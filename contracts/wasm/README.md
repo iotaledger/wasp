@@ -17,11 +17,6 @@ Sample smart contracts:
   contract owner can at any point decide to withdraw donated funds from the
   contract.
 
-- erc20
-
-  Experimental implementation of an ERC20 smart contract as first introduced by
-  Ethereum.
-
 - fairauction
 
   Allows an auctioneer to auction a number of tokens. The contract owner takes a
@@ -59,32 +54,4 @@ Sample smart contracts:
 
 ### How to create your own Rust smart contracts
 
-Prerequisites:
-
-* install the latest Rust tools, you can
-  [find them here](https://www.rust-lang.org/tools/install).
-* When installing under Windows the Rust installation program may tell you that
-  you need the Visual Studio C++ Build Tools, which you can
-  [download here](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
-  Note that you only need to install the C++ build tools, which is the top-left
-  selection.
-* install Wasm-pack, which can be
-  [downloaded here](https://rustwasm.github.io/wasm-pack/).
-
-Building a Rust smart contract is very simple when using the Rust plugin in any
-IntelliJ based development environment. Open the _contracts/wasm_ sub folder in
-your IntelliJ, which then provides you with the Rust workspace.
-
-The easiest way to create a new contract is to copy the _helloworld_ folder to a
-properly named new folder within the _rust_ sub folder. Next, change the fields
-in the first section of the new folder's _cargo.toml_ file to match your
-preferences. Make sure the package name equals the folder name. Finally, add the
-new folder to the workspace in the _cargo.toml_ in the _contracts/wasm_ folder.
-
-To build the new smart contract select _Run->Edit Configurations_. Add a new
-configuration based on the _wasmpack_ template, type the _name_ of the new
-configuration, type the _command_ `build`, and select the new folder as the
-_working directory_. You can now run this configuration to compile the smart
-contract directly to Wasm. Once compilation is successful you will find the
-resulting Wasm file in the _pkg_ sub folder of the new folder.
-
+We provide _Schema Tool_ to help developers to develop their projects. See the [README](../../tools/schema/README.md) in _Schema Tool_ for more information.
