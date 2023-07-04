@@ -19,11 +19,11 @@ func nodeHealth(args []string) error {
 	fs.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, "Usage of %s:\n", ToolNodeHealth)
 		fs.PrintDefaults()
-		println(fmt.Sprintf("\nexample: %s --%s %s",
+		fmt.Printf("\nexample: %s --%s %s\n",
 			ToolNodeHealth,
 			FlagToolNodeURL,
 			"http://192.168.1.221:9090",
-		))
+		)
 	}
 
 	if err := parseFlagSet(fs, args); err != nil {

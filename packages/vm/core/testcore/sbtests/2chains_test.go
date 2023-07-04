@@ -1,6 +1,7 @@
 package sbtests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -41,8 +42,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
 
-	setupTestSandboxSC(t, chain1, nil, w)
-	contractAgentID := setupTestSandboxSC(t, chain2, nil, w)
+	_ = setupTestSandboxSC(t, chain1, nil, w)
+	contractAgentID2 := setupTestSandboxSC(t, chain2, nil, w)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := isc.NewAgentID(userAddress)
@@ -54,18 +55,17 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.WaitForRequestsMark()
 	chain2.WaitForRequestsMark()
 
-	// send base tokens to contractAgentID (that is an entity of chain2) on chain1
+	// send base tokens to contractAgentID2 (that is an entity of chain2) on chain1
 	const baseTokensToSend = 11 * isc.Million
 	const baseTokensCreditedToScOnChain1 = 10 * isc.Million
-	req := solo.NewCallParams(
+	_, err = chain1.PostRequestSync(solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-		accounts.ParamAgentID, contractAgentID,
+		accounts.ParamAgentID, contractAgentID2,
 	).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(baseTokensCreditedToScOnChain1).
-		WithGasBudget(math.MaxUint64)
-
-	_, err = chain1.PostRequestSync(req, userWallet)
+		WithGasBudget(math.MaxUint64),
+		userWallet)
 	require.NoError(t, err)
 
 	chain1TransferAllowanceReceipt := chain1.LastReceipt()
@@ -73,19 +73,19 @@ func test2Chains(t *testing.T, w bool) {
 
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend)
 	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
-	chain1.AssertL2BaseTokens(contractAgentID, baseTokensCreditedToScOnChain1)
+	chain1.AssertL2BaseTokens(contractAgentID2, baseTokensCreditedToScOnChain1)
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + baseTokensToSend)
 	chain1TotalBaseTokens += baseTokensToSend
 
 	chain2.AssertL2BaseTokens(userAgentID, 0)
-	chain2.AssertL2BaseTokens(contractAgentID, 0)
+	chain2.AssertL2BaseTokens(contractAgentID2, 0)
 	chain2.AssertL2TotalBaseTokens(chain2TotalBaseTokens)
 
-	println("----chain1------------------------------------------")
-	println(chain1.DumpAccounts())
-	println("-----chain2-----------------------------------------")
-	println(chain2.DumpAccounts())
-	println("----------------------------------------------")
+	fmt.Println("---------------chain1---------------")
+	fmt.Println(chain1.DumpAccounts())
+	fmt.Println("---------------chain2---------------")
+	fmt.Println(chain2.DumpAccounts())
+	fmt.Println("------------------------------------")
 
 	// make chain2 send a call to chain1 to withdraw base tokens
 	baseTokensToWithdrawFromChain1 := baseTokensCreditedToScOnChain1
@@ -107,13 +107,13 @@ func test2Chains(t *testing.T, w bool) {
 	// also cover gas fee for `FuncWithdrawFromChain` on chain2
 	assetsBaseTokens := reqAllowance + isc.Million
 
-	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
+	_, err = chain2.PostRequestSync(solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamBaseTokens, baseTokensToWithdrawFromChain1).
 		AddBaseTokens(assetsBaseTokens).
 		WithAllowance(isc.NewAssetsBaseTokens(reqAllowance)).
-		WithGasBudget(isc.Million)
-	_, err = chain2.PostRequestSync(req, userWallet)
+		WithGasBudget(isc.Million),
+		userWallet)
 	require.NoError(t, err)
 	chain2WithdrawFromChainReceipt := chain2.LastReceipt()
 	chain2WithdrawFromChainGas := chain2WithdrawFromChainReceipt.GasFeeCharged
@@ -135,19 +135,19 @@ func test2Chains(t *testing.T, w bool) {
 	require.Equal(t, chain1TransferAccountToChainTarget.EntryPoint, accounts.FuncTransferAccountToChain.Hname())
 	require.Nil(t, chain1TransferAccountToChainReceipt.Error)
 
-	println("-----chain1-----------------------------------------")
-	println(chain1.DumpAccounts())
-	println("-----chain2-----------------------------------------")
-	println(chain2.DumpAccounts())
-	println("----------------------------------------------------")
+	fmt.Println("---------------chain1---------------")
+	fmt.Println(chain1.DumpAccounts())
+	fmt.Println("---------------chain2---------------")
+	fmt.Println(chain2.DumpAccounts())
+	fmt.Println("------------------------------------")
 
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend-assetsBaseTokens)
 
 	chain1.AssertL2BaseTokens(userAgentID, baseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
-	chain1.AssertL2BaseTokens(contractAgentID, 0) // emptied the account
+	chain1.AssertL2BaseTokens(contractAgentID2, 0) // emptied the account
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + chain1TransferAllowanceGas + chain1TransferAccountToChainGas - chain2TransferAllowanceGas - baseTokensToWithdrawFromChain1)
 
 	chain2.AssertL2BaseTokens(userAgentID, assetsBaseTokens-reqAllowance-chain2WithdrawFromChainGas)
-	chain2.AssertL2BaseTokens(contractAgentID, baseTokensToWithdrawFromChain1+storageDeposit)
+	chain2.AssertL2BaseTokens(contractAgentID2, baseTokensToWithdrawFromChain1+storageDeposit)
 	chain2.AssertL2TotalBaseTokens(chain2TotalBaseTokens + assetsBaseTokens + baseTokensCreditedToScOnChain1 + chain2TransferAllowanceGas - chain1TransferAllowanceGas - chain1TransferAccountToChainGas)
 }

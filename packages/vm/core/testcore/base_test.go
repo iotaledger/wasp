@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -369,7 +370,7 @@ func TestEstimateGas(t *testing.T) {
 				keyPair,
 			)
 			rec := ch.LastReceipt()
-			println(rec)
+			fmt.Println(rec)
 			if testCase.ExpectedError != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedError)
