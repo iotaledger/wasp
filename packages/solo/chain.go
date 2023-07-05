@@ -685,7 +685,7 @@ func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain
-func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool {
+func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error {
 	panic("unimplemented")
 }
 

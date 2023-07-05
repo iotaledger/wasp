@@ -131,7 +131,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	).Sign(te.governor)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
-	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq))
+	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq))
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq) // Check for duplicate receives.
 
 	t.Log("Ask for proposals")
@@ -515,7 +515,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	chosenMempool := rand.Intn(len(te.mempools))
 	for _, req := range offLedgerReqs {
 		t.Log("Sending off-ledger request with nonces 0,1,3,6,10")
-		require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(req.(isc.OffLedgerRequest)))
+		require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(req.(isc.OffLedgerRequest)))
 	}
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
@@ -575,7 +575,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// send nonce 2
 	reqNonce2 := createReqWithNonce(2)
 	t.Log("Sending off-ledger request with nonce 2")
-	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce2))
+	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce2))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	// ask for proposal, assert 2,3 are proposed
@@ -587,7 +587,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// send nonce 5, assert proposal is still empty (there is still a gap with the state)
 	reqNonce5 := createReqWithNonce(5)
 	t.Log("Sending off-ledger request with nonce 5")
-	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce5))
+	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce5))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	emptyProposalFn(currentAO)
@@ -595,7 +595,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// send nonce 4
 	reqNonce4 := createReqWithNonce(4)
 	t.Log("Sending off-ledger request with nonce 4")
-	require.True(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce4))
+	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce4))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	// ask for proposal, assert 4,5,6 are proposed
