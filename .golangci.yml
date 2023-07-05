@@ -70,6 +70,7 @@ linters-settings:
             - whyNoLint
             - wrapperFunc
             - importShadow
+            - sloppyReassign
     gomnd:
         settings:
             mnd:

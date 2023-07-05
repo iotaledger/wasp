@@ -69,6 +69,8 @@ type requestContext struct {
 	gas               requestGas
 	// SD charged to consume the current request
 	sdCharged uint64
+	// requests that the sender asked to retry
+	unprocessableToRetry []isc.OnLedgerRequest
 }
 
 type evmFailed struct {
@@ -121,7 +123,6 @@ func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 		task:            task,
 		taskResult:      taskResult,
 		blockContext:    make(map[isc.Hname]interface{}),
-		unprocessable:   make([]isc.OnLedgerRequest, 0),
 		maintenanceMode: governance.NewStateAccess(taskResult.StateDraft).MaintenanceStatus(),
 	}
 	// at the beginning of each block
@@ -340,12 +341,10 @@ func (vmctx *vmContext) saveInternalUTXOs() {
 	vmctx.storeUnprocessable(outputIndex)
 }
 
-func (vmctx *vmContext) removeUnprocessable(results []*vm.RequestResult) {
+func (vmctx *vmContext) removeUnprocessable(reqID isc.RequestID) {
 	vmctx.withStateUpdate(func() {
 		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-			for _, r := range results {
-				blocklog.RemoveUnprocessable(s, r.Request.ID())
-			}
+			blocklog.RemoveUnprocessable(s, reqID)
 		})
 	})
 }

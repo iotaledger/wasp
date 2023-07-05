@@ -5,9 +5,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type VMRunner struct{}
+type vmRunner struct{}
 
-func (r VMRunner) Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
+func (r vmRunner) Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 	// top exception catcher for all panics
 	// The VM session will be abandoned peacefully
 	err = panicutil.CatchAllButDBError(func() {
@@ -21,5 +21,5 @@ func (r VMRunner) Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 }
 
 func NewVMRunner() vm.VMRunner {
-	return VMRunner{}
+	return vmRunner{}
 }

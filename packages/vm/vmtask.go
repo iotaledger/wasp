@@ -21,15 +21,14 @@ type VMRunner interface {
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	Processors           *processors.Cache
-	AnchorOutput         *iotago.AliasOutput
-	AnchorOutputID       iotago.OutputID
-	Store                state.Store
-	Requests             []isc.Request
-	UnprocessableToRetry []isc.Request
-	TimeAssumption       time.Time
-	Entropy              hashing.HashValue
-	ValidatorFeeTarget   isc.AgentID
+	Processors         *processors.Cache
+	AnchorOutput       *iotago.AliasOutput
+	AnchorOutputID     iotago.OutputID
+	Store              state.Store
+	Requests           []isc.Request
+	TimeAssumption     time.Time
+	Entropy            hashing.HashValue
+	ValidatorFeeTarget isc.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
 	EstimateGasMode bool
 	// If EVMTracer is set, all requests will be executed normally up until the EVM

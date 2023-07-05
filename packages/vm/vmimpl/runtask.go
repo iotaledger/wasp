@@ -1,6 +1,9 @@
 package vmimpl
 
 import (
+	"math"
+
+	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -12,18 +15,8 @@ func (vmctx *vmContext) run() {
 	vmctx.openBlockContexts()
 
 	// run the batch of requests
-	results, numSuccess, numOffLedger := vmctx.runRequests(vmctx.task.Requests, 0, vmctx.task.Log)
-	{
-		// run any scheduled retry of "unprocessable" requests
-		results2, numSuccess2, numOffLedger2 := vmctx.runRequests(vmctx.task.UnprocessableToRetry, uint16(len(results)), vmctx.task.Log)
-		vmctx.removeUnprocessable(results2)
-		if numOffLedger2 != 0 {
-			panic("offledger request executed as 'unprocessable retry', this cannot happen")
-		}
-		vmctx.taskResult.RequestResults = results
-		vmctx.taskResult.RequestResults = append(vmctx.taskResult.RequestResults, results2...)
-		numSuccess += numSuccess2
-	}
+	results, numSuccess, numOffLedger := vmctx.runRequests(vmctx.task.Requests, vmctx.task.Log)
+	vmctx.taskResult.RequestResults = results
 
 	vmctx.assertConsistentGasTotals()
 
@@ -56,7 +49,6 @@ func (vmctx *vmContext) run() {
 
 func (vmctx *vmContext) runRequests(
 	reqs []isc.Request,
-	startRequestIndex uint16,
 	log *logger.Logger,
 ) (
 	results []*vm.RequestResult,
@@ -64,11 +56,12 @@ func (vmctx *vmContext) runRequests(
 	numOffLedger uint16,
 ) {
 	results = []*vm.RequestResult{}
-	reqIndexInTheBlock := startRequestIndex
+	allReqs := lo.CopySlice(reqs)
 
 	// main loop over the batch of requests
-	for _, req := range reqs {
-		result, skipReason := vmctx.runRequest(req, reqIndexInTheBlock)
+	for reqIndex := 0; reqIndex < len(allReqs); reqIndex++ {
+		req := allReqs[reqIndex]
+		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, uint16(reqIndex))
 		if skipReason != nil {
 			// some requests are just ignored (deterministically)
 			log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
@@ -76,15 +69,27 @@ func (vmctx *vmContext) runRequests(
 			continue
 		}
 		results = append(results, result)
-		reqIndexInTheBlock++
 		if req.IsOffLedger() {
 			numOffLedger++
 		}
 
-		if result.Receipt.Error == nil {
-			numSuccess++
-		} else {
+		if result.Receipt.Error != nil {
 			log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
+			continue
+		}
+		numSuccess++
+
+		isRetry := reqIndex >= len(reqs)
+		if isRetry {
+			vmctx.removeUnprocessable(req.ID())
+		}
+		for _, retry := range unprocessableToRetry {
+			if len(allReqs) >= math.MaxUint16 {
+				log.Warnf("cannot process request to be retried %s (retry requested in %s): too many requests in block",
+					retry.ID(), req.ID())
+			} else {
+				allReqs = append(allReqs, retry)
+			}
 		}
 	}
 	return results, numSuccess, numOffLedger

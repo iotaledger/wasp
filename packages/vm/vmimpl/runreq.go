@@ -31,7 +31,11 @@ import (
 )
 
 // runRequest processes a single isc.Request in the batch
-func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.RequestResult, error) {
+func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
+	res *vm.RequestResult,
+	unprocessableToRetry []isc.OnLedgerRequest,
+	err error,
+) {
 	if len(vmctx.callStack) != 0 {
 		panic("expected empty callstack")
 	}
@@ -60,8 +64,8 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.Re
 
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.taskResult.StateDraft.Timestamp().Add(1*time.Nanosecond)))
 
-	if err2 := vmctx.earlyCheckReasonToSkip(); err2 != nil {
-		return nil, err2
+	if err = vmctx.earlyCheckReasonToSkip(); err != nil {
+		return nil, nil, err
 	}
 	vmctx.loadChainConfig()
 
@@ -70,7 +74,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.Re
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
 	var result *vm.RequestResult
-	err := vmctx.catchRequestPanic(
+	err = vmctx.catchRequestPanic(
 		func() {
 			// transfer all attached assets to the sender's account
 			vmctx.creditAssetsToChain()
@@ -96,11 +100,11 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (*vm.Re
 			vmctx.unprocessable = append(vmctx.unprocessable, req.(isc.OnLedgerRequest))
 		}
 
-		return nil, err
+		return nil, nil, err
 	}
 
 	vmctx.chainState().Apply()
-	return result, nil
+	return result, vmctx.reqCtx.unprocessableToRetry, nil
 }
 
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {
