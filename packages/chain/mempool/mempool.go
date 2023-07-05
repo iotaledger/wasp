@@ -98,7 +98,7 @@ type Mempool interface {
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
 	// This is called when this node receives an off-ledger request from a user directly.
 	// I.e. when this node is an entry point of the off-ledger request.
-	ReceiveOffLedgerRequest(request isc.OffLedgerRequest) bool
+	ReceiveOffLedgerRequest(request isc.OffLedgerRequest) error
 	// Invoked by the ChainMgr when a time of a tangle changes.
 	TangleTimeUpdated(tangleTime time.Time)
 	// Invoked by the chain when a set of server nodes has changed.
@@ -281,12 +281,12 @@ func (mpi *mempoolImpl) ReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
 	mpi.reqReceiveOnLedgerRequestPipe.In() <- request
 }
 
-func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) bool {
-	if mpi.shouldAddOffledgerRequest(request) {
-		mpi.reqReceiveOffLedgerRequestPipe.In() <- request
-		return true
+func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) error {
+	if err := mpi.shouldAddOffledgerRequest(request); err != nil {
+		return err
 	}
-	return false
+	mpi.reqReceiveOffLedgerRequestPipe.In() <- request
+	return nil
 }
 
 func (mpi *mempoolImpl) ServerNodesUpdated(committeePubKeys, serverNodePubKeys []*cryptolib.PublicKey) {
@@ -447,15 +447,15 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
 		return
 	}
-	if mpi.shouldAddOffledgerRequest(offLedgerReq) {
+	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
 		mpi.addOffledger(offLedgerReq)
 	}
 }
 
-func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool {
+func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) error {
 	mpi.log.Debugf("trying to add to mempool, requestID: %s", req.ID().String())
 	if mpi.offLedgerPool.Has(isc.RequestRefFromRequest(req)) {
-		return false
+		return fmt.Errorf("already in mempool")
 	}
 	if mpi.chainHeadState != nil {
 		requestID := req.ID()
@@ -469,7 +469,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool
 			))
 		}
 		if processed {
-			return false // Already processed.
+			return fmt.Errorf("already processed")
 		}
 		accountsState := accounts.NewStateAccess(mpi.chainHeadState)
 		governanceState := governance.NewStateAccess(mpi.chainHeadState)
@@ -479,15 +479,15 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) bool
 			chainOwner := governanceState.ChainOwnerID()
 			isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
 			if !isGovRequest {
-				return false // no on-chain funds
+				return fmt.Errorf("no funds on chain")
 			}
 		}
 		accountNonce := accountsState.Nonce(req.SenderAccount())
 		if req.Nonce() < accountNonce {
-			return false // only accept requests with higher nonces
+			return fmt.Errorf("bad nonce, expected: %d", accountNonce)
 		}
 	}
-	return true
+	return nil
 }
 
 func (mpi *mempoolImpl) addOffledger(request isc.OffLedgerRequest) {
