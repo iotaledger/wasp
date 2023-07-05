@@ -33,27 +33,29 @@ import (
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
 type ViewContext struct {
-	processors     *processors.Cache
-	stateReader    state.State
-	chainID        isc.ChainID
-	log            *logger.Logger
-	chainInfo      *isc.ChainInfo
-	gasBurnLog     *gas.BurnLog
-	gasBudget      uint64
-	gasBurnEnabled bool
-	callStack      []*callContext
+	processors            *processors.Cache
+	stateReader           state.State
+	chainID               isc.ChainID
+	log                   *logger.Logger
+	chainInfo             *isc.ChainInfo
+	gasBurnLog            *gas.BurnLog
+	gasBudget             uint64
+	gasBurnEnabled        bool
+	gasBurnLoggingEnabled bool
+	callStack             []*callContext
 }
 
 var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.ChainCore, stateReader state.State) (*ViewContext, error) {
+func New(ch chain.ChainCore, stateReader state.State, gasBurnLoggingEnabled bool) (*ViewContext, error) {
 	chainID := ch.ID()
 	return &ViewContext{
-		processors:     ch.Processors(),
-		stateReader:    stateReader,
-		chainID:        chainID,
-		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		gasBurnEnabled: true,
+		processors:            ch.Processors(),
+		stateReader:           stateReader,
+		chainID:               chainID,
+		log:                   ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		gasBurnEnabled:        true,
+		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 	}, nil
 }
 
@@ -212,7 +214,9 @@ func (ctx *ViewContext) initAndCallView(targetContract, entryPoint isc.Hname, pa
 	)
 
 	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
-	ctx.gasBurnLog = gas.NewGasBurnLog()
+	if ctx.gasBurnLoggingEnabled {
+		ctx.gasBurnLog = gas.NewGasBurnLog()
+	}
 	return ctx.callView(targetContract, entryPoint, params)
 }
 
