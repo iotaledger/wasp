@@ -102,6 +102,14 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (*vm
 	return result, nil
 }
 
+func (vmctx *VMContext) payoutAgentID() isc.AgentID {
+	var payoutAgentID isc.AgentID
+	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+		payoutAgentID = governance.MustGetPayoutAgentID(s)
+	})
+	return payoutAgentID
+}
+
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *VMContext) creditAssetsToChain() {
 	req := vmctx.reqCtx.req
@@ -116,7 +124,19 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common sender and panics is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		panic("nil sender should never happen")
+		if req.IsOffLedger() {
+			panic("nil sender on offledger requests should never happen")
+		}
+		// onleger request with no sender, send all assets to the payoutAddress
+		payoutAgentID := vmctx.payoutAgentID()
+		vmctx.creditNFTToAccount(payoutAgentID, req.NFT())
+		vmctx.creditToAccount(payoutAgentID, req.Assets())
+
+		// debit any SD required for accounting UTXOs
+		if storageDepositNeeded > 0 {
+			vmctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded))
+		}
+		return
 	}
 
 	senderBaseTokens := req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
@@ -393,12 +413,8 @@ func (vmctx *VMContext) chargeGasFee() {
 		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), isc.NewAssetsBaseTokens(transferToCommonAcc))
 	}
 	if sendToPayout > 0 {
-		var payoutAddr isc.AgentID
-		vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-			payoutAddr = governance.MustGetPayoutAgentID(s)
-		})
-
-		vmctx.mustMoveBetweenAccounts(sender, payoutAddr, isc.NewAssetsBaseTokens(sendToPayout))
+		payoutAgentID := vmctx.payoutAgentID()
+		vmctx.mustMoveBetweenAccounts(sender, payoutAgentID, isc.NewAssetsBaseTokens(sendToPayout))
 	}
 }
 

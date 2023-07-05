@@ -6,5 +6,4 @@ cd $contracts_path
 find . -name "Cargo.lock" -type f -delete
 schema -go -rs -ts -force
 schema -go -rs -ts -build
-cd ../..
 bash $root_path/update_hardcoded.sh

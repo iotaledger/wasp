@@ -531,7 +531,7 @@ type reqRefNonce struct {
 	nonce uint64
 }
 
-func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {
+func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 	//
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
@@ -590,20 +590,26 @@ func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusPr
 				}
 			}
 		}
-		// remove underisable requests from the proposal
+		// remove undesirable requests from the proposal
 		reqRefs = lo.Filter(reqRefs, func(x *isc.RequestRef, _ int) bool {
 			return !slices.Contains(doNotPropose, x)
 		})
 	}
 
-	if len(reqRefs) > 0 {
-		recv.Respond(reqRefs)
+	return reqRefs
+}
+
+func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {
+	refs := mpi.refsToPropose()
+	if len(refs) > 0 {
+		recv.Respond(refs)
 		return
 	}
+
 	//
 	// Wait for any request.
-	mpi.waitReq.WaitAny(recv.ctx, func(req isc.Request) {
-		recv.Respond([]*isc.RequestRef{isc.RequestRefFromRequest(req)})
+	mpi.waitReq.WaitAny(recv.ctx, func(_ isc.Request) {
+		mpi.handleConsensusProposalForChainHead(recv)
 	})
 }
 
@@ -725,7 +731,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	// Notify existing on-ledger requests if that's first time update.
 	if oldTangleTime.IsZero() {
 		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest, ts time.Time) bool {
-			mpi.waitReq.Have(request)
+			mpi.waitReq.MarkAvailable(request)
 			return true
 		})
 	}

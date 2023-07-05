@@ -15,7 +15,7 @@ import (
 type WaitReq interface {
 	WaitMany(ctx context.Context, reqRefs []*isc.RequestRef, cb func(req isc.Request)) // Called per block.
 	WaitAny(ctx context.Context, cb func(req isc.Request))                             // Called per block.
-	Have(req isc.Request)                                                              // Called often, per request.
+	MarkAvailable(req isc.Request)                                                     // Called often, per request.
 }
 
 type waitReq struct {
@@ -55,14 +55,15 @@ func (wr *waitReq) WaitAny(ctx context.Context, cb func(req isc.Request)) {
 	wr.maybeCleanup()
 }
 
-func (wr *waitReq) Have(req isc.Request) {
+func (wr *waitReq) MarkAvailable(req isc.Request) {
 	if len(wr.any) > 0 {
-		for i := range wr.any {
-			if wr.any[i].ctx.Err() == nil {
-				wr.any[i].cb(req)
+		awaiting := wr.any // copy before resetting, so that if any of the callbacks tries to await, it doesn't get squashed
+		wr.any = wr.any[:0]
+		for i := range awaiting {
+			if awaiting[i].ctx.Err() == nil {
+				awaiting[i].cb(req)
 			}
 		}
-		wr.any = wr.any[:0]
 	}
 	reqRefKey := isc.RequestRefFromRequest(req).AsKey()
 	if cbs, exists := wr.reqs.Get(reqRefKey); exists {

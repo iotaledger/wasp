@@ -46,7 +46,7 @@ func (req *onLedgerRequestData) readFromUTXO(output iotago.Output, outputID iota
 
 	reqMetadata, err = requestMetadataFromFeatureSet(fbSet)
 	if err != nil {
-		return err
+		reqMetadata = nil // bad metadata. // we must handle these request, so that those funds are not lost forever
 	}
 
 	if reqMetadata != nil {
@@ -90,6 +90,9 @@ func (req *onLedgerRequestData) Write(w io.Writer) error {
 }
 
 func (req *onLedgerRequestData) Allowance() *Assets {
+	if req.requestMetadata == nil {
+		return NewEmptyAssets()
+	}
 	return req.requestMetadata.Allowance
 }
 
@@ -122,13 +125,16 @@ func (req *onLedgerRequestData) Clone() OnLedgerRequest {
 	outputID := iotago.OutputID{}
 	copy(outputID[:], req.outputID[:])
 
-	return &onLedgerRequestData{
+	ret := &onLedgerRequestData{
 		outputID:         outputID,
 		output:           req.output.Clone(),
 		featureBlocks:    req.featureBlocks.Clone(),
 		unlockConditions: util.CloneMap(req.unlockConditions),
-		requestMetadata:  req.requestMetadata.Clone(),
 	}
+	if req.requestMetadata != nil {
+		ret.requestMetadata = req.requestMetadata.Clone()
+	}
+	return ret
 }
 
 func (req *onLedgerRequestData) Expiry() (time.Time, iotago.Address) {
@@ -145,6 +151,9 @@ func (req *onLedgerRequestData) Features() Features {
 }
 
 func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
+	if req.requestMetadata == nil {
+		return 0, false
+	}
 	return req.requestMetadata.GasBudget, false
 }
 
@@ -204,6 +213,9 @@ func (req *onLedgerRequestData) OutputID() iotago.OutputID {
 }
 
 func (req *onLedgerRequestData) Params() dict.Dict {
+	if req.requestMetadata == nil {
+		return dict.Dict{}
+	}
 	return req.requestMetadata.Params
 }
 

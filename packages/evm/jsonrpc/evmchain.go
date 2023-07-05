@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"path"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,11 +17,12 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/gommon/log"
 
+	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpccache"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpcindex"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -46,7 +48,7 @@ type EVMChain struct {
 	chainID  uint16 // cache
 	newBlock *event.Event1[*NewBlockEvent]
 	log      *logger.Logger
-	cache    *jsonrpccache.Cache // only caches blocks that will be pruned from the active state
+	index    *jsonrpcindex.Index // only indexes blocks that will be pruned from the active state
 }
 
 type NewBlockEvent struct {
@@ -54,16 +56,20 @@ type NewBlockEvent struct {
 	logs  []*types.Log
 }
 
-func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Logger) *EVMChain {
+func NewEVMChain(
+	backend ChainBackend,
+	pub *publisher.Publisher,
+	isArchiveNode bool,
+	indexDbEngine hivedb.Engine,
+	indexDbPath string,
+	log *logger.Logger,
+) *EVMChain {
 	e := &EVMChain{
 		backend:  backend,
 		newBlock: event.New1[*NewBlockEvent](),
 		log:      log,
-		cache:    jsonrpccache.New(blockchainDB),
+		index:    jsonrpcindex.New(blockchainDB, backend.ISCStateByTrieRoot, indexDbEngine, path.Join(indexDbPath, backend.ISCChainID().String())),
 	}
-
-	// TODO disable cache for non-archive nodes based on the config parameter (only enable when -1)
-	cacheEnabled := true
 
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
 
@@ -72,8 +78,8 @@ func NewEVMChain(backend ChainBackend, pub *publisher.Publisher, log *logger.Log
 			return
 		}
 		blocksFromPublisher.In() <- ev.Payload
-		if cacheEnabled {
-			e.cache.CacheBlock(ev.Payload.TrieRoot, e.backend.ISCStateByTrieRoot)
+		if isArchiveNode {
+			e.index.IndexBlock(ev.Payload.TrieRoot)
 		}
 	})
 
@@ -219,7 +225,7 @@ func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State
 	if err != nil {
 		return nil, err
 	}
-	cachedTrieHash := e.cache.BlockTrieHashByIndex(iscBlockIndex)
+	cachedTrieHash := e.index.BlockTrieRootByIndex(iscBlockIndex)
 	if cachedTrieHash != nil {
 		return e.backend.ISCStateByTrieRoot(*cachedTrieHash)
 	}
@@ -304,7 +310,7 @@ func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumb
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 	e.log.Debugf("BlockByNumber(blockNumber=%v)", blockNumber)
 
-	cachedBlock := e.cache.BlockByNumber(blockNumber)
+	cachedBlock := e.index.BlockByNumber(blockNumber)
 	if cachedBlock != nil {
 		return cachedBlock, nil
 	}
@@ -335,25 +341,19 @@ func blockNumberU64(db *emulator.BlockchainDB, blockNumber *big.Int) (uint64, er
 	return blockNumber.Uint64(), nil
 }
 
-func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
+func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, txIndex uint64, err error) {
 	e.log.Debugf("TransactionByHash(hash=%v)", hash)
-	cachedTx, block, index := e.cache.TxByHash(hash)
+	cachedTx, blockHash, blockNumber, txIndex := e.index.TxByHash(hash)
 	if cachedTx != nil {
-		return cachedTx, block.Hash(), block.NumberU64(), index, nil
+		return cachedTx, blockHash, blockNumber, txIndex, nil
 	}
 	db := blockchainDB(e.backend.ISCLatestState())
-	blockNumber, ok := db.GetBlockNumberByTxHash(hash)
-	if !ok {
-		return nil, common.Hash{}, 0, 0, err
-	}
-	tx, txIndex := db.GetTransactionByHash(hash)
-	block = db.GetBlockByNumber(blockNumber)
-	return tx, block.Hash(), blockNumber, uint64(txIndex), nil
+	return db.GetTransactionByHash(hash)
 }
 
 func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockNumber uint64, err error) {
 	e.log.Debugf("TransactionByBlockHashAndIndex(hash=%v, index=%v)", hash, index)
-	cachedTx, bn := e.cache.TxByBlockHashAndIndex(hash, index)
+	cachedTx, bn := e.index.TxByBlockHashAndIndex(hash, index)
 	if cachedTx != nil {
 		return cachedTx, bn, nil
 	}
@@ -368,7 +368,7 @@ func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64
 
 func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet uint64, err error) {
 	e.log.Debugf("TransactionByBlockNumberAndIndex(blockNumber=%v, index=%v)", blockNumber, index)
-	cachedTx, blockHash := e.cache.TxByBlockNumberAndIndex(blockNumber, index)
+	cachedTx, blockHash := e.index.TxByBlockNumberAndIndex(blockNumber, index)
 	if cachedTx != nil {
 		return cachedTx, blockHash, blockNumber.Uint64(), nil
 	}
@@ -388,7 +388,7 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 	e.log.Debugf("BlockByHash(hash=%v)", hash)
 
-	cachedBlock := e.cache.BlockByHash(hash)
+	cachedBlock := e.index.BlockByHash(hash)
 	if cachedBlock != nil {
 		return cachedBlock
 	}
@@ -400,13 +400,9 @@ func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 
 func (e *EVMChain) TransactionReceipt(txHash common.Hash) *types.Receipt {
 	e.log.Debugf("TransactionReceipt(txHash=%v)", txHash)
-	tx, block, _ := e.cache.TxByHash(txHash)
-	if tx != nil {
-		state, err := e.backend.ISCStateByBlockIndex(uint32(block.NumberU64()))
-		if err != nil {
-			panic(err)
-		}
-		return blockchainDB(state).GetReceiptByTxHash(txHash)
+	rec := e.index.GetReceiptByTxHash(txHash)
+	if rec != nil {
+		return rec
 	}
 	db := blockchainDB(e.backend.ISCLatestState())
 	return db.GetReceiptByTxHash(txHash)

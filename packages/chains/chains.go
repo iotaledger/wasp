@@ -419,3 +419,7 @@ func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 func (c *Chains) ValidatorAddress() iotago.Address {
 	return c.validatorFeeAddr
 }
+
+func (c *Chains) IsArchiveNode() bool {
+	return c.smPruningMinStatesToKeep < 1
+}
