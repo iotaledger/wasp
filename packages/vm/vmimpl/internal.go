@@ -177,14 +177,14 @@ func (vmctx *vmContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	return receipt
 }
 
-func (vmctx *vmContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
-	if len(vmctx.unprocessable) == 0 {
+func (vmctx *vmContext) storeUnprocessable(unprocessable []isc.OnLedgerRequest, lastInternalAssetUTXOIndex uint16) {
+	if len(unprocessable) == 0 {
 		return
 	}
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		for _, r := range vmctx.unprocessable {
+		for _, r := range unprocessable {
 			txsnapshot := vmctx.createTxBuilderSnapshot()
 			err := panicutil.CatchPanic(func() {
 				position := vmctx.txbuilder.ConsumeUnprocessable(r)

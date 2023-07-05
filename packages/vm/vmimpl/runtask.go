@@ -1,6 +1,7 @@
 package vmimpl
 
 import (
+	"errors"
 	"math"
 
 	"github.com/iotaledger/hive.go/lo"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 // runTask runs batch of requests on VM
@@ -15,7 +17,7 @@ func (vmctx *vmContext) run() {
 	vmctx.openBlockContexts()
 
 	// run the batch of requests
-	results, numSuccess, numOffLedger := vmctx.runRequests(vmctx.task.Requests, vmctx.task.Log)
+	results, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(vmctx.task.Requests, vmctx.task.Log)
 	vmctx.taskResult.RequestResults = results
 
 	vmctx.assertConsistentGasTotals()
@@ -30,7 +32,9 @@ func (vmctx *vmContext) run() {
 		numProcessed, numSuccess, numOffLedger)
 
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.extractBlock(
-		numProcessed, numSuccess, numOffLedger)
+		numProcessed, numSuccess, numOffLedger,
+		unprocessable,
+	)
 
 	vmctx.task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, l1Commitment, timestamp, rotationAddr)
@@ -54,6 +58,7 @@ func (vmctx *vmContext) runRequests(
 	results []*vm.RequestResult,
 	numSuccess uint16,
 	numOffLedger uint16,
+	unprocessable []isc.OnLedgerRequest,
 ) {
 	results = []*vm.RequestResult{}
 	allReqs := lo.CopySlice(reqs)
@@ -63,6 +68,10 @@ func (vmctx *vmContext) runRequests(
 		req := allReqs[reqIndex]
 		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, uint16(reqIndex))
 		if skipReason != nil {
+			if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, skipReason) {
+				unprocessable = append(unprocessable, req.(isc.OnLedgerRequest))
+			}
+
 			// some requests are just ignored (deterministically)
 			log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
@@ -92,5 +101,5 @@ func (vmctx *vmContext) runRequests(
 			}
 		}
 	}
-	return results, numSuccess, numOffLedger
+	return results, numSuccess, numOffLedger, unprocessable
 }

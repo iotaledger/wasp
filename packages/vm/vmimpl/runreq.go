@@ -96,10 +96,6 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
 		vmctx.blockGas.burned = initialGasBurnedTotal
 		vmctx.blockGas.feeCharged = initialGasFeeChargedTotal
 
-		if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, err) {
-			vmctx.unprocessable = append(vmctx.unprocessable, req.(isc.OnLedgerRequest))
-		}
-
 		return nil, nil, err
 	}
 
