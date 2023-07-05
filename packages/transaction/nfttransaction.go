@@ -67,5 +67,5 @@ func NewMintNFTsTransaction(par MintNFTsTransactionParams) (*iotago.Transaction,
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair, parameters.L1().Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, par.IssuerKeyPair, parameters.L1().Protocol.NetworkID())
 }
