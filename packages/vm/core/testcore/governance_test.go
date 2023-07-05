@@ -4,10 +4,13 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -213,12 +216,160 @@ func TestAccessNodes(t *testing.T) {
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 }
 
-func TestDisallowMaintenanceDeadlock(t *testing.T) {
-	// contracts of the same chain cannot turn on maintenance mode
+func TestMaintenanceMode(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
+		WithNativeContract(inccounter.Processor)
+	ch := env.NewChain()
 
-	claimOwnershipFunc := coreutil.Func("claimOwnership")
-	startMaintenceFunc := coreutil.Func("initMaintenance")
-	stopMaintenceFunc := coreutil.Func("stopMaintenance")
+	ownerWallet, ownerAddr := env.NewKeyPairWithFunds()
+	ownerAgentID := isc.NewAgentID(ownerAddr)
+	ch.DepositBaseTokensToL2(10*isc.Million, ownerWallet)
+
+	userWallet, _ := env.NewKeyPairWithFunds()
+	ch.DepositBaseTokensToL2(10*isc.Million, userWallet)
+
+	// set owner of the chain
+	{
+		_, err2 := ch.PostRequestSync(
+			solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
+				governance.ParamChainOwner, codec.Encode(ownerAgentID),
+			).WithMaxAffordableGasBudget(),
+			nil,
+		)
+		require.NoError(t, err2)
+
+		_, err2 = ch.PostRequestSync(
+			solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).WithMaxAffordableGasBudget(),
+			ownerWallet,
+		)
+		require.NoError(t, err2)
+	}
+
+	// call the gov "maintenance status view", check it is OFF
+	{
+		// TODO: Add maintenance status to wrapped core contracts
+		ret, err2 := ch.CallView(governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+		require.NoError(t, err2)
+		maintenanceStatus := codec.MustDecodeBool(ret.Get(governance.VarMaintenanceStatus))
+		require.False(t, maintenanceStatus)
+	}
+
+	// test non-chain owner cannot call init maintenance
+	{
+		_, err2 := ch.PostRequestSync(
+			solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
+			userWallet,
+		)
+		require.ErrorContains(t, err2, "unauthorized")
+	}
+
+	// owner can start maintenance mode
+	{
+		_, err2 := ch.PostRequestSync(
+			solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
+			ownerWallet,
+		)
+		require.NoError(t, err2)
+	}
+
+	// call the gov "maintenance status view", check it is ON
+	{
+		ret, err2 := ch.CallView(governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+		require.NoError(t, err2)
+		maintenanceStatus := codec.MustDecodeBool(ret.Get(governance.VarMaintenanceStatus))
+		require.True(t, maintenanceStatus)
+	}
+
+	// calls to non-maintenance endpoints are not processed
+	ch.WaitForRequestsMark()
+
+	var reqs []isc.OffLedgerRequest
+	{
+		for _, wallet := range []*cryptolib.KeyPair{userWallet, ownerWallet} {
+			req := solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
+				WithMaxAffordableGasBudget().
+				NewRequestOffLedger(ch, wallet)
+			env.AddRequestsToMempool(ch, []isc.Request{req})
+			reqs = append(reqs, req)
+		}
+	}
+
+	// give some time for the requests to be picked up from the mempool
+	require.False(t, ch.WaitForRequestsThrough(2, 200*time.Millisecond))
+
+	// requests are skipped
+	for _, req := range reqs {
+		require.False(t, ch.IsRequestProcessed(req.ID()))
+	}
+
+	fp := &gas.FeePolicy{
+		GasPerToken:       util.Ratio32{A: 1, B: 10},
+		ValidatorFeeShare: 1,
+		EVMGasRatio:       gas.DefaultEVMGasRatio,
+	}
+
+	// calls to governance are processed (try changing fees for example)
+	{
+		_, err2 := ch.PostRequestSync(solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetFeePolicy.Name,
+			dict.Dict{
+				governance.ParamFeePolicyBytes: fp.Bytes(),
+			},
+		), ownerWallet)
+		require.NoError(t, err2)
+	}
+
+	// calls to governance from non-owners should be processed, but fail
+	{
+		_, err2 := ch.PostRequestSync(solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetFeePolicy.Name,
+			dict.Dict{
+				governance.ParamFeePolicyBytes: fp.Bytes(),
+			},
+		), userWallet)
+		require.ErrorContains(t, err2, "unauthorized")
+	}
+
+	// test non-chain owner cannot call stop maintenance
+	{
+		_, err2 := ch.PostRequestSync(
+			solo.NewCallParams(governance.Contract.Name, governance.FuncStopMaintenance.Name).WithMaxAffordableGasBudget(),
+			userWallet,
+		)
+		require.ErrorContains(t, err2, "unauthorized")
+	}
+
+	// requests are still skipped
+	for _, req := range reqs {
+		require.False(t, ch.IsRequestProcessed(req.ID()))
+	}
+
+	ch.WaitForRequestsMark()
+
+	// owner can stop maintenance mode
+	{
+		_, err2 := ch.PostRequestSync(
+			solo.NewCallParams(governance.Contract.Name, governance.FuncStopMaintenance.Name).WithMaxAffordableGasBudget(),
+			ownerWallet,
+		)
+		require.NoError(t, err2)
+	}
+
+	// normal requests are now processed successfully (pending requests issued during maintenance should be processed now)
+	require.True(t, ch.WaitForRequestsThrough(3, 1*time.Second))
+	for _, req := range reqs {
+		require.True(t, ch.IsRequestProcessed(req.ID()))
+	}
+}
+
+var (
+	claimOwnershipFunc = coreutil.Func("claimOwnership")
+	startMaintenceFunc = coreutil.Func("initMaintenance")
+)
+
+func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
 	ownerContract := coreutil.NewContract("chain owner contract")
 	ownerContractProcessor := ownerContract.Processor(nil,
 		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
@@ -227,22 +378,25 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 		startMaintenceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncStartMaintenance.Hname(), nil, nil)
 		}),
-		stopMaintenceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			return ctx.Call(governance.Contract.Hname(), governance.FuncStopMaintenance.Hname(), nil, nil)
-		}),
 	)
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(ownerContractProcessor)
 	ch := env.NewChain()
 
-	ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
-	userWallet, _ := env.NewKeyPairWithFunds()
-
 	err := ch.DeployContract(nil, ownerContract.Name, ownerContract.ProgramHash)
 	require.NoError(t, err)
 
+	return ch, ownerContract
+}
+
+func TestDisallowMaintenanceDeadlock1(t *testing.T) {
+	ch, ownerContract := createOwnerContract(t)
+
+	ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
+	userWallet, _ := ch.Env.NewKeyPairWithFunds()
+
 	// from the initial owner - set maintenance
-	_, err = ch.PostRequestSync(
+	_, err := ch.PostRequestSync(
 		solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -256,25 +410,40 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// the "owner contract" cannot claim ownership
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(ownerContract.Name, claimOwnershipFunc.Name).WithMaxAffordableGasBudget(),
+		userWallet,
+	)
+	require.ErrorContains(t, err, "skipped")
+}
+
+func TestDisallowMaintenanceDeadlock2(t *testing.T) {
+	ch, ownerContract := createOwnerContract(t)
+
+	ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
+	userWallet, _ := ch.Env.NewKeyPairWithFunds()
+
+	// set the "owner contract" as the new chain owner
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
+			governance.ParamChainOwner, codec.Encode(ownerContractAgentID)).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(ownerContract.Name, claimOwnershipFunc.Name).WithMaxAffordableGasBudget(),
 		userWallet,
 	)
 	require.NoError(t, err)
 
-	// the "owner contact" is able to stop maintenance mode
-	_, err = ch.PostRequestSync(
-		solo.NewCallParams(ownerContract.Name, stopMaintenceFunc.Name).WithMaxAffordableGasBudget(),
-		userWallet,
-	)
-	require.NoError(t, err)
-
-	// the "owner contract" is unable to start a new maintenance
+	// the "owner contract" is unable to start maintenance
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(ownerContract.Name, startMaintenceFunc.Name).WithMaxAffordableGasBudget(),
 		userWallet,
 	)
-	require.Error(t, err)
+	require.ErrorContains(t, err, "unauthorized")
 }
 
 func TestMetadata(t *testing.T) {

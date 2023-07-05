@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"fmt"
@@ -15,12 +15,12 @@ import (
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
-func (vmctx *VMContext) Call(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
+func (vmctx *vmContext) Call(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
 	vmctx.Debugf("Call: targetContract: %s entry point: %s", targetContract, epCode)
 	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 
-func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets, caller ...isc.AgentID) dict.Dict {
+func (vmctx *vmContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets, caller ...isc.AgentID) dict.Dict {
 	contractRecord := vmctx.getOrCreateContractRecord(targetContract)
 	ep := execution.GetEntryPointByProgHash(vmctx, targetContract, epCode, contractRecord.ProgramHash)
 
@@ -41,7 +41,7 @@ func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dic
 	return ep.Call(NewSandbox(vmctx))
 }
 
-func (vmctx *VMContext) callerIsRoot() bool {
+func (vmctx *vmContext) callerIsRoot() bool {
 	caller, ok := vmctx.Caller().(*isc.ContractAgentID)
 	if !ok {
 		return false
@@ -54,7 +54,7 @@ func (vmctx *VMContext) callerIsRoot() bool {
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Assets, optCaller ...isc.AgentID) {
+func (vmctx *vmContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Assets, optCaller ...isc.AgentID) {
 	var caller isc.AgentID
 	if len(optCaller) != 0 {
 		caller = optCaller[0]
@@ -76,7 +76,7 @@ func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, al
 	vmctx.callStack = append(vmctx.callStack, ctx)
 }
 
-func (vmctx *VMContext) popCallContext() {
+func (vmctx *vmContext) popCallContext() {
 	if traceStack {
 		vmctx.Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
 	}
@@ -84,7 +84,7 @@ func (vmctx *VMContext) popCallContext() {
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
 }
 
-func (vmctx *VMContext) getToBeCaller() isc.AgentID {
+func (vmctx *vmContext) getToBeCaller() isc.AgentID {
 	if len(vmctx.callStack) > 0 {
 		return vmctx.MyAgentID()
 	}
@@ -95,14 +95,14 @@ func (vmctx *VMContext) getToBeCaller() isc.AgentID {
 	return vmctx.reqCtx.req.SenderAccount()
 }
 
-func (vmctx *VMContext) getCallContext() *callContext {
+func (vmctx *vmContext) getCallContext() *callContext {
 	if len(vmctx.callStack) == 0 {
 		panic("getCallContext: stack is empty")
 	}
 	return vmctx.callStack[len(vmctx.callStack)-1]
 }
 
-func (vmctx *VMContext) callCore(c *coreutil.ContractInfo, f func(s kv.KVStore)) {
+func (vmctx *vmContext) callCore(c *coreutil.ContractInfo, f func(s kv.KVStore)) {
 	vmctx.pushCallContext(c.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 

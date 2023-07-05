@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 type AccountsContractRead struct {

@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"strings"
@@ -31,7 +31,7 @@ func TestSetThenGet(t *testing.T) {
 	task := &vm.VMTask{}
 	taskResult := task.CreateResult()
 	taskResult.StateDraft = stateDraft
-	vmctx := &VMContext{
+	vmctx := &vmContext{
 		task:               task,
 		taskResult:         taskResult,
 		currentStateUpdate: stateUpdate,
@@ -94,7 +94,7 @@ func TestIterate(t *testing.T) {
 	task := &vm.VMTask{}
 	taskResult := task.CreateResult()
 	taskResult.StateDraft = stateDraft
-	vmctx := &VMContext{
+	vmctx := &vmContext{
 		task:               task,
 		taskResult:         taskResult,
 		currentStateUpdate: stateUpdate,
@@ -140,7 +140,7 @@ func TestVmctxStateDeletion(t *testing.T) {
 	task := &vm.VMTask{}
 	taskResult := task.CreateResult()
 	taskResult.StateDraft = stateDraft
-	vmctx := &VMContext{
+	vmctx := &vmContext{
 		task:               task,
 		taskResult:         taskResult,
 		currentStateUpdate: stateUpdate,

@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"time"
@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (vmctx *VMContext) ChainID() isc.ChainID {
+func (vmctx *vmContext) ChainID() isc.ChainID {
 	var chainID isc.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		// origin
@@ -27,47 +27,47 @@ func (vmctx *VMContext) ChainID() isc.ChainID {
 	return chainID
 }
 
-func (vmctx *VMContext) ChainInfo() *isc.ChainInfo {
+func (vmctx *vmContext) ChainInfo() *isc.ChainInfo {
 	return vmctx.chainInfo
 }
 
-func (vmctx *VMContext) ChainOwnerID() isc.AgentID {
+func (vmctx *vmContext) ChainOwnerID() isc.AgentID {
 	return vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) AgentID() isc.AgentID {
+func (vmctx *vmContext) AgentID() isc.AgentID {
 	return isc.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) CurrentContractHname() isc.Hname {
+func (vmctx *vmContext) CurrentContractHname() isc.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) Params() *isc.Params {
+func (vmctx *vmContext) Params() *isc.Params {
 	return &vmctx.getCallContext().params
 }
 
-func (vmctx *VMContext) MyAgentID() isc.AgentID {
+func (vmctx *vmContext) MyAgentID() isc.AgentID {
 	return isc.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) Caller() isc.AgentID {
+func (vmctx *vmContext) Caller() isc.AgentID {
 	return vmctx.getCallContext().caller
 }
 
-func (vmctx *VMContext) Timestamp() time.Time {
+func (vmctx *vmContext) Timestamp() time.Time {
 	return vmctx.task.TimeAssumption
 }
 
-func (vmctx *VMContext) Entropy() hashing.HashValue {
+func (vmctx *vmContext) Entropy() hashing.HashValue {
 	return vmctx.reqCtx.entropy
 }
 
-func (vmctx *VMContext) Request() isc.Calldata {
+func (vmctx *vmContext) Request() isc.Calldata {
 	return vmctx.reqCtx.req
 }
 
-func (vmctx *VMContext) AccountID() isc.AgentID {
+func (vmctx *vmContext) AccountID() isc.AgentID {
 	hname := vmctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return accounts.CommonAccount()
@@ -75,7 +75,7 @@ func (vmctx *VMContext) AccountID() isc.AgentID {
 	return isc.NewContractAgentID(vmctx.ChainID(), hname)
 }
 
-func (vmctx *VMContext) AllowanceAvailable() *isc.Assets {
+func (vmctx *vmContext) AllowanceAvailable() *isc.Assets {
 	allowance := vmctx.getCallContext().allowanceAvailable
 	if allowance == nil {
 		return isc.NewEmptyAssets()
@@ -83,7 +83,7 @@ func (vmctx *VMContext) AllowanceAvailable() *isc.Assets {
 	return allowance.Clone()
 }
 
-func (vmctx *VMContext) IsCoreAccount(agentID isc.AgentID) bool {
+func (vmctx *vmContext) IsCoreAccount(agentID isc.AgentID) bool {
 	contract, ok := agentID.(*isc.ContractAgentID)
 	if !ok {
 		return false
@@ -91,14 +91,14 @@ func (vmctx *VMContext) IsCoreAccount(agentID isc.AgentID) bool {
 	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
 }
 
-func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Assets) {
+func (vmctx *vmContext) spendAllowedBudget(toSpend *isc.Assets) {
 	if !vmctx.getCallContext().allowanceAvailable.Spend(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
+func (vmctx *vmContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
 	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = accounts.CommonAccount()
@@ -127,7 +127,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*is
 	return vmctx.AllowanceAvailable()
 }
 
-func (vmctx *VMContext) StateAnchor() *isc.StateAnchor {
+func (vmctx *vmContext) StateAnchor() *isc.StateAnchor {
 	var nilAliasID iotago.AliasID
 	blockset := vmctx.task.AnchorOutput.FeatureSet()
 	senderBlock := blockset.SenderFeature()
@@ -150,7 +150,7 @@ func (vmctx *VMContext) StateAnchor() *isc.StateAnchor {
 }
 
 // DeployContract deploys contract by its program hash with the name specific to the instance
-func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
+func (vmctx *vmContext) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
 	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
 
 	// calling root contract from another contract to install contract
@@ -161,7 +161,7 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name strin
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 
-func (vmctx *VMContext) RegisterError(messageFormat string) *isc.VMErrorTemplate {
+func (vmctx *vmContext) RegisterError(messageFormat string) *isc.VMErrorTemplate {
 	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
 	params := dict.New()

@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"sort"
@@ -9,10 +9,10 @@ import (
 )
 
 type chainStateWrapper struct {
-	vmctx *VMContext
+	vmctx *vmContext
 }
 
-func (vmctx *VMContext) chainState() chainStateWrapper {
+func (vmctx *vmContext) chainState() chainStateWrapper {
 	return chainStateWrapper{vmctx}
 }
 
@@ -98,11 +98,11 @@ func (s chainStateWrapper) Set(name kv.Key, value []byte) {
 	s.vmctx.GasBurn(gas.BurnCodeStorage1P, uint64(len(name)+len(value)))
 }
 
-func (vmctx *VMContext) State() kv.KVStore {
+func (vmctx *vmContext) State() kv.KVStore {
 	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 
-func (vmctx *VMContext) StateReader() kv.KVStoreReader {
+func (vmctx *vmContext) StateReader() kv.KVStoreReader {
 	return subrealm.NewReadOnly(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 

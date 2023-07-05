@@ -1,4 +1,4 @@
-package vmcontext
+package vmimpl
 
 import (
 	"fmt"
@@ -13,10 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
+func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
 	stateMetadata := transaction.StateMetadata{
 		Version:      transaction.StateMetadataSupportedVersion,
 		L1Commitment: stateCommitment,
@@ -35,7 +35,7 @@ func (vmctx *VMContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	return stateMetadata.Bytes()
 }
 
-func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
+func (vmctx *vmContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
 	if vmctx.currentStateUpdate == nil {
 		// create a temporary empty state update, so that vmctx.callCore works and contracts state can be read
 		vmctx.currentStateUpdate = buffered.NewMutations()
@@ -49,15 +49,15 @@ func (vmctx *VMContext) BuildTransactionEssence(stateCommitment *state.L1Commitm
 	return essence, inputsCommitment
 }
 
-func (vmctx *VMContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {
+func (vmctx *vmContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {
 	return vmctx.txbuilder.Clone()
 }
 
-func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTransactionBuilder) {
+func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTransactionBuilder) {
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *VMContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
 	var retOut *iotago.BasicOutput
 	var blockIndex uint32
 	var outputIndex uint16
@@ -73,7 +73,7 @@ func (vmctx *VMContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID
 	return retOut, outputID
 }
 
-func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotago.OutputID) {
+func (vmctx *vmContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotago.OutputID) {
 	var foundryOutput *iotago.FoundryOutput
 	var blockIndex uint32
 	var outputIndex uint16
@@ -89,7 +89,7 @@ func (vmctx *VMContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotag
 	return foundryOutput, outputID
 }
 
-func (vmctx *VMContext) getOutputID(blockIndex uint32, outputIndex uint16) iotago.OutputID {
+func (vmctx *vmContext) getOutputID(blockIndex uint32, outputIndex uint16) iotago.OutputID {
 	if blockIndex == vmctx.StateAnchor().StateIndex {
 		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.StateAnchor().OutputID.TransactionID(), outputIndex)
 	}
@@ -104,7 +104,7 @@ func (vmctx *VMContext) getOutputID(blockIndex uint32, outputIndex uint16) iotag
 	return outputID
 }
 
-func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
+func (vmctx *vmContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
 	var nftOutput *iotago.NFTOutput
 	var blockIndex uint32
 	var outputIndex uint16
@@ -120,7 +120,7 @@ func (vmctx *VMContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.Outp
 	return nftOutput, outputID
 }
 
-func (vmctx *VMContext) loadTotalFungibleTokens() *isc.Assets {
+func (vmctx *vmContext) loadTotalFungibleTokens() *isc.Assets {
 	var totalAssets *isc.Assets
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalAssets = accounts.GetTotalL2FungibleTokens(s)

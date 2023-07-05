@@ -36,16 +36,14 @@ type VMTask struct {
 	// tx with the given index, which will then be executed with the given tracer.
 	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
-	// If maintenance mode is enabled, only requests to the governance contract will be executed
-	MaintenanceModeEnabled bool
 
 	Log *logger.Logger
 }
 
 type VMTaskResult struct {
-	Task                       *VMTask
-	AnchorOutputStorageDeposit uint64
-	// the uncommitted state resulting from the execution of the requests
+	Task *VMTask
+
+	// StateDraft is the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress iotago.Address

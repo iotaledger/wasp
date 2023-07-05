@@ -125,11 +125,9 @@ func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 	requestReceipt, err := isRequestProcessedInternal(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
-	ret := dict.New()
-	if requestReceipt != nil {
-		ret.Set(ParamRequestProcessed, codec.EncodeBool(true))
+	return dict.Dict{
+		ParamRequestProcessed: codec.EncodeBool(requestReceipt != nil),
 	}
-	return ret
 }
 
 // viewGetEventsForRequest returns a list of events for a given request.

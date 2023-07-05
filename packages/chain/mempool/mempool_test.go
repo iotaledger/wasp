@@ -40,7 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
+	vmcontext "github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 type tc struct {
@@ -209,20 +209,19 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 
 	store := te.stores[0]
 	vmTask := &vm.VMTask{
-		Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
-		AnchorOutput:           ao.GetAliasOutput(),
-		AnchorOutputID:         ao.OutputID(),
-		Store:                  store,
-		Requests:               reqs,
-		TimeAssumption:         tangleTime,
-		Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
-		ValidatorFeeTarget:     accounts.CommonAccount(),
-		EstimateGasMode:        false,
-		EnableGasBurnLogging:   false,
-		MaintenanceModeEnabled: false,
-		Log:                    te.log.Named("VM"),
+		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
+		AnchorOutput:         ao.GetAliasOutput(),
+		AnchorOutputID:       ao.OutputID(),
+		Store:                store,
+		Requests:             reqs,
+		TimeAssumption:       tangleTime,
+		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
+		ValidatorFeeTarget:   accounts.CommonAccount(),
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Log:                  te.log.Named("VM"),
 	}
-	vmResult, err := runvm.NewVMRunner().Run(vmTask)
+	vmResult, err := vmcontext.NewVMRunner().Run(vmTask)
 	require.NoError(te.t, err)
 	block := store.Commit(vmResult.StateDraft)
 	chainState, err := store.StateByTrieRoot(block.TrieRoot())
