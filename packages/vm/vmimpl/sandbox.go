@@ -78,7 +78,7 @@ func (s *contractSandbox) Request() isc.Calldata {
 }
 
 func (s *contractSandbox) Send(par isc.RequestParameters) {
-	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*vmContext).reqCtx.numPostedOutputs))
+	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*vmContext).reqctx.numPostedOutputs))
 	s.Ctx.(*vmContext).Send(par)
 }
 
@@ -194,7 +194,7 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.Ctx.(*vmContext).task.EstimateGasMode {
 		return isc.NewEmptyAssets()
 	}
-	amount := s.Ctx.(*vmContext).reqCtx.gas.maxTokensToSpendForGasFee
+	amount := s.Ctx.(*vmContext).reqctx.gas.maxTokensToSpendForGasFee
 	return isc.NewAssetsBaseTokens(amount)
 }
 

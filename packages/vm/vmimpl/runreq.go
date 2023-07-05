@@ -40,15 +40,15 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
 		panic("expected empty callstack")
 	}
 
-	vmctx.reqCtx = &requestContext{
+	vmctx.reqctx = &requestContext{
 		req:          req,
 		requestIndex: requestIndex,
 		entropy:      hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...)),
 	}
-	defer func() { vmctx.reqCtx = nil }()
+	defer func() { vmctx.reqctx = nil }()
 
 	if vmctx.task.EnableGasBurnLogging {
-		vmctx.reqCtx.gas.burnLog = gas.NewGasBurnLog()
+		vmctx.reqctx.gas.burnLog = gas.NewGasBurnLog()
 	}
 
 	vmctx.GasBurnEnable(false)
@@ -104,7 +104,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
 	}
 
 	vmctx.chainState().Apply()
-	return result, vmctx.reqCtx.unprocessableToRetry, nil
+	return result, vmctx.reqctx.unprocessableToRetry, nil
 }
 
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {
@@ -117,7 +117,7 @@ func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (vmctx *vmContext) creditAssetsToChain() {
-	req := vmctx.reqCtx.req
+	req := vmctx.reqctx.req
 	if req.IsOffLedger() {
 		// off ledger request does not bring any deposit
 		return
@@ -154,7 +154,7 @@ func (vmctx *vmContext) creditAssetsToChain() {
 	vmctx.creditToAccount(sender, req.Assets())
 	vmctx.creditNFTToAccount(sender, req.NFT())
 	if storageDepositNeeded > 0 {
-		vmctx.reqCtx.sdCharged = storageDepositNeeded
+		vmctx.reqctx.sdCharged = storageDepositNeeded
 		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
 	}
 }
@@ -174,9 +174,9 @@ func (vmctx *vmContext) catchRequestPanic(f func()) error {
 	// panic again with more information about the error
 	panic(fmt.Errorf(
 		"panic when running request #%d ID:%s, requestbytes:%s err:%w",
-		vmctx.reqCtx.requestIndex,
-		vmctx.reqCtx.req.ID(),
-		iotago.EncodeHex(vmctx.reqCtx.req.Bytes()),
+		vmctx.reqctx.requestIndex,
+		vmctx.reqctx.req.ID(),
+		iotago.EncodeHex(vmctx.reqctx.req.Bytes()),
 		err,
 	))
 }
@@ -184,16 +184,16 @@ func (vmctx *vmContext) catchRequestPanic(f func()) error {
 // checkAllowance ensure there are enough funds to cover the specified allowance
 // panics if not enough funds
 func (vmctx *vmContext) checkAllowance() {
-	if !vmctx.HasEnoughForAllowance(vmctx.reqCtx.req.SenderAccount(), vmctx.reqCtx.req.Allowance()) {
+	if !vmctx.HasEnoughForAllowance(vmctx.reqctx.req.SenderAccount(), vmctx.reqctx.req.Allowance()) {
 		panic(vm.ErrNotEnoughFundsForAllowance)
 	}
 }
 
 func (vmctx *vmContext) shouldChargeGasFee() bool {
-	if vmctx.reqCtx.req.SenderAccount() == nil {
+	if vmctx.reqctx.req.SenderAccount() == nil {
 		return false
 	}
-	if vmctx.reqCtx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.reqCtx.req.CallTarget().Contract == governance.Contract.Hname() {
+	if vmctx.reqctx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
 		return false
 	}
 	return true
@@ -243,7 +243,7 @@ func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
 
-	if vmctx.reqCtx.req.IsOffLedger() {
+	if vmctx.reqctx.req.IsOffLedger() {
 		vmctx.updateOffLedgerRequestNonce()
 	}
 
@@ -277,7 +277,7 @@ func (vmctx *vmContext) checkVMPluginPanic(r interface{}) *isc.VMError {
 
 // callFromRequest is the call itself. Assumes sc exists
 func (vmctx *vmContext) callFromRequest() dict.Dict {
-	req := vmctx.reqCtx.req
+	req := vmctx.reqctx.req
 	vmctx.Debugf("callFromRequest: %s", req.ID().String())
 
 	if req.SenderAccount() == nil {
@@ -297,7 +297,7 @@ func (vmctx *vmContext) callFromRequest() dict.Dict {
 }
 
 func (vmctx *vmContext) getGasBudget() uint64 {
-	gasBudget, isEVM := vmctx.reqCtx.req.GasBudget()
+	gasBudget, isEVM := vmctx.reqctx.req.GasBudget()
 	if !isEVM || gasBudget == 0 {
 		return gasBudget
 	}
@@ -342,9 +342,9 @@ func (vmctx *vmContext) calculateAffordableGasBudget() (budget, maxTokensToSpend
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (vmctx *vmContext) calcGuaranteedFeeTokens() uint64 {
-	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.reqCtx.req.SenderAccount())
+	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.reqctx.req.SenderAccount())
 	// safely subtract the allowed from the sender to the target
-	if allowed := vmctx.reqCtx.req.Allowance(); allowed != nil {
+	if allowed := vmctx.reqctx.req.Allowance(); allowed != nil {
 		if tokensGuaranteed < allowed.BaseTokens {
 			tokensGuaranteed = 0
 		} else {
@@ -359,13 +359,13 @@ func (vmctx *vmContext) calcGuaranteedFeeTokens() uint64 {
 func (vmctx *vmContext) chargeGasFee() {
 	defer func() {
 		// add current request gas burn to the total of the block
-		vmctx.blockGas.burned += vmctx.reqCtx.gas.burned
+		vmctx.blockGas.burned += vmctx.reqctx.gas.burned
 	}()
 
 	// ensure at least the minimum amount of gas is charged
 	minGas := gas.BurnCodeMinimumGasPerRequest1P.Cost(0)
-	if vmctx.reqCtx.gas.burned < minGas {
-		vmctx.reqCtx.gas.burned = minGas
+	if vmctx.reqctx.gas.burned < minGas {
+		vmctx.reqctx.gas.burned = minGas
 	}
 
 	vmctx.GasBurnEnable(false)
@@ -374,7 +374,7 @@ func (vmctx *vmContext) chargeGasFee() {
 		return
 	}
 
-	availableToPayFee := vmctx.reqCtx.gas.maxTokensToSpendForGasFee
+	availableToPayFee := vmctx.reqctx.gas.maxTokensToSpendForGasFee
 	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
 		// user didn't specify enough base tokens to cover the minimum request fee, charge whatever is present in the user's account
 		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
@@ -382,17 +382,17 @@ func (vmctx *vmContext) chargeGasFee() {
 
 	// total fees to charge
 	sendToPayout, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
-	vmctx.reqCtx.gas.feeCharged = sendToPayout + sendToValidator
+	vmctx.reqctx.gas.feeCharged = sendToPayout + sendToValidator
 
 	// calc gas totals
-	vmctx.blockGas.feeCharged += vmctx.reqCtx.gas.feeCharged
+	vmctx.blockGas.feeCharged += vmctx.reqctx.gas.feeCharged
 
 	if vmctx.task.EstimateGasMode {
 		// If estimating gas, compute the gas fee but do not attempt to charge
 		return
 	}
 
-	sender := vmctx.reqCtx.req.SenderAccount()
+	sender := vmctx.reqctx.req.SenderAccount()
 	if sendToValidator != 0 {
 		transferToValidator := &isc.Assets{}
 		transferToValidator.BaseTokens = sendToValidator

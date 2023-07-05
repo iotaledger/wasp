@@ -35,7 +35,7 @@ func (vmctx *vmContext) callProgram(targetContract, epCode isc.Hname, params dic
 	if epCode == isc.EntryPointInit {
 		if !vmctx.callerIsRoot() {
 			panic(fmt.Errorf("%v: target=(%s, %s)",
-				vm.ErrRepeatingInitCall, vmctx.reqCtx.req.CallTarget().Contract, epCode))
+				vm.ErrRepeatingInitCall, vmctx.reqctx.req.CallTarget().Contract, epCode))
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
@@ -88,11 +88,11 @@ func (vmctx *vmContext) getToBeCaller() isc.AgentID {
 	if len(vmctx.callStack) > 0 {
 		return vmctx.MyAgentID()
 	}
-	if vmctx.reqCtx == nil {
+	if vmctx.reqctx == nil {
 		// e.g. saving the anchor ID
 		return vmctx.chainOwnerID
 	}
-	return vmctx.reqCtx.req.SenderAccount()
+	return vmctx.reqctx.req.SenderAccount()
 }
 
 func (vmctx *vmContext) getCallContext() *callContext {

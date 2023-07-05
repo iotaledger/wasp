@@ -43,7 +43,7 @@ type vmContext struct {
 	unprocessable   []isc.OnLedgerRequest
 	chainInfo       *isc.ChainInfo
 	blockGas        blockGas
-	reqCtx          *requestContext
+	reqctx          *requestContext
 	anchorOutputSD  uint64
 	maintenanceMode bool
 
