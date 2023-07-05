@@ -37,12 +37,10 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
-	vmcontext "github.com/iotaledger/wasp/packages/vm/vmimpl"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 )
@@ -100,8 +98,6 @@ type Chain struct {
 	store indexedstore.IndexedStore
 	// Log is the named logger of the chain
 	log *logger.Logger
-	// instance of VM
-	vmRunner vm.VMRunner
 	// global processor cache
 	proc *processors.Cache
 	// related to asynchronous backlog processing
@@ -317,7 +313,6 @@ func (env *Solo) NewChainExt(
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		store:                  store,
-		vmRunner:               vmcontext.NewVMRunner(),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chainID),

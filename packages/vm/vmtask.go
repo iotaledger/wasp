@@ -13,10 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-type VMRunner interface {
-	Run(task *VMTask) (*VMTaskResult, error)
-}
-
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds

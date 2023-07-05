@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
@@ -73,7 +74,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		EstimateGasMode:      estimateGas,
 	}
 
-	res, err := ch.vmRunner.Run(task)
+	res, err := vmimpl.Run(task)
 	require.NoError(ch.Env.T, err)
 	accounts.CheckLedger(res.StateDraft, "solo")
 	return res
