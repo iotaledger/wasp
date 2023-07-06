@@ -36,14 +36,13 @@ type vmContext struct {
 	task       *vm.VMTask
 	taskResult *vm.VMTaskResult
 
-	chainOwnerID    isc.AgentID
-	blockContext    map[isc.Hname]interface{}
-	txbuilder       *vmtxbuilder.AnchorTransactionBuilder
-	chainInfo       *isc.ChainInfo
-	blockGas        blockGas
-	reqctx          *requestContext
-	anchorOutputSD  uint64
-	maintenanceMode bool
+	chainOwnerID   isc.AgentID
+	blockContext   map[isc.Hname]interface{}
+	txbuilder      *vmtxbuilder.AnchorTransactionBuilder
+	chainInfo      *isc.ChainInfo
+	blockGas       blockGas
+	reqctx         *requestContext
+	anchorOutputSD uint64
 
 	currentStateUpdate *buffered.Mutations
 	callStack          []*callContext
@@ -118,10 +117,9 @@ func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 	}
 
 	vmctx := &vmContext{
-		task:            task,
-		taskResult:      taskResult,
-		blockContext:    make(map[isc.Hname]interface{}),
-		maintenanceMode: governance.NewStateAccess(taskResult.StateDraft).MaintenanceStatus(),
+		task:         task,
+		taskResult:   taskResult,
+		blockContext: make(map[isc.Hname]interface{}),
 	}
 	// at the beginning of each block
 	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)

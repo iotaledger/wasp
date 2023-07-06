@@ -9,15 +9,22 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 // runTask runs batch of requests on VM
 func (vmctx *vmContext) run() {
+	maintenanceMode := governance.NewStateAccess(vmctx.taskResult.StateDraft).MaintenanceStatus()
+
 	vmctx.openBlockContexts()
 
 	// run the batch of requests
-	results, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(vmctx.task.Requests, vmctx.task.Log)
+	results, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(
+		vmctx.task.Requests,
+		maintenanceMode,
+		vmctx.task.Log,
+	)
 	vmctx.taskResult.RequestResults = results
 
 	vmctx.assertConsistentGasTotals()
@@ -53,6 +60,7 @@ func (vmctx *vmContext) run() {
 
 func (vmctx *vmContext) runRequests(
 	reqs []isc.Request,
+	maintenanceMode bool,
 	log *logger.Logger,
 ) (
 	results []*vm.RequestResult,
@@ -66,7 +74,7 @@ func (vmctx *vmContext) runRequests(
 	// main loop over the batch of requests
 	for reqIndex := 0; reqIndex < len(allReqs); reqIndex++ {
 		req := allReqs[reqIndex]
-		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, uint16(reqIndex))
+		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, uint16(reqIndex), maintenanceMode)
 		if skipReason != nil {
 			if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, skipReason) {
 				unprocessable = append(unprocessable, req.(isc.OnLedgerRequest))

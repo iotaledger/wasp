@@ -31,7 +31,7 @@ import (
 )
 
 // runRequest processes a single isc.Request in the batch
-func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
+func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, maintenanceMode bool) (
 	res *vm.RequestResult,
 	unprocessableToRetry []isc.OnLedgerRequest,
 	err error,
@@ -64,7 +64,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
 
 	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.taskResult.StateDraft.Timestamp().Add(1*time.Nanosecond)))
 
-	if err = vmctx.earlyCheckReasonToSkip(); err != nil {
+	if err = vmctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
 		return nil, nil, err
 	}
 	vmctx.loadChainConfig()
