@@ -36,12 +36,11 @@ type vmContext struct {
 	task       *vm.VMTask
 	taskResult *vm.VMTaskResult
 
-	blockContext   map[isc.Hname]any
-	txbuilder      *vmtxbuilder.AnchorTransactionBuilder
-	chainInfo      *isc.ChainInfo
-	blockGas       blockGas
-	reqctx         *requestContext
-	anchorOutputSD uint64
+	blockContext map[isc.Hname]any
+	txbuilder    *vmtxbuilder.AnchorTransactionBuilder
+	chainInfo    *isc.ChainInfo
+	blockGas     blockGas
+	reqctx       *requestContext
 
 	currentStateUpdate *buffered.Mutations
 	callStack          []*callContext
@@ -144,12 +143,12 @@ func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 		totalL2Funds = vmctx.loadTotalFungibleTokens()
 	})
 
-	vmctx.anchorOutputSD = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
+	anchorOutputSD := task.AnchorOutput.Amount - totalL2Funds.BaseTokens
 
 	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		task.AnchorOutput,
 		task.AnchorOutputID,
-		vmctx.anchorOutputSD,
+		anchorOutputSD,
 		vmtxbuilder.AccountsContractRead{
 			NativeTokenOutput:   vmctx.loadNativeTokenOutput,
 			FoundryOutput:       vmctx.loadFoundry,
@@ -276,7 +275,7 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
-	oldMinSD := vmctx.anchorOutputSD
+	oldMinSD := vmctx.txbuilder.AnchorOutputStorageDeposit()
 	changeInSD := int64(oldMinSD) - int64(newMinSD)
 
 	if changeInSD != 0 {
