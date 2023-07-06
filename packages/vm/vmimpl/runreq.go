@@ -189,7 +189,7 @@ func (vmctx *vmContext) shouldChargeGasFee() bool {
 	if vmctx.reqctx.req.SenderAccount() == nil {
 		return false
 	}
-	if vmctx.reqctx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
+	if vmctx.reqctx.req.SenderAccount().Equals(vmctx.ChainOwnerID()) && vmctx.reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
 		return false
 	}
 	return true
@@ -435,7 +435,6 @@ func (vmctx *vmContext) getOrCreateContractRecord(contractHname isc.Hname) (ret 
 // loadChainConfig only makes sense if chain is already deployed
 func (vmctx *vmContext) loadChainConfig() {
 	vmctx.chainInfo = vmctx.getChainInfo()
-	vmctx.chainOwnerID = vmctx.chainInfo.ChainOwnerID
 }
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit

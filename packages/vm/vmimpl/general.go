@@ -32,7 +32,7 @@ func (vmctx *vmContext) ChainInfo() *isc.ChainInfo {
 }
 
 func (vmctx *vmContext) ChainOwnerID() isc.AgentID {
-	return vmctx.chainOwnerID
+	return vmctx.chainInfo.ChainOwnerID
 }
 
 func (vmctx *vmContext) AgentID() isc.AgentID {

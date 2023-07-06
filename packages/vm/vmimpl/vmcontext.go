@@ -36,8 +36,7 @@ type vmContext struct {
 	task       *vm.VMTask
 	taskResult *vm.VMTaskResult
 
-	chainOwnerID   isc.AgentID
-	blockContext   map[isc.Hname]interface{}
+	blockContext   map[isc.Hname]any
 	txbuilder      *vmtxbuilder.AnchorTransactionBuilder
 	chainInfo      *isc.ChainInfo
 	blockGas       blockGas

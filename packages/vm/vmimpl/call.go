@@ -90,7 +90,7 @@ func (vmctx *vmContext) getToBeCaller() isc.AgentID {
 	}
 	if vmctx.reqctx == nil {
 		// e.g. saving the anchor ID
-		return vmctx.chainOwnerID
+		return vmctx.ChainOwnerID()
 	}
 	return vmctx.reqctx.req.SenderAccount()
 }
