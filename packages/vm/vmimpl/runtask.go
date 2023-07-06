@@ -8,32 +8,74 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
+func Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
+	// top exception catcher for all panics
+	// The VM session will be abandoned peacefully
+	err = panicutil.CatchAllButDBError(func() {
+		res = runTask(task)
+	}, task.Log)
+	if err != nil {
+		task.Log.Warnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
+	}
+	return res, err
+}
+
 // runTask runs batch of requests on VM
-func (vmctx *vmContext) run() {
-	maintenanceMode := governance.NewStateAccess(vmctx.taskResult.StateDraft).MaintenanceStatus()
-
-	vmctx.openBlockContexts()
-
-	// run the batch of requests
-	results, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(
-		vmctx.task.Requests,
-		maintenanceMode,
-		vmctx.task.Log,
-	)
-	vmctx.taskResult.RequestResults = results
-
-	vmctx.assertConsistentGasTotals()
-
-	if !vmctx.task.WillProduceBlock() {
-		return
+func runTask(task *vm.VMTask) *vm.VMTaskResult {
+	if len(task.Requests) == 0 {
+		panic("invalid params: must be at least 1 request")
 	}
 
-	numProcessed := uint16(len(vmctx.taskResult.RequestResults))
+	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
+	if err != nil {
+		panic(err)
+	}
+
+	stateDraft, err := task.Store.NewStateDraft(task.TimeAssumption, prevL1Commitment)
+	if err != nil {
+		panic(err)
+	}
+
+	vmctx := &vmContext{
+		task:         task,
+		stateDraft:   stateDraft,
+		blockContext: make(map[isc.Hname]interface{}),
+	}
+
+	vmctx.init(prevL1Commitment)
+
+	// run the batch of requests
+	requestResults, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(
+		vmctx.task.Requests,
+		governance.NewStateAccess(stateDraft).MaintenanceStatus(),
+		vmctx.task.Log,
+	)
+
+	vmctx.assertConsistentGasTotals(requestResults)
+
+	taskResult := &vm.VMTaskResult{
+		Task:           task,
+		StateDraft:     stateDraft,
+		RequestResults: requestResults,
+	}
+
+	if !vmctx.task.WillProduceBlock() {
+		return taskResult
+	}
+
+	numProcessed := uint16(len(requestResults))
 
 	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
@@ -43,19 +85,63 @@ func (vmctx *vmContext) run() {
 		unprocessable,
 	)
 
-	vmctx.task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
+	vmctx.task.Log.Debugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, l1Commitment, timestamp, rotationAddr)
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		vmctx.taskResult.TransactionEssence, vmctx.taskResult.InputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
+		taskResult.TransactionEssence, taskResult.InputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
 		vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	} else {
 		// rotation happens
-		vmctx.taskResult.RotationAddress = rotationAddr
-		vmctx.taskResult.TransactionEssence = nil
+		taskResult.RotationAddress = rotationAddr
+		taskResult.TransactionEssence = nil
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
+	return taskResult
+}
+
+func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
+	vmctx.loadChainConfig()
+
+	vmctx.withStateUpdate(func() {
+		vmctx.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
+	})
+
+	// save the anchor tx ID of the current state
+	vmctx.withStateUpdate(func() {
+		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+			blocklog.UpdateLatestBlockInfo(
+				s,
+				vmctx.task.AnchorOutputID.TransactionID(),
+				isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
+				prevL1Commitment,
+			)
+		})
+	})
+
+	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
+		vmctx.task.AnchorOutput,
+		vmctx.task.AnchorOutputID,
+		vmctx.getAnchorOutputSD(),
+		vmtxbuilder.AccountsContractRead{
+			NativeTokenOutput:   vmctx.loadNativeTokenOutput,
+			FoundryOutput:       vmctx.loadFoundry,
+			NFTOutput:           vmctx.loadNFT,
+			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
+		},
+	)
+
+	vmctx.openBlockContexts()
+}
+
+func (vmctx *vmContext) getAnchorOutputSD() uint64 {
+	// get the total L2 funds in accounting
+	var totalL2Funds *isc.Assets
+	vmctx.withStateUpdate(func() {
+		totalL2Funds = vmctx.loadTotalFungibleTokens()
+	})
+	return vmctx.task.AnchorOutput.Amount - totalL2Funds.BaseTokens
 }
 
 func (vmctx *vmContext) runRequests(

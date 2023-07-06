@@ -62,7 +62,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 	vmctx.currentStateUpdate = buffered.NewMutations()
 	defer func() { vmctx.currentStateUpdate = nil }()
 
-	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.taskResult.StateDraft.Timestamp().Add(1*time.Nanosecond)))
+	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)))
 
 	if err = vmctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
 		return nil, nil, err
@@ -432,9 +432,8 @@ func (vmctx *vmContext) getOrCreateContractRecord(contractHname isc.Hname) (ret 
 	return vmctx.GetContractRecord(contractHname)
 }
 
-// loadChainConfig only makes sense if chain is already deployed
 func (vmctx *vmContext) loadChainConfig() {
-	vmctx.chainInfo = vmctx.getChainInfo()
+	vmctx.chainInfo = governance.NewStateAccess(vmctx.stateDraft).ChainInfo(vmctx.ChainID())
 }
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit

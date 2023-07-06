@@ -60,12 +60,11 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 			StateIndex: stateIndex,
 		},
 	}
-	taskResult := task.CreateResult()
-	taskResult.StateDraft = stateDraft
 	vmctx := &vmContext{
 		task:       task,
-		taskResult: taskResult,
+		stateDraft: stateDraft,
 	}
+	vmctx.loadChainConfig()
 
 	env := &migrationsTestEnv{
 		t:     t,

@@ -64,10 +64,6 @@ func (task *VMTask) WillProduceBlock() bool {
 	return !task.EstimateGasMode && task.EVMTracer == nil
 }
 
-func (task *VMTask) CreateResult() *VMTaskResult {
-	return &VMTaskResult{Task: task}
-}
-
 func (task *VMTask) FinalStateTimestamp() time.Time {
 	return task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 }

@@ -29,11 +29,9 @@ func TestSetThenGet(t *testing.T) {
 	hname := isc.Hn("test")
 
 	task := &vm.VMTask{}
-	taskResult := task.CreateResult()
-	taskResult.StateDraft = stateDraft
 	vmctx := &vmContext{
 		task:               task,
-		taskResult:         taskResult,
+		stateDraft:         stateDraft,
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -92,11 +90,9 @@ func TestIterate(t *testing.T) {
 	hname := isc.Hn("test")
 
 	task := &vm.VMTask{}
-	taskResult := task.CreateResult()
-	taskResult.StateDraft = stateDraft
 	vmctx := &vmContext{
 		task:               task,
-		taskResult:         taskResult,
+		stateDraft:         stateDraft,
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -138,11 +134,9 @@ func TestVmctxStateDeletion(t *testing.T) {
 	require.NoError(t, err)
 	stateUpdate := buffered.NewMutations()
 	task := &vm.VMTask{}
-	taskResult := task.CreateResult()
-	taskResult.StateDraft = stateDraft
 	vmctx := &vmContext{
 		task:               task,
-		taskResult:         taskResult,
+		stateDraft:         stateDraft,
 		currentStateUpdate: stateUpdate,
 	}
 	vmctxStore := vmctx.chainState()
