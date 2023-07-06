@@ -1,8 +1,6 @@
 package vmimpl
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,13 +12,11 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -33,18 +29,14 @@ import (
 // The vmContext is created from immutable vm.VMTask object and UTXO state of the
 // chain address contained in the statetxbuilder.Builder
 type vmContext struct {
-	task       *vm.VMTask
-	taskResult *vm.VMTaskResult
+	task *vm.VMTask
 
-	chainOwnerID    isc.AgentID
-	blockContext    map[isc.Hname]interface{}
-	txbuilder       *vmtxbuilder.AnchorTransactionBuilder
-	chainInfo       *isc.ChainInfo
-	blockGas        blockGas
-	reqctx          *requestContext
-	anchorOutputSD  uint64
-	maintenanceMode bool
-
+	stateDraft         state.StateDraft
+	blockContext       map[isc.Hname]any
+	txbuilder          *vmtxbuilder.AnchorTransactionBuilder
+	chainInfo          *isc.ChainInfo
+	blockGas           blockGas
+	reqctx             *requestContext
 	currentStateUpdate *buffered.Mutations
 	callStack          []*callContext
 }
@@ -98,72 +90,6 @@ type callContext struct {
 	allowanceAvailable *isc.Assets // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
-// createVMContext creates a context for the whole batch run
-func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
-	// assert consistency. It is a bit redundant double check
-	if len(task.Requests) == 0 {
-		// should never happen
-		panic(errors.New("CreateVMContext.invalid params: must be at least 1 request"))
-	}
-	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
-	if err != nil {
-		// should never happen
-		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
-	}
-
-	taskResult.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, prevL1Commitment)
-	if err != nil {
-		// should never happen
-		panic(err)
-	}
-
-	vmctx := &vmContext{
-		task:            task,
-		taskResult:      taskResult,
-		blockContext:    make(map[isc.Hname]interface{}),
-		maintenanceMode: governance.NewStateAccess(taskResult.StateDraft).MaintenanceStatus(),
-	}
-	// at the beginning of each block
-	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
-	if err != nil {
-		// should never happen
-		panic(err)
-	}
-
-	var totalL2Funds *isc.Assets
-	vmctx.withStateUpdate(func() {
-		vmctx.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
-
-		// save the anchor tx ID of the current state
-		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(
-				s,
-				vmctx.task.AnchorOutputID.TransactionID(),
-				isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
-				l1Commitment,
-			)
-		})
-		// get the total L2 funds in accounting
-		totalL2Funds = vmctx.loadTotalFungibleTokens()
-	})
-
-	vmctx.anchorOutputSD = task.AnchorOutput.Amount - totalL2Funds.BaseTokens
-
-	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
-		task.AnchorOutput,
-		task.AnchorOutputID,
-		vmctx.anchorOutputSD,
-		vmtxbuilder.AccountsContractRead{
-			NativeTokenOutput:   vmctx.loadNativeTokenOutput,
-			FoundryOutput:       vmctx.loadFoundry,
-			NFTOutput:           vmctx.loadNFT,
-			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
-		},
-	)
-
-	return vmctx
-}
-
 func (vmctx *vmContext) withStateUpdate(f func()) {
 	if vmctx.currentStateUpdate != nil {
 		panic("expected currentStateUpdate == nil")
@@ -172,7 +98,7 @@ func (vmctx *vmContext) withStateUpdate(f func()) {
 
 	vmctx.currentStateUpdate = buffered.NewMutations()
 	f()
-	vmctx.currentStateUpdate.ApplyTo(vmctx.taskResult.StateDraft)
+	vmctx.currentStateUpdate.ApplyTo(vmctx.stateDraft)
 }
 
 // extractBlock does the closing actions on the block
@@ -189,12 +115,12 @@ func (vmctx *vmContext) extractBlock(
 		vmctx.saveInternalUTXOs(unprocessable)
 	})
 
-	block := vmctx.task.Store.ExtractBlock(vmctx.taskResult.StateDraft)
+	block := vmctx.task.Store.ExtractBlock(vmctx.stateDraft)
 
 	l1Commitment := block.L1Commitment()
 
-	blockIndex := vmctx.taskResult.StateDraft.BlockIndex()
-	timestamp := vmctx.taskResult.StateDraft.Timestamp()
+	blockIndex := vmctx.stateDraft.BlockIndex()
+	timestamp := vmctx.stateDraft.Timestamp()
 
 	return blockIndex, l1Commitment, timestamp, rotationAddr
 }
@@ -217,7 +143,7 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 
 	blockInfo := &blocklog.BlockInfo{
 		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
-		Timestamp:             vmctx.taskResult.StateDraft.Timestamp(),
+		Timestamp:             vmctx.stateDraft.Timestamp(),
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
@@ -240,9 +166,9 @@ func (vmctx *vmContext) openBlockContexts() {
 		panic("expected gasBurnEnabled == false")
 	}
 
-	vmctx.withStateUpdate(func() {
-		vmctx.loadChainConfig()
+	vmctx.loadChainConfig()
 
+	vmctx.withStateUpdate(func() {
 		var subs []root.BlockContextSubscription
 		vmctx.callCore(root.Contract, func(s kv.KVStore) {
 			subs = root.GetBlockContextSubscriptions(s)
@@ -279,7 +205,7 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
-	oldMinSD := vmctx.anchorOutputSD
+	oldMinSD := vmctx.txbuilder.AnchorOutputStorageDeposit()
 	changeInSD := int64(oldMinSD) - int64(newMinSD)
 
 	if changeInSD != 0 {
@@ -350,10 +276,10 @@ func (vmctx *vmContext) removeUnprocessable(reqID isc.RequestID) {
 	})
 }
 
-func (vmctx *vmContext) assertConsistentGasTotals() {
+func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestResult) {
 	var sumGasBurned, sumGasFeeCharged uint64
 
-	for _, r := range vmctx.taskResult.RequestResults {
+	for _, r := range requestResults {
 		sumGasBurned += r.Receipt.GasBurned
 		sumGasFeeCharged += r.Receipt.GasFeeCharged
 	}

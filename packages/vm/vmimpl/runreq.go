@@ -31,7 +31,7 @@ import (
 )
 
 // runRequest processes a single isc.Request in the batch
-func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
+func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, maintenanceMode bool) (
 	res *vm.RequestResult,
 	unprocessableToRetry []isc.OnLedgerRequest,
 	err error,
@@ -62,9 +62,9 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16) (
 	vmctx.currentStateUpdate = buffered.NewMutations()
 	defer func() { vmctx.currentStateUpdate = nil }()
 
-	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.taskResult.StateDraft.Timestamp().Add(1*time.Nanosecond)))
+	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)))
 
-	if err = vmctx.earlyCheckReasonToSkip(); err != nil {
+	if err = vmctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
 		return nil, nil, err
 	}
 	vmctx.loadChainConfig()
@@ -189,7 +189,7 @@ func (vmctx *vmContext) shouldChargeGasFee() bool {
 	if vmctx.reqctx.req.SenderAccount() == nil {
 		return false
 	}
-	if vmctx.reqctx.req.SenderAccount().Equals(vmctx.chainOwnerID) && vmctx.reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
+	if vmctx.reqctx.req.SenderAccount().Equals(vmctx.ChainOwnerID()) && vmctx.reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
 		return false
 	}
 	return true
@@ -432,10 +432,8 @@ func (vmctx *vmContext) getOrCreateContractRecord(contractHname isc.Hname) (ret 
 	return vmctx.GetContractRecord(contractHname)
 }
 
-// loadChainConfig only makes sense if chain is already deployed
 func (vmctx *vmContext) loadChainConfig() {
-	vmctx.chainInfo = vmctx.getChainInfo()
-	vmctx.chainOwnerID = vmctx.chainInfo.ChainOwnerID
+	vmctx.chainInfo = governance.NewStateAccess(vmctx.stateDraft).ChainInfo(vmctx.ChainID())
 }
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit

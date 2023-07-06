@@ -23,7 +23,7 @@ func (s chainStateWrapper) Has(name kv.Key) bool {
 	if _, wasDeleted := s.vmctx.currentStateUpdate.Dels[name]; wasDeleted {
 		return false
 	}
-	return s.vmctx.taskResult.StateDraft.Has(name)
+	return s.vmctx.stateDraft.Has(name)
 }
 
 func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) {
@@ -40,7 +40,7 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 			}
 		}
 	}
-	s.vmctx.taskResult.StateDraft.IterateKeys(prefix, func(k kv.Key) bool {
+	s.vmctx.stateDraft.IterateKeys(prefix, func(k kv.Key) bool {
 		if !s.vmctx.currentStateUpdate.Contains(k) {
 			return f(k)
 		}
@@ -61,7 +61,7 @@ func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) b
 			keys = append(keys, k)
 		}
 	}
-	s.vmctx.taskResult.StateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
+	s.vmctx.stateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		if !s.vmctx.currentStateUpdate.Contains(k) {
 			keys = append(keys, k)
 		}
@@ -83,7 +83,7 @@ func (s chainStateWrapper) Get(name kv.Key) []byte {
 	if _, wasDeleted := s.vmctx.currentStateUpdate.Dels[name]; wasDeleted {
 		return nil
 	}
-	ret := s.vmctx.taskResult.StateDraft.Get(name)
+	ret := s.vmctx.stateDraft.Get(name)
 	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1
 	return ret
 }
@@ -107,5 +107,5 @@ func (vmctx *vmContext) StateReader() kv.KVStoreReader {
 }
 
 func (s chainStateWrapper) Apply() {
-	s.vmctx.currentStateUpdate.ApplyTo(s.vmctx.taskResult.StateDraft)
+	s.vmctx.currentStateUpdate.ApplyTo(s.vmctx.stateDraft)
 }

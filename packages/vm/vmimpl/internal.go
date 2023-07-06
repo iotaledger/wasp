@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
@@ -58,14 +57,6 @@ func (vmctx *vmContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.Agent
 func (vmctx *vmContext) findContractByHname(contractHname isc.Hname) (ret *root.ContractRecord) {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		ret = root.FindContract(s, contractHname)
-	})
-	return ret
-}
-
-func (vmctx *vmContext) getChainInfo() *isc.ChainInfo {
-	var ret *isc.ChainInfo
-	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
-		ret = governance.MustGetChainInfo(s, vmctx.ChainID())
 	})
 	return ret
 }
@@ -133,11 +124,11 @@ func (vmctx *vmContext) GetSenderTokenBalanceForFees() uint64 {
 }
 
 func (vmctx *vmContext) requestLookupKey() blocklog.RequestLookupKey {
-	return blocklog.NewRequestLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqctx.requestIndex)
+	return blocklog.NewRequestLookupKey(vmctx.stateDraft.BlockIndex(), vmctx.reqctx.requestIndex)
 }
 
 func (vmctx *vmContext) eventLookupKey() blocklog.EventLookupKey {
-	return blocklog.NewEventLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqctx.requestIndex, vmctx.reqctx.requestEventIndex)
+	return blocklog.NewEventLookupKey(vmctx.stateDraft.BlockIndex(), vmctx.reqctx.requestIndex, vmctx.reqctx.requestEventIndex)
 }
 
 func (vmctx *vmContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {

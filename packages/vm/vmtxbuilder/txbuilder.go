@@ -392,6 +392,10 @@ func (txb *AnchorTransactionBuilder) mustCheckTotalNativeTokensExceeded() {
 	}
 }
 
+func (txb *AnchorTransactionBuilder) AnchorOutputStorageDeposit() uint64 {
+	return txb.anchorOutputStorageDeposit
+}
+
 func retryOutputFromOnLedgerRequest(req isc.OnLedgerRequest, chainAliasID iotago.AliasID) iotago.Output {
 	out := req.Output().Clone()
 
