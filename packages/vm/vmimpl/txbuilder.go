@@ -99,7 +99,7 @@ func (vmctx *vmContext) getOutputID(blockIndex uint32, outputIndex uint16) iotag
 		outputID, ok = blocklog.GetOutputID(s, blockIndex, outputIndex)
 	})
 	if !ok {
-		panic(fmt.Errorf("internal: can't find UTXO input for block index %d, output index %d", blockIndex, outputIndex))
+		panic(fmt.Errorf("UTXO input for block index %d, output index %d not found", blockIndex, outputIndex))
 	}
 	return outputID
 }

@@ -53,10 +53,10 @@ func (vmctx *vmContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 }
 
 func (vmctx *vmContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	// set the "rety output ID" so that the correct output is used by the txbuilder
+	// set the "retry output ID" so that the correct output is used by the txbuilder
 	oid := vmctx.getOutputID(blockIndex, outputIndex)
 	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), oid)
-	vmctx.task.UnprocessableToRetry = append(vmctx.task.UnprocessableToRetry, retryReq)
+	vmctx.reqctx.unprocessableToRetry = append(vmctx.reqctx.unprocessableToRetry, retryReq)
 }
 
 func (vmctx *vmContext) SetBlockContext(bctx interface{}) {
@@ -73,7 +73,7 @@ func (vmctx *vmContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint is
 }
 
 func (vmctx *vmContext) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
-	vmctx.reqCtx.evmFailed = &evmFailed{
+	vmctx.reqctx.evmFailed = &evmFailed{
 		tx:      tx,
 		receipt: receipt,
 	}

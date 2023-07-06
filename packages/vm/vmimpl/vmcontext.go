@@ -36,14 +36,12 @@ type vmContext struct {
 	task       *vm.VMTask
 	taskResult *vm.VMTaskResult
 
-	chainOwnerID isc.AgentID
-	blockContext map[isc.Hname]interface{}
-	txbuilder    *vmtxbuilder.AnchorTransactionBuilder
-	// unprocessable is a list of requests that were found to be unprocessable during this VM execution
-	unprocessable   []isc.OnLedgerRequest
+	chainOwnerID    isc.AgentID
+	blockContext    map[isc.Hname]interface{}
+	txbuilder       *vmtxbuilder.AnchorTransactionBuilder
 	chainInfo       *isc.ChainInfo
 	blockGas        blockGas
-	reqCtx          *requestContext
+	reqctx          *requestContext
 	anchorOutputSD  uint64
 	maintenanceMode bool
 
@@ -69,6 +67,8 @@ type requestContext struct {
 	gas               requestGas
 	// SD charged to consume the current request
 	sdCharged uint64
+	// requests that the sender asked to retry
+	unprocessableToRetry []isc.OnLedgerRequest
 }
 
 type evmFailed struct {
@@ -121,7 +121,6 @@ func createVMContext(task *vm.VMTask, taskResult *vm.VMTaskResult) *vmContext {
 		task:            task,
 		taskResult:      taskResult,
 		blockContext:    make(map[isc.Hname]interface{}),
-		unprocessable:   make([]isc.OnLedgerRequest, 0),
 		maintenanceMode: governance.NewStateAccess(taskResult.StateDraft).MaintenanceStatus(),
 	}
 	// at the beginning of each block
@@ -178,13 +177,16 @@ func (vmctx *vmContext) withStateUpdate(f func()) {
 
 // extractBlock does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *vmContext) extractBlock(numRequests, numSuccess, numOffLedger uint16) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
+func (vmctx *vmContext) extractBlock(
+	numRequests, numSuccess, numOffLedger uint16,
+	unprocessable []isc.OnLedgerRequest,
+) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
 	vmctx.GasBurnEnable(false)
 	var rotationAddr iotago.Address
 	vmctx.withStateUpdate(func() {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 		vmctx.closeBlockContexts()
-		vmctx.saveInternalUTXOs()
+		vmctx.saveInternalUTXOs(unprocessable)
 	})
 
 	block := vmctx.task.Store.ExtractBlock(vmctx.taskResult.StateDraft)
@@ -273,7 +275,7 @@ func (vmctx *vmContext) closeBlockContexts() {
 // 3. NFTs
 // 4. produced outputs
 // 5. unprocessable requests
-func (vmctx *vmContext) saveInternalUTXOs() {
+func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
@@ -337,15 +339,13 @@ func (vmctx *vmContext) saveInternalUTXOs() {
 	})
 
 	// add unprocessable requests
-	vmctx.storeUnprocessable(outputIndex)
+	vmctx.storeUnprocessable(unprocessable, outputIndex)
 }
 
-func (vmctx *vmContext) removeUnprocessable(results []*vm.RequestResult) {
+func (vmctx *vmContext) removeUnprocessable(reqID isc.RequestID) {
 	vmctx.withStateUpdate(func() {
 		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-			for _, r := range results {
-				blocklog.RemoveUnprocessable(s, r.Request.ID())
-			}
+			blocklog.RemoveUnprocessable(s, reqID)
 		})
 	})
 }

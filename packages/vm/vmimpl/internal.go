@@ -125,7 +125,7 @@ func (vmctx *vmContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
 }
 
 func (vmctx *vmContext) GetSenderTokenBalanceForFees() uint64 {
-	sender := vmctx.reqCtx.req.SenderAccount()
+	sender := vmctx.reqctx.req.SenderAccount()
 	if sender == nil {
 		return 0
 	}
@@ -133,21 +133,21 @@ func (vmctx *vmContext) GetSenderTokenBalanceForFees() uint64 {
 }
 
 func (vmctx *vmContext) requestLookupKey() blocklog.RequestLookupKey {
-	return blocklog.NewRequestLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqCtx.requestIndex)
+	return blocklog.NewRequestLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqctx.requestIndex)
 }
 
 func (vmctx *vmContext) eventLookupKey() blocklog.EventLookupKey {
-	return blocklog.NewEventLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqCtx.requestIndex, vmctx.reqCtx.requestEventIndex)
+	return blocklog.NewEventLookupKey(vmctx.taskResult.StateDraft.BlockIndex(), vmctx.reqctx.requestIndex, vmctx.reqctx.requestEventIndex)
 }
 
 func (vmctx *vmContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {
 	receipt := &blocklog.RequestReceipt{
-		Request:       vmctx.reqCtx.req,
-		GasBudget:     vmctx.reqCtx.gas.budgetAdjusted,
-		GasBurned:     vmctx.reqCtx.gas.burned,
-		GasFeeCharged: vmctx.reqCtx.gas.feeCharged,
-		GasBurnLog:    vmctx.reqCtx.gas.burnLog,
-		SDCharged:     vmctx.reqCtx.sdCharged,
+		Request:       vmctx.reqctx.req,
+		GasBudget:     vmctx.reqctx.gas.budgetAdjusted,
+		GasBurned:     vmctx.reqctx.gas.burned,
+		GasFeeCharged: vmctx.reqctx.gas.feeCharged,
+		GasBurnLog:    vmctx.reqctx.gas.burnLog,
+		SDCharged:     vmctx.reqctx.sdCharged,
 	}
 
 	if vmError != nil {
@@ -158,7 +158,7 @@ func (vmctx *vmContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 		receipt.Error = vmError.AsUnresolvedError()
 	}
 
-	vmctx.Debugf("writeReceiptToBlockLog - reqID:%s err: %v", vmctx.reqCtx.req.ID(), vmError)
+	vmctx.Debugf("writeReceiptToBlockLog - reqID:%s err: %v", vmctx.reqctx.req.ID(), vmError)
 
 	key := vmctx.requestLookupKey()
 	var err error
@@ -168,23 +168,23 @@ func (vmctx *vmContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.R
 	if err != nil {
 		panic(err)
 	}
-	if vmctx.reqCtx.evmFailed != nil {
+	if vmctx.reqctx.evmFailed != nil {
 		// save failed EVM transactions
 		vmctx.callCore(evm.Contract, func(s kv.KVStore) {
-			evmimpl.AddFailedTx(NewSandbox(vmctx), vmctx.reqCtx.evmFailed.tx, vmctx.reqCtx.evmFailed.receipt)
+			evmimpl.AddFailedTx(NewSandbox(vmctx), vmctx.reqctx.evmFailed.tx, vmctx.reqctx.evmFailed.receipt)
 		})
 	}
 	return receipt
 }
 
-func (vmctx *vmContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
-	if len(vmctx.unprocessable) == 0 {
+func (vmctx *vmContext) storeUnprocessable(unprocessable []isc.OnLedgerRequest, lastInternalAssetUTXOIndex uint16) {
+	if len(unprocessable) == 0 {
 		return
 	}
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		for _, r := range vmctx.unprocessable {
+		for _, r := range unprocessable {
 			txsnapshot := vmctx.createTxBuilderSnapshot()
 			err := panicutil.CatchPanic(func() {
 				position := vmctx.txbuilder.ConsumeUnprocessable(r)
@@ -204,7 +204,7 @@ func (vmctx *vmContext) storeUnprocessable(lastInternalAssetUTXOIndex uint16) {
 }
 
 func (vmctx *vmContext) MustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
-	if vmctx.reqCtx.requestEventIndex == math.MaxUint16 {
+	if vmctx.reqctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)
 	}
 	vmctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
@@ -219,13 +219,13 @@ func (vmctx *vmContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveEvent(s, eventKey, event)
 	})
-	vmctx.reqCtx.requestEventIndex++
+	vmctx.reqctx.requestEventIndex++
 }
 
 // updateOffLedgerRequestNonce updates stored nonce for off ledger requests
 func (vmctx *vmContext) updateOffLedgerRequestNonce() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.IncrementNonce(s, vmctx.reqCtx.req.SenderAccount())
+		accounts.IncrementNonce(s, vmctx.reqctx.req.SenderAccount())
 	})
 }
 

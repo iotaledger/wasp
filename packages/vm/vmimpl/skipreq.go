@@ -33,11 +33,11 @@ func (vmctx *vmContext) earlyCheckReasonToSkip() error {
 	}
 
 	if vmctx.maintenanceMode &&
-		vmctx.reqCtx.req.CallTarget().Contract != governance.Contract.Hname() {
+		vmctx.reqctx.req.CallTarget().Contract != governance.Contract.Hname() {
 		return errors.New("skipped due to maintenance mode")
 	}
 
-	if vmctx.reqCtx.req.IsOffLedger() {
+	if vmctx.reqctx.req.IsOffLedger() {
 		return vmctx.checkReasonToSkipOffLedger()
 	}
 	return vmctx.checkReasonToSkipOnLedger()
@@ -45,7 +45,7 @@ func (vmctx *vmContext) earlyCheckReasonToSkip() error {
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
 func (vmctx *vmContext) checkReasonRequestProcessed() error {
-	reqid := vmctx.reqCtx.req.ID()
+	reqid := vmctx.reqctx.req.ID()
 	var isProcessed bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
 		isProcessed = blocklog.MustIsRequestProcessed(s, reqid)
@@ -64,14 +64,14 @@ func (vmctx *vmContext) checkReasonToSkipOffLedger() error {
 	}
 
 	// skip ISC nonce check for EVM requests
-	senderAccount := vmctx.reqCtx.req.SenderAccount()
+	senderAccount := vmctx.reqctx.req.SenderAccount()
 	if senderAccount.Kind() == isc.AgentIDKindEthereumAddress {
 		return nil
 	}
 
 	var nonceErr error
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		nonceErr = accounts.CheckNonce(s, senderAccount, vmctx.reqCtx.req.(isc.OffLedgerRequest).Nonce())
+		nonceErr = accounts.CheckNonce(s, senderAccount, vmctx.reqctx.req.(isc.OffLedgerRequest).Nonce())
 	})
 	return nonceErr
 }
@@ -101,7 +101,7 @@ func (vmctx *vmContext) checkReasonToSkipOnLedger() error {
 
 func (vmctx *vmContext) checkInternalOutput() error {
 	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
-	if vmctx.reqCtx.req.(isc.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
+	if vmctx.reqctx.req.(isc.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
 		return errors.New("it is an internal output")
 	}
 	return nil
@@ -110,7 +110,7 @@ func (vmctx *vmContext) checkInternalOutput() error {
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *vmContext) checkReasonTimeLock() error {
-	timeLock := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().TimeLock()
+	timeLock := vmctx.reqctx.req.(isc.OnLedgerRequest).Features().TimeLock()
 	if !timeLock.IsZero() {
 		if vmctx.task.FinalStateTimestamp().Before(timeLock) {
 			return fmt.Errorf("can't be consumed due to lock until %v", vmctx.task.FinalStateTimestamp())
@@ -122,7 +122,7 @@ func (vmctx *vmContext) checkReasonTimeLock() error {
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *vmContext) checkReasonExpiry() error {
-	expiry, _ := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().Expiry()
+	expiry, _ := vmctx.reqctx.req.(isc.OnLedgerRequest).Features().Expiry()
 
 	if expiry.IsZero() {
 		return nil
@@ -138,7 +138,7 @@ func (vmctx *vmContext) checkReasonExpiry() error {
 	}
 
 	// General unlock validation
-	output, _ := vmctx.reqCtx.req.(isc.OnLedgerRequest).Output().(iotago.TransIndepIdentOutput)
+	output, _ := vmctx.reqctx.req.(isc.OnLedgerRequest).Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
 		ConfUnix: uint32(finalStateTimestamp.Unix()),
@@ -153,7 +153,7 @@ func (vmctx *vmContext) checkReasonExpiry() error {
 
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *vmContext) checkReasonReturnAmount() error {
-	if _, ok := vmctx.reqCtx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
+	if _, ok := vmctx.reqctx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
 		return errors.New("return amount feature not supported in this version")
 	}
 	return nil

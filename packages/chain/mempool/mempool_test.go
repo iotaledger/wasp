@@ -40,7 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	vmcontext "github.com/iotaledger/wasp/packages/vm/vmimpl"
+	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 type tc struct {
@@ -221,7 +221,7 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 		EnableGasBurnLogging: false,
 		Log:                  te.log.Named("VM"),
 	}
-	vmResult, err := vmcontext.NewVMRunner().Run(vmTask)
+	vmResult, err := vmimpl.Run(vmTask)
 	require.NoError(te.t, err)
 	block := store.Commit(vmResult.StateDraft)
 	chainState, err := store.StateByTrieRoot(block.TrieRoot())
