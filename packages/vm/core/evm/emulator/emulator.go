@@ -245,7 +245,7 @@ func (e *EVMEmulator) applyMessage(
 			// catch any exceptions during the execution, so that an EVM receipt is produced
 			res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
 		},
-		vmexceptions.AllProtocolLimits...,
+		vmexceptions.SkipRequestErrors...,
 	)
 	if caughtErr != nil {
 		return nil, caughtErr

@@ -21,7 +21,12 @@ var (
 	ErrNotEnoughFundsForSD                     = &skipRequestException{"user doesn't have enough on-chain funds to cover the SD cost of processing this request"}
 )
 
-var AllProtocolLimits = []error{
+// not a protocol limit error, but something went wrong after request execution
+var (
+	ErrPostExecutionPanic = fmt.Errorf("post execution error")
+)
+
+var SkipRequestErrors = []error{
 	ErrInputLimitExceeded,
 	ErrOutputLimitExceeded,
 	ErrTotalNativeTokensLimitExceeded,
@@ -29,6 +34,7 @@ var AllProtocolLimits = []error{
 	ErrBlockGasLimitExceeded,
 	ErrMaxTransactionSizeExceeded,
 	ErrNotEnoughFundsForSD,
+	ErrPostExecutionPanic,
 }
 
 func (m *skipRequestException) Error() string {
