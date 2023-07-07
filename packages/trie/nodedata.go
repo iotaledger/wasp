@@ -1,7 +1,6 @@
 package trie
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 
@@ -88,14 +87,6 @@ func (n *NodeData) String() string {
 	})
 	return fmt.Sprintf("c:%s ext:%v childIdx:%v term:%s",
 		n.Commitment, n.PathExtension, childIdx, t)
-}
-
-func (n *NodeData) mustPersist(w KVWriter) {
-	dbKey := n.Commitment.Bytes()
-	var buf bytes.Buffer
-	err := n.Write(&buf)
-	assertNoError(err)
-	w.Set(dbKey, buf.Bytes())
 }
 
 func (n *NodeData) iterateChildren(f func(byte, Hash) bool) {
