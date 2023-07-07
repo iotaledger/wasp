@@ -66,7 +66,7 @@ const (
 )
 
 type ChainRequests interface {
-	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool
+	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt
 }
 
@@ -481,7 +481,7 @@ func New(
 	return cni, nil
 }
 
-func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool {
+func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error {
 	cni.log.Debugf("ReceiveOffLedgerRequest: %v from outside.", request.ID())
 	// TODO: What to do with the sender's pub key?
 	return cni.mempool.ReceiveOffLedgerRequest(request)

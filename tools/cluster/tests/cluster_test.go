@@ -52,8 +52,6 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 
 	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) })
 
-	t.Run("maintenance", func(t *testing.T) { run(t, testMaintenance) })
-
 	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) })
 	t.Run("offledger 900KB", func(t *testing.T) { run(t, testOffledgerRequest900KB) })
 	t.Run("offledger nonce", func(t *testing.T) { run(t, testOffledgerNonce) })

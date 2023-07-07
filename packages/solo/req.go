@@ -469,7 +469,7 @@ func (ch *Chain) CallViewByHnameAtState(chainState state.State, hContract, hFunc
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, chainState)
+	vmctx, err := viewcontext.New(ch, chainState, false)
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +485,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState)
+	vmctx, err := viewcontext.New(ch, latestState, false)
 	require.NoError(ch.Env.T, err)
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
@@ -501,7 +501,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState)
+	vmctx, err := viewcontext.New(ch, latestState, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -541,7 +541,7 @@ func (ch *Chain) GetRootCommitment() trie.Hash {
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState)
+	vmctx, err := viewcontext.New(ch, latestState, false)
 	if err != nil {
 		return nil, err
 	}
@@ -550,6 +550,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 
 // WaitUntil waits until the condition specified by the given predicate yields true
 func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
+	ch.Env.T.Helper()
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -561,8 +562,7 @@ func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 			return true
 		}
 		if time.Now().After(deadline) {
-			ch.Log().Errorf("WaitUntil failed waiting max %v", maxw)
-			ch.Env.T.FailNow()
+			ch.Env.T.Logf("WaitUntil failed waiting max %v", maxw)
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -599,13 +599,16 @@ func (ch *Chain) WaitForRequestsMark() {
 // WaitForRequestsThrough waits until the specified number of requests
 // have been processed since the last call to WaitForRequestsMark()
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	ch.RequestsRemaining = numReq
+	ch.Env.T.Helper()
+	ch.Env.T.Logf("WaitForRequestsThrough: start -- block #%d -- numReq = %d", ch.RequestsBlock, numReq)
 	return ch.WaitUntil(func() bool {
+		ch.Env.T.Helper()
 		latest := ch.LatestBlockIndex()
 		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {
 			receipts := ch.GetRequestReceiptsForBlock(ch.RequestsBlock + 1)
-			ch.RequestsRemaining -= len(receipts)
+			numReq -= len(receipts)
+			ch.Env.T.Logf("WaitForRequestsThrough: new block #%d with %d requests -- numReq = %d", ch.RequestsBlock, len(receipts), numReq)
 		}
-		return ch.RequestsRemaining <= 0
+		return numReq <= 0
 	}, maxWait...)
 }

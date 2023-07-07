@@ -89,7 +89,7 @@ func TestNoSenderFeature(t *testing.T) {
 		tx.Essence.Outputs[i] = customOut
 	}
 
-	tx, err = transaction.CreateAndSignTx(allOutIDs, tx.Essence.InputsCommitment[:], tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
+	tx, err = transaction.CreateAndSignTx(tx.Essence.Inputs, tx.Essence.InputsCommitment[:], tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
 	require.NoError(t, err)
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(t, err)
@@ -169,7 +169,7 @@ func TestSendBack(t *testing.T) {
 		tx.Essence.Outputs[i] = customOut
 	}
 
-	tx, err = transaction.CreateAndSignTx(allOutIDs, tx.Essence.InputsCommitment[:], tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
+	tx, err = transaction.CreateAndSignTx(tx.Essence.Inputs, tx.Essence.InputsCommitment[:], tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
 	require.NoError(t, err)
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(t, err)
@@ -223,14 +223,13 @@ func TestBadMetadata(t *testing.T) {
 		for ii, f := range customOut.Features {
 			if mf, ok := f.(*iotago.MetadataFeature); ok {
 				mf.Data = []byte("foobar")
-				// mf.Data = append(mf.Data, []byte("foobar")...)
 				customOut.Features[ii] = mf
 			}
 		}
 		tx.Essence.Outputs[i] = customOut
 	}
 
-	tx, err = transaction.CreateAndSignTx(allOutIDs, tx.Essence.InputsCommitment[:], tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
+	tx, err = transaction.CreateAndSignTx(tx.Essence.Inputs, tx.Essence.InputsCommitment[:], tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
 	require.NoError(t, err)
 	require.Zero(t, ch.L2BaseTokens(isc.NewAddressAgentID(addr)))
 	err = ch.Env.AddToLedger(tx)

@@ -33,7 +33,7 @@ func (ch *Chain) ContractAgentID(name string) isc.AgentID {
 }
 
 // Warning: if the same `req` is passed in different occasions, the resulting request will have different IDs (because the ledger state is different)
-func IscRequestFromCallParams(ch *Chain, req *CallParams, keyPair *cryptolib.KeyPair) (isc.Request, error) {
+func ISCRequestFromCallParams(ch *Chain, req *CallParams, keyPair *cryptolib.KeyPair) (isc.Request, error) {
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return nil, err

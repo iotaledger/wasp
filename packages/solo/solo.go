@@ -37,11 +37,9 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
@@ -100,8 +98,6 @@ type Chain struct {
 	store indexedstore.IndexedStore
 	// Log is the named logger of the chain
 	log *logger.Logger
-	// instance of VM
-	vmRunner vm.VMRunner
 	// global processor cache
 	proc *processors.Cache
 	// related to asynchronous backlog processing
@@ -109,8 +105,7 @@ type Chain struct {
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool Mempool
 
-	RequestsBlock     uint32
-	RequestsRemaining int
+	RequestsBlock uint32
 
 	metrics *metrics.ChainMetrics
 }
@@ -318,7 +313,6 @@ func (env *Solo) NewChainExt(
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
 		store:                  store,
-		vmRunner:               runvm.NewVMRunner(),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chainID),
@@ -363,7 +357,7 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[isc.ChainID][]isc.R
 }
 
 // AddRequestsToMempool adds all the requests to the chain mempool,
-func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request, timeout ...time.Duration) {
+func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 	ch.runVMMutex.Lock()

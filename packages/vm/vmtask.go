@@ -13,39 +13,32 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-type VMRunner interface {
-	Run(task *VMTask) (*VMTaskResult, error)
-}
-
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	Processors           *processors.Cache
-	AnchorOutput         *iotago.AliasOutput
-	AnchorOutputID       iotago.OutputID
-	Store                state.Store
-	Requests             []isc.Request
-	UnprocessableToRetry []isc.Request
-	TimeAssumption       time.Time
-	Entropy              hashing.HashValue
-	ValidatorFeeTarget   isc.AgentID
+	Processors         *processors.Cache
+	AnchorOutput       *iotago.AliasOutput
+	AnchorOutputID     iotago.OutputID
+	Store              state.Store
+	Requests           []isc.Request
+	TimeAssumption     time.Time
+	Entropy            hashing.HashValue
+	ValidatorFeeTarget isc.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
 	EstimateGasMode bool
 	// If EVMTracer is set, all requests will be executed normally up until the EVM
 	// tx with the given index, which will then be executed with the given tracer.
 	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
-	// If maintenance mode is enabled, only requests to the governance contract will be executed
-	MaintenanceModeEnabled bool
 
 	Log *logger.Logger
 }
 
 type VMTaskResult struct {
-	Task                       *VMTask
-	AnchorOutputStorageDeposit uint64
-	// the uncommitted state resulting from the execution of the requests
+	Task *VMTask
+
+	// StateDraft is the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress iotago.Address
@@ -69,10 +62,6 @@ type RequestResult struct {
 
 func (task *VMTask) WillProduceBlock() bool {
 	return !task.EstimateGasMode && task.EVMTracer == nil
-}
-
-func (task *VMTask) CreateResult() *VMTaskResult {
-	return &VMTaskResult{Task: task}
 }
 
 func (task *VMTask) FinalStateTimestamp() time.Time {

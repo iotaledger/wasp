@@ -79,7 +79,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 
 	inputsCommitment := inputIDs.OrderedSet(params.UnspentOutputs).MustCommitment()
 
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, params.SenderKeyPair, parameters.L1().Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, params.SenderKeyPair, parameters.L1().Protocol.NetworkID())
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -121,7 +121,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, parameters.L1().Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, par.SenderKeyPair, parameters.L1().Protocol.NetworkID())
 }
 
 func MakeRequestTransactionOutput(par NewRequestTransactionParams) iotago.Output {

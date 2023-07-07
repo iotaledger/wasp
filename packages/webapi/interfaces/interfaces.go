@@ -18,7 +18,6 @@ import (
 )
 
 var (
-	ErrNotAddedToMempool  = errors.New("not added to the mempool")
 	ErrChainNotFound      = errors.New("chain not found")
 	ErrCantDeleteLastUser = errors.New("you can't delete the last user")
 )

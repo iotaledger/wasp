@@ -54,6 +54,10 @@ func (sa *StateAccess) CandidateNodes() []*AccessNodeInfo {
 	return candidateNodes
 }
 
+func (sa *StateAccess) ChainInfo(chainID isc.ChainID) *isc.ChainInfo {
+	return MustGetChainInfo(sa.state, chainID)
+}
+
 func (sa *StateAccess) ChainOwnerID() isc.AgentID {
 	return mustGetChainOwnerID(sa.state)
 }
