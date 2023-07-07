@@ -56,6 +56,7 @@ type Chains struct {
 	trustedNetworkListenerCancel context.CancelFunc
 	chainStateStoreProvider      database.ChainStateKVStoreProvider
 
+	walLoadToStore                      bool
 	walEnabled                          bool
 	walFolderPath                       string
 	smBlockCacheMaxSize                 int
@@ -107,6 +108,7 @@ func New(
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
+	walLoadToStore bool,
 	walEnabled bool,
 	walFolderPath string,
 	smBlockCacheMaxSize int,
@@ -154,6 +156,7 @@ func New(
 		networkProvider:                     networkProvider,
 		trustedNetworkManager:               trustedNetworkManager,
 		chainStateStoreProvider:             chainStateStoreProvider,
+		walLoadToStore:                      walLoadToStore,
 		walEnabled:                          walEnabled,
 		walFolderPath:                       walFolderPath,
 		smBlockCacheMaxSize:                 smBlockCacheMaxSize,
@@ -346,6 +349,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		c.processorConfig,
 		c.dkShareRegistryProvider,
 		c.consensusStateRegistry,
+		c.walLoadToStore,
 		chainWAL,
 		chainSnapshotManager,
 		c.chainListener,

@@ -17,8 +17,9 @@ type ParametersChains struct {
 }
 
 type ParametersWAL struct {
-	Enabled bool   `default:"true" usage:"whether the \"write-ahead logging\" is enabled"`
-	Path    string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
+	LoadToStore bool   `default:"false" usage:"load blocks from \"write-ahead log\" to the store on node start-up"`
+	Enabled     bool   `default:"true" usage:"whether the \"write-ahead logging\" is enabled"`
+	Path        string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
 }
 
 type ParametersValidator struct {

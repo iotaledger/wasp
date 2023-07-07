@@ -101,6 +101,7 @@ func provide(c *dig.Container) error {
 				deps.NetworkProvider,
 				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,
+				ParamsWAL.LoadToStore,
 				ParamsWAL.Enabled,
 				ParamsWAL.Path,
 				ParamsStateManager.BlockCacheMaxSize,

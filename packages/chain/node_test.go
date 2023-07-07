@@ -452,6 +452,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
+			false,
 			sm_gpa_utils.NewMockedTestBlockWAL(),
 			sm_snapshots.NewEmptySnapshotManager(),
 			chain.NewEmptyChainListener(),
