@@ -27,7 +27,7 @@ func (c *Controller) listBlobs(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	blobList, err := corecontracts.ListBlobs(ch)
+	blobList, err := corecontracts.ListBlobs(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -63,7 +63,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 
 	fieldKey := e.Param(params.ParamFieldKey)
 
-	blobValueBytes, err := corecontracts.GetBlobValue(ch, *blobHash, fieldKey)
+	blobValueBytes, err := corecontracts.GetBlobValue(ch, *blobHash, fieldKey, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -92,7 +92,7 @@ func (c *Controller) getBlobInfo(e echo.Context) error {
 		return err
 	}
 
-	blobInfo, ok, err := corecontracts.GetBlobInfo(ch, *blobHash)
+	blobInfo, ok, err := corecontracts.GetBlobInfo(ch, *blobHash, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}

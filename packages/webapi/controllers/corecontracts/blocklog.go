@@ -47,7 +47,7 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
-		blockInfo, err = corecontracts.GetLatestBlockInfo(ch)
+		blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = strconv.ParseUint(e.Param(params.ParamBlockIndex), 10, 64)
@@ -55,7 +55,7 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 			return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
 		}
 
-		blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum))
+		blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.Param(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
@@ -75,7 +75,7 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
-		requestIDs, err = corecontracts.GetRequestIDsForLatestBlock(ch)
+		requestIDs, err = corecontracts.GetRequestIDsForLatestBlock(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
@@ -83,7 +83,7 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 			return err
 		}
 
-		requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum))
+		requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.Param(params.ParamBlockIndexOrTrieRoot))
 	}
 
 	if err != nil {
@@ -111,7 +111,7 @@ func GetRequestReceipt(e echo.Context, c interfaces.ChainService) error {
 		return err
 	}
 
-	receipt, err := corecontracts.GetRequestReceipt(ch, requestID)
+	receipt, err := corecontracts.GetRequestReceipt(ch, requestID, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		panic(err)
 	}
@@ -141,12 +141,12 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 
 	if blockIndex == "" {
 		var blockInfo *blocklog.BlockInfo
-		blockInfo, err = corecontracts.GetLatestBlockInfo(ch)
+		blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return c.handleViewCallError(err, chainID)
 		}
 
-		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockInfo.BlockIndex())
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockInfo.BlockIndex(), e.Param(params.ParamBlockIndexOrTrieRoot))
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
@@ -154,7 +154,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 			return err
 		}
 
-		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum))
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum), e.Param(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
@@ -184,7 +184,7 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 		return err
 	}
 
-	requestProcessed, err := corecontracts.IsRequestProcessed(ch, requestID)
+	requestProcessed, err := corecontracts.IsRequestProcessed(ch, requestID, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -222,17 +222,17 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return err
 		}
 
-		events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum))
+		events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.Param(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return c.handleViewCallError(err, chainID)
 		}
 	} else {
-		blockInfo, err := corecontracts.GetLatestBlockInfo(ch)
+		blockInfo, err := corecontracts.GetLatestBlockInfo(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return c.handleViewCallError(err, chainID)
 		}
 
-		events, err = corecontracts.GetEventsForBlock(ch, blockInfo.BlockIndex())
+		events, err = corecontracts.GetEventsForBlock(ch, blockInfo.BlockIndex(), e.Param(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return c.handleViewCallError(err, chainID)
 		}
@@ -250,7 +250,7 @@ func (c *Controller) getContractEvents(e echo.Context) error {
 		return err
 	}
 
-	events, err := corecontracts.GetEventsForContract(ch, contractHname)
+	events, err := corecontracts.GetEventsForContract(ch, contractHname, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -267,7 +267,7 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 		return err
 	}
 
-	events, err := corecontracts.GetEventsForRequest(ch, requestID)
+	events, err := corecontracts.GetEventsForRequest(ch, requestID, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}

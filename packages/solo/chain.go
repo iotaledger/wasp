@@ -423,12 +423,9 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	if err != nil {
 		return nil
 	}
-	receipts := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestReceipt, receipts.Len())
-	for i := range ret {
-		ret[i], err = blocklog.RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
-		require.NoError(ch.Env.T, err)
-		ret[i].WithBlockData(blockIdx, uint16(i))
+	ret, err := blocklog.ReceiptsFromViewCallResult(res)
+	if err != nil {
+		return nil
 	}
 	return ret
 }

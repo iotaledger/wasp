@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
@@ -35,7 +36,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	chainInfo, err := corecontracts.GetChainInfo(ch)
+	chainInfo, err := corecontracts.GetChainInfo(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -51,7 +52,7 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	chainOwner, err := corecontracts.GetChainOwner(ch)
+	chainOwner, err := corecontracts.GetChainOwner(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -69,7 +70,7 @@ func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch)
+	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}

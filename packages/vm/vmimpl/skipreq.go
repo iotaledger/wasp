@@ -59,6 +59,7 @@ func (vmctx *vmContext) checkReasonRequestProcessed() error {
 // checkReasonToSkipOffLedger checks reasons to skip off ledger request
 func (vmctx *vmContext) checkReasonToSkipOffLedger() error {
 	// first checks if it is already in backlog
+	// TODO check nonce instead
 	if err := vmctx.checkReasonRequestProcessed(); err != nil {
 		return err
 	}

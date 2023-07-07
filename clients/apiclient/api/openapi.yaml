@@ -96,6 +96,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -276,6 +282,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -302,6 +314,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -333,6 +351,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -370,6 +394,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -401,6 +431,12 @@ paths:
         in: path
         name: agentID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -438,6 +474,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -469,6 +511,12 @@ paths:
         in: path
         name: agentID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -507,6 +555,12 @@ paths:
           format: int32
           minimum: 1
           type: integer
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -541,6 +595,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -565,6 +625,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -595,6 +661,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -619,6 +691,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -653,6 +731,12 @@ paths:
         in: path
         name: blobHash
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -697,6 +781,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -721,6 +811,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -751,6 +847,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -777,6 +879,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -815,6 +923,12 @@ paths:
           format: int32
           minimum: 1
           type: integer
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -850,6 +964,12 @@ paths:
           format: int32
           minimum: 1
           type: integer
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -887,6 +1007,12 @@ paths:
           format: int32
           minimum: 1
           type: integer
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -914,6 +1040,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -938,6 +1070,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -976,6 +1114,12 @@ paths:
           format: int32
           minimum: 1
           type: integer
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -1007,6 +1151,12 @@ paths:
         in: path
         name: contractHname
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -1044,6 +1194,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -1078,6 +1234,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -1109,6 +1271,12 @@ paths:
         in: path
         name: requestID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -1154,6 +1322,12 @@ paths:
           format: int32
           minimum: 1
           type: integer
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -1179,6 +1353,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -1211,6 +1391,12 @@ paths:
         schema:
           format: string
           type: string
+      - description: Block index or trie root
+        in: query
+        name: block
+        schema:
+          format: string
+          type: string
       responses:
         "200":
           content:
@@ -1236,6 +1422,12 @@ paths:
         in: path
         name: chainID
         required: true
+        schema:
+          format: string
+          type: string
+      - description: Block index or trie root
+        in: query
+        name: block
         schema:
           format: string
           type: string
@@ -1642,7 +1834,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "30"
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -3180,10 +3372,16 @@ components:
             key: key
           - value: value
             key: key
+        block: block
         contractName: contractName
       properties:
         arguments:
           $ref: '#/components/schemas/JSONDict'
+        block:
+          format: string
+          type: string
+          xml:
+            name: Block
         contractHName:
           description: The contract name as HName (Hex)
           format: string

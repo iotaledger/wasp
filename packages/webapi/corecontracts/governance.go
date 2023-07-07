@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-func GetAllowedStateControllerAddresses(ch chain.Chain) ([]iotago.Address, error) {
-	res, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
+func GetAllowedStateControllerAddresses(ch chain.Chain, blockIndexOrTrieRoot string) ([]iotago.Address, error) {
+	res, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil, blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -27,8 +27,8 @@ func GetAllowedStateControllerAddresses(ch chain.Chain) ([]iotago.Address, error
 	return ret, nil
 }
 
-func GetChainOwner(ch chain.Chain) (isc.AgentID, error) {
-	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetChainOwner.Hname(), nil)
+func GetChainOwner(ch chain.Chain, blockIndexOrTrieRoot string) (isc.AgentID, error) {
+	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetChainOwner.Hname(), nil, blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +42,8 @@ func GetChainOwner(ch chain.Chain) (isc.AgentID, error) {
 	return ownerID, nil
 }
 
-func GetChainInfo(ch chain.Chain) (*isc.ChainInfo, error) {
-	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
+func GetChainInfo(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.ChainInfo, error) {
+	ret, err := common.CallView(ch, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil, blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
 	}

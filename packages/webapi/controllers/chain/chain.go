@@ -21,7 +21,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 		return err
 	}
 
-	chain, err := c.chainService.GetChainInfoByChainID(chainID)
+	chain, err := c.chainService.GetChainInfoByChainID(chainID, "")
 	if err != nil {
 		return apierrors.ChainNotFoundError(chainID.String())
 	}
@@ -50,7 +50,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
+	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, e.Param(params.ParamBlockIndexOrTrieRoot))
 	if errors.Is(err, interfaces.ErrChainNotFound) {
 		return e.NoContent(http.StatusNotFound)
 	} else if err != nil {
@@ -59,7 +59,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 	evmChainID := uint16(0)
 	if chainInfo.IsActive {
-		evmChainID, err = c.chainService.GetEVMChainID(chainID)
+		evmChainID, err = c.chainService.GetEVMChainID(chainID, e.Param(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return err
 		}
@@ -80,7 +80,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 	chainList := make([]models.ChainInfoResponse, 0)
 
 	for _, chainID := range chainIDs {
-		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
+		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, "")
 		c.log.Info("getchaininfo %v", err)
 
 		if errors.Is(err, interfaces.ErrChainNotFound) {
@@ -96,7 +96,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 
 		evmChainID := uint16(0)
 		if chainInfo.IsActive {
-			evmChainID, err = c.chainService.GetEVMChainID(chainID)
+			evmChainID, err = c.chainService.GetEVMChainID(chainID, "")
 			c.log.Info("getevmchainid %v", err)
 
 			if err != nil {

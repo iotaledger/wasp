@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -49,26 +50,28 @@ func initBlockCmd() *cobra.Command {
 func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoResponse {
 	client := cliclients.WaspClient(node)
 
+	blockIndexStr := args[0]
 	if len(args) == 0 {
 		blockInfo, _, err := client.
 			CorecontractsApi.
 			BlocklogGetLatestBlockInfo(context.Background(), config.GetChain(chain).String()).
+			Block(blockIndexStr).
 			Execute() //nolint:bodyclose // false positive
 
 		log.Check(err)
 		return blockInfo
 	}
 
-	index, err := strconv.Atoi(args[0])
+	index, err := strconv.ParseUint(blockIndexStr, 10, 32)
 	log.Check(err)
 
 	blockInfo, _, err := client.
 		CorecontractsApi.
 		BlocklogGetBlockInfo(context.Background(), config.GetChain(chain).String(), uint32(index)).
+		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
-
 	return blockInfo
 }
 
@@ -76,6 +79,7 @@ func logRequestsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
 	receipts, _, err := client.CorecontractsApi.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetChain(chain).String(), index).
+		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
@@ -131,6 +135,7 @@ func logEventsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
 	events, _, err := client.CorecontractsApi.
 		BlocklogGetEventsOfBlock(context.Background(), config.GetChain(chain).String(), index).
+		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)
@@ -180,6 +185,7 @@ func initRequestCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			reqID := reqIDFromString(args[0], client, chainID)
 
+			// TODO add optional block param?
 			receipt, _, err := client.ChainsApi.
 				GetReceipt(context.Background(), chainID.String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
