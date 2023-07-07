@@ -52,6 +52,7 @@ func (c *Controller) Name() string {
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	publicAPI.GET("chains/:chainID", c.getChainInfo).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
 		SetOperationId("getChainInfo").
 		SetSummary("Get information about a specific chain")
@@ -153,12 +154,14 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusOK, "A list of all nodes tied to the chain", mocker.Get(models.CommitteeInfoResponse{}), nil).
 		SetOperationId("getCommitteeInfo").
 		SetSummary("Get information about the deployed committee")
 
 	adminAPI.GET("chains/:chainID/contracts", c.getContracts, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusOK, "A list of all available contracts", mocker.Get([]models.ContractInfoResponse{}), nil).
 		SetOperationId("getContracts").
 		SetSummary("Get all available chain contracts")

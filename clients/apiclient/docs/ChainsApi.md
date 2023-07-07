@@ -440,7 +440,7 @@ No authorization required
 
 ## GetChainInfo
 
-> ChainInfoResponse GetChainInfo(ctx, chainID).Execute()
+> ChainInfoResponse GetChainInfo(ctx, chainID).Block(block).Execute()
 
 Get information about a specific chain
 
@@ -458,10 +458,11 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
+    block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetChainInfo(context.Background(), chainID).Execute()
+    resp, r, err := apiClient.ChainsApi.GetChainInfo(context.Background(), chainID).Block(block).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetChainInfo``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -487,6 +488,7 @@ Other parameters are passed through a pointer to a apiGetChainInfoRequest struct
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
+ **block** | **string** | Block index or trie root | 
 
 ### Return type
 
@@ -567,7 +569,7 @@ Other parameters are passed through a pointer to a apiGetChainsRequest struct vi
 
 ## GetCommitteeInfo
 
-> CommitteeInfoResponse GetCommitteeInfo(ctx, chainID).Execute()
+> CommitteeInfoResponse GetCommitteeInfo(ctx, chainID).Block(block).Execute()
 
 Get information about the deployed committee
 
@@ -585,10 +587,11 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
+    block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetCommitteeInfo(context.Background(), chainID).Execute()
+    resp, r, err := apiClient.ChainsApi.GetCommitteeInfo(context.Background(), chainID).Block(block).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetCommitteeInfo``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -614,6 +617,7 @@ Other parameters are passed through a pointer to a apiGetCommitteeInfoRequest st
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
+ **block** | **string** | Block index or trie root | 
 
 ### Return type
 
@@ -635,7 +639,7 @@ Name | Type | Description  | Notes
 
 ## GetContracts
 
-> []ContractInfoResponse GetContracts(ctx, chainID).Execute()
+> []ContractInfoResponse GetContracts(ctx, chainID).Block(block).Execute()
 
 Get all available chain contracts
 
@@ -653,10 +657,11 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
+    block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetContracts(context.Background(), chainID).Execute()
+    resp, r, err := apiClient.ChainsApi.GetContracts(context.Background(), chainID).Block(block).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetContracts``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -682,6 +687,7 @@ Other parameters are passed through a pointer to a apiGetContractsRequest struct
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
+ **block** | **string** | Block index or trie root | 
 
 ### Return type
 

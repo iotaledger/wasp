@@ -714,6 +714,13 @@ type ApiGetChainInfoRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiGetChainInfoRequest) Block(block string) ApiGetChainInfoRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiGetChainInfoRequest) Execute() (*ChainInfoResponse, *http.Response, error) {
@@ -757,6 +764,9 @@ func (a *ChainsApiService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -936,6 +946,13 @@ type ApiGetCommitteeInfoRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiGetCommitteeInfoRequest) Block(block string) ApiGetCommitteeInfoRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiGetCommitteeInfoRequest) Execute() (*CommitteeInfoResponse, *http.Response, error) {
@@ -979,6 +996,9 @@ func (a *ChainsApiService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1061,6 +1081,13 @@ type ApiGetContractsRequest struct {
 	ctx context.Context
 	ApiService *ChainsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiGetContractsRequest) Block(block string) ApiGetContractsRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiGetContractsRequest) Execute() ([]ContractInfoResponse, *http.Response, error) {
@@ -1104,6 +1131,9 @@ func (a *ChainsApiService) GetContractsExecute(r ApiGetContractsRequest) ([]Cont
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 

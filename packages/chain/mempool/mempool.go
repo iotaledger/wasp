@@ -459,6 +459,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	}
 	if mpi.chainHeadState != nil {
 		requestID := req.ID()
+		// TODO check nonce instead
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
 			panic(fmt.Errorf(
@@ -472,6 +473,16 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 			return fmt.Errorf("already processed")
 		}
 		accountsState := accounts.NewStateAccess(mpi.chainHeadState)
+
+		if req.SenderAccount().Kind() == isc.AgentIDKindEthereumAddress {
+			// TODO check ethereum nonce
+		} else {
+			accountNonce := accountsState.Nonce(req.SenderAccount())
+			if req.Nonce() < accountNonce {
+				return fmt.Errorf("bad nonce, expected: %d", accountNonce)
+			}
+		}
+
 		governanceState := governance.NewStateAccess(mpi.chainHeadState)
 		// check user has on-chain balance
 		if !accountsState.AccountExists(req.SenderAccount()) {
@@ -481,10 +492,6 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 			if !isGovRequest {
 				return fmt.Errorf("no funds on chain")
 			}
-		}
-		accountNonce := accountsState.Nonce(req.SenderAccount())
-		if req.Nonce() < accountNonce {
-			return fmt.Errorf("bad nonce, expected: %d", accountNonce)
 		}
 	}
 	return nil

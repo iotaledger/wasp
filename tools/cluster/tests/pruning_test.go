@@ -13,9 +13,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -223,8 +226,31 @@ func TestPruning(t *testing.T) {
 		require.NotNil(t, val)
 	})
 
-	// t.Run("isc view call", func(t *testing.T) {
-	// 	t.Parallel()
-	// TODO add if we add a "block" parameter to ISC view calls
-	// })
+	t.Run("isc view call", func(t *testing.T) {
+		t.Parallel()
+		// archive node
+		res, err := chain.Client(nil, 0).CallView(
+			context.Background(),
+			blocklog.Contract.Hname(),
+			blocklog.ViewGetRequestReceiptsForBlock.Name,
+			dict.Dict{blocklog.ParamBlockIndex: codec.EncodeUint32(10)},
+			"10",
+		)
+		require.NoError(t, err)
+		receipts, err := blocklog.ReceiptsFromViewCallResult(res)
+		require.NoError(t, err)
+		require.Len(t, receipts, 1)
+		require.NoError(t, err)
+		require.NotZero(t, receipts[0].GasFeeCharged)
+
+		// light node
+		_, err = chain.Client(nil, 1).CallView(
+			context.Background(),
+			blocklog.Contract.Hname(),
+			blocklog.ViewGetRequestReceiptsForBlock.Name,
+			dict.Dict{blocklog.ParamBlockIndex: codec.EncodeUint32(9)},
+			"10",
+		)
+		require.Error(t, err)
+	})
 }
