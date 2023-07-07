@@ -413,7 +413,7 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 	}
 
 	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(response.ContentLength))
-	reader := io.TeeReader(NewBlockingReader(response.Body), progressReporter)
+	reader := io.TeeReader(response.Body, progressReporter)
 	return cancelFun, reader, nil
 }
 

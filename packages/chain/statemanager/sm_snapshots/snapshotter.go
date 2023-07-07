@@ -1,6 +1,7 @@
 package sm_snapshots
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -157,26 +158,19 @@ func writeBytes(bytes []byte, w io.Writer) error {
 }
 
 func readBytes(r io.Reader) ([]byte, error) {
-	lengthArray := make([]byte, constLengthArrayLength)
-	read, err := r.Read(lengthArray)
+	w := new(bytes.Buffer)
+	read, err := io.CopyN(w, r, constLengthArrayLength)
+	lengthArray := w.Bytes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read length: %w", err)
-	}
-	if read < constLengthArrayLength {
-		return nil, fmt.Errorf("read only %v bytes out of %v of length", read, constLengthArrayLength)
+		return nil, fmt.Errorf("read only %v bytes out of %v of length, error: %w", read, constLengthArrayLength, err)
 	}
 
-	length := binary.LittleEndian.Uint32(lengthArray)
-	array := make([]byte, length)
+	length := int64(binary.LittleEndian.Uint32(lengthArray))
+	w = new(bytes.Buffer)
+	read, err = io.CopyN(w, r, length)
+	array := w.Bytes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse length: %w", err)
-	}
-	read, err = r.Read(array)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read array: %w", err)
-	}
-	if read < len(array) {
-		return nil, fmt.Errorf("only %v of %v bytes of array read", read, len(array))
+		return nil, fmt.Errorf("only %v of %v bytes of array read, error: %w", read, len(array), err)
 	}
 
 	return array, nil
