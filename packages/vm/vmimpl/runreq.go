@@ -1,7 +1,6 @@
 package vmimpl
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"runtime/debug"
@@ -162,10 +161,8 @@ func (vmctx *vmContext) catchRequestPanic(f func()) error {
 	}
 	// catches protocol exception error which is not the request or contract fault
 	// If it occurs, the request is just skipped
-	for _, targetError := range vmexceptions.AllProtocolLimits {
-		if errors.Is(err, targetError) {
-			return err
-		}
+	if vmexceptions.IsSkipRequestException(err) {
+		return err
 	}
 	// panic again with more information about the error
 	panic(fmt.Errorf(
@@ -208,6 +205,11 @@ func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
+	rollback := func() {
+		vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		vmctx.currentStateUpdate = snapMutations
+	}
+
 	var callErr *isc.VMError
 	func() {
 		defer func() {
@@ -228,20 +230,35 @@ func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 		// ensure at least the minimum amount of gas is charged
 		vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
 	}()
-	if callErr != nil {
-		// panic happened during VM plugin call. Restore the state
-		vmctx.restoreTxBuilderSnapshot(txsnapshot)
-		vmctx.currentStateUpdate = snapMutations
-	}
-	// charge gas fee no matter what
-	vmctx.chargeGasFee()
 
-	// write receipt no matter what
-	receipt = vmctx.writeReceiptToBlockLog(callErr)
+	// execution over, save receipt, update nonces, etc
+	// if anything goes wrong here, state must be rolled back and the request must be skipped
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				rollback()
+				callErrStr := ""
+				if callErr != nil {
+					callErrStr = callErr.Error()
+				}
+				vmctx.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", vmctx.reqctx.req.ID(), callErrStr, r)
+				panic(vmexceptions.ErrPostExecutionPanic)
+			}
+		}()
+		if callErr != nil {
+			// panic happened during VM plugin call. Restore the state
+			rollback()
+		}
+		// charge gas fee no matter what
+		vmctx.chargeGasFee()
 
-	if vmctx.reqctx.req.IsOffLedger() {
-		vmctx.updateOffLedgerRequestNonce()
-	}
+		// write receipt no matter what
+		receipt = vmctx.writeReceiptToBlockLog(callErr)
+
+		if vmctx.reqctx.req.IsOffLedger() {
+			vmctx.updateOffLedgerRequestNonce()
+		}
+	}()
 
 	return receipt, callRet
 }

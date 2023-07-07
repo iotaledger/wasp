@@ -87,7 +87,7 @@ func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byt
 		func() {
 			ret = run(evm, caller, input, gas, readOnly)
 		},
-		vmexceptions.AllProtocolLimits...,
+		vmexceptions.SkipRequestErrors...,
 	)
 	if executionErr != nil {
 		log.Debugf("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), iotago.EncodeHex(input), executionErr)
