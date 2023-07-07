@@ -1,10 +1,3 @@
-//
-//
-//
-//
-//
-//
-
 package sm_snapshots
 
 import (
