@@ -3,11 +3,11 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
-import "@iscmagic/ISCSandbox.sol";
-import "@iscmagic/ISCAccounts.sol";
-import "@iscmagic/ISCPrivileged.sol";
-import "@iscmagic/ERC721NFTs.sol";
+import "./ISCTypes.sol";
+import "./ISCSandbox.sol";
+import "./ISCAccounts.sol";
+import "./ISCPrivileged.sol";
+import "./ERC721NFTs.sol";
 
 // The ERC721 contract for a L2 collection of ISC NFTs, as defined in IRC27:
 // https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md

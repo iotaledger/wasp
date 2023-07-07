@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ERC20NativeTokens.sol";
+import "./ERC20NativeTokens.sol";
 
 // The ERC20 contract for ISC L2 native tokens (off-chain foundry).
 contract ERC20ExternalNativeTokens is ERC20NativeTokens {

@@ -3,10 +3,10 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
-import "@iscmagic/ISCSandbox.sol";
-import "@iscmagic/ISCAccounts.sol";
-import "@iscmagic/ISCPrivileged.sol";
+import "./ISCTypes.sol";
+import "./ISCSandbox.sol";
+import "./ISCAccounts.sol";
+import "./ISCPrivileged.sol";
 
 // The ERC20 contract for ISC L2 native tokens (on-chain foundry).
 contract ERC20NativeTokens {

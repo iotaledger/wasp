@@ -3,14 +3,14 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCSandbox.sol";
-import "@iscmagic/ISCAccounts.sol";
-import "@iscmagic/ISCUtil.sol";
-import "@iscmagic/ISCPrivileged.sol";
-import "@iscmagic/ERC20BaseTokens.sol";
-import "@iscmagic/ERC20NativeTokens.sol";
-import "@iscmagic/ERC721NFTs.sol";
-import "@iscmagic/ERC721NFTCollection.sol";
+import "./ISCSandbox.sol";
+import "./ISCAccounts.sol";
+import "./ISCUtil.sol";
+import "./ISCPrivileged.sol";
+import "./ERC20BaseTokens.sol";
+import "./ERC20NativeTokens.sol";
+import "./ERC721NFTs.sol";
+import "./ERC721NFTCollection.sol";
 
 library ISC {
     ISCSandbox constant sandbox = __iscSandbox;
