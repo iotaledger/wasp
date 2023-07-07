@@ -474,7 +474,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 		}
 		accountsState := accounts.NewStateAccess(mpi.chainHeadState)
 
-		if req.SenderAccount().Kind() == isc.AgentIDKindEthereumAddress {
+		if req.SenderAccount().Kind() == isc.AgentIDKindEthereumAddress { //nolint:revive // intentionally left empty
 			// TODO check ethereum nonce
 		} else {
 			accountNonce := accountsState.Nonce(req.SenderAccount())

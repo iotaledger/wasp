@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
+import "./ISCTypes.sol";
 
 // The main interface of the ISC Magic Contract
 interface ISCSandbox {
