@@ -10,6 +10,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
@@ -58,21 +60,26 @@ func (vmctx *vmContext) checkReasonRequestProcessed() error {
 
 // checkReasonToSkipOffLedger checks reasons to skip off ledger request
 func (vmctx *vmContext) checkReasonToSkipOffLedger() error {
-	// first checks if it is already in backlog
-	// TODO check nonce instead
-	if err := vmctx.checkReasonRequestProcessed(); err != nil {
-		return err
-	}
-
-	// skip ISC nonce check for EVM requests
-	senderAccount := vmctx.reqctx.req.SenderAccount()
-	if senderAccount.Kind() == isc.AgentIDKindEthereumAddress {
+	if vmctx.task.EstimateGasMode {
 		return nil
 	}
-
+	senderAccount := vmctx.reqctx.req.SenderAccount()
+	reqNonce := vmctx.reqctx.req.(isc.OffLedgerRequest).Nonce()
 	var nonceErr error
+
+	if evmAgentID, ok := senderAccount.(*isc.EthereumAddressAgentID); ok {
+		vmctx.callCore(evm.Contract, func(s kv.KVStore) {
+			nonceErr = evmimpl.CheckNonce(s, evmAgentID.EthAddress(), reqNonce)
+		})
+		return nonceErr
+	}
+
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		nonceErr = accounts.CheckNonce(s, senderAccount, vmctx.reqctx.req.(isc.OffLedgerRequest).Nonce())
+		nonceErr = accounts.CheckNonce(
+			s,
+			senderAccount,
+			reqNonce,
+		)
 	})
 	return nonceErr
 }
