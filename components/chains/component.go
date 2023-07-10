@@ -115,6 +115,7 @@ func provide(c *dig.Container) error {
 				ParamsSnapshotManager.Period,
 				ParamsSnapshotManager.LocalPath,
 				ParamsSnapshotManager.NetworkPaths,
+				ParamsSnapshotManager.UpdatePeriod,
 				deps.ChainRecordRegistryProvider,
 				deps.DKShareRegistryProvider,
 				deps.NodeIdentityProvider,

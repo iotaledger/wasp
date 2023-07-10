@@ -70,6 +70,7 @@ type Chains struct {
 	snapshotPeriod                      uint32
 	snapshotFolderPath                  string
 	snapshotNetworkPaths                []string
+	snapshotUpdatePeriod                time.Duration
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -122,6 +123,7 @@ func New(
 	snapshotPeriod uint32,
 	snapshotFolderPath string,
 	snapshotNetworkPaths []string,
+	snapshotUpdatePeriod time.Duration,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -170,6 +172,7 @@ func New(
 		snapshotPeriod:                      snapshotPeriod,
 		snapshotFolderPath:                  snapshotFolderPath,
 		snapshotNetworkPaths:                snapshotNetworkPaths,
+		snapshotUpdatePeriod:                snapshotUpdatePeriod,
 		chainRecordRegistryProvider:         chainRecordRegistryProvider,
 		dkShareRegistryProvider:             dkShareRegistryProvider,
 		nodeIdentityProvider:                nodeIdentityProvider,
@@ -316,6 +319,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
 	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
+	stateManagerParameters.SnapshotManagerUpdatePeriod = c.snapshotUpdatePeriod
 
 	// Initialize Snapshotter
 	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State))
