@@ -213,7 +213,7 @@ func (vmctx *vmContext) MustSaveEvent(hContract isc.Hname, topic string, payload
 	vmctx.reqctx.requestEventIndex++
 }
 
-// updateOffLedgerRequestNonce updates stored nonce for off ledger requests
+// updateOffLedgerRequestNonce updates stored nonce for ISC off ledger requests
 func (vmctx *vmContext) updateOffLedgerRequestNonce() {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		accounts.IncrementNonce(s, vmctx.reqctx.req.SenderAccount())

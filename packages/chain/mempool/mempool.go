@@ -63,6 +63,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -452,46 +453,39 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 	}
 }
 
+func (mpi *mempoolImpl) nonce(account isc.AgentID) uint64 {
+	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
+	evmState := evmimpl.NewStateAccess(mpi.chainHeadState)
+
+	if evmSender, ok := account.(*isc.EthereumAddressAgentID); ok {
+		return evmState.Nonce(evmSender.EthAddress())
+	}
+	return accountsState.Nonce(account)
+}
+
 func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) error {
 	mpi.log.Debugf("trying to add to mempool, requestID: %s", req.ID().String())
 	if mpi.offLedgerPool.Has(isc.RequestRefFromRequest(req)) {
 		return fmt.Errorf("already in mempool")
 	}
-	if mpi.chainHeadState != nil {
-		requestID := req.ID()
-		// TODO check nonce instead
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
-		if err != nil {
-			panic(fmt.Errorf(
-				"cannot check if request.ID=%v is processed in the blocklog at state=%v: %w",
-				requestID,
-				mpi.chainHeadState,
-				err,
-			))
-		}
-		if processed {
-			return fmt.Errorf("already processed")
-		}
-		accountsState := accounts.NewStateAccess(mpi.chainHeadState)
+	if mpi.chainHeadState == nil {
+		return fmt.Errorf("chainHeadState is nil")
+	}
 
-		if req.SenderAccount().Kind() == isc.AgentIDKindEthereumAddress { //nolint:revive // intentionally left empty
-			// TODO check ethereum nonce
-		} else {
-			accountNonce := accountsState.Nonce(req.SenderAccount())
-			if req.Nonce() < accountNonce {
-				return fmt.Errorf("bad nonce, expected: %d", accountNonce)
-			}
-		}
+	accountNonce := mpi.nonce(req.SenderAccount())
+	if req.Nonce() < accountNonce {
+		return fmt.Errorf("bad nonce, expected: %d", accountNonce)
+	}
 
-		governanceState := governance.NewStateAccess(mpi.chainHeadState)
-		// check user has on-chain balance
-		if !accountsState.AccountExists(req.SenderAccount()) {
-			// make an exception for gov calls (sender is chan owner and target is gov contract)
-			chainOwner := governanceState.ChainOwnerID()
-			isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
-			if !isGovRequest {
-				return fmt.Errorf("no funds on chain")
-			}
+	governanceState := governance.NewStateAccess(mpi.chainHeadState)
+	// check user has on-chain balance
+	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
+	if !accountsState.AccountExists(req.SenderAccount()) {
+		// make an exception for gov calls (sender is chan owner and target is gov contract)
+		chainOwner := governanceState.ChainOwnerID()
+		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
+		if !isGovRequest {
+			return fmt.Errorf("no funds on chain")
 		}
 	}
 	return nil
@@ -556,7 +550,6 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 
 	expectedAccountNonces := map[string]uint64{} // string is isc.AgentID.String()
 	requestsNonces := map[string][]reqRefNonce{} // string is isc.AgentID.String()
-	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
 
 	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
 		ref := isc.RequestRefFromRequest(request)
@@ -567,7 +560,7 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 		_, ok := expectedAccountNonces[senderKey]
 		if !ok {
 			// get the current state nonce so we can detect gaps with it
-			expectedAccountNonces[senderKey] = accountsState.Nonce(request.SenderAccount())
+			expectedAccountNonces[senderKey] = mpi.nonce(request.SenderAccount())
 		}
 		requestsNonces[senderKey] = append(requestsNonces[senderKey], reqRefNonce{ref: ref, nonce: request.Nonce()})
 

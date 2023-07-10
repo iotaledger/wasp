@@ -97,8 +97,12 @@ func (s *StateDB) GetBalance(addr common.Address) *big.Int {
 	return s.l2Balance.Get(addr)
 }
 
+func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
+	return codec.MustDecodeUint64(s.Get(accountNonceKey(addr)), 0)
+}
+
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
-	return codec.MustDecodeUint64(s.kv.Get(accountNonceKey(addr)), 0)
+	return GetNonce(s.kv, addr)
 }
 
 func (s *StateDB) SetNonce(addr common.Address, n uint64) {

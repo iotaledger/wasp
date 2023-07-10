@@ -676,6 +676,11 @@ func (ch *Chain) LatestBlock() state.Block {
 }
 
 func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
+	if evmAgentID, ok := agentID.(*isc.EthereumAddressAgentID); ok {
+		nonce, err := ch.EVM().TransactionCount(evmAgentID.EthAddress(), nil)
+		require.NoError(ch.Env.T, err)
+		return nonce
+	}
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
 	return codec.MustDecodeUint64(res.Get(accounts.ParamAccountNonce))

@@ -13,6 +13,10 @@ func evmStateSubrealm(state kv.KVStore) kv.KVStore {
 	return subrealm.New(state, evm.KeyEVMState)
 }
 
+func evmStateSubrealmR(state kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(state, evm.KeyEVMState)
+}
+
 func iscMagicSubrealm(state kv.KVStore) kv.KVStore {
 	return subrealm.New(state, evm.KeyISCMagic)
 }
