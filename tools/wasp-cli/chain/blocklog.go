@@ -50,18 +50,17 @@ func initBlockCmd() *cobra.Command {
 func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoResponse {
 	client := cliclients.WaspClient(node)
 
-	blockIndexStr := args[0]
 	if len(args) == 0 {
 		blockInfo, _, err := client.
 			CorecontractsApi.
 			BlocklogGetLatestBlockInfo(context.Background(), config.GetChain(chain).String()).
-			Block(blockIndexStr).
 			Execute() //nolint:bodyclose // false positive
 
 		log.Check(err)
 		return blockInfo
 	}
 
+	blockIndexStr := args[0]
 	index, err := strconv.ParseUint(blockIndexStr, 10, 32)
 	log.Check(err)
 
