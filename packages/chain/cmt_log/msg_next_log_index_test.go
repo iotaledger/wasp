@@ -18,6 +18,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 			gpa.BasicMessage{},
 			LogIndex(rand.Int31()),
 			isc.RandomAliasOutputWithID(),
+			MsgNextLogIndexCauseRecover,
 			false,
 		}
 
@@ -27,6 +28,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 		gpa.BasicMessage{},
 		LogIndex(rand.Int31()),
 		isc.RandomAliasOutputWithID(),
+		MsgNextLogIndexCauseRecover,
 		true,
 	}
 

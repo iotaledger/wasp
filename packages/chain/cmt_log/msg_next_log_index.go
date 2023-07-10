@@ -12,20 +12,30 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+type MsgNextLogIndexCause byte
+
+const (
+	MsgNextLogIndexCauseConsCompleted MsgNextLogIndexCause = iota
+	MsgNextLogIndexCauseL1ReplacedAO
+	MsgNextLogIndexCauseRecover
+)
+
 type MsgNextLogIndex struct {
 	gpa.BasicMessage
 	NextLogIndex LogIndex               // Proposal is to go to this LI without waiting for a consensus.
 	NextBaseAO   *isc.AliasOutputWithID // Using this AO as a base.
-	PleaseRepeat bool                   // If true, the receiver should resend its latest message back to the sender.
+	Cause        MsgNextLogIndexCause
+	PleaseRepeat bool // If true, the receiver should resend its latest message back to the sender.
 }
 
 var _ gpa.Message = new(MsgNextLogIndex)
 
-func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, pleaseRepeat bool) *MsgNextLogIndex {
+func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, cause MsgNextLogIndexCause, pleaseRepeat bool) *MsgNextLogIndex {
 	return &MsgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(recipient),
 		NextLogIndex: nextLogIndex,
 		NextBaseAO:   nextBaseAO,
+		Cause:        cause,
 		PleaseRepeat: pleaseRepeat,
 	}
 }
@@ -54,6 +64,7 @@ func (msg *MsgNextLogIndex) Read(r io.Reader) error {
 	msg.NextLogIndex = LogIndex(rr.ReadUint32())
 	msg.NextBaseAO = new(isc.AliasOutputWithID)
 	rr.Read(msg.NextBaseAO)
+	msg.Cause = MsgNextLogIndexCause(rr.ReadByte())
 	msg.PleaseRepeat = rr.ReadBool()
 	return rr.Err
 }
@@ -63,6 +74,7 @@ func (msg *MsgNextLogIndex) Write(w io.Writer) error {
 	msgTypeNextLogIndex.Write(ww)
 	ww.WriteUint32(msg.NextLogIndex.AsUint32())
 	ww.Write(msg.NextBaseAO)
+	ww.WriteByte(byte(msg.Cause))
 	ww.WriteBool(msg.PleaseRepeat)
 	return ww.Err
 }

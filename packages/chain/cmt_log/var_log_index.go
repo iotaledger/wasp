@@ -280,7 +280,7 @@ func (v *varLogIndexImpl) tryPropose(li LogIndex) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	for _, nodeID := range v.nodeIDs {
 		_, haveMsgFrom := v.maxPeerLIs[nodeID] // It might happen, that we rebooted and lost the state.
-		msg := NewMsgNextLogIndex(nodeID, v.proposedLI, derivedAO, !haveMsgFrom)
+		msg := NewMsgNextLogIndex(nodeID, v.proposedLI, derivedAO, MsgNextLogIndexCauseRecover, !haveMsgFrom)
 		v.lastMsgs[nodeID] = msg
 		msgs.Add(msg)
 	}

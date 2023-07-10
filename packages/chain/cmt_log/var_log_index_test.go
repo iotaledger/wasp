@@ -30,7 +30,7 @@ func TestVarLogIndex(t *testing.T) {
 	nextLI := initLI.Next()
 	vliLI, _ := vli.Value()
 	require.NotEqual(t, nextLI, vliLI)
-	nextLIMsg := NewMsgNextLogIndex(nodeIDs[0], nextLI, ao, false)
+	nextLIMsg := NewMsgNextLogIndex(nodeIDs[0], nextLI, ao, MsgNextLogIndexCauseRecover, false)
 	for i := 0; i < n-f; i++ {
 		nextLIMsg.SetSender(nodeIDs[i])
 		vli.MsgNextLogIndexReceived(nextLIMsg)
@@ -60,7 +60,7 @@ func TestVarLogIndexV2(t *testing.T) {
 	require.Equal(t, NilLogIndex(), vliValueLI())
 
 	msgWithSender := func(sender gpa.NodeID, li LogIndex) *MsgNextLogIndex {
-		msg := NewMsgNextLogIndex(nodeIDs[0], li, ao, false)
+		msg := NewMsgNextLogIndex(nodeIDs[0], li, ao, MsgNextLogIndexCauseRecover, false)
 		msg.SetSender(sender)
 		return msg
 	}
