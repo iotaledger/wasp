@@ -634,7 +634,7 @@ func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 	for range nodeIndexes {
 		select {
 		case <-initOk:
-		case <-time.After(20 * time.Second):
+		case <-time.After(60 * time.Second):
 			return errors.New("timeout restarting wasp nodes")
 		}
 	}
