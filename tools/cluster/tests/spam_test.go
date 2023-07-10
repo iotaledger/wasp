@@ -69,10 +69,15 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 							errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
 							break
 						}
-						// wait and retry the tx
-						retries++
-						time.Sleep(200 * time.Millisecond)
-						continue
+						if err.Error() == "no valid inputs found to create transaction" ||
+							err.Error() == "block was not included in the ledger. IsTransaction: true, LedgerInclusionState: conflicting, ConflictReason: 1" {
+							// wait and retry the tx
+							retries++
+							time.Sleep(200 * time.Millisecond)
+							continue
+						}
+						errCh <- err // fail if the error is something else
+						return
 					}
 					errCh <- err
 					txCh <- *tx
