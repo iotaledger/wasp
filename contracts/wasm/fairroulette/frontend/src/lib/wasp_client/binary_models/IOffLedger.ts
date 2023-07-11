@@ -19,7 +19,7 @@ export interface IOffLedger {
   nonce: bigint;
   balances: Balance[];
 
-  // Public Key and Signature will get set in the Sign function, so no inital set is required
+  // Public Key and Signature will get set in the Sign function, so no initial set is required
   publicKey?: Buffer;
   signature?: Buffer;
 }

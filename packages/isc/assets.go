@@ -321,7 +321,7 @@ func (a *Assets) fillEmptyNFTIDs(output iotago.Output, outputID iotago.OutputID)
 		return a
 	}
 
-	// see if there is an empty NFTID in the assets (this can happpen if the NTF is minted as a request to the chain)
+	// see if there is an empty NFTID in the assets (this can happen if the NTF is minted as a request to the chain)
 	for i, nftID := range a.NFTs {
 		if nftID.Empty() {
 			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOutput, outputID)

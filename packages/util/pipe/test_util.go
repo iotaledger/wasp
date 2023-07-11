@@ -6,11 +6,11 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-type IntConvertable interface {
+type IntConvertible interface {
 	AsInt() int
 }
 
-type Factory[E IntConvertable] interface {
+type Factory[E IntConvertible] interface {
 	Create(int) E
 }
 
@@ -20,8 +20,8 @@ type SimpleNothashable int
 
 var (
 	_ Hashable                   = SimpleHashable(0)
-	_ IntConvertable             = SimpleHashable(0)
-	_ IntConvertable             = SimpleNothashable(0)
+	_ IntConvertible             = SimpleHashable(0)
+	_ IntConvertible             = SimpleNothashable(0)
 	_ Factory[SimpleHashable]    = &SimpleHashableFactory{}
 	_ Factory[SimpleNothashable] = &SimpleNothashableFactory{}
 )
@@ -65,14 +65,14 @@ func alwaysTrueFun(index int) bool {
 	return true
 }
 
-func priorityFunMod2[E IntConvertable](e E) bool {
+func priorityFunMod2[E IntConvertible](e E) bool {
 	return priorityFunMod(e, 2)
 }
 
-func priorityFunMod3[E IntConvertable](e E) bool {
+func priorityFunMod3[E IntConvertible](e E) bool {
 	return priorityFunMod(e, 3)
 }
 
-func priorityFunMod[E IntConvertable](e E, mod int) bool {
+func priorityFunMod[E IntConvertible](e E, mod int) bool {
 	return e.AsInt()%mod == 0
 }

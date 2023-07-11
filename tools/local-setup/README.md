@@ -28,7 +28,7 @@ You can stop execution with `docker-compose down`.
 
 After `docker compose down`:
 ```
- docker volume rm wasp-db hornet-nest-db
+docker volume rm wasp-db hornet-nest-db
 ```
 
 You'll need to re-create the volumes to spin the setup up again.
@@ -76,4 +76,3 @@ ChainID: 1074
 ### Re-build (wasp-devs only)
 
 If you made changes to the Wasp code and want to use it inside the setup, you can re-build the Wasp image using `build_container.sh` or `build_container.cmd`.
-

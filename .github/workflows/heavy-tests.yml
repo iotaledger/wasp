@@ -33,7 +33,7 @@ jobs:
           args: --timeout 10m0s
           skip-pkg-cache: true
 
-      - name: Run  golangci-lint on wasp-cli
+      - name: Run golangci-lint on wasp-cli
         uses: golangci/golangci-lint-action@v3
         with:
           working-directory: tools/wasp-cli
