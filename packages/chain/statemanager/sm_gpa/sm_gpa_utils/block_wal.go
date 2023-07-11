@@ -24,7 +24,7 @@ type blockWAL struct {
 	metrics *metrics.ChainBlockWALMetrics
 }
 
-const constFileSuffix = ".blk"
+const constBlockWALFileSuffix = ".blk"
 
 func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
@@ -33,7 +33,7 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 	}
 
 	result := &blockWAL{
-		WrappedLogger: logger.NewWrappedLogger(log),
+		WrappedLogger: logger.NewWrappedLogger(log.Named("WAL")),
 		dir:           dir,
 		metrics:       metrics,
 	}
@@ -45,7 +45,7 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 func (bwT *blockWAL) Write(block state.Block) error {
 	blockIndex := block.StateIndex()
 	commitment := block.L1Commitment()
-	fileName := fileName(commitment.BlockHash())
+	fileName := blockWALFileName(commitment.BlockHash())
 	filePath := filepath.Join(bwT.dir, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
@@ -69,12 +69,12 @@ func (bwT *blockWAL) Write(block state.Block) error {
 }
 
 func (bwT *blockWAL) Contains(blockHash state.BlockHash) bool {
-	_, err := os.Stat(filepath.Join(bwT.dir, fileName(blockHash)))
+	_, err := os.Stat(filepath.Join(bwT.dir, blockWALFileName(blockHash)))
 	return err == nil
 }
 
 func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
-	fileName := fileName(blockHash)
+	fileName := blockWALFileName(blockHash)
 	filePath := filepath.Join(bwT.dir, fileName)
 	block, err := blockFromFilePath(filePath)
 	if err != nil {
@@ -97,7 +97,7 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		if !dirEntry.Type().IsRegular() {
 			continue
 		}
-		if !strings.HasSuffix(dirEntry.Name(), constFileSuffix) {
+		if !strings.HasSuffix(dirEntry.Name(), constBlockWALFileSuffix) {
 			continue
 		}
 		filePath := filepath.Join(bwT.dir, dirEntry.Name())
@@ -160,6 +160,6 @@ func blockFromFilePath(filePath string) (state.Block, error) {
 	return block, nil
 }
 
-func fileName(blockHash state.BlockHash) string {
-	return blockHash.String() + constFileSuffix
+func blockWALFileName(blockHash state.BlockHash) string {
+	return blockHash.String() + constBlockWALFileSuffix
 }
