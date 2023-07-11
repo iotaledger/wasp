@@ -62,7 +62,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 		return
 	}
 	blockIndexToCache := state.BlockIndex() - uint32(blockKeepAmount-1)
-	cacheUntil := blockIndexToCache
+	cacheUntil := uint32(0)
 	lastBlockIndexed := c.lastBlockIndexed()
 	if lastBlockIndexed != nil {
 		cacheUntil = *lastBlockIndexed

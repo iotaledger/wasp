@@ -11,6 +11,7 @@ import (
 
 type ConsensusStateProposal struct {
 	context      context.Context
+	stateIndex   uint32
 	l1Commitment *state.L1Commitment
 	resultCh     chan<- interface{}
 }
@@ -25,9 +26,14 @@ func NewConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutput
 	resultChannel := make(chan interface{}, 1)
 	return &ConsensusStateProposal{
 		context:      ctx,
+		stateIndex:   aliasOutput.GetStateIndex(),
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel
+}
+
+func (cspT *ConsensusStateProposal) GetStateIndex() uint32 {
+	return cspT.stateIndex
 }
 
 func (cspT *ConsensusStateProposal) GetL1Commitment() *state.L1Commitment {

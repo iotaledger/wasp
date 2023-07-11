@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -85,6 +86,9 @@ type stateManager struct {
 	messagePipe          pipe.Pipe[*peering.PeerMessageIn]
 	nodePubKeysPipe      pipe.Pipe[*reqChainNodesUpdated]
 	preliminaryBlockPipe pipe.Pipe[*reqPreliminaryBlock]
+	snapshotManager      sm_snapshots.SnapshotManager
+	snapshotRespChannel  <-chan error
+	snapshotRespInfo     sm_snapshots.SnapshotInfo
 	wal                  sm_gpa_utils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
@@ -111,6 +115,7 @@ func New(
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
 	wal sm_gpa_utils.BlockWAL,
+	snapshotManager sm_snapshots.SnapshotManager,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
 	metrics *metrics.ChainStateManagerMetrics,
@@ -118,14 +123,18 @@ func New(
 	log *logger.Logger,
 	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {
-	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), log)
-	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, store, metrics, log, parameters)
+	smLog := log.Named("SM")
+	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
+	snapshotExistsFun := func(stateIndex uint32, commitment *state.L1Commitment) bool {
+		return snapshotManager.SnapshotExists(stateIndex, commitment)
+	}
+	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, parameters)
 	if err != nil {
-		log.Errorf("failed to create state manager GPA: %w", err)
+		smLog.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err
 	}
 	result := &stateManager{
-		log:                  log,
+		log:                  smLog,
 		chainID:              chainID,
 		stateManagerGPA:      stateManagerGPA,
 		nodeRandomiser:       nr,
@@ -133,6 +142,7 @@ func New(
 		messagePipe:          pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		nodePubKeysPipe:      pipe.NewInfinitePipe[*reqChainNodesUpdated](),
 		preliminaryBlockPipe: pipe.NewInfinitePipe[*reqPreliminaryBlock](),
+		snapshotManager:      snapshotManager,
 		wal:                  wal,
 		net:                  net,
 		netPeeringID:         peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
@@ -274,6 +284,11 @@ func (smT *stateManager) run() { //nolint:gocyclo
 			} else {
 				preliminaryBlockPipeCh = nil
 			}
+		case result, ok := <-smT.snapshotRespChannel:
+			if ok {
+				smT.handleSnapshotDone(result)
+			}
+			smT.snapshotRespChannel = nil
 		case now, ok := <-timerTickCh:
 			if ok {
 				smT.handleTimerTick(now)
@@ -294,6 +309,7 @@ func (smT *stateManager) run() { //nolint:gocyclo
 func (smT *stateManager) handleInput(input gpa.Input) {
 	outMsgs := smT.stateManagerGPA.Input(input)
 	smT.sendMessages(outMsgs)
+	smT.handleOutput()
 }
 
 func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
@@ -305,6 +321,24 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 	msg.SetSender(gpa.NodeIDFromPublicKey(peerMsg.SenderPubKey))
 	outMsgs := smT.stateManagerGPA.Message(msg)
 	smT.sendMessages(outMsgs)
+	smT.handleOutput()
+}
+
+func (smT *stateManager) handleOutput() {
+	output := smT.stateManagerGPA.Output().(sm_gpa.StateManagerOutput)
+	if smT.snapshotRespChannel == nil {
+		snapshotInfo := output.TakeSnapshotToLoad()
+		if snapshotInfo != nil {
+			smT.snapshotRespChannel = smT.snapshotManager.LoadSnapshotAsync(snapshotInfo)
+			smT.snapshotRespInfo = snapshotInfo
+		}
+	}
+	for _, snapshotInfo := range output.TakeBlocksCommitted() {
+		smT.snapshotManager.BlockCommittedAsync(snapshotInfo)
+	}
+	if output.TakeUpdateSnapshots() {
+		smT.snapshotManager.UpdateAsync()
+	}
 }
 
 func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
@@ -354,6 +388,10 @@ func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 	}
 	smT.log.Warnf("Preliminary block %v already exist in the WAL.", msg.block.L1Commitment())
 	msg.Respond(nil)
+}
+
+func (smT *stateManager) handleSnapshotDone(result error) {
+	smT.handleInput(sm_inputs.NewSnapshotManagerSnapshotDone(smT.snapshotRespInfo.GetStateIndex(), smT.snapshotRespInfo.GetCommitment(), result))
 }
 
 func (smT *stateManager) handleTimerTick(now time.Time) {

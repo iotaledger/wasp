@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,14 +32,42 @@ type testEnv struct {
 	timeProvider sm_gpa_utils.TimeProvider
 	sms          map[gpa.NodeID]gpa.GPA
 	stores       map[gpa.NodeID]state.Store
+	snapms       map[gpa.NodeID]sm_snapshots.SnapshotManagerTest
+	snaprchs     map[gpa.NodeID]<-chan error
+	snaprsis     map[gpa.NodeID]sm_snapshots.SnapshotInfo
 	tc           *gpa.TestContext
 	log          *logger.Logger
 }
 
-func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() sm_gpa_utils.TestBlockWAL, parametersOpt ...StateManagerParameters) *testEnv {
+func newTestEnv(
+	t *testing.T,
+	nodeIDs []gpa.NodeID,
+	createWALFun func() sm_gpa_utils.TestBlockWAL,
+	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
+	parametersOpt ...StateManagerParameters,
+) *testEnv {
+	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
+		return createWALFun()
+	}
+	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+		return createSnapMFun(origStore, nodeStore, tp, log)
+	}
+	return newVariedTestEnv(t, nodeIDs, createWALVariedFun, createSnapMVariedFun, parametersOpt...)
+}
+
+func newVariedTestEnv(
+	t *testing.T,
+	nodeIDs []gpa.NodeID,
+	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
+	parametersOpt ...StateManagerParameters,
+) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
+	snapms := make(map[gpa.NodeID]sm_snapshots.SnapshotManagerTest)
+	snaprchs := make(map[gpa.NodeID]<-chan error)
+	snaprsis := make(map[gpa.NodeID]sm_snapshots.SnapshotInfo)
 	var parameters StateManagerParameters
 	var chainInitParameters dict.Dict
 	if len(parametersOpt) > 0 {
@@ -52,29 +81,59 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() sm_gpa_u
 
 	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	chainID := bf.GetChainID()
-	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
+	log := testlogger.NewLogger(t)
 	parameters.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
 	for _, nodeID := range nodeIDs {
 		var err error
 		smLog := log.Named(nodeID.ShortString())
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
-		wal := createWALFun()
+		wal := createWALFun(nodeID)
 		store := state.NewStore(mapdb.NewMapDB())
+		snapshotManager := createSnapMFun(nodeID, bf.GetStore(), store, parameters.TimeProvider, smLog)
+		snapshotExistsFun := snapshotManager.SnapshotExists
 		origin.InitChain(store, chainInitParameters, 0)
 		stores[nodeID] = store
-		sms[nodeID], err = New(chainID, nr, wal, store, mockStateManagerMetrics(), smLog, parameters)
+		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, mockStateManagerMetrics(), smLog, parameters)
 		require.NoError(t, err)
+		snapms[nodeID] = snapshotManager
+		snaprchs[nodeID] = nil
+		snaprsis[nodeID] = nil
 	}
-	return &testEnv{
+	result := &testEnv{
 		t:            t,
 		bf:           bf,
 		nodeIDs:      nodeIDs,
 		timeProvider: parameters.TimeProvider,
 		sms:          sms,
+		snapms:       snapms,
+		snaprchs:     snaprchs,
+		snaprsis:     snaprsis,
 		stores:       stores,
-		tc:           gpa.NewTestContext(sms),
 		log:          log,
 	}
+	result.tc = gpa.NewTestContext(sms).WithOutputHandler(func(nodeID gpa.NodeID, outputOrig gpa.Output) {
+		output, ok := outputOrig.(StateManagerOutput)
+		require.True(result.t, ok)
+		result.checkSnapshotsLoaded()
+		snapshotManager, ok := result.snapms[nodeID]
+		require.True(result.t, ok)
+		snapshotRespChannel, ok := result.snaprchs[nodeID]
+		require.True(result.t, ok)
+		if snapshotRespChannel == nil {
+			snapshotInfo := output.TakeSnapshotToLoad()
+			if snapshotInfo != nil {
+				result.snaprchs[nodeID] = snapshotManager.LoadSnapshotAsync(snapshotInfo)
+				result.snaprsis[nodeID] = snapshotInfo
+			}
+		}
+		for _, snapshotInfo := range output.TakeBlocksCommitted() {
+			snapshotManager.BlockCommittedAsync(snapshotInfo)
+		}
+		if output.TakeUpdateSnapshots() {
+			snapshotManager.UpdateAsync()
+		}
+	})
+	return result
 }
 
 func (teT *testEnv) finalize() {
@@ -91,6 +150,24 @@ func (teT *testEnv) doesNotContainBlock(nodeID gpa.NodeID, block state.Block) {
 	store, ok := teT.stores[nodeID]
 	require.True(teT.t, ok)
 	require.False(teT.t, store.HasTrieRoot(block.TrieRoot()))
+}
+
+func (teT *testEnv) checkSnapshotsLoaded() {
+	inputs := make(map[gpa.NodeID]gpa.Input)
+	for nodeID, ch := range teT.snaprchs {
+		select {
+		case result, ok := <-ch:
+			if ok {
+				snapshotInfo, ok := teT.snaprsis[nodeID]
+				require.True(teT.t, ok)
+				input := sm_inputs.NewSnapshotManagerSnapshotDone(snapshotInfo.GetStateIndex(), snapshotInfo.GetCommitment(), result)
+				inputs[nodeID] = input
+			}
+			teT.snaprchs[nodeID] = nil
+		default:
+		}
+	}
+	teT.tc.WithInputs(inputs).RunAll()
 }
 
 func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, timeStep time.Duration, blocks ...state.Block) {
@@ -178,16 +255,11 @@ func (teT *testEnv) sendConsensusDecidedState(commitment *state.L1Commitment, no
 }
 
 func (teT *testEnv) ensureCompletedConsensusDecidedState(respChan <-chan state.State, expectedCommitment *state.L1Commitment, maxTimeIterations int, timeStep time.Duration) bool {
-	expectedState := teT.bf.GetState(expectedCommitment)
 	return teT.ensureTrue("response from ConsensusDecidedState", func() bool {
 		select {
 		case s := <-respChan:
-			// Should be require.True(teT.t, expected.Equals(s))
-			expectedTrieRoot := expectedState.TrieRoot()
-			receivedTrieRoot := s.TrieRoot()
-			require.Equal(teT.t, expectedState.BlockIndex(), s.BlockIndex())
-			teT.t.Logf("Checking trie roots: expected %s, obtained %s", expectedTrieRoot, receivedTrieRoot)
-			require.True(teT.t, expectedTrieRoot.Equals(receivedTrieRoot))
+			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), s)
+			require.True(teT.t, expectedCommitment.TrieRoot().Equals(s.TrieRoot()))
 			return true
 		default:
 			return false
@@ -216,14 +288,13 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *sm_input
 			lastNewBlockTrieRoot := expectedNewBlocks[len(expectedNewBlocks)-1].TrieRoot()
 			teT.t.Logf("Checking trie roots: expected %s, obtained %s", lastNewBlockTrieRoot, newStateTrieRoot)
 			require.True(teT.t, newStateTrieRoot.Equals(lastNewBlockTrieRoot))
+			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), cfsdr.GetNewState())
 			requireEqualsFun := func(expected, received []state.Block) {
 				teT.t.Logf("\tExpected %v elements, obtained %v elements", len(expected), len(received))
 				require.Equal(teT.t, len(expected), len(received))
 				for i := range expected {
-					expectedCommitment := expected[i].L1Commitment()
-					receivedCommitment := received[i].L1Commitment()
-					teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expectedCommitment, receivedCommitment)
-					require.True(teT.t, expectedCommitment.Equals(receivedCommitment))
+					teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expected[i].L1Commitment(), received[i].L1Commitment())
+					sm_gpa_utils.CheckBlocksEqual(teT.t, expected[i], received[i])
 				}
 			}
 			teT.t.Log("Checking added blocks...")

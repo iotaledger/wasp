@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -262,7 +263,9 @@ func New(
 	processorConfig *processors.Config,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
+	recoverFromWAL bool,
 	blockWAL sm_gpa_utils.BlockWAL,
+	snapshotManager sm_snapshots.SnapshotManager,
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
@@ -339,7 +342,9 @@ func New(
 	cni.chainMetrics.Pipe.TrackPipeLen("node-serversUpdatedPipe", cni.serversUpdatedPipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-netRecvPipe", cni.netRecvPipe.Len)
 
-	cni.tryRecoverStoreFromWAL(chainStore, blockWAL)
+	if recoverFromWAL {
+		cni.recoverStoreFromWAL(chainStore, blockWAL)
+	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
@@ -398,11 +403,12 @@ func New(
 		peerPubKeys,
 		net,
 		blockWAL,
+		snapshotManager,
 		chainStore,
 		shutdownCoordinator.Nested("StateMgr"),
 		chainMetrics.StateManager,
 		chainMetrics.Pipe,
-		cni.log.Named("SM"),
+		cni.log,
 		smParameters,
 	)
 	if err != nil {
@@ -1222,20 +1228,7 @@ func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
 	return &consensusWorkflowStatusImpl{}
 }
 
-func (cni *chainNodeImpl) tryRecoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL sm_gpa_utils.BlockWAL) {
-	defer func() {
-		if r := recover(); r != nil {
-			// Don't fail, if this crashes for some reason, that's an optional step.
-			cni.log.Warnf("TryRecoverStoreFromWAL: Failed to populate chain store from WAL: %v", r)
-		}
-	}()
-	//
-	// Check, if store is empty.
-	if _, err := chainStore.BlockByIndex(0); err == nil {
-		cni.log.Infof("TryRecoverStoreFromWAL: Skipping, because the state is not empty.")
-		return // Store is not empty, so we skip this.
-	}
-	cni.log.Infof("TryRecoverStoreFromWAL: Chain store is empty, will try to load blocks from the WAL.")
+func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL sm_gpa_utils.BlockWAL) {
 	//
 	// Load all the existing blocks from the WAL.
 	blocksAdded := 0

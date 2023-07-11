@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
@@ -55,6 +56,7 @@ type Chains struct {
 	trustedNetworkListenerCancel context.CancelFunc
 	chainStateStoreProvider      database.ChainStateKVStoreProvider
 
+	walLoadToStore                      bool
 	walEnabled                          bool
 	walFolderPath                       string
 	smBlockCacheMaxSize                 int
@@ -65,6 +67,10 @@ type Chains struct {
 	smStateManagerTimerTickPeriod       time.Duration
 	smPruningMinStatesToKeep            int
 	smPruningMaxStatesToDelete          int
+	snapshotPeriod                      uint32
+	snapshotFolderPath                  string
+	snapshotNetworkPaths                []string
+	snapshotUpdatePeriod                time.Duration
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -103,6 +109,7 @@ func New(
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
+	walLoadToStore bool,
 	walEnabled bool,
 	walFolderPath string,
 	smBlockCacheMaxSize int,
@@ -113,6 +120,10 @@ func New(
 	smStateManagerTimerTickPeriod time.Duration,
 	smPruningMinStatesToKeep int,
 	smPruningMaxStatesToDelete int,
+	snapshotPeriod uint32,
+	snapshotFolderPath string,
+	snapshotNetworkPaths []string,
+	snapshotUpdatePeriod time.Duration,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -147,6 +158,7 @@ func New(
 		networkProvider:                     networkProvider,
 		trustedNetworkManager:               trustedNetworkManager,
 		chainStateStoreProvider:             chainStateStoreProvider,
+		walLoadToStore:                      walLoadToStore,
 		walEnabled:                          walEnabled,
 		walFolderPath:                       walFolderPath,
 		smBlockCacheMaxSize:                 smBlockCacheMaxSize,
@@ -157,6 +169,10 @@ func New(
 		smStateManagerTimerTickPeriod:       smStateManagerTimerTickPeriod,
 		smPruningMinStatesToKeep:            smPruningMinStatesToKeep,
 		smPruningMaxStatesToDelete:          smPruningMaxStatesToDelete,
+		snapshotPeriod:                      snapshotPeriod,
+		snapshotFolderPath:                  snapshotFolderPath,
+		snapshotNetworkPaths:                snapshotNetworkPaths,
+		snapshotUpdatePeriod:                snapshotUpdatePeriod,
 		chainRecordRegistryProvider:         chainRecordRegistryProvider,
 		dkShareRegistryProvider:             dkShareRegistryProvider,
 		nodeIdentityProvider:                nodeIdentityProvider,
@@ -249,7 +265,7 @@ func (c *Chains) activateAllFromRegistry() error {
 }
 
 // activateWithoutLocking activates a chain in the node.
-func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
+func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:funlen
 	if c.ctx == nil {
 		return errors.New("run chains first")
 	}
@@ -286,7 +302,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainLog := c.log.Named(chainID.ShortString())
 	var chainWAL sm_gpa_utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog.Named("WAL"), c.walFolderPath, chainID, chainMetrics.BlockWAL)
+		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
@@ -303,28 +319,48 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
 	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
+	stateManagerParameters.SnapshotManagerUpdatePeriod = c.snapshotUpdatePeriod
 
+	// Initialize Snapshotter
+	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State))
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {
 		validatorAgentID = isc.NewAgentID(c.validatorFeeAddr)
 	}
+	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
+	chainSnapshotManager, err := sm_snapshots.NewSnapshotManager(
+		chainCtx,
+		chainShutdownCoordinator.Nested("SnapMgr"),
+		chainID,
+		c.snapshotPeriod,
+		c.snapshotFolderPath,
+		c.snapshotNetworkPaths,
+		chainStore,
+		chainLog,
+	)
+	if err != nil {
+		panic(fmt.Errorf("cannot create Snapshotter: %w", err))
+	}
+
 	newChain, err := chain.New(
 		chainCtx,
 		chainLog,
 		chainID,
-		indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State)),
+		chainStore,
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
 		c.dkShareRegistryProvider,
 		c.consensusStateRegistry,
+		c.walLoadToStore,
 		chainWAL,
+		chainSnapshotManager,
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
 		chainMetrics,
-		c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String())),
+		chainShutdownCoordinator,
 		func() { c.chainMetricsProvider.RegisterChain(chainID) },
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 		c.deriveAliasOutputByQuorum,

@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -71,6 +72,13 @@ type Store interface {
 
 	// Prune deletes the trie with the given root from the DB
 	Prune(trie.Hash) (trie.PruneStats, error)
+
+	// TakeSnapshot takes a snapshot of the block and trie at the given trie root.
+	TakeSnapshot(trie.Hash, kvstore.KVStore) error
+
+	// RestoreSnapshot restores the block and trie from the given snapshot.
+	// It is not required for the previous trie root to be present in the DB.
+	RestoreSnapshot(trie.Hash, kvstore.KVStore) error
 }
 
 // A Block contains the mutations between the previous and current states,

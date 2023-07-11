@@ -189,7 +189,7 @@ func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {
 }
 
 func (bwtsmT *blockWALTestSM) pathFromHash(blockHash state.BlockHash) string {
-	return filepath.Join(constTestFolder, bwtsmT.factory.GetChainID().String(), fileName(blockHash))
+	return filepath.Join(constTestFolder, bwtsmT.factory.GetChainID().String(), blockWALFileName(blockHash))
 }
 
 func (bwtsmT *blockWALTestSM) invariantAllWrittenBlocksExist(t *rapid.T) {
