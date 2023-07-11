@@ -19,7 +19,7 @@ func (c *Controller) getAccounts(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	accounts, err := corecontracts.GetAccounts(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
+	accounts, err := corecontracts.GetAccounts(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -41,7 +41,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	assets, err := corecontracts.GetTotalAssets(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
+	assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -65,7 +65,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 		return err
 	}
 
-	assets, err := corecontracts.GetAccountBalance(ch, agentID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -89,7 +89,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 		return err
 	}
 
-	nfts, err := corecontracts.GetAccountNFTs(ch, agentID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	nfts, err := corecontracts.GetAccountNFTs(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -115,7 +115,7 @@ func (c *Controller) getAccountFoundries(e echo.Context) error {
 		return err
 	}
 
-	foundries, err := corecontracts.GetAccountFoundries(ch, agentID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	foundries, err := corecontracts.GetAccountFoundries(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -136,7 +136,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 		return err
 	}
 
-	nonce, err := corecontracts.GetAccountNonce(ch, agentID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	nonce, err := corecontracts.GetAccountNonce(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -159,7 +159,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 		return err
 	}
 
-	nftData, err := corecontracts.GetNFTData(ch, *nftID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	nftData, err := corecontracts.GetNFTData(ch, *nftID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -175,7 +175,7 @@ func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	registries, err := corecontracts.GetNativeTokenIDRegistry(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
+	registries, err := corecontracts.GetNativeTokenIDRegistry(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -202,7 +202,7 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 		return err
 	}
 
-	foundryOutput, err := corecontracts.GetFoundryOutput(ch, uint32(serialNumber), e.Param(params.ParamBlockIndexOrTrieRoot))
+	foundryOutput, err := corecontracts.GetFoundryOutput(ch, uint32(serialNumber), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}

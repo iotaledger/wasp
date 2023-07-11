@@ -17,7 +17,7 @@ func (c *Controller) getContracts(e echo.Context) error {
 		return err
 	}
 
-	contracts, err := c.chainService.GetContracts(chainID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	contracts, err := c.chainService.GetContracts(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return err
 	}
