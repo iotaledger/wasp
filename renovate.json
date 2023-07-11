@@ -17,7 +17,7 @@
     "."
   ],
   "allowedPostUpgradeCommands": [
-    "^\\./scripts/go_mod_tidy.sh$"
+    "^\\./scripts/go_mod_tidy\\.sh$"
   ],
   "postUpgradeTasks": {
     "commands": [
