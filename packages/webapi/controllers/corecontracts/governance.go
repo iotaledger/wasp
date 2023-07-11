@@ -36,7 +36,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	chainInfo, err := corecontracts.GetChainInfo(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
+	chainInfo, err := corecontracts.GetChainInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -52,7 +52,7 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	chainOwner, err := corecontracts.GetChainOwner(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
+	chainOwner, err := corecontracts.GetChainOwner(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
@@ -70,7 +70,7 @@ func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch, e.Param(params.ParamBlockIndexOrTrieRoot))
+	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}

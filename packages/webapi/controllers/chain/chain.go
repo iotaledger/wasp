@@ -50,7 +50,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, e.Param(params.ParamBlockIndexOrTrieRoot))
+	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if errors.Is(err, interfaces.ErrChainNotFound) {
 		return e.NoContent(http.StatusNotFound)
 	} else if err != nil {
@@ -59,7 +59,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 	evmChainID := uint16(0)
 	if chainInfo.IsActive {
-		evmChainID, err = c.chainService.GetEVMChainID(chainID, e.Param(params.ParamBlockIndexOrTrieRoot))
+		evmChainID, err = c.chainService.GetEVMChainID(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return err
 		}

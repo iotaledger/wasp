@@ -29,7 +29,7 @@ func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 		return err
 	}
 
-	messageFormat, err := corecontracts.ErrorMessageFormat(ch, contractHname, uint16(errorID), e.Param(params.ParamBlockIndexOrTrieRoot))
+	messageFormat, err := corecontracts.ErrorMessageFormat(ch, contractHname, uint16(errorID), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err, chainID)
 	}
