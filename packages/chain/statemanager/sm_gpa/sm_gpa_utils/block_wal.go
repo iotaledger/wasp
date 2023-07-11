@@ -50,7 +50,7 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
 		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("openning file %s for writing block index %v failed: %w", fileName, blockIndex, err)
+		return fmt.Errorf("opening file %s for writing block index %v failed: %w", fileName, blockIndex, err)
 	}
 	defer f.Close()
 	blockBytes := block.Bytes()

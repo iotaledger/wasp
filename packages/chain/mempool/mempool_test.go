@@ -95,14 +95,14 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
 		node.TangleTimeUpdated(tangleTime)
 	}
-	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChanels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
-		<-awaitTrackHeadChanels[i]
+		<-awaitTrackHeadChannels[i]
 	}
 
 	output := transaction.BasicOutputFromPostData(
@@ -241,12 +241,12 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 	nextAO := te.tcl.FakeStateTransition(ao, block.L1Commitment())
 
 	// sync mempools with new state
-	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
 	for i := range te.mempools {
-		awaitTrackHeadChanels[i] = te.mempools[i].TrackNewChainHead(chainState, ao, nextAO, []state.Block{block}, []state.Block{})
+		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, ao, nextAO, []state.Block{block}, []state.Block{})
 	}
 	for i := range te.mempools {
-		<-awaitTrackHeadChanels[i]
+		<-awaitTrackHeadChannels[i]
 	}
 	return nextAO
 }
@@ -468,14 +468,14 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
 		node.TangleTimeUpdated(tangleTime)
 	}
-	awaitTrackHeadChanels := make([]<-chan bool, len(te.mempools))
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChanels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
-		<-awaitTrackHeadChanels[i]
+		<-awaitTrackHeadChannels[i]
 	}
 
 	output := transaction.BasicOutputFromPostData(

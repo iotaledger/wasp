@@ -1,6 +1,6 @@
 This is the actual client to interact with the fairroulette smart contract.
 
-It uses the wasp_client library for the low level interaction. In the future, this won't be nessecary,
+It uses the wasp_client library for the low level interaction. In the future, this won't be necessary,
 as we will provide an external library at some point.   
 
 

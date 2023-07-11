@@ -1608,7 +1608,7 @@ func TestSolidityRevertMessage(t *testing.T) {
 	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
 }
 
-func TestCallContractCannotCauseStackOverlow(t *testing.T) {
+func TestCallContractCannotCauseStackOverflow(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 

@@ -22,7 +22,7 @@ type Permutation16 struct {
 // different calls (probable from different nodes).
 // In the latter case, the seed should be the same for all the calls which expect
 // the same permutation.
-// This function allways returns a permutation; error should be considered as a
+// This function always returns a permutation; error should be considered as a
 // warning that permutation was seeded incorrectly.
 func NewPermutation16(size uint16, seedOptional ...int64) (*Permutation16, error) {
 	var seed int64

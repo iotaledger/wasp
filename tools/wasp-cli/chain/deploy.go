@@ -70,7 +70,7 @@ func initDeployCmd() *cobra.Command {
 			chainName = defaultChainFallback(chainName)
 
 			if !util.IsSlug(chainName) {
-				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", chainName)
+				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
 			}
 
 			l1Client := cliclients.L1Client()

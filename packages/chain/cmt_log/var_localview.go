@@ -104,7 +104,7 @@ type varLocalViewEntry struct {
 
 type varLocalViewImpl struct {
 	// The latest confirmed AO, as received from L1.
-	// All the pending entries are built on top ot this one.
+	// All the pending entries are built on top of this one.
 	// It can be nil, if the latest AO is unclear (either not received yet, or some rejections happened).
 	confirmed *isc.AliasOutputWithID
 	// AOs produced by this committee, but not confirmed yet.

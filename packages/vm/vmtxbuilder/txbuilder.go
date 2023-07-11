@@ -44,7 +44,7 @@ type AnchorTransactionBuilder struct {
 	// already consumed outputs, specified by entire Request. It is needed for checking validity
 	consumed []isc.OnLedgerRequest
 
-	// view the acounts contract state
+	// view the accounts contract state
 	accountsView AccountsContractRead
 
 	// balances of native tokens loaded during the batch run

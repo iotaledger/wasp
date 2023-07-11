@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-// buils a normal tx to post a request to inccounter, optionally adds SDRC
+// builds a normal tx to post a request to inccounter, optionally adds SDRC
 func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptolib.KeyPair, addSDRC bool) *iotago.Transaction {
 	outputs, err := env.Clu.L1Client().OutputMap(addr)
 	require.NoError(t, err)
