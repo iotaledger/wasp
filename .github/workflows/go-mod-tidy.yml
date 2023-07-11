@@ -29,5 +29,5 @@ jobs:
         with:
           author_name: GitHub Actions
           committer_email: actions@github.com
-          message: 'updated go mod files'
+          message: 'go mod tidy'
           add: '.'
