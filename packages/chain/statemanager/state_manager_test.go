@@ -62,12 +62,12 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	bf := sm_gpa_utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
-	snapMs := make([]sm_snapshots.SnapshotManagerTest, nodeCount)
+	snapMs := make([]sm_snapshots.SnapshotManager, nodeCount)
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
 	parameters.SnapshotManagerUpdatePeriod = snapshotUpdatePeriod
-	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManager {
 		var createPeriod uint32
 		if createSnapshots {
 			createPeriod = snapshotCreatePeriod
@@ -102,9 +102,9 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 		require.NoError(t, err)
 	}
 	for i := 0; i < snapshotCreateNodeCount; i++ {
-		snapMs[i].SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
+		snapMs[i].(*sm_snapshots.MockedSnapshotManager).SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
 			for j := snapshotCreateNodeCount; j < len(snapMs); j++ {
-				snapMs[j].SnapshotReady(snapshotInfo)
+				snapMs[j].(*sm_snapshots.MockedSnapshotManager).SnapshotReady(snapshotInfo)
 			}
 		})
 	}
