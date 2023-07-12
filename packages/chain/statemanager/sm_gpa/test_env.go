@@ -32,7 +32,7 @@ type testEnv struct {
 	timeProvider sm_gpa_utils.TimeProvider
 	sms          map[gpa.NodeID]gpa.GPA
 	stores       map[gpa.NodeID]state.Store
-	snapms       map[gpa.NodeID]sm_snapshots.SnapshotManagerTest
+	snapms       map[gpa.NodeID]sm_snapshots.SnapshotManager
 	snaprchs     map[gpa.NodeID]<-chan error
 	snaprsis     map[gpa.NodeID]sm_snapshots.SnapshotInfo
 	tc           *gpa.TestContext
@@ -43,13 +43,13 @@ func newTestEnv(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
+	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
 	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
 		return createWALFun()
 	}
-	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		return createSnapMFun(origStore, nodeStore, tp, log)
 	}
 	return newVariedTestEnv(t, nodeIDs, createWALVariedFun, createSnapMVariedFun, parametersOpt...)
@@ -59,13 +59,13 @@ func newVariedTestEnv(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
-	snapms := make(map[gpa.NodeID]sm_snapshots.SnapshotManagerTest)
+	snapms := make(map[gpa.NodeID]sm_snapshots.SnapshotManager)
 	snaprchs := make(map[gpa.NodeID]<-chan error)
 	snaprsis := make(map[gpa.NodeID]sm_snapshots.SnapshotInfo)
 	var parameters StateManagerParameters

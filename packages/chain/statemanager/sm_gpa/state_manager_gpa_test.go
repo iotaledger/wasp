@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-var newEmptySnapshotManagerFun = func(_, _ state.Store, _ sm_gpa_utils.TimeProvider, _ *logger.Logger) sm_snapshots.SnapshotManagerTest {
+var newEmptySnapshotManagerFun = func(_, _ state.Store, _ sm_gpa_utils.TimeProvider, _ *logger.Logger) sm_snapshots.SnapshotManager {
 	return sm_snapshots.NewEmptySnapshotManager()
 }
 
@@ -307,7 +307,7 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	snapshottedIndex := 7
 
 	nodeIDs := gpa.MakeTestNodeIDs(2)
-	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, timeProvider sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, timeProvider sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		return sm_snapshots.NewMockedSnapshotManager(t, 0, origStore, nodeStore, 0*time.Second, 0*time.Second, timeProvider, log)
 	}
 	smParameters := NewStateManagerParameters()
@@ -319,9 +319,10 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, oldBlocks[branchIndex].L1Commitment(), 2)
 	oldSnapshottedBlock := oldBlocks[snapshottedIndex]
 	newSnapshottedBlock := newBlocks[snapshottedIndex-branchIndex-1]
-	env.snapms[nodeIDs[1]].SnapshotReady(sm_snapshots.NewSnapshotInfo(oldSnapshottedBlock.StateIndex(), oldSnapshottedBlock.L1Commitment()))
-	env.snapms[nodeIDs[1]].SnapshotReady(sm_snapshots.NewSnapshotInfo(newSnapshottedBlock.StateIndex(), newSnapshottedBlock.L1Commitment()))
-	env.snapms[nodeIDs[1]].UpdateAsync()
+	snapm1 := env.snapms[nodeIDs[1]].(*sm_snapshots.MockedSnapshotManager)
+	snapm1.SnapshotReady(sm_snapshots.NewSnapshotInfo(oldSnapshottedBlock.StateIndex(), oldSnapshottedBlock.L1Commitment()))
+	snapm1.SnapshotReady(sm_snapshots.NewSnapshotInfo(newSnapshottedBlock.StateIndex(), newSnapshottedBlock.L1Commitment()))
+	snapm1.UpdateAsync()
 
 	env.sendBlocksToNode(nodeIDs[0], 0*time.Second, oldBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeIDs[0], oldBlocks))
@@ -332,10 +333,10 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	oldCommitment := oldBlocks[len(oldBlocks)-1].L1Commitment()
 	newCommitment := newBlocks[len(newBlocks)-1].L1Commitment()
 	responseCh := env.sendChainFetchStateDiff(oldCommitment, newCommitment, nodeIDs[1])
-	time.Sleep(10 * time.Millisecond)                // To allow snapshot manager to receive load old state snapshot request
-	env.sendTimerTickToNodes(100 * time.Millisecond) // To check the response from snapshot manager about loaded old state snapshot; timer tick is not necessary: any input would be suitable
-	time.Sleep(10 * time.Millisecond)                // To allow snapshot manager to receive load new state snapshot request
-	env.sendTimerTickToNodes(100 * time.Millisecond) // To check the response from snapshot manager about loaded new state snapshot; timer tick is not necessary: any input would be suitable
+	require.True(env.t, snapm1.WaitSnapshotLoadRequestCount(1, 10*time.Millisecond, 100)) // To allow snapshot manager to receive load old state snapshot request
+	env.sendTimerTickToNodes(100 * time.Millisecond)                                      // To check the response from snapshot manager about loaded old state snapshot; timer tick is not necessary: any input would be suitable
+	require.True(env.t, snapm1.WaitSnapshotLoadRequestCount(2, 10*time.Millisecond, 100)) // To allow snapshot manager to receive load new state snapshot request
+	env.sendTimerTickToNodes(100 * time.Millisecond)                                      // To check the response from snapshot manager about loaded new state snapshot; timer tick is not necessary: any input would be suitable
 	require.True(env.t, env.ensureCompletedChainFetchStateDiff(responseCh, oldBlocks[branchIndex+1:], newBlocks, 10, 100*time.Millisecond))
 }
 
@@ -476,6 +477,7 @@ func TestSnapshots(t *testing.T) {
 	snapshotCreatePeriod := uint32(5)
 	snapshotCreateTime := 1 * time.Second
 	snapshotLoadTime := 2 * time.Second
+	snapshotCount := uint32(blockCount) / snapshotCreatePeriod
 	snapshotCreatedFun := func(index uint32) bool {
 		return (index+1)%snapshotCreatePeriod == 0
 	}
@@ -488,7 +490,7 @@ func TestSnapshots(t *testing.T) {
 	nodeIDFirst := nodeIDs[0]
 	nodeIDOther := nodeIDs[1]
 	newEmptyTestBlockWALFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL { return sm_gpa_utils.NewEmptyTestBlockWAL() }
-	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManagerTest {
+	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		if nodeID.Equals(nodeIDFirst) {
 			return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, origStore, nodeStore, snapshotCreateTime, snapshotLoadTime, tp, log)
 		}
@@ -497,9 +499,11 @@ func TestSnapshots(t *testing.T) {
 	smParameters := NewStateManagerParameters()
 	smParameters.SnapshotManagerUpdatePeriod = 2 * time.Second
 	env := newVariedTestEnv(t, nodeIDs, newEmptyTestBlockWALFun, newMockedSnapshotManagerFun, smParameters)
-	env.snapms[nodeIDFirst].SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
+	snapMFirst := env.snapms[nodeIDFirst].(*sm_snapshots.MockedSnapshotManager)
+	snapMOther := env.snapms[nodeIDOther].(*sm_snapshots.MockedSnapshotManager)
+	snapMFirst.SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
 		<-env.timeProvider.After(100 * time.Millisecond) // Other node knows about the snapshot a bit later
-		env.snapms[nodeIDOther].SnapshotReady(snapshotInfo)
+		snapMOther.SnapshotReady(snapshotInfo)
 	})
 	defer env.finalize()
 
@@ -520,7 +524,7 @@ func TestSnapshots(t *testing.T) {
 		require.True(env.t, ok)
 		for i := range expected {
 			env.t.Logf("Checking snapshot/block index %v at node %v", snapshotInfos[i].StateIndex(), nodeID)
-			require.Equal(env.t, expected[i].snapshotReady, snapM.IsSnapshotReady(snapshotInfos[i]))
+			require.Equal(env.t, expected[i].snapshotReady, snapM.(*sm_snapshots.MockedSnapshotManager).IsSnapshotReady(snapshotInfos[i]))
 			require.Equal(env.t, expected[i].snapshotExists, snapM.SnapshotExists(snapshotInfos[i].StateIndex(), snapshotInfos[i].Commitment()))
 			require.Equal(env.t, expected[i].blockCommitted, store.HasTrieRoot(snapshotInfos[i].TrieRoot()))
 		}
@@ -531,12 +535,14 @@ func TestSnapshots(t *testing.T) {
 		checkBlocksInNodeFun(expectedFirst, nodeIDFirst)
 		checkBlocksInNodeFun(expectedOther, nodeIDOther)
 	}
-	checkBlocksFun()                          // At start no blocks/snapshots are in any node
-	env.sendTimerTickToNodes(0 * time.Second) // Initial timer tick to send first snapshot manager Update request
-	time.Sleep(10 * time.Millisecond)         // Time for first snapshot manager Update request to propagate to snapshot manager (and do nothing)
+	checkBlocksFun()                                                                 // At start no blocks/snapshots are in any node
+	env.sendTimerTickToNodes(0 * time.Second)                                        // Initial timer tick to send first snapshot manager Update request
+	require.True(env.t, snapMFirst.WaitNodeUpdateCount(1, 10*time.Millisecond, 100)) // Time for first snapshot manager Update request to propagate to snapshot manager (and do nothing)
+	require.True(env.t, snapMOther.WaitNodeUpdateCount(1, 10*time.Millisecond, 100)) // Time for first snapshot manager Update request to propagate to snapshot manager (and do nothing)
 
 	// Blocks are sent to the first node: they are committed there, snapshots are being produced, but not yet available
 	env.sendBlocksToNode(nodeIDFirst, 0*time.Second, blocks...)
+	require.True(env.t, snapMFirst.WaitSnapshotCreateRequestCount(snapshotCount, 10*time.Millisecond, 100))
 	for i := range blocks {
 		expectedFirst[i].blockCommitted = true
 	}
@@ -546,7 +552,7 @@ func TestSnapshots(t *testing.T) {
 	for i := 0; i < 7; i++ {
 		env.sendTimerTickToNodes(timerTickPeriod) // Timer tick is not necessary; it's just a way to advance artificial timer
 	}
-	time.Sleep(10 * time.Millisecond) // To allow threads, that "create snapshots", to wake up
+	require.True(env.t, snapMFirst.WaitSnapshotCreatedCount(snapshotCount, 10*time.Millisecond, 100)) // To allow threads, that "create snapshots", to wake up
 	for i := range blocks {
 		if snapshotCreatedFun(uint32(i)) {
 			expectedFirst[i].snapshotReady = true
@@ -555,31 +561,34 @@ func TestSnapshots(t *testing.T) {
 	checkBlocksFun()
 
 	// Some more time passes, produced snapshots are visible in other node too; Update hasn't picked them up yet
-	env.sendTimerTickToNodes(timerTickPeriod) // Timer tick is not necessary; it's just a way to advance artificial timer
+	env.sendTimerTickToNodes(timerTickPeriod)                                                                 // Timer tick is not necessary; it's just a way to advance artificial timer
+	require.True(env.t, snapMFirst.WaitSnapshotCreateFinalisedCount(snapshotCount, 10*time.Millisecond, 100)) // To allow threads, that "create snapshots", to wake up
 	for i := range blocks {
 		expectedOther[i].snapshotReady = expectedFirst[i].snapshotReady
 	}
-	time.Sleep(10 * time.Millisecond) // To allow threads, that "create snapshots", to wake up
 	checkBlocksFun()
 
 	// More time passes, Update event is triggered in both nodes, snapshots are available for state managers of both nodes
 	for i := 0; i < 7; i++ {
 		env.sendTimerTickToNodes(timerTickPeriod) // Only the last timer tick is necessary as it sends Update request to snapshot manager
 	}
-	time.Sleep(10 * time.Millisecond) // Time for snapshot manager Update request to propagate to snapshot manager
+	require.True(env.t, snapMFirst.WaitNodeUpdateCount(2, 10*time.Millisecond, 100)) // Time for snapshot manager Update request to propagate to snapshot manager
+	require.True(env.t, snapMOther.WaitNodeUpdateCount(2, 10*time.Millisecond, 100)) // Time for snapshot manager Update request to propagate to snapshot manager
 	for i := range blocks {
 		expectedFirst[i].snapshotExists = expectedFirst[i].snapshotReady
 		expectedOther[i].snapshotExists = expectedOther[i].snapshotReady
 	}
 	checkBlocksFun()
 
+	loadRequestsCount := uint32(0)
 	sendAndEnsureCompletedConsensusStateProposalWithWaitFun := func(snapshotInfo sm_snapshots.SnapshotInfo) {
 		respCh := env.sendConsensusStateProposal(snapshotInfo.Commitment(), nodeIDOther)
-		time.Sleep(10 * time.Millisecond) // Time for load snapshot request to propagate to snapshot manager
+		loadRequestsCount++
+		require.True(env.t, snapMOther.WaitSnapshotLoadRequestCount(loadRequestsCount, 10*time.Millisecond, 100)) // Time for load snapshot request to propagate to snapshot manager
 		for i := 0; i < 14; i++ {
 			env.sendTimerTickToNodes(timerTickPeriod) // Timer tick is not necessary; it's just a way to advance artificial timer
 		}
-		time.Sleep(10 * time.Millisecond) // To allow snapshot manager thread to wake up and respond
+		require.True(env.t, snapMOther.WaitSnapshotLoadedCount(loadRequestsCount, 10*time.Millisecond, 100)) // To allow snapshot manager thread to wake up and respond
 		require.True(env.t, env.ensureCompletedConsensusStateProposal(respCh, 2, timerTickPeriod))
 	}
 
