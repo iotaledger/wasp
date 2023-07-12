@@ -8,6 +8,8 @@ jobs:
   build:
     name: run go mod tidy
     runs-on: ubuntu-latest
+    # don't run on PRs from forks (it will fail because secrets won't be available), run only on renovate bot PRs
+    if: github.actor == 'renovate[bot]'
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v4
