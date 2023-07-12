@@ -3,6 +3,7 @@ package sm_snapshots
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type mockedSnapshotManager struct {
+type MockedSnapshotManager struct {
 	*snapshotManagerRunner
 
 	t            *testing.T
@@ -33,12 +34,18 @@ type mockedSnapshotManager struct {
 	snapshotLoadTime        time.Duration
 	timeProvider            sm_gpa_utils.TimeProvider
 	afterSnapshotCreatedFun func(SnapshotInfo)
+
+	updateCount                  atomic.Uint32
+	snapshotCreateRequestCount   atomic.Uint32
+	snapshotCreatedCount         atomic.Uint32
+	snapshotCreateFinalisedCount atomic.Uint32
+	snapshotLoadRequestCount     atomic.Uint32
+	snapshotLoadedCount          atomic.Uint32
 }
 
 var (
-	_ snapshotManagerCore = &mockedSnapshotManager{}
-	_ SnapshotManager     = &mockedSnapshotManager{}
-	_ SnapshotManagerTest = &mockedSnapshotManager{}
+	_ snapshotManagerCore = &MockedSnapshotManager{}
+	_ SnapshotManager     = &MockedSnapshotManager{}
 )
 
 func NewMockedSnapshotManager(
@@ -50,8 +57,8 @@ func NewMockedSnapshotManager(
 	snapshotLoadTime time.Duration,
 	timeProvider sm_gpa_utils.TimeProvider,
 	log *logger.Logger,
-) SnapshotManagerTest {
-	result := &mockedSnapshotManager{
+) *MockedSnapshotManager {
+	result := &MockedSnapshotManager{
 		t:                       t,
 		createPeriod:            createPeriod,
 		availableSnapshots:      make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
@@ -73,7 +80,7 @@ func NewMockedSnapshotManager(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-func (msmT *mockedSnapshotManager) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
+func (msmT *MockedSnapshotManager) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
 	msmT.availableSnapshotsMutex.RLock()
 	defer msmT.availableSnapshotsMutex.RUnlock()
 
@@ -87,10 +94,10 @@ func (msmT *mockedSnapshotManager) SnapshotExists(stateIndex uint32, commitment 
 // NOTE: other implementations are inherited from snapshotManagerRunner
 
 // -------------------------------------
-// Implementations of SnapshotManagerTest interface
+// Additional API functions of MockedSnapshotManager
 // -------------------------------------
 
-func (msmT *mockedSnapshotManager) SnapshotReady(snapshotInfo SnapshotInfo) {
+func (msmT *MockedSnapshotManager) SnapshotReady(snapshotInfo SnapshotInfo) {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
@@ -104,7 +111,7 @@ func (msmT *mockedSnapshotManager) SnapshotReady(snapshotInfo SnapshotInfo) {
 	}
 }
 
-func (msmT *mockedSnapshotManager) IsSnapshotReady(snapshotInfo SnapshotInfo) bool {
+func (msmT *MockedSnapshotManager) IsSnapshotReady(snapshotInfo SnapshotInfo) bool {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
@@ -115,19 +122,43 @@ func (msmT *mockedSnapshotManager) IsSnapshotReady(snapshotInfo SnapshotInfo) bo
 	return commitments.ContainsBy(func(elem *state.L1Commitment) bool { return elem.Equals(snapshotInfo.Commitment()) })
 }
 
-func (msmT *mockedSnapshotManager) SetAfterSnapshotCreated(fun func(SnapshotInfo)) {
+func (msmT *MockedSnapshotManager) SetAfterSnapshotCreated(fun func(SnapshotInfo)) {
 	msmT.afterSnapshotCreatedFun = fun
+}
+
+func (msmT *MockedSnapshotManager) WaitNodeUpdateCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.updateCount.Load() == count }, sleepTime, maxSleepCount)
+}
+
+func (msmT *MockedSnapshotManager) WaitSnapshotCreateRequestCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.snapshotCreateRequestCount.Load() == count }, sleepTime, maxSleepCount)
+}
+
+func (msmT *MockedSnapshotManager) WaitSnapshotCreatedCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.snapshotCreatedCount.Load() == count }, sleepTime, maxSleepCount)
+}
+
+func (msmT *MockedSnapshotManager) WaitSnapshotCreateFinalisedCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.snapshotCreateFinalisedCount.Load() == count }, sleepTime, maxSleepCount)
+}
+
+func (msmT *MockedSnapshotManager) WaitSnapshotLoadRequestCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.snapshotLoadRequestCount.Load() == count }, sleepTime, maxSleepCount)
+}
+
+func (msmT *MockedSnapshotManager) WaitSnapshotLoadedCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
+	return wait(func() bool { return msmT.snapshotLoadedCount.Load() == count }, sleepTime, maxSleepCount)
 }
 
 // -------------------------------------
 // Implementations of snapshotManagerCore interface
 // -------------------------------------
 
-func (msmT *mockedSnapshotManager) createSnapshotsNeeded() bool {
+func (msmT *MockedSnapshotManager) createSnapshotsNeeded() bool {
 	return msmT.createPeriod > 0
 }
 
-func (msmT *mockedSnapshotManager) handleUpdate() {
+func (msmT *MockedSnapshotManager) handleUpdate() {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
@@ -143,22 +174,27 @@ func (msmT *mockedSnapshotManager) handleUpdate() {
 	msmT.availableSnapshotsMutex.Lock()
 	defer msmT.availableSnapshotsMutex.Unlock()
 	msmT.availableSnapshots = availableSnapshots
+	msmT.updateCount.Add(1)
 }
 
-func (msmT *mockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInfo) {
+func (msmT *MockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInfo) {
 	stateIndex := snapshotInfo.StateIndex()
 	if stateIndex%msmT.createPeriod == 0 {
+		msmT.snapshotCreateRequestCount.Add(1)
 		msmT.log.Debugf("Creating snapshot %s...", snapshotInfo)
 		go func() {
 			<-msmT.timeProvider.After(msmT.snapshotCommitTime)
+			msmT.snapshotCreatedCount.Add(1)
 			msmT.SnapshotReady(snapshotInfo)
 			msmT.afterSnapshotCreatedFun(snapshotInfo)
 			msmT.log.Debugf("Creating snapshot %s: completed", snapshotInfo)
+			msmT.snapshotCreateFinalisedCount.Add(1)
 		}()
 	}
 }
 
-func (msmT *mockedSnapshotManager) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
+func (msmT *MockedSnapshotManager) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
+	msmT.snapshotLoadRequestCount.Add(1)
 	msmT.log.Debugf("Loading snapshot %s...", snapshotInfo)
 	commitments, ok := msmT.availableSnapshots[snapshotInfo.StateIndex()]
 	require.True(msmT.t, ok)
@@ -173,4 +209,18 @@ func (msmT *mockedSnapshotManager) handleLoadSnapshot(snapshotInfo SnapshotInfo,
 	require.NoError(msmT.t, err)
 	callback <- nil
 	msmT.log.Debugf("Loading snapshot %s: snapshot loaded", snapshotInfo)
+	msmT.snapshotLoadedCount.Add(1)
+}
+
+func wait(predicateFun func() bool, sleepTime time.Duration, maxSleepCount int) bool {
+	if predicateFun() {
+		return true
+	}
+	for i := 0; i < maxSleepCount; i++ {
+		time.Sleep(sleepTime)
+		if predicateFun() {
+			return true
+		}
+	}
+	return false
 }
