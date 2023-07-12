@@ -17,63 +17,55 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/execution"
 )
 
-func (vmctx *vmContext) mustBeCalledFromContract(contract *coreutil.ContractInfo) {
-	if vmctx.CurrentContractHname() != contract.Hname() {
+func (reqctx *requestContext) mustBeCalledFromContract(contract *coreutil.ContractInfo) {
+	if reqctx.CurrentContractHname() != contract.Hname() {
 		panic(fmt.Sprintf("%v: core contract '%s' expected", vm.ErrPrivilegedCallFailed, contract.Name))
 	}
 }
 
-func (vmctx *vmContext) TryLoadContract(programHash hashing.HashValue) error {
-	vmctx.mustBeCalledFromContract(root.Contract)
-	vmtype, programBinary, err := execution.GetProgramBinary(vmctx, programHash)
+func (reqctx *requestContext) TryLoadContract(programHash hashing.HashValue) error {
+	reqctx.mustBeCalledFromContract(root.Contract)
+	vmtype, programBinary, err := execution.GetProgramBinary(reqctx, programHash)
 	if err != nil {
 		return err
 	}
-	return vmctx.task.Processors.NewProcessor(programHash, programBinary, vmtype)
+	return reqctx.vm.task.Processors.NewProcessor(programHash, programBinary, vmtype)
 }
 
-func (vmctx *vmContext) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
-	vmctx.mustBeCalledFromContract(accounts.Contract)
-	return vmctx.txbuilder.CreateNewFoundry(scheme, metadata)
+func (reqctx *requestContext) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
+	reqctx.mustBeCalledFromContract(accounts.Contract)
+	return reqctx.vm.txbuilder.CreateNewFoundry(scheme, metadata)
 }
 
-func (vmctx *vmContext) DestroyFoundry(sn uint32) uint64 {
-	vmctx.mustBeCalledFromContract(accounts.Contract)
-	return vmctx.txbuilder.DestroyFoundry(sn)
+func (reqctx *requestContext) DestroyFoundry(sn uint32) uint64 {
+	reqctx.mustBeCalledFromContract(accounts.Contract)
+	return reqctx.vm.txbuilder.DestroyFoundry(sn)
 }
 
-func (vmctx *vmContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
-	vmctx.mustBeCalledFromContract(accounts.Contract)
-	out, _, _ := accounts.GetFoundryOutput(vmctx.State(), sn, vmctx.ChainID())
+func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
+	reqctx.mustBeCalledFromContract(accounts.Contract)
+	out, _, _ := accounts.GetFoundryOutput(reqctx.contractStateWithGasBurn(), sn, reqctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
 		panic(fmt.Errorf("internal: %w", err))
 	}
-	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
+	return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
-func (vmctx *vmContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
+func (reqctx *requestContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
 	// set the "retry output ID" so that the correct output is used by the txbuilder
-	oid := vmctx.getOutputID(blockIndex, outputIndex)
+	oid := reqctx.vm.getOutputID(blockIndex, outputIndex)
 	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), oid)
-	vmctx.reqctx.unprocessableToRetry = append(vmctx.reqctx.unprocessableToRetry, retryReq)
+	reqctx.unprocessableToRetry = append(reqctx.unprocessableToRetry, retryReq)
 }
 
-func (vmctx *vmContext) SetBlockContext(bctx interface{}) {
-	vmctx.blockContext[vmctx.CurrentContractHname()] = bctx
+func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
+	reqctx.Debugf("CallOnBehalfOf: caller = %s, target = %s, entryPoint = %s, params = %s", caller.String(), target.String(), entryPoint.String(), params.String())
+	return reqctx.callProgram(target, entryPoint, params, allowance, caller)
 }
 
-func (vmctx *vmContext) BlockContext() interface{} {
-	return vmctx.blockContext[vmctx.CurrentContractHname()]
-}
-
-func (vmctx *vmContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
-	vmctx.Debugf("CallOnBehalfOf: caller = %s, target = %s, entryPoint = %s, params = %s", caller.String(), target.String(), entryPoint.String(), params.String())
-	return vmctx.callProgram(target, entryPoint, params, allowance, caller)
-}
-
-func (vmctx *vmContext) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
-	vmctx.reqctx.evmFailed = &evmFailed{
+func (reqctx *requestContext) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
+	reqctx.evmFailed = &evmFailed{
 		tx:      tx,
 		receipt: receipt,
 	}

@@ -698,26 +698,25 @@ func blockchainDB(chainState state.State) *emulator.BlockchainDB {
 	gasLimits := governance.MustGetGasLimits(govPartition)
 	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
 	blockKeepAmount := governance.GetBlockKeepAmount(govPartition)
-	bdbPartition := subrealm.NewReadOnly(
-		chainState,
-		kv.Key(evm.Contract.Hname().Bytes())+evm.KeyEVMState+emulator.KeyBlockchainDB,
-	)
 	return emulator.NewBlockchainDB(
-		buffered.NewBufferedKVStore(bdbPartition),
+		buffered.NewBufferedKVStore(evmStateSubrealmR(chainState)),
 		gas.EVMBlockGasLimit(gasLimits, &gasFeePolicy.EVMGasRatio),
 		blockKeepAmount,
 	)
 }
 
 func stateDB(chainState state.State) *emulator.StateDB {
-	sdbPartition := subrealm.NewReadOnly(
-		chainState,
-		kv.Key(evm.Contract.Hname().Bytes())+evm.KeyEVMState+emulator.KeyStateDB,
-	)
 	accountsPartition := subrealm.NewReadOnly(chainState, kv.Key(accounts.Contract.Hname().Bytes()))
 	return emulator.NewStateDB(
-		buffered.NewBufferedKVStore(sdbPartition),
+		buffered.NewBufferedKVStore(evmStateSubrealmR(chainState)),
 		newL2Balance(accountsPartition),
+	)
+}
+
+func evmStateSubrealmR(chainState state.State) kv.KVStoreReader {
+	return subrealm.NewReadOnly(
+		chainState,
+		kv.Key(evm.Contract.Hname().Bytes())+evm.KeyEVMState,
 	)
 }
 

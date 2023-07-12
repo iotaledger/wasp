@@ -23,10 +23,6 @@ var (
 	FuncRegisterERC20ExternalNativeToken      = coreutil.Func(evmnames.FuncRegisterERC20ExternalNativeToken)
 	FuncGetERC20ExternalNativeTokenAddress    = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
 	FuncRegisterERC721NFTCollection           = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
-
-	// block context
-	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)
-	FuncCloseBlockContext = coreutil.Func(evmnames.FuncCloseBlockContext)
 )
 
 const (

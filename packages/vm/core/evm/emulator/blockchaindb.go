@@ -51,7 +51,7 @@ type BlockchainDB struct {
 
 func NewBlockchainDB(store kv.KVStore, blockGasLimit uint64, blockKeepAmount int32) *BlockchainDB {
 	return &BlockchainDB{
-		kv:              store,
+		kv:              BlockchainDBSubrealm(store),
 		blockGasLimit:   blockGasLimit,
 		blockKeepAmount: blockKeepAmount,
 	}
@@ -70,7 +70,7 @@ func (bc *BlockchainDB) SetChainID(chainID uint16) {
 	bc.kv.Set(keyChainID, codec.EncodeUint16(chainID))
 }
 
-func GetChainIDFromBlockChainDBState(kv kv.KVStore) uint16 {
+func GetChainIDFromBlockChainDBState(kv kv.KVStoreReader) uint16 {
 	return codec.MustDecodeUint16(kv.Get(keyChainID))
 }
 

@@ -6,13 +6,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 )
 
 func Nonce(state kv.KVStoreReader, addr common.Address) uint64 {
-	emulatorState := evmStateSubrealmR(state)
-	stateDBStore := subrealm.NewReadOnly(emulatorState, emulator.KeyStateDB)
+	evmState := evmStateSubrealmR(state)
+	stateDBStore := emulator.StateDBSubrealmR(evmState)
 	return emulator.GetNonce(stateDBStore, addr)
 }
 

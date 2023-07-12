@@ -12,8 +12,10 @@ type sandboxView struct {
 	SandboxBase
 }
 
-func NewSandboxView(ctx execution.WaspContext) isc.SandboxView {
-	ret := &sandboxView{}
-	ret.Ctx = ctx
-	return ret
+func NewSandboxView(ctx execution.WaspCallContext) isc.SandboxView {
+	return &sandboxView{
+		SandboxBase: SandboxBase{
+			Ctx: ctx,
+		},
+	}
 }

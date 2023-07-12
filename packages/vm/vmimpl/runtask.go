@@ -49,9 +49,8 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	}
 
 	vmctx := &vmContext{
-		task:         task,
-		stateDraft:   stateDraft,
-		blockContext: make(map[isc.Hname]interface{}),
+		task:       task,
+		stateDraft: stateDraft,
 	}
 
 	vmctx.init(prevL1Commitment)
@@ -104,13 +103,13 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	vmctx.loadChainConfig()
 
-	vmctx.withStateUpdate(func() {
-		vmctx.runMigrations(migrations.BaseSchemaVersion, migrations.Migrations)
+	vmctx.withStateUpdate(func(chainState kv.KVStore) {
+		vmctx.runMigrations(chainState, migrations.BaseSchemaVersion, migrations.Migrations)
 	})
 
 	// save the anchor tx ID of the current state
-	vmctx.withStateUpdate(func() {
-		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+	vmctx.withStateUpdate(func(chainState kv.KVStore) {
+		withContractState(chainState, blocklog.Contract, func(s kv.KVStore) {
 			blocklog.UpdateLatestBlockInfo(
 				s,
 				vmctx.task.AnchorOutputID.TransactionID(),
@@ -131,16 +130,11 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
 		},
 	)
-
-	vmctx.openBlockContexts()
 }
 
 func (vmctx *vmContext) getAnchorOutputSD() uint64 {
 	// get the total L2 funds in accounting
-	var totalL2Funds *isc.Assets
-	vmctx.withStateUpdate(func() {
-		totalL2Funds = vmctx.loadTotalFungibleTokens()
-	})
+	totalL2Funds := vmctx.loadTotalFungibleTokens()
 	return vmctx.task.AnchorOutput.Amount - totalL2Funds.BaseTokens
 }
 

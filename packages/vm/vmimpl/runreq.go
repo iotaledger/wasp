@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
@@ -35,35 +36,27 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 	unprocessableToRetry []isc.OnLedgerRequest,
 	err error,
 ) {
-	if len(vmctx.callStack) != 0 {
-		panic("expected empty callstack")
+	reqctx := &requestContext{
+		vm:               vmctx,
+		req:              req,
+		requestIndex:     requestIndex,
+		entropy:          hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...)),
+		uncommittedState: buffered.NewBufferedKVStore(vmctx.stateDraft),
 	}
-
-	vmctx.reqctx = &requestContext{
-		req:          req,
-		requestIndex: requestIndex,
-		entropy:      hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...)),
-	}
-	defer func() { vmctx.reqctx = nil }()
 
 	if vmctx.task.EnableGasBurnLogging {
-		vmctx.reqctx.gas.burnLog = gas.NewGasBurnLog()
+		reqctx.gas.burnLog = gas.NewGasBurnLog()
 	}
-
-	vmctx.GasBurnEnable(false)
 
 	initialGasBurnedTotal := vmctx.blockGas.burned
 	initialGasFeeChargedTotal := vmctx.blockGas.feeCharged
 
-	if vmctx.currentStateUpdate != nil {
-		panic("expected currentStateUpdate == nil")
-	}
-	vmctx.currentStateUpdate = buffered.NewMutations()
-	defer func() { vmctx.currentStateUpdate = nil }()
+	reqctx.uncommittedState.Set(
+		kv.Key(coreutil.StatePrefixTimestamp),
+		codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)),
+	)
 
-	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)))
-
-	if err = vmctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
+	if err = reqctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
 		return nil, nil, err
 	}
 	vmctx.loadChainConfig()
@@ -73,14 +66,14 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
 	var result *vm.RequestResult
-	err = vmctx.catchRequestPanic(
+	err = reqctx.catchRequestPanic(
 		func() {
 			// transfer all attached assets to the sender's account
-			vmctx.creditAssetsToChain()
+			reqctx.creditAssetsToChain()
 			// load gas and fee policy, calculate and set gas budget
-			vmctx.prepareGasBudget()
+			reqctx.prepareGasBudget()
 			// run the contract program
-			receipt, callRet := vmctx.callTheContract()
+			receipt, callRet := reqctx.callTheContract()
 			vmctx.mustCheckTransactionSize()
 			result = &vm.RequestResult{
 				Request: req,
@@ -98,27 +91,27 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 		return nil, nil, err
 	}
 
-	vmctx.chainState().Apply()
-	return result, vmctx.reqctx.unprocessableToRetry, nil
+	reqctx.uncommittedState.Mutations().ApplyTo(vmctx.stateDraft)
+	return result, reqctx.unprocessableToRetry, nil
 }
 
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 	var payoutAgentID isc.AgentID
-	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
 		payoutAgentID = governance.MustGetPayoutAgentID(s)
 	})
 	return payoutAgentID
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
-func (vmctx *vmContext) creditAssetsToChain() {
-	req := vmctx.reqctx.req
+func (reqctx *requestContext) creditAssetsToChain() {
+	req := reqctx.req
 	if req.IsOffLedger() {
 		// off ledger request does not bring any deposit
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
-	storageDepositNeeded := vmctx.txbuilder.Consume(req.(isc.OnLedgerRequest))
+	storageDepositNeeded := reqctx.vm.txbuilder.Consume(req.(isc.OnLedgerRequest))
 
 	// if sender is specified, all assets goes to sender's sender
 	// Otherwise it all goes to the common sender and panics is logged in the SC call
@@ -128,33 +121,33 @@ func (vmctx *vmContext) creditAssetsToChain() {
 			panic("nil sender on offledger requests should never happen")
 		}
 		// onleger request with no sender, send all assets to the payoutAddress
-		payoutAgentID := vmctx.payoutAgentID()
-		vmctx.creditNFTToAccount(payoutAgentID, req.NFT())
-		vmctx.creditToAccount(payoutAgentID, req.Assets())
+		payoutAgentID := reqctx.vm.payoutAgentID()
+		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req.NFT())
+		creditToAccount(reqctx.uncommittedState, payoutAgentID, req.Assets())
 
 		// debit any SD required for accounting UTXOs
 		if storageDepositNeeded > 0 {
-			vmctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded))
+			debitFromAccount(reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded))
 		}
 		return
 	}
 
-	senderBaseTokens := req.Assets().BaseTokens + vmctx.GetBaseTokensBalance(sender)
+	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalance(sender)
 
 	if senderBaseTokens < storageDepositNeeded {
 		// user doesn't have enough funds to pay for the SD needs of this request
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
-	vmctx.creditToAccount(sender, req.Assets())
-	vmctx.creditNFTToAccount(sender, req.NFT())
+	creditToAccount(reqctx.uncommittedState, sender, req.Assets())
+	creditNFTToAccount(reqctx.uncommittedState, sender, req.NFT())
 	if storageDepositNeeded > 0 {
-		vmctx.reqctx.sdCharged = storageDepositNeeded
-		vmctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
+		reqctx.sdCharged = storageDepositNeeded
+		debitFromAccount(reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
 	}
 }
 
-func (vmctx *vmContext) catchRequestPanic(f func()) error {
+func (reqctx *requestContext) catchRequestPanic(f func()) error {
 	err := panicutil.CatchPanic(f)
 	if err == nil {
 		return nil
@@ -167,69 +160,71 @@ func (vmctx *vmContext) catchRequestPanic(f func()) error {
 	// panic again with more information about the error
 	panic(fmt.Errorf(
 		"panic when running request #%d ID:%s, requestbytes:%s err:%w",
-		vmctx.reqctx.requestIndex,
-		vmctx.reqctx.req.ID(),
-		iotago.EncodeHex(vmctx.reqctx.req.Bytes()),
+		reqctx.requestIndex,
+		reqctx.req.ID(),
+		iotago.EncodeHex(reqctx.req.Bytes()),
 		err,
 	))
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
 // panics if not enough funds
-func (vmctx *vmContext) checkAllowance() {
-	if !vmctx.HasEnoughForAllowance(vmctx.reqctx.req.SenderAccount(), vmctx.reqctx.req.Allowance()) {
+func (reqctx *requestContext) checkAllowance() {
+	if !reqctx.HasEnoughForAllowance(reqctx.req.SenderAccount(), reqctx.req.Allowance()) {
 		panic(vm.ErrNotEnoughFundsForAllowance)
 	}
 }
 
-func (vmctx *vmContext) shouldChargeGasFee() bool {
-	if vmctx.reqctx.req.SenderAccount() == nil {
+func (reqctx *requestContext) shouldChargeGasFee() bool {
+	if reqctx.req.SenderAccount() == nil {
 		return false
 	}
-	if vmctx.reqctx.req.SenderAccount().Equals(vmctx.ChainOwnerID()) && vmctx.reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
+	if reqctx.req.SenderAccount().Equals(reqctx.vm.ChainOwnerID()) && reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
 		return false
 	}
 	return true
 }
 
-func (vmctx *vmContext) prepareGasBudget() {
-	if !vmctx.shouldChargeGasFee() {
+func (reqctx *requestContext) prepareGasBudget() {
+	if !reqctx.shouldChargeGasFee() {
 		return
 	}
-	vmctx.gasSetBudget(vmctx.calculateAffordableGasBudget())
-	vmctx.GasBurnEnable(true)
+	reqctx.gasSetBudget(reqctx.calculateAffordableGasBudget())
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict) {
-	txsnapshot := vmctx.createTxBuilderSnapshot()
-	snapMutations := vmctx.currentStateUpdate.Clone()
+func (reqctx *requestContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict) {
+	// TODO: do not mutate vmContext's txbuilder
+	txSnapshot := reqctx.vm.createTxBuilderSnapshot()
+	stateSnapshot := reqctx.uncommittedState.Clone()
 
 	rollback := func() {
-		vmctx.restoreTxBuilderSnapshot(txsnapshot)
-		vmctx.currentStateUpdate = snapMutations
+		reqctx.vm.restoreTxBuilderSnapshot(txSnapshot)
+		reqctx.uncommittedState = stateSnapshot
 	}
 
 	var callErr *isc.VMError
 	func() {
 		defer func() {
-			panicErr := vmctx.checkVMPluginPanic(recover())
+			panicErr := checkVMPluginPanic(recover())
 			if panicErr == nil {
 				return
 			}
 			callErr = panicErr
-			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
-			if vmctx.task.WillProduceBlock() {
-				vmctx.Debugf(string(debug.Stack()))
+			reqctx.Debugf("recovered panic from contract call: %v", panicErr)
+			if reqctx.vm.task.WillProduceBlock() {
+				reqctx.Debugf(string(debug.Stack()))
 			}
 		}()
 		// ensure there are enough funds to cover the specified allowance
-		vmctx.checkAllowance()
+		reqctx.checkAllowance()
 
-		callRet = vmctx.callFromRequest()
+		reqctx.GasBurnEnable(true)
+		callRet = reqctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
-		vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
+		reqctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, reqctx.GasBurned())
 	}()
+	reqctx.GasBurnEnable(false)
 
 	// execution over, save receipt, update nonces, etc
 	// if anything goes wrong here, state must be rolled back and the request must be skipped
@@ -241,7 +236,7 @@ func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 				if callErr != nil {
 					callErrStr = callErr.Error()
 				}
-				vmctx.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", vmctx.reqctx.req.ID(), callErrStr, r)
+				reqctx.vm.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, r)
 				panic(vmexceptions.ErrPostExecutionPanic)
 			}
 		}()
@@ -250,20 +245,20 @@ func (vmctx *vmContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			rollback()
 		}
 		// charge gas fee no matter what
-		vmctx.chargeGasFee()
+		reqctx.chargeGasFee()
 
 		// write receipt no matter what
-		receipt = vmctx.writeReceiptToBlockLog(callErr)
+		receipt = reqctx.writeReceiptToBlockLog(callErr)
 
-		if vmctx.reqctx.req.IsOffLedger() {
-			vmctx.updateOffLedgerRequestNonce()
+		if reqctx.req.IsOffLedger() {
+			reqctx.updateOffLedgerRequestNonce()
 		}
 	}()
 
 	return receipt, callRet
 }
 
-func (vmctx *vmContext) checkVMPluginPanic(r interface{}) *isc.VMError {
+func checkVMPluginPanic(r interface{}) *isc.VMError {
 	if r == nil {
 		return nil
 	}
@@ -289,9 +284,9 @@ func (vmctx *vmContext) checkVMPluginPanic(r interface{}) *isc.VMError {
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (vmctx *vmContext) callFromRequest() dict.Dict {
-	req := vmctx.reqctx.req
-	vmctx.Debugf("callFromRequest: %s", req.ID().String())
+func (reqctx *requestContext) callFromRequest() dict.Dict {
+	req := reqctx.req
+	reqctx.Debugf("callFromRequest: %s", req.ID().String())
 
 	if req.SenderAccount() == nil {
 		// if sender unknown, follow panic path
@@ -301,22 +296,23 @@ func (vmctx *vmContext) callFromRequest() dict.Dict {
 	contract := req.CallTarget().Contract
 	entryPoint := req.CallTarget().EntryPoint
 
-	return vmctx.callProgram(
+	return reqctx.callProgram(
 		contract,
 		entryPoint,
 		req.Params(),
 		req.Allowance(),
+		req.SenderAccount(),
 	)
 }
 
-func (vmctx *vmContext) getGasBudget() uint64 {
-	gasBudget, isEVM := vmctx.reqctx.req.GasBudget()
+func (reqctx *requestContext) getGasBudget() uint64 {
+	gasBudget, isEVM := reqctx.req.GasBudget()
 	if !isEVM || gasBudget == 0 {
 		return gasBudget
 	}
 
 	var gasRatio util.Ratio32
-	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+	reqctx.callCore(governance.Contract, func(s kv.KVStore) {
 		gasRatio = governance.MustGetGasFeePolicy(s).EVMGasRatio
 	})
 	return gas.EVMGasToISC(gasBudget, &gasRatio)
@@ -326,38 +322,38 @@ func (vmctx *vmContext) getGasBudget() uint64 {
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
 // how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
-func (vmctx *vmContext) calculateAffordableGasBudget() (budget, maxTokensToSpendForGasFee uint64) {
-	gasBudget := vmctx.getGasBudget()
+func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensToSpendForGasFee uint64) {
+	gasBudget := reqctx.getGasBudget()
 
-	if vmctx.task.EstimateGasMode && gasBudget == 0 {
+	if reqctx.vm.task.EstimateGasMode && gasBudget == 0 {
 		// gas budget 0 means its a view call, so we give it max gas and tokens
-		return vmctx.chainInfo.GasLimits.MaxGasExternalViewCall, math.MaxUint64
+		return reqctx.vm.chainInfo.GasLimits.MaxGasExternalViewCall, math.MaxUint64
 	}
 
 	// make sure the gasBuget is at least >= than the allowed minimum
-	if gasBudget < vmctx.chainInfo.GasLimits.MinGasPerRequest {
-		gasBudget = vmctx.chainInfo.GasLimits.MinGasPerRequest
+	if gasBudget < reqctx.vm.chainInfo.GasLimits.MinGasPerRequest {
+		gasBudget = reqctx.vm.chainInfo.GasLimits.MinGasPerRequest
 	}
 
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
-	guaranteedFeeTokens := vmctx.calcGuaranteedFeeTokens()
+	guaranteedFeeTokens := reqctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget
-	f1, f2 := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(gasBudget, guaranteedFeeTokens)
+	f1, f2 := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(gasBudget, guaranteedFeeTokens)
 	maxTokensToSpendForGasFee = f1 + f2
 	// calculate affordableGas gas budget
-	affordableGas := vmctx.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
+	affordableGas := reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
 	affordableGas = util.MinUint64(gasBudget, affordableGas)
 	// cap gas to the maximum allowed per tx
-	return util.MinUint64(affordableGas, vmctx.chainInfo.GasLimits.MaxGasPerRequest), maxTokensToSpendForGasFee
+	return util.MinUint64(affordableGas, reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest), maxTokensToSpendForGasFee
 }
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
-func (vmctx *vmContext) calcGuaranteedFeeTokens() uint64 {
-	tokensGuaranteed := vmctx.GetBaseTokensBalance(vmctx.reqctx.req.SenderAccount())
+func (reqctx *requestContext) calcGuaranteedFeeTokens() uint64 {
+	tokensGuaranteed := reqctx.GetBaseTokensBalance(reqctx.req.SenderAccount())
 	// safely subtract the allowed from the sender to the target
-	if allowed := vmctx.reqctx.req.Allowance(); allowed != nil {
+	if allowed := reqctx.req.Allowance(); allowed != nil {
 		if tokensGuaranteed < allowed.BaseTokens {
 			tokensGuaranteed = 0
 		} else {
@@ -369,56 +365,54 @@ func (vmctx *vmContext) calcGuaranteedFeeTokens() uint64 {
 
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
-func (vmctx *vmContext) chargeGasFee() {
+func (reqctx *requestContext) chargeGasFee() {
 	defer func() {
 		// add current request gas burn to the total of the block
-		vmctx.blockGas.burned += vmctx.reqctx.gas.burned
+		reqctx.vm.blockGas.burned += reqctx.gas.burned
 	}()
 
 	// ensure at least the minimum amount of gas is charged
 	minGas := gas.BurnCodeMinimumGasPerRequest1P.Cost(0)
-	if vmctx.reqctx.gas.burned < minGas {
-		vmctx.reqctx.gas.burned = minGas
+	if reqctx.gas.burned < minGas {
+		reqctx.gas.burned = minGas
 	}
 
-	vmctx.GasBurnEnable(false)
-
-	if !vmctx.shouldChargeGasFee() {
+	if !reqctx.shouldChargeGasFee() {
 		return
 	}
 
-	availableToPayFee := vmctx.reqctx.gas.maxTokensToSpendForGasFee
-	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
+	availableToPayFee := reqctx.gas.maxTokensToSpendForGasFee
+	if !reqctx.vm.task.EstimateGasMode && !reqctx.vm.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
 		// user didn't specify enough base tokens to cover the minimum request fee, charge whatever is present in the user's account
-		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
+		availableToPayFee = reqctx.GetSenderTokenBalanceForFees()
 	}
 
 	// total fees to charge
-	sendToPayout, sendToValidator := vmctx.chainInfo.GasFeePolicy.FeeFromGasBurned(vmctx.GasBurned(), availableToPayFee)
-	vmctx.reqctx.gas.feeCharged = sendToPayout + sendToValidator
+	sendToPayout, sendToValidator := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(reqctx.GasBurned(), availableToPayFee)
+	reqctx.gas.feeCharged = sendToPayout + sendToValidator
 
 	// calc gas totals
-	vmctx.blockGas.feeCharged += vmctx.reqctx.gas.feeCharged
+	reqctx.vm.blockGas.feeCharged += reqctx.gas.feeCharged
 
-	if vmctx.task.EstimateGasMode {
+	if reqctx.vm.task.EstimateGasMode {
 		// If estimating gas, compute the gas fee but do not attempt to charge
 		return
 	}
 
-	sender := vmctx.reqctx.req.SenderAccount()
+	sender := reqctx.req.SenderAccount()
 	if sendToValidator != 0 {
 		transferToValidator := &isc.Assets{}
 		transferToValidator.BaseTokens = sendToValidator
-		vmctx.mustMoveBetweenAccounts(sender, vmctx.task.ValidatorFeeTarget, transferToValidator)
+		mustMoveBetweenAccounts(reqctx.uncommittedState, sender, reqctx.vm.task.ValidatorFeeTarget, transferToValidator)
 	}
 
 	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
 	var minBalanceInCommonAccount uint64
-	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+	withContractState(reqctx.uncommittedState, governance.Contract, func(s kv.KVStore) {
 		minBalanceInCommonAccount = governance.MustGetMinCommonAccountBalance(s)
 	})
-	commonAccountBal := vmctx.GetBaseTokensBalance(accounts.CommonAccount())
+	commonAccountBal := reqctx.GetBaseTokensBalance(accounts.CommonAccount())
 	if commonAccountBal < minBalanceInCommonAccount {
 		// pay to common account since the balance of common account is less than minSD
 		transferToCommonAcc := sendToPayout
@@ -428,25 +422,29 @@ func (vmctx *vmContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		vmctx.mustMoveBetweenAccounts(sender, accounts.CommonAccount(), isc.NewAssetsBaseTokens(transferToCommonAcc))
+		mustMoveBetweenAccounts(reqctx.uncommittedState, sender, accounts.CommonAccount(), isc.NewAssetsBaseTokens(transferToCommonAcc))
 	}
 	if sendToPayout > 0 {
-		payoutAgentID := vmctx.payoutAgentID()
-		vmctx.mustMoveBetweenAccounts(sender, payoutAgentID, isc.NewAssetsBaseTokens(sendToPayout))
+		payoutAgentID := reqctx.vm.payoutAgentID()
+		mustMoveBetweenAccounts(reqctx.uncommittedState, sender, payoutAgentID, isc.NewAssetsBaseTokens(sendToPayout))
 	}
 }
 
-func (vmctx *vmContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
-	ret = vmctx.findContractByHname(contractHname)
+func (reqctx *requestContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+	return reqctx.vm.locateProgram(reqctx.chainStateWithGasBurn(), programHash)
+}
+
+func (reqctx *requestContext) Processors() *processors.Cache {
+	return reqctx.vm.task.Processors
+}
+
+func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
+	ret = findContractByHname(reqctx.chainStateWithGasBurn(), contractHname)
 	if ret == nil {
-		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
+		reqctx.GasBurn(gas.BurnCodeCallTargetNotFound)
 		panic(vm.ErrContractNotFound.Create(contractHname))
 	}
 	return ret
-}
-
-func (vmctx *vmContext) getOrCreateContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
-	return vmctx.GetContractRecord(contractHname)
 }
 
 func (vmctx *vmContext) loadChainConfig() {

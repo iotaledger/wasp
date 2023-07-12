@@ -10,10 +10,9 @@ var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
 const (
 	StateVarSchemaVersion = "v"
 
-	StateVarContractRegistry          = "r"
-	StateVarDeployPermissionsEnabled  = "a"
-	StateVarDeployPermissions         = "p"
-	StateVarBlockContextSubscriptions = "b"
+	StateVarContractRegistry         = "r"
+	StateVarDeployPermissionsEnabled = "a"
+	StateVarDeployPermissions        = "p"
 )
 
 // param variables

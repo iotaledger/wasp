@@ -141,8 +141,6 @@ type Privileged interface {
 	RetryUnprocessable(req Request, blockIndex uint32, outputIndex uint16)
 
 	// EVM
-	SetBlockContext(bctx interface{})
-	BlockContext() interface{}
 	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 	SetEVMFailed(*types.Transaction, *types.Receipt)
 }

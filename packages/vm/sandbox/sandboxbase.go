@@ -17,7 +17,7 @@ import (
 )
 
 type SandboxBase struct {
-	Ctx       execution.WaspContext
+	Ctx       execution.WaspCallContext
 	assertObj *assert.Assert
 }
 
@@ -32,7 +32,7 @@ func (s *SandboxBase) assert() *assert.Assert {
 
 func (s *SandboxBase) AccountID() isc.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.Ctx.AccountID()
+	return s.Ctx.CurrentContractAccountID()
 }
 
 func (s *SandboxBase) Caller() isc.AgentID {
@@ -148,5 +148,5 @@ func (s *SandboxBase) CallView(contractHname, entryPoint isc.Hname, params dict.
 }
 
 func (s *SandboxBase) StateR() kv.KVStoreReader {
-	return s.Ctx.StateReader()
+	return s.Ctx.ContractStateReaderWithGasBurn()
 }

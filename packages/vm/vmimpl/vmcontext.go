@@ -16,11 +16,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
@@ -31,25 +31,22 @@ import (
 type vmContext struct {
 	task *vm.VMTask
 
-	stateDraft         state.StateDraft
-	blockContext       map[isc.Hname]any
-	txbuilder          *vmtxbuilder.AnchorTransactionBuilder
-	chainInfo          *isc.ChainInfo
-	blockGas           blockGas
-	reqctx             *requestContext
-	currentStateUpdate *buffered.Mutations
-	callStack          []*callContext
+	stateDraft state.StateDraft
+	txbuilder  *vmtxbuilder.AnchorTransactionBuilder
+	chainInfo  *isc.ChainInfo
+	blockGas   blockGas
 }
 
 type blockGas struct {
 	burned     uint64
 	feeCharged uint64
-	// is gas burn enabled
-	// TODO: should be in requestGas?
-	burnEnabled bool
 }
 
 type requestContext struct {
+	vm *vmContext
+
+	uncommittedState  *buffered.BufferedKVStore
+	callStack         []*callContext
 	req               isc.Request
 	numPostedOutputs  int
 	requestIndex      uint16
@@ -69,6 +66,8 @@ type evmFailed struct {
 }
 
 type requestGas struct {
+	// is gas burn enabled
+	burnEnabled bool
 	// max tokens that can be charged for gas fee
 	maxTokensToSpendForGasFee uint64
 	// final gas budget set for the run
@@ -81,24 +80,21 @@ type requestGas struct {
 	burnLog *gas.BurnLog
 }
 
-var _ execution.WaspContext = &vmContext{}
+var _ execution.WaspCallContext = &requestContext{}
 
 type callContext struct {
-	caller             isc.AgentID // calling agent
-	contract           isc.Hname   // called contract
-	params             isc.Params  // params passed
-	allowanceAvailable *isc.Assets // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller   isc.AgentID // calling agent
+	contract isc.Hname   // called contract
+	params   isc.Params  // params passed
+	// MUTABLE: allowance budget left after TransferAllowedFunds
+	// TODO: should be in requestContext?
+	allowanceAvailable *isc.Assets
 }
 
-func (vmctx *vmContext) withStateUpdate(f func()) {
-	if vmctx.currentStateUpdate != nil {
-		panic("expected currentStateUpdate == nil")
-	}
-	defer func() { vmctx.currentStateUpdate = nil }()
-
-	vmctx.currentStateUpdate = buffered.NewMutations()
-	f()
-	vmctx.currentStateUpdate.ApplyTo(vmctx.stateDraft)
+func (vmctx *vmContext) withStateUpdate(f func(chainState kv.KVStore)) {
+	chainState := buffered.NewBufferedKVStore(vmctx.stateDraft)
+	f(chainState)
+	chainState.Mutations().ApplyTo(vmctx.stateDraft)
 }
 
 // extractBlock does the closing actions on the block
@@ -107,11 +103,12 @@ func (vmctx *vmContext) extractBlock(
 	numRequests, numSuccess, numOffLedger uint16,
 	unprocessable []isc.OnLedgerRequest,
 ) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
-	vmctx.GasBurnEnable(false)
 	var rotationAddr iotago.Address
-	vmctx.withStateUpdate(func() {
+	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-		vmctx.closeBlockContexts()
+		withContractState(chainState, evm.Contract, func(s kv.KVStore) {
+			evmimpl.MintBlock(s, vmctx.chainInfo, vmctx.task.TimeAssumption)
+		})
 		vmctx.saveInternalUTXOs(unprocessable)
 	})
 
@@ -126,7 +123,7 @@ func (vmctx *vmContext) extractBlock(
 }
 
 func (vmctx *vmContext) checkRotationAddress() (ret iotago.Address) {
-	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
 		ret = governance.GetRotationAddress(s)
 	})
 	return
@@ -152,45 +149,12 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}
 
-	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, blocklog.Contract, func(s kv.KVStore) {
 		blocklog.SaveNextBlockInfo(s, blockInfo)
 		blocklog.Prune(s, blockInfo.BlockIndex(), vmctx.chainInfo.BlockKeepAmount)
 	})
 	vmctx.task.Log.Debugf("saved blockinfo:\n%s", blockInfo)
 	return nil
-}
-
-// openBlockContexts calls the block context open function for all subscribed core contracts
-func (vmctx *vmContext) openBlockContexts() {
-	if vmctx.blockGas.burnEnabled {
-		panic("expected gasBurnEnabled == false")
-	}
-
-	vmctx.loadChainConfig()
-
-	vmctx.withStateUpdate(func() {
-		var subs []root.BlockContextSubscription
-		vmctx.callCore(root.Contract, func(s kv.KVStore) {
-			subs = root.GetBlockContextSubscriptions(s)
-		})
-		for _, sub := range subs {
-			vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil, &isc.NilAgentID{})
-		}
-	})
-}
-
-// closeBlockContexts closes block contexts in deterministic FIFO sequence
-func (vmctx *vmContext) closeBlockContexts() {
-	if vmctx.blockGas.burnEnabled {
-		panic("expected gasBurnEnabled == false")
-	}
-	var subs []root.BlockContextSubscription
-	vmctx.callCore(root.Contract, func(s kv.KVStore) {
-		subs = root.GetBlockContextSubscriptions(s)
-	})
-	for i := len(subs) - 1; i >= 0; i-- {
-		vmctx.callProgram(subs[i].Contract, subs[i].CloseFunc, nil, nil, &isc.NilAgentID{})
-	}
 }
 
 // saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
@@ -203,7 +167,7 @@ func (vmctx *vmContext) closeBlockContexts() {
 // 5. unprocessable requests
 func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
-	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
+	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.stateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
 	oldMinSD := vmctx.txbuilder.AnchorOutputStorageDeposit()
 	changeInSD := int64(oldMinSD) - int64(newMinSD)
@@ -211,7 +175,7 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	if changeInSD != 0 {
 		vmctx.task.Log.Debugf("adjusting commonAccount because AO SD cost changed, old:%d new:%d", oldMinSD, newMinSD)
 		// update the commonAccount with the change in SD cost
-		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 			accounts.AdjustAccountBaseTokens(s, accounts.CommonAccount(), changeInSD)
 		})
 	}
@@ -229,7 +193,7 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)
 
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 		// update native token outputs
 		for _, ntID := range nativeTokenIDsToBeUpdated {
 			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", ntID, outputIndex)
@@ -265,14 +229,12 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	})
 
 	// add unprocessable requests
-	vmctx.storeUnprocessable(unprocessable, outputIndex)
+	vmctx.storeUnprocessable(vmctx.stateDraft, unprocessable, outputIndex)
 }
 
 func (vmctx *vmContext) removeUnprocessable(reqID isc.RequestID) {
-	vmctx.withStateUpdate(func() {
-		vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.RemoveUnprocessable(s, reqID)
-		})
+	withContractState(vmctx.stateDraft, blocklog.Contract, func(s kv.KVStore) {
+		blocklog.RemoveUnprocessable(s, reqID)
 	})
 }
 
@@ -291,13 +253,9 @@ func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestRe
 	}
 }
 
-func (vmctx *vmContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	vmctx.callCore(blob.Contract, func(s kv.KVStore) {
+func (vmctx *vmContext) locateProgram(chainState kv.KVStore, programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
+	withContractState(chainState, blob.Contract, func(s kv.KVStore) {
 		vmtype, binary, err = blob.LocateProgram(s, programHash)
 	})
 	return vmtype, binary, err
-}
-
-func (vmctx *vmContext) Processors() *processors.Cache {
-	return vmctx.task.Processors
 }

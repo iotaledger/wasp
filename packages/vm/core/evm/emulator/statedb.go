@@ -64,7 +64,7 @@ var _ vm.StateDB = &StateDB{}
 
 func NewStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
 	return &StateDB{
-		kv:        store,
+		kv:        StateDBSubrealm(store),
 		l2Balance: l2Balance,
 	}
 }
@@ -103,6 +103,10 @@ func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	return GetNonce(s.kv, addr)
+}
+
+func (s *StateDB) IncNonce(addr common.Address) {
+	s.SetNonce(addr, s.GetNonce(addr)+1)
 }
 
 func (s *StateDB) SetNonce(addr common.Address, n uint64) {

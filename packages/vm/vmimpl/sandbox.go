@@ -20,12 +20,14 @@ import (
 
 type contractSandbox struct {
 	sandbox.SandboxBase
+	reqctx *requestContext
 }
 
-func NewSandbox(vmctx *vmContext) isc.Sandbox {
-	ret := &contractSandbox{}
-	ret.Ctx = vmctx
-	return ret
+func NewSandbox(reqctx *requestContext) isc.Sandbox {
+	return &contractSandbox{
+		SandboxBase: sandbox.SandboxBase{Ctx: reqctx},
+		reqctx:      reqctx,
+	}
 }
 
 // Call calls an entry point of contract, passes parameters and funds
@@ -38,70 +40,65 @@ func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, t
 // and calls "init" endpoint (constructor) with provided parameters
 func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
 	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
-	s.Ctx.(*vmContext).DeployContract(programHash, name, initParams)
+	s.reqctx.deployContract(programHash, name, initParams)
 }
 
 func (s *contractSandbox) Event(topic string, payload []byte) {
 	s.Ctx.GasBurn(gas.BurnCodeEmitEventFixed)
-	hContract := s.Ctx.(*vmContext).CurrentContractHname()
+	hContract := s.reqctx.CurrentContractHname()
 	hex := iotago.EncodeHex(payload)
 	if len(hex) > 80 {
 		hex = hex[:40] + "..."
 	}
 	s.Log().Infof("event::%s -> %s(%s)", hContract.String(), topic, hex)
-	s.Ctx.(*vmContext).MustSaveEvent(hContract, topic, payload)
+	s.reqctx.mustSaveEvent(hContract, topic, payload)
 }
 
 func (s *contractSandbox) GetEntropy() hashing.HashValue {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.Ctx.(*vmContext).Entropy()
+	return s.reqctx.entropy
 }
 
 func (s *contractSandbox) AllowanceAvailable() *isc.Assets {
 	s.Ctx.GasBurn(gas.BurnCodeGetAllowance)
-	return s.Ctx.(*vmContext).AllowanceAvailable()
+	return s.reqctx.allowanceAvailable()
 }
 
 func (s *contractSandbox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
 	s.Ctx.GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*vmContext).TransferAllowedFunds(target, transfer...)
-}
-
-func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
-	s.Ctx.GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*vmContext).TransferAllowedFunds(target, transfer...)
+	return s.reqctx.transferAllowedFunds(target, transfer...)
 }
 
 func (s *contractSandbox) Request() isc.Calldata {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.Ctx.(*vmContext).Request()
+	return s.reqctx.req
 }
 
 func (s *contractSandbox) Send(par isc.RequestParameters) {
-	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*vmContext).reqctx.numPostedOutputs))
-	s.Ctx.(*vmContext).Send(par)
+	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.reqctx.numPostedOutputs))
+	s.reqctx.send(par)
 }
 
 func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
 	s.Ctx.GasBurn(gas.BurnCodeEstimateStorageDepositCost)
-	return s.Ctx.(*vmContext).EstimateRequiredStorageDeposit(par)
+	return s.reqctx.estimateRequiredStorageDeposit(par)
 }
 
 func (s *contractSandbox) State() kv.KVStore {
-	return s.Ctx.(*vmContext).State()
+	return s.reqctx.contractStateWithGasBurn()
 }
 
 func (s *contractSandbox) StateAnchor() *isc.StateAnchor {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.Ctx.(*vmContext).StateAnchor()
+	return s.reqctx.vm.stateAnchor()
 }
 
 func (s *contractSandbox) RegisterError(messageFormat string) *isc.VMErrorTemplate {
-	return s.Ctx.(*vmContext).RegisterError(messageFormat)
+	return s.reqctx.registerError(messageFormat)
 }
 
 func (s *contractSandbox) EVMTracer() *isc.EVMTracer {
-	return s.Ctx.(*vmContext).task.EVMTracer
+	return s.reqctx.vm.task.EVMTracer
 }
 
 // helper methods
@@ -135,27 +132,19 @@ func (s *contractSandbox) Privileged() isc.Privileged {
 // privileged methods:
 
 func (s *contractSandbox) TryLoadContract(programHash hashing.HashValue) error {
-	return s.Ctx.(*vmContext).TryLoadContract(programHash)
+	return s.reqctx.TryLoadContract(programHash)
 }
 
 func (s *contractSandbox) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
-	return s.Ctx.(*vmContext).CreateNewFoundry(scheme, metadata)
+	return s.reqctx.CreateNewFoundry(scheme, metadata)
 }
 
 func (s *contractSandbox) DestroyFoundry(sn uint32) uint64 {
-	return s.Ctx.(*vmContext).DestroyFoundry(sn)
+	return s.reqctx.DestroyFoundry(sn)
 }
 
 func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
-	return s.Ctx.(*vmContext).ModifyFoundrySupply(sn, delta)
-}
-
-func (s *contractSandbox) SetBlockContext(bctx interface{}) {
-	s.Ctx.(*vmContext).SetBlockContext(bctx)
-}
-
-func (s *contractSandbox) BlockContext() interface{} {
-	return s.Ctx.(*vmContext).BlockContext()
+	return s.reqctx.ModifyFoundrySupply(sn, delta)
 }
 
 func (s *contractSandbox) GasBurnEnable(enable bool) {
@@ -163,12 +152,12 @@ func (s *contractSandbox) GasBurnEnable(enable bool) {
 }
 
 func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
-	s.Ctx.(*vmContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, assets)
+	mustMoveBetweenAccounts(s.reqctx.chainStateWithGasBurn(), fromAgentID, toAgentID, assets)
 	s.checkRemainingTokens(fromAgentID)
 }
 
 func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, tokens *isc.Assets) {
-	s.Ctx.(*vmContext).debitFromAccount(agentID, tokens)
+	debitFromAccount(s.reqctx.chainStateWithGasBurn(), agentID, tokens)
 	s.checkRemainingTokens(agentID)
 }
 
@@ -183,26 +172,26 @@ func (s *contractSandbox) checkRemainingTokens(debitedAccount isc.AgentID) {
 }
 
 func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Assets) {
-	s.Ctx.(*vmContext).creditToAccount(agentID, tokens)
+	creditToAccount(s.reqctx.chainStateWithGasBurn(), agentID, tokens)
 }
 
 func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	s.Ctx.(*vmContext).RetryUnprocessable(req, blockIndex, outputIndex)
+	s.reqctx.RetryUnprocessable(req, blockIndex, outputIndex)
 }
 
 func (s *contractSandbox) totalGasTokens() *isc.Assets {
-	if s.Ctx.(*vmContext).task.EstimateGasMode {
+	if s.reqctx.vm.task.EstimateGasMode {
 		return isc.NewEmptyAssets()
 	}
-	amount := s.Ctx.(*vmContext).reqctx.gas.maxTokensToSpendForGasFee
+	amount := s.reqctx.gas.maxTokensToSpendForGasFee
 	return isc.NewAssetsBaseTokens(amount)
 }
 
 func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
-	return s.Ctx.(*vmContext).CallOnBehalfOf(caller, target, entryPoint, params, transfer)
+	return s.reqctx.CallOnBehalfOf(caller, target, entryPoint, params, transfer)
 }
 
 func (s *contractSandbox) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
-	s.Ctx.(*vmContext).SetEVMFailed(tx, receipt)
+	s.reqctx.SetEVMFailed(tx, receipt)
 }
