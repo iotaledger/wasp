@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type commitmentSources struct {
@@ -39,7 +40,7 @@ type snapshotManagerImpl struct {
 	createPeriod              uint32
 	snapshotter               snapshotter
 
-	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]
+	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]
 	availableSnapshotsMutex sync.RWMutex
 
 	localPath    string
@@ -89,7 +90,7 @@ func NewSnapshotManager(
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
 		snapshotter:               newSnapshotter(store),
-		availableSnapshots:        shrinkingmap.New[uint32, SliceStruct[*commitmentSources]](),
+		availableSnapshots:        shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]](),
 		availableSnapshotsMutex:   sync.RWMutex{},
 		localPath:                 localPath,
 		networkPaths:              networkPaths,
@@ -133,7 +134,7 @@ func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
 }
 
 func (smiT *snapshotManagerImpl) handleUpdate() {
-	result := shrinkingmap.New[uint32, SliceStruct[*commitmentSources]]()
+	result := shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]]()
 	smiT.handleUpdateLocal(result)
 	smiT.handleUpdateNetwork(result)
 
@@ -294,7 +295,7 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
+func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]) {
 	fileRegExp := snapshotFileNameString("*", "*")
 	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
 	files, err := filepath.Glob(fileRegExpWithPath)
@@ -327,7 +328,7 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 	smiT.log.Debugf("Update local: %v snapshot files found", snapshotCount)
 }
 
-func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
+func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]) {
 	for _, networkPath := range smiT.networkPaths {
 		func() { // Function to make the defers sooner
 			indexFilePath, err := url.JoinPath(networkPath, constIndexFileName)
@@ -417,7 +418,7 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 	return cancelFun, reader, nil
 }
 
-func addSource(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
+func addSource(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
 	makeNewComSourcesFun := func() *commitmentSources {
 		return &commitmentSources{
 			commitment: si.GetCommitment(),
@@ -433,7 +434,7 @@ func addSource(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitment
 			comSourcesArray.Add(makeNewComSourcesFun())
 		}
 	} else {
-		comSourcesArray = NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
+		comSourcesArray = util.NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
 		result.Set(si.GetStateIndex(), comSourcesArray)
 	}
 }

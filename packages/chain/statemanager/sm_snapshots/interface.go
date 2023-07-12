@@ -41,17 +41,3 @@ type snapshotter interface {
 	storeSnapshot(SnapshotInfo, io.Writer) error
 	loadSnapshot(SnapshotInfo, io.Reader) error
 }
-
-// Putting slice into a map is not acceptable as if you want to append to slice,
-// you'll have to re-include the appended slice into the map.
-type SliceStruct[E any] interface {
-	Add(E)
-	Get(int) E
-	Set(int, E)
-	Length() int
-	ForEach(func(int, E) bool) bool
-	Clone() SliceStruct[E]              // Returns a new SliceStruct with exactly the same elements
-	CloneDeep(func(E) E) SliceStruct[E] // Returns a new SliceStruct with every element of the old SliceStruct cloned using provided function
-	ContainsBy(func(E) bool) bool
-	Find(func(E) bool) (E, bool)
-}

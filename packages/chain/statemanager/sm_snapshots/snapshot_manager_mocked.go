@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type mockedSnapshotManager struct {
@@ -20,9 +21,9 @@ type mockedSnapshotManager struct {
 	t            *testing.T
 	createPeriod uint32
 
-	availableSnapshots      map[uint32]SliceStruct[*state.L1Commitment]
+	availableSnapshots      map[uint32]*util.SliceStruct[*state.L1Commitment]
 	availableSnapshotsMutex sync.RWMutex
-	readySnapshots          map[uint32]SliceStruct[*state.L1Commitment]
+	readySnapshots          map[uint32]*util.SliceStruct[*state.L1Commitment]
 	readySnapshotsMutex     sync.Mutex
 
 	origStore state.Store
@@ -53,9 +54,9 @@ func NewMockedSnapshotManager(
 	result := &mockedSnapshotManager{
 		t:                       t,
 		createPeriod:            createPeriod,
-		availableSnapshots:      make(map[uint32]SliceStruct[*state.L1Commitment]),
+		availableSnapshots:      make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
 		availableSnapshotsMutex: sync.RWMutex{},
-		readySnapshots:          make(map[uint32]SliceStruct[*state.L1Commitment]),
+		readySnapshots:          make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
 		readySnapshotsMutex:     sync.Mutex{},
 		origStore:               origStore,
 		nodeStore:               nodeStore,
@@ -99,7 +100,7 @@ func (msmT *mockedSnapshotManager) SnapshotReady(snapshotInfo SnapshotInfo) {
 			commitments.Add(snapshotInfo.GetCommitment())
 		}
 	} else {
-		msmT.readySnapshots[snapshotInfo.GetStateIndex()] = NewSliceStruct(snapshotInfo.GetCommitment())
+		msmT.readySnapshots[snapshotInfo.GetStateIndex()] = util.NewSliceStruct(snapshotInfo.GetCommitment())
 	}
 }
 
@@ -130,7 +131,7 @@ func (msmT *mockedSnapshotManager) handleUpdate() {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
-	availableSnapshots := make(map[uint32]SliceStruct[*state.L1Commitment])
+	availableSnapshots := make(map[uint32]*util.SliceStruct[*state.L1Commitment])
 	count := 0
 	for index, commitments := range msmT.readySnapshots {
 		clonedCommitments := commitments.Clone()
