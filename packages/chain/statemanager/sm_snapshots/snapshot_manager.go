@@ -274,6 +274,8 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, c
 // Internal functions
 // -------------------------------------
 
+// This happens strictly before snapshot manager starts to produce new snapshots.
+// So there is no way that this function will delete temp file, which is needed.
 func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	tempFileRegExp := tempSnapshotFileNameString("*", "*")
 	tempFileRegExpWithPath := filepath.Join(smiT.localPath, tempFileRegExp)

@@ -13,6 +13,8 @@ type snapshotInfoCallback struct {
 	callback chan<- error
 }
 
+// To avoid code duplication, a common parts of regular and mocked snapshot managers
+// are extracted to `snapshotManagerRunner`.
 type snapshotManagerRunner struct {
 	log                 *logger.Logger
 	ctx                 context.Context
