@@ -160,7 +160,7 @@ func (teT *testEnv) checkSnapshotsLoaded() {
 			if ok {
 				snapshotInfo, ok := teT.snaprsis[nodeID]
 				require.True(teT.t, ok)
-				input := sm_inputs.NewSnapshotManagerSnapshotDone(snapshotInfo.GetStateIndex(), snapshotInfo.GetCommitment(), result)
+				input := sm_inputs.NewSnapshotManagerSnapshotDone(snapshotInfo.StateIndex(), snapshotInfo.Commitment(), result)
 				inputs[nodeID] = input
 			}
 			teT.snaprchs[nodeID] = nil

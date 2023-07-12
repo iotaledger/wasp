@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type mockedSnapshotManager struct {
@@ -20,9 +21,9 @@ type mockedSnapshotManager struct {
 	t            *testing.T
 	createPeriod uint32
 
-	availableSnapshots      map[uint32]SliceStruct[*state.L1Commitment]
+	availableSnapshots      map[uint32]*util.SliceStruct[*state.L1Commitment]
 	availableSnapshotsMutex sync.RWMutex
-	readySnapshots          map[uint32]SliceStruct[*state.L1Commitment]
+	readySnapshots          map[uint32]*util.SliceStruct[*state.L1Commitment]
 	readySnapshotsMutex     sync.Mutex
 
 	origStore state.Store
@@ -53,9 +54,9 @@ func NewMockedSnapshotManager(
 	result := &mockedSnapshotManager{
 		t:                       t,
 		createPeriod:            createPeriod,
-		availableSnapshots:      make(map[uint32]SliceStruct[*state.L1Commitment]),
+		availableSnapshots:      make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
 		availableSnapshotsMutex: sync.RWMutex{},
-		readySnapshots:          make(map[uint32]SliceStruct[*state.L1Commitment]),
+		readySnapshots:          make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
 		readySnapshotsMutex:     sync.Mutex{},
 		origStore:               origStore,
 		nodeStore:               nodeStore,
@@ -93,13 +94,13 @@ func (msmT *mockedSnapshotManager) SnapshotReady(snapshotInfo SnapshotInfo) {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
-	commitments, ok := msmT.readySnapshots[snapshotInfo.GetStateIndex()]
+	commitments, ok := msmT.readySnapshots[snapshotInfo.StateIndex()]
 	if ok {
-		if !commitments.ContainsBy(func(comm *state.L1Commitment) bool { return comm.Equals(snapshotInfo.GetCommitment()) }) {
-			commitments.Add(snapshotInfo.GetCommitment())
+		if !commitments.ContainsBy(func(comm *state.L1Commitment) bool { return comm.Equals(snapshotInfo.Commitment()) }) {
+			commitments.Add(snapshotInfo.Commitment())
 		}
 	} else {
-		msmT.readySnapshots[snapshotInfo.GetStateIndex()] = NewSliceStruct(snapshotInfo.GetCommitment())
+		msmT.readySnapshots[snapshotInfo.StateIndex()] = util.NewSliceStruct(snapshotInfo.Commitment())
 	}
 }
 
@@ -107,11 +108,11 @@ func (msmT *mockedSnapshotManager) IsSnapshotReady(snapshotInfo SnapshotInfo) bo
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
-	commitments, ok := msmT.readySnapshots[snapshotInfo.GetStateIndex()]
+	commitments, ok := msmT.readySnapshots[snapshotInfo.StateIndex()]
 	if !ok {
 		return false
 	}
-	return commitments.ContainsBy(func(elem *state.L1Commitment) bool { return elem.Equals(snapshotInfo.GetCommitment()) })
+	return commitments.ContainsBy(func(elem *state.L1Commitment) bool { return elem.Equals(snapshotInfo.Commitment()) })
 }
 
 func (msmT *mockedSnapshotManager) SetAfterSnapshotCreated(fun func(SnapshotInfo)) {
@@ -130,7 +131,7 @@ func (msmT *mockedSnapshotManager) handleUpdate() {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
-	availableSnapshots := make(map[uint32]SliceStruct[*state.L1Commitment])
+	availableSnapshots := make(map[uint32]*util.SliceStruct[*state.L1Commitment])
 	count := 0
 	for index, commitments := range msmT.readySnapshots {
 		clonedCommitments := commitments.Clone()
@@ -145,7 +146,7 @@ func (msmT *mockedSnapshotManager) handleUpdate() {
 }
 
 func (msmT *mockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.GetStateIndex()
+	stateIndex := snapshotInfo.StateIndex()
 	if stateIndex%msmT.createPeriod == 0 {
 		msmT.log.Debugf("Creating snapshot %s...", snapshotInfo)
 		go func() {
@@ -159,16 +160,16 @@ func (msmT *mockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInf
 
 func (msmT *mockedSnapshotManager) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
 	msmT.log.Debugf("Loading snapshot %s...", snapshotInfo)
-	commitments, ok := msmT.availableSnapshots[snapshotInfo.GetStateIndex()]
+	commitments, ok := msmT.availableSnapshots[snapshotInfo.StateIndex()]
 	require.True(msmT.t, ok)
 	require.True(msmT.t, commitments.ContainsBy(func(elem *state.L1Commitment) bool {
-		return elem.Equals(snapshotInfo.GetCommitment())
+		return elem.Equals(snapshotInfo.Commitment())
 	}))
 	<-msmT.timeProvider.After(msmT.snapshotLoadTime)
 	snapshot := mapdb.NewMapDB()
-	err := msmT.origStore.TakeSnapshot(snapshotInfo.GetTrieRoot(), snapshot)
+	err := msmT.origStore.TakeSnapshot(snapshotInfo.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
-	err = msmT.nodeStore.RestoreSnapshot(snapshotInfo.GetTrieRoot(), snapshot)
+	err = msmT.nodeStore.RestoreSnapshot(snapshotInfo.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
 	callback <- nil
 	msmT.log.Debugf("Loading snapshot %s: snapshot loaded", snapshotInfo)

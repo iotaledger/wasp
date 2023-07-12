@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type commitmentSources struct {
@@ -39,7 +40,7 @@ type snapshotManagerImpl struct {
 	createPeriod              uint32
 	snapshotter               snapshotter
 
-	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]
+	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]
 	availableSnapshotsMutex sync.RWMutex
 
 	localPath    string
@@ -89,7 +90,7 @@ func NewSnapshotManager(
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
 		snapshotter:               newSnapshotter(store),
-		availableSnapshots:        shrinkingmap.New[uint32, SliceStruct[*commitmentSources]](),
+		availableSnapshots:        shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]](),
 		availableSnapshotsMutex:   sync.RWMutex{},
 		localPath:                 localPath,
 		networkPaths:              networkPaths,
@@ -133,7 +134,7 @@ func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
 }
 
 func (smiT *snapshotManagerImpl) handleUpdate() {
-	result := shrinkingmap.New[uint32, SliceStruct[*commitmentSources]]()
+	result := shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]]()
 	smiT.handleUpdateLocal(result)
 	smiT.handleUpdateNetwork(result)
 
@@ -151,13 +152,13 @@ func (smiT *snapshotManagerImpl) handleUpdate() {
 // that another go routine is already making a snapshot and returns. For this reason
 // it is important to delete all temporary files on snapshot manager start.
 func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.GetStateIndex()
+	stateIndex := snapshotInfo.StateIndex()
 	var lastIndexSnapshotted uint32
 	smiT.lastIndexSnapshottedMutex.Lock()
 	lastIndexSnapshotted = smiT.lastIndexSnapshotted
 	smiT.lastIndexSnapshottedMutex.Unlock()
 	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smiT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
-		commitment := snapshotInfo.GetCommitment()
+		commitment := snapshotInfo.Commitment()
 		smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
 		tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
 		tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
@@ -204,16 +205,16 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
 	smiT.log.Debugf("Loading snapshot %s", snapshotInfo)
 	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
-	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.GetStateIndex())
+	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.StateIndex())
 	// smiT.availableSnapshotsMutex.RUnlock()
 	if !exists {
-		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfo.GetStateIndex())
+		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfo.StateIndex())
 		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, err)
 		callback <- err
 		return
 	}
 	cs, exists := commitments.Find(func(c *commitmentSources) bool {
-		return c.commitment.Equals(snapshotInfo.GetCommitment())
+		return c.commitment.Equals(snapshotInfo.Commitment())
 	})
 	if !exists {
 		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfo)
@@ -273,6 +274,8 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, c
 // Internal functions
 // -------------------------------------
 
+// This happens strictly before snapshot manager starts to produce new snapshots.
+// So there is no way that this function will delete temp file, which is needed.
 func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	tempFileRegExp := tempSnapshotFileNameString("*", "*")
 	tempFileRegExpWithPath := filepath.Join(smiT.localPath, tempFileRegExp)
@@ -294,7 +297,7 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
+func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]) {
 	fileRegExp := snapshotFileNameString("*", "*")
 	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
 	files, err := filepath.Glob(fileRegExpWithPath)
@@ -327,7 +330,7 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 	smiT.log.Debugf("Update local: %v snapshot files found", snapshotCount)
 }
 
-func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]]) {
+func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]) {
 	for _, networkPath := range smiT.networkPaths {
 		func() { // Function to make the defers sooner
 			indexFilePath, err := url.JoinPath(networkPath, constIndexFileName)
@@ -417,23 +420,23 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 	return cancelFun, reader, nil
 }
 
-func addSource(result *shrinkingmap.ShrinkingMap[uint32, SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
+func addSource(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
 	makeNewComSourcesFun := func() *commitmentSources {
 		return &commitmentSources{
-			commitment: si.GetCommitment(),
+			commitment: si.Commitment(),
 			sources:    []string{path},
 		}
 	}
-	comSourcesArray, exists := result.Get(si.GetStateIndex())
+	comSourcesArray, exists := result.Get(si.StateIndex())
 	if exists {
-		comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.GetCommitment()) })
+		comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.Commitment()) })
 		if ok {
 			comSources.sources = append(comSources.sources, path)
 		} else {
 			comSourcesArray.Add(makeNewComSourcesFun())
 		}
 	} else {
-		comSourcesArray = NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
-		result.Set(si.GetStateIndex(), comSourcesArray)
+		comSourcesArray = util.NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
+		result.Set(si.StateIndex(), comSourcesArray)
 	}
 }
