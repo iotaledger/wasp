@@ -15,12 +15,20 @@ jobs:
           go-version: "1.20"
         id: go
 
+      - name: Generate token # generate a token to trigger the rest of the CI tasks... https://github.com/tibdex/github-app-token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
-        with: 
+        with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-      
+          token: ${{ steps.generate_token.outputs.token }}
+
       - name: Run go mod tidy script
         run: ./scripts/go_mod_tidy.sh
 
@@ -29,5 +37,5 @@ jobs:
         with:
           author_name: GitHub Actions
           committer_email: actions@github.com
-          message: 'go mod tidy'
-          add: '.'
+          message: "go mod tidy"
+          add: "."
