@@ -22,13 +22,6 @@ type SnapshotManager interface {
 	LoadSnapshotAsync(SnapshotInfo) <-chan error
 }
 
-type SnapshotManagerTest interface {
-	SnapshotManager
-	SnapshotReady(SnapshotInfo)
-	IsSnapshotReady(SnapshotInfo) bool
-	SetAfterSnapshotCreated(func(SnapshotInfo))
-}
-
 type SnapshotInfo interface {
 	StateIndex() uint32
 	Commitment() *state.L1Commitment
