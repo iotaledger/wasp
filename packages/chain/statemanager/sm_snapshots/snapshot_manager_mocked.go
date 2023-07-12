@@ -94,13 +94,13 @@ func (msmT *mockedSnapshotManager) SnapshotReady(snapshotInfo SnapshotInfo) {
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
-	commitments, ok := msmT.readySnapshots[snapshotInfo.GetStateIndex()]
+	commitments, ok := msmT.readySnapshots[snapshotInfo.StateIndex()]
 	if ok {
-		if !commitments.ContainsBy(func(comm *state.L1Commitment) bool { return comm.Equals(snapshotInfo.GetCommitment()) }) {
-			commitments.Add(snapshotInfo.GetCommitment())
+		if !commitments.ContainsBy(func(comm *state.L1Commitment) bool { return comm.Equals(snapshotInfo.Commitment()) }) {
+			commitments.Add(snapshotInfo.Commitment())
 		}
 	} else {
-		msmT.readySnapshots[snapshotInfo.GetStateIndex()] = util.NewSliceStruct(snapshotInfo.GetCommitment())
+		msmT.readySnapshots[snapshotInfo.StateIndex()] = util.NewSliceStruct(snapshotInfo.Commitment())
 	}
 }
 
@@ -108,11 +108,11 @@ func (msmT *mockedSnapshotManager) IsSnapshotReady(snapshotInfo SnapshotInfo) bo
 	msmT.readySnapshotsMutex.Lock()
 	defer msmT.readySnapshotsMutex.Unlock()
 
-	commitments, ok := msmT.readySnapshots[snapshotInfo.GetStateIndex()]
+	commitments, ok := msmT.readySnapshots[snapshotInfo.StateIndex()]
 	if !ok {
 		return false
 	}
-	return commitments.ContainsBy(func(elem *state.L1Commitment) bool { return elem.Equals(snapshotInfo.GetCommitment()) })
+	return commitments.ContainsBy(func(elem *state.L1Commitment) bool { return elem.Equals(snapshotInfo.Commitment()) })
 }
 
 func (msmT *mockedSnapshotManager) SetAfterSnapshotCreated(fun func(SnapshotInfo)) {
@@ -146,7 +146,7 @@ func (msmT *mockedSnapshotManager) handleUpdate() {
 }
 
 func (msmT *mockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.GetStateIndex()
+	stateIndex := snapshotInfo.StateIndex()
 	if stateIndex%msmT.createPeriod == 0 {
 		msmT.log.Debugf("Creating snapshot %s...", snapshotInfo)
 		go func() {
@@ -160,16 +160,16 @@ func (msmT *mockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInf
 
 func (msmT *mockedSnapshotManager) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
 	msmT.log.Debugf("Loading snapshot %s...", snapshotInfo)
-	commitments, ok := msmT.availableSnapshots[snapshotInfo.GetStateIndex()]
+	commitments, ok := msmT.availableSnapshots[snapshotInfo.StateIndex()]
 	require.True(msmT.t, ok)
 	require.True(msmT.t, commitments.ContainsBy(func(elem *state.L1Commitment) bool {
-		return elem.Equals(snapshotInfo.GetCommitment())
+		return elem.Equals(snapshotInfo.Commitment())
 	}))
 	<-msmT.timeProvider.After(msmT.snapshotLoadTime)
 	snapshot := mapdb.NewMapDB()
-	err := msmT.origStore.TakeSnapshot(snapshotInfo.GetTrieRoot(), snapshot)
+	err := msmT.origStore.TakeSnapshot(snapshotInfo.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
-	err = msmT.nodeStore.RestoreSnapshot(snapshotInfo.GetTrieRoot(), snapshot)
+	err = msmT.nodeStore.RestoreSnapshot(snapshotInfo.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
 	callback <- nil
 	msmT.log.Debugf("Loading snapshot %s: snapshot loaded", snapshotInfo)

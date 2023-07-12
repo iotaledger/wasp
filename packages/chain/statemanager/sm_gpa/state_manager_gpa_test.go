@@ -519,10 +519,10 @@ func TestSnapshots(t *testing.T) {
 		store, ok := env.stores[nodeID]
 		require.True(env.t, ok)
 		for i := range expected {
-			env.t.Logf("Checking snapshot/block index %v at node %v", snapshotInfos[i].GetStateIndex(), nodeID)
+			env.t.Logf("Checking snapshot/block index %v at node %v", snapshotInfos[i].StateIndex(), nodeID)
 			require.Equal(env.t, expected[i].snapshotReady, snapM.IsSnapshotReady(snapshotInfos[i]))
-			require.Equal(env.t, expected[i].snapshotExists, snapM.SnapshotExists(snapshotInfos[i].GetStateIndex(), snapshotInfos[i].GetCommitment()))
-			require.Equal(env.t, expected[i].blockCommitted, store.HasTrieRoot(snapshotInfos[i].GetTrieRoot()))
+			require.Equal(env.t, expected[i].snapshotExists, snapM.SnapshotExists(snapshotInfos[i].StateIndex(), snapshotInfos[i].Commitment()))
+			require.Equal(env.t, expected[i].blockCommitted, store.HasTrieRoot(snapshotInfos[i].TrieRoot()))
 		}
 	}
 	expectedFirst := make([]expectedValues, len(blocks))
@@ -574,7 +574,7 @@ func TestSnapshots(t *testing.T) {
 	checkBlocksFun()
 
 	sendAndEnsureCompletedConsensusStateProposalWithWaitFun := func(snapshotInfo sm_snapshots.SnapshotInfo) {
-		respCh := env.sendConsensusStateProposal(snapshotInfo.GetCommitment(), nodeIDOther)
+		respCh := env.sendConsensusStateProposal(snapshotInfo.Commitment(), nodeIDOther)
 		time.Sleep(10 * time.Millisecond) // Time for load snapshot request to propagate to snapshot manager
 		for i := 0; i < 14; i++ {
 			env.sendTimerTickToNodes(timerTickPeriod) // Timer tick is not necessary; it's just a way to advance artificial timer

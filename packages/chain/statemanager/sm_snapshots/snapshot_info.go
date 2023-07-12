@@ -21,32 +21,32 @@ func NewSnapshotInfo(index uint32, commitment *state.L1Commitment) SnapshotInfo 
 	}
 }
 
-func (si *snapshotInfoImpl) GetStateIndex() uint32 {
+func (si *snapshotInfoImpl) StateIndex() uint32 {
 	return si.index
 }
 
-func (si *snapshotInfoImpl) GetCommitment() *state.L1Commitment {
+func (si *snapshotInfoImpl) Commitment() *state.L1Commitment {
 	return si.commitment
 }
 
-func (si *snapshotInfoImpl) GetTrieRoot() trie.Hash {
-	return si.GetCommitment().TrieRoot()
+func (si *snapshotInfoImpl) TrieRoot() trie.Hash {
+	return si.Commitment().TrieRoot()
 }
 
-func (si *snapshotInfoImpl) GetBlockHash() state.BlockHash {
-	return si.GetCommitment().BlockHash()
+func (si *snapshotInfoImpl) BlockHash() state.BlockHash {
+	return si.Commitment().BlockHash()
 }
 
 func (si *snapshotInfoImpl) String() string {
-	return fmt.Sprintf("%v %s", si.GetStateIndex(), si.GetCommitment())
+	return fmt.Sprintf("%v %s", si.StateIndex(), si.Commitment())
 }
 
 func (si *snapshotInfoImpl) Equals(other SnapshotInfo) bool {
 	if si == nil {
 		return other == nil
 	}
-	if si.GetStateIndex() != other.GetStateIndex() {
+	if si.StateIndex() != other.StateIndex() {
 		return false
 	}
-	return si.GetCommitment().Equals(other.GetCommitment())
+	return si.Commitment().Equals(other.Commitment())
 }

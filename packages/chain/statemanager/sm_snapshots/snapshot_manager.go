@@ -152,13 +152,13 @@ func (smiT *snapshotManagerImpl) handleUpdate() {
 // that another go routine is already making a snapshot and returns. For this reason
 // it is important to delete all temporary files on snapshot manager start.
 func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.GetStateIndex()
+	stateIndex := snapshotInfo.StateIndex()
 	var lastIndexSnapshotted uint32
 	smiT.lastIndexSnapshottedMutex.Lock()
 	lastIndexSnapshotted = smiT.lastIndexSnapshotted
 	smiT.lastIndexSnapshottedMutex.Unlock()
 	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smiT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
-		commitment := snapshotInfo.GetCommitment()
+		commitment := snapshotInfo.Commitment()
 		smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
 		tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
 		tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
@@ -205,16 +205,16 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
 	smiT.log.Debugf("Loading snapshot %s", snapshotInfo)
 	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
-	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.GetStateIndex())
+	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.StateIndex())
 	// smiT.availableSnapshotsMutex.RUnlock()
 	if !exists {
-		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfo.GetStateIndex())
+		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfo.StateIndex())
 		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, err)
 		callback <- err
 		return
 	}
 	cs, exists := commitments.Find(func(c *commitmentSources) bool {
-		return c.commitment.Equals(snapshotInfo.GetCommitment())
+		return c.commitment.Equals(snapshotInfo.Commitment())
 	})
 	if !exists {
 		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfo)
@@ -421,13 +421,13 @@ func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout t
 func addSource(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
 	makeNewComSourcesFun := func() *commitmentSources {
 		return &commitmentSources{
-			commitment: si.GetCommitment(),
+			commitment: si.Commitment(),
 			sources:    []string{path},
 		}
 	}
-	comSourcesArray, exists := result.Get(si.GetStateIndex())
+	comSourcesArray, exists := result.Get(si.StateIndex())
 	if exists {
-		comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.GetCommitment()) })
+		comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.Commitment()) })
 		if ok {
 			comSources.sources = append(comSources.sources, path)
 		} else {
@@ -435,6 +435,6 @@ func addSource(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*comm
 		}
 	} else {
 		comSourcesArray = util.NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
-		result.Set(si.GetStateIndex(), comSourcesArray)
+		result.Set(si.StateIndex(), comSourcesArray)
 	}
 }

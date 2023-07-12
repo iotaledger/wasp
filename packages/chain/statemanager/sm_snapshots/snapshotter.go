@@ -26,7 +26,7 @@ func newSnapshotter(store state.Store) snapshotter {
 
 func (sn *snapshotterImpl) storeSnapshot(snapshotInfo SnapshotInfo, w io.Writer) error {
 	snapshot := mapdb.NewMapDB()
-	err := sn.store.TakeSnapshot(snapshotInfo.GetTrieRoot(), snapshot)
+	err := sn.store.TakeSnapshot(snapshotInfo.TrieRoot(), snapshot)
 	if err != nil {
 		return fmt.Errorf("failed to read store: %w", err)
 	}
@@ -45,7 +45,7 @@ func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) 
 	if !readSnapshotInfo.Equals(snapshotInfo) {
 		return fmt.Errorf("snapshot read %s is different than expected %v", readSnapshotInfo, snapshotInfo)
 	}
-	err = sn.store.RestoreSnapshot(readSnapshotInfo.GetTrieRoot(), snapshot)
+	err = sn.store.RestoreSnapshot(readSnapshotInfo.TrieRoot(), snapshot)
 	if err != nil {
 		return fmt.Errorf("failed restoring snapshot: %w", err)
 	}
@@ -54,16 +54,16 @@ func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) 
 
 func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Writer) error {
 	indexArray := make([]byte, 4) // Size of block index, which is of type uint32: 4 bytes
-	binary.LittleEndian.PutUint32(indexArray, snapshotInfo.GetStateIndex())
+	binary.LittleEndian.PutUint32(indexArray, snapshotInfo.StateIndex())
 	err := writeBytes(indexArray, w)
 	if err != nil {
-		return fmt.Errorf("failed writing block index %v: %w", snapshotInfo.GetStateIndex(), err)
+		return fmt.Errorf("failed writing block index %v: %w", snapshotInfo.StateIndex(), err)
 	}
 
-	trieRootBytes := snapshotInfo.GetCommitment().Bytes()
+	trieRootBytes := snapshotInfo.Commitment().Bytes()
 	err = writeBytes(trieRootBytes, w)
 	if err != nil {
-		return fmt.Errorf("failed writing L1 commitment %s: %w", snapshotInfo.GetCommitment(), err)
+		return fmt.Errorf("failed writing L1 commitment %s: %w", snapshotInfo.Commitment(), err)
 	}
 
 	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {

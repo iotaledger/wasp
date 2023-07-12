@@ -60,7 +60,7 @@ func TestSnapshotManagerNetwork(t *testing.T) {
 		defer f.Close()
 		w := bufio.NewWriter(f)
 		for _, snapshotInfo := range snapshotInfos {
-			w.WriteString(snapshotFileName(snapshotInfo.GetStateIndex(), snapshotInfo.GetBlockHash()) + "\n")
+			w.WriteString(snapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash()) + "\n")
 		}
 		w.Flush()
 	}
@@ -144,7 +144,7 @@ func loadAndWaitLoaded(t *testing.T, snapshotManager SnapshotManager, snapshotIn
 		}
 	}
 	waitFun := func() { time.Sleep(sleep) }
-	return ensureTrue(t, fmt.Sprintf("state %v to be loaded", snapshotInfo.GetStateIndex()), loadCompletedFun, maxIterations, waitFun)
+	return ensureTrue(t, fmt.Sprintf("state %v to be loaded", snapshotInfo.StateIndex()), loadCompletedFun, maxIterations, waitFun)
 }
 
 func ensureTrue(t *testing.T, title string, predicate func() bool, maxIterations int, step func()) bool {

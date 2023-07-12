@@ -391,7 +391,7 @@ func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 }
 
 func (smT *stateManager) handleSnapshotDone(result error) {
-	smT.handleInput(sm_inputs.NewSnapshotManagerSnapshotDone(smT.snapshotRespInfo.GetStateIndex(), smT.snapshotRespInfo.GetCommitment(), result))
+	smT.handleInput(sm_inputs.NewSnapshotManagerSnapshotDone(smT.snapshotRespInfo.StateIndex(), smT.snapshotRespInfo.Commitment(), result))
 }
 
 func (smT *stateManager) handleTimerTick(now time.Time) {

@@ -22,10 +22,10 @@ type SnapshotManagerTest interface {
 }
 
 type SnapshotInfo interface {
-	GetStateIndex() uint32
-	GetCommitment() *state.L1Commitment
-	GetTrieRoot() trie.Hash
-	GetBlockHash() state.BlockHash
+	StateIndex() uint32
+	Commitment() *state.L1Commitment
+	TrieRoot() trie.Hash
+	BlockHash() state.BlockHash
 	String() string
 	Equals(SnapshotInfo) bool
 }
