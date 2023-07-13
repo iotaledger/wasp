@@ -43,7 +43,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
-func SetInitialState(state kv.KVStore, evmChainID uint16) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	// add the standard ISC contract at arbitrary address 0x1074...
 	genesisAlloc := core.GenesisAlloc{}
 	deployMagicContractOnGenesis(genesisAlloc)
@@ -54,7 +54,7 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-	addToPrivileged(state, iscmagic.ERC20BaseTokensAddress)
+	addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 
 	// add the standard ERC721 contract
 	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
@@ -62,13 +62,13 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-	addToPrivileged(state, iscmagic.ERC721NFTsAddress)
+	addToPrivileged(evmPartition, iscmagic.ERC721NFTsAddress)
 
 	// chain always starts with default gas fee & limits configuration
 	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
 	emulator.Init(
-		evmStateSubrealm(state),
+		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
@@ -359,7 +359,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 func getChainID(ctx isc.SandboxView) dict.Dict {
 	chainID := emulator.GetChainIDFromBlockChainDBState(
 		emulator.BlockchainDBSubrealmR(
-			evmStateSubrealmR(ctx.StateR()),
+			evm.EmulatorStateSubrealmR(ctx.StateR()),
 		),
 	)
 	return result(codec.EncodeUint16(chainID))

@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -30,12 +31,12 @@ func keyPrivileged(addr common.Address) kv.Key {
 }
 
 func isCallerPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
-	state := iscMagicSubrealmR(ctx.StateR())
+	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	return state.Has(keyPrivileged(addr))
 }
 
 func addToPrivileged(s kv.KVStore, addr common.Address) {
-	state := iscMagicSubrealm(s)
+	state := evm.ISCMagicSubrealm(s)
 	state.Set(keyPrivileged(addr), []byte{1})
 }
 
@@ -45,7 +46,7 @@ func keyAllowance(from, to common.Address) kv.Key {
 }
 
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
-	state := iscMagicSubrealmR(ctx.StateR())
+	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	key := keyAllowance(from, to)
 	return isc.MustAssetsFromBytes(state.Get(key))
 }
@@ -84,7 +85,7 @@ func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Assets) {
 }
 
 func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)) {
-	state := iscMagicSubrealm(ctx.State())
+	state := evm.ISCMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
 	allowance := isc.MustAssetsFromBytes(state.Get(key))
 	f(allowance)
@@ -94,7 +95,7 @@ func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)
 var errFundsNotAllowed = coreerrors.Register("remaining allowance insufficient").Create()
 
 func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.Assets) *isc.Assets {
-	state := iscMagicSubrealm(ctx.State())
+	state := evm.ISCMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
 
 	remaining := isc.MustAssetsFromBytes(state.Get(key))
@@ -121,12 +122,12 @@ func keyERC20ExternalNativeTokensAddress(nativeTokenID iotago.NativeTokenID) kv.
 }
 
 func addERC20ExternalNativeTokensAddress(ctx isc.Sandbox, nativeTokenID iotago.NativeTokenID, addr common.Address) {
-	state := iscMagicSubrealm(ctx.State())
+	state := evm.ISCMagicSubrealm(ctx.State())
 	state.Set(keyERC20ExternalNativeTokensAddress(nativeTokenID), addr.Bytes())
 }
 
 func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID iotago.NativeTokenID) (ret common.Address, ok bool) {
-	state := iscMagicSubrealmR(ctx.StateR())
+	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	b := state.Get(keyERC20ExternalNativeTokensAddress(nativeTokenID))
 	if b == nil {
 		return ret, false

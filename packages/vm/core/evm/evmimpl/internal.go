@@ -27,8 +27,8 @@ import (
 // MintBlock "mints" the Ethereum block after all requests in the ISC
 // block have been processed.
 // IMPORTANT: Must only be called from the ISC VM
-func MintBlock(state kv.KVStore, chainInfo *isc.ChainInfo, blockTimestamp time.Time) {
-	createBlockchainDB(state, chainInfo).MintBlock(timestamp(blockTimestamp))
+func MintBlock(evmPartition kv.KVStore, chainInfo *isc.ChainInfo, blockTimestamp time.Time) {
+	createBlockchainDB(evmPartition, chainInfo).MintBlock(timestamp(blockTimestamp))
 }
 
 func getTracer(ctx isc.Sandbox) tracers.Tracer {
@@ -42,7 +42,7 @@ func getTracer(ctx isc.Sandbox) tracers.Tracer {
 func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
 	chainInfo := ctx.ChainInfo()
 	return emulator.NewEVMEmulator(
-		evmStateSubrealm(ctx.State()),
+		evm.EmulatorStateSubrealm(ctx.State()),
 		timestamp(ctx.Timestamp()),
 		gasLimits(chainInfo),
 		chainInfo.BlockKeepAmount,
@@ -51,13 +51,13 @@ func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
 	)
 }
 
-func createBlockchainDB(state kv.KVStore, chainInfo *isc.ChainInfo) *emulator.BlockchainDB {
-	return emulator.NewBlockchainDB(evmStateSubrealm(state), gasLimits(chainInfo).Block, chainInfo.BlockKeepAmount)
+func createBlockchainDB(evmPartition kv.KVStore, chainInfo *isc.ChainInfo) *emulator.BlockchainDB {
+	return emulator.NewBlockchainDB(evm.EmulatorStateSubrealm(evmPartition), gasLimits(chainInfo).Block, chainInfo.BlockKeepAmount)
 }
 
 // IMPORTANT: Must only be called from the ISC VM (when the request is done executing)
 func AddFailedTx(
-	state kv.KVStore,
+	evmPartition kv.KVStore,
 	chainInfo *isc.ChainInfo,
 	tx *types.Transaction,
 	receipt *types.Receipt,
@@ -68,9 +68,9 @@ func AddFailedTx(
 	if receipt == nil {
 		panic("nil receipt")
 	}
-	createBlockchainDB(state, chainInfo).AddTransaction(tx, receipt)
+	createBlockchainDB(evmPartition, chainInfo).AddTransaction(tx, receipt)
 	// we must also increment the nonce manually since the original request was reverted
-	emulator.NewStateDB(evmStateSubrealm(state), nil).IncNonce(evmutil.MustGetSender(tx))
+	emulator.NewStateDB(evm.EmulatorStateSubrealm(evmPartition), nil).IncNonce(evmutil.MustGetSender(tx))
 }
 
 func gasLimits(chainInfo *isc.ChainInfo) emulator.GasLimits {

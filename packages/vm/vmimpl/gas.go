@@ -29,7 +29,6 @@ func (reqctx *requestContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 
 	if reqctx.gas.burned > reqctx.gas.budgetAdjusted {
 		reqctx.gas.burned = reqctx.gas.budgetAdjusted // do not charge more than the limit set by the request
-		// debug.PrintStack()
 		panic(vm.ErrGasBudgetExceeded)
 	}
 

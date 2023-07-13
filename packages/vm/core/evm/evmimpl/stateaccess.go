@@ -4,19 +4,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 type StateAccess struct {
-	state kv.KVStoreReader
+	evmPartition kv.KVStoreReader
 }
 
 func NewStateAccess(store kv.KVStoreReader) *StateAccess {
-	contractState := subrealm.NewReadOnly(store, kv.Key(evm.Contract.Hname().Bytes()))
-	return &StateAccess{state: contractState}
+	return &StateAccess{evmPartition: evm.ContractPartitionR(store)}
 }
 
 func (sa *StateAccess) Nonce(addr common.Address) uint64 {
-	return Nonce(sa.state, addr)
+	return Nonce(sa.evmPartition, addr)
 }
