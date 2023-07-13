@@ -39,10 +39,6 @@ func NewBatchProposal(
 	}
 }
 
-func batchProposalFromBytes(data []byte) (*BatchProposal, error) {
-	return rwutil.ReadFromBytes(data, new(BatchProposal))
-}
-
 func (b *BatchProposal) Bytes() []byte {
 	return rwutil.WriteToBytes(b)
 }

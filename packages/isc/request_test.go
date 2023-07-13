@@ -9,6 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -53,10 +54,25 @@ func TestRequestDataSerialization(t *testing.T) {
 	})
 }
 
-func TestRequestIDToSerialization(t *testing.T) {
+func TestRequestIDSerialization(t *testing.T) {
 	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
 	rwutil.ReadWriteTest(t, &requestID, new(RequestID))
 	rwutil.BytesTest(t, requestID, RequestIDFromBytes)
 	rwutil.StringTest(t, requestID, RequestIDFromString)
+}
+
+func TestRequestRefSerialization(t *testing.T) {
+	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
+	reqRef0 := &RequestRef{
+		ID:   req.ID(),
+		Hash: hashing.PseudoRandomHash(nil),
+	}
+
+	b := reqRef0.Bytes()
+	reqRef1, err := RequestRefFromBytes(b)
+	require.NoError(t, err)
+	require.Equal(t, reqRef0, reqRef1)
+
+	rwutil.ReadWriteTest(t, reqRef0, new(RequestRef))
 }

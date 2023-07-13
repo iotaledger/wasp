@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 // Here we store just an aggregated info.
@@ -29,7 +30,8 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
 	for nid := range inputs {
-		batchProposal, err := batchProposalFromBytes(inputs[nid])
+		var batchProposal *BatchProposal
+		batchProposal, err := rwutil.ReadFromBytes(inputs[nid], new(BatchProposal))
 		if err != nil {
 			log.Warnf("cannot decode BatchProposal from %v: %v", nid, err)
 			continue
