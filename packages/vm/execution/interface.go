@@ -14,18 +14,25 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-// WaspContext defines the common functionality for vm context - both used in internal/external calls (SC execution/external view calls)
+// The following interfaces define the common functionality for SC execution (VM/external view calls)
+
 type WaspContext interface {
 	LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error)
 	GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord)
+	Processors() *processors.Cache
+}
+
+type GasContext interface {
 	GasBurnEnable(enable bool)
 	GasBurn(burnCode gas.BurnCode, par ...uint64)
-	Processors() *processors.Cache
+}
 
-	// needed for sandbox
+type WaspCallContext interface {
+	WaspContext
+	GasContext
 	isc.LogInterface
 	Timestamp() time.Time
-	AccountID() isc.AgentID
+	CurrentContractAccountID() isc.AgentID
 	Caller() isc.AgentID
 	GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens
 	GetBaseTokensBalance(agentID isc.AgentID) uint64
@@ -36,7 +43,7 @@ type WaspContext interface {
 	ChainInfo() *isc.ChainInfo
 	CurrentContractHname() isc.Hname
 	Params() *isc.Params
-	StateReader() kv.KVStoreReader
+	ContractStateReaderWithGasBurn() kv.KVStoreReader
 	GasBurned() uint64
 	GasBudgetLeft() uint64
 	GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID

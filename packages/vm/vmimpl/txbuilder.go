@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -16,17 +15,17 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
+func (vmctx *vmContext) stateMetadata(stateCommitment *state.L1Commitment) []byte {
 	stateMetadata := transaction.StateMetadata{
 		Version:      transaction.StateMetadataSupportedVersion,
 		L1Commitment: stateCommitment,
 	}
 
-	vmctx.callCore(root.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, root.Contract, func(s kv.KVStore) {
 		stateMetadata.SchemaVersion = root.GetSchemaVersion(s)
 	})
 
-	vmctx.callCore(governance.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
 		// On error, the publicURL is len(0)
 		stateMetadata.PublicURL, _ = governance.GetPublicURL(s)
 		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
@@ -36,12 +35,7 @@ func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 }
 
 func (vmctx *vmContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
-	if vmctx.currentStateUpdate == nil {
-		// create a temporary empty state update, so that vmctx.callCore works and contracts state can be read
-		vmctx.currentStateUpdate = buffered.NewMutations()
-		defer func() { vmctx.currentStateUpdate = nil }()
-	}
-	stateMetadata := vmctx.StateMetadata(stateCommitment)
+	stateMetadata := vmctx.stateMetadata(stateCommitment)
 	essence, inputsCommitment := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
 	if assertTxbuilderBalanced {
 		vmctx.txbuilder.MustBalanced()
@@ -61,7 +55,7 @@ func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID
 	var retOut *iotago.BasicOutput
 	var blockIndex uint32
 	var outputIndex uint16
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 		retOut, blockIndex, outputIndex = accounts.GetNativeTokenOutput(s, nativeTokenID, vmctx.ChainID())
 	})
 	if retOut == nil {
@@ -77,7 +71,7 @@ func (vmctx *vmContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotag
 	var foundryOutput *iotago.FoundryOutput
 	var blockIndex uint32
 	var outputIndex uint16
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 		foundryOutput, blockIndex, outputIndex = accounts.GetFoundryOutput(s, serNum, vmctx.ChainID())
 	})
 	if foundryOutput == nil {
@@ -90,12 +84,12 @@ func (vmctx *vmContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotag
 }
 
 func (vmctx *vmContext) getOutputID(blockIndex uint32, outputIndex uint16) iotago.OutputID {
-	if blockIndex == vmctx.StateAnchor().StateIndex {
-		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.StateAnchor().OutputID.TransactionID(), outputIndex)
+	if blockIndex == vmctx.stateAnchor().StateIndex {
+		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.stateAnchor().OutputID.TransactionID(), outputIndex)
 	}
 	var outputID iotago.OutputID
 	var ok bool
-	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, blocklog.Contract, func(s kv.KVStore) {
 		outputID, ok = blocklog.GetOutputID(s, blockIndex, outputIndex)
 	})
 	if !ok {
@@ -108,7 +102,7 @@ func (vmctx *vmContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.Outp
 	var nftOutput *iotago.NFTOutput
 	var blockIndex uint32
 	var outputIndex uint16
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 		nftOutput, blockIndex, outputIndex = accounts.GetNFTOutput(s, id)
 	})
 	if nftOutput == nil {
@@ -122,7 +116,7 @@ func (vmctx *vmContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.Outp
 
 func (vmctx *vmContext) loadTotalFungibleTokens() *isc.Assets {
 	var totalAssets *isc.Assets
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 		totalAssets = accounts.GetTotalL2FungibleTokens(s)
 	})
 	return totalAssets

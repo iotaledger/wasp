@@ -6,11 +6,11 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-func (vmctx *vmContext) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
+func (reqctx *requestContext) estimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
 	par.AdjustToMinimumStorageDeposit = false
 	out := transaction.BasicOutputFromPostData(
-		vmctx.task.AnchorOutput.AliasID.ToAddress(),
-		vmctx.CurrentContractHname(),
+		reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
+		reqctx.CurrentContractHname(),
 		par,
 	)
 	return parameters.L1().Protocol.RentStructure.MinRent(out)

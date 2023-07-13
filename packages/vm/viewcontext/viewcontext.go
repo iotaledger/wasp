@@ -45,7 +45,7 @@ type ViewContext struct {
 	callStack             []*callContext
 }
 
-var _ execution.WaspContext = &ViewContext{}
+var _ execution.WaspCallContext = &ViewContext{}
 
 func New(ch chain.ChainCore, stateReader state.State, gasBurnLoggingEnabled bool) (*ViewContext, error) {
 	chainID := ch.ID()
@@ -54,21 +54,24 @@ func New(ch chain.ChainCore, stateReader state.State, gasBurnLoggingEnabled bool
 		stateReader:           stateReader,
 		chainID:               chainID,
 		log:                   ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		gasBurnEnabled:        true,
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 	}, nil
 }
 
-func (ctx *ViewContext) contractStateReader(contract isc.Hname) kv.KVStoreReader {
-	return subrealm.NewReadOnly(ctx.stateReader, kv.Key(contract.Bytes()))
+func (ctx *ViewContext) stateReaderWithGasBurn() kv.KVStoreReader {
+	return execution.NewKVStoreReaderWithGasBurn(ctx.stateReader, ctx)
+}
+
+func (ctx *ViewContext) contractStateReaderWithGasBurn(contract isc.Hname) kv.KVStoreReader {
+	return subrealm.NewReadOnly(ctx.stateReaderWithGasBurn(), kv.Key(contract.Bytes()))
 }
 
 func (ctx *ViewContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	return blob.LocateProgram(ctx.contractStateReader(blob.Contract.Hname()), programHash)
+	return blob.LocateProgram(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname()), programHash)
 }
 
 func (ctx *ViewContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
-	return root.FindContract(ctx.contractStateReader(root.Contract.Hname()), contractHname)
+	return root.FindContract(ctx.contractStateReaderWithGasBurn(root.Contract.Hname()), contractHname)
 }
 
 func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
@@ -83,7 +86,7 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	ctx.gasBudget -= g
 }
 
-func (ctx *ViewContext) AccountID() isc.AgentID {
+func (ctx *ViewContext) CurrentContractAccountID() isc.AgentID {
 	hname := ctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return accounts.CommonAccount()
@@ -109,15 +112,15 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 }
 
 func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
-	return accounts.GetNativeTokens(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+	return accounts.GetNativeTokens(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
-	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+	return accounts.GetAccountNFTs(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
-	return accounts.MustGetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
+	return accounts.MustGetNFTData(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), nftID)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {
@@ -125,12 +128,12 @@ func (ctx *ViewContext) Timestamp() time.Time {
 }
 
 func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
-	return accounts.GetBaseTokensBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+	return accounts.GetBaseTokensBalance(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
 	return accounts.GetNativeTokenBalance(
-		ctx.contractStateReader(accounts.Contract.Hname()),
+		ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()),
 		agentID,
 		nativeTokenID)
 }
@@ -160,8 +163,8 @@ func (ctx *ViewContext) Params() *isc.Params {
 	return &ctx.getCallContext().params
 }
 
-func (ctx *ViewContext) StateReader() kv.KVStoreReader {
-	return ctx.contractStateReader(ctx.CurrentContractHname())
+func (ctx *ViewContext) ContractStateReaderWithGasBurn() kv.KVStoreReader {
+	return ctx.contractStateReaderWithGasBurn(ctx.CurrentContractHname())
 }
 
 func (ctx *ViewContext) GasBudgetLeft() uint64 {
@@ -209,7 +212,7 @@ func (ctx *ViewContext) callView(targetContract, entryPoint isc.Hname, params di
 
 func (ctx *ViewContext) initAndCallView(targetContract, entryPoint isc.Hname, params dict.Dict) (ret dict.Dict) {
 	ctx.chainInfo = governance.MustGetChainInfo(
-		ctx.contractStateReader(governance.Contract.Hname()),
+		ctx.contractStateReaderWithGasBurn(governance.Contract.Hname()),
 		ctx.chainID,
 	)
 
@@ -217,6 +220,7 @@ func (ctx *ViewContext) initAndCallView(targetContract, entryPoint isc.Hname, pa
 	if ctx.gasBurnLoggingEnabled {
 		ctx.gasBurnLog = gas.NewGasBurnLog()
 	}
+	ctx.GasBurnEnable(true)
 	return ctx.callView(targetContract, entryPoint, params)
 }
 

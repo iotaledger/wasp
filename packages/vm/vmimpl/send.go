@@ -11,46 +11,46 @@ import (
 
 const MaxPostedOutputsInOneRequest = 4
 
-func (vmctx *vmContext) getNFTData(nftID iotago.NFTID) *isc.NFT {
+func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.NFTID) *isc.NFT {
 	var nft *isc.NFT
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
 		nft = accounts.MustGetNFTData(s, nftID)
 	})
 	return nft
 }
 
 // Send implements sandbox function of sending cross-chain request
-func (vmctx *vmContext) Send(par isc.RequestParameters) {
+func (reqctx *requestContext) send(par isc.RequestParameters) {
 	if len(par.Assets.NFTs) > 1 {
 		panic(vm.ErrSendMultipleNFTs)
 	}
 	if len(par.Assets.NFTs) == 1 {
 		// create NFT output
-		nft := vmctx.getNFTData(par.Assets.NFTs[0])
+		nft := reqctx.vm.getNFTData(reqctx.chainStateWithGasBurn(), par.Assets.NFTs[0])
 		out := transaction.NFTOutputFromPostData(
-			vmctx.task.AnchorOutput.AliasID.ToAddress(),
-			vmctx.CurrentContractHname(),
+			reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
+			reqctx.CurrentContractHname(),
 			par,
 			nft,
 		)
-		vmctx.debitNFTFromAccount(vmctx.AccountID(), nft.ID)
-		vmctx.sendOutput(out)
+		debitNFTFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), nft.ID)
+		reqctx.sendOutput(out)
 		return
 	}
 	// create extended output
 	out := transaction.BasicOutputFromPostData(
-		vmctx.task.AnchorOutput.AliasID.ToAddress(),
-		vmctx.CurrentContractHname(),
+		reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
+		reqctx.CurrentContractHname(),
 		par,
 	)
-	vmctx.sendOutput(out)
+	reqctx.sendOutput(out)
 }
 
-func (vmctx *vmContext) sendOutput(o iotago.Output) {
-	if vmctx.reqctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
+func (reqctx *requestContext) sendOutput(o iotago.Output) {
+	if reqctx.numPostedOutputs >= MaxPostedOutputsInOneRequest {
 		panic(vm.ErrExceededPostedOutputLimit)
 	}
-	vmctx.reqctx.numPostedOutputs++
+	reqctx.numPostedOutputs++
 
 	assets := isc.AssetsFromOutput(o)
 
@@ -58,9 +58,9 @@ func (vmctx *vmContext) sendOutput(o iotago.Output) {
 	// it does not change total balance of the transaction, and it does not create new internal outputs
 	// The call can destroy internal output when all native tokens of particular ID are moved outside chain
 	// The caller will receive all the storage deposit
-	baseTokenAdjustmentL2 := vmctx.txbuilder.AddOutput(o)
-	vmctx.adjustL2BaseTokensIfNeeded(baseTokenAdjustmentL2, vmctx.AccountID())
+	baseTokenAdjustmentL2 := reqctx.vm.txbuilder.AddOutput(o)
+	reqctx.adjustL2BaseTokensIfNeeded(baseTokenAdjustmentL2, reqctx.CurrentContractAccountID())
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
-	vmctx.debitFromAccount(vmctx.AccountID(), assets)
+	debitFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), assets)
 }

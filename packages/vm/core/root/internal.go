@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
@@ -58,56 +57,4 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 		return true
 	})
 	return ret, err
-}
-
-type BlockContextSubscription struct {
-	Contract  isc.Hname
-	OpenFunc  isc.Hname
-	CloseFunc isc.Hname
-}
-
-func (s *BlockContextSubscription) Encode() []byte {
-	b := make([]byte, 0, 12)
-	b = append(b, codec.EncodeHname(s.Contract)...)
-	b = append(b, codec.EncodeHname(s.OpenFunc)...)
-	b = append(b, codec.EncodeHname(s.CloseFunc)...)
-	return b
-}
-
-func mustDecodeBlockContextSubscription(b []byte) (s BlockContextSubscription) {
-	if len(b) != 12 {
-		panic("invalid length")
-	}
-	s.Contract = codec.MustDecodeHname(b[0:4])
-	s.OpenFunc = codec.MustDecodeHname(b[4:8])
-	s.CloseFunc = codec.MustDecodeHname(b[8:12])
-	return
-}
-
-func getBlockContextSubscriptions(state kv.KVStore) *collections.Array {
-	return collections.NewArray(state, StateVarBlockContextSubscriptions)
-}
-
-func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.ArrayReadOnly {
-	return collections.NewArrayReadOnly(state, StateVarBlockContextSubscriptions)
-}
-
-func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.Hname) {
-	s := BlockContextSubscription{
-		Contract:  contract,
-		OpenFunc:  openFunc,
-		CloseFunc: closeFunc,
-	}
-	getBlockContextSubscriptions(state).Push(s.Encode())
-}
-
-// GetBlockContextSubscriptions returns all contracts that are subscribed to block context,
-// in deterministic order
-func GetBlockContextSubscriptions(state kv.KVStoreReader) []BlockContextSubscription {
-	subscriptions := getBlockContextSubscriptionsR(state)
-	ret := make([]BlockContextSubscription, subscriptions.Len())
-	for i := range ret {
-		ret[i] = mustDecodeBlockContextSubscription(subscriptions.GetAt(uint32(i)))
-	}
-	return ret
 }

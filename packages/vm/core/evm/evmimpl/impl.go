@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -31,9 +30,6 @@ import (
 )
 
 var Processor = evm.Contract.Processor(nil,
-	evm.FuncOpenBlockContext.WithHandler(restricted(openBlockContext)),
-	evm.FuncCloseBlockContext.WithHandler(restricted(closeBlockContext)),
-
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncCallContract.WithHandler(restricted(callContract)),
 
@@ -47,7 +43,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
-func SetInitialState(state kv.KVStore, evmChainID uint16) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	// add the standard ISC contract at arbitrary address 0x1074...
 	genesisAlloc := core.GenesisAlloc{}
 	deployMagicContractOnGenesis(genesisAlloc)
@@ -58,7 +54,7 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-	addToPrivileged(state, iscmagic.ERC20BaseTokensAddress)
+	addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 
 	// add the standard ERC721 contract
 	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
@@ -66,13 +62,13 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-	addToPrivileged(state, iscmagic.ERC721NFTsAddress)
+	addToPrivileged(evmPartition, iscmagic.ERC721NFTsAddress)
 
 	// chain always starts with default gas fee & limits configuration
 	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
 	emulator.Init(
-		evmStateSubrealm(state),
+		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
@@ -81,8 +77,6 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		0,
 		genesisAlloc,
 	)
-
-	// subscription to block context is now done in `vmcontext/bootstrapstate.go`
 }
 
 var errChainIDMismatch = coreerrors.Register("chainId mismatch").Create()
@@ -97,10 +91,9 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
 
-	// next block will be minted when the ISC block is closed
-	bctx := getBlockContext(ctx)
+	emu := createEmulator(ctx)
 
-	if tx.ChainId().Uint64() != uint64(bctx.emu.BlockchainDB().GetChainID()) {
+	if tx.ChainId().Uint64() != uint64(emu.BlockchainDB().GetChainID()) {
 		panic(errChainIDMismatch)
 	}
 
@@ -129,7 +122,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	// Send the tx to the emulator.
 	// ISC gas burn will be enabled right before executing the tx, and disabled right after,
 	// so that ISC magic calls are charged gas.
-	receipt, result, iscGasErr, err := bctx.emu.SendTransaction(
+	receipt, result, iscGasErr, err := emu.SendTransaction(
 		tx,
 		ctx.Privileged().GasBurnEnable,
 		chargeISCGas,
@@ -172,7 +165,7 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 	if evmState.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
@@ -292,7 +285,7 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox) dict.Dict {
 		panic(errNativeTokenAlreadyRegistered)
 	}
 
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 
 	addr, err := iscmagic.ERC20ExternalNativeTokensAddress(nativeTokenID, evmState.Exist)
@@ -345,7 +338,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 	if evmState.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
@@ -365,8 +358,8 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 
 func getChainID(ctx isc.SandboxView) dict.Dict {
 	chainID := emulator.GetChainIDFromBlockChainDBState(
-		emulator.NewBlockchainDBSubrealm(
-			evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
+		emulator.BlockchainDBSubrealmR(
+			evm.EmulatorStateSubrealmR(ctx.StateR()),
 		),
 	)
 	return result(codec.EncodeUint16(chainID))
@@ -397,7 +390,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)

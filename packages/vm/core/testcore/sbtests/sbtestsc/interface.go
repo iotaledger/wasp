@@ -42,10 +42,6 @@ var Processor = Contract.Processor(initialize,
 	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
 	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
 
-	FuncOpenBlockContext.WithHandler(openBlockContext),
-	FuncCloseBlockContext.WithHandler(closeBlockContext),
-	FuncGetLastBlockNumCalls.WithHandler(getLastBlockNumCalls),
-
 	FuncJustView.WithHandler(testJustView),
 
 	FuncSpawn.WithHandler(spawn),
@@ -80,10 +76,6 @@ var (
 	FuncCallPanicFullEP         = coreutil.Func("testCallPanicFullEP")
 	FuncCallPanicViewEPFromFull = coreutil.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = coreutil.ViewFunc("testCallPanicViewEPFromView")
-
-	FuncOpenBlockContext     = coreutil.Func("openBlockContext")
-	FuncCloseBlockContext    = coreutil.Func("closeBlockContext")
-	FuncGetLastBlockNumCalls = coreutil.ViewFunc("getLastBlockNumCalls")
 
 	FuncWithdrawFromChain = coreutil.Func("withdrawFromChain")
 

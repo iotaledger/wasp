@@ -16,6 +16,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+func (reqctx *requestContext) ChainID() isc.ChainID {
+	return reqctx.vm.ChainID()
+}
+
 func (vmctx *vmContext) ChainID() isc.ChainID {
 	var chainID isc.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
@@ -27,63 +31,59 @@ func (vmctx *vmContext) ChainID() isc.ChainID {
 	return chainID
 }
 
+func (reqctx *requestContext) ChainInfo() *isc.ChainInfo {
+	return reqctx.vm.ChainInfo()
+}
+
 func (vmctx *vmContext) ChainInfo() *isc.ChainInfo {
 	return vmctx.chainInfo
+}
+
+func (reqctx *requestContext) ChainOwnerID() isc.AgentID {
+	return reqctx.vm.ChainOwnerID()
 }
 
 func (vmctx *vmContext) ChainOwnerID() isc.AgentID {
 	return vmctx.chainInfo.ChainOwnerID
 }
 
-func (vmctx *vmContext) AgentID() isc.AgentID {
-	return isc.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
+func (reqctx *requestContext) CurrentContractAgentID() isc.AgentID {
+	return isc.NewContractAgentID(reqctx.vm.ChainID(), reqctx.CurrentContractHname())
 }
 
-func (vmctx *vmContext) CurrentContractHname() isc.Hname {
-	return vmctx.getCallContext().contract
+func (reqctx *requestContext) CurrentContractHname() isc.Hname {
+	return reqctx.getCallContext().contract
 }
 
-func (vmctx *vmContext) Params() *isc.Params {
-	return &vmctx.getCallContext().params
+func (reqctx *requestContext) Params() *isc.Params {
+	return &reqctx.getCallContext().params
 }
 
-func (vmctx *vmContext) MyAgentID() isc.AgentID {
-	return isc.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
+func (reqctx *requestContext) Caller() isc.AgentID {
+	return reqctx.getCallContext().caller
 }
 
-func (vmctx *vmContext) Caller() isc.AgentID {
-	return vmctx.getCallContext().caller
+func (reqctx *requestContext) Timestamp() time.Time {
+	return reqctx.vm.task.TimeAssumption
 }
 
-func (vmctx *vmContext) Timestamp() time.Time {
-	return vmctx.task.TimeAssumption
-}
-
-func (vmctx *vmContext) Entropy() hashing.HashValue {
-	return vmctx.reqctx.entropy
-}
-
-func (vmctx *vmContext) Request() isc.Calldata {
-	return vmctx.reqctx.req
-}
-
-func (vmctx *vmContext) AccountID() isc.AgentID {
-	hname := vmctx.CurrentContractHname()
+func (reqctx *requestContext) CurrentContractAccountID() isc.AgentID {
+	hname := reqctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return accounts.CommonAccount()
 	}
-	return isc.NewContractAgentID(vmctx.ChainID(), hname)
+	return isc.NewContractAgentID(reqctx.vm.ChainID(), hname)
 }
 
-func (vmctx *vmContext) AllowanceAvailable() *isc.Assets {
-	allowance := vmctx.getCallContext().allowanceAvailable
+func (reqctx *requestContext) allowanceAvailable() *isc.Assets {
+	allowance := reqctx.getCallContext().allowanceAvailable
 	if allowance == nil {
 		return isc.NewEmptyAssets()
 	}
 	return allowance.Clone()
 }
 
-func (vmctx *vmContext) IsCoreAccount(agentID isc.AgentID) bool {
+func (vmctx *vmContext) isCoreAccount(agentID isc.AgentID) bool {
 	contract, ok := agentID.(*isc.ContractAgentID)
 	if !ok {
 		return false
@@ -91,43 +91,43 @@ func (vmctx *vmContext) IsCoreAccount(agentID isc.AgentID) bool {
 	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
 }
 
-func (vmctx *vmContext) spendAllowedBudget(toSpend *isc.Assets) {
-	if !vmctx.getCallContext().allowanceAvailable.Spend(toSpend) {
+func (reqctx *requestContext) spendAllowedBudget(toSpend *isc.Assets) {
+	if !reqctx.getCallContext().allowanceAvailable.Spend(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *vmContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
-	if vmctx.IsCoreAccount(target) {
+func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
+	if reqctx.vm.isCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = accounts.CommonAccount()
 	}
 
 	var toMove *isc.Assets
 	if len(transfer) == 0 {
-		toMove = vmctx.AllowanceAvailable()
+		toMove = reqctx.allowanceAvailable()
 	} else {
 		toMove = transfer[0]
 	}
 
-	vmctx.spendAllowedBudget(toMove) // panics if not enough
+	reqctx.spendAllowedBudget(toMove) // panics if not enough
 
-	caller := vmctx.Caller() // have to take it here because callCore changes that
+	caller := reqctx.Caller() // have to take it here because callCore changes that
 
 	// if the caller is a core contract, funds should be taken from the common account
-	if vmctx.IsCoreAccount(caller) {
+	if reqctx.vm.isCoreAccount(caller) {
 		caller = accounts.CommonAccount()
 	}
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		if err := accounts.MoveBetweenAccounts(s, caller, target, toMove); err != nil {
 			panic(vm.ErrNotEnoughFundsForAllowance)
 		}
 	})
-	return vmctx.AllowanceAvailable()
+	return reqctx.allowanceAvailable()
 }
 
-func (vmctx *vmContext) StateAnchor() *isc.StateAnchor {
+func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
 	var nilAliasID iotago.AliasID
 	blockset := vmctx.task.AnchorOutput.FeatureSet()
 	senderBlock := blockset.SenderFeature()
@@ -150,27 +150,27 @@ func (vmctx *vmContext) StateAnchor() *isc.StateAnchor {
 }
 
 // DeployContract deploys contract by its program hash with the name specific to the instance
-func (vmctx *vmContext) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
-	vmctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
+func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
+	reqctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
 
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
 	par := initParams.Clone()
 	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
-	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
+	reqctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 
-func (vmctx *vmContext) RegisterError(messageFormat string) *isc.VMErrorTemplate {
-	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
+func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
+	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
 	params := dict.New()
 	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
 
-	result := vmctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	result := reqctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
 	errorCode := codec.MustDecodeVMErrorCode(result.Get(errors.ParamErrorCode))
 
-	vmctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
+	reqctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
 
 	return isc.NewVMErrorTemplate(errorCode, messageFormat)
 }

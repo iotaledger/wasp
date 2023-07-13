@@ -79,20 +79,24 @@ func getConfig(chainID int) *params.ChainConfig {
 }
 
 const (
-	KeyStateDB      = "s"
-	KeyBlockchainDB = "b"
+	keyStateDB      = "s"
+	keyBlockchainDB = "b"
 )
 
-func newStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
-	return NewStateDB(subrealm.New(store, KeyStateDB), l2Balance)
+func StateDBSubrealm(store kv.KVStore) kv.KVStore {
+	return subrealm.New(store, keyStateDB)
 }
 
-func NewBlockchainDBSubrealm(store kv.KVStore) kv.KVStore {
-	return subrealm.New(store, KeyBlockchainDB)
+func StateDBSubrealmR(store kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(store, keyStateDB)
 }
 
-func newBlockchainDBWithSubrealm(store kv.KVStore, blockGasLimit uint64, blockKeepAmount int32) *BlockchainDB {
-	return NewBlockchainDB(NewBlockchainDBSubrealm(store), blockGasLimit, blockKeepAmount)
+func BlockchainDBSubrealm(store kv.KVStore) kv.KVStore {
+	return subrealm.New(store, keyBlockchainDB)
+}
+
+func BlockchainDBSubrealmR(store kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(store, keyBlockchainDB)
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
@@ -103,13 +107,13 @@ func Init(
 	timestamp uint64,
 	alloc core.GenesisAlloc,
 ) {
-	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block, BlockKeepAll)
+	bdb := NewBlockchainDB(store, gasLimits.Block, BlockKeepAll)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
 	bdb.Init(chainID, timestamp)
 
-	statedb := newStateDB(store, nil)
+	statedb := NewStateDB(store, nil)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
@@ -133,7 +137,7 @@ func NewEVMEmulator(
 	magicContracts map[common.Address]vm.ISCMagicContract,
 	l2Balance L2Balance,
 ) *EVMEmulator {
-	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block, blockKeepAmount)
+	bdb := NewBlockchainDB(store, gasLimits.Block, blockKeepAmount)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
 	}
@@ -153,11 +157,11 @@ func NewEVMEmulator(
 }
 
 func (e *EVMEmulator) StateDB() *StateDB {
-	return newStateDB(e.kv, e.l2Balance)
+	return NewStateDB(e.kv, e.l2Balance)
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {
-	return newBlockchainDBWithSubrealm(e.kv, e.gasLimits.Block, e.blockKeepAmount)
+	return NewBlockchainDB(e.kv, e.gasLimits.Block, e.blockKeepAmount)
 }
 
 func (e *EVMEmulator) BlockGasLimit() uint64 {
