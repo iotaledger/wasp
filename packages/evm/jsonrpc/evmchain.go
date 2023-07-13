@@ -610,12 +610,13 @@ func (e *EVMChain) SubscribeLogs(q *ethereum.FilterQuery, ch chan<- []*types.Log
 	}).Unhook
 }
 
-func (e *EVMChain) iscRequestsInBlock(blockIndex uint32) (*blocklog.BlockInfo, []isc.Request, error) {
-	iscState, err := e.backend.ISCStateByBlockIndex(blockIndex)
+func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInfo, []isc.Request, error) {
+	iscState, err := e.iscStateFromEVMBlockNumber(new(big.Int).SetUint64(evmBlockNumber))
 	if err != nil {
 		return nil, nil, err
 	}
-	reqIDs, err := blocklog.GetRequestIDsForBlock(iscState, blockIndex)
+	iscBlockIndex := iscState.BlockIndex()
+	reqIDs, err := blocklog.GetRequestIDsForBlock(iscState, iscBlockIndex)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -629,9 +630,9 @@ func (e *EVMChain) iscRequestsInBlock(blockIndex uint32) (*blocklog.BlockInfo, [
 		reqs[i] = receipt.Request
 	}
 	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	block, ok := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
+	block, ok := blocklog.GetBlockInfo(blocklogStatePartition, iscBlockIndex)
 	if !ok {
-		return nil, nil, fmt.Errorf("block not found: %d", blockIndex)
+		return nil, nil, fmt.Errorf("block not found: %d", evmBlockNumber)
 	}
 	if err != nil {
 		return nil, nil, err
@@ -658,11 +659,7 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 		return nil, errors.New("tx not found")
 	}
 
-	blockIndex, err := iscBlockIndexByEVMBlockNumber(big.NewInt(0).SetUint64(blockNumber))
-	if err != nil {
-		return nil, err
-	}
-	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockIndex)
+	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
 	if err != nil {
 		return nil, err
 	}
