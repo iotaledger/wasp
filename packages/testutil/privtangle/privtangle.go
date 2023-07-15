@@ -129,7 +129,6 @@ func (pt *PrivTangle) generateSnapshot() {
 }
 
 func (pt *PrivTangle) startNode(i int, deleteExisting bool) {
-	env := []string{}
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
 	nodePathDB := "db"               // Relative from nodePath.
 	nodeP2PStore := "p2pStore"       // Relative from nodePath.
@@ -189,7 +188,6 @@ func (pt *PrivTangle) startNode(i int, deleteExisting bool) {
 	util.TerminateCmdWhenTestStops(hornetCmd)
 
 	hornetCmd.Env = os.Environ()
-	hornetCmd.Env = append(hornetCmd.Env, env...)
 	hornetCmd.Dir = nodePath
 	pt.NodeCommands[i] = hornetCmd
 
@@ -276,7 +274,7 @@ func (pt *PrivTangle) Stop() {
 			panic(fmt.Errorf("failed while waiting for a HORNET node [%d]: %w", i, err))
 		}
 		if !c.ProcessState.Success() {
-			panic(fmt.Errorf("Hornet node [%d] failed: %s", i, c.ProcessState.String()))
+			panic(fmt.Errorf("hornet node [%d] failed: %s", i, c.ProcessState.String()))
 		}
 	}
 	pt.logf("Stopping... Done")
