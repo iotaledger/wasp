@@ -335,8 +335,10 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	responseCh := env.sendChainFetchStateDiff(oldCommitment, newCommitment, nodeIDs[1])
 	require.True(env.t, snapm1.WaitSnapshotLoadRequestCount(1, 10*time.Millisecond, 100)) // To allow snapshot manager to receive load old state snapshot request
 	env.sendTimerTickToNodes(100 * time.Millisecond)                                      // To check the response from snapshot manager about loaded old state snapshot; timer tick is not necessary: any input would be suitable
+	require.True(env.t, snapm1.WaitSnapshotLoadedCount(1, 10*time.Millisecond, 100))      // To allow snapshot manager thread to wake up and respond
 	require.True(env.t, snapm1.WaitSnapshotLoadRequestCount(2, 10*time.Millisecond, 100)) // To allow snapshot manager to receive load new state snapshot request
 	env.sendTimerTickToNodes(100 * time.Millisecond)                                      // To check the response from snapshot manager about loaded new state snapshot; timer tick is not necessary: any input would be suitable
+	require.True(env.t, snapm1.WaitSnapshotLoadedCount(2, 10*time.Millisecond, 100))      // To allow snapshot manager thread to wake up and respond
 	require.True(env.t, env.ensureCompletedChainFetchStateDiff(responseCh, oldBlocks[branchIndex+1:], newBlocks, 10, 100*time.Millisecond))
 }
 
