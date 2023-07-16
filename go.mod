@@ -16,7 +16,7 @@ require (
 	github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ethereum/go-ethereum v1.12.0
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/hashicorp/golang-lru/v2 v2.0.4
 	github.com/iotaledger/hive.go/app v0.0.0-20230629181801-64c530ff9d15
 	github.com/iotaledger/hive.go/constraints v0.0.0-20230629181801-64c530ff9d15
@@ -33,6 +33,7 @@ require (
 	github.com/iotaledger/inx/go v1.0.0-rc.2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/labstack/echo-contrib v0.15.0
+	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/labstack/gommon v0.4.0
 	github.com/libp2p/go-libp2p v0.28.0
@@ -91,6 +92,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/glog v1.1.1 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
