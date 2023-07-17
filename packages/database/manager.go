@@ -121,7 +121,7 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 		return databaseChainState, nil
 	}
 
-	databaseChainState, err := newDatabaseWithHealthTracker(path.Join(m.databasePath, chainID.String()), m.engine, true, StoreVersionChainState, nil)
+	databaseChainState, err := newDatabaseWithHealthTracker(path.Join(m.databasePath, chainID.String()), m.engine, false, StoreVersionChainState, nil)
 	if err != nil {
 		return nil, fmt.Errorf("chain state database initialization failed: %w", err)
 	}
