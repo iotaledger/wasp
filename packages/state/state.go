@@ -26,7 +26,7 @@ func newState(db *storeDB, root trie.Hash) (*state, error) {
 		return nil, err
 	}
 	return &state{
-		KVStoreReader: kv.NewCachedKVStoreReader(&trieKVAdapter{trie}, cacheSize),
+		KVStoreReader: &trieKVAdapter{trie},
 		trieReader:    trie,
 	}, nil
 }
