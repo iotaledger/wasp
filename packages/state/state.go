@@ -10,8 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
-const cacheSize = 10_000
-
 // state is the implementation of the State interface
 type state struct {
 	trieReader *trie.TrieReader

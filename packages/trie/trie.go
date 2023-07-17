@@ -23,8 +23,8 @@ type CommitStats struct {
 	CreatedValues uint
 }
 
-func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatable, error) {
-	trieReader, err := NewTrieReader(store, root, cacheSize...)
+func NewTrieUpdatable(store KVReader, root Hash) (*TrieUpdatable, error) {
+	trieReader, err := NewTrieReader(store, root)
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +37,9 @@ func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatab
 	return ret, nil
 }
 
-func NewTrieReader(store KVReader, root Hash, cacheSize ...int) (*TrieReader, error) {
+func NewTrieReader(store KVReader, root Hash) (*TrieReader, error) {
 	ret := &TrieReader{
-		nodeStore: openNodeStore(store, cacheSize...),
+		nodeStore: openNodeStore(store),
 	}
 	if _, err := ret.setRoot(root); err != nil {
 		return nil, err
