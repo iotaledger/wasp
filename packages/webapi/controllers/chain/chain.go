@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
+	"github.com/iotaledger/wasp/packages/webapi/services"
 )
 
 func (c *Controller) getCommitteeInfo(e echo.Context) error {
@@ -28,6 +29,9 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 
 	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chainID)
 	if err != nil {
+		if errors.Is(err, services.ErrNotInCommittee) {
+			return e.JSON(http.StatusOK, models.CommitteeInfoResponse{})
+		}
 		return err
 	}
 
