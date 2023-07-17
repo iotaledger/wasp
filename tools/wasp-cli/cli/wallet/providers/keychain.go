@@ -1,0 +1,47 @@
+package providers
+
+import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+)
+
+type KeyChainWallet struct {
+	cryptolib.VariantKeyPair
+	addressIndex uint32
+}
+
+func newInMemoryWallet(keyPair *cryptolib.KeyPair, addressIndex uint32) *KeyChainWallet {
+	return &KeyChainWallet{
+		VariantKeyPair: keyPair,
+		addressIndex:   addressIndex,
+	}
+}
+
+func (i *KeyChainWallet) AddressIndex() uint32 {
+	return i.addressIndex
+}
+
+func LoadKeyChain(addressIndex uint32) wallets.Wallet {
+	seed, err := keychain.GetSeed()
+	log.Check(err)
+
+	keyPair := cryptolib.KeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
+
+	return newInMemoryWallet(keyPair, addressIndex)
+}
+
+func CreateKeyChain() {
+	seed := cryptolib.NewSeed()
+	err := keychain.SetSeed(seed)
+	log.Check(err)
+
+	log.Printf("Seed stored in the keychain.\n")
+}
+
+func MigrateKeyChain(seed cryptolib.Seed) {
+	err := keychain.SetSeed(seed)
+	log.Check(err)
+	log.Printf("Seed migrated to keychain")
+}

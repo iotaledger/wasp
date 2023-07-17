@@ -1,10 +1,12 @@
-package config
+package keychain
 
 import (
 	"errors"
 	"fmt"
+	"runtime"
 
 	"github.com/99designs/keyring"
+	"github.com/awnumar/memguard"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
@@ -22,31 +24,41 @@ var (
 	ErrSeedDoesNotMatchLength = errors.New("returned seed does not have a valid length")
 )
 
-type KeyChain struct {
+type keyChain struct {
 	Keyring keyring.Keyring
 }
 
-func NewKeyChain() *KeyChain {
+func newKeyRing() *keyChain {
 	ring, _ := keyring.Open(keyring.Config{
 		ServiceName: "IOTAFoundation.WaspCLI",
 	})
 
-	return &KeyChain{
+	return &keyChain{
 		Keyring: ring,
 	}
 }
 
-func (k *KeyChain) SetSeed(seed cryptolib.Seed) error {
-	err := k.Keyring.Set(keyring.Item{
+func (k *keyChain) Close() {
+	runtime.KeepAlive(k.Keyring)
+	k.Keyring = nil
+}
+
+func SetSeed(seed cryptolib.Seed) error {
+	store := newKeyRing()
+	defer store.Close()
+
+	err := store.Keyring.Set(keyring.Item{
 		Key:  seedKey,
 		Data: seed[:],
 	})
-
 	return err
 }
 
-func (k *KeyChain) GetSeed() (*cryptolib.Seed, error) {
-	seedItem, err := k.Keyring.Get(seedKey)
+func GetSeed() (*cryptolib.Seed, error) {
+	store := newKeyRing()
+	defer store.Close()
+
+	seedItem, err := store.Keyring.Get(seedKey)
 	if errors.Is(err, keyring.ErrKeyNotFound) {
 		return nil, ErrSeedDoesNotExist
 	}
@@ -64,35 +76,53 @@ func (k *KeyChain) GetSeed() (*cryptolib.Seed, error) {
 	return &seed, nil
 }
 
-func (k *KeyChain) SetStrongholdPassword(password string) error {
-	return k.Keyring.Set(keyring.Item{
+func SetStrongholdPassword(password *memguard.Enclave) error {
+	store := newKeyRing()
+	defer store.Close()
+
+	buffer, err := password.Open()
+	if err != nil {
+		return err
+	}
+	defer buffer.Destroy()
+
+	return store.Keyring.Set(keyring.Item{
 		Key:  strongholdKey,
-		Data: []byte(password),
+		Data: buffer.Data(),
 	})
 }
 
-func (k *KeyChain) GetStrongholdPassword() (string, error) {
-	seedItem, err := k.Keyring.Get(strongholdKey)
+func GetStrongholdPassword() (*memguard.Enclave, error) {
+	store := newKeyRing()
+	defer store.Close()
+
+	seedItem, err := store.Keyring.Get(strongholdKey)
 	if errors.Is(err, keyring.ErrKeyNotFound) {
-		return "", ErrPasswordDoesNotExist
+		return nil, ErrPasswordDoesNotExist
 	}
 
-	return string(seedItem.Data), nil
+	return memguard.NewEnclave(seedItem.Data), nil
 }
 
 func jwtTokenKey(node string) string {
 	return fmt.Sprintf("%s.%s", jwtTokenKeyPrefix, node)
 }
 
-func (k *KeyChain) SetJWTAuthToken(node string, token string) error {
-	return k.Keyring.Set(keyring.Item{
+func SetJWTAuthToken(node string, token string) error {
+	store := newKeyRing()
+	defer store.Close()
+
+	return store.Keyring.Set(keyring.Item{
 		Key:  jwtTokenKey(node),
 		Data: []byte(token),
 	})
 }
 
-func (k *KeyChain) GetJWTAuthToken(node string) (string, error) {
-	seedItem, err := k.Keyring.Get(jwtTokenKey(node))
+func GetJWTAuthToken(node string) (string, error) {
+	store := newKeyRing()
+	defer store.Close()
+
+	seedItem, err := store.Keyring.Get(jwtTokenKey(node))
 	// Special case. If the key is not found, return an empty token.
 	if errors.Is(err, keyring.ErrKeyNotFound) {
 		return "", nil

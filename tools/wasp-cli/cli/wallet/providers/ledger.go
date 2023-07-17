@@ -9,9 +9,7 @@ import (
 )
 
 func LoadLedgerWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.Wallet {
-	secretManager, err := walletsdk.NewLedgerSecretManager(sdk, types.LedgerNanoSecretManager{
-		LedgerNano: false,
-	})
+	secretManager, err := walletsdk.NewLedgerSecretManager(sdk, false)
 	log.Check(err)
 
 	status, err := secretManager.GetLedgerStatus()

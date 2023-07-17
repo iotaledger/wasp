@@ -3,9 +3,13 @@ package wallet
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
 	"runtime"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	wasp_wallet_sdk "github.com/iotaledger/wasp-wallet-sdk"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
@@ -17,7 +21,7 @@ var AddressIndex uint32
 type WalletScheme string
 
 const (
-	SchemeInMemory   WalletScheme = "in_memory"
+	SchemeKeyChain   WalletScheme = "keychain"
 	SchemeLedger     WalletScheme = "sdk_ledger"
 	SchemeStronghold WalletScheme = "sdk_stronghold"
 )
@@ -26,15 +30,15 @@ func GetWalletScheme() WalletScheme {
 	scheme := WalletScheme(config.GetWalletSchemeString())
 
 	switch scheme {
-	case SchemeLedger, SchemeInMemory, SchemeStronghold:
+	case SchemeLedger, SchemeKeyChain, SchemeStronghold:
 		return scheme
 	}
-	return SchemeInMemory
+	return SchemeKeyChain
 }
 
 func SetWalletScheme(scheme WalletScheme) error {
 	switch scheme {
-	case SchemeLedger, SchemeInMemory, SchemeStronghold:
+	case SchemeLedger, SchemeKeyChain, SchemeStronghold:
 		config.SetWalletSchemeString(string(scheme))
 		return nil
 	}
@@ -57,7 +61,11 @@ func getIotaSDKLibName() string {
 func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 	// LoadLibrary (windows) and dlLoad (linux) have different search path behaviors
 	// For now, use a relative path - as it will eventually be shipped with a release.
-	sdk, err := wasp_wallet_sdk.NewIotaSDK(getIotaSDKLibName())
+	wd, err := os.Getwd()
+	log.Check(err)
+
+	libPath := path.Join(wd, getIotaSDKLibName())
+	sdk, err := wasp_wallet_sdk.NewIotaSDK(libPath)
 	log.Check(err)
 	return sdk
 }
@@ -65,10 +73,9 @@ func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 func Load() wallets.Wallet {
 	walletScheme := GetWalletScheme()
 
-	log.Printf("Scheme: %v\n", walletScheme)
 	switch walletScheme {
-	case SchemeInMemory:
-		return providers.LoadInMemory(AddressIndex)
+	case SchemeKeyChain:
+		return providers.LoadKeyChain(AddressIndex)
 	case SchemeLedger:
 		return providers.LoadLedgerWallet(getIotaSDK(), AddressIndex)
 	case SchemeStronghold:
@@ -95,11 +102,32 @@ func InitWallet() {
 	walletScheme := GetWalletScheme()
 
 	switch walletScheme {
-	case SchemeInMemory:
-		providers.CreateNewInMemory()
+	case SchemeKeyChain:
+		providers.CreateKeyChain()
 	case SchemeLedger:
 		log.Printf("Ledger wallet scheme selected, no initialization required")
 	case SchemeStronghold:
 		providers.CreateNewStrongholdWallet(getIotaSDK())
+	}
+}
+
+func Migrate(scheme WalletScheme) {
+	seedHex := config.GetSeedForMigration()
+	if seedHex == "" {
+		fmt.Println("No seed found to migrate found.")
+		return
+	}
+
+	seedBytes, err := iotago.DecodeHex(seedHex)
+	log.Check(err)
+	seed := cryptolib.SeedFromBytes(seedBytes)
+
+	switch scheme {
+	case SchemeKeyChain:
+		providers.MigrateKeyChain(seed)
+	case SchemeLedger:
+		log.Printf("Ledger wallet scheme selected, no migration available")
+	case SchemeStronghold:
+		providers.MigrateToStrongholdWallet(getIotaSDK(), seed)
 	}
 }

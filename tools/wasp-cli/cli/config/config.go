@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -123,15 +124,13 @@ func L1FaucetAddress() string {
 }
 
 func GetToken(node string) string {
-	keyChain := NewKeyChain()
-	token, err := keyChain.GetJWTAuthToken(node)
+	token, err := keychain.GetJWTAuthToken(node)
 	log.Check(err)
 	return token
 }
 
 func SetToken(node, token string) {
-	keyChain := NewKeyChain()
-	err := keyChain.SetJWTAuthToken(node, token)
+	err := keychain.SetJWTAuthToken(node, token)
 	log.Check(err)
 }
 
@@ -192,4 +191,9 @@ func GetWalletSchemeString() string {
 
 func SetWalletSchemeString(scheme string) {
 	Set("wallet.scheme", scheme)
+}
+
+// GetSeedForMigration is used to migrate the seed of the config file to a certain wallet provider.
+func GetSeedForMigration() string {
+	return viper.GetString("wallet.seed")
 }
