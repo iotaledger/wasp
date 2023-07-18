@@ -30,7 +30,7 @@ func (l *ExternalWallet) AddressIndex() uint32 {
 }
 
 func (l *ExternalWallet) Sign(addr iotago.Address, payload []byte) (signature iotago.Signature, err error) {
-	bip32Chain := walletsdk.BuildBip44Chain(l.CoinType, 0, false, l.addressIndex)
+	bip32Chain := walletsdk.BuildBip44Chain(l.CoinType, 0, l.addressIndex)
 	signResult, err := l.secretManager.SignTransactionEssence(types.HexEncodedString(iotago.EncodeHex(payload)), bip32Chain)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (l *ExternalWallet) Sign(addr iotago.Address, payload []byte) (signature io
 }
 
 func (l *ExternalWallet) SignBytes(payload []byte) []byte {
-	bip32Chain := walletsdk.BuildBip44Chain(l.CoinType, 0, false, l.addressIndex)
+	bip32Chain := walletsdk.BuildBip44Chain(l.CoinType, 0, l.addressIndex)
 	signResult, err := l.secretManager.SignTransactionEssence(types.HexEncodedString(iotago.EncodeHex(payload)), bip32Chain)
 	log.Check(err)
 
