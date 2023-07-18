@@ -30,7 +30,7 @@ func (l *ExternalWallet) AddressIndex() uint32 {
 }
 
 func (l *ExternalWallet) Sign(addr iotago.Address, payload []byte) (signature iotago.Signature, err error) {
-	bip32Chain := walletsdk.BuildBip32Chain(l.CoinType, 0, false, l.addressIndex)
+	bip32Chain := walletsdk.BuildBip44Chain(l.CoinType, 0, false, l.addressIndex)
 	signResult, err := l.secretManager.SignTransactionEssence(types.HexEncodedString(iotago.EncodeHex(payload)), bip32Chain)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (l *ExternalWallet) Sign(addr iotago.Address, payload []byte) (signature io
 }
 
 func (l *ExternalWallet) SignBytes(payload []byte) []byte {
-	bip32Chain := walletsdk.BuildBip32Chain(l.CoinType, 0, false, l.addressIndex)
+	bip32Chain := walletsdk.BuildBip44Chain(l.CoinType, 0, false, l.addressIndex)
 	signResult, err := l.secretManager.SignTransactionEssence(types.HexEncodedString(iotago.EncodeHex(payload)), bip32Chain)
 	log.Check(err)
 
@@ -56,7 +56,10 @@ func (l *ExternalWallet) GetPublicKey() *cryptolib.PublicKey {
 	signedPayload, err := l.Sign(nil, payload)
 	log.Check(err)
 
-	ed25519Signature := signedPayload.(*iotago.Ed25519Signature)
+	ed25519Signature, ok := signedPayload.(*iotago.Ed25519Signature)
+	if !ok {
+		log.Fatalf("signed payload is not an ED25519 signature")
+	}
 
 	publicKey, err := cryptolib.PublicKeyFromBytes(ed25519Signature.PublicKey[:])
 	log.Check(err)
@@ -65,7 +68,10 @@ func (l *ExternalWallet) GetPublicKey() *cryptolib.PublicKey {
 }
 
 func (l *ExternalWallet) Address() *iotago.Ed25519Address {
-	addressStr, err := l.secretManager.GenerateEd25519Address(l.addressIndex, 0, l.Bech32Hrp, l.CoinType, nil)
+	addressStr, err := l.secretManager.GenerateEd25519Address(l.addressIndex, 0, l.Bech32Hrp, l.CoinType, &types.IGenerateAddressOptions{
+		Internal:         false,
+		LedgerNanoPrompt: false,
+	})
 	log.Check(err)
 
 	_, address, err := iotago.ParseBech32(addressStr)

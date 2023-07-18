@@ -12,7 +12,6 @@ import (
 	"golang.org/x/term"
 
 	walletsdk "github.com/iotaledger/wasp-wallet-sdk"
-	"github.com/iotaledger/wasp-wallet-sdk/types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -47,7 +46,10 @@ func LoadStrongholdWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.W
 	secretManager, err := configureStronghold(sdk, password)
 	log.Check(err)
 
-	return wallets.NewExternalWallet(secretManager, addressIndex, string(parameters.L1().Protocol.Bech32HRP), types.CoinTypeSMR)
+	hrp := parameters.L1().Protocol.Bech32HRP
+	coinType := MapCoinType(hrp)
+
+	return wallets.NewExternalWallet(secretManager, addressIndex, string(hrp), coinType)
 }
 
 func printMnemonic(mnemonic *memguard.Enclave) {

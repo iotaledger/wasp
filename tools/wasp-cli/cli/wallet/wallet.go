@@ -9,6 +9,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	wasp_wallet_sdk "github.com/iotaledger/wasp-wallet-sdk"
+	"github.com/iotaledger/wasp-wallet-sdk/types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
@@ -67,6 +68,10 @@ func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 	libPath := path.Join(wd, getIotaSDKLibName())
 	sdk, err := wasp_wallet_sdk.NewIotaSDK(libPath)
 	log.Check(err)
+
+	sdk.InitLogger(types.ILoggerConfig{
+		LevelFilter: types.LevelFilterTrace,
+	})
 	return sdk
 }
 

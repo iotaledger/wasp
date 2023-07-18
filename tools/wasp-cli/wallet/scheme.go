@@ -9,8 +9,8 @@ import (
 
 func initSchemeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "wallet-scheme (in_memory, sdk_ledger, sdk_stronghold)",
-		Short: "Get or set wallet scheme (in_memory, sdk_ledger, sdk_stronghold)",
+		Use:   "wallet-scheme (keychain, sdk_ledger, sdk_stronghold)",
+		Short: "Get or set wallet scheme (keychain, sdk_ledger, sdk_stronghold)",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {

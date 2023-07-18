@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp-wallet-sdk/types"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
@@ -196,4 +197,12 @@ func SetWalletSchemeString(scheme string) {
 // GetSeedForMigration is used to migrate the seed of the config file to a certain wallet provider.
 func GetSeedForMigration() string {
 	return viper.GetString("wallet.seed")
+}
+
+func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
+	return types.ILoggerConfigLevelFilter(viper.GetString("wallet.loglevel"))
+}
+
+func SetWalletLogLevel(filter types.ILoggerConfigLevelFilter) {
+	viper.Set("wallet.loglevel", string(filter))
 }
