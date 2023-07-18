@@ -200,7 +200,12 @@ func GetSeedForMigration() string {
 }
 
 func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
-	return types.ILoggerConfigLevelFilter(viper.GetString("wallet.loglevel"))
+	logLevel := viper.GetString("wallet.loglevel")
+	if logLevel == "" {
+		return types.LevelFilterOff
+	}
+
+	return types.ILoggerConfigLevelFilter(logLevel)
 }
 
 func SetWalletLogLevel(filter types.ILoggerConfigLevelFilter) {

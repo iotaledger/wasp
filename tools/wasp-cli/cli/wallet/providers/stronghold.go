@@ -1,7 +1,6 @@
 package providers
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -39,7 +38,6 @@ func configureStronghold(sdk *walletsdk.IOTASDK, unlockPassword *memguard.Enclav
 }
 
 func LoadStrongholdWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.Wallet {
-	fmt.Println("Load stronghold wallet")
 	password, err := keychain.GetStrongholdPassword()
 	log.Check(err)
 

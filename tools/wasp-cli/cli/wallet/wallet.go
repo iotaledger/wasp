@@ -69,9 +69,11 @@ func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 	sdk, err := wasp_wallet_sdk.NewIotaSDK(libPath)
 	log.Check(err)
 
-	sdk.InitLogger(types.ILoggerConfig{
-		LevelFilter: types.LevelFilterTrace,
+	_, err = sdk.InitLogger(types.ILoggerConfig{
+		LevelFilter: config.GetWalletLogLevel(),
 	})
+	log.Check(err)
+
 	return sdk
 }
 
