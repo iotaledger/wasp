@@ -6,8 +6,6 @@ package vmimpl
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -192,6 +190,9 @@ func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint 
 	return s.reqctx.CallOnBehalfOf(caller, target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
-	s.reqctx.SetEVMFailed(tx, receipt)
+func (s *contractSandbox) OnWriteReceipt(f isc.CoreCallbackFunc) {
+	s.reqctx.onWriteReceipt = append(s.reqctx.onWriteReceipt, coreCallbackFunc{
+		contract: s.reqctx.CurrentContractHname(),
+		callback: f,
+	})
 }

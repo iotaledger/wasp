@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -139,11 +138,11 @@ type Privileged interface {
 	DebitFromAccount(AgentID, *Assets)
 	CreditToAccount(AgentID, *Assets)
 	RetryUnprocessable(req Request, blockIndex uint32, outputIndex uint16)
-
-	// EVM
+	OnWriteReceipt(CoreCallbackFunc)
 	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
-	SetEVMFailed(*types.Transaction, *types.Receipt)
 }
+
+type CoreCallbackFunc func(contractPartition kv.KVStore)
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {

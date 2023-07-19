@@ -11,9 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
@@ -159,10 +158,9 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 	if err != nil {
 		panic(err)
 	}
-	// save failed EVM transactions
-	if reqctx.evmFailed != nil {
-		reqctx.callCore(evm.Contract, func(s kv.KVStore) {
-			evmimpl.AddFailedTx(s, reqctx.vm.chainInfo, reqctx.evmFailed.tx, reqctx.evmFailed.receipt)
+	for _, f := range reqctx.onWriteReceipt {
+		reqctx.callCore(corecontracts.All[f.contract], func(s kv.KVStore) {
+			f.callback(s)
 		})
 	}
 	return receipt
