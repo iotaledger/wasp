@@ -76,7 +76,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 func (c *Controller) getChainList(e echo.Context) error {
 	chainIDs, err := c.chainService.GetAllChainIDs()
-	c.log.Info("After allChainIDS %v", err)
+	c.log.Infof("After allChainIDS %v", err)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 
 	for _, chainID := range chainIDs {
 		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, "")
-		c.log.Info("getchaininfo %v", err)
+		c.log.Infof("getchaininfo %v", err)
 
 		if errors.Is(err, interfaces.ErrChainNotFound) {
 			// TODO: Validate this logic here. Is it possible to still get more chain info?
@@ -101,7 +101,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		evmChainID := uint16(0)
 		if chainInfo.IsActive {
 			evmChainID, err = c.chainService.GetEVMChainID(chainID, "")
-			c.log.Info("getevmchainid %v", err)
+			c.log.Infof("getevmchainid %v", err)
 
 			if err != nil {
 				return err
@@ -109,7 +109,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		}
 
 		chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
-		c.log.Info("mapchaininfo %v", err)
+		c.log.Infof("mapchaininfo %v", err)
 
 		chainList = append(chainList, chainInfoResponse)
 	}
