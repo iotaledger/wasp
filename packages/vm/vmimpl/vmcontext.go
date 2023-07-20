@@ -3,8 +3,6 @@ package vmimpl
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -52,17 +50,12 @@ type requestContext struct {
 	requestIndex      uint16
 	requestEventIndex uint16
 	entropy           hashing.HashValue
-	evmFailed         *evmFailed
+	onWriteReceipt    []coreCallbackFunc
 	gas               requestGas
 	// SD charged to consume the current request
 	sdCharged uint64
 	// requests that the sender asked to retry
 	unprocessableToRetry []isc.OnLedgerRequest
-}
-
-type evmFailed struct {
-	tx      *types.Transaction
-	receipt *types.Receipt
 }
 
 type requestGas struct {
@@ -78,6 +71,11 @@ type requestGas struct {
 	feeCharged uint64
 	// burn history. If disabled, it is nil
 	burnLog *gas.BurnLog
+}
+
+type coreCallbackFunc struct {
+	contract isc.Hname
+	callback isc.CoreCallbackFunc
 }
 
 var _ execution.WaspCallContext = &requestContext{}

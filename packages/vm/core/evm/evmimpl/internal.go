@@ -55,22 +55,17 @@ func createBlockchainDB(evmPartition kv.KVStore, chainInfo *isc.ChainInfo) *emul
 	return emulator.NewBlockchainDB(evm.EmulatorStateSubrealm(evmPartition), gasLimits(chainInfo).Block, chainInfo.BlockKeepAmount)
 }
 
-// IMPORTANT: Must only be called from the ISC VM (when the request is done executing)
-func AddFailedTx(
+func saveExecutedTx(
 	evmPartition kv.KVStore,
 	chainInfo *isc.ChainInfo,
 	tx *types.Transaction,
 	receipt *types.Receipt,
 ) {
-	if tx == nil {
-		panic("nil tx")
-	}
-	if receipt == nil {
-		panic("nil receipt")
-	}
 	createBlockchainDB(evmPartition, chainInfo).AddTransaction(tx, receipt)
-	// we must also increment the nonce manually since the original request was reverted
-	emulator.NewStateDB(evm.EmulatorStateSubrealm(evmPartition), nil).IncNonce(evmutil.MustGetSender(tx))
+	// make sure the nonce is incremented if the state was rolled back by the VM
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		emulator.NewStateDB(evm.EmulatorStateSubrealm(evmPartition), nil).IncNonce(evmutil.MustGetSender(tx))
+	}
 }
 
 func gasLimits(chainInfo *isc.ChainInfo) emulator.GasLimits {

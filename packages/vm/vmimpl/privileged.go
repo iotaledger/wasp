@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/types"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -62,11 +60,4 @@ func (reqctx *requestContext) RetryUnprocessable(req isc.Request, blockIndex uin
 func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
 	reqctx.Debugf("CallOnBehalfOf: caller = %s, target = %s, entryPoint = %s, params = %s", caller.String(), target.String(), entryPoint.String(), params.String())
 	return reqctx.callProgram(target, entryPoint, params, allowance, caller)
-}
-
-func (reqctx *requestContext) SetEVMFailed(tx *types.Transaction, receipt *types.Receipt) {
-	reqctx.evmFailed = &evmFailed{
-		tx:      tx,
-		receipt: receipt,
-	}
 }

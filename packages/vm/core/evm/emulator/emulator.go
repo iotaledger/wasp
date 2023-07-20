@@ -4,10 +4,12 @@
 package emulator
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
@@ -244,42 +246,60 @@ func (e *EVMEmulator) applyMessage(
 		defer gasBurnEnable(false)
 	}
 
-	caughtErr := panicutil.CatchAllExcept(
-		func() {
-			// catch any exceptions during the execution, so that an EVM receipt is produced
-			res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
-		},
-		vmexceptions.SkipRequestErrors...,
-	)
+	// catch any exceptions during the execution, so that an EVM receipt is always produced
+	caughtErr := panicutil.CatchAllExcept(func() {
+		res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
+	}, vmexceptions.SkipRequestErrors...)
 	if caughtErr != nil {
-		return nil, caughtErr
+		return &core.ExecutionResult{
+			Err:        vm.ErrExecutionReverted,
+			UsedGas:    msg.GasLimit - gasPool.Gas(),
+			ReturnData: abiEncodeError(caughtErr),
+		}, caughtErr
 	}
 	return res, err
+}
+
+// see UnpackRevert in go-ethereum/accounts/abi/abi.go
+var revertSelector = crypto.Keccak256([]byte("Error(string)"))[:4]
+
+func abiEncodeError(err error) []byte {
+	// include the ISC error as the revert reason by encoding it into the returnData
+	ret := bytes.Clone(revertSelector)
+	abiString, err2 := abi.NewType("string", "", nil)
+	if err2 != nil {
+		panic(err2)
+	}
+	encodedErr, err2 := abi.Arguments{{Type: abiString}}.Pack(err.Error())
+	if err2 != nil {
+		panic(err2)
+	}
+	return append(ret, encodedErr...)
 }
 
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
 	gasBurnEnable func(bool),
-	chargeISCGas func(*core.ExecutionResult) (uint64, error),
 	tracer tracers.Tracer,
-) (receipt *types.Receipt, result *core.ExecutionResult, iscGasErr error, err error) {
+	addToBlockchain ...bool,
+) (receipt *types.Receipt, result *core.ExecutionResult, err error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("invalid transaction: %w", err)
+		return nil, nil, fmt.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	signer := types.MakeSigner(e.chainConfig, pendingHeader.Number, pendingHeader.Time)
 	msg, err := core.TransactionToMessage(tx, signer, pendingHeader.BaseFee)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	result, err = e.applyMessage(
@@ -292,12 +312,7 @@ func (e *EVMEmulator) SendTransaction(
 
 	gasUsed := uint64(0)
 	if result != nil {
-		// chargeISCGas will keep gasBurnEnabled = false and mutate `result` when charging ISC gas fails
-		if chargeISCGas != nil {
-			gasUsed, iscGasErr = chargeISCGas(result)
-		} else {
-			gasUsed = result.UsedGas
-		}
+		gasUsed = result.UsedGas
 	}
 
 	cumulativeGasUsed := gasUsed
@@ -330,9 +345,12 @@ func (e *EVMEmulator) SendTransaction(
 	}
 
 	buf.Commit()
-	e.BlockchainDB().AddTransaction(tx, receipt)
+	// add tx and receipt to the blockchain unless addToBlockchain == false
+	if len(addToBlockchain) == 0 || addToBlockchain[0] {
+		e.BlockchainDB().AddTransaction(tx, receipt)
+	}
 
-	return receipt, result, iscGasErr, err
+	return receipt, result, err
 }
 
 func (e *EVMEmulator) MintBlock() {
