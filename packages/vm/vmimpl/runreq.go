@@ -237,6 +237,7 @@ func (reqctx *requestContext) callTheContract() (receipt *blocklog.RequestReceip
 					callErrStr = callErr.Error()
 				}
 				reqctx.vm.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, r)
+				reqctx.vm.task.Log.Debug(string(debug.Stack()))
 				panic(vmexceptions.ErrPostExecutionPanic)
 			}
 		}()
