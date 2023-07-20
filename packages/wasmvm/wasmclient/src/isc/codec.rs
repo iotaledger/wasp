@@ -96,14 +96,14 @@ impl Codec {
     pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
         let items_num = dict.items.len();
-        enc.fixed_bytes(&uint32_to_bytes(items_num as u32), SC_UINT32_LENGTH);
+        enc.vlu_encode(items_num as u64);
         for i in 0..items_num {
             let item = dict.items[i].clone();
             let key = hex_decode(&item.key);
             let val = hex_decode(&item.value);
-            enc.fixed_bytes(&uint16_to_bytes(key.len() as u16), SC_UINT16_LENGTH);
+            enc.vlu_encode(key.len() as u64);
             enc.fixed_bytes(&key, key.len());
-            enc.fixed_bytes(&uint32_to_bytes(val.len() as u32), SC_UINT32_LENGTH);
+            enc.vlu_encode(val.len() as u64);
             enc.fixed_bytes(&val, val.len());
         }
         return enc.buf();
@@ -111,16 +111,14 @@ impl Codec {
 
     pub fn json_encode(buf: &[u8]) -> JsonDict {
         let mut dec = WasmDecoder::new(buf);
-        let items_num = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
+        let size = dec.vlu_decode(32);
         let mut dict = JsonDict {
-            items: Vec::with_capacity(items_num as usize),
+            items: Vec::with_capacity(size as usize),
         };
-        for _ in 0..items_num {
-            let key_buf = dec.fixed_bytes(SC_UINT16_LENGTH);
-            let key_len = uint16_from_bytes(&key_buf);
+        for _ in 0..size {
+            let key_len = dec.vlu_decode(32);
             let key = dec.fixed_bytes(key_len as usize);
-            let val_buf = dec.fixed_bytes(SC_UINT32_LENGTH);
-            let val_len = uint32_from_bytes(&val_buf);
+            let val_len = dec.vlu_decode(32);
             let val = dec.fixed_bytes(val_len as usize);
             let item = JsonItem {
                 key: hex_encode(&key),

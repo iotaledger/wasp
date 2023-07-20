@@ -91,10 +91,10 @@ impl ScDict {
         if buf.len() != 0 {
             let mut dec = WasmDecoder::new(buf);
             let size = dec.vlu_decode(32);
-            for _i in 0..size {
-                 let key_len = dec.vlu_decode(32) as usize;
+            for _ in 0..size {
+                let key_len = dec.vlu_decode(32) as usize;
                 let key = dec.fixed_bytes(key_len);
-                 let val_len = dec.vlu_decode(32) as usize;
+                let val_len = dec.vlu_decode(32) as usize;
                 let val = dec.fixed_bytes(val_len);
                 self.set(&key, &val);
             }
@@ -103,17 +103,7 @@ impl ScDict {
 
     pub fn from_bytes(buf: &[u8]) -> Result<ScDict, String> {
         let dict = ScDict::new(&[]);
-        if buf.len() != 0 {
-            let mut dec = WasmDecoder::new(buf);
-            let size = dec.vlu_decode(32);
-            for _ in 0..size {
-                let key_len = dec.vlu_decode(32) as usize;
-                let key = dec.fixed_bytes(key_len);
-                 let val_len = dec.vlu_decode(32) as usize;
-                let val = dec.fixed_bytes(val_len);
-                dict.set(&key, &val);
-            }
-        }
+        dict.read_bytes(buf);
         return Ok(dict);
     }
 

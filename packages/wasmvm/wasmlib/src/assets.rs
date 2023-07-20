@@ -29,12 +29,10 @@ impl ScAssets {
             return assets;
         }
         if (flags & HAS_BASE_TOKENS) != 0 {
-            let mut base_tokens:Vec<u8> = dec.fixed_bytes(((flags&0x07)+1) as usize);
-            base_tokens.resize(SC_UINT64_LENGTH, 0);
-            assets.base_tokens = uint64_from_bytes(&base_tokens);
+            assets.base_tokens = dec.vlu_decode(64);
         }
         if (flags & HAS_NATIVE_TOKENS) != 0 {
-            let size = dec.vlu_decode(32);
+            let size = dec.vlu_decode(16);
             for _i in 0..size {
                 let token_id = token_id_decode(&mut dec);
                 let amount = big_int_decode(&mut dec);
@@ -42,7 +40,7 @@ impl ScAssets {
             }
         }
         if (flags & HAS_NFTS) != 0 {
-            let size = dec.vlu_decode(32);
+            let size = dec.vlu_decode(16);
             for _i in 0..size {
                 let nft_id = nft_id_decode(&mut dec);
                 assets.nfts.insert(nft_id);
@@ -93,19 +91,8 @@ impl ScAssets {
         }
 
         let mut flags = 0 as u8;
-        let mut base_tokens:Vec<u8> = vec![0,0];
         if self.base_tokens != 0 {
             flags |= HAS_BASE_TOKENS;
-            base_tokens = uint64_to_bytes(self.base_tokens);
-            let mut i = base_tokens.len() - 1;
-            while i > 0 {
-                if base_tokens[i] != 0 {
-                    flags |= i as u8;
-                    base_tokens.truncate(i+1);
-                    break;
-                }
-                i -= 1;
-            }
         }
         if self.native_tokens.len() != 0 {
             flags |= HAS_NATIVE_TOKENS;
@@ -116,7 +103,7 @@ impl ScAssets {
         uint8_encode(&mut enc, flags);
         
         if (flags & HAS_BASE_TOKENS) != 0 {
-            enc.fixed_bytes(&base_tokens, base_tokens.len());
+            enc.vlu_encode(self.base_tokens);
         }
         if (flags & HAS_NATIVE_TOKENS) != 0 {
             enc.vlu_encode(self.native_tokens.len() as u64);
