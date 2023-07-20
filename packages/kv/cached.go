@@ -21,11 +21,11 @@ func NewCachedKVStoreReader(r KVStoreReader) KVStoreReader {
 }
 
 func (c *cachedKVStoreReader) Get(key Key) []byte {
-	if v, ok := c.cache.Get(string(key)); ok {
+	if v, ok := c.cache.Get([]byte(key)); ok {
 		return v
 	}
 	v := c.KVStoreReader.Get(key)
-	c.cache.Add(string(key), v)
+	c.cache.Add([]byte(key), v)
 	return v
 }
 

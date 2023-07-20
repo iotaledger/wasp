@@ -45,12 +45,12 @@ func NewCacheParition() (*CachePartition, error) {
 	}, nil
 }
 
-func (c *CachePartition) Get(key string) ([]byte, bool) {
+func (c *CachePartition) Get(key []byte) ([]byte, bool) {
 	v := cache.Get(nil, append(c.partition[:], []byte(key)...))
 	return v, v != nil
 }
 
-func (c *CachePartition) Add(key string, value []byte) bool {
+func (c *CachePartition) Add(key []byte, value []byte) bool {
 	cache.Set(append(c.partition[:], []byte(key)...), value)
 	return false
 }
