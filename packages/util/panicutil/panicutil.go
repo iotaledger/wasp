@@ -54,7 +54,7 @@ func CatchAllButDBError(f func(), log *logger.Logger, prefix ...string) (err err
 				err = fmt.Errorf("%s%v", s, err1)
 			}
 			log.Debugf("%s%v", s, err)
-			log.Debugf(string(debug.Stack()))
+			log.Debug(string(debug.Stack()))
 		}()
 		f()
 	}()
