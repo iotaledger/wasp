@@ -21,11 +21,23 @@ var (
 	cache         *fastcache.Cache
 )
 
-func init() {
-	cache = fastcache.New(512 * 1024 * 1024)
+func InitCache(size int) error {
+	cache = fastcache.New(size)
 	if cache == nil {
-		panic("creating lru cache failed")
+		return errors.New("creating lru cache failed")
 	}
+	return nil
+}
+
+func GetStats() *fastcache.Stats {
+	// cache disabled
+	if cache == nil {
+		return nil
+	}
+
+	stats := &fastcache.Stats{}
+	cache.UpdateStats(stats)
+	return stats
 }
 
 func NewCacheParition() (*CachePartition, error) {
@@ -46,9 +58,18 @@ func NewCacheParition() (*CachePartition, error) {
 }
 
 func (c *CachePartition) Get(key []byte) ([]byte, bool) {
-	return cache.HasGet(nil, append(c.partition[:], []byte(key)...))
+	// cache disabled
+	if cache == nil {
+		return nil, false
+	}
+	v, ok := cache.HasGet(nil, append(c.partition[:], []byte(key)...))
+	return v, ok
 }
 
 func (c *CachePartition) Add(key []byte, value []byte) {
+	// cache disabled
+	if cache == nil {
+		return
+	}
 	cache.Set(append(c.partition[:], []byte(key)...), value)
 }

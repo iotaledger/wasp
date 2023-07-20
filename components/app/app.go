@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/components/profiling"
 	"github.com/iotaledger/hive.go/app/components/shutdown"
+	"github.com/iotaledger/wasp/components/cache"
 	"github.com/iotaledger/wasp/components/chains"
 	"github.com/iotaledger/wasp/components/database"
 	"github.com/iotaledger/wasp/components/dkg"
@@ -41,6 +42,7 @@ func App() *app.App {
 			nodeconn.Component,
 			users.Component,
 			logger.Component,
+			cache.Component,
 			database.Component,
 			registry.Component,
 			peering.Component,
