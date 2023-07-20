@@ -1,16 +1,15 @@
 // // Copyright 2020 IOTA Stiftung
 // // SPDX-License-Identifier: Apache-2.0
 
+use crypto::signatures::ed25519::PublicKey;
+use reqwest::{blocking, StatusCode};
+use serde::{Deserialize, Serialize};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::channel;
 use std::thread::JoinHandle;
 use std::time::Duration;
-
-use crypto::signatures::ed25519::PublicKey;
-use reqwest::{blocking, StatusCode};
-use serde::{Deserialize, Serialize};
 use wasmlib::*;
 
 use crate::*;
@@ -105,7 +104,7 @@ impl WasmClientService {
         key_pair: &KeyPair,
     ) -> Result<ScRequestID> {
         let nonce: u64;
-        match self.cache_nonce(key_pair) {
+        match self.cached_nonce(key_pair) {
             Ok(n) => nonce = n,
             Err(e) => return Err(e),
         }
@@ -243,11 +242,15 @@ impl WasmClientService {
         format!("{}: {}: {}", status, err_msg.message, err_msg.error)
     }
 
-    fn cache_nonce(&self, key_pair: &KeyPair) -> Result<u64> {
+    fn cached_nonce(&self, key_pair: &KeyPair) -> Result<u64> {
         let key = key_pair.public_key;
         let mut nonces = self.nonces.lock().unwrap();
-        let mut nonce: u64;
         match nonces.get(&key) {
+            Some(n) => {
+                let nonce = *n;
+                nonces.insert(key, nonce + 1);
+                Ok(nonce)
+            },
             None => {
                 // get last used nonce from accounts core contract
                 let isc_agent = ScAgentID::from_address(&key_pair.address());
@@ -258,14 +261,14 @@ impl WasmClientService {
                 n.params.agent_id().set_value(&isc_agent);
                 n.func.call();
                 match ctx.err() {
-                    Ok(_) => nonce = n.results.account_nonce().value(),
-                    Err(e) => return Err(e),
+                    Ok(_) => {
+                        let nonce = n.results.account_nonce().value();
+                        nonces.insert(key, nonce + 1);
+                        Ok(nonce)
+                    },
+                    Err(e) => Err(e),
                 }
             }
-            Some(n) => nonce = *n,
         }
-        nonce += 1;
-        nonces.insert(key, nonce);
-        Ok(nonce)
     }
 }

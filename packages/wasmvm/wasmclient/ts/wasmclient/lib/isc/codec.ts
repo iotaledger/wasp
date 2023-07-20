@@ -74,14 +74,14 @@ export class Codec {
     public static jsonDecode(dict: JsonResp): Uint8Array {
         const enc = new wasmlib.WasmEncoder();
         const items = dict.Items;
-        enc.fixedBytes(wasmlib.uint32ToBytes(items.length as u32), wasmlib.ScUint32Length);
+        enc.vluEncode(items.length as u32);
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const key = wasmlib.hexDecode(item.key);
             const val = wasmlib.hexDecode(item.value);
-            enc.fixedBytes(wasmlib.uint16ToBytes(key.length as u16), wasmlib.ScUint16Length);
+            enc.vluEncode(key.length as u32);
             enc.fixedBytes(key, key.length as u32);
-            enc.fixedBytes(wasmlib.uint32ToBytes(val.length as u32), wasmlib.ScUint32Length);
+            enc.vluEncode(val.length as u32);
             enc.fixedBytes(val, val.length as u32);
         }
         return enc.buf();
@@ -90,13 +90,11 @@ export class Codec {
     public static jsonEncode(buf: Uint8Array): JsonReq {
         const dict = new JsonReq();
         const dec = new wasmlib.WasmDecoder(buf);
-        const size = wasmlib.uint32FromBytes(dec.fixedBytes(wasmlib.ScUint32Length));
+        const size = dec.vluDecode(32);
         for (let i: u32 = 0; i < size; i++) {
-            const keyBuf = dec.fixedBytes(wasmlib.ScUint16Length);
-            const keyLen = wasmlib.uint16FromBytes(keyBuf);
+            const keyLen = dec.vluDecode(32);
             const key = dec.fixedBytes(keyLen as u32);
-            const valBuf = dec.fixedBytes(wasmlib.ScUint32Length);
-            const valLen = wasmlib.uint32FromBytes(valBuf);
+            const valLen = dec.vluDecode(32);
             const val = dec.fixedBytes(valLen);
             const item = new JsonItem();
             item.key = wasmlib.hexEncode(key);

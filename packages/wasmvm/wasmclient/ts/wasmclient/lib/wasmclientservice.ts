@@ -159,19 +159,21 @@ export class WasmClientService {
     private cachedNonce(keyPair: isc.KeyPair): [u64, isc.Error] {
         const key = keyPair.publicKey;
         let nonce = this.nonces.get(key);
-        if (nonce === undefined) {
-            const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
-            const ctx = new WasmClientContext(this, coreaccounts.ScName);
-            const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
-            n.params.agentID().setValue(agent);
-            n.func.call();
-            if (ctx.Err != null) {
-                return [0n, ctx.Err];
-            }
-            nonce = n.results.accountNonce().value();
+        if (nonce !== undefined) {
+            this.nonces.set(key, nonce + 1n);
+            return [nonce, null];
         }
-        nonce++;
-        this.nonces.set(key, nonce);
+
+        const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
+        const ctx = new WasmClientContext(this, coreaccounts.ScName);
+        const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
+        n.params.agentID().setValue(agent);
+        n.func.call();
+        if (ctx.Err != null) {
+            return [0n, ctx.Err];
+        }
+        nonce = n.results.accountNonce().value();
+        this.nonces.set(key, nonce + 1n);
         return [nonce, null];
     }
 }

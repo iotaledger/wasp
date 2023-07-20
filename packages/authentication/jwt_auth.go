@@ -95,7 +95,7 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 			}
 
 			// use the default JWT middleware to verify and extract the JWT
-			
+
 			handler := middleware.JWTWithConfig(config)(func(c echo.Context) error {
 				return nil
 			})

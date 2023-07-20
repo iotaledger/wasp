@@ -185,21 +185,21 @@ func (svc *WasmClientService) cachedNonce(keyPair *cryptolib.KeyPair) (uint64, e
 
 	key := string(keyPair.GetPublicKey().AsBytes())
 	nonce, ok := svc.nonces[key]
-	if !ok {
-		// note that even while getting the current nonce we keep the lock active
-		// that way prevent other potential contenders to do the same in parallel
-		iscAgent := isc.NewAgentID(keyPair.Address())
-		agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
-		ctx := NewWasmClientContext(svc, coreaccounts.ScName)
-		n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-		n.Params.AgentID().SetValue(agent)
-		n.Func.Call()
-		if ctx.Err != nil {
-			return 0, ctx.Err
-		}
-		nonce = n.Results.AccountNonce().Value()
+	if ok {
+		svc.nonces[key] = nonce + 1
+		return nonce, nil
 	}
-	nonce++
-	svc.nonces[key] = nonce
+
+	iscAgent := isc.NewAgentID(keyPair.Address())
+	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
+	ctx := NewWasmClientContext(svc, coreaccounts.ScName)
+	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+	n.Params.AgentID().SetValue(agent)
+	n.Func.Call()
+	if ctx.Err != nil {
+		return 0, ctx.Err
+	}
+	nonce = n.Results.AccountNonce().Value()
+	svc.nonces[key] = nonce + 1
 	return nonce, nil
 }

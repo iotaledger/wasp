@@ -41,7 +41,7 @@ func AddHealthEndpoint(server echoswagger.ApiRoot, chainService interfaces.Chain
 			return e.String(http.StatusInternalServerError, fmt.Sprintf("chain unsync with %d diff", lag))
 		}
 
-		return e.String(http.StatusOK, "all chain synchronized")
+		return e.NoContent(http.StatusOK)
 	}).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
 		SetOperationId("getHealth").
