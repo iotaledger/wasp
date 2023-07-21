@@ -75,7 +75,7 @@ func NewCacheParition() (CacheInterface, error) {
 		return &CacheNoop{}, nil
 	}
 
-	if handleCounter == (1<<(partitionSize*8) - 1) {
+	if handleCounter == (1<<(partitionSize*8))-1 {
 		return nil, errors.New("too many cache partitions")
 	}
 	handleCounter++
