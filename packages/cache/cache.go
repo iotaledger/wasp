@@ -53,13 +53,13 @@ func InitCache(size int) error {
 }
 
 func GetStats() *Stats {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	// cache disabled
 	if cache == nil {
 		return nil
 	}
-
-	mutex.Lock()
-	defer mutex.Unlock()
 
 	stats := &fastcache.Stats{}
 	cache.UpdateStats(stats)
