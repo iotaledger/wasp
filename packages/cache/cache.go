@@ -1,19 +1,19 @@
 package cache
 
 import (
-	"encoding/binary"
 	"errors"
-	"math"
 	"sync"
 
 	"github.com/VictoriaMetrics/fastcache"
 )
 
-type partition [4]byte
+const partitionSize = 5
+
+type partition [partitionSize]byte
 
 type Stats struct {
 	*fastcache.Stats
-	NumHandles uint32
+	NumHandles uint64
 }
 
 type CacheInterface interface {
@@ -33,7 +33,7 @@ type CacheNoop struct {
 }
 
 var (
-	handleCounter uint32
+	handleCounter uint64
 	mutex         = &sync.Mutex{}
 	cache         *fastcache.Cache
 )
@@ -75,13 +75,15 @@ func NewCacheParition() (CacheInterface, error) {
 		return &CacheNoop{}, nil
 	}
 
-	if handleCounter == math.MaxUint32 {
+	if handleCounter == (1<<(partitionSize*8) - 1) {
 		return nil, errors.New("too many cache partitions")
 	}
 	handleCounter++
 
 	var partitionBytes partition
-	binary.LittleEndian.PutUint32(partitionBytes[:], handleCounter)
+	for i := 0; i < partitionSize; i++ {
+		partitionBytes[i] = byte(handleCounter >> (i * 8))
+	}
 
 	return &CachePartition{
 		partition: &partitionBytes,
