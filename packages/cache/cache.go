@@ -39,6 +39,9 @@ var (
 )
 
 func InitCache(size int) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if size < 32*1024*1024 || size > 1024*1024*1024 {
 		return errors.New("allowed size 32MiB to 1GiB")
 	}
@@ -70,14 +73,12 @@ func NewCacheParition() (CacheInterface, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	// if cache disabled return a /cache/ that does nothing
-	if cache == nil {
+	// if cache disabled or we used all handles
+	// return a cache (as failsafe) that does nothing
+	if cache == nil || handleCounter >= (1<<(partitionSize*8))-1 {
 		return &CacheNoop{}, nil
 	}
 
-	if handleCounter == (1<<(partitionSize*8))-1 {
-		return nil, errors.New("too many cache partitions")
-	}
 	handleCounter++
 
 	var partitionBytes partition
