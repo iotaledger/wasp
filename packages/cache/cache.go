@@ -11,6 +11,11 @@ import (
 
 type partition [4]byte
 
+type Stats struct {
+	*fastcache.Stats
+	NumHandles uint32
+}
+
 type CacheInterface interface {
 	Get(key []byte) ([]byte, bool)
 	Add(key []byte, value []byte)
@@ -44,15 +49,21 @@ func InitCache(size int) error {
 	return nil
 }
 
-func GetStats() *fastcache.Stats {
+func GetStats() *Stats {
 	// cache disabled
 	if cache == nil {
 		return nil
 	}
 
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	stats := &fastcache.Stats{}
 	cache.UpdateStats(stats)
-	return stats
+	return &Stats{
+		Stats:      stats,
+		NumHandles: handleCounter,
+	}
 }
 
 func NewCacheParition() (CacheInterface, error) {

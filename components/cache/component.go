@@ -54,8 +54,8 @@ func run() error {
 				cacheUsed := humanize.IBytes(stats.BytesSize)
 				cacheSize := humanize.IBytes(stats.MaxBytesSize)
 
-				Component.LogDebugf("gets: %d, sets: %d, misses: %d, hits(%%): %.3f, misses(%%): %.3f, collisions: %d, corruptions: %d, entries: %d, bytesize: %s, maxbytesize: %s",
-					stats.GetCalls, stats.SetCalls, stats.Misses, hitsPercent, 100.0-hitsPercent, stats.Collisions,
+				Component.LogDebugf("handles: %d, gets: %d, sets: %d, misses: %d, hits(%%): %.3f, misses(%%): %.3f, collisions: %d, corruptions: %d, entries: %d, bytesize: %s, maxbytesize: %s",
+					stats.NumHandles, stats.GetCalls, stats.SetCalls, stats.Misses, hitsPercent, 100.0-hitsPercent, stats.Collisions,
 					stats.Corruptions, stats.EntriesCount, cacheUsed, cacheSize)
 
 			case <-ctx.Done():
