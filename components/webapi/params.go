@@ -27,6 +27,9 @@ type ParametersWebAPI struct {
 var ParamsWebAPI = &ParametersWebAPI{
 	Auth: authentication.AuthConfiguration{
 		Scheme: "jwt",
+		JWTConfig: authentication.JWTAuthConfiguration{
+			Duration: 24 * time.Hour,
+		},
 	},
 }
 

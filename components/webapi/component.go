@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/web/websockethub"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
+	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
@@ -86,6 +87,7 @@ func initConfigParams(c *dig.Container) error {
 	return nil
 }
 
+//nolint:funlen
 func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, log *logger.Logger) *echo.Echo {
 	e := httpserver.NewEcho(
 		log,
@@ -100,6 +102,7 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 	e.HTTPErrorHandler = apierrors.HTTPErrorHandler()
 
 	webapi.ConfirmedStateLagThreshold = params.Limits.ConfirmedStateLagThreshold
+	authentication.DefaultJWTDuration = params.Auth.JWTConfig.Duration
 
 	e.Pre(middleware.RemoveTrailingSlash())
 
