@@ -6,7 +6,7 @@ import (
 
 type cachedKVStoreReader struct {
 	KVStoreReader
-	cache *cache.CachePartition
+	cache cache.CacheInterface
 }
 
 // NewCachedKVStoreReader wraps a KVStoreReader with an in-memory cache.

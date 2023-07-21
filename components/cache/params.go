@@ -15,7 +15,7 @@ type ParametersCache struct {
 	CacheStatsInterval time.Duration `default:"30s" usage:"interval for printing cache statistics"`
 
 	// CacheEnable enabled the cache
-	CacheEnabled bool `default:"true" usage:"enables or disables caching of states"`
+	Enabled bool `default:"true" usage:"whether the cache plugin is enabled"`
 }
 
 var ParamsCache = &ParametersCache{}

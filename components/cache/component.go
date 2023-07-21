@@ -2,20 +2,21 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/cache"
 	"github.com/iotaledger/wasp/packages/daemon"
+	"go.uber.org/dig"
 )
 
 func init() {
 	Component = &app.Component{
-		Name:   "Cache",
-		Params: params,
-		Run:    run,
+		Name:      "Cache",
+		IsEnabled: func(_ *dig.Container) bool { return ParamsCache.Enabled },
+		Params:    params,
+		Run:       run,
 	}
 }
 
@@ -24,11 +25,6 @@ var (
 )
 
 func run() error {
-	// cache is disabled, don't initialize it
-	if !ParamsCache.CacheEnabled {
-		return nil
-	}
-
 	size, err := humanize.ParseBytes(ParamsCache.CacheSize)
 	if err != nil {
 		Component.LogPanicf("invalid CacheSize")
@@ -54,18 +50,13 @@ func run() error {
 					continue
 				}
 
-				var hitsPercent = "-"
-				var missesPercent = "-"
-				if stats.GetCalls > 0 { // Avoid division by zero
-					hp := float64(stats.GetCalls-stats.Misses) / float64(stats.GetCalls) * 100.0
-					hitsPercent = fmt.Sprintf("%.3f", hp)
-					missesPercent = fmt.Sprintf("%.3f", 100.0-hp)
-				}
+				hitsPercent := float64(stats.GetCalls-stats.Misses) / float64(stats.GetCalls+1) * 100.0
+
 				cacheUsed := humanize.IBytes(stats.BytesSize)
 				cacheSize := humanize.IBytes(stats.MaxBytesSize)
 
-				Component.LogDebugf("gets: %d, sets: %d, misses: %d, hits(%%): %s, misses(%%): %s, collisions: %d, corruptions: %d, entries: %d, bytesize: %s, maxbytesize: %s",
-					stats.GetCalls, stats.SetCalls, stats.Misses, hitsPercent, missesPercent, stats.Collisions,
+				Component.LogDebugf("gets: %d, sets: %d, misses: %d, hits(%%): %.3f, misses(%%): %.3f, collisions: %d, corruptions: %d, entries: %d, bytesize: %s, maxbytesize: %s",
+					stats.GetCalls, stats.SetCalls, stats.Misses, hitsPercent, 100.0-hitsPercent, stats.Collisions,
 					stats.Corruptions, stats.EntriesCount, cacheUsed, cacheSize)
 
 			case <-ctx.Done():

@@ -4,7 +4,7 @@ import "github.com/iotaledger/wasp/packages/cache"
 
 type cachedKVReader struct {
 	r     KVReader
-	cache *cache.CachePartition
+	cache cache.CacheInterface
 }
 
 func makeCachedKVReader(r KVReader) KVReader {
