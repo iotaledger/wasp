@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"go.uber.org/dig"
+
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/wasp/packages/cache"
 	"github.com/iotaledger/wasp/packages/daemon"
-	"go.uber.org/dig"
 )
 
 func init() {
@@ -20,9 +21,7 @@ func init() {
 	}
 }
 
-var (
-	Component *app.Component
-)
+var Component *app.Component
 
 func run() error {
 	size, err := humanize.ParseBytes(ParamsCache.CacheSize)
