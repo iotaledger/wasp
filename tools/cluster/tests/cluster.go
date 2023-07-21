@@ -20,12 +20,12 @@ type waspClusterOpts struct {
 }
 
 // by default, when running the cluster tests we will automatically setup a private tangle,
-// however its possible to run the tests on any compatible network, by providing the L1 node configuration:
+// however it's possible to run the tests on any compatible network, by providing the L1 node configuration.
 // example:
 // go test -timeout 30m github.com/iotaledger/wasp/tools/cluster/tests -layer1-api="http://1.1.1.123:3000" -layer1-faucet="http://1.1.1.123:5000"
 var l1 = l1starter.New(flag.CommandLine, flag.CommandLine)
 
-// newCluster starts a new cluster environment for tests.
+// newCluster starts a new cluster environment (both L1 and L2) for tests.
 // It is a private function because cluster tests cannot be run in parallel,
 // so all cluster tests MUST be in this same package.
 func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
