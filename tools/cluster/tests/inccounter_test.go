@@ -256,7 +256,7 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 	require.EqualValues(t, 1, counter)
 }
 
-// privtangle tests have accelerate milestones (check `startCoordinator` on `privtangle.go`)
+// privtangle tests have accelerated milestones (check `startCoordinator` on `privtangle.go`)
 // right now each milestone is issued each 100ms which means a "1s increase" each 100ms
 // executed in cluster_test.go
 func testIncCounterTimelock(t *testing.T, env *ChainEnv) {
