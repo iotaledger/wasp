@@ -29,12 +29,13 @@ func run() error {
 		Component.LogPanicf("invalid CacheSize")
 	}
 
-	if err := cache.InitCache(int(size)); err != nil {
-		Component.LogPanic("cache initialization failed")
+	if err := cache.SetCacheSize(int(size)); err != nil {
+		Component.LogPanic(err)
 	}
-	Component.LogInfof("cache initialized ...")
 
 	if err := Component.Daemon().BackgroundWorker("Cache statistics", func(ctx context.Context) {
+		Component.LogInfof("Started cache statistics ticker")
+
 		ticker := time.NewTicker(ParamsCache.CacheStatsInterval)
 		defer ticker.Stop()
 

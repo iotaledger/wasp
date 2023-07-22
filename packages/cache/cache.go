@@ -7,12 +7,16 @@ import (
 	"github.com/VictoriaMetrics/fastcache"
 )
 
-const partitionSize = 5
+const (
+	partitionSize = 5
+)
 
 type partition [partitionSize]byte
 
 type Stats struct {
 	*fastcache.Stats
+
+	// Number of handles
 	NumHandles uint64
 }
 
@@ -33,25 +37,37 @@ type CacheNoop struct {
 }
 
 var (
+	// size for the cache
+	// default value of 0 means disabled
+	cacheSize int
+
+	initOnce sync.Once
+
+	// the handle counter
 	handleCounter uint64
-	mutex         = &sync.Mutex{}
-	cache         *fastcache.Cache
+
+	// mutex
+	mutex = &sync.Mutex{}
+
+	// the fastcache
+	cache *fastcache.Cache
 )
 
-func InitCache(size int) error {
+// set Cache size
+// called from cache component to set parameter
+// before first use
+func SetCacheSize(size int) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if size < 32*1024*1024 || size > 1024*1024*1024 {
 		return errors.New("allowed size 32MiB to 1GiB")
 	}
-	cache = fastcache.New(size)
-	if cache == nil {
-		return errors.New("creating lru cache failed")
-	}
+	cacheSize = size
 	return nil
 }
 
+// get fastcache statistics
 func GetStats() *Stats {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -69,9 +85,18 @@ func GetStats() *Stats {
 	}
 }
 
+// create a new cache partition
+// initializes the cache if not already happened
 func NewCacheParition() (CacheInterface, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
+
+	// initialize the cache first time it is used
+	if cacheSize != 0 {
+		initOnce.Do(func() {
+			cache = fastcache.New(cacheSize)
+		})
+	}
 
 	// if cache disabled or we used all handles
 	// return a cache (as failsafe) that does nothing
@@ -79,13 +104,16 @@ func NewCacheParition() (CacheInterface, error) {
 		return &CacheNoop{}, nil
 	}
 
+	// increment the handle counter
 	handleCounter++
 
+	// store counter into byte array
 	var partitionBytes partition
 	for i := 0; i < partitionSize; i++ {
 		partitionBytes[i] = byte(handleCounter >> (i * 8))
 	}
 
+	// and return it as CachePartition struct
 	return &CachePartition{
 		partition: &partitionBytes,
 	}, nil
