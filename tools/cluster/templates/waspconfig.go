@@ -118,14 +118,6 @@ var WaspConfig = `
       "scheme": "none",
       "jwt": {
         "duration": "24h"
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": [
-          "0.0.0.0"
-        ]
       }
     },
     "limits": {

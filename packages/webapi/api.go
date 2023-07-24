@@ -48,7 +48,7 @@ func AddHealthEndpoint(server echoswagger.ApiRoot, chainService interfaces.Chain
 		SetSummary("Returns 200 if the node is healthy.")
 }
 
-func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware func() echo.MiddlewareFunc) {
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController, authMiddleware echo.MiddlewareFunc) {
 	for _, controller := range controllersToLoad {
 		group := server.Group(controller.Name(), fmt.Sprintf("/v%d/", APIVersion))
 		controller.RegisterPublic(group, mocker)
@@ -66,7 +66,7 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 		}
 
 		if authMiddleware != nil {
-			group.EchoGroup().Use(authMiddleware())
+			group.EchoGroup().Use(authMiddleware)
 		}
 
 		controller.RegisterAdmin(adminGroup, mocker)
@@ -110,13 +110,7 @@ func Init(
 	userService := services.NewUserService(userManager)
 	// --
 
-	claimValidator := func(claims *authentication.WaspClaims) bool {
-		// The v2 api uses another way of permission handling, so we can always return true here.
-		// Permissions are now validated at the route level. See the webapi/v2/controllers/*/controller.go routes.
-		return true
-	}
-
-	authMiddleware := authentication.AddV2Authentication(server, userManager, nodeIdentityProvider, authConfig, claimValidator)
+	authMiddleware := authentication.AddAuthentication(server, userManager, nodeIdentityProvider, authConfig, mocker)
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService),
