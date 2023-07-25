@@ -8,23 +8,22 @@ import (
 
 func HTTPErrorHandler() func(error, echo.Context) {
 	return func(err error, c echo.Context) {
+		if c.Response().Committed {
+			return
+		}
+
 		switch err := err.(type) {
 		case *echo.HTTPError:
 			mappedError := HTTPErrorFromEchoError(err)
 			_ = c.JSON(mappedError.HTTPCode, mappedError.GetErrorResult())
-			return
 
 		case *HTTPError:
-			if !c.Response().Committed {
-				if c.Request().Method == http.MethodHead { // Issue #608
-					_ = c.NoContent(err.HTTPCode)
-					return
-				}
-
-				_ = c.JSON(err.HTTPCode, err.GetErrorResult())
+			if c.Request().Method == http.MethodHead { // Issue #608
+				_ = c.NoContent(err.HTTPCode)
 				return
 			}
-			c.Echo().DefaultHTTPErrorHandler(err, c)
+
+			_ = c.JSON(err.HTTPCode, err.GetErrorResult())
 
 		default:
 			c.Echo().DefaultHTTPErrorHandler(err, c)
