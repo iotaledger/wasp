@@ -56,6 +56,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/legacymigration"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -518,32 +519,40 @@ func (mpi *mempoolImpl) nonce(account isc.AgentID) uint64 {
 
 func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) error {
 	mpi.log.Debugf("trying to add to mempool, requestID: %s", req.ID().String())
-	if err := req.VerifySignature(); err != nil {
-		return fmt.Errorf("invalid signature")
-	}
-	if mpi.offLedgerPool.Has(isc.RequestRefFromRequest(req)) {
-		return fmt.Errorf("already in mempool")
-	}
 	if mpi.chainHeadState == nil {
 		return fmt.Errorf("chainHeadState is nil")
 	}
 
-	accountNonce := mpi.nonce(req.SenderAccount())
-	if req.Nonce() < accountNonce {
-		return fmt.Errorf("bad nonce, expected: %d", accountNonce)
-	}
+	// make an exception for legacy migration requests
+	legacyMigrationSA := legacymigration.NewStateAccess(mpi.chainHeadState)
+	if !legacyMigrationSA.ValidMigrationRequest(req) {
+		// skip regular checks for valid legacy-migration requests
+		if err := req.VerifySignature(); err != nil {
+			return fmt.Errorf("invalid signature")
+		}
 
-	// check user has on-chain balance
-	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
-	if !accountsState.AccountExists(req.SenderAccount(), mpi.chainID) {
-		// make an exception for gov calls (sender is chan owner and target is gov contract)
+		accountNonce := mpi.nonce(req.SenderAccount())
+		if req.Nonce() < accountNonce {
+			return fmt.Errorf("bad nonce, expected: %d", accountNonce)
+		}
+
 		governanceState := governance.NewStateAccess(mpi.chainHeadState)
-		chainOwner := governanceState.ChainOwnerID()
-		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
-		if !isGovRequest {
-			return fmt.Errorf("no funds on chain")
+		// check user has on-chain balance
+		accountsState := accounts.NewStateAccess(mpi.chainHeadState)
+		if !accountsState.AccountExists(req.SenderAccount(), mpi.chainID) {
+			// make an exception for gov calls (sender is chan owner and target is gov contract)
+			chainOwner := governanceState.ChainOwnerID()
+			isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
+			if !isGovRequest {
+				return fmt.Errorf("no funds on chain")
+			}
 		}
 	}
+
+	if mpi.offLedgerPool.Has(isc.RequestRefFromRequest(req)) {
+		return fmt.Errorf("already in mempool")
+	}
+
 	return nil
 }
 

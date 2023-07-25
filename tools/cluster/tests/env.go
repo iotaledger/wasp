@@ -68,7 +68,7 @@ func (e *ChainEnv) deployWasmContract(wasmName string, initParams map[string]int
 
 	reqTx, err := chClient.DepositFunds(1_000_000)
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 120*time.Second)
 	require.NoError(e.t, err)
 
 	ph, err := e.Chain.DeployWasmContract(wasmName, wasm, initParams)

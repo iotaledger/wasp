@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/legacymigration"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -53,6 +54,7 @@ func SetInitialState(state kv.KVStore) {
 			errors.Contract,
 			governance.Contract,
 			evm.Contract,
+			legacymigration.Contract,
 		}
 
 		for _, c := range contracts {

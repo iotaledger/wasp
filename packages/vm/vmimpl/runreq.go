@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/legacymigration"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -321,6 +322,12 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 	if reqctx.vm.task.EstimateGasMode && gasBudget == 0 {
 		// gas budget 0 means its a view call, so we give it max gas and tokens
 		return reqctx.vm.chainInfo.GasLimits.MaxGasExternalViewCall, math.MaxUint64
+	}
+
+	// make an exception for legacy migration requests
+	legacyMigrationSA := legacymigration.NewStateAccess(reqctx.vm.stateDraft)
+	if legacyMigrationSA.ValidMigrationRequest(reqctx.req) {
+		return reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest, 0
 	}
 
 	// make sure the gasBudget is at least >= than the allowed minimum

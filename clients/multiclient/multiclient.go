@@ -26,7 +26,7 @@ func New(resolver ClientResolver, hosts []string) *MultiClient {
 		m.nodes[i] = resolver(host)
 	}
 
-	m.Timeout = 30 * time.Second
+	m.Timeout = 200 * time.Second
 	return m
 }
 

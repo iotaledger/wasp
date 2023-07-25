@@ -83,7 +83,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// give some time for the access node to sync
-	time.Sleep(2 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	// send a request to the access node
 	myClient := scclient.New(

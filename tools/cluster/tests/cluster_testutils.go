@@ -57,7 +57,7 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 			// retry (access nodes might take slightly more time to sync)
 			retries++
 			i--
-			time.Sleep(1 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 	}

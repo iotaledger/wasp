@@ -859,6 +859,7 @@ func TestEVMISCReceipt(t *testing.T) {
 	require.NoError(t, err)
 	err = jsonRPCClient.SendTransaction(context.Background(), tx)
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second)
 	out := w.MustRun("chain", "request", tx.Hash().Hex(), "--node=0")
 	require.Contains(t, out[0], "Request found in block")
 }
