@@ -15,7 +15,7 @@ import (
 type MsgNextLogIndexCause byte
 
 const (
-	MsgNextLogIndexCauseConsCompleted MsgNextLogIndexCause = iota
+	MsgNextLogIndexCauseConsOut MsgNextLogIndexCause = iota
 	MsgNextLogIndexCauseL1ReplacedAO
 	MsgNextLogIndexCauseRecover
 )
@@ -23,7 +23,7 @@ const (
 type MsgNextLogIndex struct {
 	gpa.BasicMessage
 	NextLogIndex LogIndex               // Proposal is to go to this LI without waiting for a consensus.
-	NextBaseAO   *isc.AliasOutputWithID // Using this AO as a base.
+	NextBaseAO   *isc.AliasOutputWithID // Using this AO as a base, might be nil.
 	Cause        MsgNextLogIndexCause
 	PleaseRepeat bool // If true, the receiver should resend its latest message back to the sender.
 }
@@ -62,8 +62,12 @@ func (msg *MsgNextLogIndex) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeNextLogIndex.ReadAndVerify(rr)
 	msg.NextLogIndex = LogIndex(rr.ReadUint32())
-	msg.NextBaseAO = new(isc.AliasOutputWithID)
-	rr.Read(msg.NextBaseAO)
+	if rr.ReadBool() {
+		msg.NextBaseAO = new(isc.AliasOutputWithID)
+		rr.Read(msg.NextBaseAO)
+	} else {
+		msg.NextBaseAO = nil
+	}
 	msg.Cause = MsgNextLogIndexCause(rr.ReadByte())
 	msg.PleaseRepeat = rr.ReadBool()
 	return rr.Err
@@ -73,7 +77,12 @@ func (msg *MsgNextLogIndex) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypeNextLogIndex.Write(ww)
 	ww.WriteUint32(msg.NextLogIndex.AsUint32())
-	ww.Write(msg.NextBaseAO)
+	if msg.NextBaseAO != nil {
+		ww.WriteBool(true)
+		ww.Write(msg.NextBaseAO)
+	} else {
+		ww.WriteBool(false)
+	}
 	ww.WriteByte(byte(msg.Cause))
 	ww.WriteBool(msg.PleaseRepeat)
 	return ww.Err

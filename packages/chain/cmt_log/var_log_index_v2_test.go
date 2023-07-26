@@ -8,14 +8,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
-func TestVarLogIndexBasic(t *testing.T) {
+func TestVarLogIndexV2Basic(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	n := 4
@@ -25,7 +23,7 @@ func TestVarLogIndexBasic(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
+	vli := NewVarLogIndexV2(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
 	//
 	nextLI := initLI.Next()
 	vliLI, _ := vli.Value()
@@ -39,7 +37,7 @@ func TestVarLogIndexBasic(t *testing.T) {
 	require.Equal(t, nextLI, vliLI)
 }
 
-func TestVarLogIndexOther(t *testing.T) {
+func TestVarLogIndexV2Other(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	n := 4
@@ -49,7 +47,7 @@ func TestVarLogIndexOther(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
+	vli := NewVarLogIndexV2(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
 	vliValueLI := func() LogIndex {
 		li, _ := vli.Value()
 		return li
@@ -76,10 +74,4 @@ func TestVarLogIndexOther(t *testing.T) {
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[3], li15))
 	require.Equal(t, li15, vliValueLI())
-}
-
-func randomAliasOutputWithID() *isc.AliasOutputWithID {
-	outputID := testiotago.RandOutputID()
-	aliasOutput := &iotago.AliasOutput{}
-	return isc.NewAliasOutputWithID(aliasOutput, outputID)
 }
