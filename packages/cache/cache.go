@@ -107,7 +107,9 @@ func NewCacheParition() (CacheInterface, error) {
 	// increment the handle counter
 	handleCounter++
 
-	// store counter into byte array
+	// store counter into byte array by selecting 8bit-wise via
+	// shift and cast and store each byte at the 'i'th position
+	// of the partitionBytes array
 	var partitionBytes partition
 	for i := 0; i < partitionSize; i++ {
 		partitionBytes[i] = byte(handleCounter >> (i * 8))
