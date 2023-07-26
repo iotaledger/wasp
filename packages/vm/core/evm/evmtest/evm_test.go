@@ -226,7 +226,7 @@ func TestNotEnoughISCGas(t *testing.T) {
 
 	// the call must fail with "not enough gas"
 	require.Error(t, err)
-	require.Regexp(t, "gas budget exceeded", err)
+	require.Regexp(t, "out of gas", err)
 	require.Equal(t, nonce+1, env.getNonce(senderAddress))
 
 	// there must be an EVM receipt
@@ -917,7 +917,8 @@ func TestISCPanic(t *testing.T) {
 	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "execution reverted")
+	require.Equal(t, types.ReceiptStatusFailed, ret.evmReceipt.Status)
+	require.Contains(t, err.Error(), "not delegated to another chain owner")
 }
 
 func TestISCSendWithArgs(t *testing.T) {
@@ -1344,7 +1345,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 	)
 	// request must fail with an error, and receiver should not receive any funds
 	require.Error(t, err)
-	require.Regexp(t, "execution reverted", err.Error())
+	require.Regexp(t, vm.ErrNotEnoughTokensLeftForGas.Error(), err.Error())
 	iscReceipt := env.soloChain.LastReceipt()
 	require.Error(t, iscReceipt.Error.AsGoError())
 	require.EqualValues(t, 0, env.solo.L1BaseTokens(receiver))
@@ -1542,11 +1543,11 @@ func TestSendEntireBalance(t *testing.T) {
 	require.NoError(t, err)
 	err = env.evmChain.SendTransaction(tx)
 	// this will produce an error because there won't be tokens left in the account to pay for gas
-	require.Error(t, err)
+	require.ErrorContains(t, err, vm.ErrNotEnoughTokensLeftForGas.Error())
 	evmReceipt := env.evmChain.TransactionReceipt(tx.Hash())
 	require.Equal(t, evmReceipt.Status, types.ReceiptStatusFailed)
 	rec := env.soloChain.LastReceipt()
-	require.EqualValues(t, rec.ResolvedError, vm.ErrNotEnoughTokensLeftForGas.Error())
+	require.EqualValues(t, vm.ErrNotEnoughTokensLeftForGas.Error(), rec.ResolvedError)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 0)
 
 	// now try sending all balance, minus the funds needed for gas
@@ -1608,7 +1609,7 @@ func TestSolidityRevertMessage(t *testing.T) {
 	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
 }
 
-func TestCallContractCannotCauseStackOverlow(t *testing.T) {
+func TestCallContractCannotCauseStackOverflow(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 

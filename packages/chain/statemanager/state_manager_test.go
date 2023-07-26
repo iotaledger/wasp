@@ -10,8 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -22,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
-func TestCruelWorld(t *testing.T) {
+func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -39,6 +41,11 @@ func TestCruelWorld(t *testing.T) {
 	consensusDecidedStateCount := 50
 	mempoolStateRequestDelay := 50 * time.Millisecond
 	mempoolStateRequestCount := 50
+	snapshotCreateNodeCount := 2
+	snapshotCreatePeriod := uint32(7)
+	snapshotCommitTime := 170 * time.Millisecond
+	snapshotLoadTime := 320 * time.Millisecond
+	snapshotUpdatePeriod := 510 * time.Millisecond
 
 	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
@@ -55,13 +62,26 @@ func TestCruelWorld(t *testing.T) {
 	bf := sm_gpa_utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
+	snapMs := make([]sm_snapshots.SnapshotManager, nodeCount)
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
+	parameters.SnapshotManagerUpdatePeriod = snapshotUpdatePeriod
+	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManager {
+		var createPeriod uint32
+		if createSnapshots {
+			createPeriod = snapshotCreatePeriod
+		} else {
+			createPeriod = 0
+		}
+		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, bf.GetStore(), store, snapshotCommitTime, snapshotLoadTime, parameters.TimeProvider, log)
+	}
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
+		logNode := log.Named(peeringURLs[i])
 		stores[i] = state.NewStore(mapdb.NewMapDB())
+		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
 		origin.InitChain(stores[i], nil, 0)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
@@ -71,14 +91,22 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys,
 			netProviders[i],
 			sm_gpa_utils.NewMockedTestBlockWAL(),
+			snapMs[i],
 			stores[i],
 			nil,
 			chainMetrics.StateManager,
 			chainMetrics.Pipe,
-			log.Named(peeringURLs[i]),
+			logNode,
 			parameters,
 		)
 		require.NoError(t, err)
+	}
+	for i := 0; i < snapshotCreateNodeCount; i++ {
+		snapMs[i].(*sm_snapshots.MockedSnapshotManager).SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
+			for j := snapshotCreateNodeCount; j < len(snapMs); j++ {
+				snapMs[j].(*sm_snapshots.MockedSnapshotManager).SnapshotReady(snapshotInfo)
+			}
+		})
 	}
 	blocks := bf.GetBlocks(blockCount, 1)
 	stateDrafts := make([]state.StateDraft, blockCount)
@@ -144,7 +172,13 @@ func TestCruelWorld(t *testing.T) {
 		newStateOutput := bf.GetAliasOutput(blocks[newBlockIndex].L1Commitment())
 		responseCh := sms[nodeIndex].(*stateManager).ChainFetchStateDiff(context.Background(), oldStateOutput, newStateOutput)
 		results := <-responseCh
-		if !bf.GetState(blocks[newBlockIndex].L1Commitment()).TrieRoot().Equals(results.GetNewState().TrieRoot()) { // TODO: should compare states instead of trie roots
+		expectedNewState, err := bf.GetStore().StateByTrieRoot(blocks[newBlockIndex].TrieRoot())
+		if err != nil {
+			t.Logf("Mempool state request for new block %v and old block %v to node %v wasn't able to retrieve expected new state: %v",
+				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], err)
+			return false
+		}
+		if !sm_gpa_utils.StatesEqual(expectedNewState, results.GetNewState()) {
 			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong new state: expected trie root %s, received %s",
 				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], blocks[newBlockIndex].TrieRoot(), results.GetNewState().TrieRoot())
 			return false

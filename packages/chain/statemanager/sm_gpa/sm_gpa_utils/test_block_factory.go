@@ -153,16 +153,14 @@ func (bfT *BlockFactory) GetNextBlock(
 	return block
 }
 
+func (bfT *BlockFactory) GetStore() state.Store {
+	return NewReadOnlyStore(bfT.store)
+}
+
 func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	result, err := bfT.store.NewEmptyStateDraft(block.PreviousL1Commitment())
 	require.NoError(bfT.t, err)
 	block.Mutations().ApplyTo(result)
-	return result
-}
-
-func (bfT *BlockFactory) GetState(commitment *state.L1Commitment) state.State {
-	result, err := bfT.store.StateByTrieRoot(commitment.TrieRoot())
-	require.NoError(bfT.t, err)
 	return result
 }
 

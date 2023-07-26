@@ -28,8 +28,10 @@ func GetEntryPointByProgHash(ctx WaspContext, targetContract, epCode isc.Hname, 
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		ctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(vm.ErrTargetEntryPointNotFound)
+		if gasctx, ok2 := ctx.(GasContext); ok2 {
+			gasctx.GasBurn(gas.BurnCodeCallTargetNotFound)
+			panic(vm.ErrTargetEntryPointNotFound)
+		}
 	}
 	return ep
 }

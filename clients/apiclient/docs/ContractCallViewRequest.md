@@ -5,6 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Arguments** | [**JSONDict**](JSONDict.md) |  | 
+**Block** | Pointer to **string** |  | [optional] 
 **ContractHName** | **string** | The contract name as HName (Hex) | 
 **ContractName** | **string** | The contract name | 
 **FunctionHName** | **string** | The function name as HName (Hex) | 
@@ -48,6 +49,31 @@ and a boolean to check if the value has been set.
 
 SetArguments sets Arguments field to given value.
 
+
+### GetBlock
+
+`func (o *ContractCallViewRequest) GetBlock() string`
+
+GetBlock returns the Block field if non-nil, zero value otherwise.
+
+### GetBlockOk
+
+`func (o *ContractCallViewRequest) GetBlockOk() (*string, bool)`
+
+GetBlockOk returns a tuple with the Block field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetBlock
+
+`func (o *ContractCallViewRequest) SetBlock(v string)`
+
+SetBlock sets Block field to given value.
+
+### HasBlock
+
+`func (o *ContractCallViewRequest) HasBlock() bool`
+
+HasBlock returns a boolean if a field has been set.
 
 ### GetContractHName
 

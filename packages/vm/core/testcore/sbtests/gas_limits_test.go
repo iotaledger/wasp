@@ -64,13 +64,16 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 
 	for i := 0; i < nRequests; i++ {
 		req, wallet := infiniteLoopRequest(ch)
-		iscReq, err := solo.IscRequestFromCallParams(ch, req, wallet)
+		iscReq, err := solo.ISCRequestFromCallParams(ch, req, wallet)
 		require.NoError(t, err)
 		reqs[i] = iscReq
 	}
 
 	ch.Env.AddRequestsToMempool(ch, reqs)
 	ch.WaitUntilMempoolIsEmpty()
+
+	// we should have produced 2 blocks
+	require.EqualValues(t, initialBlockInfo.BlockIndex()+2, ch.LatestBlockIndex())
 
 	fullGasBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 1)
 	require.NoError(t, err)
@@ -83,10 +86,6 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 	followingBlockInfo, err := ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 2)
 	require.NoError(t, err)
 	require.Equal(t, uint16(1), followingBlockInfo.TotalRequests)
-
-	// no further blocks should have been produced
-	_, err = ch.GetBlockInfo(initialBlockInfo.BlockIndex() + 3)
-	require.Error(t, err)
 }
 
 func TestGasBudget(t *testing.T) { run2(t, testGasBudget) }

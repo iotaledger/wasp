@@ -10,15 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	iscvm "github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 var allMethods = make(map[string]*magicMethod)
@@ -76,40 +72,6 @@ func parseCall(input []byte, privileged bool) (*abi.Method, []any) {
 	return magicMethod.abi, args
 }
 
-type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte
-
-// see UnpackRevert in go-ethereum/accounts/abi/abi.go
-var revertSelector = crypto.Keccak256([]byte("Error(string)"))[:4]
-
-// catchISCPanics executes a `Run` function (either from a call or view), and catches ISC exceptions, if any ISC exception happens, ErrExecutionReverted is issued
-func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool, log isc.LogInterface) (ret []byte, remainingGas uint64, executionErr error) {
-	executionErr = panicutil.CatchAllExcept(
-		func() {
-			ret = run(evm, caller, input, gas, readOnly)
-		},
-		vmexceptions.AllProtocolLimits...,
-	)
-	if executionErr != nil {
-		log.Debugf("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), iotago.EncodeHex(input), executionErr)
-		// TODO this works, but is there a better way to encode the error in the required abi format?
-
-		// include the ISC error as the revert reason by encoding it into the returnData
-		ret = revertSelector
-		abiString, err := abi.NewType("string", "", nil)
-		if err != nil {
-			panic(err)
-		}
-		encodedErr, err := abi.Arguments{{Type: abiString}}.Pack(executionErr.Error())
-		if err != nil {
-			panic(err)
-		}
-		ret = append(ret, encodedErr...)
-		// override the error to be returned (must be "execution reverted")
-		executionErr = vm.ErrExecutionReverted
-	}
-	return ret, gas, executionErr
-}
-
 type magicContract struct {
 	ctx isc.Sandbox
 }
@@ -121,16 +83,13 @@ func newMagicContract(ctx isc.Sandbox) map[common.Address]vm.ISCMagicContract {
 }
 
 func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
-}
-
-func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
 	privileged := isCallerPrivileged(c.ctx, caller.Address())
 	method, args := parseCall(input, privileged)
 	if readOnly && !method.IsConstant() {
-		panic(errReadOnlyContext)
+		return nil, gas, errReadOnlyContext
 	}
-	return callHandler(c.ctx, caller, method, args)
+	ret = callHandler(c.ctx, caller, method, args)
+	return ret, gas, nil
 }
 
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract

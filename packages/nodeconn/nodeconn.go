@@ -252,7 +252,7 @@ func (nc *nodeConnection) Run(ctx context.Context) error {
 
 	// the node bridge needs to be started before waiting for L1 to become synced,
 	// otherwise the NodeStatus would never be updated and "syncAndSetProtocolParameters" would be stuck
-	// in an inifinite loop
+	// in an infinite loop
 	go func() {
 		nc.nodeBridge.Run(ctx)
 

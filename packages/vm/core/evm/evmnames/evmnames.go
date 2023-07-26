@@ -17,10 +17,6 @@ const (
 	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
 	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
-	// block context
-	FuncOpenBlockContext  = "openBlockContext"
-	FuncCloseBlockContext = "closeBlockContext"
-
 	FieldTransaction      = "t"
 	FieldCallMsg          = "c"
 	FieldChainID          = "chid"

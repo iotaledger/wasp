@@ -27,10 +27,7 @@ func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call
 		gasCap uint64
 	)
 
-	maximumPossibleGas, err := getMaxCallGasLimit(ch)
-	if err != nil {
-		return 0, err
-	}
+	maximumPossibleGas := getMaxCallGasLimit(ch)
 
 	if call.Gas >= params.TxGas {
 		hi = call.Gas
@@ -121,24 +118,7 @@ func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call
 	return hi, nil
 }
 
-func getMaxCallGasLimit(ch chain.ChainCore) (uint64, error) {
-	ret, err := CallView(
-		mustLatestState(ch),
-		ch,
-		governance.Contract.Hname(),
-		governance.ViewGetChainInfo.Hname(),
-		nil,
-	)
-	if err != nil {
-		return 0, err
-	}
-	fp, err := gas.FeePolicyFromBytes(ret.Get(governance.VarGasFeePolicyBytes))
-	if err != nil {
-		return 0, err
-	}
-	gl, err := gas.LimitsFromBytes(ret.Get(governance.VarGasLimitsBytes))
-	if err != nil {
-		return 0, err
-	}
-	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio), nil
+func getMaxCallGasLimit(ch chain.ChainCore) uint64 {
+	info := governance.NewStateAccess(mustLatestState(ch)).ChainInfo(ch.ID())
+	return gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
 }

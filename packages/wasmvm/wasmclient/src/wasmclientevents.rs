@@ -23,13 +23,13 @@ pub struct SubscriptionCommand {
 
 #[derive(Deserialize)]
 pub struct ISCPayload {
-    #[serde(rename = "contractID")]
+    #[serde(rename = "ContractID")]
     pub contract_id: u32,
-    #[serde(rename = "payload")]
+    #[serde(rename = "Payload")]
     pub payload: String,
-    #[serde(rename = "timestamp")]
+    #[serde(rename = "Timestamp")]
     pub timestamp: u64,
-    #[serde(rename = "topic")]
+    #[serde(rename = "Topic")]
     pub topic: String,
 }
 

@@ -68,8 +68,8 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 		return err
 	}
 
-	if !chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey()) {
-		return interfaces.ErrNotAddedToMempool
+	if err := chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey()); err != nil {
+		return fmt.Errorf("tx not added to the mempool: %v", err.Error())
 	}
 
 	c.requestCache.Set(reqID, true)

@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -451,7 +452,9 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
+			false,
 			sm_gpa_utils.NewMockedTestBlockWAL(),
+			sm_snapshots.NewEmptySnapshotManager(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],

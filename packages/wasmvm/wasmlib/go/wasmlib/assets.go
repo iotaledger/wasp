@@ -37,12 +37,10 @@ func NewScAssets(buf []byte) *ScAssets {
 	}
 
 	if (flags & hasBaseTokens) != 0 {
-		baseTokens := make([]byte, wasmtypes.ScUint64Length)
-		copy(baseTokens, dec.FixedBytes(uint32((flags&0x07)+1)))
-		assets.BaseTokens = wasmtypes.Uint64FromBytes(baseTokens)
+		assets.BaseTokens = dec.VluDecode(64)
 	}
 	if (flags & hasNativeTokens) != 0 {
-		size := dec.VluDecode(32)
+		size := dec.VluDecode(16)
 		assets.NativeTokens = make(TokenAmounts, size)
 		for ; size > 0; size-- {
 			tokenID := wasmtypes.TokenIDDecode(dec)
@@ -50,7 +48,7 @@ func NewScAssets(buf []byte) *ScAssets {
 		}
 	}
 	if (flags & hasNFTs) != 0 {
-		size := dec.VluDecode(32)
+		size := dec.VluDecode(16)
 		assets.Nfts = make(map[wasmtypes.ScNftID]bool)
 		for ; size > 0; size-- {
 			nftID := wasmtypes.NftIDDecode(dec)
@@ -75,17 +73,8 @@ func (a *ScAssets) Bytes() []byte {
 	}
 
 	var flags byte
-	var baseTokens []byte
 	if a.BaseTokens != 0 {
 		flags |= hasBaseTokens
-		baseTokens = wasmtypes.Uint64ToBytes(a.BaseTokens)
-		for i := len(baseTokens) - 1; i > 0; i-- {
-			if baseTokens[i] != 0 {
-				flags |= byte(i)
-				baseTokens = baseTokens[:i+1]
-				break
-			}
-		}
 	}
 	if len(a.NativeTokens) != 0 {
 		flags |= hasNativeTokens
@@ -96,7 +85,7 @@ func (a *ScAssets) Bytes() []byte {
 	wasmtypes.Uint8Encode(enc, flags)
 
 	if (flags & hasBaseTokens) != 0 {
-		enc.FixedBytes(baseTokens, uint32(len(baseTokens)))
+		enc.VluEncode(a.BaseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
 		enc.VluEncode(uint64(len(a.NativeTokens)))

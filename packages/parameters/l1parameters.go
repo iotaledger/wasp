@@ -30,7 +30,7 @@ const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
 	serializer.OneByte - // ProtocolVersion
 	serializer.OneByte - // ParentCount
 	(iotago.BlockMaxParents * iotago.BlockIDLength) - // Parents
-	serializer.UInt32ByteSize - // PayloadLenght
+	serializer.UInt32ByteSize - // PayloadLength
 	serializer.UInt64ByteSize // Nonce
 
 var (

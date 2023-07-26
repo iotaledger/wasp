@@ -30,7 +30,12 @@ type ChainService struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
-func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, chainMetricsProvider *metrics.ChainMetricsProvider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.ChainService {
+func NewChainService(
+	logger *logger.Logger,
+	chainsProvider chains.Provider,
+	chainMetricsProvider *metrics.ChainMetricsProvider,
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+) interfaces.ChainService {
 	return &ChainService{
 		log:                         logger,
 		chainsProvider:              chainsProvider,
@@ -117,12 +122,12 @@ func (c *ChainService) GetChainByID(chainID isc.ChainID) (chainpkg.Chain, error)
 	return c.chainsProvider().Get(chainID)
 }
 
-func (c *ChainService) GetEVMChainID(chainID isc.ChainID) (uint16, error) {
+func (c *ChainService) GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (uint16, error) {
 	ch, err := c.GetChainByID(chainID)
 	if err != nil {
 		return 0, err
 	}
-	ret, err := common.CallView(ch, evm.Contract.Hname(), evm.FuncGetChainID.Hname(), nil)
+	ret, err := common.CallView(ch, evm.Contract.Hname(), evm.FuncGetChainID.Hname(), nil, blockIndexOrTrieRoot)
 	if err != nil {
 		return 0, err
 	}
@@ -145,7 +150,7 @@ func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
 	return chainIDs, nil
 }
 
-func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error) {
+func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
 	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return nil, err
@@ -156,7 +161,7 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInf
 		return nil, err
 	}
 
-	governanceChainInfo, err := corecontracts.GetChainInfo(ch)
+	governanceChainInfo, err := corecontracts.GetChainInfo(ch, blockIndexOrTrieRoot)
 	if err != nil {
 		if chainRecord != nil && errors.Is(err, interfaces.ErrChainNotFound) {
 			return &dto.ChainInfo{ChainID: chainID, IsActive: false}, nil
@@ -170,12 +175,12 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInf
 	return chainInfo, nil
 }
 
-func (c *ChainService) GetContracts(chainID isc.ChainID) (dto.ContractsMap, error) {
+func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) (dto.ContractsMap, error) {
 	ch, err := c.GetChainByID(chainID)
 	if err != nil {
 		return nil, err
 	}
-	recs, err := common.CallView(ch, root.Contract.Hname(), root.ViewGetContractRecords.Hname(), nil)
+	recs, err := common.CallView(ch, root.Contract.Hname(), root.ViewGetContractRecords.Hname(), nil, blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
 	}

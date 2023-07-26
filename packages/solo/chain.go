@@ -423,12 +423,9 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	if err != nil {
 		return nil
 	}
-	receipts := collections.NewArrayReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestReceipt, receipts.Len())
-	for i := range ret {
-		ret[i], err = blocklog.RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
-		require.NoError(ch.Env.T, err)
-		ret[i].WithBlockData(blockIdx, uint16(i))
+	ret, err := blocklog.ReceiptsFromViewCallResult(res)
+	if err != nil {
+		return nil
 	}
 	return ret
 }
@@ -679,13 +676,18 @@ func (ch *Chain) LatestBlock() state.Block {
 }
 
 func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
+	if evmAgentID, ok := agentID.(*isc.EthereumAddressAgentID); ok {
+		nonce, err := ch.EVM().TransactionCount(evmAgentID.EthAddress(), nil)
+		require.NoError(ch.Env.T, err)
+		return nonce
+	}
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
 	return codec.MustDecodeUint64(res.Get(accounts.ParamAccountNonce))
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain
-func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) bool {
+func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error {
 	panic("unimplemented")
 }
 

@@ -70,14 +70,6 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(contractState(evm.Contract), evmChainID)
 
-	// set block context subscriptions
-	root.SubscribeBlockContext(
-		contractState(root.Contract),
-		evm.Contract.Hname(),
-		evm.FuncOpenBlockContext.Hname(),
-		evm.FuncCloseBlockContext.Hname(),
-	)
-
 	block := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)

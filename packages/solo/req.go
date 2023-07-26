@@ -383,10 +383,11 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 // if useFakeBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
+	reqCopy := *req
 	if len(useFakeBudget) > 0 && useFakeBudget[0] {
-		req.WithGasBudget(0)
+		reqCopy.WithGasBudget(0)
 	}
-	r, err := ch.requestFromParams(req, keyPair)
+	r, err := ch.requestFromParams(&reqCopy, keyPair)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -398,16 +399,17 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-// if useFakeBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
+// if useMaxBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
+	reqCopy := *req
 	if len(useMaxBalance) > 0 && useMaxBalance[0] {
-		req.WithGasBudget(0)
+		reqCopy.WithGasBudget(0)
 	}
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	r := req.NewRequestOffLedger(ch, keyPair)
+	r := reqCopy.NewRequestOffLedger(ch, keyPair)
 	res := ch.estimateGas(r)
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
@@ -469,7 +471,7 @@ func (ch *Chain) CallViewByHnameAtState(chainState state.State, hContract, hFunc
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, chainState)
+	vmctx, err := viewcontext.New(ch, chainState, false)
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +487,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState)
+	vmctx, err := viewcontext.New(ch, latestState, false)
 	require.NoError(ch.Env.T, err)
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
@@ -501,7 +503,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState)
+	vmctx, err := viewcontext.New(ch, latestState, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -541,7 +543,7 @@ func (ch *Chain) GetRootCommitment() trie.Hash {
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState)
+	vmctx, err := viewcontext.New(ch, latestState, false)
 	if err != nil {
 		return nil, err
 	}
@@ -550,6 +552,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 
 // WaitUntil waits until the condition specified by the given predicate yields true
 func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
+	ch.Env.T.Helper()
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -561,8 +564,7 @@ func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 			return true
 		}
 		if time.Now().After(deadline) {
-			ch.Log().Errorf("WaitUntil failed waiting max %v", maxw)
-			ch.Env.T.FailNow()
+			ch.Env.T.Logf("WaitUntil failed waiting max %v", maxw)
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -599,13 +601,16 @@ func (ch *Chain) WaitForRequestsMark() {
 // WaitForRequestsThrough waits until the specified number of requests
 // have been processed since the last call to WaitForRequestsMark()
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	ch.RequestsRemaining = numReq
+	ch.Env.T.Helper()
+	ch.Env.T.Logf("WaitForRequestsThrough: start -- block #%d -- numReq = %d", ch.RequestsBlock, numReq)
 	return ch.WaitUntil(func() bool {
+		ch.Env.T.Helper()
 		latest := ch.LatestBlockIndex()
 		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {
 			receipts := ch.GetRequestReceiptsForBlock(ch.RequestsBlock + 1)
-			ch.RequestsRemaining -= len(receipts)
+			numReq -= len(receipts)
+			ch.Env.T.Logf("WaitForRequestsThrough: new block #%d with %d requests -- numReq = %d", ch.RequestsBlock, len(receipts), numReq)
 		}
-		return ch.RequestsRemaining <= 0
+		return numReq <= 0
 	}, maxWait...)
 }

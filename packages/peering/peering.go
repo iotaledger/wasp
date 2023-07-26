@@ -185,7 +185,7 @@ type PeerSender interface {
 }
 
 // PeerStatusProvider is used to access the current state of the network peer
-// without allocating it (increading usage counters, etc). This interface
+// without allocating it (increasing usage counters, etc). This interface
 // overlaps with the PeerSender, and most probably they both will be implemented
 // by the same object.
 type PeerStatusProvider interface {

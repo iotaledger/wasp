@@ -28,6 +28,13 @@ type ApiAccountsGetAccountBalanceRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	agentID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetAccountBalanceRequest) Block(block string) ApiAccountsGetAccountBalanceRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetAccountBalanceRequest) Execute() (*AssetsResponse, *http.Response, error) {
@@ -74,6 +81,9 @@ func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccounts
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -143,6 +153,13 @@ type ApiAccountsGetAccountFoundriesRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	agentID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetAccountFoundriesRequest) Block(block string) ApiAccountsGetAccountFoundriesRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetAccountFoundriesRequest) Execute() (*AccountFoundriesResponse, *http.Response, error) {
@@ -189,6 +206,9 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -258,6 +278,13 @@ type ApiAccountsGetAccountNFTIDsRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	agentID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetAccountNFTIDsRequest) Block(block string) ApiAccountsGetAccountNFTIDsRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetAccountNFTIDsRequest) Execute() (*AccountNFTsResponse, *http.Response, error) {
@@ -304,6 +331,9 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -373,6 +403,13 @@ type ApiAccountsGetAccountNonceRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	agentID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetAccountNonceRequest) Block(block string) ApiAccountsGetAccountNonceRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetAccountNonceRequest) Execute() (*AccountNonceResponse, *http.Response, error) {
@@ -419,6 +456,9 @@ func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -487,6 +527,13 @@ type ApiAccountsGetAccountsRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetAccountsRequest) Block(block string) ApiAccountsGetAccountsRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetAccountsRequest) Execute() (*AccountListResponse, *http.Response, error) {
@@ -530,6 +577,9 @@ func (a *CorecontractsApiService) AccountsGetAccountsExecute(r ApiAccountsGetAcc
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -599,6 +649,13 @@ type ApiAccountsGetFoundryOutputRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	serialNumber uint32
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetFoundryOutputRequest) Block(block string) ApiAccountsGetFoundryOutputRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetFoundryOutputRequest) Execute() (*FoundryOutputResponse, *http.Response, error) {
@@ -648,6 +705,9 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 		return localVarReturnValue, nil, reportError("serialNumber must be greater than 1")
 	}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -717,6 +777,13 @@ type ApiAccountsGetNFTDataRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	nftID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetNFTDataRequest) Block(block string) ApiAccountsGetNFTDataRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetNFTDataRequest) Execute() (*NFTDataResponse, *http.Response, error) {
@@ -763,6 +830,9 @@ func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -831,6 +901,13 @@ type ApiAccountsGetNativeTokenIDRegistryRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetNativeTokenIDRegistryRequest) Block(block string) ApiAccountsGetNativeTokenIDRegistryRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetNativeTokenIDRegistryRequest) Execute() (*NativeTokenIDRegistryResponse, *http.Response, error) {
@@ -874,6 +951,9 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -942,6 +1022,13 @@ type ApiAccountsGetTotalAssetsRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiAccountsGetTotalAssetsRequest) Block(block string) ApiAccountsGetTotalAssetsRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiAccountsGetTotalAssetsRequest) Execute() (*AssetsResponse, *http.Response, error) {
@@ -985,6 +1072,9 @@ func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1053,6 +1143,13 @@ type ApiBlobsGetAllBlobsRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlobsGetAllBlobsRequest) Block(block string) ApiBlobsGetAllBlobsRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlobsGetAllBlobsRequest) Execute() (*BlobListResponse, *http.Response, error) {
@@ -1096,6 +1193,9 @@ func (a *CorecontractsApiService) BlobsGetAllBlobsExecute(r ApiBlobsGetAllBlobsR
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1165,6 +1265,13 @@ type ApiBlobsGetBlobInfoRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	blobHash string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlobsGetBlobInfoRequest) Block(block string) ApiBlobsGetBlobInfoRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlobsGetBlobInfoRequest) Execute() (*BlobInfoResponse, *http.Response, error) {
@@ -1211,6 +1318,9 @@ func (a *CorecontractsApiService) BlobsGetBlobInfoExecute(r ApiBlobsGetBlobInfoR
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1281,6 +1391,13 @@ type ApiBlobsGetBlobValueRequest struct {
 	chainID string
 	blobHash string
 	fieldKey string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlobsGetBlobValueRequest) Block(block string) ApiBlobsGetBlobValueRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlobsGetBlobValueRequest) Execute() (*BlobValueResponse, *http.Response, error) {
@@ -1330,6 +1447,9 @@ func (a *CorecontractsApiService) BlobsGetBlobValueExecute(r ApiBlobsGetBlobValu
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1399,6 +1519,13 @@ type ApiBlocklogGetBlockInfoRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	blockIndex uint32
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetBlockInfoRequest) Block(block string) ApiBlocklogGetBlockInfoRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetBlockInfoRequest) Execute() (*BlockInfoResponse, *http.Response, error) {
@@ -1448,6 +1575,9 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 		return localVarReturnValue, nil, reportError("blockIndex must be greater than 1")
 	}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1516,6 +1646,13 @@ type ApiBlocklogGetControlAddressesRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetControlAddressesRequest) Block(block string) ApiBlocklogGetControlAddressesRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetControlAddressesRequest) Execute() (*ControlAddressesResponse, *http.Response, error) {
@@ -1559,6 +1696,9 @@ func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlockl
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1628,6 +1768,13 @@ type ApiBlocklogGetEventsOfBlockRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	blockIndex uint32
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetEventsOfBlockRequest) Block(block string) ApiBlocklogGetEventsOfBlockRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetEventsOfBlockRequest) Execute() (*EventsResponse, *http.Response, error) {
@@ -1677,6 +1824,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 		return localVarReturnValue, nil, reportError("blockIndex must be greater than 1")
 	}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1746,6 +1896,13 @@ type ApiBlocklogGetEventsOfContractRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	contractHname string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetEventsOfContractRequest) Block(block string) ApiBlocklogGetEventsOfContractRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetEventsOfContractRequest) Execute() (*EventsResponse, *http.Response, error) {
@@ -1792,6 +1949,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfContractExecute(r ApiBlockl
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1860,6 +2020,13 @@ type ApiBlocklogGetEventsOfLatestBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetEventsOfLatestBlockRequest) Block(block string) ApiBlocklogGetEventsOfLatestBlockRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetEventsOfLatestBlockRequest) Execute() (*EventsResponse, *http.Response, error) {
@@ -1903,6 +2070,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -1972,6 +2142,13 @@ type ApiBlocklogGetEventsOfRequestRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	requestID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetEventsOfRequestRequest) Block(block string) ApiBlocklogGetEventsOfRequestRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetEventsOfRequestRequest) Execute() (*EventsResponse, *http.Response, error) {
@@ -2018,6 +2195,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2086,6 +2266,13 @@ type ApiBlocklogGetLatestBlockInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetLatestBlockInfoRequest) Block(block string) ApiBlocklogGetLatestBlockInfoRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetLatestBlockInfoRequest) Execute() (*BlockInfoResponse, *http.Response, error) {
@@ -2129,6 +2316,9 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2198,6 +2388,13 @@ type ApiBlocklogGetRequestIDsForBlockRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	blockIndex uint32
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetRequestIDsForBlockRequest) Block(block string) ApiBlocklogGetRequestIDsForBlockRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetRequestIDsForBlockRequest) Execute() (*RequestIDsResponse, *http.Response, error) {
@@ -2247,6 +2444,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 		return localVarReturnValue, nil, reportError("blockIndex must be greater than 1")
 	}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2315,6 +2515,13 @@ type ApiBlocklogGetRequestIDsForLatestBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetRequestIDsForLatestBlockRequest) Block(block string) ApiBlocklogGetRequestIDsForLatestBlockRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetRequestIDsForLatestBlockRequest) Execute() (*RequestIDsResponse, *http.Response, error) {
@@ -2358,6 +2565,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2427,6 +2637,13 @@ type ApiBlocklogGetRequestIsProcessedRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	requestID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetRequestIsProcessedRequest) Block(block string) ApiBlocklogGetRequestIsProcessedRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetRequestIsProcessedRequest) Execute() (*RequestProcessedResponse, *http.Response, error) {
@@ -2473,6 +2690,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2542,6 +2762,13 @@ type ApiBlocklogGetRequestReceiptRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	requestID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetRequestReceiptRequest) Block(block string) ApiBlocklogGetRequestReceiptRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error) {
@@ -2588,6 +2815,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2657,6 +2887,13 @@ type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
 	ApiService *CorecontractsApiService
 	chainID string
 	blockIndex uint32
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Block(block string) ApiBlocklogGetRequestReceiptsOfBlockRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() ([]ReceiptResponse, *http.Response, error) {
@@ -2706,6 +2943,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 		return localVarReturnValue, nil, reportError("blockIndex must be greater than 1")
 	}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2774,6 +3014,13 @@ type ApiBlocklogGetRequestReceiptsOfLatestBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Block(block string) ApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() ([]ReceiptResponse, *http.Response, error) {
@@ -2817,6 +3064,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -2887,6 +3137,13 @@ type ApiErrorsGetErrorMessageFormatRequest struct {
 	chainID string
 	contractHname string
 	errorID uint32
+	block *string
+}
+
+// Block index or trie root
+func (r ApiErrorsGetErrorMessageFormatRequest) Block(block string) ApiErrorsGetErrorMessageFormatRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiErrorsGetErrorMessageFormatRequest) Execute() (*ErrorMessageFormatResponse, *http.Response, error) {
@@ -2939,6 +3196,9 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 		return localVarReturnValue, nil, reportError("errorID must be greater than 1")
 	}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -3007,6 +3267,13 @@ type ApiGovernanceGetAllowedStateControllerAddressesRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiGovernanceGetAllowedStateControllerAddressesRequest) Block(block string) ApiGovernanceGetAllowedStateControllerAddressesRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiGovernanceGetAllowedStateControllerAddressesRequest) Execute() (*GovAllowedStateControllerAddressesResponse, *http.Response, error) {
@@ -3052,6 +3319,9 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesEx
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -3120,6 +3390,13 @@ type ApiGovernanceGetChainInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiGovernanceGetChainInfoRequest) Block(block string) ApiGovernanceGetChainInfoRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiGovernanceGetChainInfoRequest) Execute() (*GovChainInfoResponse, *http.Response, error) {
@@ -3165,6 +3442,9 @@ func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -3233,6 +3513,13 @@ type ApiGovernanceGetChainOwnerRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsApiService
 	chainID string
+	block *string
+}
+
+// Block index or trie root
+func (r ApiGovernanceGetChainOwnerRequest) Block(block string) ApiGovernanceGetChainOwnerRequest {
+	r.block = &block
+	return r
 }
 
 func (r ApiGovernanceGetChainOwnerRequest) Execute() (*GovChainOwnerResponse, *http.Response, error) {
@@ -3278,6 +3565,9 @@ func (a *CorecontractsApiService) GovernanceGetChainOwnerExecute(r ApiGovernance
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.block != nil {
+		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 

@@ -11,6 +11,7 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -29,31 +30,31 @@ type EVMService struct {
 	evmBackendMutex sync.Mutex
 	evmChainServers map[isc.ChainID]*chainServer
 
+	chainsProvider  chains.Provider
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
-	isArchiveNode   bool
 	indexDbPath     string
 	metrics         *metrics.ChainMetricsProvider
 	log             *logger.Logger
 }
 
 func NewEVMService(
+	chainsProvider chains.Provider,
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
-	isArchiveNode bool,
 	indexDbPath string,
 	metrics *metrics.ChainMetricsProvider,
 	log *logger.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
+		chainsProvider:  chainsProvider,
 		chainService:    chainService,
 		evmChainServers: map[isc.ChainID]*chainServer{},
 		evmBackendMutex: sync.Mutex{},
 		networkProvider: networkProvider,
 		publisher:       pub,
-		isArchiveNode:   isArchiveNode,
 		indexDbPath:     indexDbPath,
 		metrics:         metrics,
 		log:             log,
@@ -77,7 +78,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
 	srv, err := jsonrpc.NewServer(
-		jsonrpc.NewEVMChain(backend, e.publisher, e.isArchiveNode, hivedb.EngineRocksDB, e.indexDbPath, e.log.Named("EVMChain")),
+		jsonrpc.NewEVMChain(backend, e.publisher, e.chainsProvider().IsArchiveNode(), hivedb.EngineRocksDB, e.indexDbPath, e.log.Named("EVMChain")),
 		jsonrpc.NewAccountManager(nil),
 		e.metrics.GetChainMetrics(chainID).WebAPI,
 	)

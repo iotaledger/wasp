@@ -17,8 +17,9 @@ type ParametersChains struct {
 }
 
 type ParametersWAL struct {
-	Enabled bool   `default:"true" usage:"whether the \"write-ahead logging\" is enabled"`
-	Path    string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
+	LoadToStore bool   `default:"false" usage:"load blocks from \"write-ahead log\" to the store on node start-up"`
+	Enabled     bool   `default:"true" usage:"whether the \"write-ahead logging\" is enabled"`
+	Path        string `default:"waspdb/wal" usage:"the path to the \"write-ahead logging\" folder"`
 }
 
 type ParametersValidator struct {
@@ -36,11 +37,19 @@ type ParametersStateManager struct {
 	PruningMaxStatesToDelete          int           `default:"1000" usage:"on single store pruning attempt at most this number of states will be deleted"`
 }
 
+type ParametersSnapshotManager struct {
+	Period       uint32        `default:"0" usage:"how often state snapshots should be made: 1000 meaning \"every 1000th state\", 0 meaning \"making snapshots is disabled\""`
+	LocalPath    string        `default:"waspdb/snap" usage:"the path to the snapshots folder in this node's disk"`
+	NetworkPaths []string      `default:"" usage:"the list of paths to the remote (http(s)) snapshot locations; each of listed locations must contain 'INDEX' file with list of snapshot files"`
+	UpdatePeriod time.Duration `default:"5m" usage:"how often known snapshots list should be updated"`
+}
+
 var (
-	ParamsChains       = &ParametersChains{}
-	ParamsWAL          = &ParametersWAL{}
-	ParamsValidator    = &ParametersValidator{}
-	ParamsStateManager = &ParametersStateManager{}
+	ParamsChains          = &ParametersChains{}
+	ParamsWAL             = &ParametersWAL{}
+	ParamsValidator       = &ParametersValidator{}
+	ParamsStateManager    = &ParametersStateManager{}
+	ParamsSnapshotManager = &ParametersSnapshotManager{}
 )
 
 var params = &app.ComponentParams{
@@ -49,6 +58,7 @@ var params = &app.ComponentParams{
 		"wal":          ParamsWAL,
 		"validator":    ParamsValidator,
 		"stateManager": ParamsStateManager,
+		"snapshots":    ParamsSnapshotManager,
 	},
 	Masked: nil,
 }

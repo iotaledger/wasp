@@ -4,10 +4,12 @@
 package emulator
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
@@ -23,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 type EVMEmulator struct {
@@ -79,20 +81,24 @@ func getConfig(chainID int) *params.ChainConfig {
 }
 
 const (
-	KeyStateDB      = "s"
-	KeyBlockchainDB = "b"
+	keyStateDB      = "s"
+	keyBlockchainDB = "b"
 )
 
-func newStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
-	return NewStateDB(subrealm.New(store, KeyStateDB), l2Balance)
+func StateDBSubrealm(store kv.KVStore) kv.KVStore {
+	return subrealm.New(store, keyStateDB)
 }
 
-func NewBlockchainDBSubrealm(store kv.KVStore) kv.KVStore {
-	return subrealm.New(store, KeyBlockchainDB)
+func StateDBSubrealmR(store kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(store, keyStateDB)
 }
 
-func newBlockchainDBWithSubrealm(store kv.KVStore, blockGasLimit uint64, blockKeepAmount int32) *BlockchainDB {
-	return NewBlockchainDB(NewBlockchainDBSubrealm(store), blockGasLimit, blockKeepAmount)
+func BlockchainDBSubrealm(store kv.KVStore) kv.KVStore {
+	return subrealm.New(store, keyBlockchainDB)
+}
+
+func BlockchainDBSubrealmR(store kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(store, keyBlockchainDB)
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
@@ -103,13 +109,13 @@ func Init(
 	timestamp uint64,
 	alloc core.GenesisAlloc,
 ) {
-	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block, BlockKeepAll)
+	bdb := NewBlockchainDB(store, gasLimits.Block, BlockKeepAll)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
 	bdb.Init(chainID, timestamp)
 
-	statedb := newStateDB(store, nil)
+	statedb := NewStateDB(store, nil)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
@@ -133,7 +139,7 @@ func NewEVMEmulator(
 	magicContracts map[common.Address]vm.ISCMagicContract,
 	l2Balance L2Balance,
 ) *EVMEmulator {
-	bdb := newBlockchainDBWithSubrealm(store, gasLimits.Block, blockKeepAmount)
+	bdb := NewBlockchainDB(store, gasLimits.Block, blockKeepAmount)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
 	}
@@ -153,11 +159,11 @@ func NewEVMEmulator(
 }
 
 func (e *EVMEmulator) StateDB() *StateDB {
-	return newStateDB(e.kv, e.l2Balance)
+	return NewStateDB(e.kv, e.l2Balance)
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {
-	return newBlockchainDBWithSubrealm(e.kv, e.gasLimits.Block, e.blockKeepAmount)
+	return NewBlockchainDB(e.kv, e.gasLimits.Block, e.blockKeepAmount)
 }
 
 func (e *EVMEmulator) BlockGasLimit() uint64 {
@@ -240,42 +246,60 @@ func (e *EVMEmulator) applyMessage(
 		defer gasBurnEnable(false)
 	}
 
-	caughtErr := panicutil.CatchAllExcept(
-		func() {
-			// catch any exceptions during the execution, so that an EVM receipt is produced
-			res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
-		},
-		vmexceptions.AllProtocolLimits...,
-	)
+	// catch any exceptions during the execution, so that an EVM receipt is always produced
+	caughtErr := panicutil.CatchAllExcept(func() {
+		res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
+	}, vmexceptions.SkipRequestErrors...)
 	if caughtErr != nil {
-		return nil, caughtErr
+		return &core.ExecutionResult{
+			Err:        vm.ErrExecutionReverted,
+			UsedGas:    msg.GasLimit - gasPool.Gas(),
+			ReturnData: abiEncodeError(caughtErr),
+		}, caughtErr
 	}
 	return res, err
+}
+
+// see UnpackRevert in go-ethereum/accounts/abi/abi.go
+var revertSelector = crypto.Keccak256([]byte("Error(string)"))[:4]
+
+func abiEncodeError(err error) []byte {
+	// include the ISC error as the revert reason by encoding it into the returnData
+	ret := bytes.Clone(revertSelector)
+	abiString, err2 := abi.NewType("string", "", nil)
+	if err2 != nil {
+		panic(err2)
+	}
+	encodedErr, err2 := abi.Arguments{{Type: abiString}}.Pack(err.Error())
+	if err2 != nil {
+		panic(err2)
+	}
+	return append(ret, encodedErr...)
 }
 
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
 	gasBurnEnable func(bool),
-	chargeISCGas func(*core.ExecutionResult) (uint64, error),
 	tracer tracers.Tracer,
-) (receipt *types.Receipt, result *core.ExecutionResult, iscGasErr error, err error) {
+	addToBlockchain ...bool,
+) (receipt *types.Receipt, result *core.ExecutionResult, err error) {
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("invalid transaction: %w", err)
+		return nil, nil, fmt.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	signer := types.MakeSigner(e.chainConfig, pendingHeader.Number, pendingHeader.Time)
 	msg, err := core.TransactionToMessage(tx, signer, pendingHeader.BaseFee)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	result, err = e.applyMessage(
@@ -288,12 +312,7 @@ func (e *EVMEmulator) SendTransaction(
 
 	gasUsed := uint64(0)
 	if result != nil {
-		// chargeISCGas will keep gasBurnEnabled = false and mutate `result` when charging ISC gas fails
-		if chargeISCGas != nil {
-			gasUsed, iscGasErr = chargeISCGas(result)
-		} else {
-			gasUsed = result.UsedGas
-		}
+		gasUsed = result.UsedGas
 	}
 
 	cumulativeGasUsed := gasUsed
@@ -326,9 +345,12 @@ func (e *EVMEmulator) SendTransaction(
 	}
 
 	buf.Commit()
-	e.BlockchainDB().AddTransaction(tx, receipt)
+	// add tx and receipt to the blockchain unless addToBlockchain == false
+	if len(addToBlockchain) == 0 || addToBlockchain[0] {
+		e.BlockchainDB().AddTransaction(tx, receipt)
+	}
 
-	return receipt, result, iscGasErr, err
+	return receipt, result, err
 }
 
 func (e *EVMEmulator) MintBlock() {

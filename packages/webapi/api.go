@@ -41,7 +41,7 @@ func AddHealthEndpoint(server echoswagger.ApiRoot, chainService interfaces.Chain
 			return e.String(http.StatusInternalServerError, fmt.Sprintf("chain unsync with %d diff", lag))
 		}
 
-		return e.String(http.StatusOK, "all chain synchronized")
+		return e.NoContent(http.StatusOK)
 	}).
 		AddResponse(http.StatusOK, "The node is healthy.", nil, nil).
 		SetOperationId("getHealth").
@@ -104,7 +104,7 @@ func Init(
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainService, networkProvider, pub, chainsProvider().IsArchiveNode(), indexDbPath, chainMetricsProvider, logger.Named("EVMService"))
+	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDbPath, chainMetricsProvider, logger.Named("EVMService"))
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)

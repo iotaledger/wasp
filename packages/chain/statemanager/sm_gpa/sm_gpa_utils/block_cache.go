@@ -30,7 +30,7 @@ var _ BlockCache = &blockCache{}
 
 func NewBlockCache(tp TimeProvider, maxCacheSize int, wal BlockWAL, metrics *metrics.ChainStateManagerMetrics, log *logger.Logger) (BlockCache, error) {
 	return &blockCache{
-		log:          log.Named("bc"),
+		log:          log.Named("BC"),
 		blocks:       shrinkingmap.New[BlockKey, state.Block](),
 		maxCacheSize: maxCacheSize,
 		wal:          wal,

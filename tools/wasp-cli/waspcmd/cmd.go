@@ -38,7 +38,7 @@ func initAddWaspNodeCmd() *cobra.Command {
 			nodeURL := args[1]
 
 			if !util.IsSlug(nodeName) {
-				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hypens, example: foo-bar", nodeName)
+				log.Fatalf("invalid node name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", nodeName)
 			}
 
 			_, err := apiextensions.ValidateAbsoluteURL(nodeURL)

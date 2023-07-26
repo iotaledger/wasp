@@ -220,7 +220,7 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	return
 }
 
-// SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
+// SendTxArgs represents the arguments to submit a new transaction into the transaction pool.
 type SendTxArgs struct {
 	From     common.Address  `json:"from"`
 	To       *common.Address `json:"to"`

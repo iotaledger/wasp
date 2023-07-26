@@ -76,10 +76,6 @@ func (cps *Cache) ExistsProcessor(h hashing.HashValue) bool {
 
 type GetBinaryFunc func(hashing.HashValue) (string, []byte, error)
 
-func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary GetBinaryFunc) (isc.VMProcessor, error) {
-	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
-}
-
 func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary GetBinaryFunc) (isc.VMProcessor, error) {
 	cps.mutex.Lock()
 	defer cps.mutex.Unlock()

@@ -3,10 +3,10 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
-import "@iscmagic/ISCSandbox.sol";
-import "@iscmagic/ISCAccounts.sol";
-import "@iscmagic/ISCPrivileged.sol";
+import "./ISCTypes.sol";
+import "./ISCSandbox.sol";
+import "./ISCAccounts.sol";
+import "./ISCPrivileged.sol";
 
 // The ERC721 contract for the "global" collection of ISC L2 NFTs.
 contract ERC721NFTs {
@@ -35,23 +35,17 @@ contract ERC721NFTs {
         bool approved
     );
 
-    function _balanceOf(ISCAgentID memory owner)
-        internal
-        view
-        virtual
-        returns (uint256)
-    {
+    function _balanceOf(
+        ISCAgentID memory owner
+    ) internal view virtual returns (uint256) {
         return __iscAccounts.getL2NFTAmount(owner);
     }
 
     // virtual function meant to be overridden. ERC721NFTs manages all NFTs, regardless of
     // whether they belong to any collection or not.
-    function _isManagedByThisContract(ISCNFT memory)
-        internal
-        view
-        virtual
-        returns (bool)
-    {
+    function _isManagedByThisContract(
+        ISCNFT memory
+    ) internal view virtual returns (bool) {
         return true;
     }
 
@@ -112,30 +106,24 @@ contract ERC721NFTs {
         return _tokenApprovals[tokenId];
     }
 
-    function isApprovedForAll(address owner, address operator)
-        public
-        view
-        returns (bool)
-    {
+    function isApprovedForAll(
+        address owner,
+        address operator
+    ) public view returns (bool) {
         return _operatorApprovals[owner][operator];
     }
 
-    function _isApprovedOrOwner(address spender, uint256 tokenId)
-        internal
-        view
-        returns (bool)
-    {
+    function _isApprovedOrOwner(
+        address spender,
+        uint256 tokenId
+    ) internal view returns (bool) {
         address owner = ownerOf(tokenId);
         return (spender == owner ||
             getApproved(tokenId) == spender ||
             isApprovedForAll(owner, spender));
     }
 
-    function _transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal {
+    function _transferFrom(address from, address to, uint256 tokenId) internal {
         require(ownerOf(tokenId) == from);
         require(to != address(0));
         _clearApproval(tokenId);

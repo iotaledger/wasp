@@ -147,6 +147,8 @@ func AddV2Authentication(apiRoot echoswagger.ApiRoot,
 
 	case AuthNone:
 		AddNoneAuth(echoRoot)
+		authGroup.POST(shared.AuthRoute(), nil).
+			AddResponse(http.StatusMethodNotAllowed, "auth type: none", nil, nil)
 		return nil
 
 	default:

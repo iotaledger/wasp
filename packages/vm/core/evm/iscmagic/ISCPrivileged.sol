@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
+import "./ISCTypes.sol";
 
 // The ISC magic contract has some extra methods not included in the standard ISC interface:
 // (only callable from privileged contracts)

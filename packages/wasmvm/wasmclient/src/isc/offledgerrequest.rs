@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::num::Wrapping;
+use std::ops::Add;
 use crypto::{
     hashes::{blake2b::Blake2b256, Digest},
     signatures::ed25519,
@@ -57,15 +59,21 @@ impl OffLedgerRequest {
     }
 
     pub fn essence(&self) -> Vec<u8> {
-        let mut data: Vec<u8> = vec![1]; // requestKindTagOffLedgerISC
-        data.extend(self.chain_id.to_bytes());
-        data.extend(self.contract.to_bytes());
-        data.extend(self.entry_point.to_bytes());
-        data.extend(self.params.clone());
-        data.extend(uint64_to_bytes(self.nonce));
-        data.extend(uint64_to_bytes(self.gas_budget));
-        data.extend(self.allowance.to_bytes());
-        return data;
+        let mut enc = WasmEncoder::new();
+        self.essence_encode(&mut enc);
+        enc.buf()
+    }
+
+    fn essence_encode(&self, mut enc: &mut WasmEncoder) {
+        enc.byte(1); // requestKindOffLedgerISC
+        chain_id_encode(&mut enc, &self.chain_id);
+        hname_encode(&mut enc, self.contract);
+        hname_encode(&mut enc, self.entry_point);
+        enc.fixed_bytes(&self.params, self.params.len());
+        enc.vlu_encode(self.nonce);
+        enc.vlu_encode(Wrapping(self.gas_budget).add(Wrapping(1)).0);
+        let allowance = self.allowance.to_bytes();
+        enc.fixed_bytes(&allowance, allowance.len());
     }
 
     pub fn id(&self) -> ScRequestID {
@@ -90,14 +98,11 @@ impl OffLedgerRequest {
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut data = self.essence();
-        let public_key = self.signature.public_key.to_bytes();
-        data.extend(uint8_to_bytes(public_key.len() as u8));
-        data.extend(public_key);
-        let signature = &self.signature.signature;
-        data.extend(uint16_to_bytes(signature.len() as u16));
-        data.extend(signature);
-        return data;
+        let mut enc = WasmEncoder::new();
+        self.essence_encode(&mut enc);
+        enc.fixed_bytes(&self.signature.public_key.to_bytes(), 32);
+        enc.bytes(&self.signature.signature);
+        enc.buf()
     }
 
     pub fn with_allowance(&mut self, allowance: &ScAssets) -> &Self {

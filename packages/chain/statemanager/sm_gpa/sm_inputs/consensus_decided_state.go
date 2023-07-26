@@ -11,6 +11,7 @@ import (
 
 type ConsensusDecidedState struct {
 	context      context.Context
+	stateIndex   uint32
 	l1Commitment *state.L1Commitment
 	resultCh     chan<- state.State
 }
@@ -25,9 +26,14 @@ func NewConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputW
 	resultChannel := make(chan state.State, 1)
 	return &ConsensusDecidedState{
 		context:      ctx,
+		stateIndex:   aliasOutput.GetStateIndex(),
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel
+}
+
+func (cdsT *ConsensusDecidedState) GetStateIndex() uint32 {
+	return cdsT.stateIndex
 }
 
 func (cdsT *ConsensusDecidedState) GetL1Commitment() *state.L1Commitment {

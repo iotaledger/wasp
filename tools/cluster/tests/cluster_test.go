@@ -11,9 +11,6 @@ func TestClusterSingleNode(t *testing.T) {
 		t.Skip("Skipping cluster tests in short mode")
 	}
 
-	// TODO could be interesting to experiment running these in parallel
-	// t.Parallel()
-
 	// setup a cluster with a single node
 	run := createTestWrapper(t, 1, []int{0})
 
@@ -31,6 +28,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping cluster tests in short mode")
 	}
+
 	// setup a cluster with 4 nodes
 	run := createTestWrapper(t, 4, []int{0, 1, 2, 3})
 
@@ -51,8 +49,6 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("post 5 async", func(t *testing.T) { run(t, testPost5AsyncRequests) })
 
 	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) })
-
-	t.Run("maintenance", func(t *testing.T) { run(t, testMaintenance) })
 
 	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) })
 	t.Run("offledger 900KB", func(t *testing.T) { run(t, testOffledgerRequest900KB) })

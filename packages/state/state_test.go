@@ -435,3 +435,42 @@ func TestPruning2(t *testing.T) {
 		t.Logf("committed block: %d", len(trieRoots))
 	}
 }
+
+func TestSnapshot(t *testing.T) {
+	snapshot := mapdb.NewMapDB()
+
+	trieRoot, blockHash := func() (trie.Hash, state.BlockHash) {
+		db := mapdb.NewMapDB()
+		cs := mustChainStore{initializedStore(db)}
+		for i := byte(1); i <= 10; i++ {
+			d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+			d.Set(kv.Key(fmt.Sprintf("k%d", i)), []byte("v"))
+			d.Set("k", []byte{i})
+			block := cs.Commit(d)
+			err := cs.SetLatest(block.TrieRoot())
+			require.NoError(t, err)
+		}
+		block := cs.LatestBlock()
+		err := cs.TakeSnapshot(block.TrieRoot(), snapshot)
+		require.NoError(t, err)
+		return block.TrieRoot(), block.Hash()
+	}()
+
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{state.NewStore(db)}
+	err := cs.RestoreSnapshot(trieRoot, snapshot)
+	require.NoError(t, err)
+
+	block := cs.LatestBlock()
+	require.EqualValues(t, 10, block.StateIndex())
+	require.EqualValues(t, blockHash, block.Hash())
+
+	_, err = cs.Store.BlockByTrieRoot(block.PreviousL1Commitment().TrieRoot())
+	require.ErrorContains(t, err, "not found")
+
+	state := cs.LatestState()
+	for i := byte(1); i <= 10; i++ {
+		require.EqualValues(t, []byte("v"), state.Get(kv.Key(fmt.Sprintf("k%d", i))))
+	}
+	require.EqualValues(t, []byte{10}, state.Get("k"))
+}

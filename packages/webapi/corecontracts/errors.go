@@ -9,12 +9,16 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-func ErrorMessageFormat(ch chain.Chain, contractID isc.Hname, errorID uint16) (string, error) {
+func ErrorMessageFormat(ch chain.Chain, contractID isc.Hname, errorID uint16, blockIndexOrTrieRoot string) (string, error) {
 	errorCode := isc.NewVMErrorCode(contractID, errorID)
 
-	ret, err := common.CallView(ch, errors.Contract.Hname(), errors.ViewGetErrorMessageFormat.Hname(), codec.MakeDict(map[string]interface{}{
-		errors.ParamErrorCode: errorCode.Bytes(),
-	}))
+	ret, err := common.CallView(
+		ch,
+		errors.Contract.Hname(),
+		errors.ViewGetErrorMessageFormat.Hname(),
+		codec.MakeDict(map[string]interface{}{errors.ParamErrorCode: errorCode.Bytes()}),
+		blockIndexOrTrieRoot,
+	)
 	if err != nil {
 		return "", err
 	}

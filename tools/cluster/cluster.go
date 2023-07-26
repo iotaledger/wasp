@@ -320,7 +320,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	for _, tx := range addAccessNodesTxs {
 		// ---------- wait until the requests are processed in all committee nodes
 
-		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 30*time.Second); err != nil {
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 5*time.Second); err != nil {
 			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
@@ -634,7 +634,7 @@ func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 	for range nodeIndexes {
 		select {
 		case <-initOk:
-		case <-time.After(20 * time.Second):
+		case <-time.After(60 * time.Second):
 			return errors.New("timeout restarting wasp nodes")
 		}
 	}

@@ -233,22 +233,22 @@ func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signat
 	}
 }
 
-func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
+func CreateAndSignTx(inputs iotago.Inputs, inputsCommitment []byte, outputs iotago.Outputs, wallet *cryptolib.KeyPair, networkID uint64) (*iotago.Transaction, error) {
 	unorderedEssence := &iotago.TransactionEssence{
 		NetworkID: networkID,
-		Inputs:    inputs.UTXOInputs(),
+		Inputs:    inputs,
 		Outputs:   outputs,
 	}
 
 	// IMPORTANT: serialize and de-serialize the essence, just to make sure it is correctly ordered before signing
 	// otherwise it might fail when it reaches the node, since the PoW that would order the tx is done after the signing,
 	// so if we don't order now, we might sign an invalid TX
-	essenseBytes, err := unorderedEssence.Serialize(serializer.DeSeriModePerformValidation|serializer.DeSeriModePerformLexicalOrdering, nil)
+	essenceBytes, err := unorderedEssence.Serialize(serializer.DeSeriModePerformValidation|serializer.DeSeriModePerformLexicalOrdering, nil)
 	if err != nil {
 		return nil, err
 	}
 	essence := new(iotago.TransactionEssence)
-	_, err = essence.Deserialize(essenseBytes, serializer.DeSeriModeNoValidation, nil)
+	_, err = essence.Deserialize(essenceBytes, serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil, err
 	}

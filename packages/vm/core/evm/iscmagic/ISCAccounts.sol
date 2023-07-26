@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
+import "./ISCTypes.sol";
 
 // Functions of the ISC Magic Contract to access the core accounts functionality
 interface ISCAccounts {

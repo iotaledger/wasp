@@ -15,6 +15,7 @@ type ContractCallViewRequest struct {
 	FunctionName  string        `json:"functionName" swagger:"desc(The function name),required"`
 	FunctionHName string        `json:"functionHName" swagger:"desc(The function name as HName (Hex)),required"`
 	Arguments     dict.JSONDict `json:"arguments" swagger:"desc(Encoded arguments to be passed to the function),required"`
+	Block         string        `json:"block" swagger:"desc(block index or trie root to execute the view call in, latest block will be used if not specified)"`
 }
 
 type EstimateGasRequestOnledger struct {

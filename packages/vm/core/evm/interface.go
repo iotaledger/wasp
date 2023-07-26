@@ -23,10 +23,6 @@ var (
 	FuncRegisterERC20ExternalNativeToken      = coreutil.Func(evmnames.FuncRegisterERC20ExternalNativeToken)
 	FuncGetERC20ExternalNativeTokenAddress    = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
 	FuncRegisterERC721NFTCollection           = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
-
-	// block context
-	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)
-	FuncCloseBlockContext = coreutil.Func(evmnames.FuncCloseBlockContext)
 )
 
 const (
@@ -63,9 +59,9 @@ const (
 var GasPrice = big.NewInt(0)
 
 const (
-	// KeyEVMState is the subrealm prefix for the EVM state, used by the emulator
-	KeyEVMState = "s"
+	// keyEmulatorState is the subrealm prefix for the data stored by the emulator (StateDB + BlockchainDB)
+	keyEmulatorState = "s"
 
-	// KeyISCMagic is the subrealm prefix for the ISC magic contract
-	KeyISCMagic = "m"
+	// keyISCMagic is the subrealm prefix for the ISC magic contract
+	keyISCMagic = "m"
 )

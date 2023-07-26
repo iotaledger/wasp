@@ -30,12 +30,10 @@ export class ScAssets {
         }
 
         if ((flags & hasBaseTokens) != 0) {
-            const baseTokens = new Uint8Array(ScUint64Length);
-            baseTokens.set(dec.fixedBytes(((flags & 0x07) + 1) as u32));
-            this.baseTokens = uint64FromBytes(baseTokens);
+            this.baseTokens = dec.vluDecode(64);
         }
         if ((flags & hasNativeTokens) != 0) {
-            let size = dec.vluDecode(32);
+            let size = dec.vluDecode(16);
             for (; size > 0; size--) {
                 const tokenID = tokenIDDecode(dec);
                 const amount = bigIntDecode(dec);
@@ -43,7 +41,7 @@ export class ScAssets {
             }
         }
         if ((flags & hasNFTs) != 0) {
-            let size = dec.vluDecode(32);
+            let size = dec.vluDecode(16);
             for (; size > 0; size--) {
                 const nftID = nftIDDecode(dec);
                 this.nfts.set(ScDict.toKey(nftID.id), nftID);
@@ -85,17 +83,8 @@ export class ScAssets {
         }
 
         let flags = 0x00 as u8;
-        let baseTokens = new Uint8Array(0);
         if (this.baseTokens != 0) {
             flags |= hasBaseTokens;
-            baseTokens = uint64ToBytes(this.baseTokens)
-            for (let i = baseTokens.length-1; i > 0; i--) {
-                if (baseTokens[i] != 0) {
-                    flags |= i as u8;
-                    baseTokens = baseTokens.slice(0, i + 1)
-                    break;
-                }
-            }
         }
         if (this.nativeTokens.size != 0) {
             flags |= hasNativeTokens;
@@ -106,7 +95,7 @@ export class ScAssets {
         uint8Encode(enc, flags);
 
         if ((flags & hasBaseTokens) != 0) {
-            enc.fixedBytes(baseTokens, baseTokens.length as u32);
+            enc.vluEncode(this.baseTokens);
         }
         if ((flags & hasNativeTokens) != 0) {
             const keys = this.nativeTokens.keys().sort();

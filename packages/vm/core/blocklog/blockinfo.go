@@ -46,15 +46,17 @@ func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
 }
 
 func (bi *BlockInfo) String() string {
-	ret := fmt.Sprintf("Block index: %d\n", bi.BlockIndex())
-	ret += fmt.Sprintf("SchemaVersion: %d\n", bi.SchemaVersion)
-	ret += fmt.Sprintf("Timestamp: %d\n", bi.Timestamp.Unix())
-	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
-	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
-	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("Prev AliasOutput: %s\n", bi.PreviousAliasOutput.String())
-	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
-	ret += fmt.Sprintf("Gas fee charged: %d\n", bi.GasFeeCharged)
+	ret := "{\n"
+	ret += fmt.Sprintf("\tBlock index: %d\n", bi.BlockIndex())
+	ret += fmt.Sprintf("\tSchemaVersion: %d\n", bi.SchemaVersion)
+	ret += fmt.Sprintf("\tTimestamp: %d\n", bi.Timestamp.Unix())
+	ret += fmt.Sprintf("\tTotal requests: %d\n", bi.TotalRequests)
+	ret += fmt.Sprintf("\toff-ledger requests: %d\n", bi.NumOffLedgerRequests)
+	ret += fmt.Sprintf("\tSuccessful requests: %d\n", bi.NumSuccessfulRequests)
+	ret += fmt.Sprintf("\tPrev AliasOutput: %s\n", bi.PreviousAliasOutput.String())
+	ret += fmt.Sprintf("\tGas burned: %d\n", bi.GasBurned)
+	ret += fmt.Sprintf("\tGas fee charged: %d\n", bi.GasFeeCharged)
+	ret += "}\n"
 	return ret
 }
 

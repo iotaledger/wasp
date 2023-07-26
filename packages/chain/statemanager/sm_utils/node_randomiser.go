@@ -28,7 +28,7 @@ func NewNodeRandomiserNoInit(me gpa.NodeID, log *logger.Logger) NodeRandomiser {
 		me:          me,
 		nodeIDs:     nil, // Will be set in result.UpdateNodeIDs([]gpa.NodeID).
 		permutation: nil, // Will be set in result.UpdateNodeIDs([]gpa.NodeID).
-		log:         log.Named("nr"),
+		log:         log.Named("NR"),
 	}
 }
 

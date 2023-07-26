@@ -3,10 +3,10 @@
 
 pragma solidity >=0.8.11;
 
-import "@iscmagic/ISCTypes.sol";
-import "@iscmagic/ISCSandbox.sol";
-import "@iscmagic/ISCPrivileged.sol";
-import "@iscmagic/ISCAccounts.sol";
+import "./ISCTypes.sol";
+import "./ISCSandbox.sol";
+import "./ISCPrivileged.sol";
+import "./ISCAccounts.sol";
 
 // The ERC20 contract for ISC L2 base tokens.
 contract ERC20BaseTokens {

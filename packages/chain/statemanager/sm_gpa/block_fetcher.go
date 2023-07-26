@@ -8,6 +8,7 @@ import (
 
 type blockFetcherImpl struct {
 	start      time.Time
+	stateIndex uint32
 	commitment *state.L1Commitment
 	callbacks  []blockRequestCallback
 	related    []blockFetcher
@@ -15,25 +16,31 @@ type blockFetcherImpl struct {
 
 var _ blockFetcher = &blockFetcherImpl{}
 
-func newBlockFetcher(commitment *state.L1Commitment) blockFetcher {
+func newBlockFetcher(stateIndex uint32, commitment *state.L1Commitment) blockFetcher {
 	return &blockFetcherImpl{
 		start:      time.Now(),
+		stateIndex: stateIndex,
 		commitment: commitment,
 		callbacks:  make([]blockRequestCallback, 0),
 		related:    make([]blockFetcher, 0),
 	}
 }
 
-func newBlockFetcherWithCallback(commitment *state.L1Commitment, callback blockRequestCallback) blockFetcher {
-	result := newBlockFetcher(commitment)
+func newBlockFetcherWithCallback(stateIndex uint32, commitment *state.L1Commitment, callback blockRequestCallback) blockFetcher {
+	result := newBlockFetcher(stateIndex, commitment)
 	result.addCallback(callback)
 	return result
 }
 
 func newBlockFetcherWithRelatedFetcher(commitment *state.L1Commitment, fetcher blockFetcher) blockFetcher {
-	result := newBlockFetcher(commitment)
+	newStateIndex := fetcher.getStateIndex() - 1
+	result := newBlockFetcher(newStateIndex, commitment)
 	result.addRelatedFetcher(fetcher)
 	return result
+}
+
+func (bfiT *blockFetcherImpl) getStateIndex() uint32 {
+	return bfiT.stateIndex
 }
 
 func (bfiT *blockFetcherImpl) getCommitment() *state.L1Commitment {
@@ -52,16 +59,20 @@ func (bfiT *blockFetcherImpl) addRelatedFetcher(fetcher blockFetcher) {
 	bfiT.related = append(bfiT.related, fetcher)
 }
 
-func (bfiT *blockFetcherImpl) notifyFetched(notifyFun func(blockFetcher) bool) {
-	if notifyFun(bfiT) {
-		for _, callback := range bfiT.callbacks {
-			if callback.isValid() {
-				callback.requestCompleted()
-			}
+func (bfiT *blockFetcherImpl) commitAndNotifyFetched(commitFun func(blockFetcher) bool) {
+	if commitFun(bfiT) {
+		bfiT.notifyFetched(commitFun)
+	}
+}
+
+func (bfiT *blockFetcherImpl) notifyFetched(commitFun func(blockFetcher) bool) {
+	for _, callback := range bfiT.callbacks {
+		if callback.isValid() {
+			callback.requestCompleted()
 		}
-		for _, fetcher := range bfiT.related {
-			fetcher.notifyFetched(notifyFun)
-		}
+	}
+	for _, fetcher := range bfiT.related {
+		fetcher.commitAndNotifyFetched(commitFun)
 	}
 }
 

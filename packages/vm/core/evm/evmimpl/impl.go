@@ -9,6 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -31,9 +32,6 @@ import (
 )
 
 var Processor = evm.Contract.Processor(nil,
-	evm.FuncOpenBlockContext.WithHandler(restricted(openBlockContext)),
-	evm.FuncCloseBlockContext.WithHandler(restricted(closeBlockContext)),
-
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncCallContract.WithHandler(restricted(callContract)),
 
@@ -47,7 +45,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
-func SetInitialState(state kv.KVStore, evmChainID uint16) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	// add the standard ISC contract at arbitrary address 0x1074...
 	genesisAlloc := core.GenesisAlloc{}
 	deployMagicContractOnGenesis(genesisAlloc)
@@ -58,7 +56,7 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-	addToPrivileged(state, iscmagic.ERC20BaseTokensAddress)
+	addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 
 	// add the standard ERC721 contract
 	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
@@ -66,13 +64,13 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-	addToPrivileged(state, iscmagic.ERC721NFTsAddress)
+	addToPrivileged(evmPartition, iscmagic.ERC721NFTsAddress)
 
 	// chain always starts with default gas fee & limits configuration
 	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
 	emulator.Init(
-		evmStateSubrealm(state),
+		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
@@ -81,8 +79,6 @@ func SetInitialState(state kv.KVStore, evmChainID uint16) {
 		0,
 		genesisAlloc,
 	)
-
-	// subscription to block context is now done in `vmcontext/bootstrapstate.go`
 }
 
 var errChainIDMismatch = coreerrors.Register("chainId mismatch").Create()
@@ -97,56 +93,60 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
 
-	// next block will be minted when the ISC block is closed
-	bctx := getBlockContext(ctx)
+	emu := createEmulator(ctx)
 
-	if tx.ChainId().Uint64() != uint64(bctx.emu.BlockchainDB().GetChainID()) {
+	if tx.ChainId().Uint64() != uint64(emu.BlockchainDB().GetChainID()) {
 		panic(errChainIDMismatch)
-	}
-
-	chargeISCGas := func(result *core.ExecutionResult) (uint64, error) {
-		// convert burnt EVM gas to ISC gas
-		chainInfo := ctx.ChainInfo()
-		ctx.Privileged().GasBurnEnable(true)
-		iscGasErr := panicutil.CatchPanic(
-			func() {
-				ctx.Gas().Burn(
-					gas.BurnCodeEVM1P,
-					gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
-				)
-			},
-		)
-		ctx.Privileged().GasBurnEnable(false)
-		if iscGasErr != nil {
-			// out of gas when burning ISC gas, amend the EVM receipt so that it is saved as "failed execution"
-			result.Err = core.ErrInsufficientFunds
-		}
-		// amend the gas usage (to include any ISC gas from sandbox calls)
-		evmGasUsed := gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
-		return evmGasUsed, iscGasErr
 	}
 
 	// Send the tx to the emulator.
 	// ISC gas burn will be enabled right before executing the tx, and disabled right after,
 	// so that ISC magic calls are charged gas.
-	receipt, result, iscGasErr, err := bctx.emu.SendTransaction(
+	receipt, result, err := emu.SendTransaction(
 		tx,
 		ctx.Privileged().GasBurnEnable,
-		chargeISCGas,
 		getTracer(ctx),
+		false,
 	)
 
-	executionError := panicutil.CatchPanic(func() {
-		ctx.RequireNoError(err)
-		ctx.RequireNoError(iscGasErr)
-		ctx.RequireNoError(tryGetRevertError(result))
+	chainInfo := ctx.ChainInfo()
+	ctx.Privileged().GasBurnEnable(true)
+	burnGasErr := panicutil.CatchPanic(
+		func() {
+			ctx.Gas().Burn(
+				gas.BurnCodeEVM1P,
+				gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
+			)
+		},
+	)
+	ctx.Privileged().GasBurnEnable(false)
+
+	// if any of these is != nil, the request will be reverted
+	revertErr, _ := lo.Find(
+		[]error{err, tryGetRevertError(result), burnGasErr},
+		func(err error) bool { return err != nil },
+	)
+	if revertErr != nil {
+		receipt.Status = types.ReceiptStatusFailed
+	}
+
+	// amend the gas usage (to include any ISC gas from sandbox calls)
+	{
+		realGasUsed := gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
+		if realGasUsed > receipt.GasUsed {
+			receipt.CumulativeGasUsed += realGasUsed - receipt.GasUsed
+			receipt.GasUsed = realGasUsed
+		}
+	}
+
+	// make sure we store the EVM tx/receipt in the BlockchainDB *after* the ISC request is reverted
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
+		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
 
-	if executionError != nil {
-		// revert ISC/EVM state changes, store EVM tx/receipt so it is saved as "failed"
-		ctx.Privileged().SetEVMFailed(tx, receipt)
-		panic(executionError)
-	}
+	// revert the changes in the state / txbuilder in case of error
+	ctx.RequireNoError(revertErr)
+
 	return nil
 }
 
@@ -172,7 +172,7 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 	if evmState.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
@@ -292,7 +292,7 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox) dict.Dict {
 		panic(errNativeTokenAlreadyRegistered)
 	}
 
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 
 	addr, err := iscmagic.ERC20ExternalNativeTokensAddress(nativeTokenID, evmState.Exist)
@@ -345,7 +345,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 	if evmState.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
@@ -365,8 +365,8 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 
 func getChainID(ctx isc.SandboxView) dict.Dict {
 	chainID := emulator.GetChainIDFromBlockChainDBState(
-		emulator.NewBlockchainDBSubrealm(
-			evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
+		emulator.BlockchainDBSubrealmR(
+			evm.EmulatorStateSubrealmR(ctx.StateR()),
 		),
 	)
 	return result(codec.EncodeUint16(chainID))
@@ -397,7 +397,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
-	emu := getBlockContext(ctx).emu
+	emu := createEmulator(ctx)
 
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)

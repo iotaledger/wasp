@@ -50,7 +50,7 @@ export class WasmClientEvents {
         let msg: any;
         try {
             const json = data.toString();
-            // console.log(json);
+            console.log(json);
             msg = JSON.parse(json);
             if (!msg.kind) {
                 // filter out subscribe responses

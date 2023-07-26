@@ -20,6 +20,7 @@ var _ MappedNullable = &ContractCallViewRequest{}
 // ContractCallViewRequest struct for ContractCallViewRequest
 type ContractCallViewRequest struct {
 	Arguments JSONDict `json:"arguments"`
+	Block *string `json:"block,omitempty"`
 	// The contract name as HName (Hex)
 	ContractHName string `json:"contractHName"`
 	// The contract name
@@ -74,6 +75,38 @@ func (o *ContractCallViewRequest) GetArgumentsOk() (*JSONDict, bool) {
 // SetArguments sets field value
 func (o *ContractCallViewRequest) SetArguments(v JSONDict) {
 	o.Arguments = v
+}
+
+// GetBlock returns the Block field value if set, zero value otherwise.
+func (o *ContractCallViewRequest) GetBlock() string {
+	if o == nil || isNil(o.Block) {
+		var ret string
+		return ret
+	}
+	return *o.Block
+}
+
+// GetBlockOk returns a tuple with the Block field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ContractCallViewRequest) GetBlockOk() (*string, bool) {
+	if o == nil || isNil(o.Block) {
+		return nil, false
+	}
+	return o.Block, true
+}
+
+// HasBlock returns a boolean if a field has been set.
+func (o *ContractCallViewRequest) HasBlock() bool {
+	if o != nil && !isNil(o.Block) {
+		return true
+	}
+
+	return false
+}
+
+// SetBlock gets a reference to the given string and assigns it to the Block field.
+func (o *ContractCallViewRequest) SetBlock(v string) {
+	o.Block = &v
 }
 
 // GetContractHName returns the ContractHName field value
@@ -183,6 +216,9 @@ func (o ContractCallViewRequest) MarshalJSON() ([]byte, error) {
 func (o ContractCallViewRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["arguments"] = o.Arguments
+	if !isNil(o.Block) {
+		toSerialize["block"] = o.Block
+	}
 	toSerialize["contractHName"] = o.ContractHName
 	toSerialize["contractName"] = o.ContractName
 	toSerialize["functionHName"] = o.FunctionHName

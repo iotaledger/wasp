@@ -38,8 +38,12 @@ var FuncDefaultInitializer = Func("initializer")
 func NewContract(name string) *ContractInfo {
 	return &ContractInfo{
 		Name:        name,
-		ProgramHash: hashing.HashStrings(name),
+		ProgramHash: CoreContractProgramHash(name),
 	}
+}
+
+func CoreContractProgramHash(name string) hashing.HashValue {
+	return hashing.HashStrings(name)
 }
 
 func defaultInitFunc(ctx isc.Sandbox) dict.Dict {

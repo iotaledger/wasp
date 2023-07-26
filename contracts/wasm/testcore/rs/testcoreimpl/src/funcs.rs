@@ -25,27 +25,38 @@ pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
     }
 
     let counter = f.state.counter();
-    ctx.log(&format!("call depth = {}, hnameContract = {}, hnameEP = {}, counter = {}",
-                     &f.params.n().to_string(),
-                     &hname_contract.to_string(),
-                     &hname_ep.to_string(),
-                     &counter.to_string()));
+    ctx.log(&format!(
+        "call depth = {}, hnameContract = {}, hnameEP = {}, counter = {}",
+        &f.params.n().to_string(),
+        &hname_contract.to_string(),
+        &hname_ep.to_string(),
+        &counter.to_string()
+    ));
 
     counter.set_value(counter.value() + 1);
 
-    let parms = ScDict::new(&[]);
+    let params = ScDict::new(&[]);
     let key = string_to_bytes(PARAM_N);
-    parms.set(&key, &uint64_to_bytes(param_int));
-    let ret = ctx.call(hname_contract, hname_ep, Some(parms), None);
+    params.set(&key, &uint64_to_bytes(param_int));
+    let ret = ctx.call(hname_contract, hname_ep, Some(params), None);
     let ret_val = uint64_from_bytes(&ret.get(&key));
     f.results.n().set_value(ret_val);
 }
 
 pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFromFullEPContext) {
-    ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
+    ctx.require(
+        f.params.agent_id().value() == ctx.account_id(),
+        "fail: agentID",
+    );
     ctx.require(f.params.caller().value() == ctx.caller(), "fail: caller");
-    ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
-    ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
+    ctx.require(
+        f.params.chain_id().value() == ctx.current_chain_id(),
+        "fail: chainID",
+    );
+    ctx.require(
+        f.params.chain_owner_id().value() == ctx.chain_owner_id(),
+        "fail: chainOwnerID",
+    );
 }
 
 pub fn func_claim_allowance(ctx: &ScFuncContext, _f: &ClaimAllowanceContext) {
@@ -58,7 +69,10 @@ pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
     ctx.log("doing nothing...");
 }
 
-pub fn func_estimate_min_storage_deposit(ctx: &ScFuncContext, _f: &EstimateMinStorageDepositContext) {
+pub fn func_estimate_min_storage_deposit(
+    ctx: &ScFuncContext,
+    _f: &EstimateMinStorageDepositContext,
+) {
     let provided = ctx.allowance().base_tokens();
     let dummy = ScFuncs::estimate_min_storage_deposit(ctx);
     let required = ctx.estimate_storage_deposit(&dummy.func);
@@ -89,13 +103,19 @@ pub fn func_pass_types_full(ctx: &ScFuncContext, f: &PassTypesFullContext) {
     ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
     ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
+    ctx.require(
+        f.params.hname().value() == ScHname::new(PARAM_HNAME),
+        "Hname wrong",
+    );
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
 pub fn func_ping_allowance_back(ctx: &ScFuncContext, _f: &PingAllowanceBackContext) {
     let caller = ctx.caller();
-    ctx.require(caller.is_address(), "pingAllowanceBack: caller expected to be a L1 address");
+    ctx.require(
+        caller.is_address(),
+        "pingAllowanceBack: caller expected to be a L1 address",
+    );
     let transfer = wasmlib::ScTransfer::from_balances(&ctx.allowance());
     ctx.transfer_allowed(&ctx.account_id(), &transfer);
     ctx.send(&caller.address(), &transfer);
@@ -109,7 +129,10 @@ pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
 
     let call_on_chain = ScFuncs::call_on_chain(ctx);
     call_on_chain.params.n().set_value(depth - 1);
-    call_on_chain.params.hname_ep().set_value(HFUNC_RUN_RECURSION);
+    call_on_chain
+        .params
+        .hname_ep()
+        .set_value(HFUNC_RUN_RECURSION);
     call_on_chain.func.call();
     let ret_val = call_on_chain.results.n().value();
     f.results.n().set_value(ret_val);
@@ -134,7 +157,10 @@ pub fn func_send_to_address(_ctx: &ScFuncContext, _f: &SendToAddressContext) {
 }
 
 pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
-    f.state.ints().get_int64(&f.params.name().value()).set_value(f.params.int_value().value());
+    f.state
+        .ints()
+        .get_int64(&f.params.name().value())
+        .set_value(f.params.int_value().value());
 }
 
 pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
@@ -189,7 +215,10 @@ pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext, _f: &TestCallPanicFullE
     ScFuncs::test_panic_full_ep(ctx).func.call();
 }
 
-pub fn func_test_call_panic_view_ep_from_full(ctx: &ScFuncContext, _f: &TestCallPanicViewEPFromFullContext) {
+pub fn func_test_call_panic_view_ep_from_full(
+    ctx: &ScFuncContext,
+    _f: &TestCallPanicViewEPFromFullContext,
+) {
     ScFuncs::test_panic_view_ep(ctx).func.call();
 }
 
@@ -242,15 +271,25 @@ pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContex
     // NOTE: make sure you READ THE DOCS before calling this function
     let xfer = coreaccounts::ScFuncs::transfer_account_to_chain(ctx);
     xfer.params.gas_reserve().set_value(gas_reserve);
-    xfer.func.transfer_base_tokens(storage_deposit + gas_fee + gas_reserve).
-        allowance_base_tokens(withdrawal + storage_deposit + gas_reserve).
-        post_to_chain(target_chain);
+    xfer.func
+        .transfer_base_tokens(storage_deposit + gas_fee + gas_reserve)
+        .allowance_base_tokens(withdrawal + storage_deposit + gas_reserve)
+        .post_to_chain(target_chain);
 }
 
 pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {
-    ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
-    ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
-    ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
+    ctx.require(
+        f.params.agent_id().value() == ctx.account_id(),
+        "fail: agentID",
+    );
+    ctx.require(
+        f.params.chain_id().value() == ctx.current_chain_id(),
+        "fail: chainID",
+    );
+    ctx.require(
+        f.params.chain_owner_id().value() == ctx.chain_owner_id(),
+        "fail: chainOwnerID",
+    );
 }
 
 fn fibonacci(n: u64) -> u64 {
@@ -292,7 +331,10 @@ pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
 pub fn view_get_int(ctx: &ScViewContext, f: &GetIntContext) {
     let name = f.params.name().value();
     let value = f.state.ints().get_int64(&name);
-    ctx.require(value.exists(), &("param '".to_string() + &name + "' not found"));
+    ctx.require(
+        value.exists(),
+        &("param '".to_string() + &name + "' not found"),
+    );
     f.results.values().get_int64(&name).set_value(value.value());
 }
 
@@ -317,11 +359,17 @@ pub fn view_pass_types_view(ctx: &ScViewContext, f: &PassTypesViewContext) {
     ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
     ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
     ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
-    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
+    ctx.require(
+        f.params.hname().value() == ScHname::new(PARAM_HNAME),
+        "Hname wrong",
+    );
     ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
-pub fn view_test_call_panic_view_ep_from_view(ctx: &ScViewContext, _f: &TestCallPanicViewEPFromViewContext) {
+pub fn view_test_call_panic_view_ep_from_view(
+    ctx: &ScViewContext,
+    _f: &TestCallPanicViewEPFromViewContext,
+) {
     ScFuncs::test_panic_view_ep(ctx).func.call();
 }
 
@@ -336,5 +384,7 @@ pub fn view_test_panic_view_ep(ctx: &ScViewContext, _f: &TestPanicViewEPContext)
 pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
     let get_chain_info = coregovernance::ScFuncs::get_chain_info(ctx);
     get_chain_info.func.call();
-    f.results.sandbox_call().set_value(&get_chain_info.results.chain_id().value().to_string());
+    f.results
+        .sandbox_call()
+        .set_value(&get_chain_info.results.chain_id().value().to_string());
 }

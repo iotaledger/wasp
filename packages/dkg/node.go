@@ -102,7 +102,7 @@ func (n *Node) Close() {
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //
-//nolint:funlen,gocritic,gocyclo
+//nolint:funlen,gocyclo
 func (n *Node) GenerateDistributedKey(
 	peerPubs []*cryptolib.PublicKey,
 	threshold uint16,

@@ -18,7 +18,6 @@ import (
 )
 
 var (
-	ErrNotAddedToMempool  = errors.New("not added to the mempool")
 	ErrChainNotFound      = errors.New("chain not found")
 	ErrCantDeleteLastUser = errors.New("you can't delete the last user")
 )
@@ -36,9 +35,9 @@ type ChainService interface {
 	GetAllChainIDs() ([]isc.ChainID, error)
 	HasChain(chainID isc.ChainID) bool
 	GetChainByID(chainID isc.ChainID) (chain.Chain, error)
-	GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error)
-	GetContracts(chainID isc.ChainID) (dto.ContractsMap, error)
-	GetEVMChainID(chainID isc.ChainID) (uint16, error)
+	GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
+	GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) (dto.ContractsMap, error)
+	GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (uint16, error)
 	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
 	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
 }

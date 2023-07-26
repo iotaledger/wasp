@@ -4,6 +4,7 @@
 import {Blake2b} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
 import {KeyPair} from './keypair';
+import {chainIDEncode, hnameEncode} from "wasmlib";
 
 export class OffLedgerSignature {
     publicKey: Uint8Array;
@@ -34,25 +35,28 @@ export class OffLedgerRequest {
     }
 
     public bytes(): Uint8Array {
-        let data = this.essence()
-        const publicKey = this.signature.publicKey;
-        data = wasmlib.concat(data, wasmlib.uint8ToBytes(publicKey.length as u8))
-        data = wasmlib.concat(data, publicKey)
-        const signature = this.signature.signature;
-        data = wasmlib.concat(data, wasmlib.uint16ToBytes(signature.length as u16))
-        return wasmlib.concat(data, signature);
+        let enc = this.essenceEncode();
+        enc.fixedBytes(this.signature.publicKey, 32);
+        enc.bytes(this.signature.signature);
+        return enc.buf();
     }
 
     public essence(): Uint8Array {
-        const oneByte = new Uint8Array(1);
-        oneByte[0] = 1; // requestKindTagOffLedgerISC
-        let data = wasmlib.concat(oneByte, this.chainID.toBytes());
-        data = wasmlib.concat(data, this.contract.toBytes());
-        data = wasmlib.concat(data, this.entryPoint.toBytes());
-        data = wasmlib.concat(data, this.params);
-        data = wasmlib.concat(data, wasmlib.uint64ToBytes(this.nonce));
-        data = wasmlib.concat(data, wasmlib.uint64ToBytes(this.gasBudget));
-        return wasmlib.concat(data, this.allowance.toBytes());
+        return this.essenceEncode().buf();
+    }
+
+    private essenceEncode() : wasmlib.WasmEncoder {
+        const enc = new wasmlib.WasmEncoder();
+        enc.byte(1); // requestKindOffLedgerISC
+        chainIDEncode(enc, this.chainID);
+        hnameEncode(enc, this.contract);
+        hnameEncode(enc, this.entryPoint);
+        enc.fixedBytes(this.params, this.params.length);
+        enc.vliEncode64(this.nonce);
+        enc.vluEncode64((this.gasBudget < 0xffffffffffffffffn) ? this.gasBudget + 1n : 0n);
+        const allowance = this.allowance.toBytes();
+        enc.fixedBytes(allowance, allowance.length);
+        return enc;
     }
 
     public ID(): wasmlib.ScRequestID {

@@ -23,8 +23,8 @@ type CommitStats struct {
 	CreatedValues uint
 }
 
-func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatable, error) {
-	trieReader, err := NewTrieReader(store, root, cacheSize...)
+func NewTrieUpdatable(store KVReader, root Hash) (*TrieUpdatable, error) {
+	trieReader, err := NewTrieReader(store, root)
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +37,9 @@ func NewTrieUpdatable(store KVReader, root Hash, cacheSize ...int) (*TrieUpdatab
 	return ret, nil
 }
 
-func NewTrieReader(store KVReader, root Hash, cacheSize ...int) (*TrieReader, error) {
+func NewTrieReader(store KVReader, root Hash) (*TrieReader, error) {
 	ret := &TrieReader{
-		nodeStore: openNodeStore(store, cacheSize...),
+		nodeStore: openNodeStore(store),
 	}
 	if _, err := ret.setRoot(root); err != nil {
 		return nil, err
@@ -104,6 +104,23 @@ func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) 
 func (tr *TrieReader) DebugDump() {
 	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
 		fmt.Printf("%s %v %s\n", strings.Repeat(" ", len(nodeKey)), nodeKey, n)
+		return IterateContinue
+	})
+}
+
+func (tr *TrieReader) CopyToStore(snapshot KVStore) {
+	triePartition := makeWriterPartition(snapshot, partitionTrieNodes)
+	valuePartition := makeWriterPartition(snapshot, partitionValues)
+	refcounts := newRefcounts(snapshot)
+	tr.IterateNodes(func(_ []byte, n *NodeData, depth int) IterateNodesAction {
+		nodeKey := n.Commitment.Bytes()
+		triePartition.Set(nodeKey, tr.nodeStore.trieStore.Get(nodeKey))
+		if n.Terminal != nil && !n.Terminal.IsValue {
+			n.Terminal.ExtractValue()
+			valueKey := n.Terminal.Bytes()
+			valuePartition.Set(valueKey, tr.nodeStore.valueStore.Get(valueKey))
+		}
+		refcounts.incNodeAndValue(n)
 		return IterateContinue
 	})
 }

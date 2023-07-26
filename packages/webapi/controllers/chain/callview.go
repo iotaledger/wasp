@@ -53,7 +53,7 @@ func (c *Controller) executeCallView(e echo.Context) error {
 		return apierrors.InvalidPropertyError("arguments", err)
 	}
 
-	result, err := common.CallView(ch, contractHName, functionHName, args)
+	result, err := common.CallView(ch, contractHName, functionHName, args, callViewRequest.Block)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

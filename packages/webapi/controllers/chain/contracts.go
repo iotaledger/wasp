@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) getContracts(e echo.Context) error {
@@ -16,7 +17,7 @@ func (c *Controller) getContracts(e echo.Context) error {
 		return err
 	}
 
-	contracts, err := c.chainService.GetContracts(chainID)
+	contracts, err := c.chainService.GetContracts(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return err
 	}
