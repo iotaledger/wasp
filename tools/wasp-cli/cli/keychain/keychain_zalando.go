@@ -2,8 +2,6 @@ package keychain
 
 import (
 	"errors"
-	"fmt"
-	"unsafe"
 
 	"github.com/awnumar/memguard"
 	"github.com/zalando/go-keyring"
@@ -12,27 +10,32 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-const (
-	strongholdKey     = "wasp-cli.stronghold.key"
-	jwtTokenKeyPrefix = "wasp-cli.auth.jwt"
-	seedKey           = "wasp-cli.seed"
-)
+type KeyChainZalando struct{}
 
-var (
-	ErrTokenDoesNotExist      = errors.New("jwt token not found, call 'login'")
-	ErrPasswordDoesNotExist   = errors.New("stronghold entry not found, call 'init'")
-	ErrSeedDoesNotExist       = errors.New("seed not found, call 'init'")
-	ErrSeedDoesNotMatchLength = errors.New("returned seed does not have a valid length")
-)
+func NewKeyChainZalando() *KeyChainZalando {
+	return &KeyChainZalando{}
+}
 
-const WaspCliServiceName = "IOTAFoundation.WaspCLI"
+func IsKeyChainAvailable() bool {
+	_, err := keyring.Get("", "")
 
-func SetSeed(seed cryptolib.Seed) error {
+	if errors.Is(err, keyring.ErrNotFound) {
+		return true
+	}
+
+	if errors.Is(err, keyring.ErrUnsupportedPlatform) {
+		return false
+	}
+
+	return false
+}
+
+func (k *KeyChainZalando) SetSeed(seed cryptolib.Seed) error {
 	err := keyring.Set(WaspCliServiceName, seedKey, iotago.EncodeHex(seed[:]))
 	return err
 }
 
-func GetSeed() (*cryptolib.Seed, error) {
+func (k *KeyChainZalando) GetSeed() (*cryptolib.Seed, error) {
 	seedItem, err := keyring.Get(WaspCliServiceName, seedKey)
 	if errors.Is(err, keyring.ErrNotFound) {
 		return nil, ErrSeedDoesNotExist
@@ -50,7 +53,7 @@ func GetSeed() (*cryptolib.Seed, error) {
 	return &seed, nil
 }
 
-func SetStrongholdPassword(password *memguard.Enclave) error {
+func (k *KeyChainZalando) SetStrongholdPassword(password *memguard.Enclave) error {
 	buffer, err := password.Open()
 	if err != nil {
 		return err
@@ -60,37 +63,20 @@ func SetStrongholdPassword(password *memguard.Enclave) error {
 	return keyring.Set(WaspCliServiceName, strongholdKey, buffer.String())
 }
 
-func GetStrongholdPassword() (*memguard.Enclave, error) {
-	enclave, err := Get("service", "user")
-	if err != nil {
-		panic(err)
-	}
-
-	secretPassword, err := enclave.Open()
-	if err != nil {
-		panic(err)
-	}
-	defer secretPassword.Destroy()
-
+func (k *KeyChainZalando) GetStrongholdPassword() (*memguard.Enclave, error) {
 	seedItem, err := keyring.Get(WaspCliServiceName, strongholdKey)
 	if errors.Is(err, keyring.ErrNotFound) {
 		return nil, ErrPasswordDoesNotExist
 	}
 
-	memguard.WipeBytes(*(*[]byte)(unsafe.Pointer(&seedItem)))
-
 	return memguard.NewEnclave([]byte(seedItem)), nil
 }
 
-func jwtTokenKey(node string) string {
-	return fmt.Sprintf("%s.%s", jwtTokenKeyPrefix, node)
-}
-
-func SetJWTAuthToken(node string, token string) error {
+func (k *KeyChainZalando) SetJWTAuthToken(node string, token string) error {
 	return keyring.Set(WaspCliServiceName, jwtTokenKey(node), token)
 }
 
-func GetJWTAuthToken(node string) (string, error) {
+func (k *KeyChainZalando) GetJWTAuthToken(node string) (string, error) {
 	seedItem, err := keyring.Get(WaspCliServiceName, jwtTokenKey(node))
 	// Special case. If the key is not found, return an empty token.
 	if errors.Is(err, keyring.ErrNotFound) {

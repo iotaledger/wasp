@@ -4,17 +4,15 @@ import (
 	"os"
 	"path"
 	"strings"
-	"syscall"
 
 	"github.com/awnumar/memguard"
 	"github.com/tyler-smith/go-bip39"
-	"golang.org/x/term"
 
 	walletsdk "github.com/iotaledger/wasp-wallet-sdk"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -38,7 +36,7 @@ func configureStronghold(sdk *walletsdk.IOTASDK, unlockPassword *memguard.Enclav
 }
 
 func LoadStrongholdWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.Wallet {
-	password, err := keychain.GetStrongholdPassword()
+	password, err := config.GetKeyChain().GetStrongholdPassword()
 	log.Check(err)
 
 	secretManager, err := configureStronghold(sdk, password)
@@ -64,13 +62,6 @@ func printMnemonic(mnemonic *memguard.Enclave) {
 	}
 }
 
-func readPasswordFromStdin() *memguard.Enclave {
-	log.Printf("Password: ")
-	passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:nolintlint,unconvert // int cast is needed for windows
-	log.Check(err)
-	return memguard.NewEnclave(passwordBytes)
-}
-
 func MigrateToStrongholdWallet(sdk *walletsdk.IOTASDK, seed cryptolib.Seed) {
 	log.Printf("Migrating existing seed into Stronghold store.\n\n")
 
@@ -79,7 +70,7 @@ func MigrateToStrongholdWallet(sdk *walletsdk.IOTASDK, seed cryptolib.Seed) {
 	}
 
 	log.Printf("Enter a secure password.\n")
-	unlockPassword := readPasswordFromStdin()
+	unlockPassword := cli.ReadPasswordFromStdin()
 	log.Printf("\n")
 
 	s := seed.SubSeed(0)
@@ -112,7 +103,7 @@ func createNewStrongholdWallet(sdk *walletsdk.IOTASDK, mnemonic *memguard.Enclav
 		return
 	}
 
-	err = keychain.SetStrongholdPassword(password)
+	err = config.GetKeyChain().SetStrongholdPassword(password)
 	log.Check(err)
 }
 
@@ -124,7 +115,7 @@ func CreateNewStrongholdWallet(sdk *walletsdk.IOTASDK) {
 	}
 
 	log.Printf("Enter a secure password.\n")
-	unlockPassword := readPasswordFromStdin()
+	unlockPassword := cli.ReadPasswordFromStdin()
 	log.Printf("\n")
 
 	mnemonic, err := sdk.Utils().GenerateMnemonic()

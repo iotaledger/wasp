@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -124,14 +125,32 @@ func L1FaucetAddress() string {
 	)
 }
 
+var keyChain keychain.KeyChain
+
+func GetKeyChain() keychain.KeyChain {
+	if keyChain == nil {
+		fmt.Printf("KeyChain available: %v\n", keychain.IsKeyChainAvailable())
+
+		if keychain.IsKeyChainAvailable() {
+			fmt.Println("Using OS keychain")
+			keyChain = keychain.NewKeyChainZalando()
+		} else {
+			fmt.Println("Using encrypted file")
+			keyChain = keychain.NewKeyChainFile(BaseDir, cli.ReadPasswordFromStdin)
+		}
+	}
+
+	return keyChain
+}
+
 func GetToken(node string) string {
-	token, err := keychain.GetJWTAuthToken(node)
+	token, err := GetKeyChain().GetJWTAuthToken(node)
 	log.Check(err)
 	return token
 }
 
 func SetToken(node, token string) {
-	err := keychain.SetJWTAuthToken(node, token)
+	err := GetKeyChain().SetJWTAuthToken(node, token)
 	log.Check(err)
 }
 
@@ -202,7 +221,7 @@ func GetSeedForMigration() string {
 func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
 	logLevel := viper.GetString("wallet.loglevel")
 	if logLevel == "" {
-		return types.LevelFilterOff
+		return types.LevelFilterTrace
 	}
 
 	return types.ILoggerConfigLevelFilter(logLevel)
