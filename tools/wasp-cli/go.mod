@@ -12,6 +12,7 @@ replace (
 require (
 	github.com/99designs/keyring v1.2.2
 	github.com/awnumar/memguard v0.22.3
+	github.com/dvsekhvalnov/jose2go v1.5.0
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/iotaledger/hive.go/logger v0.0.0-20230629181801-64c530ff9d15
@@ -54,7 +55,6 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/dvsekhvalnov/jose2go v1.5.0 // indirect
 	github.com/ebitengine/purego v0.4.0-alpha.4 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.4.2 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
