@@ -63,8 +63,12 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 	if reqctx.vm.task.EstimateGasMode {
 		return nil
 	}
-	senderAccount := reqctx.req.SenderAccount()
-	reqNonce := reqctx.req.(isc.OffLedgerRequest).Nonce()
+	offledgerReq := reqctx.req.(isc.OffLedgerRequest)
+	if err := offledgerReq.VerifySignature(); err != nil {
+		return err
+	}
+	senderAccount := offledgerReq.SenderAccount()
+	reqNonce := offledgerReq.Nonce()
 	var nonceErr error
 
 	if evmAgentID, ok := senderAccount.(*isc.EthereumAddressAgentID); ok {

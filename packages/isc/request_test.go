@@ -19,7 +19,7 @@ func TestRequestDataSerialization(t *testing.T) {
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
 		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 100).Sign(cryptolib.NewKeyPair())
-		rwutil.ReadWriteTest(t, req.(*offLedgerRequestData), new(offLedgerRequestData))
+		rwutil.ReadWriteTest(t, req.(*OffLedgerRequestData), new(OffLedgerRequestData))
 		rwutil.BytesTest(t, req, RequestFromBytes)
 	})
 

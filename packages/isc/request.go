@@ -43,11 +43,6 @@ type Features interface {
 	TimeLock() time.Time
 }
 
-type OffLedgerRequestData interface {
-	ChainID() ChainID
-	Nonce() uint64
-}
-
 type UnsignedOffLedgerRequest interface {
 	Bytes() []byte
 	WithNonce(nonce uint64) UnsignedOffLedgerRequest
@@ -59,7 +54,8 @@ type UnsignedOffLedgerRequest interface {
 
 type OffLedgerRequest interface {
 	Request
-	OffLedgerRequestData
+	ChainID() ChainID
+	Nonce() uint64
 	VerifySignature() error
 }
 
