@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
@@ -116,6 +117,13 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 				isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
 				prevL1Commitment,
 			)
+		})
+	})
+
+	// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
+	vmctx.withStateUpdate(func(chainState kv.KVStore) {
+		withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
+			accounts.UpdateLatestOutputID(s, vmctx.task.AnchorOutputID.TransactionID())
 		})
 	})
 

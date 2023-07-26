@@ -241,3 +241,24 @@ func TestBlocklogPruning(t *testing.T) {
 		require.EqualValues(t, i, evmBlock.Number().Uint64())
 	}
 }
+
+func TestBlocklogFoundriesWithPruning(t *testing.T) {
+	// test that foundries can be accessed even after the block is pruned
+
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
+		origin.ParamBlockKeepAmount: codec.EncodeInt32(10),
+	})
+	ch.DepositBaseTokensToL2(1*isc.Million, nil)
+
+	sn, _, err := ch.NewFoundryParams(10).CreateFoundry()
+	require.NoError(t, err)
+
+	// provoke the block where the foundry was stored to be pruned
+	for i := 1; i <= 20; i++ {
+		ch.DepositBaseTokensToL2(1000, nil)
+	}
+
+	err = ch.DestroyFoundry(sn, ch.OriginatorPrivateKey)
+	require.NoError(t, err)
+}

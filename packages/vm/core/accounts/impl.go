@@ -247,7 +247,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 		panic(vm.ErrUnauthorized)
 	}
 
-	out, _, _ := GetFoundryOutput(state, sn, ctx.ChainID())
+	out, _ := GetFoundryOutput(state, sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
 	if !util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)) {
 		panic(errFoundryWithCirculatingSupply)
@@ -286,7 +286,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 		panic(vm.ErrUnauthorized)
 	}
 
-	out, _, _ := GetFoundryOutput(state, sn, ctx.ChainID())
+	out, _ := GetFoundryOutput(state, sn, ctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
 	ctx.RequireNoError(err, "internal")
 

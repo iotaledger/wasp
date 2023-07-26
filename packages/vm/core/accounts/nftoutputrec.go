@@ -9,9 +9,8 @@ import (
 )
 
 type NFTOutputRec struct {
-	BlockIndex  uint32
-	OutputIndex uint16
-	Output      *iotago.NFTOutput
+	OutputID iotago.OutputID
+	Output   *iotago.NFTOutput
 }
 
 func nftOutputRecFromBytes(data []byte) (*NFTOutputRec, error) {
@@ -31,14 +30,13 @@ func (rec *NFTOutputRec) Bytes() []byte {
 }
 
 func (rec *NFTOutputRec) String() string {
-	return fmt.Sprintf("NFT Record: base tokens: %d, ID: %s, block: %d, outIdx: %d",
-		rec.Output.Deposit(), rec.Output.NFTID, rec.BlockIndex, rec.OutputIndex)
+	return fmt.Sprintf("NFT Record: base tokens: %d, ID: %s, outID: %s",
+		rec.Output.Deposit(), rec.Output.NFTID, rec.OutputID)
 }
 
 func (rec *NFTOutputRec) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rec.BlockIndex = rr.ReadUint32()
-	rec.OutputIndex = rr.ReadUint16()
+	rr.ReadN(rec.OutputID[:])
 	rec.Output = new(iotago.NFTOutput)
 	rr.ReadSerialized(rec.Output)
 	return rr.Err
@@ -46,8 +44,7 @@ func (rec *NFTOutputRec) Read(r io.Reader) error {
 
 func (rec *NFTOutputRec) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint32(rec.BlockIndex)
-	ww.WriteUint16(rec.OutputIndex)
+	ww.WriteN(rec.OutputID[:])
 	ww.WriteSerialized(rec.Output)
 	return ww.Err
 }

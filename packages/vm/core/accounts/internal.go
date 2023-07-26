@@ -3,6 +3,7 @@ package accounts
 import (
 	"errors"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -58,6 +59,13 @@ const (
 	keyNFTOutputRecords = "NO"
 	// keyNFTData stores a map of <NFTID> => isc.NFT
 	keyNFTData = "ND"
+
+	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
+	keyNewNativeTokens = "TN"
+	// keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the OutputID
+	keyNewFoundries = "FN"
+	// keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the OutputID
+	keyNewNFTs = "NN"
 )
 
 func accountKey(agentID isc.AgentID) kv.Key {
@@ -158,4 +166,10 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64) {
 	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
 	DebitFromAccount(ctx.State(), CommonAccount(), storageDepositAssets)
+}
+
+func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID) {
+	updateNativeTokenOutputIDs(state, anchorTxID)
+	updateFoundryOutputIDs(state, anchorTxID)
+	updateNFTOutputIDs(state, anchorTxID)
 }
