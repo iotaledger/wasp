@@ -93,9 +93,7 @@ func (pkT *PublicKey) String() string {
 
 func (pkT *PublicKey) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	if len(pkT.key) != PublicKeySize {
-		panic("unexpected public key size for read")
-	}
+	pkT.key = make([]byte, PublicKeySize)
 	rr.ReadN(pkT.key)
 	return rr.Err
 }

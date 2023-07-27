@@ -1,6 +1,7 @@
 package utxodb
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -448,5 +449,66 @@ func (u *UtxoDB) checkLedgerBalance() {
 	}
 	if total != u.Supply() {
 		panic("utxodb: wrong ledger balance")
+	}
+}
+
+type UtxoDBState struct {
+	Supply            uint64
+	Transactions      map[string]*iotago.Transaction
+	UTXO              []string
+	GlobalLogicalTime time.Time
+	TimeStep          time.Duration
+}
+
+func (u *UtxoDB) State() *UtxoDBState {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+
+	txs := make(map[string]*iotago.Transaction)
+	for txid, tx := range u.transactions {
+		txs[hex.EncodeToString(txid[:])] = tx
+	}
+
+	utxo := make([]string, 0, len(u.utxo))
+	for oid := range u.utxo {
+		utxo = append(utxo, hex.EncodeToString(oid[:]))
+	}
+
+	return &UtxoDBState{
+		Supply:            u.supply,
+		Transactions:      txs,
+		UTXO:              utxo,
+		GlobalLogicalTime: u.globalLogicalTime,
+		TimeStep:          u.timeStep,
+	}
+}
+
+func (u *UtxoDB) SetState(state *UtxoDBState) {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+
+	u.supply = state.Supply
+	u.transactions = make(map[iotago.TransactionID]*iotago.Transaction)
+	u.utxo = make(map[iotago.OutputID]struct{})
+	u.globalLogicalTime = state.GlobalLogicalTime
+	u.timeStep = state.TimeStep
+
+	for s, tx := range state.Transactions {
+		b, err := hex.DecodeString(s)
+		if err != nil {
+			panic(err)
+		}
+		var txid iotago.TransactionID
+		copy(txid[:], b)
+		u.transactions[txid] = tx
+	}
+	for _, s := range state.UTXO {
+		b, err := hex.DecodeString(s)
+		if err != nil {
+			panic(err)
+		}
+		var oid iotago.OutputID
+		copy(oid[:], b)
+		u.utxo[oid] = struct{}{}
 	}
 }
