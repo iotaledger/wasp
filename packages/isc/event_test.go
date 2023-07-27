@@ -13,7 +13,7 @@ func TestEventSerialize(t *testing.T) {
 		ContractID: isc.Hname(1223),
 		Payload:    []byte("message payload"),
 		Topic:      "this is a topic",
-		Timestamp:  uint64(time.Now().Unix()),
+		Timestamp:  uint64(time.Now().UnixNano()),
 	}
 	rwutil.ReadWriteTest(t, event, new(isc.Event))
 	rwutil.BytesTest(t, event, isc.EventFromBytes)
