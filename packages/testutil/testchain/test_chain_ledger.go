@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -57,6 +58,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (
 		nil,
 		outs,
 		outIDs,
+		allmigrations.DefaultScheme.LatestSchemaVersion(),
 	)
 	require.NoError(tcl.t, err)
 	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)

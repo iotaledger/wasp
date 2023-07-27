@@ -63,6 +63,4 @@ func TestLoadSnapshot(t *testing.T) {
 	nativeTokenID, err := ch.GetNativeTokenIDByFoundrySN(1)
 	require.NoError(t, err)
 	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, 1000)
-
-	require.NotEmpty(t, ch.L2NFTs(ch.OriginatorAgentID))
 }

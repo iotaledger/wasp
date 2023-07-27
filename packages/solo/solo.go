@@ -40,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -116,6 +117,8 @@ type Chain struct {
 	RequestsBlock uint32
 
 	metrics *metrics.ChainMetrics
+
+	migrationScheme *migrations.MigrationScheme
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -278,6 +281,7 @@ func (env *Solo) deployChain(
 		initParams,
 		outs,
 		outIDs,
+		0,
 	)
 	require.NoError(env.T, err)
 
@@ -468,6 +472,10 @@ func (ch *Chain) collateAndRunBatch() {
 			}
 		}
 	}
+}
+
+func (ch *Chain) AddMigration(m migrations.Migration) {
+	ch.migrationScheme.Migrations = append(ch.migrationScheme.Migrations, m)
 }
 
 func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {

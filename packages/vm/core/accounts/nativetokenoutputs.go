@@ -12,7 +12,7 @@ func newNativeTokensArray(state kv.KVStore) *collections.Array {
 	return collections.NewArray(state, keyNewNativeTokens)
 }
 
-func nativeTokenOutputMap(state kv.KVStore) *collections.Map {
+func NativeTokenOutputMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyNativeTokenOutputMap)
 }
 
@@ -28,13 +28,13 @@ func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex
 		StorageBaseTokens: out.Amount,
 		Amount:            out.NativeTokens[0].Amount,
 	}
-	nativeTokenOutputMap(state).SetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
+	NativeTokenOutputMap(state).SetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 	newNativeTokensArray(state).Push(out.NativeTokens[0].ID[:])
 }
 
 func updateNativeTokenOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	newNativeTokens := newNativeTokensArray(state)
-	allNativeTokens := nativeTokenOutputMap(state)
+	allNativeTokens := NativeTokenOutputMap(state)
 	n := newNativeTokens.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newNativeTokens.GetAt(i)
@@ -46,7 +46,7 @@ func updateNativeTokenOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionI
 }
 
 func DeleteNativeTokenOutput(state kv.KVStore, nativeTokenID iotago.NativeTokenID) {
-	nativeTokenOutputMap(state).DelAt(nativeTokenID[:])
+	NativeTokenOutputMap(state).DelAt(nativeTokenID[:])
 }
 
 func GetNativeTokenOutput(state kv.KVStoreReader, nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, iotago.OutputID) {

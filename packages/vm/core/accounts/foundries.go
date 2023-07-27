@@ -20,7 +20,7 @@ func accountFoundriesMapR(state kv.KVStoreReader, agentID isc.AgentID) *collecti
 	return collections.NewMapReadOnly(state, foundriesMapKey(agentID))
 }
 
-func allFoundriesMap(state kv.KVStore) *collections.Map {
+func AllFoundriesMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyFoundryOutputRecords)
 }
 
@@ -37,13 +37,13 @@ func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uin
 		TokenScheme: f.TokenScheme,
 		Metadata:    []byte{},
 	}
-	allFoundriesMap(state).SetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
+	AllFoundriesMap(state).SetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
 	newFoundriesArray(state).Push(codec.EncodeUint32(f.SerialNumber))
 }
 
 func updateFoundryOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	newFoundries := newFoundriesArray(state)
-	allFoundries := allFoundriesMap(state)
+	allFoundries := AllFoundriesMap(state)
 	n := newFoundries.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newFoundries.GetAt(i)
@@ -56,7 +56,7 @@ func updateFoundryOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 
 // DeleteFoundryOutput deletes foundry output from the map of all foundries
 func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
-	allFoundriesMap(state).DelAt(codec.EncodeUint32(sn))
+	AllFoundriesMap(state).DelAt(codec.EncodeUint32(sn))
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index

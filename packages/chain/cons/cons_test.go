@@ -33,6 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
@@ -91,6 +92,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nil,
 		outputs,
 		outIDs,
+		allmigrations.DefaultScheme.LatestSchemaVersion(),
 	)
 	require.NoError(t, err)
 	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)

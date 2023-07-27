@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -31,6 +32,8 @@ type VMTask struct {
 	// tx with the given index, which will then be executed with the given tracer.
 	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
+
+	MigrationsOverride *migrations.MigrationScheme // for testing and Solo only
 
 	Log *logger.Logger
 }

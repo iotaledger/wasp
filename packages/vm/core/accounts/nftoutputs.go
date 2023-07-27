@@ -10,7 +10,7 @@ func newNFTsArray(state kv.KVStore) *collections.Array {
 	return collections.NewArray(state, keyNewNFTs)
 }
 
-func nftOutputMap(state kv.KVStore) *collections.Map {
+func NFTOutputMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyNFTOutputRecords)
 }
 
@@ -25,13 +25,13 @@ func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, blockIndex uint32, o
 		OutputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
 		Output:   out,
 	}
-	nftOutputMap(state).SetAt(out.NFTID[:], tokenRec.Bytes())
+	NFTOutputMap(state).SetAt(out.NFTID[:], tokenRec.Bytes())
 	newNFTsArray(state).Push(out.NFTID[:])
 }
 
 func updateNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	newNFTs := newNFTsArray(state)
-	allNFTs := nftOutputMap(state)
+	allNFTs := NFTOutputMap(state)
 	n := newNFTs.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newNFTs.GetAt(i)
@@ -43,7 +43,7 @@ func updateNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 }
 
 func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
-	nftOutputMap(state).DelAt(id[:])
+	NFTOutputMap(state).DelAt(id[:])
 }
 
 func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {

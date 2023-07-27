@@ -32,18 +32,18 @@ const (
 	// prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
 	prefixBaseTokens = "b"
 	// prefixBaseTokens | <accountID> stores a map of <nativeTokenID> => big.Int
-	prefixNativeTokens = "t"
+	PrefixNativeTokens = "t"
 
 	// l2TotalsAccount is the special <accountID> storing the total fungible tokens
 	// controlled by the chain
 	l2TotalsAccount = "*"
 
-	// prefixNFTs | <agentID> stores a map of <NFTID> => true
-	prefixNFTs = "n"
-	// prefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
-	prefixNFTsByCollection = "c"
-	// prefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
-	prefixFoundries = "f"
+	// PrefixNFTs | <agentID> stores a map of <NFTID> => true
+	PrefixNFTs = "n"
+	// PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
+	PrefixNFTsByCollection = "c"
+	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
+	PrefixFoundries = "f"
 
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	noCollection = "-"

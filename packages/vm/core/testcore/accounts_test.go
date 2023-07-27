@@ -818,8 +818,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		err = ch2.DepositAssetsToL2(isc.NewAssets(1*isc.Million, iotago.NativeTokens{
 			{ID: v.nativeTokenID, Amount: big.NewInt(1)},
 		}), v.user)
-		require.Error(t, err) // TODO this check needs to be changed after the "accounting UTXO pruning fix"
-		testmisc.RequireErrorToBe(t, err, "request has been skipped")
+		require.NoError(t, err)
 	})
 }
 
