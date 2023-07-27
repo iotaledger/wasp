@@ -465,6 +465,9 @@ func (mpi *mempoolImpl) nonce(account isc.AgentID) uint64 {
 
 func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) error {
 	mpi.log.Debugf("trying to add to mempool, requestID: %s", req.ID().String())
+	if err := req.VerifySignature(); err != nil {
+		return fmt.Errorf("invalid signature")
+	}
 	if mpi.offLedgerPool.Has(isc.RequestRefFromRequest(req)) {
 		return fmt.Errorf("already in mempool")
 	}

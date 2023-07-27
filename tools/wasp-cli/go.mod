@@ -17,7 +17,7 @@ require (
 	github.com/samber/lo v1.38.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
+	golang.org/x/exp v0.0.0-20230724220655-d98519c11495
 	golang.org/x/term v0.10.0
 )
 
@@ -164,7 +164,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
-	github.com/second-state/WasmEdge-go v0.13.0 // indirect
+	github.com/second-state/WasmEdge-go v0.13.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect

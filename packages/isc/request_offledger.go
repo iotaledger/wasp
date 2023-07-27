@@ -18,7 +18,7 @@ type offLedgerSignature struct {
 	signature []byte
 }
 
-type offLedgerRequestData struct {
+type OffLedgerRequestData struct {
 	allowance  *Assets
 	chainID    ChainID
 	contract   Hname
@@ -30,11 +30,11 @@ type offLedgerRequestData struct {
 }
 
 var (
-	_ Request                  = new(offLedgerRequestData)
-	_ OffLedgerRequest         = new(offLedgerRequestData)
-	_ UnsignedOffLedgerRequest = new(offLedgerRequestData)
-	_ Calldata                 = new(offLedgerRequestData)
-	_ Features                 = new(offLedgerRequestData)
+	_ Request                  = new(OffLedgerRequestData)
+	_ OffLedgerRequest         = new(OffLedgerRequestData)
+	_ UnsignedOffLedgerRequest = new(OffLedgerRequestData)
+	_ Calldata                 = new(OffLedgerRequestData)
+	_ Features                 = new(OffLedgerRequestData)
 )
 
 func NewOffLedgerRequest(
@@ -44,7 +44,7 @@ func NewOffLedgerRequest(
 	nonce uint64,
 	gasBudget uint64,
 ) UnsignedOffLedgerRequest {
-	return &offLedgerRequestData{
+	return &OffLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
 		entryPoint: entryPoint,
@@ -55,7 +55,7 @@ func NewOffLedgerRequest(
 	}
 }
 
-func (req *offLedgerRequestData) Read(r io.Reader) error {
+func (req *OffLedgerRequestData) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	req.readEssence(rr)
 	req.signature.publicKey = cryptolib.NewEmptyPublicKey()
@@ -64,7 +64,7 @@ func (req *offLedgerRequestData) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (req *offLedgerRequestData) Write(w io.Writer) error {
+func (req *OffLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	req.writeEssence(ww)
 	ww.Write(req.signature.publicKey)
@@ -72,7 +72,7 @@ func (req *offLedgerRequestData) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func (req *offLedgerRequestData) readEssence(rr *rwutil.Reader) {
+func (req *OffLedgerRequestData) readEssence(rr *rwutil.Reader) {
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOffLedgerISC))
 	rr.Read(&req.chainID)
 	rr.Read(&req.contract)
@@ -85,7 +85,7 @@ func (req *offLedgerRequestData) readEssence(rr *rwutil.Reader) {
 	rr.Read(req.allowance)
 }
 
-func (req *offLedgerRequestData) writeEssence(ww *rwutil.Writer) {
+func (req *OffLedgerRequestData) writeEssence(ww *rwutil.Writer) {
 	ww.WriteKind(rwutil.Kind(requestKindOffLedgerISC))
 	ww.Write(&req.chainID)
 	ww.Write(&req.contract)
@@ -97,41 +97,41 @@ func (req *offLedgerRequestData) writeEssence(ww *rwutil.Writer) {
 }
 
 // Allowance from the sender's account to the target smart contract. Nil mean no Allowance
-func (req *offLedgerRequestData) Allowance() *Assets {
+func (req *OffLedgerRequestData) Allowance() *Assets {
 	return req.allowance
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger
-func (req *offLedgerRequestData) Assets() *Assets {
+func (req *OffLedgerRequestData) Assets() *Assets {
 	return nil
 }
 
-func (req *offLedgerRequestData) Bytes() []byte {
+func (req *OffLedgerRequestData) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
 }
 
-func (req *offLedgerRequestData) CallTarget() CallTarget {
+func (req *OffLedgerRequestData) CallTarget() CallTarget {
 	return CallTarget{
 		Contract:   req.contract,
 		EntryPoint: req.entryPoint,
 	}
 }
 
-func (req *offLedgerRequestData) ChainID() ChainID {
+func (req *OffLedgerRequestData) ChainID() ChainID {
 	return req.chainID
 }
 
-func (req *offLedgerRequestData) essenceBytes() []byte {
+func (req *OffLedgerRequestData) EssenceBytes() []byte {
 	ww := rwutil.NewBytesWriter()
 	req.writeEssence(ww)
 	return ww.Bytes()
 }
 
-func (req *offLedgerRequestData) Expiry() (time.Time, iotago.Address) {
+func (req *OffLedgerRequestData) Expiry() (time.Time, iotago.Address) {
 	return time.Time{}, nil
 }
 
-func (req *offLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
+func (req *OffLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 	return req.gasBudget, false
 }
 
@@ -139,45 +139,45 @@ func (req *offLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 // index part of request id is always 0 for off ledger requests
 // note that request needs to have been signed before this value is
 // considered valid
-func (req *offLedgerRequestData) ID() (requestID RequestID) {
+func (req *OffLedgerRequestData) ID() (requestID RequestID) {
 	return NewRequestID(iotago.TransactionID(hashing.HashData(req.Bytes())), 0)
 }
 
-func (req *offLedgerRequestData) IsOffLedger() bool {
+func (req *OffLedgerRequestData) IsOffLedger() bool {
 	return true
 }
 
-func (req *offLedgerRequestData) NFT() *NFT {
+func (req *OffLedgerRequestData) NFT() *NFT {
 	return nil
 }
 
 // Nonce incremental nonce used for replay protection
-func (req *offLedgerRequestData) Nonce() uint64 {
+func (req *OffLedgerRequestData) Nonce() uint64 {
 	return req.nonce
 }
 
-func (req *offLedgerRequestData) Params() dict.Dict {
+func (req *OffLedgerRequestData) Params() dict.Dict {
 	return req.params
 }
 
-func (req *offLedgerRequestData) ReturnAmount() (uint64, bool) {
+func (req *OffLedgerRequestData) ReturnAmount() (uint64, bool) {
 	return 0, false
 }
 
-func (req *offLedgerRequestData) SenderAccount() AgentID {
+func (req *OffLedgerRequestData) SenderAccount() AgentID {
 	return NewAgentID(req.signature.publicKey.AsEd25519Address())
 }
 
 // Sign signs the essence
-func (req *offLedgerRequestData) Sign(key *cryptolib.KeyPair) OffLedgerRequest {
+func (req *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) OffLedgerRequest {
 	req.signature = offLedgerSignature{
 		publicKey: key.GetPublicKey(),
-		signature: key.GetPrivateKey().Sign(req.essenceBytes()),
+		signature: key.GetPrivateKey().Sign(req.EssenceBytes()),
 	}
 	return req
 }
 
-func (req *offLedgerRequestData) String() string {
+func (req *OffLedgerRequestData) String() string {
 	return fmt.Sprintf("offLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, nonce: %d }",
 		req.ID().String(),
 		req.SenderAccount().String(),
@@ -188,44 +188,44 @@ func (req *offLedgerRequestData) String() string {
 	)
 }
 
-func (req *offLedgerRequestData) TargetAddress() iotago.Address {
+func (req *OffLedgerRequestData) TargetAddress() iotago.Address {
 	return req.chainID.AsAddress()
 }
 
-func (req *offLedgerRequestData) TimeLock() time.Time {
+func (req *OffLedgerRequestData) TimeLock() time.Time {
 	return time.Time{}
 }
 
-func (req *offLedgerRequestData) Timestamp() time.Time {
+func (req *OffLedgerRequestData) Timestamp() time.Time {
 	// no request TX, return zero time
 	return time.Time{}
 }
 
 // VerifySignature verifies essence signature
-func (req *offLedgerRequestData) VerifySignature() error {
-	if !req.signature.publicKey.Verify(req.essenceBytes(), req.signature.signature) {
+func (req *OffLedgerRequestData) VerifySignature() error {
+	if !req.signature.publicKey.Verify(req.EssenceBytes(), req.signature.signature) {
 		return errors.New("invalid signature")
 	}
 	return nil
 }
 
-func (req *offLedgerRequestData) WithAllowance(allowance *Assets) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestData) WithAllowance(allowance *Assets) UnsignedOffLedgerRequest {
 	req.allowance = allowance.Clone()
 	return req
 }
 
-func (req *offLedgerRequestData) WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestData) WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest {
 	req.gasBudget = gasBudget
 	return req
 }
 
-func (req *offLedgerRequestData) WithNonce(nonce uint64) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestData) WithNonce(nonce uint64) UnsignedOffLedgerRequest {
 	req.nonce = nonce
 	return req
 }
 
 // WithSender can be used to estimate gas, without a signature
-func (req *offLedgerRequestData) WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest {
 	req.signature = offLedgerSignature{
 		publicKey: sender,
 		signature: []byte{},
