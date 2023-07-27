@@ -407,9 +407,8 @@ func (ch *Chain) collateBatch() []isc.Request {
 	if batchSize > maxBatch {
 		batchSize = maxBatch
 	}
-	ret := make([]isc.Request, 0)
-	ret = append(ret, requests[:batchSize]...)
-	return ret
+
+	return requests[:batchSize]
 }
 
 // batchLoop mimics behavior Wasp consensus
