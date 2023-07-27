@@ -41,7 +41,7 @@ func TestPruning(t *testing.T) {
 		},
 	})
 
-	// set blockKeepAmount to 10 as well
+	// set blockKeepAmount (active state pruning) to 10 as well
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), clu.Config.AllNodes(), 4, int32(blockKeepAmount))
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)

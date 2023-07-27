@@ -1,6 +1,7 @@
 package vmexceptions
 
 import (
+	"errors"
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -41,7 +42,10 @@ func (m *skipRequestException) Error() string {
 	return m.msg
 }
 
-func IsSkipRequestException(e interface{}) bool {
-	_, ok := e.(*skipRequestException)
-	return ok
+func IsSkipRequestException(e interface{}) error {
+	s, ok := e.(*skipRequestException)
+	if !ok {
+		return nil
+	}
+	return errors.New(s.msg)
 }
