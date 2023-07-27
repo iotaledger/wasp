@@ -677,6 +677,8 @@ github.com/second-state/WasmEdge-go v0.13.0 h1:lCirXbSeqqvLLI67e330+F65EhkbvtAi7
 github.com/second-state/WasmEdge-go v0.13.0/go.mod h1:HyBf9hVj1sRAjklsjc1Yvs9b5RcmthPG9z99dY78TKg=
 github.com/second-state/WasmEdge-go v0.13.1 h1:XbWDP5in/IeMeEktr6KokYZnq7aHaU3nH1wZAm3Yloo=
 github.com/second-state/WasmEdge-go v0.13.1/go.mod h1:HyBf9hVj1sRAjklsjc1Yvs9b5RcmthPG9z99dY78TKg=
+github.com/second-state/WasmEdge-go v0.13.2 h1:MVCdV03OEMKku+4FMwq4gNQhPTiNhlFSe5RNy7ujvzo=
+github.com/second-state/WasmEdge-go v0.13.2/go.mod h1:HyBf9hVj1sRAjklsjc1Yvs9b5RcmthPG9z99dY78TKg=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/shirou/gopsutil v3.21.11+incompatible h1:+1+c1VGhc88SSonWP6foOcLhvnKlUeu/erjjvaPEYiI=
 github.com/shirou/gopsutil v3.21.11+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
