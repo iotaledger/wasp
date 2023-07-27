@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -779,6 +780,46 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		require.NoError(t, err)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 0)
 		v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 50)
+	})
+
+	t.Run("accounting UTXOs and pruning", func(t *testing.T) {
+		// mint 100 tokens from chain 1 and withdraw those to L1
+		v := initWithdrawTest(t, 2*isc.Million)
+		{
+			allSenderAssets := v.ch.L2Assets(v.userAgentID)
+			v.req.AddAllowance(allSenderAssets)
+			v.req.AddBaseTokens(BaseTokensDepositFee)
+			_, err := v.ch.PostRequestSync(v.req, v.user)
+			require.NoError(t, err)
+			v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 100)
+			v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 0)
+		}
+
+		// create a new chain (ch2) with active state pruning set to keep only 1 block
+		blockKeepAmount := int32(1)
+		ch2, _ := v.env.NewChainExt(nil, 0, "evmchain", dict.Dict{
+			origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
+		})
+
+		// deposit 1 native token from L1 into ch2
+		err := ch2.DepositAssetsToL2(isc.NewAssets(1*isc.Million, iotago.NativeTokens{
+			{ID: v.nativeTokenID, Amount: big.NewInt(1)},
+		}), v.user)
+		require.NoError(t, err)
+
+		// make the chain produce 2 blocks (prune the previous block with the initial deposit info)
+		for i := 0; i < 2; i++ {
+			_, err = ch2.PostRequestSync(solo.NewCallParams("contract", "func"), nil)
+			require.Error(t, err)                      // dummy request, so an error is expected
+			require.NotNil(t, ch2.LastReceipt().Error) // but it produced a receipt, thus make the state progress
+		}
+
+		// deposit 1 more after the initial deposit block has been prunned
+		err = ch2.DepositAssetsToL2(isc.NewAssets(1*isc.Million, iotago.NativeTokens{
+			{ID: v.nativeTokenID, Amount: big.NewInt(1)},
+		}), v.user)
+		require.Error(t, err) // TODO this check needs to be changed after the "accounting UTXO pruning fix"
+		testmisc.RequireErrorToBe(t, err, "request has been skipped")
 	})
 }
 
