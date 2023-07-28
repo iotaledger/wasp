@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 func createChain(t *testing.T) isc.ChainID {
@@ -47,6 +48,7 @@ func createChain(t *testing.T) isc.ChainID {
 		nil,
 		utxoMap,
 		utxoIDs,
+		allmigrations.DefaultScheme.LatestSchemaVersion(),
 	)
 	require.NoError(t, err)
 	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)

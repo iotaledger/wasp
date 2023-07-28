@@ -12,15 +12,15 @@ import (
 )
 
 func nftsMapKey(agentID isc.AgentID) string {
-	return prefixNFTs + string(agentID.Bytes())
+	return PrefixNFTs + string(agentID.Bytes())
 }
 
 func nftsByCollectionMapKey(agentID isc.AgentID, collectionKey kv.Key) string {
-	return prefixNFTsByCollection + string(agentID.Bytes()) + string(collectionKey)
+	return PrefixNFTsByCollection + string(agentID.Bytes()) + string(collectionKey)
 }
 
 func foundriesMapKey(agentID isc.AgentID) string {
-	return prefixFoundries + string(agentID.Bytes())
+	return PrefixFoundries + string(agentID.Bytes())
 }
 
 func nftsMapR(state kv.KVStoreReader, agentID isc.AgentID) *collections.ImmutableMap {
@@ -31,7 +31,7 @@ func nftsMap(state kv.KVStore, agentID isc.AgentID) *collections.Map {
 	return collections.NewMap(state, nftsMapKey(agentID))
 }
 
-func nftDataMap(state kv.KVStore) *collections.Map {
+func NFTDataMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyNFTData)
 }
 
@@ -68,11 +68,11 @@ func saveNFTData(state kv.KVStore, nft *isc.NFT) {
 	// note we store the NFT data without the leading id bytes
 	ww.Skip().ReadN(nft.ID[:])
 	ww.Write(nft)
-	nftDataMap(state).SetAt(nft.ID[:], ww.Bytes())
+	NFTDataMap(state).SetAt(nft.ID[:], ww.Bytes())
 }
 
 func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
-	allNFTs := nftDataMap(state)
+	allNFTs := NFTDataMap(state)
 	if !allNFTs.HasAt(id[:]) {
 		panic("deleteNFTData: inconsistency - NFT data doesn't exists")
 	}

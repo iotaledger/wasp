@@ -8,6 +8,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
+func newFoundriesArray(state kv.KVStore) *collections.Array {
+	return collections.NewArray(state, keyNewFoundries)
+}
+
 func accountFoundriesMap(state kv.KVStore, agentID isc.AgentID) *collections.Map {
 	return collections.NewMap(state, foundriesMapKey(agentID))
 }
@@ -16,7 +20,7 @@ func accountFoundriesMapR(state kv.KVStoreReader, agentID isc.AgentID) *collecti
 	return collections.NewMapReadOnly(state, foundriesMapKey(agentID))
 }
 
-func allFoundriesMap(state kv.KVStore) *collections.Map {
+func AllFoundriesMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyFoundryOutputRecords)
 }
 
@@ -27,25 +31,39 @@ func allFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 // SaveFoundryOutput stores foundry output into the map of all foundry outputs (compressed form)
 func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
 	foundryRec := foundryOutputRec{
+		// TransactionID is unknown yet, will be filled next block
+		OutputID:    iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
 		Amount:      f.Amount,
 		TokenScheme: f.TokenScheme,
 		Metadata:    []byte{},
-		BlockIndex:  blockIndex,
-		OutputIndex: outputIndex,
 	}
-	allFoundriesMap(state).SetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
+	AllFoundriesMap(state).SetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
+	newFoundriesArray(state).Push(codec.EncodeUint32(f.SerialNumber))
+}
+
+func updateFoundryOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
+	newFoundries := newFoundriesArray(state)
+	allFoundries := AllFoundriesMap(state)
+	n := newFoundries.Len()
+	for i := uint32(0); i < n; i++ {
+		k := newFoundries.GetAt(i)
+		rec := mustFoundryOutputRecFromBytes(allFoundries.GetAt(k))
+		rec.OutputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.OutputID.Index())
+		allFoundries.SetAt(k, rec.Bytes())
+	}
+	newFoundries.Erase()
 }
 
 // DeleteFoundryOutput deletes foundry output from the map of all foundries
 func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
-	allFoundriesMap(state).DelAt(codec.EncodeUint32(sn))
+	AllFoundriesMap(state).DelAt(codec.EncodeUint32(sn))
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index
-func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
+func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, iotago.OutputID) {
 	data := allFoundriesMapR(state).GetAt(codec.EncodeUint32(sn))
 	if data == nil {
-		return nil, 0, 0
+		return nil, iotago.OutputID{}
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
 
@@ -59,7 +77,7 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*
 		},
 		Features: nil,
 	}
-	return ret, rec.BlockIndex, rec.OutputIndex
+	return ret, rec.OutputID
 }
 
 // hasFoundry checks if specific account owns the foundry

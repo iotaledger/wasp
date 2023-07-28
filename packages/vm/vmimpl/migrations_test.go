@@ -97,7 +97,10 @@ func TestMigrationsStateIndex0(t *testing.T) {
 	require.EqualValues(t, 0, env.getSchemaVersion())
 
 	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		env.vmctx.runMigrations(chainState, 0, []migrations.Migration{env.panic, env.panic, env.panic})
+		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
+			BaseSchemaVersion: 0,
+			Migrations:        []migrations.Migration{env.panic, env.panic, env.panic},
+		})
 	})
 
 	require.EqualValues(t, 3, env.getSchemaVersion())
@@ -109,7 +112,10 @@ func TestMigrationsStateIndex1(t *testing.T) {
 	require.EqualValues(t, 0, env.getSchemaVersion())
 
 	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		env.vmctx.runMigrations(chainState, 0, []migrations.Migration{env.incCounter, env.incCounter, env.incCounter})
+		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
+			BaseSchemaVersion: 0,
+			Migrations:        []migrations.Migration{env.incCounter, env.incCounter, env.incCounter},
+		})
 	})
 
 	require.EqualValues(t, 3, env.counter)
@@ -122,7 +128,10 @@ func TestMigrationsStateIndex1Current1(t *testing.T) {
 	env.setSchemaVersion(1)
 
 	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		env.vmctx.runMigrations(chainState, 0, []migrations.Migration{env.panic, env.incCounter, env.incCounter})
+		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
+			BaseSchemaVersion: 0,
+			Migrations:        []migrations.Migration{env.panic, env.incCounter, env.incCounter},
+		})
 	})
 
 	require.EqualValues(t, 2, env.counter)
@@ -135,7 +144,10 @@ func TestMigrationsStateIndex1Current2Base1(t *testing.T) {
 	env.setSchemaVersion(2)
 
 	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		env.vmctx.runMigrations(chainState, 1, []migrations.Migration{env.panic, env.incCounter, env.incCounter})
+		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
+			BaseSchemaVersion: 1,
+			Migrations:        []migrations.Migration{env.panic, env.incCounter, env.incCounter},
+		})
 	})
 
 	require.EqualValues(t, 2, env.counter)

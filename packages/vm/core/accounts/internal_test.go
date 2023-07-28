@@ -344,15 +344,14 @@ func TestTransferNFTs(t *testing.T) {
 
 func TestFoundryOutputRecSerialization(t *testing.T) {
 	o := foundryOutputRec{
-		Amount: 300,
+		OutputID: iotago.OutputID{1, 2, 3},
+		Amount:   300,
 		TokenScheme: &iotago.SimpleTokenScheme{
 			MaximumSupply: big.NewInt(1000),
 			MintedTokens:  big.NewInt(20),
 			MeltedTokens:  big.NewInt(1),
 		},
-		Metadata:    []byte("Tralala"),
-		BlockIndex:  3,
-		OutputIndex: 2,
+		Metadata: []byte("Tralala"),
 	}
 	rwutil.ReadWriteTest(t, &o, new(foundryOutputRec))
 	rwutil.BytesTest(t, &o, foundryOutputRecFromBytes)

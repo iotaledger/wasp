@@ -101,10 +101,14 @@ func (m *ImmutableMap) Len() uint32 {
 
 // Erase the map.
 func (m *Map) Erase() {
+	var keys [][]byte
 	m.IterateKeys(func(elemKey []byte) bool {
-		m.DelAt(elemKey)
+		keys = append(keys, elemKey)
 		return true
 	})
+	for _, k := range keys {
+		m.DelAt(k)
+	}
 }
 
 // Iterate non-deterministic
