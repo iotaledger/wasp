@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	MinGasFee      = uint64(100)
+	MinGasFee      = uint64(100_000)
 	StorageDeposit = uint64(20_000)
 
 	FnAccountID              = int32(-1)

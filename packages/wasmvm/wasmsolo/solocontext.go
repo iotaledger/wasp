@@ -51,7 +51,6 @@ var (
 )
 
 const (
-	MinGasFee         = 100
 	L2FundsAgent      = 10 * isc.Million
 	L2FundsContract   = 10 * isc.Million
 	L2FundsCreator    = 20 * isc.Million
@@ -406,7 +405,7 @@ func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScN
 // tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent(name string) *SoloAgent {
 	agent := NewSoloAgent(ctx.Chain.Env, name)
-	ctx.Chain.MustDepositBaseTokensToL2(L2FundsAgent+MinGasFee, agent.Pair)
+	ctx.Chain.MustDepositBaseTokensToL2(L2FundsAgent+wasmlib.MinGasFee, agent.Pair)
 	return agent
 }
 
