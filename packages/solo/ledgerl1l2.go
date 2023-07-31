@@ -297,7 +297,7 @@ func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount in
 	return err
 }
 
-// DepositAssetsToL2 deposits ftokens on user's on-chain account
+// DepositAssetsToL2 deposits ftokens on user's on-chain account, if user is nil, then chain owner is assigned
 func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user *cryptolib.KeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).

@@ -249,7 +249,10 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	// unless absolutely necessary. Better to just make sure that the
 	// storage deposit is large enough, since it will be returned anyway.
 	const gasFee = wasmlib.MinGasFee
-	const gasReserve = wasmlib.MinGasFee
+	var gasReserve = wasmlib.MinGasFee
+	if f.Params.GasReserve().Exists() {
+		gasReserve = f.Params.GasReserve().Value()
+	}
 	const storageDeposit = wasmlib.StorageDeposit
 
 	// note: gasReserve is the gas necessary to run accounts.transferAllowanceTo

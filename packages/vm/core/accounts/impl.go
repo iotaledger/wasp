@@ -174,8 +174,9 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 	// save the assets to send to the transfer request, as specified by the allowance
 	assets := allowance.Clone()
 
+	defaultMinGasFee := uint64(100_000)
 	// deduct the gas reserve GAS2 from the allowance, if possible
-	gasReserve := ctx.Params().MustGetUint64(ParamGasReserve, 100)
+	gasReserve := ctx.Params().MustGetUint64(ParamGasReserve, defaultMinGasFee)
 	if allowance.BaseTokens < gasReserve {
 		panic(ErrNotEnoughAllowance)
 	}
@@ -183,7 +184,7 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 
 	// Warning: this will transfer all assets into the accounts core contract's L2 account.
 	// Be sure everything transfers out again, or assets will be stuck forever.
-	_ = ctx.TransferAllowedFunds(ctx.AccountID())
+	ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// Send the specified assets, which should include GAS2 and SD, as part of the
 	// accounts.TransferAllowanceTo() request on the origin chain.

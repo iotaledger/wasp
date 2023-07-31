@@ -262,7 +262,10 @@ pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContex
     // unless absolutely necessary. Better to just make sure that the
     // storage deposit is large enough, since it will be returned anyway.
     let gas_fee: u64 = MIN_GAS_FEE;
-    let gas_reserve: u64 = MIN_GAS_FEE;
+    let mut gas_reserve: u64 = MIN_GAS_FEE;
+    if f.params.gas_reserve().exists() {
+        gas_reserve = f.params.gas_reserve().value();
+    }
     let storage_deposit: u64 = STORAGE_DEPOSIT;
 
     // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo

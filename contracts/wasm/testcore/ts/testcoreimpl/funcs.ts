@@ -235,7 +235,10 @@ export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.Withdraw
     // unless absolutely necessary. Better to just make sure that the
     // storage deposit is large enough, since it will be returned anyway.
     const gasFee: u64 = wasmlib.MinGasFee;
-    const gasReserve: u64 = wasmlib.MinGasFee;
+    let gasReserve: u64 = wasmlib.MinGasFee;
+    if (f.params.gasReserve().exists()) {
+        gasReserve = f.params.gasReserve().value();
+    }
     const storageDeposit: u64 = wasmlib.StorageDeposit;
 
     // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
