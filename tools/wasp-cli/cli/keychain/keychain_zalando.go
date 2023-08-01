@@ -16,6 +16,9 @@ func NewKeyChainZalando() *KeyChainZalando {
 	return &KeyChainZalando{}
 }
 
+// IsKeyChainAvailable validates existence of a keychain by querying an entry.
+// If a keychain is not available, it will throw an internal OS error,
+// while an existing keychain will return ErrNotFound (as the key does not exist)
 func IsKeyChainAvailable() bool {
 	_, err := keyring.Get("", "")
 

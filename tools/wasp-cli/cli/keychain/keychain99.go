@@ -12,6 +12,10 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
+/**
+Will most likely be removed and replaced by zalando/go-keyring + `keychain_file.go`
+*/
+
 type KeyChain99 struct {
 	Keyring keyring.Keyring
 }

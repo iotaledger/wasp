@@ -14,8 +14,6 @@ import (
 )
 
 const fileName = "secrets.db"
-const passwordValidationKey = "password.validation"
-const passwordValidationValue = "VALID_PW"
 
 var ErrInvalidPassword = errors.New("invalid password")
 
@@ -93,9 +91,11 @@ func (k *KeyChainFile) Get(key string) ([]byte, error) {
 		defer password.Destroy()
 
 		payload, _, err := jose.Decode(string(val), password.String())
-		if strings.Contains(err.Error(), "aes.KeyUnwrap(): integrity check failed.") {
-			return nil, ErrInvalidPassword
-		} else if err != nil {
+		if err != nil {
+			// There is no proper error definition available to check against, so it needs to be hardcoded here.
+			if strings.Contains(err.Error(), "aes.KeyUnwrap") {
+				return nil, ErrInvalidPassword
+			}
 			return nil, err
 		}
 
@@ -135,24 +135,6 @@ func (k *KeyChainFile) Set(key string, value []byte) error {
 	}
 
 	return nil
-}
-
-func (k *KeyChainFile) setValidationPassword() error {
-	err := k.Set(passwordValidationKey, []byte(passwordValidationValue))
-	return err
-}
-
-func (k *KeyChainFile) validatePassword() (bool, error) {
-	str, err := k.Get(passwordValidationKey)
-	if err != nil {
-		return false, err
-	}
-
-	if string(str) == passwordValidationValue {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 func (k *KeyChainFile) SetSeed(seed cryptolib.Seed) error {

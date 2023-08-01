@@ -129,7 +129,9 @@ var keyChain keychain.KeyChain
 
 func GetKeyChain() keychain.KeyChain {
 	if keyChain == nil {
-		fmt.Printf("KeyChain available: %v\n", keychain.IsKeyChainAvailable())
+		fmt.Printf("\nKeyChain available: %v\n", keychain.IsKeyChainAvailable())
+
+		const enableKeyChain = false
 
 		if keychain.IsKeyChainAvailable() {
 			fmt.Println("Using OS keychain")

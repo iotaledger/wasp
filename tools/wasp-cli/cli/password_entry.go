@@ -10,8 +10,10 @@ import (
 )
 
 func ReadPasswordFromStdin() *memguard.Enclave {
+	log.Printf("\nPassword required to open/create secured storage.\n")
 	log.Printf("Password: ")
 	passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:nolintlint,unconvert // int cast is needed for windows
 	log.Check(err)
+	log.Printf("\n")
 	return memguard.NewEnclave(passwordBytes)
 }
