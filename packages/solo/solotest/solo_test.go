@@ -1,6 +1,7 @@
 package solo_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,8 +14,10 @@ import (
 // This test is an example of how to generate a snapshot from a Solo chain.
 // The snapshot is especially useful to test migrations.
 func TestSaveSnapshot(t *testing.T) {
-	// skipped because the generated dump is fairly large
-	t.SkipNow()
+	// skipped by default because the generated dump is fairly large
+	if os.Getenv("ENABLE_SOLO_SNAPSHOT") == "" {
+		t.SkipNow()
+	}
 
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
@@ -50,7 +53,7 @@ func TestSaveSnapshot(t *testing.T) {
 // This test is an example of how to restore a Solo snapshot.
 // The snapshot is especially useful to test migrations.
 func TestLoadSnapshot(t *testing.T) {
-	// skipped because the generated dump is fairly large
+	// skipped because this is just an example, the dump is not committed
 	t.SkipNow()
 
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})

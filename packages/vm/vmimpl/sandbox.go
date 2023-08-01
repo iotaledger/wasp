@@ -173,8 +173,8 @@ func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.Asset
 	creditToAccount(s.reqctx.chainStateWithGasBurn(), agentID, tokens)
 }
 
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	s.reqctx.RetryUnprocessable(req, blockIndex, outputIndex)
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, outputID iotago.OutputID) {
+	s.reqctx.RetryUnprocessable(req, outputID)
 }
 
 func (s *contractSandbox) totalGasTokens() *isc.Assets {

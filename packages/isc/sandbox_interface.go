@@ -137,7 +137,7 @@ type Privileged interface {
 	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, assets *Assets)
 	DebitFromAccount(AgentID, *Assets)
 	CreditToAccount(AgentID, *Assets)
-	RetryUnprocessable(req Request, blockIndex uint32, outputIndex uint16)
+	RetryUnprocessable(req Request, outputID iotago.OutputID)
 	OnWriteReceipt(CoreCallbackFunc)
 	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 }
