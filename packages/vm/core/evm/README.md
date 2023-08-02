@@ -49,10 +49,10 @@ the Metamask connection parameters for any given ISC chain in the Dashboard.
     wasp-cli chain deploy --chain=mychain --evm-chainid 1234
     ```
 
-4. Send some iotas from your L1 account to any Ethereum account on L2 (e.g. to cover for gas fees):
+4. Send some base tokens from your L1 account to any Ethereum account on L2 (e.g. to cover for gas fees):
 
     ```
-    wasp-cli chain deposit 0xa1b2c3d4... iota:1000000
+    wasp-cli chain deposit 0xa1b2c3d4... base:1000000
     ```
 
 5. Visit the Wasp dashboard (`<URL>/wasp/dashboard` when using `node-docker-setup`), go to `Chains`, then to

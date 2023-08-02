@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
+// ChainBackend provides access to the underlying ISC chain.
 type ChainBackend interface {
 	EVMSendTransaction(tx *types.Transaction) error
 	EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error)
