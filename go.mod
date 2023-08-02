@@ -50,7 +50,7 @@ require (
 	go.dedis.ch/kyber/v3 v3.1.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/dig v1.17.0
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.25.0
 	golang.org/x/crypto v0.11.0
 	golang.org/x/exp v0.0.0-20230724220655-d98519c11495
 	golang.org/x/net v0.13.0
