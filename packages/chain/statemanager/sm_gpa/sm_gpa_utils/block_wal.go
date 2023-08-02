@@ -24,7 +24,10 @@ type blockWAL struct {
 	metrics *metrics.ChainBlockWALMetrics
 }
 
-const constBlockWALFileSuffix = ".blk"
+const (
+	constBlockWALFileSuffix    = ".blk"
+	constBlockWALTmpFileSuffix = ".tmp"
+)
 
 func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
@@ -45,26 +48,40 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 func (bwT *blockWAL) Write(block state.Block) error {
 	blockIndex := block.StateIndex()
 	commitment := block.L1Commitment()
-	fileName := blockWALFileName(commitment.BlockHash())
-	filePath := filepath.Join(bwT.dir, fileName)
-	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+	tmpFileName := blockWALTmpFileName(commitment.BlockHash())
+	tmpFilePath := filepath.Join(bwT.dir, tmpFileName)
+	err := func() error { // Function is used to make defered close occur when it is needed even if write is successful
+		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+		if err != nil {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("failed to create temporary file %s for writing block index %v: %w", tmpFileName, blockIndex, err)
+		}
+		defer f.Close()
+		blockBytes := block.Bytes()
+		n, err := f.Write(blockBytes)
+		if err != nil {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("writing block index %v data to temporary file %s failed: %w", blockIndex, tmpFileName, err)
+		}
+		if len(blockBytes) != n {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("only %v of total %v bytes of block index %v were written to temporary file %s", n, len(blockBytes), blockIndex, tmpFileName)
+		}
+		return nil
+	}()
 	if err != nil {
-		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("opening file %s for writing block index %v failed: %w", fileName, blockIndex, err)
+		return err
 	}
-	defer f.Close()
-	blockBytes := block.Bytes()
-	n, err := f.Write(blockBytes)
+	finalFileName := blockWALFileName(commitment.BlockHash())
+	finalFilePath := filepath.Join(bwT.dir, finalFileName)
+	err = os.Rename(tmpFilePath, finalFilePath)
 	if err != nil {
-		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("writing block index %v data to file %s failed: %w", blockIndex, fileName, err)
+		return fmt.Errorf("failed to move temporary WAL file %s to permanent location %s: %v",
+			tmpFilePath, finalFilePath, err)
 	}
-	if len(blockBytes) != n {
-		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("only %v of total %v bytes of block index %v were written to file %s", n, len(blockBytes), blockIndex, fileName)
-	}
+
 	bwT.metrics.BlockWritten(block.StateIndex())
-	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, fileName)
+	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, finalFileName)
 	return nil
 }
 
@@ -162,4 +179,8 @@ func blockFromFilePath(filePath string) (state.Block, error) {
 
 func blockWALFileName(blockHash state.BlockHash) string {
 	return blockHash.String() + constBlockWALFileSuffix
+}
+
+func blockWALTmpFileName(blockHash state.BlockHash) string {
+	return blockWALFileName(blockHash) + constBlockWALTmpFileSuffix
 }
