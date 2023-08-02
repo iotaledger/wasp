@@ -3,6 +3,7 @@ package blocklog
 import (
 	"io"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -15,13 +16,20 @@ import (
 )
 
 type unprocessableRequestRecord struct {
-	blockIndex  uint32
-	outputIndex uint16
-	req         isc.Request
+	outputID iotago.OutputID
+	req      isc.Request
 }
 
 func unprocessableRequestRecordFromBytes(data []byte) (*unprocessableRequestRecord, error) {
 	return rwutil.ReadFromBytes(data, new(unprocessableRequestRecord))
+}
+
+func mustUnprocessableRequestRecordFromBytes(data []byte) *unprocessableRequestRecord {
+	rec, err := unprocessableRequestRecordFromBytes(data)
+	if err != nil {
+		panic(err)
+	}
+	return rec
 }
 
 func (rec *unprocessableRequestRecord) Bytes() []byte {
@@ -30,18 +38,20 @@ func (rec *unprocessableRequestRecord) Bytes() []byte {
 
 func (rec *unprocessableRequestRecord) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rec.blockIndex = rr.ReadUint32()
-	rec.outputIndex = rr.ReadUint16()
+	rr.ReadN(rec.outputID[:])
 	rec.req = isc.RequestFromReader(rr)
 	return rr.Err
 }
 
 func (rec *unprocessableRequestRecord) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint32(rec.blockIndex)
-	ww.WriteUint16(rec.outputIndex)
+	ww.WriteN(rec.outputID[:])
 	ww.Write(rec.req)
 	return ww.Err
+}
+
+func newUnprocessableRequestsArray(state kv.KVStore) *collections.Array {
+	return collections.NewArray(state, prefixNewUnprocessableRequests)
 }
 
 func unprocessableMap(state kv.KVStore) *collections.Map {
@@ -55,20 +65,34 @@ func unprocessableMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 // save request reference / address of the sender
 func SaveUnprocessable(state kv.KVStore, req isc.OnLedgerRequest, blockIndex uint32, outputIndex uint16) {
 	rec := unprocessableRequestRecord{
-		blockIndex:  blockIndex,
-		outputIndex: outputIndex,
-		req:         req,
+		// TransactionID is unknown yet, will be filled next block
+		outputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
+		req:      req,
 	}
 	unprocessableMap(state).SetAt(req.ID().Bytes(), rec.Bytes())
+	newUnprocessableRequestsArray(state).Push(req.ID().Bytes())
 }
 
-func GetUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) (req isc.Request, blockIndex uint32, outputIndex uint16, err error) {
+func updateUnprocessableRequestsOutputID(state kv.KVStore, anchorTxID iotago.TransactionID) {
+	newReqs := newUnprocessableRequestsArray(state)
+	allReqs := unprocessableMap(state)
+	n := newReqs.Len()
+	for i := uint32(0); i < n; i++ {
+		k := newReqs.GetAt(i)
+		rec := mustUnprocessableRequestRecordFromBytes(allReqs.GetAt(k))
+		rec.outputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.outputID.Index())
+		allReqs.SetAt(k, rec.Bytes())
+	}
+	newReqs.Erase()
+}
+
+func GetUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) (req isc.Request, outputID iotago.OutputID, err error) {
 	recData := unprocessableMapR(state).GetAt(reqID.Bytes())
 	rec, err := unprocessableRequestRecordFromBytes(recData)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, iotago.OutputID{}, err
 	}
-	return rec.req, rec.blockIndex, rec.outputIndex, nil
+	return rec.req, rec.outputID, nil
 }
 
 func HasUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) bool {
@@ -102,14 +126,14 @@ func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
 	if !exists {
 		panic(ErrUnprocessableAlreadyExist)
 	}
-	rec, blockIndex, outputIndex, err := GetUnprocessable(ctx.StateR(), reqID)
+	rec, outputID, err := GetUnprocessable(ctx.StateR(), reqID)
 	if err != nil {
 		panic(ErrUnprocessableUnexpected)
 	}
 	if !rec.SenderAccount().Equals(ctx.Request().SenderAccount()) {
 		panic(ErrUnprocessableWrongSender)
 	}
-	ctx.Privileged().RetryUnprocessable(rec, blockIndex, outputIndex)
+	ctx.Privileged().RetryUnprocessable(rec, outputID)
 	return nil
 }
 
