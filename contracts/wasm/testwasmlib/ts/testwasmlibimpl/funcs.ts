@@ -780,3 +780,20 @@ export function viewCheckEthEmptyAddressAndAgentID(ctx: wasmlib.ScViewContext, f
 export function viewCheckEthInvalidEmptyAddressFromString(ctx: wasmlib.ScViewContext, f: sc.CheckEthInvalidEmptyAddressFromStringContext): void {
     wasmtypes.addressFromString("0x00");
 }
+
+export function funcActivate(ctx: wasmlib.ScFuncContext, f: sc.ActivateContext): void {
+    f.state.active().setValue(true);
+    const deposit = ctx.allowance().baseTokens();
+    const transfer = wasmlib.ScTransfer.baseTokens(deposit);
+    ctx.transferAllowed(ctx.accountID(), transfer);
+    const delay = f.params.seconds().value();
+    sc.ScFuncs.deactivate(ctx).func.delay(delay).post();
+}
+
+export function funcDeactivate(ctx: wasmlib.ScFuncContext, f: sc.DeactivateContext): void {
+    f.state.active().setValue(false);
+}
+
+export function viewGetActive(ctx: wasmlib.ScViewContext, f: sc.GetActiveContext): void {
+    f.results.active().setValue(f.state.active().value());
+}

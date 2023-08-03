@@ -793,3 +793,20 @@ func viewCheckEthEmptyAddressAndAgentID(ctx wasmlib.ScViewContext, f *CheckEthEm
 func viewCheckEthInvalidEmptyAddressFromString(_ wasmlib.ScViewContext, _ *CheckEthInvalidEmptyAddressFromStringContext) {
 	_ = wasmtypes.AddressFromString("0x00")
 }
+
+func funcActivate(ctx wasmlib.ScFuncContext, f *ActivateContext) {
+	f.State.Active().SetValue(true)
+	deposit := ctx.Allowance().BaseTokens()
+	transfer := wasmlib.ScTransferFromBaseTokens(deposit)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
+	delay := f.Params.Seconds().Value()
+	testwasmlib.ScFuncs.Deactivate(ctx).Func.Delay(delay).Post()
+}
+
+func funcDeactivate(_ wasmlib.ScFuncContext, f *DeactivateContext) {
+	f.State.Active().SetValue(false)
+}
+
+func viewGetActive(_ wasmlib.ScViewContext, f *GetActiveContext) {
+	f.Results.Active().SetValue(f.State.Active().Value())
+}
