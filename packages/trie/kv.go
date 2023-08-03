@@ -59,12 +59,22 @@ func (p *kvStorePartition) Set(key []byte, value []byte) {
 	p.s.Set(concat([]byte{p.prefix}, key), value)
 }
 
-func (p *kvStorePartition) Iterate(func(k []byte, v []byte) bool) {
-	panic("unimplemented")
+func (p *kvStorePartition) Iterate(f func([]byte, []byte) bool) {
+	p.s.Iterate(func(k, v []byte) bool {
+		if k[0] == p.prefix {
+			return f(k[1:], v)
+		}
+		return true
+	})
 }
 
-func (p *kvStorePartition) IterateKeys(func(k []byte) bool) {
-	panic("unimplemented")
+func (p *kvStorePartition) IterateKeys(f func([]byte) bool) {
+	p.s.IterateKeys(func(k []byte) bool {
+		if k[0] == p.prefix {
+			return f(k[1:])
+		}
+		return true
+	})
 }
 
 func makeKVStorePartition(s KVStore, prefix byte) *kvStorePartition {
