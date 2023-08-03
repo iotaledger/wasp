@@ -22,6 +22,8 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
+// jsonRPCSoloBackend is the implementation of [jsonrpc.ChainBackend] for Solo
+// tests.
 type jsonRPCSoloBackend struct {
 	Chain     *Chain
 	baseToken *parameters.BaseToken

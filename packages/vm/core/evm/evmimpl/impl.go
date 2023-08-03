@@ -45,12 +45,23 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
+// SetInitialState initializes the evm core contract and the Ethereum genesis
+// block on a newly created ISC chain.
 func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
-	// add the standard ISC contract at arbitrary address 0x1074...
+	// Ethereum genesis block configuration
 	genesisAlloc := core.GenesisAlloc{}
-	deployMagicContractOnGenesis(genesisAlloc)
 
-	// add the standard ERC20 contract
+	// add the ISC magic contract at address 0x10740000...00
+	genesisAlloc[iscmagic.Address] = core.GenesisAccount{
+		// Dummy code, because some contracts check the code size before calling
+		// the contract.
+		// The EVM code itself will never get executed; see type [magicContract].
+		Code:    common.Hex2Bytes("600180808053f3"),
+		Storage: map[common.Hash]common.Hash{},
+		Balance: nil,
+	}
+
+	// add the ERC20BaseTokens contract at address 0x10740100...00
 	genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
 		Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
 		Storage: map[common.Hash]common.Hash{},
@@ -58,7 +69,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	}
 	addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 
-	// add the standard ERC721 contract
+	// add the ERC721NFTs contract at address 0x10740300...00
 	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
 		Code:    iscmagic.ERC721NFTsRuntimeBytecode,
 		Storage: map[common.Hash]common.Hash{},
@@ -66,9 +77,9 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	}
 	addToPrivileged(evmPartition, iscmagic.ERC721NFTsAddress)
 
-	// chain always starts with default gas fee & limits configuration
 	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
+	// create the Ethereum genesis block
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
@@ -109,6 +120,8 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		false,
 	)
 
+	// Any gas burned by the EVM is converted to ISC gas units and burned as
+	// ISC gas.
 	chainInfo := ctx.ChainInfo()
 	ctx.Privileged().GasBurnEnable(true)
 	burnGasErr := panicutil.CatchPanic(
@@ -130,7 +143,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		receipt.Status = types.ReceiptStatusFailed
 	}
 
-	// amend the gas usage (to include any ISC gas from sandbox calls)
+	// amend the gas usage (to include any ISC gas burned in sandbox calls)
 	{
 		realGasUsed := gas.ISCGasBudgetToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
 		if realGasUsed > receipt.GasUsed {
@@ -139,7 +152,8 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		}
 	}
 
-	// make sure we store the EVM tx/receipt in the BlockchainDB *after* the ISC request is reverted
+	// make sure we always store the EVM tx/receipt in the BlockchainDB, even
+	// if the ISC request is reverted
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})

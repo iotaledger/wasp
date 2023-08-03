@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
+// WaspEVMBackend is the implementation of [ChainBackend] for the production environment.
 type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey

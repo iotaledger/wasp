@@ -13,10 +13,16 @@ import (
 var Contract = coreutil.NewContract(evmnames.Contract)
 
 var (
-	// EVM state
+	// FuncSendTransaction is the main entry point, called by an
+	// evmOffLedgerTxRequest in order to process an Ethereum tx (e.g.
+	// eth_sendRawTransaction).
 	FuncSendTransaction = coreutil.Func(evmnames.FuncSendTransaction)
-	FuncCallContract    = coreutil.Func(evmnames.FuncCallContract)
-	FuncGetChainID      = coreutil.ViewFunc(evmnames.FuncGetChainID)
+
+	// FuncCallContract is the entry point called by an evmOffLedgerCallRequest
+	// in order to process a view call (e.g. eth_call).
+	FuncCallContract = coreutil.Func(evmnames.FuncCallContract)
+
+	FuncGetChainID = coreutil.ViewFunc(evmnames.FuncGetChainID)
 
 	FuncRegisterERC20NativeToken              = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
 	FuncRegisterERC20NativeTokenOnRemoteChain = coreutil.Func(evmnames.FuncRegisterERC20NativeTokenOnRemoteChain)
@@ -57,11 +63,3 @@ const (
 
 // Gas is charged in isc VM (L1 currencies), not ETH
 var GasPrice = big.NewInt(0)
-
-const (
-	// keyEmulatorState is the subrealm prefix for the data stored by the emulator (StateDB + BlockchainDB)
-	keyEmulatorState = "s"
-
-	// keyISCMagic is the subrealm prefix for the ISC magic contract
-	keyISCMagic = "m"
-)

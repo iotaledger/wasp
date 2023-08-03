@@ -27,6 +27,11 @@ import (
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
+// EthService contains the implementations for the `eth_*` JSONRPC endpoints.
+//
+// Each endpoint corresponds to a public receiver with the same name. For
+// example, `eth_getTransactionCount` corresponds to
+// [EthService.GetTransactionCount].
 type EthService struct {
 	evmChain *EVMChain
 	accounts *AccountManager
