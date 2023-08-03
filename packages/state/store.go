@@ -5,6 +5,7 @@ package state
 
 import (
 	"errors"
+	"io"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -208,10 +209,13 @@ func (s *store) LatestTrieRoot() (trie.Hash, error) {
 	return s.db.latestTrieRoot()
 }
 
-func (s *store) TakeSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
-	return s.db.takeSnapshot(root, snapshot)
+func (s *store) TakeSnapshot(root trie.Hash, w io.Writer) error {
+	return s.db.takeSnapshot(root, w)
 }
 
-func (s *store) RestoreSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
-	return s.db.restoreSnapshot(root, snapshot)
+func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader) error {
+	if s.db.hasBlock(root) {
+		return errors.New("trie root already in store")
+	}
+	return s.db.restoreSnapshot(root, r)
 }

@@ -4,6 +4,7 @@
 package state_test
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -437,7 +438,7 @@ func TestPruning2(t *testing.T) {
 }
 
 func TestSnapshot(t *testing.T) {
-	snapshot := mapdb.NewMapDB()
+	snapshot := new(bytes.Buffer)
 
 	trieRoot, blockHash := func() (trie.Hash, state.BlockHash) {
 		db := mapdb.NewMapDB()
@@ -458,7 +459,7 @@ func TestSnapshot(t *testing.T) {
 
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{state.NewStore(db)}
-	err := cs.RestoreSnapshot(trieRoot, snapshot)
+	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
 
 	block := cs.LatestBlock()
