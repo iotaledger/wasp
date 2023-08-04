@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -447,6 +448,9 @@ func TestSnapshot(t *testing.T) {
 			d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 			d.Set(kv.Key(fmt.Sprintf("k%d", i)), []byte("v"))
 			d.Set("k", []byte{i})
+			if i == 1 {
+				d.Set("x", []byte(strings.Repeat("v", 70)))
+			}
 			block := cs.Commit(d)
 			err := cs.SetLatest(block.TrieRoot())
 			require.NoError(t, err)
@@ -474,4 +478,5 @@ func TestSnapshot(t *testing.T) {
 		require.EqualValues(t, []byte("v"), state.Get(kv.Key(fmt.Sprintf("k%d", i))))
 	}
 	require.EqualValues(t, []byte{10}, state.Get("k"))
+	require.EqualValues(t, []byte(strings.Repeat("v", 70)), state.Get("x"))
 }

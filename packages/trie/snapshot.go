@@ -12,7 +12,7 @@ func (tr *TrieReader) TakeSnapshot(w io.Writer) error {
 	// If the cap is reached, the generated snapshot will contain duplicate information,
 	// but will still be correct.
 	seenNodes := make(map[Hash]struct{})
-	seenValues := make(map[Hash]struct{})
+	seenValues := make(map[string]struct{})
 	const mapSizeCap = 2_000_000 / HashSizeBytes // 2 MB max for each map
 
 	ww := rwutil.NewWriter(w)
@@ -24,16 +24,18 @@ func (tr *TrieReader) TakeSnapshot(w io.Writer) error {
 			seenNodes[n.Commitment] = struct{}{}
 		}
 
-		nodeKey := n.Commitment.Bytes()
-		ww.WriteBytes(tr.nodeStore.trieStore.Get(nodeKey))
+		ww.WriteBytes(n.Bytes())
 		if n.Terminal != nil && !n.Terminal.IsValue {
-			var k Hash
-			copy(k[:], n.Terminal.Bytes())
-			if _, seen := seenValues[k]; !seen {
-				ww.WriteBytes(tr.nodeStore.valueStore.Get(k[:]))
+			valueKey := n.Terminal.Bytes()
+			if _, seen := seenValues[string(valueKey)]; !seen {
+				ww.WriteBool(true)
+				value := tr.nodeStore.valueStore.Get(valueKey)
+				ww.WriteBytes(value)
 				if len(seenValues) < mapSizeCap {
-					seenValues[k] = struct{}{}
+					seenValues[string(valueKey)] = struct{}{}
 				}
+			} else {
+				ww.WriteBool(false)
 			}
 		}
 		if ww.Err != nil {
@@ -62,9 +64,11 @@ func RestoreSnapshot(r io.Reader, store KVStore) error {
 		nodeKey := n.Commitment.Bytes()
 		triePartition.Set(nodeKey, nodeBytes)
 		if n.Terminal != nil && !n.Terminal.IsValue {
-			value := rr.ReadBytes()
-			valueKey := n.Terminal.Bytes()
-			valuePartition.Set(valueKey, value)
+			if rr.ReadBool() {
+				value := rr.ReadBytes()
+				valueKey := n.Terminal.Bytes()
+				valuePartition.Set(valueKey, value)
+			}
 		}
 		refcounts.incNodeAndValue(n)
 		if rr.Err != nil {
