@@ -103,9 +103,27 @@ func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) 
 // DebugDump prints the structure of the tree to stdout, for debugging purposes.
 func (tr *TrieReader) DebugDump() {
 	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
-		fmt.Printf("%s %v %s\n", strings.Repeat(" ", len(nodeKey)), nodeKey, n)
+		key := "[]"
+		if len(nodeKey) > 0 {
+			key = fmt.Sprintf("[%d]", nodeKey[len(nodeKey)-1])
+		}
+		fmt.Printf("%s %v %s\n", strings.Repeat(" ", depth*4), key, n)
+		if n.Terminal != nil && !n.Terminal.IsValue {
+			fmt.Printf("%s [v: %x -> %q]\n", strings.Repeat(" ", len(nodeKey)+1), n.Terminal.Data, tr.nodeStore.valueStore.Get(n.Terminal.Bytes()))
+		}
 		return IterateContinue
 	})
+}
+
+// DebugDump prints the structure of the whole DB to stdout, for debugging purposes.
+func DebugDump(store KVStore, roots []Hash) {
+	fmt.Printf("[trie store]\n")
+	for _, root := range roots {
+		tr, err := NewTrieReader(store, root)
+		assertNoError(err)
+		tr.DebugDump()
+	}
+	newRefcounts(store).DebugDump()
 }
 
 func (tr *TrieReader) CopyToStore(snapshot KVStore) {
