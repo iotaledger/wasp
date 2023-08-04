@@ -6,11 +6,13 @@ package state
 import (
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/chaindb"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 var (
@@ -141,37 +143,42 @@ func (db *storeDB) buffered() (*bufferedKVStore, *storeDB) {
 	return buf, &storeDB{buf}
 }
 
-func (db *storeDB) takeSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
-	if !db.hasBlock(root) {
-		return fmt.Errorf("cannot take snapshot: trie root not found: %s", root)
-	}
-	blockKey := keyBlockByTrieRoot(root)
-	err := snapshot.Set(blockKey, db.mustGet(blockKey))
+func (db *storeDB) takeSnapshot(root trie.Hash, w io.Writer) error {
+	block, err := db.readBlock(root)
 	if err != nil {
 		return err
 	}
-
-	trie, err := db.trieReader(root)
+	ww := rwutil.NewWriter(w)
+	ww.WriteBytes(block.Bytes())
+	if ww.Err != nil {
+		return ww.Err
+	}
+	trie, err := db.trieReader(block.TrieRoot())
 	if err != nil {
 		return err
 	}
-	trie.CopyToStore(trieStore(snapshot))
-	return nil
+	return trie.TakeSnapshot(w)
 }
 
-func (db *storeDB) restoreSnapshot(root trie.Hash, snapshot kvstore.KVStore) error {
-	blockKey := keyBlockByTrieRoot(root)
-	blockBytes, err := snapshot.Get(blockKey)
+func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	blockBytes := rr.ReadBytes()
+	if rr.Err != nil {
+		return rr.Err
+	}
+	block, err := BlockFromBytes(blockBytes)
 	if err != nil {
 		return err
 	}
-	db.mustSet(blockKey, blockBytes)
+	if block.TrieRoot() != root {
+		return errors.New("trie root mismatch")
+	}
+	db.saveBlock(block)
 
-	trieSnapshot, err := trieReader(trieStore(snapshot), root)
+	err = trie.RestoreSnapshot(r, trieStore(db))
 	if err != nil {
 		return err
 	}
-	trieSnapshot.CopyToStore(trieStore(db))
 
 	db.setLatestTrieRoot(root)
 	return nil
