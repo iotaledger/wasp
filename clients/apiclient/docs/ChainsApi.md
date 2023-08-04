@@ -15,7 +15,6 @@ Method | HTTP request | Description
 [**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
 [**GetContracts**](ChainsApi.md#GetContracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
 [**GetReceipt**](ChainsApi.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
-[**GetRequestIDFromEVMTransactionID**](ChainsApi.md#GetRequestIDFromEVMTransactionID) | **Get** /v1/chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
 [**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
 [**SetChainRecord**](ChainsApi.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
@@ -763,77 +762,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**ReceiptResponse**](ReceiptResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## GetRequestIDFromEVMTransactionID
-
-> RequestIDResponse GetRequestIDFromEVMTransactionID(ctx, chainID, txHash).Execute()
-
-Get the ISC request ID for the given Ethereum transaction hash
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    txHash := "txHash_example" // string | Transaction hash (Hex)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetRequestIDFromEVMTransactionID(context.Background(), chainID, txHash).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetRequestIDFromEVMTransactionID``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetRequestIDFromEVMTransactionID`: RequestIDResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetRequestIDFromEVMTransactionID`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**txHash** | **string** | Transaction hash (Hex) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetRequestIDFromEVMTransactionIDRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
-
-### Return type
-
-[**RequestIDResponse**](RequestIDResponse.md)
 
 ### Authorization
 

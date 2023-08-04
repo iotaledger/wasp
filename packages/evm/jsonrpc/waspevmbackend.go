@@ -5,11 +5,9 @@ package jsonrpc
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
@@ -31,7 +29,6 @@ import (
 type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
-	requestIDs sync.Map
 	baseToken  *parameters.BaseToken
 }
 
@@ -43,15 +40,6 @@ func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToke
 		nodePubKey: nodePubKey,
 		baseToken:  baseToken,
 	}
-}
-
-func (b *WaspEVMBackend) RequestIDByTransactionHash(txHash common.Hash) (isc.RequestID, bool) {
-	// TODO: should this be stored in the chain state instead of a volatile cache?
-	r, ok := b.requestIDs.Load(txHash)
-	if !ok {
-		return isc.RequestID{}, false
-	}
-	return r.(isc.RequestID), true
 }
 
 func (b *WaspEVMBackend) EVMGasRatio() (util.Ratio32, error) {
@@ -82,18 +70,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 		return fmt.Errorf("tx not added to the mempool: %v", err.Error())
 	}
 
-	// store the request ID so that the user can query it later (if the
-	// Ethereum tx fails, the Ethereum receipt is never generated).
-	txHash := tx.Hash()
-	b.requestIDs.Store(txHash, req.ID())
-	go b.evictWhenExpired(txHash)
-
 	return nil
-}
-
-func (b *WaspEVMBackend) evictWhenExpired(txHash common.Hash) {
-	time.Sleep(1 * time.Hour)
-	b.requestIDs.Delete(txHash)
 }
 
 func (b *WaspEVMBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {

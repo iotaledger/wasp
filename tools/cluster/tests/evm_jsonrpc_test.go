@@ -43,10 +43,7 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := env.Chain.Client(nil, nodeIndex)
-		reqID, err := c.RequestIDByEVMTransactionHash(context.Background(), txHash)
-		if err != nil {
-			return err
-		}
+		reqID := isc.RequestIDFromEVMTxHash(txHash)
 		receipt, _, err := c.WaspClient.ChainsApi.
 			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
 			TimeoutSeconds(10).

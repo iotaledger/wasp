@@ -71,14 +71,6 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		SetSummary("Ethereum JSON-RPC (Websocket transport)")
 
-	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamPath("", params.ParamTxHash, params.DescriptionTxHash).
-		AddResponse(http.StatusOK, "Request ID", mocker.Get(models.RequestIDResponse{}), nil).
-		AddResponse(http.StatusNotFound, "Request ID not found", "", nil).
-		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
-		SetOperationId("getRequestIDFromEVMTransactionID")
-
 	publicAPI.GET("chains/:chainID/state/:stateKey", c.getState).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamStateKey, params.DescriptionStateKey).
