@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 var Processor = evm.Contract.Processor(nil,
@@ -252,11 +253,15 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
 				evm.FieldTokenDecimals:      codec.EncodeUint8(decimals),
 				evm.FieldFoundryTokenScheme: codec.EncodeTokenScheme(tokenScheme),
 			},
+			// FIXME why does this gas budget is higher than the allowance below
+			GasBudget: 5 * wasmlib.MinGasFee,
 		},
 	}
 	sd := ctx.EstimateRequiredStorageDeposit(req)
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(sd))
-	req.Assets.AddBaseTokens(sd)
+	// this request is sent by contract account,
+	// so we move enough allowance for the gas fee below in the req.Assets.AddBaseTokens() function call
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(sd+wasmlib.MinGasFee))
+	req.Assets.AddBaseTokens(sd + wasmlib.MinGasFee)
 	ctx.Send(req)
 
 	return nil

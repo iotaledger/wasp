@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 func TestNoSenderFeature(t *testing.T) {
@@ -37,14 +39,20 @@ func TestNoSenderFeature(t *testing.T) {
 	err = ch.MintTokens(sn, nativeTokenAmount, wallet)
 	require.NoError(t, err)
 
-	// withdraw NTs to L1
-	req := solo.NewCallParams("accounts", "withdraw").
-		AddAllowanceBaseTokens(5 * isc.Million).
+	// withdraw native tokens to L1
+	allowance := 5 * isc.Million
+	baseTokensToSend := allowance + wasmlib.MinGasFee
+	_, err = ch.PostRequestOffLedger(solo.NewCallParams(
+		accounts.Contract.Name, accounts.FuncWithdraw.Name,
+	).
+		AddBaseTokens(baseTokensToSend).
+		AddAllowanceBaseTokens(allowance).
 		AddAllowanceNativeTokensVect(&iotago.NativeToken{
 			ID:     nativeTokenID,
 			Amount: nativeTokenAmount,
-		})
-	_, err = ch.PostRequestOffLedger(req, wallet)
+		}).
+		WithGasBudget(wasmlib.MinGasFee),
+		wallet)
 	require.NoError(t, err)
 
 	nft, _, err := ch.Env.MintNFTL1(wallet, addr, []byte("foobar"))

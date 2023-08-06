@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 const (
@@ -50,7 +51,8 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
 	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
-	err := ch.DepositBaseTokensToL2(10_000, user)
+	// FIXME may user other MinGasFee instead of wasmlib.MinGasFee
+	err := ch.DepositBaseTokensToL2(wasmlib.MinGasFee, user)
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,

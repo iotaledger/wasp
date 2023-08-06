@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 func CommonAccount() isc.AgentID {
@@ -174,9 +175,8 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 	// save the assets to send to the transfer request, as specified by the allowance
 	assets := allowance.Clone()
 
-	defaultMinGasFee := uint64(100_000)
 	// deduct the gas reserve GAS2 from the allowance, if possible
-	gasReserve := ctx.Params().MustGetUint64(ParamGasReserve, defaultMinGasFee)
+	gasReserve := ctx.Params().MustGetUint64(ParamGasReserve, wasmlib.MinGasFee)
 	if allowance.BaseTokens < gasReserve {
 		panic(ErrNotEnoughAllowance)
 	}

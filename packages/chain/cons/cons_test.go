@@ -36,6 +36,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 // Here we run a single consensus instance, step by step with
@@ -346,7 +347,8 @@ func testChained(t *testing.T, n, f, b int) {
 				inccounter.FuncIncCounter.Hname(),
 				dict.New(),
 				uint64(i*reqPerBlock+ii),
-				20000,
+				// FIXME may user other MinGasFee instead of wasmlib.MinGasFee
+				wasmlib.MinGasFee,
 			).Sign(scClient)
 			reqs = append(reqs, scRequest)
 			incTotal++
