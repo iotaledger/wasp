@@ -3,7 +3,6 @@ package sm_gpa_utils
 import (
 	"crypto/rand"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/samber/lo"
@@ -44,7 +43,7 @@ func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
 	return bwtsmT
 }
 
-func (bwtsmT *blockWALTestSM) Cleanup() {
+func (bwtsmT *blockWALTestSM) cleanup() {
 	bwtsmT.log.Sync()
 	os.RemoveAll(constTestFolder)
 }
@@ -107,8 +106,8 @@ func (bwtsmT *blockWALTestSM) MoveBlock(t *rapid.T) {
 	if blockHashOrig.Equals(blockHashToDamage) {
 		t.Skip()
 	}
-	fileOrigPath := bwtsmT.pathFromHash(blockHashOrig)
-	fileToDamagePath := bwtsmT.pathFromHash(blockHashToDamage)
+	fileOrigPath := walPathFromHash(bwtsmT.factory.GetChainID(), blockHashOrig)
+	fileToDamagePath := walPathFromHash(bwtsmT.factory.GetChainID(), blockHashToDamage)
 	data, err := os.ReadFile(fileOrigPath)
 	require.NoError(t, err)
 	err = os.WriteFile(fileToDamagePath, data, 0o644)
@@ -124,7 +123,7 @@ func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 		t.Skip()
 	}
 	blockHash := rapid.SampledFrom(blockHashes).Example()
-	filePath := bwtsmT.pathFromHash(blockHash)
+	filePath := walPathFromHash(bwtsmT.factory.GetChainID(), blockHash)
 	data := make([]byte, 50)
 	_, err := rand.Read(data)
 	require.NoError(t, err)
@@ -188,10 +187,6 @@ func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {
 	return result
 }
 
-func (bwtsmT *blockWALTestSM) pathFromHash(blockHash state.BlockHash) string {
-	return filepath.Join(constTestFolder, bwtsmT.factory.GetChainID().String(), blockWALFileName(blockHash))
-}
-
 func (bwtsmT *blockWALTestSM) invariantAllWrittenBlocksExist(t *rapid.T) {
 	for blockHash := range bwtsmT.blocks {
 		require.True(t, bwtsmT.bw.Contains(blockHash))
@@ -202,6 +197,7 @@ func TestBlockWALPropBased(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		sm := newBlockWALTestSM(t)
 		t.Repeat(rapid.StateMachineActions(sm))
+		sm.cleanup()
 	})
 }
 

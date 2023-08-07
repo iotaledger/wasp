@@ -49,6 +49,37 @@ func TestBlockWALBasic(t *testing.T) {
 	require.Error(t, err)
 }
 
+// Check if existing block in WAL is found even if it is not in a subfolder
+func TestBlockWALNoSubfolder(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+	defer cleanupAfterTest(t)
+
+	factory := NewBlockFactory(t)
+	blocks := factory.GetBlocks(4, 1)
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
+	require.NoError(t, err)
+	for i := range blocks {
+		err = wal.Write(blocks[i])
+		require.NoError(t, err)
+	}
+	pathNoSubfolderFromHashFun := func(blockHash state.BlockHash) string {
+		return filepath.Join(constTestFolder, factory.GetChainID().String(), blockWALFileName(blockHash))
+	}
+	for _, block := range blocks {
+		pathWithSubfolder := walPathFromHash(factory.GetChainID(), block.Hash())
+		pathNoSubfolder := pathNoSubfolderFromHashFun(block.Hash())
+		err = os.Rename(pathWithSubfolder, pathNoSubfolder)
+		require.NoError(t, err)
+	}
+	for _, block := range blocks {
+		require.True(t, wal.Contains(block.Hash()))
+		blockRead, err := wal.Read(block.Hash())
+		require.NoError(t, err)
+		CheckBlocksEqual(t, block, blockRead)
+	}
+}
+
 // Check if existing WAL record is overwritten
 func TestBlockWALOverwrite(t *testing.T) {
 	log := testlogger.NewLogger(t)
@@ -63,11 +94,8 @@ func TestBlockWALOverwrite(t *testing.T) {
 		err = wal.Write(blocks[i])
 		require.NoError(t, err)
 	}
-	pathFromHashFun := func(blockHash state.BlockHash) string {
-		return filepath.Join(constTestFolder, factory.GetChainID().String(), blockWALFileName(blockHash))
-	}
-	file0Path := pathFromHashFun(blocks[0].Hash())
-	file1Path := pathFromHashFun(blocks[1].Hash())
+	file0Path := walPathFromHash(factory.GetChainID(), blocks[0].Hash())
+	file1Path := walPathFromHash(factory.GetChainID(), blocks[1].Hash())
 	err = os.Rename(file1Path, file0Path)
 	require.NoError(t, err)
 	// block[1] is no longer in WAL
@@ -114,6 +142,10 @@ func TestBlockWALRestart(t *testing.T) {
 		require.NoError(t, err)
 		CheckBlocksEqual(t, blocks[i], block)
 	}
+}
+
+func walPathFromHash(chainID isc.ChainID, blockHash state.BlockHash) string {
+	return filepath.Join(constTestFolder, chainID.String(), blockWALSubFolderName(blockHash), blockWALFileName(blockHash))
 }
 
 func cleanupAfterTest(t *testing.T) {
