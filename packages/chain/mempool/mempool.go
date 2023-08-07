@@ -565,7 +565,7 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 				accountNonce++ // increment the account nonce to match the next valid request
 			}
 			if reqNonce > accountNonce {
-				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nouce %d which is too high, won't be proposed", account, e.req.ID().String(), e.req.Nonce())
+				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nonce %d which is too high, won't be proposed", account, e.req.ID().String(), e.req.Nonce())
 				return // no more valid nonces for this account, continue to the next account
 			}
 		}

@@ -151,9 +151,9 @@ func (p *TypedPoolByNonce[V]) Remove(request V) {
 	p.reqsByAcountOrdered.Set(account, reqsByAccount)
 }
 
-func (p *TypedPoolByNonce[V]) Iterate(predicate func(account string, requests []*OrderedPoolEntry[V])) {
+func (p *TypedPoolByNonce[V]) Iterate(f func(account string, requests []*OrderedPoolEntry[V])) {
 	p.reqsByAcountOrdered.ForEach(func(acc string, reqs []*OrderedPoolEntry[V]) bool {
-		predicate(acc, reqs)
+		f(acc, reqs)
 		return true
 	})
 }
