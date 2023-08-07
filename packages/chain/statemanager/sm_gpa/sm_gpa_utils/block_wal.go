@@ -91,33 +91,33 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	return nil
 }
 
-func (bwT *blockWAL) containsWithPath(blockHash state.BlockHash) (bool, string) {
+func (bwT *blockWAL) blockFilepath(blockHash state.BlockHash) (string, bool) {
 	subfolderName := blockWALSubFolderName(blockHash)
 	fileName := blockWALFileName(blockHash)
 
 	pathWithSubFolder := filepath.Join(bwT.dir, subfolderName, fileName)
 	_, err := os.Stat(pathWithSubFolder)
 	if err == nil {
-		return true, pathWithSubFolder
+		return pathWithSubFolder, true
 	}
 
 	// Checked for backward compatibility and for ease of adding some blocks from other sources
 	pathNoSubFolder := filepath.Join(bwT.dir, fileName)
 	_, err = os.Stat(pathNoSubFolder)
 	if err == nil {
-		return true, pathNoSubFolder
+		return pathNoSubFolder, true
 	}
-	return false, ""
+	return "", false
 }
 
 func (bwT *blockWAL) Contains(blockHash state.BlockHash) bool {
-	result, _ := bwT.containsWithPath(blockHash)
-	return result
+	_, exists := bwT.blockFilepath(blockHash)
+	return exists
 }
 
 func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
-	conains, filePath := bwT.containsWithPath(blockHash)
-	if !conains {
+	filePath, exists := bwT.blockFilepath(blockHash)
+	if !exists {
 		return nil, fmt.Errorf("block hash %s is not present in WAL", blockHash)
 	}
 	block, err := blockFromFilePath(filePath)
