@@ -24,59 +24,79 @@ import (
 func TestBasic(t *testing.T) {
 	store := NewInMemoryKVStore()
 
-	var root0 trie.Hash
+	var roots []trie.Hash
 	{
-		root0 = trie.MustInitRoot(store)
+		roots = append(roots, trie.MustInitRoot(store))
 	}
 	{
+		root0 := roots[0]
 		state, err := trie.NewTrieReader(store, root0)
 		require.NoError(t, err)
 		require.EqualValues(t, []byte(nil), state.Get([]byte("a")))
 	}
 
-	var root1 trie.Hash
+	fmt.Printf("--- DebugDump %d\n", len(roots))
+	trie.DebugDump(store, roots)
+
 	{
-		tr, err := trie.NewTrieUpdatable(store, root0)
+		tr, err := trie.NewTrieUpdatable(store, roots[0])
 		require.NoError(t, err)
 		tr.Update([]byte("a"), []byte("a"))
 		tr.Update([]byte("b"), []byte("b"))
 		var stats trie.CommitStats
-		root1, stats = tr.Commit(store)
-		// the trie now has 4 nodes:
-		// [] c:7ec331767219528ab3c9e864ad9422e9f831ec5e ext:[] childIdx:[6] term:<nil>
-		//  [6] c:a00e505e10971ec248b1404ef9dcc6c6c493a6c9 ext:[] childIdx:[1 2] term:<nil>
-		//   [6 1] c:81db21106a17dd57e6099402bbe5543a015193d0 ext:[] childIdx:[] term:61
-		//   [6 2] c:b23756724eca8e6197bb6b6cbfc9725067b36d9c ext:[] childIdx:[] term:62
+		root1, stats := tr.Commit(store)
+		roots = append(roots, root1)
+		// the trie at root1 has 4 nodes (see the output of DebugDump below)
 		require.EqualValues(t, 4, stats.CreatedNodes)
 		require.EqualValues(t, 0, stats.CreatedValues)
 	}
 
-	var root2 trie.Hash
+	fmt.Printf("--- DebugDump %d\n", len(roots))
+	trie.DebugDump(store, roots)
+
 	{
-		tr, err := trie.NewTrieUpdatable(store, root1)
+		tr, err := trie.NewTrieUpdatable(store, roots[1])
+		require.NoError(t, err)
+		tr.Update([]byte("b"), []byte("bb"))
+		root2, _ := tr.Commit(store)
+		roots = append(roots, root2)
+		require.NoError(t, err)
+
+		require.EqualValues(t, []byte("a"), tr.Get([]byte("a")))
+		require.EqualValues(t, []byte("bb"), tr.Get([]byte("b")))
+	}
+
+	fmt.Printf("--- DebugDump %d\n", len(roots))
+	trie.DebugDump(store, roots)
+
+	{
+		tr, err := trie.NewTrieUpdatable(store, roots[2])
 		require.NoError(t, err)
 		tr.Update([]byte("a"), nil)
-		tr.Update([]byte("b"), []byte("bb"))
 		tr.Update([]byte("cccddd"), []byte("c"))
 		tr.Update([]byte("ccceee"), bytes.Repeat([]byte("c"), 70))
-		root2, _ = tr.Commit(store)
+		root3, _ := tr.Commit(store)
+		roots = append(roots, root3)
 		require.NoError(t, err)
 
 		require.Nil(t, tr.Get([]byte("a")))
 	}
 
-	state, err := trie.NewTrieReader(store, root2)
+	fmt.Printf("--- DebugDump %d\n", len(roots))
+	trie.DebugDump(store, roots)
+
+	state, err := trie.NewTrieReader(store, roots[3])
 	require.NoError(t, err)
 	require.Nil(t, state.Get([]byte("a")))
 
-	var root3 trie.Hash
 	{
-		tr, err := trie.NewTrieUpdatable(store, root2)
+		tr, err := trie.NewTrieUpdatable(store, roots[3])
 		require.NoError(t, err)
 		tr.Update([]byte("b"), nil)
 		tr.Update([]byte("cccddd"), nil)
 		tr.Update([]byte("ccceee"), nil)
-		root3, _ = tr.Commit(store)
+		root4, _ := tr.Commit(store)
+		roots = append(roots, root4)
 		require.NoError(t, err)
 
 		require.Nil(t, tr.Get([]byte("a")))
@@ -84,8 +104,8 @@ func TestBasic(t *testing.T) {
 		require.Nil(t, tr.Get([]byte("cccddd")))
 		require.Nil(t, tr.Get([]byte("ccceee")))
 	}
-	// trie is now empty, so hash3 should be equal to hash0
-	require.Equal(t, root0, root3)
+	// trie is now empty, so hash4 should be equal to hash0
+	require.Equal(t, roots[0], roots[4])
 }
 
 func TestBasic2(t *testing.T) {

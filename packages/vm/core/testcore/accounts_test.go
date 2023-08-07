@@ -549,9 +549,9 @@ type testParams struct {
 	nativeTokenID     iotago.NativeTokenID
 }
 
-func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
+func initDepositTest(t *testing.T, originParams dict.Dict, initLoad ...uint64) *testParams {
 	ret := &testParams{}
-	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 
 	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
 	ret.chainOwnerAgentID = isc.NewAgentID(ret.chainOwnerAddr)
@@ -562,7 +562,7 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	if len(initLoad) != 0 {
 		initBaseTokens = initLoad[0]
 	}
-	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
+	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1", originParams)
 
 	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	return ret
@@ -587,7 +587,7 @@ func TestDepositBaseTokens(t *testing.T) {
 	// storage deposit. If storage deposit is 185, anything below that fill be topped up to 185, above that no adjustment is needed
 	for _, addBaseTokens := range []uint64{0, 50, 150, 200, 1000} {
 		t.Run("add base tokens "+strconv.Itoa(int(addBaseTokens)), func(t *testing.T) {
-			v := initDepositTest(t)
+			v := initDepositTest(t, nil)
 			v.req.WithGasBudget(100_000)
 			estimatedGas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
@@ -614,7 +614,7 @@ func TestDepositBaseTokens(t *testing.T) {
 
 // initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
 func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
-	v := initDepositTest(t, initLoad...)
+	v := initDepositTest(t, nil, initLoad...)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create foundry and mint 100 tokens
 	v.sn, v.nativeTokenID = v.createFoundryAndMint(1_000_000, 100)
@@ -840,7 +840,7 @@ func TestTransferAndCheckBaseTokens(t *testing.T) {
 
 func TestFoundryDestroy(t *testing.T) {
 	t.Run("destroy existing", func(t *testing.T) {
-		v := initDepositTest(t)
+		v := initDepositTest(t, nil)
 		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 		sn, _, err := v.ch.NewFoundryParams(1_000_000).
 			WithUser(v.user).
@@ -853,14 +853,14 @@ func TestFoundryDestroy(t *testing.T) {
 		testmisc.RequireErrorToBe(t, err, "not found")
 	})
 	t.Run("destroy fail", func(t *testing.T) {
-		v := initDepositTest(t)
+		v := initDepositTest(t, nil)
 		err := v.ch.DestroyFoundry(2, v.user)
 		testmisc.RequireErrorToBe(t, err, "unauthorized")
 	})
 }
 
 func TestTransferPartialAssets(t *testing.T) {
-	v := initDepositTest(t)
+	v := initDepositTest(t, nil)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
 	// setup a chain with some base tokens and native tokens for user1
 	sn, nativeTokenID, err := v.ch.NewFoundryParams(10).
@@ -1160,8 +1160,18 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestUnprocessable(t *testing.T) {
-	v := initDepositTest(t)
+func TestUnprocessableWithNoPruning(t *testing.T) {
+	testUnprocessable(t, nil)
+}
+
+func TestUnprocessableWithPruning(t *testing.T) {
+	testUnprocessable(t, dict.Dict{
+		origin.ParamBlockKeepAmount: codec.EncodeInt32(1),
+	})
+}
+
+func testUnprocessable(t *testing.T, originParams dict.Dict) {
+	v := initDepositTest(t, originParams)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each
 	_, nativeTokenID1 := v.createFoundryAndMint(1, 1)

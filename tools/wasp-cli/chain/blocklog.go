@@ -145,7 +145,7 @@ func hexLenFromByteLen(length int) int {
 	return (length * 2) + 2
 }
 
-func reqIDFromString(s string, client *apiclient.APIClient, chainID isc.ChainID) isc.RequestID {
+func reqIDFromString(s string) isc.RequestID {
 	switch len(s) {
 	case hexLenFromByteLen(iotago.OutputIDLength):
 		// isc ReqID
@@ -153,16 +153,11 @@ func reqIDFromString(s string, client *apiclient.APIClient, chainID isc.ChainID)
 		log.Check(err)
 		return reqID
 	case hexLenFromByteLen(common.HashLength):
-		// EVM ReqID
-		rsp, _, err := client.ChainsApi.GetRequestIDFromEVMTransactionID(
-			context.Background(),
-			chainID.String(),
-			s,
-		).Execute() //nolint:bodyclose // false positive
+		bytes, err := iotago.DecodeHex(s)
 		log.Check(err)
-		reqID, err := isc.RequestIDFromString(rsp.RequestId)
-		log.Check(err)
-		return reqID
+		var txHash common.Hash
+		copy(txHash[:], bytes)
+		return isc.RequestIDFromEVMTxHash(txHash)
 	default:
 		log.Fatalf("invalid requestID length: %d", len(s))
 	}
@@ -182,7 +177,7 @@ func initRequestCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 
 			client := cliclients.WaspClient(node)
-			reqID := reqIDFromString(args[0], client, chainID)
+			reqID := reqIDFromString(args[0])
 
 			// TODO add optional block param?
 			receipt, _, err := client.ChainsApi.

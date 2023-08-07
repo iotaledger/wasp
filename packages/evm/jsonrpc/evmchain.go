@@ -43,6 +43,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
+// EVMChain provides common functionality to interact with the EVM state.
 type EVMChain struct {
 	backend  ChainBackend
 	chainID  uint16 // cache

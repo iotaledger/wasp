@@ -1,15 +1,12 @@
 package vmimpl
 
 import (
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
@@ -63,21 +60,6 @@ func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, i
 		out, id = accounts.GetFoundryOutput(s, serNum, vmctx.ChainID())
 	})
 	return
-}
-
-func (vmctx *vmContext) getOutputID(blockIndex uint32, outputIndex uint16) iotago.OutputID {
-	if blockIndex == vmctx.stateAnchor().StateIndex {
-		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.stateAnchor().OutputID.TransactionID(), outputIndex)
-	}
-	var outputID iotago.OutputID
-	var ok bool
-	withContractState(vmctx.stateDraft, blocklog.Contract, func(s kv.KVStore) {
-		outputID, ok = blocklog.GetOutputID(s, blockIndex, outputIndex)
-	})
-	if !ok {
-		panic(fmt.Errorf("UTXO input for block index %d, output index %d not found", blockIndex, outputIndex))
-	}
-	return outputID
 }
 
 func (vmctx *vmContext) loadNFT(nftID iotago.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
