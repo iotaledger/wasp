@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/users"
 )
 
-func TestAddJWTAuth(t *testing.T) {
+func TestGetJWTAuthMiddleware(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		e := echo.New()
 		e.GET("/test-route", func(c echo.Context) error {
@@ -32,11 +32,10 @@ func TestAddJWTAuth(t *testing.T) {
 			Name: "wasp",
 		})
 
-		_, middleware := authentication.AddJWTAuth(
+		_, middleware := authentication.GetJWTAuthMiddleware(
 			authentication.JWTAuthConfiguration{},
 			[]byte("abc"),
 			userManager,
-			nil, // remove claim validator
 		)
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) error {
@@ -45,7 +44,7 @@ func TestAddJWTAuth(t *testing.T) {
 				return next(c)
 			}
 		})
-		e.Use(middleware())
+		e.Use(middleware)
 
 		req := httptest.NewRequest(http.MethodGet, "/test-route", http.NoBody)
 		req.Header.Set(echo.HeaderAuthorization, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3YXNwIiwic3ViIjoid2FzcCIsImF1ZCI6WyJ3YXNwIl0sImV4cCI6NDg0NTUwNjQ5MiwibmJmIjoxNjg5ODYxNDM2LCJpYXQiOjE2ODk4NjE0MzYsImp0aSI6IjE2ODk4NjE0MzYiLCJwZXJtaXNzaW9ucyI6eyJ3cml0ZSI6e319fQ.VP--725H3xO2Spz6L9twB6Tsm37a26IXVU87cSqRoOM")
@@ -73,13 +72,12 @@ func TestAddJWTAuth(t *testing.T) {
 			})
 		}
 
-		_, middleware := authentication.AddJWTAuth(
+		_, middleware := authentication.GetJWTAuthMiddleware(
 			authentication.JWTAuthConfiguration{},
 			[]byte(""),
 			&users.UserManager{},
-			nil, // remove claim validator
 		)
-		e.Use(middleware())
+		e.Use(middleware)
 
 		for _, path := range skipPaths {
 			req := httptest.NewRequest(http.MethodGet, path, http.NoBody)
@@ -119,11 +117,10 @@ func TestJWTAuthIssueAndVerify(t *testing.T) {
 		Name: username,
 	})
 
-	_, middleware := authentication.AddJWTAuth(
+	_, middleware := authentication.GetJWTAuthMiddleware(
 		authentication.JWTAuthConfiguration{Duration: duration},
 		privateKey,
 		userManager,
-		nil, // remove claim validator
 	)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -132,7 +129,7 @@ func TestJWTAuthIssueAndVerify(t *testing.T) {
 			return next(c)
 		}
 	})
-	e.Use(middleware())
+	e.Use(middleware)
 
 	req := httptest.NewRequest(http.MethodGet, "/test-route", http.NoBody)
 	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", jwtString))

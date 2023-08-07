@@ -4,10 +4,6 @@ func AuthRoute() string {
 	return "/auth"
 }
 
-func AuthRouteSuccess() string {
-	return "/auth/success"
-}
-
 func AuthInfoRoute() string {
 	return "/auth/info"
 }
