@@ -1,0 +1,24 @@
+{
+  "name": "@iota/iscutils",
+  "version": "0.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iotaledger/wasp.git",
+    "directory": "tools/evm/iscutils"
+  },
+  "keywords": [
+    "iscutils",
+    "wasp",
+    "solidity",
+    "evm",
+    "isc",
+    "iota"
+  ],
+  "author": "Iota Smart Contracts",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/iotaledger/wasp/issues"
+  },
+  "homepage": "https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/README.md"
+}
