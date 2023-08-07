@@ -53,7 +53,7 @@ require (
 	go.uber.org/zap v1.25.0
 	golang.org/x/crypto v0.11.0
 	golang.org/x/exp v0.0.0-20230724220655-d98519c11495
-	golang.org/x/net v0.12.0
+	golang.org/x/net v0.13.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
 	pgregory.net/rapid v1.0.0
