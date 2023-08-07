@@ -215,7 +215,7 @@ func (s *store) TakeSnapshot(root trie.Hash, w io.Writer) error {
 
 func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader) error {
 	if s.db.hasBlock(root) {
-		return errors.New("trie root already in store")
+		return nil
 	}
 	return s.db.restoreSnapshot(root, r)
 }
