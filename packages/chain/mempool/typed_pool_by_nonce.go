@@ -40,6 +40,7 @@ func NewTypedPoolByNonce[V isc.OffLedgerRequest](waitReq WaitReq, sizeMetric fun
 
 type OrderedPoolEntry[V isc.OffLedgerRequest] struct {
 	req V
+	old bool
 	ts  time.Time
 }
 
@@ -95,14 +96,9 @@ func (p *TypedPoolByNonce[V]) Add(request V) {
 		},
 	)
 	if exists {
-		// same nonce, delete old request with overlapping nonce, replace with the new one
-		p.Remove(reqsForAcount[index].req)
-		// refresh `reqsForAcount` after removing the old req
-		reqsForAcount, exists = p.reqsByAcountOrdered.Get(account)
-		if !exists {
-			reqsForAcount = make([]*OrderedPoolEntry[V], 0)
-		}
-		// TODO could	this create some race condition if there is ongoing voting on a batch propostal containing the old nonce?
+		// same nonce, mark the existing request with overlapping nonce as "old", place the new one
+		// NOTE: do not delete the request here, as it might already be part of an on-going consensus round
+		reqsForAcount[index].old = true
 	}
 
 	reqsForAcount = append(reqsForAcount, entry) // add to the end of the list (thus extending the array)

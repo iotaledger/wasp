@@ -558,6 +558,11 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 				mpi.log.Debugf("refsToPropose, account: %s, removing old nonce from pool: %d", account, e.req.Nonce())
 				mpi.offLedgerPool.Remove(e.req)
 			}
+			if e.old {
+				// this request was marked as "old", do not propose it
+				mpi.log.Debugf("refsToPropose, account: %s, skipping old request: %s", account, e.req.ID().String())
+				continue
+			}
 			if reqNonce == accountNonce {
 				// expected nonce, add it to the list to propose
 				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce %d: d", account, e.req.ID().String(), e.req.Nonce())
