@@ -603,6 +603,74 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// nonce 10 was never proposed
 }
 
+func TestMempoolOverrideNonce(t *testing.T) {
+	// 1 node setup
+	// send nonce 0
+	// send another request with the same nonce 0
+	// assert the last request is proposed
+	te := newEnv(t, 1, 0, true)
+	defer te.close()
+
+	tangleTime := time.Now()
+	for _, node := range te.mempools {
+		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.TangleTimeUpdated(tangleTime)
+	}
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
+	// deposit some funds so off-ledger requests can go through
+	t.Log("TrackNewChainHead")
+	for i, node := range te.mempools {
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChannels[i]
+	}
+
+	output := transaction.BasicOutputFromPostData(
+		te.governor.Address(),
+		isc.HnameNil,
+		isc.RequestParameters{
+			TargetAddress: te.chainID.AsAddress(),
+			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
+		},
+	)
+	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	require.NoError(t, err)
+	for _, node := range te.mempools {
+		node.ReceiveOnLedgerRequest(onLedgerReq)
+	}
+	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
+
+	initialReq := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
+
+	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(initialReq))
+	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+
+	overwritingReq := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("baz"),
+		isc.Hn("bar"),
+		dict.New(),
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
+
+	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(overwritingReq))
+	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
+	reqRefs := <-te.mempools[0].ConsensusProposalAsync(te.ctx, currentAO)
+	proposedReqs := <-te.mempools[0].ConsensusRequestsAsync(te.ctx, reqRefs)
+	require.Len(t, proposedReqs, 1)
+	require.Equal(t, overwritingReq, proposedReqs[0])
+	require.NotEqual(t, initialReq, proposedReqs[0])
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // testEnv
 
