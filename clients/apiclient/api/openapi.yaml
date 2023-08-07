@@ -1551,41 +1551,6 @@ paths:
       summary: Ethereum JSON-RPC
       tags:
       - chains
-  /v1/chains/{chainID}/evm/tx/{txHash}:
-    get:
-      operationId: getRequestIDFromEVMTransactionID
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Transaction hash (Hex)
-        in: path
-        name: txHash
-        required: true
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RequestIDResponse'
-          description: Request ID
-        "404":
-          content:
-            application/json:
-              schema:
-                format: string
-                type: string
-          description: Request ID not found
-      summary: Get the ISC request ID for the given Ethereum transaction hash
-      tags:
-      - chains
   /v1/chains/{chainID}/evm/ws:
     get:
       parameters:
@@ -1962,7 +1927,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
                 type: array
           description: A list of all peers
         "401":
@@ -3018,18 +2983,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+            numUsers: 6
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3135,10 +3100,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: localhost:4000
+          peeringURL: peeringURL
           name: name
-          publicKey: 0x0000
-          numUsers: 1
+          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          numUsers: 6
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -4795,6 +4760,60 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
+        peeringURL: peeringURL
+        name: name
+        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+        numUsers: 6
+        isTrusted: true
+      properties:
+        isAlive:
+          description: Whether or not the peer is activated
+          format: boolean
+          type: boolean
+          xml:
+            name: IsAlive
+        isTrusted:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsTrusted
+        name:
+          format: string
+          type: string
+          xml:
+            name: Name
+        numUsers:
+          description: The amount of users attached to the peer
+          format: int32
+          type: integer
+          xml:
+            name: NumUsers
+        peeringURL:
+          description: The peering URL of the peer
+          format: string
+          type: string
+          xml:
+            name: PeeringURL
+        publicKey:
+          description: The peers public key encoded in Hex
+          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
+          format: string
+          type: string
+          xml:
+            name: PublicKey
+      required:
+      - isAlive
+      - isTrusted
+      - name
+      - numUsers
+      - peeringURL
+      - publicKey
+      type: object
+      xml:
+        name: PeeringNodeStatusResponse
+    PeeringNodeStatusResponse__:
+      example:
+        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -5333,21 +5352,6 @@ components:
       type: object
       xml:
         name: RequestDetail
-    RequestIDResponse:
-      example:
-        requestId: requestId
-      properties:
-        requestId:
-          description: The request ID of the given transaction ID. (Hex)
-          format: string
-          type: string
-          xml:
-            name: RequestID
-      required:
-      - requestId
-      type: object
-      xml:
-        name: RequestIDResponse
     RequestIDsResponse:
       example:
         requestIds:
