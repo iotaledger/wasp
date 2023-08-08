@@ -555,8 +555,9 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 			reqNonce := e.req.Nonce()
 			if reqNonce < accountNonce {
 				// nonce too old, delete
-				mpi.log.Debugf("refsToPropose, account: %s, removing old nonce from pool: %d", account, e.req.Nonce())
+				mpi.log.Debugf("refsToPropose, account: %s, removing request (%s) with old nonce (%d) from the pool", account, e.req.ID(), e.req.Nonce())
 				mpi.offLedgerPool.Remove(e.req)
+				continue
 			}
 			if e.old {
 				// this request was marked as "old", do not propose it
@@ -565,12 +566,12 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 			}
 			if reqNonce == accountNonce {
 				// expected nonce, add it to the list to propose
-				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce %d: d", account, e.req.ID().String(), e.req.Nonce())
+				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", account, e.req.ID().String(), e.req.Nonce())
 				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
 				accountNonce++ // increment the account nonce to match the next valid request
 			}
 			if reqNonce > accountNonce {
-				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nonce %d which is too high, won't be proposed", account, e.req.ID().String(), e.req.Nonce())
+				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nonce %d which is too high (expected %d), won't be proposed", account, e.req.ID().String(), e.req.Nonce(), accountNonce)
 				return // no more valid nonces for this account, continue to the next account
 			}
 		}
