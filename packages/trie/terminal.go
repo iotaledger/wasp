@@ -3,6 +3,7 @@ package trie
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -106,6 +107,9 @@ func (t *Tcommitment) Bytes() []byte {
 }
 
 func (t *Tcommitment) String() string {
+	if t.IsValue {
+		return fmt.Sprintf("%q", t.Data)
+	}
 	return hex.EncodeToString(t.Data)
 }
 

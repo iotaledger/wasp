@@ -124,13 +124,35 @@ func (clu *Cluster) AddTrustedNode(peerInfo apiclient.PeeringTrustRequest, onNod
 	return nil
 }
 
-func (clu *Cluster) TrustAll() error {
+func (clu *Cluster) Login() ([]string, error) {
+	allNodes := clu.Config.AllNodes()
+	jwtTokens := make([]string, len(allNodes))
+	for ni := range allNodes {
+		res, _, err := clu.WaspClient(allNodes[ni]).AuthApi.Authenticate(context.Background()).
+			LoginRequest(*apiclient.NewLoginRequest("wasp", "wasp")).
+			Execute() //nolint:bodyclose // false positive
+		if err != nil {
+			return nil, err
+		}
+		jwtTokens[ni] = "Bearer " + res.Jwt
+	}
+	return jwtTokens, nil
+}
+
+func (clu *Cluster) TrustAll(jwtTokens ...string) error {
 	allNodes := clu.Config.AllNodes()
 	allPeers := make([]*apiclient.PeeringNodeIdentityResponse, len(allNodes))
+	clients := make([]*apiclient.APIClient, len(allNodes))
+	for ni := range allNodes {
+		clients[ni] = clu.WaspClient(allNodes[ni])
+		if jwtTokens != nil {
+			clients[ni].GetConfig().AddDefaultHeader("Authorization", jwtTokens[ni])
+		}
+	}
 	for ni := range allNodes {
 		var err error
 		//nolint:bodyclose // false positive
-		if allPeers[ni], _, err = clu.WaspClient(allNodes[ni]).NodeApi.GetPeeringIdentity(context.Background()).Execute(); err != nil {
+		if allPeers[ni], _, err = clients[ni].NodeApi.GetPeeringIdentity(context.Background()).Execute(); err != nil {
 			return err
 		}
 	}
@@ -140,7 +162,7 @@ func (clu *Cluster) TrustAll() error {
 			if ni == pi {
 				continue // dont trust self
 			}
-			if _, err = clu.WaspClient(allNodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
+			if _, err = clients[ni].NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
 				apiclient.PeeringTrustRequest{
 					Name:       fmt.Sprintf("%d", pi),
 					PublicKey:  allPeers[pi].PublicKey,
@@ -534,11 +556,18 @@ func (clu *Cluster) StartAndTrustAll(dataPath string) error {
 		return fmt.Errorf("data path %s does not exist", dataPath)
 	}
 
-	if err := clu.Start(); err != nil {
+	if err = clu.Start(); err != nil {
 		return err
 	}
 
-	if err := clu.TrustAll(); err != nil {
+	var jwtTokens []string
+	if clu.Config.Wasp[0].AuthScheme == "jwt" {
+		if jwtTokens, err = clu.Login(); err != nil {
+			return err
+		}
+	}
+
+	if err := clu.TrustAll(jwtTokens...); err != nil {
 		return err
 	}
 

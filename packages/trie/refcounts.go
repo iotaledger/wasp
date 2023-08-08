@@ -1,6 +1,8 @@
 package trie
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -16,12 +18,12 @@ func newRefcounts(store KVStore) *Refcounts {
 	}
 }
 
-func (d *Refcounts) Inc(node *bufferedNode) (uint32, uint32) {
-	nodeCount, valueCount := d.incNodeAndValue(node.nodeData)
+func (r *Refcounts) Inc(node *bufferedNode) (uint32, uint32) {
+	nodeCount, valueCount := r.incNodeAndValue(node.nodeData)
 	node.nodeData.iterateChildren(func(i byte, commitment Hash) bool {
 		if _, ok := node.uncommittedChildren[i]; !ok {
 			// the new node adds a reference to an "old" node
-			n := d.incNode(commitment)
+			n := r.incNode(commitment)
 			assertf(n > 1, "inconsistency")
 		}
 		return true
@@ -29,27 +31,42 @@ func (d *Refcounts) Inc(node *bufferedNode) (uint32, uint32) {
 	return nodeCount, valueCount
 }
 
-func (d *Refcounts) incNodeAndValue(node *NodeData) (uint32, uint32) {
-	n := d.incNode(node.Commitment)
+func (r *Refcounts) incNodeAndValue(node *NodeData) (uint32, uint32) {
+	n := r.incNode(node.Commitment)
 	v := uint32(0)
 	if n == 1 && node.Terminal != nil && !node.Terminal.IsValue {
-		v = incRefcount(d.values, node.Terminal.Data)
+		v = incRefcount(r.values, node.Terminal.Data)
 	}
 	return n, v
 }
 
-func (d *Refcounts) incNode(commitment Hash) uint32 {
-	return incRefcount(d.nodes, commitment[:])
+func (r *Refcounts) incNode(commitment Hash) uint32 {
+	return incRefcount(r.nodes, commitment[:])
 }
 
-func (d *Refcounts) Dec(node *NodeData) (deleteNode, deleteValue bool) {
-	n := decRefcount(d.nodes, node.Commitment[:])
+func (r *Refcounts) Dec(node *NodeData) (deleteNode, deleteValue bool) {
+	n := decRefcount(r.nodes, node.Commitment[:])
 	deleteNode = n == 0
 	if n == 0 && node.Terminal != nil && !node.Terminal.IsValue {
-		nv := decRefcount(d.values, node.Terminal.Data)
+		nv := decRefcount(r.values, node.Terminal.Data)
 		deleteValue = nv == 0
 	}
 	return
+}
+
+func (r *Refcounts) DebugDump() {
+	fmt.Print("[node refcounts]\n")
+	r.nodes.IterateKeys(func(k []byte) bool {
+		n := getRefcount(r.nodes, k)
+		fmt.Printf("   %x: %d\n", k, n)
+		return true
+	})
+	fmt.Print("[value refcounts]\n")
+	r.values.IterateKeys(func(k []byte) bool {
+		n := getRefcount(r.values, k)
+		fmt.Printf("   %x: %d\n", k, n)
+		return true
+	})
 }
 
 func incRefcount(s KVStore, key []byte) uint32 {
