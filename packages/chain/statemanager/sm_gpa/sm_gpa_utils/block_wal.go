@@ -1,7 +1,6 @@
 package sm_gpa_utils
 
 import (
-	//"bufio"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -235,31 +234,6 @@ func blockFromReader(r io.Reader) (state.Block, error) {
 	}
 	return block, nil
 }
-
-/*func blockFromFilePath(filePath string) (state.Block, error) {
-	f, err := os.OpenFile(filePath, os.O_RDONLY, 0o666)
-	if err != nil {
-		return nil, fmt.Errorf("opening file %s for reading failed: %w", filePath, err)
-	}
-	defer f.Close()
-	stat, err := f.Stat()
-	if err != nil {
-		return nil, fmt.Errorf("reading file %s information failed: %w", filePath, err)
-	}
-	blockBytes := make([]byte, stat.Size())
-	n, err := bufio.NewReader(f).Read(blockBytes)
-	if err != nil {
-		return nil, fmt.Errorf("reading file %s failed: %w", filePath, err)
-	}
-	if int64(n) != stat.Size() {
-		return nil, fmt.Errorf("only %v of total %v bytes of file %s were read", n, stat.Size(), filePath)
-	}
-	block, err := state.BlockFromBytes(blockBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing block from bytes read from file %s: %w", filePath, err)
-	}
-	return block, nil
-}*/
 
 func blockWALSubFolderName(blockHash state.BlockHash) string {
 	return hex.EncodeToString(blockHash[:1])
