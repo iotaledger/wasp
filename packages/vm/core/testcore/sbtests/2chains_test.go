@@ -50,6 +50,12 @@ func test2Chains(t *testing.T, w bool) {
 	userAgentID := isc.NewAgentID(userAddress)
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 
+	fmt.Println("---------------chain1---------------")
+	fmt.Println(chain1.DumpAccounts())
+	fmt.Println("---------------chain2---------------")
+	fmt.Println(chain2.DumpAccounts())
+	fmt.Println("------------------------------------")
+
 	chain1TotalBaseTokens := chain1.L2TotalBaseTokens()
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
@@ -92,7 +98,8 @@ func test2Chains(t *testing.T, w bool) {
 	baseTokensToWithdrawFromChain1 := baseTokensCreditedToScOnChain1
 
 	const gasFee1 = wasmlib.MinGasFee
-	const gasFee2 = wasmlib.MinGasFee
+	// gas reserve for the 'TransferAllowanceTo' func call in 'TransferAccountToChain' func call
+	const gasReserve = wasmlib.MinGasFee
 	const withdrawFeeGas = wasmlib.MinGasFee
 	const storageDeposit = wasmlib.StorageDeposit
 
@@ -104,7 +111,7 @@ func test2Chains(t *testing.T, w bool) {
 	// the gas fees for the chain2.accounts.transferAccountToChain() request and the
 	// chain1.accounts.transferAllowanceTo() request.
 	// note that the storage deposit will be returned in the end
-	withdrawReqAllowance := storageDeposit + gasFee1 + gasFee2
+	withdrawReqAllowance := storageDeposit + gasFee1 + gasReserve
 
 	// also cover gas fee for `FuncWithdrawFromChain` on chain2
 	withdrawBaseTokensToSend := withdrawReqAllowance + withdrawFeeGas
@@ -113,7 +120,7 @@ func test2Chains(t *testing.T, w bool) {
 		ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamBaseTokens, baseTokensToWithdrawFromChain1,
-		sbtestsc.ParamGasReserve, gasFee2,
+		sbtestsc.ParamGasReserve, gasReserve,
 	).
 		AddBaseTokens(withdrawBaseTokensToSend).
 		WithAllowance(isc.NewAssetsBaseTokens(withdrawReqAllowance)).
@@ -156,14 +163,20 @@ func test2Chains(t *testing.T, w bool) {
 
 	// the 2 function call we did above are requests from L1
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend)
-	// on chain1 user only made the first transaction
+	// on chain1 user only made the first transaction, so it is the same as its balance before 'WithdrawFromChain' function call
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
+	// gasReserve is used for paying the gas fee of the 'TransferAllowanceTo' func call in 'TransferAccountToChain' func call
+	// So the token left in contractAgentID2 on chain1 is the unused gas fee
+	chain1.AssertL2BaseTokens(contractAgentID2, gasReserve-chain1TransferAccountToChainGas)
+	// tokens in 'withdrawBaseTokensToSend' amount are moved with the request from L1 to L2
+	// 'withdrawReqAllowance' is is the amount moved from chain1 to chain2 with the request
+	// 'baseTokensToWithdrawFromChain1' is the amount we assigned to withdraw in 'WithdrawFromChain' func call
+	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + (withdrawBaseTokensToSend - withdrawReqAllowance - baseTokensToWithdrawFromChain1))
 
-	// FIXME ???
-	chain1.AssertL2BaseTokens(contractAgentID2, wasmlib.MinGasFee-chain1TransferAccountToChainGas)
-	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + withdrawBaseTokensToSend - baseTokensToWithdrawFromChain1 - withdrawReqAllowance)
-
+	// tokens in 'withdrawBaseTokensToSend' amount are moved from L1 to L2 with the 'WithdrawFromChain' func call
+	// token in 'withdrawReqAllowance' amount are withdrawn by contractAgentID2
+	// and 'WithdrawFromChain' func call was sent by user on chain2, so its balance should deduct 'chain2WithdrawFromChainGas'
 	chain2.AssertL2BaseTokens(userAgentID, withdrawBaseTokensToSend-withdrawReqAllowance-chain2WithdrawFromChainGas)
 	chain2.AssertL2BaseTokens(contractAgentID2, baseTokensToWithdrawFromChain1+storageDeposit)
-	chain2.AssertL2TotalBaseTokens(baseTokensToWithdrawFromChain1 + chain2TotalBaseTokens + withdrawReqAllowance)
+	chain2.AssertL2TotalBaseTokens(chain2TotalBaseTokens + baseTokensToWithdrawFromChain1 + withdrawReqAllowance)
 }
