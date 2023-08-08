@@ -111,12 +111,13 @@ func (b *block) readEssence(r io.Reader) (int, error) {
 
 func (b *block) writeEssence(w io.Writer) (int, error) {
 	ww := rwutil.NewWriter(w)
+	counter := rwutil.NewWriteCounter(ww)
 	ww.Write(b.mutations)
 	ww.WriteBool(b.previousL1Commitment != nil)
 	if b.previousL1Commitment != nil {
 		ww.Write(b.previousL1Commitment)
 	}
-	return len(ww.Bytes()), ww.Err
+	return counter.Count(), ww.Err
 }
 
 // test only function
