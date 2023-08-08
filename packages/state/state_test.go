@@ -111,7 +111,7 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 }
 
 func initializedStore(db kvstore.KVStore) state.Store {
-	st := state.NewStore(db)
+	st := state.NewStoreWithUniqueWriteMutex(db)
 	origin.InitChain(st, nil, 0)
 	return st
 }
@@ -133,8 +133,8 @@ func TestOriginBlock(t *testing.T) {
 	require.EqualValues(t, 0, s.BlockIndex())
 	require.True(t, s.Timestamp().IsZero())
 
-	validateBlock0(state.NewStore(db).BlockByTrieRoot(block0.TrieRoot()))
-	validateBlock0(state.NewStore(db).LatestBlock())
+	validateBlock0(state.NewStoreWithUniqueWriteMutex(db).BlockByTrieRoot(block0.TrieRoot()))
+	validateBlock0(state.NewStoreWithUniqueWriteMutex(db).LatestBlock())
 
 	require.EqualValues(t, 0, cs.LatestBlockIndex())
 }
@@ -143,12 +143,12 @@ func TestOriginBlockDeterminism(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		deposit := rapid.Uint64().Draw(t, "deposit")
 		db := mapdb.NewMapDB()
-		st := state.NewStore(db)
+		st := state.NewStoreWithUniqueWriteMutex(db)
 		blockA := origin.InitChain(st, nil, deposit)
 		blockB := origin.InitChain(st, nil, deposit)
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
-		st2 := state.NewStore(db2)
+		st2 := state.NewStoreWithUniqueWriteMutex(db2)
 		blockC := origin.InitChain(st2, nil, deposit)
 		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
 	})
@@ -462,7 +462,7 @@ func TestSnapshot(t *testing.T) {
 	}()
 
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{state.NewStore(db)}
+	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
 	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
 

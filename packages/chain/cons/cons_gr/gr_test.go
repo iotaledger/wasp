@@ -113,7 +113,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
-		chainStore := state.NewStore(mapdb.NewMapDB())
+		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByAliasOutput(chainStore, originAO)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)

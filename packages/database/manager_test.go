@@ -38,8 +38,9 @@ func TestCreateChainStateDatabase(t *testing.T) {
 	require.NoError(t, err)
 
 	chainID := isc.RandomChainID()
-	require.Nil(t, chainStateDatabaseManager.chainStateKVStore(chainID))
-	store, err := chainStateDatabaseManager.ChainStateKVStore(chainID)
+	store, _ := chainStateDatabaseManager.chainStateKVStore(chainID)
+	require.Nil(t, store)
+	store, _, err = chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	require.Len(t, chainStateDatabaseManager.databases, 1)
@@ -68,10 +69,10 @@ func TestWriteAmplification(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chainKVStore, err := chainStateDatabaseManager.ChainStateKVStore(chainID)
+	chainKVStore, writeMutex, err := chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(t, err)
 	countKVStore := newCountingKVStore(chainKVStore)
-	chainStore := state.NewStore(countKVStore)
+	chainStore := state.NewStore(countKVStore, writeMutex)
 	require.NotNil(t, chainStore)
 
 	originSD := chainStore.NewOriginStateDraft()

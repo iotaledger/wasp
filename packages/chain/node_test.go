@@ -446,7 +446,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.ctx,
 			log,
 			te.chainID,
-			indexedstore.NewFake(state.NewStore(mapdb.NewMapDB())),
+			indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())),
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),

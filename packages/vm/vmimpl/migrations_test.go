@@ -49,7 +49,7 @@ func (e *migrationsTestEnv) setSchemaVersion(v uint32) {
 
 func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
-	cs := state.NewStore(db)
+	cs := state.NewStoreWithUniqueWriteMutex(db)
 	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)

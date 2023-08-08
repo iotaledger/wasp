@@ -88,7 +88,8 @@ type chainData struct {
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
 	ValidatorFeeTarget isc.AgentID
 
-	db kvstore.KVStore
+	db         kvstore.KVStore
+	writeMutex *sync.Mutex
 }
 
 // Chain represents state of individual chain.
@@ -297,10 +298,10 @@ func (env *Solo) deployChain(
 	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 
-	db, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
+	db, writeMutex, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
-	store := indexedstore.New(state.NewStore(db))
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 	origin.InitChain(store, initParams, originAO.Amount-originAOMinSD)
 
 	{
@@ -316,6 +317,7 @@ func (env *Solo) deployChain(
 		OriginatorPrivateKey:   chainOriginator,
 		ValidatorFeeTarget:     originatorAgentID,
 		db:                     db,
+		writeMutex:             writeMutex,
 	}, originTx
 }
 
@@ -356,7 +358,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		OriginatorAddress:      chData.OriginatorPrivateKey.GetPublicKey().AsEd25519Address(),
 		OriginatorAgentID:      isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsEd25519Address()),
 		Env:                    env,
-		store:                  indexedstore.New(state.NewStore(chData.db)),
+		store:                  indexedstore.New(state.NewStore(chData.db, chData.writeMutex)),
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    env.logger.Named(chData.Name),
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
