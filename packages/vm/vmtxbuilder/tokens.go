@@ -15,10 +15,10 @@ import (
 
 // nativeTokenBalance represents on-chain account of the specific native token
 type nativeTokenBalance struct {
-	nativeTokenID      iotago.NativeTokenID
-	accountingoutputID iotago.OutputID     // if in != nil, otherwise zeroOutputID
-	in                 *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
-	accountingOutput   *iotago.BasicOutput // current balance of the token_id on the chain
+	nativeTokenID     iotago.NativeTokenID
+	accountingInputID iotago.OutputID     // if in != nil, otherwise zeroOutputID
+	accountingInput   *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
+	accountingOutput  *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
 func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
@@ -26,13 +26,13 @@ func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
 	copy(nativeTokenID[:], n.nativeTokenID[:])
 
 	outputID := iotago.OutputID{}
-	copy(outputID[:], n.accountingoutputID[:])
+	copy(outputID[:], n.accountingInputID[:])
 
 	return &nativeTokenBalance{
-		nativeTokenID:      nativeTokenID,
-		accountingoutputID: outputID,
-		in:                 cloneInternalBasicOutputOrNil(n.in),
-		accountingOutput:   cloneInternalBasicOutputOrNil(n.accountingOutput),
+		nativeTokenID:     nativeTokenID,
+		accountingInputID: outputID,
+		accountingInput:   cloneInternalBasicOutputOrNil(n.accountingInput),
+		accountingOutput:  cloneInternalBasicOutputOrNil(n.accountingOutput),
 	}
 }
 
@@ -55,7 +55,7 @@ func (n *nativeTokenBalance) requiresExistingAccountingUTXOAsInput() bool {
 		// value didn't change
 		return false
 	}
-	return n.in != nil
+	return n.accountingInput != nil
 }
 
 func (n *nativeTokenBalance) getOutValue() *big.Int {
@@ -86,23 +86,23 @@ func (n *nativeTokenBalance) updateMinSD() {
 
 func (n *nativeTokenBalance) identicalInOut() bool {
 	switch {
-	case n.in == n.accountingOutput:
+	case n.accountingInput == n.accountingOutput:
 		panic("identicalBasicOutputs: internal inconsistency 1")
-	case n.in == nil || n.accountingOutput == nil:
+	case n.accountingInput == nil || n.accountingOutput == nil:
 		return false
-	case !n.in.Ident().Equal(n.accountingOutput.Ident()):
+	case !n.accountingInput.Ident().Equal(n.accountingOutput.Ident()):
 		return false
-	case n.in.Amount != n.accountingOutput.Amount:
+	case n.accountingInput.Amount != n.accountingOutput.Amount:
 		return false
-	case !n.in.NativeTokens.Equal(n.accountingOutput.NativeTokens):
+	case !n.accountingInput.NativeTokens.Equal(n.accountingOutput.NativeTokens):
 		return false
-	case !n.in.Features.Equal(n.accountingOutput.Features):
+	case !n.accountingInput.Features.Equal(n.accountingOutput.Features):
 		return false
-	case len(n.in.NativeTokens) != 1:
+	case len(n.accountingInput.NativeTokens) != 1:
 		panic("identicalBasicOutputs: internal inconsistency 2")
 	case len(n.accountingOutput.NativeTokens) != 1:
 		panic("identicalBasicOutputs: internal inconsistency 3")
-	case n.in.NativeTokens[0].ID != n.nativeTokenID:
+	case n.accountingInput.NativeTokens[0].ID != n.nativeTokenID:
 		panic("identicalBasicOutputs: internal inconsistency 4")
 	case n.accountingOutput.NativeTokens[0].ID != n.nativeTokenID:
 		panic("identicalBasicOutputs: internal inconsistency 5")
@@ -187,11 +187,11 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID io
 
 	if util.IsZeroBigInt(nt.getOutValue()) {
 		// 0 native tokens on the output side
-		if nt.in == nil {
+		if nt.accountingInput == nil {
 			// in this case the internar accounting output that would be created is not needed anymore, reiburse the SD
 			return int64(nt.accountingOutput.Amount)
 		}
-		return int64(nt.in.Amount)
+		return int64(nt.accountingInput.Amount)
 	}
 
 	// update the SD in case the storage deposit has changed from the last time this output was used
@@ -228,10 +228,10 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID iota
 	}
 
 	nativeTokenBalance := &nativeTokenBalance{
-		nativeTokenID:      nativeTokenID,
-		accountingoutputID: outputID,
-		in:                 basicOutputIn,
-		accountingOutput:   basicOutputOut,
+		nativeTokenID:     nativeTokenID,
+		accountingInputID: outputID,
+		accountingInput:   basicOutputIn,
+		accountingOutput:  basicOutputOut,
 	}
 	txb.balanceNativeTokens[nativeTokenID] = nativeTokenBalance
 	return nativeTokenBalance
