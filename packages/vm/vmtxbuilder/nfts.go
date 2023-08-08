@@ -10,11 +10,11 @@ import (
 )
 
 type nftIncluded struct {
-	ID          iotago.NFTID
-	outputID    iotago.OutputID // only available when the input is already accounted for (NFT was deposited in a previous block)
-	in          *iotago.NFTOutput
-	out         *iotago.NFTOutput // this is not the same as in the `nativeTokenBalance` struct, this can be the accounting output, or the output leaving the chain. // TODO should refactor to follow the same logic so its easier to grok
-	sentOutside bool
+	ID                iotago.NFTID
+	accountingInputID iotago.OutputID // only available when the input is already accounted for (NFT was deposited in a previous block)
+	accountingInput   *iotago.NFTOutput
+	resultingOutput   *iotago.NFTOutput // this is not the same as in the `nativeTokenBalance` struct, this can be the accounting output, or the output leaving the chain. // TODO should refactor to follow the same logic so its easier to grok
+	sentOutside       bool
 }
 
 // 3 cases of handling NFTs in txbuilder
@@ -28,13 +28,13 @@ func (n *nftIncluded) Clone() *nftIncluded {
 	copy(nftID[:], n.ID[:])
 
 	outputID := iotago.OutputID{}
-	copy(outputID[:], n.outputID[:])
+	copy(outputID[:], n.accountingInputID[:])
 
 	return &nftIncluded{
-		ID:       nftID,
-		outputID: outputID,
-		in:       cloneInternalNFTOutputOrNil(n.in),
-		out:      cloneInternalNFTOutputOrNil(n.out),
+		ID:                nftID,
+		accountingInputID: outputID,
+		accountingInput:   cloneInternalNFTOutputOrNil(n.accountingInput),
+		resultingOutput:   cloneInternalNFTOutputOrNil(n.resultingOutput),
 	}
 }
 
@@ -61,7 +61,7 @@ func (txb *AnchorTransactionBuilder) NFTOutputs() []*iotago.NFTOutput {
 	for _, nft := range txb.nftsSorted() {
 		if !nft.sentOutside {
 			// outputs sent outside are already added to txb.postedOutputs
-			outs = append(outs, nft.out)
+			outs = append(outs, nft.resultingOutput)
 		}
 	}
 	return outs
@@ -71,9 +71,9 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 	toBeAdded = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	toBeRemoved = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	for _, nft := range txb.nftsSorted() {
-		if nft.in != nil {
+		if nft.accountingInput != nil {
 			// to remove if input is not nil (nft exists in accounting), and its sent to outside the chain
-			toBeRemoved = append(toBeRemoved, nft.out)
+			toBeRemoved = append(toBeRemoved, nft.resultingOutput)
 			continue
 		}
 		if nft.sentOutside {
@@ -81,7 +81,7 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 			continue
 		}
 		// to add if input is nil (doesn't exist in accounting), and its not sent outside the chain
-		toBeAdded = append(toBeAdded, nft.out)
+		toBeAdded = append(toBeAdded, nft.resultingOutput)
 	}
 	return toBeAdded, toBeRemoved
 }
@@ -111,10 +111,10 @@ func (txb *AnchorTransactionBuilder) internalNFTOutputFromRequest(nftOutput *iot
 	out.Amount = parameters.L1().Protocol.RentStructure.MinRent(out)
 
 	ret := &nftIncluded{
-		ID:          out.NFTID,
-		in:          nil,
-		out:         out,
-		sentOutside: false,
+		ID:              out.NFTID,
+		accountingInput: nil,
+		resultingOutput: out,
+		sentOutside:     false,
 	}
 
 	txb.nftsIncluded[out.NFTID] = ret
@@ -129,8 +129,8 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	if txb.nftsIncluded[o.NFTID] != nil {
 		// NFT comes in and out in the same block
 		txb.nftsIncluded[o.NFTID].sentOutside = true
-		sd := txb.nftsIncluded[o.NFTID].out.Amount // reimburse the SD cost
-		txb.nftsIncluded[o.NFTID].out = o
+		sd := txb.nftsIncluded[o.NFTID].resultingOutput.Amount // reimburse the SD cost
+		txb.nftsIncluded[o.NFTID].resultingOutput = o
 		return int64(sd)
 	}
 	if txb.InputsAreFull() {
@@ -140,11 +140,11 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	// using NFT already owned by the chain
 	in, outputID := txb.accountsView.NFTOutput(o.NFTID)
 	toInclude := &nftIncluded{
-		ID:          o.NFTID,
-		in:          in,
-		outputID:    outputID,
-		out:         o,
-		sentOutside: true,
+		ID:                o.NFTID,
+		accountingInput:   in,
+		accountingInputID: outputID,
+		resultingOutput:   o,
+		sentOutside:       true,
 	}
 
 	txb.nftsIncluded[o.NFTID] = toInclude
