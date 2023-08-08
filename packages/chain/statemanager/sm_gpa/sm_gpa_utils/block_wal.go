@@ -140,13 +140,12 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		if !strings.HasSuffix(filePath, constBlockWALFileSuffix) {
 			return
 		}
-		fileBlock, fileErr := blockFromFilePath(filePath)
-		if fileErr != nil {
+		stateIndex, err := blockIndexFromFilePath(filePath)
+		if err != nil {
 			bwT.metrics.IncFailedReads()
-			bwT.LogWarn("Unable to read %v: %v", filePath, fileErr)
+			bwT.LogWarn("Unable to read %v: %v", filePath, err)
 			return
 		}
-		stateIndex := fileBlock.StateIndex()
 		stateIndexPaths, found := blocksByStateIndex[stateIndex]
 		if found {
 			stateIndexPaths = append(stateIndexPaths, filePath)
@@ -206,9 +205,9 @@ func blockInfoFromFilePath[I any](filePath string, getInfoFun func(io.Reader) (I
 	return getInfoFun(f)
 }
 
-/*func blockIndexFromFilePath(filePath string) (uint32, error) {
+func blockIndexFromFilePath(filePath string) (uint32, error) {
 	return blockInfoFromFilePath(filePath, blockIndexFromReader)
-}*/
+}
 
 func blockFromFilePath(filePath string) (state.Block, error) {
 	return blockInfoFromFilePath(filePath, blockFromReader)
