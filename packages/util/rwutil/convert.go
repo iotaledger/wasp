@@ -29,7 +29,7 @@ type (
 //////////////////// basic size-checked read/write \\\\\\\\\\\\\\\\\\\\
 
 func ReadN(r io.Reader, data []byte) error {
-	n, err := r.Read(data)
+	n, err := io.ReadFull(r, data)
 	if err != nil {
 		return err
 	}
