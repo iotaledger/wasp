@@ -132,7 +132,7 @@ func (p *TypedPoolByNonce[V]) Remove(request V) {
 	}
 	// find the request in the accounts map
 	indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry[V]) bool {
-		return true
+		return refKey == isc.RequestRefFromRequest(e.req).AsKey()
 	})
 	if indexToDel == -1 {
 		p.log.Error("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
@@ -148,8 +148,8 @@ func (p *TypedPoolByNonce[V]) Remove(request V) {
 }
 
 func (p *TypedPoolByNonce[V]) Iterate(f func(account string, requests []*OrderedPoolEntry[V])) {
-	p.reqsByAcountOrdered.ForEach(func(acc string, reqs []*OrderedPoolEntry[V]) bool {
-		f(acc, reqs)
+	p.reqsByAcountOrdered.ForEach(func(acc string, entries []*OrderedPoolEntry[V]) bool {
+		f(acc, slices.Clone(entries))
 		return true
 	})
 }
