@@ -1,11 +1,15 @@
 package cmt_log
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type VarOutput interface {
+	// Summary of the internal state.
+	StatusString() string
 	Value() *Output
 	LogIndexAgreed(li LogIndex)
 	TipAOChanged(ao *isc.AliasOutputWithID)
@@ -33,6 +37,13 @@ func NewVarOutput(persistUsed func(li LogIndex), log *logger.Logger) VarOutput {
 		persistUsed: persistUsed,
 		log:         log,
 	}
+}
+
+func (voi *varOutputImpl) StatusString() string {
+	return fmt.Sprintf(
+		"{varOutput: output=%v, candidate{li=%v, ao=%v}, canPropose=%v, suspended=%v}",
+		voi.outValue, voi.candidateLI, voi.candidateAO, voi.canPropose, voi.suspended,
+	)
 }
 
 func (voi *varOutputImpl) Value() *Output {
@@ -76,6 +87,7 @@ func (voi *varOutputImpl) tryOutput() {
 	// Output the new data.
 	voi.persistUsed(voi.candidateLI)
 	voi.outValue = makeOutput(voi.candidateLI, voi.candidateAO)
+	voi.log.Infof("⊪ Output %p", voi.outValue)
 	voi.canPropose = false
 	voi.candidateLI = NilLogIndex()
 }
