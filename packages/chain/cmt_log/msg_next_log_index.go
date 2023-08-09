@@ -52,9 +52,20 @@ func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 }
 
 func (msg *MsgNextLogIndex) String() string {
+	var causeStr string
+	switch msg.Cause {
+	case MsgNextLogIndexCauseConsOut:
+		causeStr = "ConsOut"
+	case MsgNextLogIndexCauseRecover:
+		causeStr = "Recover"
+	case MsgNextLogIndexCauseL1ReplacedAO:
+		causeStr = "L1RepAO"
+	default:
+		causeStr = fmt.Sprintf("%v", msg.Cause)
+	}
 	return fmt.Sprintf(
-		"{MsgNextLogIndex, sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
-		msg.Sender().ShortString(), msg.NextLogIndex, msg.NextBaseAO, msg.PleaseRepeat,
+		"{MsgNextLogIndex[%s], sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
+		causeStr, msg.Sender().ShortString(), msg.NextLogIndex, msg.NextBaseAO, msg.PleaseRepeat,
 	)
 }
 

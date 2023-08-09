@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
-func TestVarLogIndexBasic(t *testing.T) {
+func TestVarLogIndexV2Basic(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	n := 4
@@ -25,21 +25,19 @@ func TestVarLogIndexBasic(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex) {}, log)
 	//
 	nextLI := initLI.Next()
-	vliLI, _ := vli.Value()
-	require.NotEqual(t, nextLI, vliLI)
+	require.NotEqual(t, nextLI, vli.Value())
 	nextLIMsg := NewMsgNextLogIndex(nodeIDs[0], nextLI, ao, MsgNextLogIndexCauseRecover, false)
 	for i := 0; i < n-f; i++ {
 		nextLIMsg.SetSender(nodeIDs[i])
 		vli.MsgNextLogIndexReceived(nextLIMsg)
 	}
-	vliLI, _ = vli.Value()
-	require.Equal(t, nextLI, vliLI)
+	require.Equal(t, nextLI, vli.Value())
 }
 
-func TestVarLogIndexOther(t *testing.T) {
+func TestVarLogIndexV2Other(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	n := 4
@@ -49,15 +47,11 @@ func TestVarLogIndexOther(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex, ao *isc.AliasOutputWithID) {}, true, log)
-	vliValueLI := func() LogIndex {
-		li, _ := vli.Value()
-		return li
-	}
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex) {}, log)
 	li15 := LogIndex(15)
 	li16 := LogIndex(16)
 	li18 := LogIndex(18)
-	require.Equal(t, NilLogIndex(), vliValueLI())
+	require.Equal(t, NilLogIndex(), vli.Value())
 
 	msgWithSender := func(sender gpa.NodeID, li LogIndex) *MsgNextLogIndex {
 		msg := NewMsgNextLogIndex(nodeIDs[0], li, ao, MsgNextLogIndexCauseRecover, false)
@@ -66,16 +60,16 @@ func TestVarLogIndexOther(t *testing.T) {
 	}
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[0], li15))
-	require.Equal(t, NilLogIndex(), vliValueLI())
+	require.Equal(t, NilLogIndex(), vli.Value())
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[1], li18))
-	require.Equal(t, NilLogIndex(), vliValueLI())
+	require.Equal(t, NilLogIndex(), vli.Value())
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[2], li16))
-	require.Equal(t, li15, vliValueLI())
+	require.Equal(t, li15, vli.Value())
 
 	vli.MsgNextLogIndexReceived(msgWithSender(nodeIDs[3], li15))
-	require.Equal(t, li15, vliValueLI())
+	require.Equal(t, li15, vli.Value())
 }
 
 func randomAliasOutputWithID() *isc.AliasOutputWithID {

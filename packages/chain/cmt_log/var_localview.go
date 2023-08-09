@@ -60,6 +60,11 @@
 // Note on the AO as an input for a consensus. The provided AO is just a proposal. After ACS
 // is completed, the participants will select the actual AO, which can differ from the one
 // proposed by this node.
+//
+// NOTE: On the rejections. When we get a rejection of an AO, we cannot mark all the subsequent
+// StateIndexes as rejected, because it is possible that the rejected AO was started to publish
+// before a reorg/reject. Thus, only that single AO has to be marked as rejected. Nevertheless,
+// the AOs explicitly (via consumed AO) depending on the rejected AO can be cleaned up.
 package cmt_log
 
 import (
@@ -115,16 +120,19 @@ type varLocalViewImpl struct {
 	// Limit pipelining (a number of unconfirmed TXes to this number.)
 	// -1 -- infinite, 0 -- disabled, x -- up to x TXes ahead.
 	pipeliningLimit int
+	// Callback for the TIP changes.
+	tipUpdatedCB func(ao *isc.AliasOutputWithID)
 	// Just a logger.
 	log *logger.Logger
 }
 
-func NewVarLocalView(pipeliningLimit int, log *logger.Logger) VarLocalView {
+func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.AliasOutputWithID), log *logger.Logger) VarLocalView {
 	log.Debugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &varLocalViewImpl{
 		confirmed:       nil,
 		pending:         shrinkingmap.New[uint32, []*varLocalViewEntry](),
 		pipeliningLimit: pipeliningLimit,
+		tipUpdatedCB:    tipUpdatedCB,
 		log:             log,
 	}
 }
@@ -171,6 +179,7 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed iot
 	// Check, if the added AO is a new tip for the chain.
 	if published.Equals(lvi.findLatestPending()) {
 		lvi.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, lvi.confirmed)
+		lvi.tipUpdatedCB(published)
 		return published, true
 	}
 	lvi.log.Debugf("⊳ That's not a tip.")
@@ -269,6 +278,7 @@ func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *isc.AliasOutputWith
 	}
 	if oldTip == nil || newTip == nil {
 		lvi.log.Debugf("⊳ New tip=%v, was %v", newTip, oldTip)
+		lvi.tipUpdatedCB(newTip)
 		return newTip, true
 	}
 	if oldTip.Equals(newTip) {
@@ -276,6 +286,7 @@ func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *isc.AliasOutputWith
 		return newTip, false
 	}
 	lvi.log.Debugf("⊳ New tip=%v, was %v", newTip, oldTip)
+	lvi.tipUpdatedCB(newTip)
 	return newTip, true
 }
 

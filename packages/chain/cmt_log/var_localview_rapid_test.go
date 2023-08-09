@@ -38,7 +38,7 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 
 func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
 	sm := new(varLocalViewSM)
-	sm.lv = cmt_log.NewVarLocalView(-1, testlogger.NewLogger(t))
+	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *isc.AliasOutputWithID) {}, testlogger.NewLogger(t))
 	sm.confirmed = []*isc.AliasOutputWithID{}
 	sm.pending = []*isc.AliasOutputWithID{}
 	sm.rejected = []*isc.AliasOutputWithID{}

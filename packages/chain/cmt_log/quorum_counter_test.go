@@ -45,19 +45,11 @@ func TestQuorumCounter(t *testing.T) {
 	qc.VoteReceived(makeVote(nodeIDs[3], li8, ao2))
 	qc.VoteReceived(makeVote(nodeIDs[4], li8, ao2))
 
-	li, ao = qc.EnoughVotes(f+1, false)
+	li, _ = qc.EnoughVotes(f+1, false)
 	require.Equal(t, li8, li)
-	require.Nil(t, ao) // Don't return AO i the case of false.
 
-	li, ao = qc.EnoughVotes(f+1, true)
+	li, _ = qc.EnoughVotes(n-f, false)
 	require.Equal(t, li7, li)
-
-	li, ao = qc.EnoughVotes(n-f, false)
-	require.Equal(t, li7, li)
-	require.Nil(t, ao) // Don't return AO i the case of false.
-
-	li, ao = qc.EnoughVotes(n-f, true)
-	require.Equal(t, lin, li)
 
 	require.True(t, qc.HaveVoteFrom(nodeIDs[4]))
 	require.False(t, qc.HaveVoteFrom(nodeIDs[5]))
