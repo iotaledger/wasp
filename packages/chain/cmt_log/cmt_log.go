@@ -344,9 +344,10 @@ func (cl *cmtLogImpl) Output() gpa.Output {
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) StatusString() string {
-	vliLI := cl.varLogIndex.Value()
 	return fmt.Sprintf(
-		"{cmtLogImpl, LogIndex=%v, output=%+v, %v, %v}",
-		vliLI, cl.varOutput.Value(), cl.varLocalView.StatusString(), cl.varLogIndex.StatusString(),
+		"{cmtLogImpl, %v, %v, %v}",
+		cl.varOutput.StatusString(),
+		cl.varLocalView.StatusString(),
+		cl.varLogIndex.StatusString(),
 	)
 }
