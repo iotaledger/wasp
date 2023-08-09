@@ -226,7 +226,7 @@ func New(
 			// Nothing to do, if we cannot persist this.
 			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}
-	}, log.Named("OUT"))
+	}, log.Named("VO"))
 	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, cl.varOutput.LogIndexAgreed, log.Named("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, cl.varOutput.TipAOChanged, log.Named("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)

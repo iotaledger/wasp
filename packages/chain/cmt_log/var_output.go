@@ -39,55 +39,55 @@ func NewVarOutput(persistUsed func(li LogIndex), log *logger.Logger) VarOutput {
 	}
 }
 
-func (voi *varOutputImpl) StatusString() string {
+func (vo *varOutputImpl) StatusString() string {
 	return fmt.Sprintf(
 		"{varOutput: output=%v, candidate{li=%v, ao=%v}, canPropose=%v, suspended=%v}",
-		voi.outValue, voi.candidateLI, voi.candidateAO, voi.canPropose, voi.suspended,
+		vo.outValue, vo.candidateLI, vo.candidateAO, vo.canPropose, vo.suspended,
 	)
 }
 
-func (voi *varOutputImpl) Value() *Output {
-	if voi.outValue == nil || voi.suspended {
+func (vo *varOutputImpl) Value() *Output {
+	if vo.outValue == nil || vo.suspended {
 		return nil // Untyped nil.
 	}
-	return voi.outValue
+	return vo.outValue
 }
 
-func (voi *varOutputImpl) LogIndexAgreed(li LogIndex) {
-	voi.candidateLI = li
-	voi.tryOutput()
+func (vo *varOutputImpl) LogIndexAgreed(li LogIndex) {
+	vo.candidateLI = li
+	vo.tryOutput()
 }
 
-func (voi *varOutputImpl) TipAOChanged(ao *isc.AliasOutputWithID) {
-	voi.candidateAO = ao
-	voi.tryOutput()
+func (vo *varOutputImpl) TipAOChanged(ao *isc.AliasOutputWithID) {
+	vo.candidateAO = ao
+	vo.tryOutput()
 }
 
-func (voi *varOutputImpl) CanPropose() {
-	voi.canPropose = true
-	voi.tryOutput()
+func (vo *varOutputImpl) CanPropose() {
+	vo.canPropose = true
+	vo.tryOutput()
 }
 
-func (voi *varOutputImpl) Suspended(suspended bool) {
-	if voi.suspended && !suspended {
-		voi.log.Infof("Committee resumed.")
+func (vo *varOutputImpl) Suspended(suspended bool) {
+	if vo.suspended && !suspended {
+		vo.log.Infof("Committee resumed.")
 	}
-	if !voi.suspended && suspended {
-		voi.log.Infof("Committee suspended.")
+	if !vo.suspended && suspended {
+		vo.log.Infof("Committee suspended.")
 	}
-	voi.suspended = suspended
+	vo.suspended = suspended
 }
 
-func (voi *varOutputImpl) tryOutput() {
-	if voi.candidateLI.IsNil() || voi.candidateAO == nil || !voi.canPropose {
+func (vo *varOutputImpl) tryOutput() {
+	if vo.candidateLI.IsNil() || vo.candidateAO == nil || !vo.canPropose {
 		// Keep output unchanged.
 		return
 	}
 	//
 	// Output the new data.
-	voi.persistUsed(voi.candidateLI)
-	voi.outValue = makeOutput(voi.candidateLI, voi.candidateAO)
-	voi.log.Infof("⊪ Output %p", voi.outValue)
-	voi.canPropose = false
-	voi.candidateLI = NilLogIndex()
+	vo.persistUsed(vo.candidateLI)
+	vo.outValue = makeOutput(vo.candidateLI, vo.candidateAO)
+	vo.log.Infof("⊪ Output %v", vo.outValue)
+	vo.canPropose = false
+	vo.candidateLI = NilLogIndex()
 }

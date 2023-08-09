@@ -144,7 +144,7 @@ func (vli *varLogIndexImpl) Value() LogIndex {
 	return vli.agreedLI
 }
 
-func (vli *varLogIndexImpl) LogIndexUsed(li LogIndex) { // TODO: Call it.
+func (vli *varLogIndexImpl) LogIndexUsed(li LogIndex) { // TODO: Call it. Or remove it.
 	if vli.minLI <= li {
 		vli.minLI = li.Next()
 	}
@@ -214,9 +214,17 @@ func (vli *varLogIndexImpl) msgNextLogIndexOnConsOut(msg *MsgNextLogIndex) {
 }
 
 func (vli *varLogIndexImpl) msgNextLogIndexOnRecover(msg *MsgNextLogIndex) gpa.OutMessages {
+	msgs := gpa.NoMessages()
 	vli.qcRecover.VoteReceived(msg)
 	sli, _ := vli.qcRecover.EnoughVotes(vli.f+1, false)
-	msgs := vli.qcRecover.MaybeSendVote(sli)
+	msgs.AddAll(vli.qcRecover.MaybeSendVote(sli))
+	if msg.PleaseRepeat {
+		if msgs.Count() == 0 {
+			msgs = vli.qcRecover.LastMessageForPeer(msg.Sender(), msgs)
+		}
+		msgs = vli.qcConsOut.LastMessageForPeer(msg.Sender(), msgs)
+		msgs = vli.qcL1AORep.LastMessageForPeer(msg.Sender(), msgs)
+	}
 	vli.tryOutputOnRecover()
 	return msgs
 }
