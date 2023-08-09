@@ -23,15 +23,8 @@ func TestQuorumCounter(t *testing.T) {
 	li8 := cmt_log.LogIndex(8)
 
 	qc := cmt_log.NewQuorumCounter(cmt_log.MsgNextLogIndexCauseRecover, nodeIDs, log)
-	var li cmt_log.LogIndex
-	var ao *isc.AliasOutputWithID
 
-	li, ao = qc.EnoughVotes(f+1, true)
-	require.Equal(t, lin, li)
-	require.Nil(t, ao)
-	li, ao = qc.EnoughVotes(f+1, false)
-	require.Equal(t, lin, li)
-	require.Nil(t, ao)
+	require.Equal(t, lin, qc.EnoughVotes(f+1))
 
 	makeVote := func(from gpa.NodeID, li cmt_log.LogIndex, ao *isc.AliasOutputWithID) *cmt_log.MsgNextLogIndex {
 		vote := cmt_log.NewMsgNextLogIndex(nodeIDs[0], li, ao, cmt_log.MsgNextLogIndexCauseRecover, false)
@@ -45,11 +38,8 @@ func TestQuorumCounter(t *testing.T) {
 	qc.VoteReceived(makeVote(nodeIDs[3], li8, ao2))
 	qc.VoteReceived(makeVote(nodeIDs[4], li8, ao2))
 
-	li, _ = qc.EnoughVotes(f+1, false)
-	require.Equal(t, li8, li)
-
-	li, _ = qc.EnoughVotes(n-f, false)
-	require.Equal(t, li7, li)
+	require.Equal(t, li8, qc.EnoughVotes(f+1))
+	require.Equal(t, li7, qc.EnoughVotes(n-f))
 
 	require.True(t, qc.HaveVoteFrom(nodeIDs[4]))
 	require.False(t, qc.HaveVoteFrom(nodeIDs[5]))

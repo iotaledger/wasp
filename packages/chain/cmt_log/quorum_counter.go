@@ -2,9 +2,7 @@ package cmt_log
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type QuorumCounter struct {
@@ -72,42 +70,24 @@ func (qc *QuorumCounter) HaveVoteFrom(from gpa.NodeID) bool {
 	return have
 }
 
-func (qc *QuorumCounter) EnoughVotes(quorum int, countEqual bool) (LogIndex, *isc.AliasOutputWithID) {
-	if countEqual {
-		panic("countEqual should not be used")
-	}
-	countsLI := map[iotago.OutputID]map[LogIndex]int{}
-	aos := map[iotago.OutputID]*isc.AliasOutputWithID{}
+func (qc *QuorumCounter) EnoughVotes(quorum int) LogIndex {
+	countsLI := map[LogIndex]int{}
 	for _, vote := range qc.maxPeerVotes {
-		var oid iotago.OutputID // Will keep it nil, if !countEqual.
-		if countEqual && vote.NextBaseAO != nil {
-			oid = vote.NextBaseAO.OutputID()
-			if _, ok := aos[oid]; !ok {
-				aos[oid] = vote.NextBaseAO
-			}
-		}
-		if _, ok := countsLI[oid]; !ok {
-			countsLI[oid] = map[LogIndex]int{}
-		}
-		countsLI[oid][vote.NextLogIndex]++
+		countsLI[vote.NextLogIndex]++
 	}
 	maxLI := NilLogIndex()
-	var maxAO *isc.AliasOutputWithID
-	for oid, oidCounts := range countsLI {
-		for li := range oidCounts {
-			// Count votes: all vote for this LI, if votes for it or higher LI.
-			c := 0
-			for li2, c2 := range oidCounts {
-				if li2 >= li {
-					c += c2
-				}
-			}
-			// If quorum reached and it is higher than we had before, take it.
-			if c >= quorum && li > maxLI {
-				maxLI = li
-				maxAO = aos[oid] // Might be nil.
+	for li := range countsLI {
+		// Count votes: all vote for this LI, if votes for it or higher LI.
+		c := 0
+		for li2, c2 := range countsLI {
+			if li2 >= li {
+				c += c2
 			}
 		}
+		// If quorum reached and it is higher than we had before, take it.
+		if c >= quorum && li > maxLI {
+			maxLI = li
+		}
 	}
-	return maxLI, maxAO
+	return maxLI
 }

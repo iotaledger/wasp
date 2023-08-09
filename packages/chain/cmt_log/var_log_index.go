@@ -216,7 +216,7 @@ func (vli *varLogIndexImpl) msgNextLogIndexOnConsOut(msg *MsgNextLogIndex) {
 func (vli *varLogIndexImpl) msgNextLogIndexOnRecover(msg *MsgNextLogIndex) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	vli.qcRecover.VoteReceived(msg)
-	sli, _ := vli.qcRecover.EnoughVotes(vli.f+1, false)
+	sli := vli.qcRecover.EnoughVotes(vli.f + 1)
 	msgs.AddAll(vli.qcRecover.MaybeSendVote(sli))
 	if msg.PleaseRepeat {
 		if msgs.Count() == 0 {
@@ -236,17 +236,17 @@ func (vli *varLogIndexImpl) msgNextLogIndexOnL1ReplacedAO(msg *MsgNextLogIndex) 
 
 // If we voted for that LI based on consensus output, and there is N-F supporters, then proceed.
 func (vli *varLogIndexImpl) tryOutputOnConsOut() {
-	ali, _ := vli.qcConsOut.EnoughVotes(vli.n-vli.f, false)
+	ali := vli.qcConsOut.EnoughVotes(vli.n - vli.f)
 	vli.tryOutput(ali)
 }
 
 func (vli *varLogIndexImpl) tryOutputOnRecover() {
-	ali, _ := vli.qcRecover.EnoughVotes(vli.n-vli.f, false)
+	ali := vli.qcRecover.EnoughVotes(vli.n - vli.f)
 	vli.tryOutput(ali)
 }
 
 func (vli *varLogIndexImpl) tryOutputOnL1ReplacedAO() {
-	ali, _ := vli.qcL1AORep.EnoughVotes(vli.n-vli.f, false)
+	ali := vli.qcL1AORep.EnoughVotes(vli.n - vli.f)
 	vli.tryOutput(ali)
 }
 
