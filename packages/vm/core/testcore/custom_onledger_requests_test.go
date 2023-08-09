@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestNoSenderFeature(t *testing.T) {
@@ -28,7 +28,9 @@ func TestNoSenderFeature(t *testing.T) {
 	// ----------------------------------------------------------------
 
 	// mint some NTs and withdraw them
-	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(10*isc.Million), wallet)
+	gasFee := 10 * gas.LimitsDefault.MinGasPerRequest
+	withdrawAmount := 3 * gas.LimitsDefault.MinGasPerRequest
+	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(withdrawAmount+gasFee), wallet)
 	require.NoError(t, err)
 	nativeTokenAmount := big.NewInt(123)
 	sn, nativeTokenID, err := ch.NewFoundryParams(1234).
@@ -40,8 +42,8 @@ func TestNoSenderFeature(t *testing.T) {
 	require.NoError(t, err)
 
 	// withdraw native tokens to L1
-	allowance := 5 * isc.Million
-	baseTokensToSend := allowance + wasmlib.MinGasFee
+	allowance := withdrawAmount
+	baseTokensToSend := allowance + gasFee
 	_, err = ch.PostRequestOffLedger(solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncWithdraw.Name,
 	).
@@ -51,7 +53,7 @@ func TestNoSenderFeature(t *testing.T) {
 			ID:     nativeTokenID,
 			Amount: nativeTokenAmount,
 		}).
-		WithGasBudget(wasmlib.MinGasFee),
+		WithGasBudget(gasFee),
 		wallet)
 	require.NoError(t, err)
 

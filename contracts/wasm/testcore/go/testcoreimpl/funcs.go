@@ -18,10 +18,10 @@ const (
 
 	MsgDoNothing     = "========== doing nothing"
 	MsgFailOnPurpose = "failing on purpose"
-	MsgFullPanic     = "========== panic FULL ENTRY POINT ========="
+	MsgFullPanic     = "========== panic FULL ENTRY POINT =========="
 	MsgJustView      = "calling empty view entry point"
 
-	MsgViewPanic = "========== panic VIEW ========="
+	MsgViewPanic = "========== panic VIEW =========="
 )
 
 func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
@@ -242,13 +242,10 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	transfer := wasmlib.ScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
-	// This is just a test contract, but normally these numbers should
-	// be parameters because there is no way for the contract to figure
-	// out the gas fees on the other chain, and it's also silly to run
-	// the costly calculation to determine storage deposit every time
-	// unless absolutely necessary. Better to just make sure that the
-	// storage deposit is large enough, since it will be returned anyway.
-	const gasFee = wasmlib.MinGasFee
+	var gasReserveTransferAccountToChain = wasmlib.MinGasFee
+	if f.Params.GasReserveTransferAccountToChain().Exists() {
+		gasReserveTransferAccountToChain = f.Params.GasReserveTransferAccountToChain().Value()
+	}
 	var gasReserve = wasmlib.MinGasFee
 	if f.Params.GasReserve().Exists() {
 		gasReserve = f.Params.GasReserve().Value()
@@ -261,7 +258,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	// NOTE: make sure you READ THE DOCS before calling this function
 	xfer := coreaccounts.ScFuncs.TransferAccountToChain(ctx)
 	xfer.Params.GasReserve().SetValue(gasReserve)
-	xfer.Func.TransferBaseTokens(storageDeposit + gasFee + gasReserve).
+	xfer.Func.TransferBaseTokens(storageDeposit + gasReserveTransferAccountToChain + gasReserve).
 		AllowanceBaseTokens(withdrawal + storageDeposit + gasReserve).
 		PostToChain(targetChain)
 }

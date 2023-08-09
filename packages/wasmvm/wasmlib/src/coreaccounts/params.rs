@@ -6,8 +6,8 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::coreaccounts::*;
 use crate::*;
+use crate::coreaccounts::*;
 
 #[derive(Clone)]
 pub struct ImmutableFoundryCreateNewParams {
@@ -132,7 +132,7 @@ impl ImmutableTransferAccountToChainParams {
     }
 
     // Optional gas amount to reserve in the allowance for the internal
-    // call to transferAllowanceTo(). Default 100_000 (MinGasFee).
+    // call to transferAllowanceTo(). Default 10_000 (MinGasFee).
     pub fn gas_reserve(&self) -> ScImmutableUint64 {
         ScImmutableUint64::new(self.proxy.root(PARAM_GAS_RESERVE))
     }
@@ -145,7 +145,7 @@ pub struct MutableTransferAccountToChainParams {
 
 impl MutableTransferAccountToChainParams {
     // Optional gas amount to reserve in the allowance for the internal
-    // call to transferAllowanceTo(). Default 100_000 (MinGasFee).
+    // call to transferAllowanceTo(). Default 10_000 (MinGasFee).
     pub fn gas_reserve(&self) -> ScMutableUint64 {
         ScMutableUint64::new(self.proxy.root(PARAM_GAS_RESERVE))
     }

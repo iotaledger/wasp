@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,8 +86,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 				Metadata: &isc.SendMetadata{
 					TargetContract: accounts.Contract.Hname(),
 					EntryPoint:     accounts.FuncDeposit.Hname(),
-					// FIXME may user other MinGasFee instead of wasmlib.MinGasFee
-					GasBudget: wasmlib.MinGasFee,
+					GasBudget:      2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},
 		},
@@ -119,8 +117,7 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 						root.ParamName:        inccounter.Contract.Name,
 						inccounter.VarCounter: 0,
 					}),
-					// FIXME may user other MinGasFee instead of wasmlib.MinGasFee
-					GasBudget: wasmlib.MinGasFee,
+					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},
 		},

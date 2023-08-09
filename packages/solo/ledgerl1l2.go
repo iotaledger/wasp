@@ -203,7 +203,8 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 		user = fp.user
 	}
 	req := CallParamsFromDict(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
-		WithAllowance(isc.NewAssetsBaseTokens(allowanceForFoundryStorageDeposit))
+		WithAllowance(isc.NewAssetsBaseTokens(allowanceForFoundryStorageDeposit)).
+		AddBaseTokens(allowanceForFoundryStorageDeposit)
 
 	gas, _, err := fp.ch.EstimateGasOnLedger(req, user, true)
 	if err != nil {

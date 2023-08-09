@@ -66,7 +66,7 @@ var burnTable = BurnTable{
 	BurnCodeUtilsBLSValidSignature:     {"bls valid", constValue(2000)},
 	BurnCodeUtilsBLSAddrFromPubKey:     {"bls addr", constValue(50)},
 	BurnCodeUtilsBLSAggregateBLS1P:     {"bls aggregate", linear(CoefBLSAggregate)},
-	BurnCodeMinimumGasPerRequest1P:     {"minimum gas per request", minBurn(10000)}, // TODO maybe make it configurable (gov contract?) // FIXME not equal to wasmlib.MinGasFee
+	BurnCodeMinimumGasPerRequest1P:     {"minimum gas per request", minBurn(10000)}, // TODO maybe make it configurable (gov contract?)
 	BurnCodeEVM1P:                      {"evm", linear(1)},
 }
 

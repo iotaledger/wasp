@@ -33,7 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 type soloChainEnv struct {
@@ -373,9 +372,8 @@ func (e *soloChainEnv) registerERC20ExternalNativeToken(
 		evm.FieldTargetAddress:     codec.EncodeAddress(e.soloChain.ChainID.AsAddress()),
 	}).
 		// to cover sd and gas fee for the 'FuncRegisterERC20ExternalNativeToken' func call in 'FuncRegisterERC20NativeTokenOnRemoteChain'
-		WithAllowance(isc.NewAssetsBaseTokens(2*wasmlib.MinGasFee)).
-		// FIXME why this gas budget is less than the gas budget of the indirect call FuncRegisterERC20ExternalNativeToken
-		WithGasBudget(wasmlib.MinGasFee),
+		WithAllowance(isc.NewAssetsBaseTokens(20*gas.LimitsDefault.MinGasPerRequest)).
+		WithGasBudget(10*gas.LimitsDefault.MinGasPerRequest),
 		fromChain.OriginatorPrivateKey)
 	if err != nil {
 		return ret, err
