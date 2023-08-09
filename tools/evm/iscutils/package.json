@@ -1,7 +1,7 @@
 {
   "name": "@iota/iscutils",
   "version": "0.0.0",
-  "description": "",
+  "description": "The iscutils package contains various utility methods to simplify the interaction with the IOTA Magic contract.",
   "repository": {
     "type": "git",
     "url": "https://github.com/iotaledger/wasp.git",
@@ -12,8 +12,7 @@
     "wasp",
     "solidity",
     "evm",
-    "isc",
-    "iota"
+    "isc"
   ],
   "author": "Iota Smart Contracts",
   "license": "Apache-2.0",
