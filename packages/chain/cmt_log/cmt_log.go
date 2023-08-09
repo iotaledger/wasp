@@ -291,7 +291,8 @@ func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusO
 
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
-	msgs := cl.varLogIndex.ConsensusOutputReceived(input.logIndex) // This should be superfluous, always follows handleInputConsensusOutputDone.
+	msgs := gpa.NoMessages()
+	msgs.AddAll(cl.varLogIndex.ConsensusOutputReceived(input.logIndex)) // This should be superfluous, always follows handleInputConsensusOutputDone.
 	if _, tipUpdated := cl.varLocalView.AliasOutputRejected(input.aliasOutput); tipUpdated {
 		return msgs.AddAll(cl.varLogIndex.L1ReplacedBaseAliasOutput())
 	}
