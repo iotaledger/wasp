@@ -29,6 +29,7 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 		MetricsPort:                  w.FirstMetricsPort + i,
 		OffledgerBroadcastUpToNPeers: 10,
 		PruningMinStatesToKeep:       10000,
+		AuthScheme:                   "none",
 	}
 }
 

@@ -283,6 +283,8 @@ func (e *EVMEmulator) SendTransaction(
 	tracer tracers.Tracer,
 	addToBlockchain ...bool,
 ) (receipt *types.Receipt, result *core.ExecutionResult, err error) {
+	// create a buffered view of the EVM state; any writes will be made in memory
+	// until Commit is called below.
 	buf := e.StateDB().Buffered()
 	statedb := buf.StateDB()
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.timestamp)
@@ -344,8 +346,10 @@ func (e *EVMEmulator) SendTransaction(
 		receipt.ContractAddress = crypto.CreateAddress(msg.From, tx.Nonce())
 	}
 
+	// commit the state changes
 	buf.Commit()
-	// add tx and receipt to the blockchain unless addToBlockchain == false
+
+	// add the tx and receipt to the blockchain unless addToBlockchain == false
 	if len(addToBlockchain) == 0 || addToBlockchain[0] {
 		e.BlockchainDB().AddTransaction(tx, receipt)
 	}

@@ -2,9 +2,9 @@ package sm_gpa_utils
 
 import (
 	"fmt"
+	"io"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 )
@@ -75,10 +75,10 @@ func (ros *readOnlyStore) Prune(trie.Hash) (trie.PruneStats, error) {
 	panic("Cannot prune read-only store")
 }
 
-func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, kvStore kvstore.KVStore) error {
-	return ros.store.TakeSnapshot(trieRoot, kvStore)
+func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, w io.Writer) error {
+	return ros.store.TakeSnapshot(trieRoot, w)
 }
 
-func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, kvstore.KVStore) error {
+func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, io.Reader) error {
 	return fmt.Errorf("cannot write snapshot into read-only store")
 }

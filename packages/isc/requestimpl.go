@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -31,7 +33,7 @@ func RequestFromReader(rr *rwutil.Reader) (ret Request) {
 	case requestKindOnLedger:
 		ret = new(onLedgerRequestData)
 	case requestKindOffLedgerISC:
-		ret = new(offLedgerRequestData)
+		ret = new(OffLedgerRequestData)
 	case requestKindOffLedgerEVMTx:
 		ret = new(evmOffLedgerTxRequest)
 	case requestKindOffLedgerEVMCall:
@@ -129,6 +131,10 @@ func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
 	_, err = rwutil.ReadFromBytes(data, &ret)
 	return ret, err
+}
+
+func RequestIDFromEVMTxHash(txHash common.Hash) RequestID {
+	return NewRequestID(iotago.TransactionID(txHash), 0)
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {

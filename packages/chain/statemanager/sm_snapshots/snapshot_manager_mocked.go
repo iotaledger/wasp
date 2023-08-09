@@ -1,6 +1,7 @@
 package sm_snapshots
 
 import (
+	"bytes"
 	"context"
 	"sync"
 	"sync/atomic"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/state"
@@ -202,7 +202,7 @@ func (msmT *MockedSnapshotManager) handleLoadSnapshot(snapshotInfo SnapshotInfo,
 		return elem.Equals(snapshotInfo.Commitment())
 	}))
 	<-msmT.timeProvider.After(msmT.snapshotLoadTime)
-	snapshot := mapdb.NewMapDB()
+	snapshot := new(bytes.Buffer)
 	err := msmT.origStore.TakeSnapshot(snapshotInfo.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
 	err = msmT.nodeStore.RestoreSnapshot(snapshotInfo.TrieRoot(), snapshot)

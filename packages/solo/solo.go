@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -39,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -67,19 +69,14 @@ type Solo struct {
 	ctx                             context.Context
 }
 
-// Chain represents state of individual chain.
-// There may be several parallel instances of the chain in the 'solo' test
-type Chain struct {
-	// Env is a pointer to the global structure of the 'solo' test
-	Env *Solo
-
+// data to be persisted in the snapshot
+type chainData struct {
 	// Name is the name of the chain
 	Name string
 
 	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
 	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
 	StateControllerKeyPair *cryptolib.KeyPair
-	StateControllerAddress iotago.Address
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID isc.ChainID
@@ -87,12 +84,24 @@ type Chain struct {
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
 	// It is a default key pair in many of Solo calls which require private key.
 	OriginatorPrivateKey *cryptolib.KeyPair
-	OriginatorAddress    iotago.Address
-	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID isc.AgentID
 
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
 	ValidatorFeeTarget isc.AgentID
+
+	db kvstore.KVStore
+}
+
+// Chain represents state of individual chain.
+// There may be several parallel instances of the chain in the 'solo' test
+type Chain struct {
+	chainData
+
+	StateControllerAddress iotago.Address
+	OriginatorAddress      iotago.Address
+	OriginatorAgentID      isc.AgentID
+
+	// Env is a pointer to the global structure of the 'solo' test
+	Env *Solo
 
 	// Store is where the chain data (blocks, state) is stored
 	store indexedstore.IndexedStore
@@ -108,6 +117,8 @@ type Chain struct {
 	RequestsBlock uint32
 
 	metrics *metrics.ChainMetrics
+
+	migrationScheme *migrations.MigrationScheme
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -199,6 +210,17 @@ func (env *Solo) Publisher() *publisher.Publisher {
 	return env.publisher
 }
 
+func (env *Solo) GetChainByName(name string) *Chain {
+	env.glbMutex.Lock()
+	defer env.glbMutex.Unlock()
+	for _, ch := range env.chains {
+		if ch.Name == name {
+			return ch
+		}
+	}
+	panic("chain not found")
+}
+
 // WithNativeContract registers a native contract so that it may be deployed
 func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 	env.processorConfig.RegisterNativeContract(c)
@@ -216,26 +238,12 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	return ret
 }
 
-// NewChainExt returns also origin and init transactions. Used for core testing
-//
-// If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
-// ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
-// To deploy a chain instance the following steps are performed:
-//   - chain signature scheme (private key), chain address and chain ID are created
-//   - empty virtual state is initialized
-//   - origin transaction is created by the originator and added to the UTXODB
-//   - 'init' request transaction to the 'root' contract is created and added to UTXODB
-//   - backlog processing threads (goroutines) are started
-//   - VM processor cache is initialized
-//   - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//
-// Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChainExt(
+func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
 	initBaseTokens uint64,
 	name string,
 	originParams ...dict.Dict,
-) (*Chain, *iotago.Transaction) {
+) (chainData, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	if chainOriginator == nil {
@@ -273,6 +281,7 @@ func (env *Solo) NewChainExt(
 		initParams,
 		outs,
 		outIDs,
+		0,
 	)
 	require.NoError(env.T, err)
 
@@ -288,46 +297,74 @@ func (env *Solo) NewChainExt(
 	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 
-	chainlog := env.logger.Named(name)
-
-	kvStore, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
+	db, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
-	store := indexedstore.New(state.NewStore(kvStore))
+	store := indexedstore.New(state.NewStore(db))
 	origin.InitChain(store, initParams, originAO.Amount-originAOMinSD)
 
 	{
 		block, err2 := store.LatestBlock()
 		require.NoError(env.T, err2)
-		env.logger.Infof("     chain '%s'. origin trie root: %s", chainID.String(), block.TrieRoot())
+		env.logger.Infof("     chain '%s'. origin trie root: %s", chainID, block.TrieRoot())
 	}
 
-	ret := &Chain{
-		Env:                    env,
+	return chainData{
 		Name:                   name,
 		ChainID:                chainID,
 		StateControllerKeyPair: stateControllerKey,
-		StateControllerAddress: stateControllerAddr,
 		OriginatorPrivateKey:   chainOriginator,
-		OriginatorAddress:      originatorAddr,
-		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
-		store:                  store,
-		proc:                   processors.MustNew(env.processorConfig),
-		log:                    chainlog,
-		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chainID),
-	}
+		db:                     db,
+	}, originTx
+}
 
-	ret.mempool = newMempool(env.utxoDB.GlobalTime)
+// NewChainExt returns also origin and init transactions. Used for core testing
+//
+// If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
+// ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
+// To deploy a chain instance the following steps are performed:
+//   - chain signature scheme (private key), chain address and chain ID are created
+//   - empty virtual state is initialized
+//   - origin transaction is created by the originator and added to the UTXODB
+//   - 'init' request transaction to the 'root' contract is created and added to UTXODB
+//   - backlog processing threads (goroutines) are started
+//   - VM processor cache is initialized
+//   - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
+//
+// Upon return, the chain is fully functional to process requests
+func (env *Solo) NewChainExt(
+	chainOriginator *cryptolib.KeyPair,
+	initBaseTokens uint64,
+	name string,
+	originParams ...dict.Dict,
+) (*Chain, *iotago.Transaction) {
+	chData, originTx := env.deployChain(chainOriginator, initBaseTokens, name, originParams...)
 
 	env.glbMutex.Lock()
-	env.chains[chainID] = ret
-	env.glbMutex.Unlock()
+	defer env.glbMutex.Unlock()
+	ch := env.addChain(chData)
 
-	go ret.batchLoop()
+	ch.log.Infof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
+	return ch, originTx
+}
 
-	ret.log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
-	return ret, originTx
+func (env *Solo) addChain(chData chainData) *Chain {
+	ch := &Chain{
+		chainData:              chData,
+		StateControllerAddress: chData.StateControllerKeyPair.GetPublicKey().AsEd25519Address(),
+		OriginatorAddress:      chData.OriginatorPrivateKey.GetPublicKey().AsEd25519Address(),
+		OriginatorAgentID:      isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsEd25519Address()),
+		Env:                    env,
+		store:                  indexedstore.New(state.NewStore(chData.db)),
+		proc:                   processors.MustNew(env.processorConfig),
+		log:                    env.logger.Named(chData.Name),
+		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
+		mempool:                newMempool(env.utxoDB.GlobalTime),
+	}
+	env.chains[chData.ChainID] = ch
+	go ch.batchLoop()
+	return ch
 }
 
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
@@ -407,9 +444,8 @@ func (ch *Chain) collateBatch() []isc.Request {
 	if batchSize > maxBatch {
 		batchSize = maxBatch
 	}
-	ret := make([]isc.Request, 0)
-	ret = append(ret, requests[:batchSize]...)
-	return ret
+
+	return requests[:batchSize]
 }
 
 // batchLoop mimics behavior Wasp consensus
@@ -435,6 +471,10 @@ func (ch *Chain) collateAndRunBatch() {
 			}
 		}
 	}
+}
+
+func (ch *Chain) AddMigration(m migrations.Migration) {
+	ch.migrationScheme.Migrations = append(ch.migrationScheme.Migrations, m)
 }
 
 func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {

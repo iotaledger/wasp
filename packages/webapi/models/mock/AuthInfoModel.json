@@ -1,0 +1,4 @@
+{
+	"scheme": "jwt",
+	"authURL": "/auth"
+}

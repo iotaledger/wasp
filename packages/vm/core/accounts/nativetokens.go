@@ -11,7 +11,7 @@ import (
 )
 
 func nativeTokensMapKey(accountKey kv.Key) string {
-	return prefixNativeTokens + string(accountKey)
+	return PrefixNativeTokens + string(accountKey)
 }
 
 func nativeTokensMapR(state kv.KVStoreReader, accountKey kv.Key) *collections.ImmutableMap {

@@ -1,18 +1,18 @@
 package sm_snapshots
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 func TestNewerSnapshotKeepsOlderSnapshot(t *testing.T) {
-	twoSnapshotsCheckEnds(t, func(t *testing.T, _storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block) {
+	twoSnapshotsCheckEnds(t, func(t *testing.T, _storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot *bytes.Buffer, blocks []state.Block) {
 		intermediateTrieRoot := blocks[0].TrieRoot()
 		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
 
@@ -28,7 +28,7 @@ func TestNewerSnapshotKeepsOlderSnapshot(t *testing.T) {
 }
 
 func TestOlderSnapshotKeepsNewerSnapshot(t *testing.T) {
-	twoSnapshotsCheckEnds(t, func(t *testing.T, _storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block) {
+	twoSnapshotsCheckEnds(t, func(t *testing.T, _storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot *bytes.Buffer, blocks []state.Block) {
 		intermediateTrieRoot := blocks[0].TrieRoot()
 		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
 
@@ -44,7 +44,7 @@ func TestOlderSnapshotKeepsNewerSnapshot(t *testing.T) {
 }
 
 func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
-	twoSnapshotsCheckEnds(t, func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block) {
+	twoSnapshotsCheckEnds(t, func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot *bytes.Buffer, blocks []state.Block) {
 		intermediateTrieRoot := blocks[0].TrieRoot()
 		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
 		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
@@ -68,7 +68,7 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 	})
 }
 
-func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot kvstore.KVStore, blocks []state.Block)) {
+func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot *bytes.Buffer, blocks []state.Block)) {
 	numberOfBlocks := 10
 	intermediateBlockIndex := 4
 
@@ -79,13 +79,13 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 
 	intermediateBlock := blocks[intermediateBlockIndex]
 	intermediateCommitment := intermediateBlock.L1Commitment()
-	intermediateSnapshot := mapdb.NewMapDB()
+	intermediateSnapshot := new(bytes.Buffer)
 	err := storeOrig.TakeSnapshot(intermediateCommitment.TrieRoot(), intermediateSnapshot)
 	require.NoError(t, err)
 
 	lastBlock := blocks[len(blocks)-1]
 	lastCommitment := lastBlock.L1Commitment()
-	lastSnapshot := mapdb.NewMapDB()
+	lastSnapshot := new(bytes.Buffer)
 	err = storeOrig.TakeSnapshot(lastCommitment.TrieRoot(), lastSnapshot)
 	require.NoError(t, err)
 

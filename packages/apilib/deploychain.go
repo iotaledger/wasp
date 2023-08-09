@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -99,6 +100,7 @@ func CreateChainOrigin(
 		initParams,
 		utxoMap,
 		utxoIDsFromUtxoMap(utxoMap),
+		allmigrations.DefaultScheme.LatestSchemaVersion(),
 	)
 	if err != nil {
 		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)

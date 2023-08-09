@@ -1,15 +1,12 @@
 package vmimpl
 
 import (
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
@@ -51,67 +48,25 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
-	var retOut *iotago.BasicOutput
-	var blockIndex uint32
-	var outputIndex uint16
+func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (out *iotago.BasicOutput, id iotago.OutputID) {
 	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		retOut, blockIndex, outputIndex = accounts.GetNativeTokenOutput(s, nativeTokenID, vmctx.ChainID())
+		out, id = accounts.GetNativeTokenOutput(s, nativeTokenID, vmctx.ChainID())
 	})
-	if retOut == nil {
-		return nil, iotago.OutputID{}
-	}
-
-	outputID := vmctx.getOutputID(blockIndex, outputIndex)
-
-	return retOut, outputID
+	return
 }
 
-func (vmctx *vmContext) loadFoundry(serNum uint32) (*iotago.FoundryOutput, iotago.OutputID) {
-	var foundryOutput *iotago.FoundryOutput
-	var blockIndex uint32
-	var outputIndex uint16
+func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, id iotago.OutputID) {
 	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		foundryOutput, blockIndex, outputIndex = accounts.GetFoundryOutput(s, serNum, vmctx.ChainID())
+		out, id = accounts.GetFoundryOutput(s, serNum, vmctx.ChainID())
 	})
-	if foundryOutput == nil {
-		return nil, iotago.OutputID{}
-	}
-
-	outputID := vmctx.getOutputID(blockIndex, outputIndex)
-
-	return foundryOutput, outputID
+	return
 }
 
-func (vmctx *vmContext) getOutputID(blockIndex uint32, outputIndex uint16) iotago.OutputID {
-	if blockIndex == vmctx.stateAnchor().StateIndex {
-		return iotago.OutputIDFromTransactionIDAndIndex(vmctx.stateAnchor().OutputID.TransactionID(), outputIndex)
-	}
-	var outputID iotago.OutputID
-	var ok bool
-	withContractState(vmctx.stateDraft, blocklog.Contract, func(s kv.KVStore) {
-		outputID, ok = blocklog.GetOutputID(s, blockIndex, outputIndex)
-	})
-	if !ok {
-		panic(fmt.Errorf("UTXO input for block index %d, output index %d not found", blockIndex, outputIndex))
-	}
-	return outputID
-}
-
-func (vmctx *vmContext) loadNFT(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
-	var nftOutput *iotago.NFTOutput
-	var blockIndex uint32
-	var outputIndex uint16
+func (vmctx *vmContext) loadNFT(nftID iotago.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
 	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		nftOutput, blockIndex, outputIndex = accounts.GetNFTOutput(s, id)
+		out, id = accounts.GetNFTOutput(s, nftID)
 	})
-	if nftOutput == nil {
-		return nil, iotago.OutputID{}
-	}
-
-	outputID := vmctx.getOutputID(blockIndex, outputIndex)
-
-	return nftOutput, outputID
+	return
 }
 
 func (vmctx *vmContext) loadTotalFungibleTokens() *isc.Assets {

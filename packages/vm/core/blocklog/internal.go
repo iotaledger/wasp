@@ -30,6 +30,7 @@ func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID
 		panic(err)
 	}
 	registry.SetAt(lastBlockIndex, blockInfo.Bytes())
+	updateUnprocessableRequestsOutputID(partition, anchorTxID)
 }
 
 // SaveRequestReceipt appends request record to the record log and creates records for fast lookup

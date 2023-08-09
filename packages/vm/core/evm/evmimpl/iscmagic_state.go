@@ -19,9 +19,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
+// The ISC magic contract stores some data in the ISC state.
 const (
-	prefixPrivileged                = "p"
-	prefixAllowance                 = "a"
+	// prefixPrivileged stores the directory of EVM contracts that have access to
+	// the "privileged" ISC magic methods.
+	prefixPrivileged = "p"
+	// prefixAllowance stores the allowance between accounts (e.g. by calling
+	// ISC.allow() from solidity).
+	prefixAllowance = "a"
+	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
+	// registered by calling ISC.registerERC20NativeToken() from solidity.
 	prefixERC20ExternalNativeTokens = "e"
 )
 

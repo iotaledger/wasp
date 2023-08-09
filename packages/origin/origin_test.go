@@ -1,7 +1,6 @@
 package origin_test
 
 import (
-	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -20,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -67,6 +66,7 @@ func TestCreateOrigin(t *testing.T) {
 			nil,
 			allOutputs,
 			ids,
+			allmigrations.DefaultScheme.LatestSchemaVersion(),
 		)
 		require.NoError(t, err)
 
@@ -103,15 +103,11 @@ func TestCreateOrigin(t *testing.T) {
 				governance.DefaultMinBaseTokensOnCommonAccount,
 			),
 			gas.DefaultFeePolicy(),
-			migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			"",
 		)
 
-		require.True(t,
-			bytes.Equal(
-				originStateMetadata.Bytes(),
-				anchor.StateData),
-		)
+		require.EqualValues(t, anchor.StateData, originStateMetadata.Bytes())
 
 		// only one output is expected in the ledger under the address of chainID
 		outs, ids := u.GetUnspentOutputs(chainID.AsAddress())

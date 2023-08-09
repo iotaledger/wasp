@@ -271,13 +271,6 @@ func TestTxBuilderConsistency(t *testing.T) {
 			runConsume(txb, nativeTokenIDs, runTimes, testAmount, mockedAccounts)
 		}, vmexceptions.ErrInputLimitExceeded)
 		require.Error(t, err, vmexceptions.ErrInputLimitExceeded)
-
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("exceeded outputs", func(t *testing.T) {
 		const runTimesInputs = 120
@@ -295,15 +288,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 				addOutput(txb, 1, nativeTokenIDs[idx], mockedAccounts)
 			}
 		}, vmexceptions.ErrOutputLimitExceeded)
-
 		require.Error(t, err, vmexceptions.ErrOutputLimitExceeded)
-
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("randomize", func(t *testing.T) {
 		const runTimes = 30

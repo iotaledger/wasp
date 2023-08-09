@@ -95,10 +95,10 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 	}
 }
 
-// SplitAssetsIntoInternalOutputs splits the native Tokens/NFT from a given (request) output.
+// splitAssetsIntoInternalOutputs splits the native Tokens/NFT from a given (request) output.
 // returns the resulting outputs and the list of new outputs
 // (some of the native tokens might already have an accounting output owned by the chain, so we don't need new outputs for those)
-func (txb *AnchorTransactionBuilder) SplitAssetsIntoInternalOutputs(req isc.OnLedgerRequest) uint64 {
+func (txb *AnchorTransactionBuilder) splitAssetsIntoInternalOutputs(req isc.OnLedgerRequest) uint64 {
 	requiredSD := uint64(0)
 	for _, nativeToken := range req.Assets().NativeTokens {
 		// ensure this NT is in the txbuilder, update it
@@ -117,11 +117,21 @@ func (txb *AnchorTransactionBuilder) SplitAssetsIntoInternalOutputs(req isc.OnLe
 	if req.NFT() != nil {
 		// create new output
 		nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.OutputID())
-		requiredSD += nftIncl.out.Amount
+		requiredSD += nftIncl.resultingOutput.Amount
 	}
 
 	txb.consumed = append(txb.consumed, req)
 	return requiredSD
+}
+
+func (txb *AnchorTransactionBuilder) assertLimits() {
+	if txb.InputsAreFull() {
+		panic(vmexceptions.ErrInputLimitExceeded)
+	}
+	if txb.outputsAreFull() {
+		panic(vmexceptions.ErrOutputLimitExceeded)
+	}
+	txb.mustCheckTotalNativeTokensExceeded()
 }
 
 // Consume adds an input to the transaction.
@@ -130,14 +140,9 @@ func (txb *AnchorTransactionBuilder) SplitAssetsIntoInternalOutputs(req isc.OnLe
 // It updates total assets held by the chain. So it may panic due to exceed output counts
 // Returns  the amount of baseTokens needed to cover SD costs for the NTs/NFT contained by the request output
 func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) uint64 {
-	if txb.InputsAreFull() {
-		panic(vmexceptions.ErrInputLimitExceeded)
-	}
-
-	defer txb.mustCheckTotalNativeTokensExceeded()
-
+	defer txb.assertLimits()
 	// deduct the minSD for all the outputs that need to be created
-	requiredSD := txb.SplitAssetsIntoInternalOutputs(req)
+	requiredSD := txb.splitAssetsIntoInternalOutputs(req)
 	return requiredSD
 }
 
@@ -145,31 +150,16 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) uint64 {
 // consumes the original request and cretes a new output keeping assets intact
 // return the position of the resulting output in `txb.postedOutputs`
 func (txb *AnchorTransactionBuilder) ConsumeUnprocessable(req isc.OnLedgerRequest) int {
-	if txb.InputsAreFull() {
-		panic(vmexceptions.ErrInputLimitExceeded)
-	}
-
-	if txb.outputsAreFull() {
-		panic(vmexceptions.ErrOutputLimitExceeded)
-	}
-
-	defer txb.mustCheckTotalNativeTokensExceeded()
-
+	defer txb.assertLimits()
 	txb.consumed = append(txb.consumed, req)
-
 	txb.postedOutputs = append(txb.postedOutputs, retryOutputFromOnLedgerRequest(req, txb.anchorOutput.AliasID))
-
 	return len(txb.postedOutputs) - 1
 }
 
 // AddOutput adds an information about posted request. It will produce output
 // Return adjustment needed for the L2 ledger (adjustment on base tokens related to storage deposit)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
-	if txb.outputsAreFull() {
-		panic(vmexceptions.ErrOutputLimitExceeded)
-	}
-
-	defer txb.mustCheckTotalNativeTokensExceeded()
+	defer txb.assertLimits()
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(o)
 	if o.Deposit() < storageDeposit {
@@ -239,27 +229,27 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 	// internal native token outputs
 	for _, nativeTokenBalance := range txb.nativeTokenOutputsSorted() {
 		if nativeTokenBalance.requiresExistingAccountingUTXOAsInput() {
-			outputID := nativeTokenBalance.accountingoutputID
+			outputID := nativeTokenBalance.accountingInputID
 			outputIDs = append(outputIDs, outputID)
-			inputs[outputID] = nativeTokenBalance.in
+			inputs[outputID] = nativeTokenBalance.accountingInput
 		}
 	}
 
 	// foundries
 	for _, foundry := range txb.foundriesSorted() {
 		if foundry.requiresExistingAccountingUTXOAsInput() {
-			outputID := foundry.outputID
+			outputID := foundry.accountingInputID
 			outputIDs = append(outputIDs, outputID)
-			inputs[outputID] = foundry.in
+			inputs[outputID] = foundry.accountingInput
 		}
 	}
 
 	// nfts
 	for _, nft := range txb.nftsSorted() {
-		if !isc.IsEmptyOutputID(nft.outputID) {
-			outputID := nft.outputID
+		if !isc.IsEmptyOutputID(nft.accountingInputID) {
+			outputID := nft.accountingInputID
 			outputIDs = append(outputIDs, outputID)
-			inputs[outputID] = nft.in
+			inputs[outputID] = nft.accountingInput
 		}
 	}
 
@@ -325,7 +315,7 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 	// creating outputs for updated foundries
 	foundriesToBeUpdated, _ := txb.FoundriesToBeUpdated()
 	for _, sn := range foundriesToBeUpdated {
-		ret = append(ret, txb.invokedFoundries[sn].out)
+		ret = append(ret, txb.invokedFoundries[sn].accountingOutput)
 	}
 	// creating outputs for new NFTs
 	nftOuts := txb.NFTOutputs()
@@ -351,7 +341,7 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
-		if !isc.IsEmptyOutputID(nft.outputID) {
+		if !isc.IsEmptyOutputID(nft.accountingInputID) {
 			ret++
 		}
 	}

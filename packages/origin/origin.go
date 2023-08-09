@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -114,11 +113,11 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 	return originBlock, nil
 }
 
-func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64) []byte {
+func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaVersion uint32) []byte {
 	s := transaction.NewStateMetadata(
 		L1Commitment(initParams, commonAccountAmount),
 		gas.DefaultFeePolicy(),
-		migrations.BaseSchemaVersion+uint32(len(migrations.Migrations)),
+		schemaVersion,
 		"",
 	)
 	return s.Bytes()
@@ -134,6 +133,7 @@ func NewChainOriginTransaction(
 	initParams dict.Dict,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
+	schemaVersion uint32,
 ) (*iotago.Transaction, *iotago.AliasOutput, isc.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
@@ -151,7 +151,7 @@ func NewChainOriginTransaction(
 
 	aliasOutput := &iotago.AliasOutput{
 		Amount:        deposit,
-		StateMetadata: calcStateMetadata(initParams, deposit), // NOTE: Updated bellow.
+		StateMetadata: calcStateMetadata(initParams, deposit, schemaVersion), // NOTE: Updated below.
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
@@ -167,7 +167,7 @@ func NewChainOriginTransaction(
 		aliasOutput.Amount = minAmount
 	}
 	// update the L1 commitment to not include the minimumSD
-	aliasOutput.StateMetadata = calcStateMetadata(initParams, aliasOutput.Amount-minSD)
+	aliasOutput.StateMetadata = calcStateMetadata(initParams, aliasOutput.Amount-minSD, schemaVersion)
 
 	txInputs, remainderOutput, err := transaction.ComputeInputsAndRemainder(
 		walletAddr,

@@ -58,7 +58,9 @@ func (k *KeyPair) Address() *iotago.Ed25519Address {
 
 func (k *KeyPair) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
+	k.publicKey = new(PublicKey)
 	rr.Read(k.publicKey)
+	k.privateKey = new(PrivateKey)
 	rr.Read(k.privateKey)
 	return rr.Err
 }

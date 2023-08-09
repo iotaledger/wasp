@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -54,24 +53,10 @@ var (
 	errReadOnlyContext   = coreerrors.Register("attempt to call non-view method in read-only context").Create()
 )
 
-func parseCall(input []byte, privileged bool) (*abi.Method, []any) {
-	magicMethod := allMethods[string(input[:4])]
-	if magicMethod == nil {
-		panic(errMethodNotFound)
-	}
-	if !privileged && magicMethod.isPrivileged {
-		panic(iscvm.ErrUnauthorized)
-	}
-	if len(input) == 4 {
-		return magicMethod.abi, nil
-	}
-	args, err := magicMethod.abi.Inputs.Unpack(input[4:])
-	if err != nil {
-		panic(errInvalidMethodArgs)
-	}
-	return magicMethod.abi, args
-}
-
+// magicContract implements [vm.ISCMagicContract], which is an interface added
+// to go-ethereum in ISC's fork. Whenever a call is made to the address
+// [iscmagic.Address], [magicContract.Run] is called, allowing to process the call in
+// native Go instead of solidity or EVM code.
 type magicContract struct {
 	ctx isc.Sandbox
 }
@@ -92,14 +77,20 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 	return ret, gas, nil
 }
 
-// deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract
-// which will go into the EVM genesis block
-func deployMagicContractOnGenesis(genesisAlloc core.GenesisAlloc) {
-	genesisAlloc[iscmagic.Address] = core.GenesisAccount{
-		// dummy code, because some contracts check the code size before calling
-		// the contract; the code itself will never get executed
-		Code:    common.Hex2Bytes("600180808053f3"),
-		Storage: map[common.Hash]common.Hash{},
-		Balance: nil,
+func parseCall(input []byte, privileged bool) (*abi.Method, []any) {
+	magicMethod := allMethods[string(input[:4])]
+	if magicMethod == nil {
+		panic(errMethodNotFound)
 	}
+	if !privileged && magicMethod.isPrivileged {
+		panic(iscvm.ErrUnauthorized)
+	}
+	if len(input) == 4 {
+		return magicMethod.abi, nil
+	}
+	args, err := magicMethod.abi.Inputs.Unpack(input[4:])
+	if err != nil {
+		panic(errInvalidMethodArgs)
+	}
+	return magicMethod.abi, args
 }

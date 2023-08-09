@@ -13,9 +13,11 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
@@ -104,7 +106,8 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	vmctx.loadChainConfig()
 
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		vmctx.runMigrations(chainState, migrations.BaseSchemaVersion, migrations.Migrations)
+		migrationScheme := vmctx.getMigrations()
+		vmctx.runMigrations(chainState, migrationScheme)
 	})
 
 	// save the anchor tx ID of the current state
@@ -119,6 +122,13 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 		})
 	})
 
+	// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
+	vmctx.withStateUpdate(func(chainState kv.KVStore) {
+		withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
+			accounts.UpdateLatestOutputID(s, vmctx.task.AnchorOutputID.TransactionID())
+		})
+	})
+
 	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
 		vmctx.task.AnchorOutput,
 		vmctx.task.AnchorOutputID,
@@ -130,6 +140,13 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
 		},
 	)
+}
+
+func (vmctx *vmContext) getMigrations() *migrations.MigrationScheme {
+	if vmctx.task.MigrationsOverride != nil {
+		return vmctx.task.MigrationsOverride
+	}
+	return allmigrations.DefaultScheme
 }
 
 func (vmctx *vmContext) getAnchorOutputSD() uint64 {

@@ -99,12 +99,20 @@ func (m *ImmutableMap) Len() uint32 {
 	return uint32(rwutil.NewBytesReader(data).Must().ReadSize32())
 }
 
-// Erase the map.
-func (m *Map) Erase() {
+func (m *Map) Keys() [][]byte {
+	var keys [][]byte
 	m.IterateKeys(func(elemKey []byte) bool {
-		m.DelAt(elemKey)
+		keys = append(keys, elemKey)
 		return true
 	})
+	return keys
+}
+
+// Erase the map.
+func (m *Map) Erase() {
+	for _, k := range m.Keys() {
+		m.DelAt(k)
+	}
 }
 
 // Iterate non-deterministic

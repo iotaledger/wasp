@@ -8,10 +8,10 @@ import (
 )
 
 type Event struct {
-	ContractID Hname
-	Payload    []byte
-	Topic      string
-	Timestamp  uint64
+	ContractID Hname  `json:"contractID"`
+	Topic      string `json:"topic"`
+	Timestamp  uint64 `json:"timestamp"`
+	Payload    []byte `json:"payload"`
 }
 
 func EventFromBytes(data []byte) (*Event, error) {
@@ -50,18 +50,18 @@ func (e *Event) Write(w io.Writer) error {
 	return ww.Err
 }
 
+type EventJSON struct {
+	ContractID Hname  `json:"contractID" swagger:"desc(ID of the Contract that issued the event),required,min(1)"`
+	Topic      string `json:"topic" swagger:"desc(topic),required"`
+	Timestamp  uint64 `json:"timestamp" swagger:"desc(timestamp),required"`
+	Payload    string `json:"payload" swagger:"desc(payload),required"`
+}
+
 func (e *Event) ToJSONStruct() *EventJSON {
 	return &EventJSON{
 		ContractID: e.ContractID,
-		Payload:    iotago.EncodeHex(e.Payload),
 		Topic:      e.Topic,
 		Timestamp:  e.Timestamp,
+		Payload:    iotago.EncodeHex(e.Payload),
 	}
-}
-
-type EventJSON struct {
-	ContractID Hname  `json:"contractID" swagger:"desc(ID of the Contract that issued the event),required,min(1)"`
-	Payload    string `json:"payload" swagger:"desc(payload),required"`
-	Topic      string `json:"topic" swagger:"desc(topic),required"`
-	Timestamp  uint64 `json:"timestamp" swagger:"desc(timestamp),required"`
 }

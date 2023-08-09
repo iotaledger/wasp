@@ -154,6 +154,55 @@ func newClient(t testing.TB, svcClient wasmclient.IClientService, wallet *crypto
 	return ctx
 }
 
+func TestTimedDeactivation(t *testing.T) {
+	if !useDisposable && !useCluster {
+		t.SkipNow()
+	}
+
+	var ctxCluster *wasmclient.WasmClientContext
+	if useCluster {
+		ctxCluster = setupClient(t)
+	}
+
+	ctx := setupClientLib(t)
+	require.NoError(t, ctx.Err)
+
+	active := getActive(t, ctx)
+	require.False(t, active)
+
+	f := testwasmlib.ScFuncs.Activate(ctx)
+	f.Params.Seconds().SetValue(420)
+	f.Func.TransferBaseTokens(2_000_000).AllowanceBaseTokens(1_000_000).Post()
+	require.NoError(t, ctx.Err)
+
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
+
+	for i := 0; i < 100; i++ {
+		active = getActive(t, ctx)
+		seconds := 20
+		fmt.Printf("TICK #%d: %v\n", i*seconds, active)
+		if !active {
+			break
+		}
+		factor := time.Duration(seconds)
+		if useCluster {
+			// time marches 10x faster
+			factor /= 10
+		}
+		time.Sleep(factor * time.Second)
+	}
+
+	_ = ctxCluster
+}
+
+func getActive(t *testing.T, ctx *wasmclient.WasmClientContext) bool {
+	a := testwasmlib.ScFuncs.GetActive(ctx)
+	a.Func.Call()
+	require.NoError(t, ctx.Err)
+	return a.Results.Active().Value()
+}
+
 func TestClientAccountBalance(t *testing.T) {
 	ctx := setupClient(t)
 	wallet := ctx.CurrentKeyPair()

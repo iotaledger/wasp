@@ -1,7 +1,6 @@
 package vmimpl
 
 import (
-	"fmt"
 	"math"
 	"runtime/debug"
 	"time"
@@ -21,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -30,7 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
-// runRequest processes a single isc.Request in the batch
+// runRequest processes a single isc.Request in the batch, returning an error means the request will be skipped
 func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, maintenanceMode bool) (
 	res *vm.RequestResult,
 	unprocessableToRetry []isc.OnLedgerRequest,
@@ -65,29 +63,15 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 	// so far there were no panics except optimistic reader
 	txsnapshot := vmctx.createTxBuilderSnapshot()
 
-	var result *vm.RequestResult
-	err = reqctx.catchRequestPanic(
-		func() {
-			// transfer all attached assets to the sender's account
-			reqctx.creditAssetsToChain()
-			// load gas and fee policy, calculate and set gas budget
-			reqctx.prepareGasBudget()
-			// run the contract program
-			receipt, callRet := reqctx.callTheContract()
-			vmctx.mustCheckTransactionSize()
-			result = &vm.RequestResult{
-				Request: req,
-				Receipt: receipt,
-				Return:  callRet,
-			}
-		},
-	)
+	result, err := reqctx.callTheContract()
+	if err == nil {
+		err = vmctx.checkTransactionSize()
+	}
 	if err != nil {
-		// protocol exception triggered. Skipping the request. Rollback
+		// skip the request / rollback tx builder (no need to rollback the state, because the mutations will never be applied)
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		vmctx.blockGas.burned = initialGasBurnedTotal
 		vmctx.blockGas.feeCharged = initialGasFeeChargedTotal
-
 		return nil, nil, err
 	}
 
@@ -147,26 +131,6 @@ func (reqctx *requestContext) creditAssetsToChain() {
 	}
 }
 
-func (reqctx *requestContext) catchRequestPanic(f func()) error {
-	err := panicutil.CatchPanic(f)
-	if err == nil {
-		return nil
-	}
-	// catches protocol exception error which is not the request or contract fault
-	// If it occurs, the request is just skipped
-	if vmexceptions.IsSkipRequestException(err) {
-		return err
-	}
-	// panic again with more information about the error
-	panic(fmt.Errorf(
-		"panic when running request #%d ID:%s, requestbytes:%s err:%w",
-		reqctx.requestIndex,
-		reqctx.req.ID(),
-		iotago.EncodeHex(reqctx.req.Bytes()),
-		err,
-	))
-}
-
 // checkAllowance ensure there are enough funds to cover the specified allowance
 // panics if not enough funds
 func (reqctx *requestContext) checkAllowance() {
@@ -192,10 +156,29 @@ func (reqctx *requestContext) prepareGasBudget() {
 	reqctx.gasSetBudget(reqctx.calculateAffordableGasBudget())
 }
 
-// callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (reqctx *requestContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict) {
+// callTheContract runs the contract. if an error is returned, the request will be skipped
+func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 	// TODO: do not mutate vmContext's txbuilder
-	txSnapshot := reqctx.vm.createTxBuilderSnapshot()
+
+	// pre execution ---------------------------------------------------------------
+	err := panicutil.CatchPanic(func() {
+		// transfer all attached assets to the sender's account
+		reqctx.creditAssetsToChain()
+		// load gas and fee policy, calculate and set gas budget
+		reqctx.prepareGasBudget()
+		// run the contract program
+	})
+	if err != nil {
+		// this should never happen. something is wrong here, SKIP the request
+		reqctx.vm.task.Log.Errorf("panic before request execution (reqid: %s): %v", reqctx.req.ID(), err)
+		return nil, err
+	}
+
+	// execution ---------------------------------------------------------------
+
+	result := &vm.RequestResult{Request: reqctx.req}
+
+	txSnapshot := reqctx.vm.createTxBuilderSnapshot() // take the txbuilder snapshot **after** the request has been consumed (in `creditAssetsToChain`)
 	stateSnapshot := reqctx.uncommittedState.Clone()
 
 	rollback := func() {
@@ -203,15 +186,17 @@ func (reqctx *requestContext) callTheContract() (receipt *blocklog.RequestReceip
 		reqctx.uncommittedState = stateSnapshot
 	}
 
-	var callErr *isc.VMError
+	var executionErr *isc.VMError
+	var skipRequestErr error
 	func() {
 		defer func() {
-			panicErr := checkVMPluginPanic(recover())
-			if panicErr == nil {
+			r := recover()
+			if r == nil {
 				return
 			}
-			callErr = panicErr
-			reqctx.Debugf("recovered panic from contract call: %v", panicErr)
+			skipRequestErr = vmexceptions.IsSkipRequestException(r)
+			executionErr = recoverFromExecutionError(r)
+			reqctx.Debugf("recovered panic from contract call: %v", executionErr)
 			if reqctx.vm.task.WillProduceBlock() {
 				reqctx.Debugf(string(debug.Stack()))
 			}
@@ -220,28 +205,21 @@ func (reqctx *requestContext) callTheContract() (receipt *blocklog.RequestReceip
 		reqctx.checkAllowance()
 
 		reqctx.GasBurnEnable(true)
-		callRet = reqctx.callFromRequest()
+		result.Return = reqctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		reqctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, reqctx.GasBurned())
 	}()
 	reqctx.GasBurnEnable(false)
+	if skipRequestErr != nil {
+		return nil, skipRequestErr
+	}
+
+	// post execution ---------------------------------------------------------------
 
 	// execution over, save receipt, update nonces, etc
 	// if anything goes wrong here, state must be rolled back and the request must be skipped
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				rollback()
-				callErrStr := ""
-				if callErr != nil {
-					callErrStr = callErr.Error()
-				}
-				reqctx.vm.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, r)
-				reqctx.vm.task.Log.Debug(string(debug.Stack()))
-				panic(vmexceptions.ErrPostExecutionPanic)
-			}
-		}()
-		if callErr != nil {
+	err = panicutil.CatchPanic(func() {
+		if executionErr != nil {
 			// panic happened during VM plugin call. Restore the state
 			rollback()
 		}
@@ -249,25 +227,28 @@ func (reqctx *requestContext) callTheContract() (receipt *blocklog.RequestReceip
 		reqctx.chargeGasFee()
 
 		// write receipt no matter what
-		receipt = reqctx.writeReceiptToBlockLog(callErr)
+		result.Receipt = reqctx.writeReceiptToBlockLog(executionErr)
 
 		if reqctx.req.IsOffLedger() {
 			reqctx.updateOffLedgerRequestNonce()
 		}
-	}()
+	})
 
-	return receipt, callRet
+	if err != nil {
+		rollback()
+		callErrStr := ""
+		if executionErr != nil {
+			callErrStr = executionErr.Error()
+		}
+		reqctx.vm.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, err)
+		reqctx.vm.task.Log.Debug(string(debug.Stack()))
+		return nil, err
+	}
+
+	return result, nil
 }
 
-func checkVMPluginPanic(r interface{}) *isc.VMError {
-	if r == nil {
-		return nil
-	}
-	// re-panic-ing if error it not user nor VM plugin fault.
-	if vmexceptions.IsSkipRequestException(r) {
-		panic(r)
-	}
-	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
+func recoverFromExecutionError(r interface{}) *isc.VMError {
 	switch err := r.(type) {
 	case *isc.VMError:
 		return r.(*isc.VMError)
@@ -452,11 +433,12 @@ func (vmctx *vmContext) loadChainConfig() {
 	vmctx.chainInfo = governance.NewStateAccess(vmctx.stateDraft).ChainInfo(vmctx.ChainID())
 }
 
-// mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
-func (vmctx *vmContext) mustCheckTransactionSize() {
+// checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
+func (vmctx *vmContext) checkTransactionSize() error {
 	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
 	if tx.Size() > parameters.L1().MaxPayloadSize {
-		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
+		return vmexceptions.ErrMaxTransactionSizeExceeded
 	}
+	return nil
 }

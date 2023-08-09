@@ -42,7 +42,7 @@ func (reqctx *requestContext) DestroyFoundry(sn uint32) uint64 {
 
 func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	out, _, _ := accounts.GetFoundryOutput(reqctx.contractStateWithGasBurn(), sn, reqctx.ChainID())
+	out, _ := accounts.GetFoundryOutput(reqctx.contractStateWithGasBurn(), sn, reqctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
 		panic(fmt.Errorf("internal: %w", err))
@@ -50,10 +50,8 @@ func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int
 	return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
-func (reqctx *requestContext) RetryUnprocessable(req isc.Request, blockIndex uint32, outputIndex uint16) {
-	// set the "retry output ID" so that the correct output is used by the txbuilder
-	oid := reqctx.vm.getOutputID(blockIndex, outputIndex)
-	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), oid)
+func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID iotago.OutputID) {
+	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), outputID)
 	reqctx.unprocessableToRetry = append(reqctx.unprocessableToRetry, retryReq)
 }
 

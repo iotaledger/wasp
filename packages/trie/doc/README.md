@@ -1,55 +1,65 @@
 # Trie package
 
-![`Trie class diagram`](https://www.plantuml.com/plantuml/png/RL9DZzem4BtxLqnpIYe5bLQYKWHeLRLIfTxQQYyi1mSF6ml7Njd3zWFuxsixE1Z12VBclV6RcVVWY5lQzueviliDmMyhyIToWHOE340RWR_8M6mkVpriZQ46ldFNiHDBqf4GbMHbKlvu73fwz9Mh_GrytU8h9nux7BOIbJZ12wVksrz2xQJH3QpMxJ_2y0BQNcgk6g2DwNj9FMho-AQJIbWCrEbi7Kq2Z8mRtxawlYkyWUmPwHw3wGPQOrIGQKC8LZvt16QRgyzQhm2KrA5jF58FCqCfjw1Gb_6hWZdCFbMnt7at0ng-6O13AxcI_r40Tx3gufAEeVFQL__ulWW320jOdUr1EOLMKWN7-4fWLr1-3fYhrWorWE0x3Hrt08URQSxRMdty4CUFvZBn2z_i-3E2Q64-3uTgkSFbCgujrIudlkMSCbuAo5sQDvObyNrTP_6xBaJBJKma6-CpcIpp01QxnULAJ_fraOYJBtv8LrR5jJHFQH4EzovbRN9UT_MaTujukR4od31qluQotiMq29RZB-M9J8hxr6722_yUQvPeAVriN5WSAKaQwBdswtTPtTJr4aJBs0DgiU_L6m00)
+![`Trie class diagram`](https://www.plantuml.com/plantuml/png/TLDDRnen4BtlhvXoOYk1GY9HQGKegbgfKczfbGj1bS53ri9hH_QGf2NyzzfcrsiSSe9zyzvyZD_SMcA6zeqic9JwvKyZNeLwB0fBPhyX-6q4tY7ZQE1G02ZDyHTfWrN_ry56QwhW1xDrSOpII0XACg9J_hm_PNJeCvFx7CvIV6F4GeR3Lg3aHtXYL7z_9LHMQ5N1ShN-I-Whe6c4Oh82skYc4TIW8eTlQY6vGK-TJ5UXIO2UaVUTgaDTpeWbPOIzzqrNiDPQ9h8xt6xqNf4D8lj-9gK9dOX8Dw2tQPcsY4iDAAX6KpbaT5eE3CKM9AfX-2fX1jERCeHhrtQBkczV4urWKln33ip2iWwLttpcbOk-kBm89n3ci6pdWE44re9AU0jLFBk4uHUFsN9LeEBW6uzZ-cN1uVquxLwNrrTXKQ6xHFt4DZlsYC3NC9lv9rqpYuj5sDLMIz_JLVW0u6sqjuo3ZprlalEYYJBYTKxqTehFTCwzkPGq8xkXatFuF1hr5iy3VXjLE8iYUdWyNgHNCDZDUmSygETvHnn_TVkpmt9mBarFPU1DyQap_BXzol91xUR15J5oieVFVWubkGUJGMZP_r9w5ftY8hMTiETVOarRMZp18YuiZDH9AcYOSkwmMRnVV_mNTH_5idUxHSNtZVmF)
 
-[Edit](https://www.plantuml.com/plantuml/uml/RL9DZzem4BtxLqnpIYe5bLQYKWHeLRLIfTxQQYyi1mSF6ml7Njd3zWFuxsixE1Z12VBclV6RcVVWY5lQzueviliDmMyhyIToWHOE340RWR_8M6mkVpriZQ46ldFNiHDBqf4GbMHbKlvu73fwz9Mh_GrytU8h9nux7BOIbJZ12wVksrz2xQJH3QpMxJ_2y0BQNcgk6g2DwNj9FMho-AQJIbWCrEbi7Kq2Z8mRtxawlYkyWUmPwHw3wGPQOrIGQKC8LZvt16QRgyzQhm2KrA5jF58FCqCfjw1Gb_6hWZdCFbMnt7at0ng-6O13AxcI_r40Tx3gufAEeVFQL__ulWW320jOdUr1EOLMKWN7-4fWLr1-3fYhrWorWE0x3Hrt08URQSxRMdty4CUFvZBn2z_i-3E2Q64-3uTgkSFbCgujrIudlkMSCbuAo5sQDvObyNrTP_6xBaJBJKma6-CpcIpp01QxnULAJ_fraOYJBtv8LrR5jJHFQH4EzovbRN9UT_MaTujukR4od31qluQotiMq29RZB-M9J8hxr6722_yUQvPeAVriN5WSAKaQwBdswtTPtTJr4aJBs0DgiU_L6m00)
+[Edit](https://www.plantuml.com/plantuml/uml/TLDDRnen4BtlhvXoOYk1GY9HQGKegbgfKczfbGj1bS53ri9hH_QGf2NyzzfcrsiSSe9zyzvyZD_SMcA6zeqic9JwvKyZNeLwB0fBPhyX-6q4tY7ZQE1G02ZDyHTfWrN_ry56QwhW1xDrSOpII0XACg9J_hm_PNJeCvFx7CvIV6F4GeR3Lg3aHtXYL7z_9LHMQ5N1ShN-I-Whe6c4Oh82skYc4TIW8eTlQY6vGK-TJ5UXIO2UaVUTgaDTpeWbPOIzzqrNiDPQ9h8xt6xqNf4D8lj-9gK9dOX8Dw2tQPcsY4iDAAX6KpbaT5eE3CKM9AfX-2fX1jERCeHhrtQBkczV4urWKln33ip2iWwLttpcbOk-kBm89n3ci6pdWE44re9AU0jLFBk4uHUFsN9LeEBW6uzZ-cN1uVquxLwNrrTXKQ6xHFt4DZlsYC3NC9lv9rqpYuj5sDLMIz_JLVW0u6sqjuo3ZprlalEYYJBYTKxqTehFTCwzkPGq8xkXatFuF1hr5iy3VXjLE8iYUdWyNgHNCDZDUmSygETvHnn_TVkpmt9mBarFPU1DyQap_BXzol91xUR15J5oieVFVWubkGUJGMZP_r9w5ftY8hMTiETVOarRMZp18YuiZDH9AcYOSkwmMRnVV_mNTH_5idUxHSNtZVmF)
 
 
 ## Example
 
-Given the following pairs of key-values:
+`TestBasic` in `packages/trie/test/trie_test.go` generates 4 trie roots:
 
 ```
-"b"      => "bb"
-"cccddd" => "c"
-"ccceee" => "c" * 70
+trie root 1: (empty trie)
+trie root 2:
+  set 0x61 "a" = "a"
+  set 0x62 "b" = "b"
+trie root 3:
+  set 0x62 "b" = "bb"
+trie root 4:
+  del 0x61 "a"
+  set 0x636363646464 "cccddd" = "c"
+  set 0x636363656565 "ccceee" = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
 ```
 
-the trie will have the following structure:
+The resulting trie has the following structure:
 
 ```
-deb052a7efca855ad373283fb1fcf73cdb44667f
-  Key:  "" ()
-  Full key: ""
-  child(6): 6174a77493e10eae75d828ffb0fddd7dc9adfa10
-6174a77493e10eae75d828ffb0fddd7dc9adfa10
-  Key:  "`" (0x60)
-  Full key: "`" (0x60)
-  child(2): 7e84c82d6daa06e959d1d9c43c1de6c00c3ab456
-  child(3): a3acfd855f84c4b665324397b4583947f19595f7
-7e84c82d6daa06e959d1d9c43c1de6c00c3ab456
-  Key:  "b" (0x62)
-  Full key: "b"
-  Terminal:    "bb"
-a3acfd855f84c4b665324397b4583947f19595f7
-  Key:  "c" (0x63)
-  Extension: 0x63636
-  Full key: "ccc`"
-  child(4): a3c2a38f7da19d791df3fda09dfde7f60b5e7d7f
-  child(5): c4cf202df0ec08a0cc5a5d0c7bfe972433d25253
-a3c2a38f7da19d791df3fda09dfde7f60b5e7d7f
-  Key:  "cccd" (0x63636364)
-  Extension: "dd" (0x6464)
-  Full key: "cccddd"
-  Terminal:    "c"
-c4cf202df0ec08a0cc5a5d0c7bfe972433d25253
-  Key:  "ccce" (0x63636365)
-  Extension: "ee" (0x6565)
-  Full key: "ccceee"
-  Terminal: 0x14d25eb7361e92d86c9fcf3f7f602217fc45d86290
-    (in valueStore: 0x14d25... => "c" * 70)
+[trie store]
+├─ [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
+├─ [] c:7ec331767219528ab3c9e864ad9422e9f831ec5e ext:[] term:<nil>
+│  └─ [6] c:a00e505e10971ec248b1404ef9dcc6c6c493a6c9 ext:[] term:<nil>
+│     ├─ [1] c:81db21106a17dd57e6099402bbe5543a015193d0 ext:[] term:"a"
+│     └─ [2] c:b23756724eca8e6197bb6b6cbfc9725067b36d9c ext:[] term:"b"
+├─ [] c:27806fe716c7f11add3ada0a356c0fb9c9377c5a ext:[] term:<nil>
+│  └─ [6] c:fd3f071332a7fcca857cf49df735ff49c4539d07 ext:[] term:<nil>
+│     ├─ [1] c:81db21106a17dd57e6099402bbe5543a015193d0 ext:[] term:"a"
+│     └─ [2] c:bae0c3296e8fa86c0d6f6621200f987cc01a6c0a ext:[] term:"bb"
+└─ [] c:b8cc8cb105beb3ee7100049b91d3d8b0c49ba05a ext:[] term:<nil>
+   └─ [6] c:65a4c9c112d3e8e995c36915c527f4b85a9507fb ext:[] term:<nil>
+      ├─ [2] c:bae0c3296e8fa86c0d6f6621200f987cc01a6c0a ext:[] term:"bb"
+      └─ [3] c:9af38ad122bdf3ea08cf146f0f8608ae00dc7624 ext:[6 3 6 3 6] term:<nil>
+         ├─ [4] c:fe360246e69933a23be31ae26653c0fd68d790a8 ext:[6 4 6 4] term:"c"
+         └─ [5] c:a2185f866895f47d830bb8aa096a9a51e6d9a25b ext:[6 5 6 5] term:d25eb7361e92d86c9fcf3f7f602217fc45d86290
+
+[value store]
+   d25eb7361e92d86c9fcf3f7f602217fc45d86290: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+
+[node refcounts]
+   65a4c9c112d3e8e995c36915c527f4b85a9507fb: 1
+   534f98b3ad630819d284287b647283a1d5dbcf90: 1
+   a2185f866895f47d830bb8aa096a9a51e6d9a25b: 1
+   fe360246e69933a23be31ae26653c0fd68d790a8: 1
+   27806fe716c7f11add3ada0a356c0fb9c9377c5a: 1
+   9af38ad122bdf3ea08cf146f0f8608ae00dc7624: 1
+   b23756724eca8e6197bb6b6cbfc9725067b36d9c: 1
+   7ec331767219528ab3c9e864ad9422e9f831ec5e: 1
+   bae0c3296e8fa86c0d6f6621200f987cc01a6c0a: 2
+   fd3f071332a7fcca857cf49df735ff49c4539d07: 1
+   81db21106a17dd57e6099402bbe5543a015193d0: 2
+   a00e505e10971ec248b1404ef9dcc6c6c493a6c9: 1
+   b8cc8cb105beb3ee7100049b91d3d8b0c49ba05a: 1
+
+[value refcounts]
+   d25eb7361e92d86c9fcf3f7f602217fc45d86290: 1
 ```
-
-![Example](https://www.plantuml.com/plantuml/png/TP91ReCm44Ntd6BaLM8f4Wq6kccKE_G2DUDfGG6Cm5Ifgjoz35WEZOZOmF-V_-pHd0UdUpSsTUHi1yv2OPsp3PYg9tILRQDEuqL_4RY-edTdUuBVgD4Tw0IFqoi0NHsrmnI5jnF4rqnb2eGnOh8kzEF5P7xKOYAYMG9IEkgRgjMrb9oKKg2GChhD25JukOb8inG4qHOYdKr64D4sejH3kPiu807oU1zmEj6uYUDUhlpO0BBX7IohskpK7kJXS9hd4yJKYtmZJylfLJ5jNGYYU3ALehYF9Nl97_y4iJf14awWCOX7BpBMznWgudMFk5TaIvfHdBw5BVZMzRXUW_y2mCDikJPypKLdQitOr7y0)
-
-![Edit](https://www.plantuml.com/plantuml/uml/TP91ReCm44Ntd6BaLM8f4Wq6kccKE_G2DUDfGG6Cm5Ifgjoz35WEZOZOmF-V_-pHd0UdUpSsTUHi1yv2OPsp3PYg9tILRQDEuqL_4RY-edTdUuBVgD4Tw0IFqoi0NHsrmnI5jnF4rqnb2eGnOh8kzEF5P7xKOYAYMG9IEkgRgjMrb9oKKg2GChhD25JukOb8inG4qHOYdKr64D4sejH3kPiu807oU1zmEj6uYUDUhlpO0BBX7IohskpK7kJXS9hd4yJKYtmZJylfLJ5jNGYYU3ALehYF9Nl97_y4iJf14awWCOX7BpBMznWgudMFk5TaIvfHdBw5BVZMzRXUW_y2mCDikJPypKLdQitOr7y0)

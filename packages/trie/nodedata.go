@@ -80,13 +80,8 @@ func (n *NodeData) String() string {
 	if n.Terminal != nil {
 		t = n.Terminal.String()
 	}
-	childIdx := make([]byte, 0)
-	n.iterateChildren(func(i byte, _ Hash) bool {
-		childIdx = append(childIdx, i)
-		return true
-	})
-	return fmt.Sprintf("c:%s ext:%v childIdx:%v term:%s",
-		n.Commitment, n.PathExtension, childIdx, t)
+	return fmt.Sprintf("c:%s ext:%v term:%s",
+		n.Commitment, n.PathExtension, t)
 }
 
 func (n *NodeData) iterateChildren(f func(byte, Hash) bool) {

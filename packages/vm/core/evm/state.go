@@ -8,6 +8,15 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
+// The evm core contract state stores two subrealms.
+const (
+	// keyEmulatorState is the subrealm prefix for the data stored by the emulator (StateDB + BlockchainDB)
+	keyEmulatorState = "s"
+
+	// keyISCMagic is the subrealm prefix for the ISC magic contract
+	keyISCMagic = "m"
+)
+
 func ContractPartition(chainState kv.KVStore) kv.KVStore {
 	return subrealm.New(chainState, kv.Key(Contract.Hname().Bytes()))
 }

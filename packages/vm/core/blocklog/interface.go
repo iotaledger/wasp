@@ -9,11 +9,16 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 
 const (
-	PrefixBlockRegistry = string('a' + iota)
-	prefixRequestLookupIndex
-	prefixRequestReceipts
-	prefixRequestEvents
-	prefixUnprocessableRequests
+	PrefixBlockRegistry      = "a"
+	prefixRequestLookupIndex = "b"
+	prefixRequestReceipts    = "c"
+	prefixRequestEvents      = "d"
+
+	// map of == request ID => unprocessableRequestRecord
+	prefixUnprocessableRequests = "u"
+	// array of request ID: list of unprocessable requests that
+	// need updating the outputID field
+	prefixNewUnprocessableRequests = "U"
 )
 
 var (

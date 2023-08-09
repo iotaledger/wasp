@@ -83,9 +83,7 @@ func (pkT *PrivateKey) AddressKeys(addr iotago.Address) iotago.AddressKeys {
 
 func (pkT *PrivateKey) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	if len(pkT.key) != PrivateKeySize {
-		panic("unexpected private key size for read")
-	}
+	pkT.key = make([]byte, PrivateKeySize)
 	rr.ReadN(pkT.key)
 	return rr.Err
 }

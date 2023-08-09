@@ -45,6 +45,21 @@ func TestWaspCLINoChains(t *testing.T) {
 	require.Contains(t, out[0], "Total 0 chain(s)")
 }
 
+func TestWaspAuth(t *testing.T) {
+	w := newWaspCLITest(t, waspClusterOpts{
+		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
+			configParams.AuthScheme = "jwt"
+			return configParams
+		},
+	})
+	_, err := w.Run("chain", "list", "--node=0", "--node=0")
+	require.Error(t, err)
+	out := w.MustRun("auth", "login", "--node=0", "-u=wasp", "-p=wasp")
+	require.Equal(t, "Successfully authenticated", out[1])
+	out = w.MustRun("chain", "list", "--node=0", "--node=0")
+	require.Contains(t, out[0], "Total 0 chain(s)")
+}
+
 func TestWaspCLI1Chain(t *testing.T) {
 	w := newWaspCLITest(t)
 

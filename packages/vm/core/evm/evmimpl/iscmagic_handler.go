@@ -16,11 +16,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
+// magicContractHandler has one public receiver for each ISC magic method, with
+// the same name capitalized.
+// For example, if ISC.getL2NFTs() is called from solidity, this will
+// correspond to a call to [GetL2NFTs].
 type magicContractHandler struct {
 	ctx    isc.Sandbox
 	caller vm.ContractRef
 }
 
+// callHandler finds the requested ISC magic method by reflection, and executes
+// it.
 func callHandler(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []any) []byte {
 	return reflectCall(&magicContractHandler{
 		ctx:    ctx,

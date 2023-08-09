@@ -2,6 +2,7 @@ package sm_gpa_utils
 
 import (
 	"bufio"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +25,10 @@ type blockWAL struct {
 	metrics *metrics.ChainBlockWALMetrics
 }
 
-const constBlockWALFileSuffix = ".blk"
+const (
+	constBlockWALFileSuffix    = ".blk"
+	constBlockWALTmpFileSuffix = ".tmp"
+)
 
 func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
@@ -45,37 +49,77 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 func (bwT *blockWAL) Write(block state.Block) error {
 	blockIndex := block.StateIndex()
 	commitment := block.L1Commitment()
-	fileName := blockWALFileName(commitment.BlockHash())
-	filePath := filepath.Join(bwT.dir, fileName)
-	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+	subfolderName := blockWALSubFolderName(commitment.BlockHash())
+	folderPath := filepath.Join(bwT.dir, subfolderName)
+	if err := ioutils.CreateDirectory(folderPath, 0o777); err != nil {
+		return fmt.Errorf("failed create folder %v for writing block index %v: %w", folderPath, blockIndex, err)
+	}
+	tmpFileName := blockWALTmpFileName(commitment.BlockHash())
+	tmpFilePath := filepath.Join(folderPath, tmpFileName)
+	err := func() error { // Function is used to make defered close occur when it is needed even if write is successful
+		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+		if err != nil {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("failed to create temporary file %s for writing block index %v: %w", tmpFileName, blockIndex, err)
+		}
+		defer f.Close()
+		blockBytes := block.Bytes()
+		n, err := f.Write(blockBytes)
+		if err != nil {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("writing block index %v data to temporary file %s failed: %w", blockIndex, tmpFileName, err)
+		}
+		if len(blockBytes) != n {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("only %v of total %v bytes of block index %v were written to temporary file %s", n, len(blockBytes), blockIndex, tmpFileName)
+		}
+		return nil
+	}()
 	if err != nil {
-		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("opening file %s for writing block index %v failed: %w", fileName, blockIndex, err)
+		return err
 	}
-	defer f.Close()
-	blockBytes := block.Bytes()
-	n, err := f.Write(blockBytes)
+	finalFileName := blockWALFileName(commitment.BlockHash())
+	finalFilePath := filepath.Join(folderPath, finalFileName)
+	err = os.Rename(tmpFilePath, finalFilePath)
 	if err != nil {
-		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("writing block index %v data to file %s failed: %w", blockIndex, fileName, err)
+		return fmt.Errorf("failed to move temporary WAL file %s to permanent location %s: %v",
+			tmpFilePath, finalFilePath, err)
 	}
-	if len(blockBytes) != n {
-		bwT.metrics.IncFailedWrites()
-		return fmt.Errorf("only %v of total %v bytes of block index %v were written to file %s", n, len(blockBytes), blockIndex, fileName)
-	}
+
 	bwT.metrics.BlockWritten(block.StateIndex())
-	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, fileName)
+	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, finalFileName)
 	return nil
 }
 
+func (bwT *blockWAL) blockFilepath(blockHash state.BlockHash) (string, bool) {
+	subfolderName := blockWALSubFolderName(blockHash)
+	fileName := blockWALFileName(blockHash)
+
+	pathWithSubFolder := filepath.Join(bwT.dir, subfolderName, fileName)
+	_, err := os.Stat(pathWithSubFolder)
+	if err == nil {
+		return pathWithSubFolder, true
+	}
+
+	// Checked for backward compatibility and for ease of adding some blocks from other sources
+	pathNoSubFolder := filepath.Join(bwT.dir, fileName)
+	_, err = os.Stat(pathNoSubFolder)
+	if err == nil {
+		return pathNoSubFolder, true
+	}
+	return "", false
+}
+
 func (bwT *blockWAL) Contains(blockHash state.BlockHash) bool {
-	_, err := os.Stat(filepath.Join(bwT.dir, blockWALFileName(blockHash)))
-	return err == nil
+	_, exists := bwT.blockFilepath(blockHash)
+	return exists
 }
 
 func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
-	fileName := blockWALFileName(blockHash)
-	filePath := filepath.Join(bwT.dir, fileName)
+	filePath, exists := bwT.blockFilepath(blockHash)
+	if !exists {
+		return nil, fmt.Errorf("block hash %s is not present in WAL", blockHash)
+	}
 	block, err := blockFromFilePath(filePath)
 	if err != nil {
 		bwT.metrics.IncFailedReads()
@@ -88,24 +132,16 @@ func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
 // The blocks are provided ordered by the state index, so that they can be applied to the store.
 // This function reads blocks twice, but tries to minimize the amount of memory required to load the WAL.
 func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.Block) bool) error {
-	dirEntries, err := os.ReadDir(bwT.dir)
-	if err != nil {
-		return err
-	}
 	blocksByStateIndex := map[uint32][]string{}
-	for _, dirEntry := range dirEntries {
-		if !dirEntry.Type().IsRegular() {
-			continue
+	checkFile := func(filePath string) {
+		if !strings.HasSuffix(filePath, constBlockWALFileSuffix) {
+			return
 		}
-		if !strings.HasSuffix(dirEntry.Name(), constBlockWALFileSuffix) {
-			continue
-		}
-		filePath := filepath.Join(bwT.dir, dirEntry.Name())
 		fileBlock, fileErr := blockFromFilePath(filePath)
 		if fileErr != nil {
 			bwT.metrics.IncFailedReads()
-			bwT.LogWarn("Unable to read %v: %v", filePath, err)
-			continue
+			bwT.LogWarn("Unable to read %v: %v", filePath, fileErr)
+			return
 		}
 		stateIndex := fileBlock.StateIndex()
 		stateIndexPaths, found := blocksByStateIndex[stateIndex]
@@ -116,6 +152,28 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		}
 		blocksByStateIndex[stateIndex] = stateIndexPaths
 	}
+
+	var checkDir func(dirPath string, dirEntries []os.DirEntry)
+	checkDir = func(dirPath string, dirEntries []os.DirEntry) {
+		for _, dirEntry := range dirEntries {
+			entryPath := filepath.Join(dirPath, dirEntry.Name())
+			if dirEntry.IsDir() {
+				subDirEntries, err := os.ReadDir(entryPath)
+				if err == nil {
+					checkDir(entryPath, subDirEntries)
+				}
+			} else {
+				checkFile(entryPath)
+			}
+		}
+	}
+
+	dirEntries, err := os.ReadDir(bwT.dir)
+	if err != nil {
+		return err
+	}
+	checkDir(bwT.dir, dirEntries)
+
 	allStateIndexes := lo.Keys(blocksByStateIndex)
 	sort.Slice(allStateIndexes, func(i, j int) bool { return allStateIndexes[i] < allStateIndexes[j] })
 	for _, stateIndex := range allStateIndexes {
@@ -160,6 +218,14 @@ func blockFromFilePath(filePath string) (state.Block, error) {
 	return block, nil
 }
 
+func blockWALSubFolderName(blockHash state.BlockHash) string {
+	return hex.EncodeToString(blockHash[:1])
+}
+
 func blockWALFileName(blockHash state.BlockHash) string {
 	return blockHash.String() + constBlockWALFileSuffix
+}
+
+func blockWALTmpFileName(blockHash state.BlockHash) string {
+	return blockWALFileName(blockHash) + constBlockWALTmpFileSuffix
 }

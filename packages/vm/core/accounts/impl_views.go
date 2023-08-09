@@ -94,7 +94,7 @@ func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewFoundryOutput")
 
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	out, _, _ := GetFoundryOutput(ctx.StateR(), sn, ctx.ChainID())
+	out, _ := GetFoundryOutput(ctx.StateR(), sn, ctx.ChainID())
 	if out == nil {
 		panic(errFoundryNotFound)
 	}

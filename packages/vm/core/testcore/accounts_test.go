@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -548,9 +549,9 @@ type testParams struct {
 	nativeTokenID     iotago.NativeTokenID
 }
 
-func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
+func initDepositTest(t *testing.T, originParams dict.Dict, initLoad ...uint64) *testParams {
 	ret := &testParams{}
-	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ret.env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 
 	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
 	ret.chainOwnerAgentID = isc.NewAgentID(ret.chainOwnerAddr)
@@ -561,7 +562,7 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	if len(initLoad) != 0 {
 		initBaseTokens = initLoad[0]
 	}
-	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
+	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1", originParams)
 
 	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	return ret
@@ -586,7 +587,7 @@ func TestDepositBaseTokens(t *testing.T) {
 	// storage deposit. If storage deposit is 185, anything below that fill be topped up to 185, above that no adjustment is needed
 	for _, addBaseTokens := range []uint64{0, 50, 150, 200, 1000} {
 		t.Run("add base tokens "+strconv.Itoa(int(addBaseTokens)), func(t *testing.T) {
-			v := initDepositTest(t)
+			v := initDepositTest(t, nil)
 			v.req.WithGasBudget(100_000)
 			estimatedGas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
@@ -613,7 +614,7 @@ func TestDepositBaseTokens(t *testing.T) {
 
 // initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
 func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
-	v := initDepositTest(t, initLoad...)
+	v := initDepositTest(t, nil, initLoad...)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create foundry and mint 100 tokens
 	v.sn, v.nativeTokenID = v.createFoundryAndMint(1_000_000, 100)
@@ -780,6 +781,45 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 0)
 		v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 50)
 	})
+
+	t.Run("accounting UTXOs and pruning", func(t *testing.T) {
+		// mint 100 tokens from chain 1 and withdraw those to L1
+		v := initWithdrawTest(t, 2*isc.Million)
+		{
+			allSenderAssets := v.ch.L2Assets(v.userAgentID)
+			v.req.AddAllowance(allSenderAssets)
+			v.req.AddBaseTokens(BaseTokensDepositFee)
+			_, err := v.ch.PostRequestSync(v.req, v.user)
+			require.NoError(t, err)
+			v.env.AssertL1NativeTokens(v.userAddr, v.nativeTokenID, 100)
+			v.ch.AssertL2NativeTokens(v.userAgentID, v.nativeTokenID, 0)
+		}
+
+		// create a new chain (ch2) with active state pruning set to keep only 1 block
+		blockKeepAmount := int32(1)
+		ch2, _ := v.env.NewChainExt(nil, 0, "evmchain", dict.Dict{
+			origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
+		})
+
+		// deposit 1 native token from L1 into ch2
+		err := ch2.DepositAssetsToL2(isc.NewAssets(1*isc.Million, iotago.NativeTokens{
+			{ID: v.nativeTokenID, Amount: big.NewInt(1)},
+		}), v.user)
+		require.NoError(t, err)
+
+		// make the chain produce 2 blocks (prune the previous block with the initial deposit info)
+		for i := 0; i < 2; i++ {
+			_, err = ch2.PostRequestSync(solo.NewCallParams("contract", "func"), nil)
+			require.Error(t, err)                      // dummy request, so an error is expected
+			require.NotNil(t, ch2.LastReceipt().Error) // but it produced a receipt, thus make the state progress
+		}
+
+		// deposit 1 more after the initial deposit block has been prunned
+		err = ch2.DepositAssetsToL2(isc.NewAssets(1*isc.Million, iotago.NativeTokens{
+			{ID: v.nativeTokenID, Amount: big.NewInt(1)},
+		}), v.user)
+		require.NoError(t, err)
+	})
 }
 
 func TestTransferAndCheckBaseTokens(t *testing.T) {
@@ -800,7 +840,7 @@ func TestTransferAndCheckBaseTokens(t *testing.T) {
 
 func TestFoundryDestroy(t *testing.T) {
 	t.Run("destroy existing", func(t *testing.T) {
-		v := initDepositTest(t)
+		v := initDepositTest(t, nil)
 		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 		sn, _, err := v.ch.NewFoundryParams(1_000_000).
 			WithUser(v.user).
@@ -813,14 +853,14 @@ func TestFoundryDestroy(t *testing.T) {
 		testmisc.RequireErrorToBe(t, err, "not found")
 	})
 	t.Run("destroy fail", func(t *testing.T) {
-		v := initDepositTest(t)
+		v := initDepositTest(t, nil)
 		err := v.ch.DestroyFoundry(2, v.user)
 		testmisc.RequireErrorToBe(t, err, "unauthorized")
 	})
 }
 
 func TestTransferPartialAssets(t *testing.T) {
-	v := initDepositTest(t)
+	v := initDepositTest(t, nil)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
 	// setup a chain with some base tokens and native tokens for user1
 	sn, nativeTokenID, err := v.ch.NewFoundryParams(10).
@@ -1120,8 +1160,18 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestUnprocessable(t *testing.T) {
-	v := initDepositTest(t)
+func TestUnprocessableWithNoPruning(t *testing.T) {
+	testUnprocessable(t, nil)
+}
+
+func TestUnprocessableWithPruning(t *testing.T) {
+	testUnprocessable(t, dict.Dict{
+		origin.ParamBlockKeepAmount: codec.EncodeInt32(1),
+	})
+}
+
+func testUnprocessable(t *testing.T, originParams dict.Dict) {
+	v := initDepositTest(t, originParams)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each
 	_, nativeTokenID1 := v.createFoundryAndMint(1, 1)

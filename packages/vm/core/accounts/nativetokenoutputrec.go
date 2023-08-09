@@ -5,12 +5,12 @@ import (
 	"io"
 	"math/big"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type nativeTokenOutputRec struct {
-	BlockIndex        uint32
-	OutputIndex       uint16
+	OutputID          iotago.OutputID
 	Amount            *big.Int
 	StorageBaseTokens uint64 // always storage deposit
 }
@@ -32,14 +32,13 @@ func (rec *nativeTokenOutputRec) Bytes() []byte {
 }
 
 func (rec *nativeTokenOutputRec) String() string {
-	return fmt.Sprintf("Native Token Account: base tokens: %d, amount: %d, block: %d, outIdx: %d",
-		rec.StorageBaseTokens, rec.Amount, rec.BlockIndex, rec.OutputIndex)
+	return fmt.Sprintf("Native Token Account: base tokens: %d, amount: %d, outID: %s",
+		rec.StorageBaseTokens, rec.Amount, rec.OutputID)
 }
 
 func (rec *nativeTokenOutputRec) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	rec.BlockIndex = rr.ReadUint32()
-	rec.OutputIndex = rr.ReadUint16()
+	rr.ReadN(rec.OutputID[:])
 	rec.Amount = rr.ReadUint256()
 	rec.StorageBaseTokens = rr.ReadAmount64()
 	return rr.Err
@@ -47,8 +46,7 @@ func (rec *nativeTokenOutputRec) Read(r io.Reader) error {
 
 func (rec *nativeTokenOutputRec) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteUint32(rec.BlockIndex)
-	ww.WriteUint16(rec.OutputIndex)
+	ww.WriteN(rec.OutputID[:])
 	ww.WriteUint256(rec.Amount)
 	ww.WriteAmount64(rec.StorageBaseTokens)
 	return ww.Err

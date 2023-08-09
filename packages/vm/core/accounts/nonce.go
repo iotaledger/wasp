@@ -12,7 +12,7 @@ func nonceKey(callerAgentID isc.AgentID) kv.Key {
 	return keyNonce + accountKey(callerAgentID)
 }
 
-// Nonce returns the "total request count" for an account (its the accountNonce that is expected in the next request)
+// Nonce returns the "total request count" for an account (it's the accountNonce that is expected in the next request)
 func accountNonce(state kv.KVStoreReader, callerAgentID isc.AgentID) uint64 {
 	if callerAgentID.Kind() == isc.AgentIDKindEthereumAddress {
 		panic("to get EVM nonce, call EVM contract")

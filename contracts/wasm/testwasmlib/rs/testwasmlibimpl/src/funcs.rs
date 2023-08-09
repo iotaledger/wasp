@@ -1351,3 +1351,20 @@ pub fn view_check_eth_invalid_empty_address_from_string(
 ) {
     address_from_string("0x00");
 }
+
+pub fn func_activate(ctx: &ScFuncContext, f: &ActivateContext) {
+    f.state.active().set_value(true);
+    let deposit = ctx.allowance().base_tokens();
+    let transfer = wasmlib::ScTransfer::base_tokens(deposit);
+    ctx.transfer_allowed(&ctx.account_id(), &transfer);
+    let delay = f.params.seconds().value();
+    testwasmlib::ScFuncs::deactivate(ctx).func.delay(delay).post();
+}
+
+pub fn func_deactivate(ctx: &ScFuncContext, f: &DeactivateContext) {
+    f.state.active().set_value(false);
+}
+
+pub fn view_get_active(ctx: &ScViewContext, f: &GetActiveContext) {
+    f.results.active().set_value(f.state.active().value());
+}
