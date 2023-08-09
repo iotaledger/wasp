@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -21,7 +20,6 @@ func TestMsgCmtLogSerialization(t *testing.T) {
 		&cmt_log.MsgNextLogIndex{
 			BasicMessage: gpa.BasicMessage{},
 			NextLogIndex: cmt_log.LogIndex(rand.Int31()),
-			NextBaseAO:   isc.RandomAliasOutputWithID(),
 			PleaseRepeat: false,
 		},
 	}

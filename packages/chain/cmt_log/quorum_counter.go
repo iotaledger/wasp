@@ -33,7 +33,7 @@ func (qc *QuorumCounter) MaybeSendVote(li LogIndex) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	for _, nodeID := range qc.nodeIDs {
 		_, haveMsgFrom := qc.maxPeerVotes[nodeID] // It might happen, that we rebooted and lost the state.
-		msg := NewMsgNextLogIndex(nodeID, li, nil, qc.msgCause, !haveMsgFrom)
+		msg := NewMsgNextLogIndex(nodeID, li, qc.msgCause, !haveMsgFrom)
 		qc.lastSentMsgs[nodeID] = msg
 		msgs.Add(msg)
 	}

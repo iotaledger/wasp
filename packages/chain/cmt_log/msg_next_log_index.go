@@ -8,11 +8,23 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type MsgNextLogIndexCause byte
+
+func (c MsgNextLogIndexCause) String() string {
+	switch c {
+	case MsgNextLogIndexCauseConsOut:
+		return "ConsOut"
+	case MsgNextLogIndexCauseRecover:
+		return "Recover"
+	case MsgNextLogIndexCauseL1ReplacedAO:
+		return "L1RepAO"
+	default:
+		return fmt.Sprintf("%v", byte(c))
+	}
+}
 
 const (
 	MsgNextLogIndexCauseConsOut MsgNextLogIndexCause = iota
@@ -22,19 +34,17 @@ const (
 
 type MsgNextLogIndex struct {
 	gpa.BasicMessage
-	NextLogIndex LogIndex               // Proposal is to go to this LI without waiting for a consensus.
-	NextBaseAO   *isc.AliasOutputWithID // Using this AO as a base, might be nil.
-	Cause        MsgNextLogIndexCause
-	PleaseRepeat bool // If true, the receiver should resend its latest message back to the sender.
+	NextLogIndex LogIndex             // Proposal is to go to this LI without waiting for a consensus.
+	Cause        MsgNextLogIndexCause // Reason for the proposal.
+	PleaseRepeat bool                 // If true, the receiver should resend its latest message back to the sender.
 }
 
 var _ gpa.Message = new(MsgNextLogIndex)
 
-func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, nextBaseAO *isc.AliasOutputWithID, cause MsgNextLogIndexCause, pleaseRepeat bool) *MsgNextLogIndex {
+func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, cause MsgNextLogIndexCause, pleaseRepeat bool) *MsgNextLogIndex {
 	return &MsgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(recipient),
 		NextLogIndex: nextLogIndex,
-		NextBaseAO:   nextBaseAO,
 		Cause:        cause,
 		PleaseRepeat: pleaseRepeat,
 	}
@@ -46,26 +56,15 @@ func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 	return &MsgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(msg.Recipient()),
 		NextLogIndex: msg.NextLogIndex,
-		NextBaseAO:   msg.NextBaseAO,
+		Cause:        msg.Cause,
 		PleaseRepeat: false,
 	}
 }
 
 func (msg *MsgNextLogIndex) String() string {
-	var causeStr string
-	switch msg.Cause {
-	case MsgNextLogIndexCauseConsOut:
-		causeStr = "ConsOut"
-	case MsgNextLogIndexCauseRecover:
-		causeStr = "Recover"
-	case MsgNextLogIndexCauseL1ReplacedAO:
-		causeStr = "L1RepAO"
-	default:
-		causeStr = fmt.Sprintf("%v", msg.Cause)
-	}
 	return fmt.Sprintf(
-		"{MsgNextLogIndex[%s], sender=%v, nextLogIndex=%v, nextBaseAO=%v, pleaseRepeat=%v",
-		causeStr, msg.Sender().ShortString(), msg.NextLogIndex, msg.NextBaseAO, msg.PleaseRepeat,
+		"{MsgNextLogIndex[%v], sender=%v, nextLogIndex=%v, pleaseRepeat=%v",
+		msg.Cause, msg.Sender().ShortString(), msg.NextLogIndex, msg.PleaseRepeat,
 	)
 }
 
@@ -73,12 +72,6 @@ func (msg *MsgNextLogIndex) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeNextLogIndex.ReadAndVerify(rr)
 	msg.NextLogIndex = LogIndex(rr.ReadUint32())
-	if rr.ReadBool() {
-		msg.NextBaseAO = new(isc.AliasOutputWithID)
-		rr.Read(msg.NextBaseAO)
-	} else {
-		msg.NextBaseAO = nil
-	}
 	msg.Cause = MsgNextLogIndexCause(rr.ReadByte())
 	msg.PleaseRepeat = rr.ReadBool()
 	return rr.Err
@@ -88,12 +81,6 @@ func (msg *MsgNextLogIndex) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypeNextLogIndex.Write(ww)
 	ww.WriteUint32(msg.NextLogIndex.AsUint32())
-	if msg.NextBaseAO != nil {
-		ww.WriteBool(true)
-		ww.Write(msg.NextBaseAO)
-	} else {
-		ww.WriteBool(false)
-	}
 	ww.WriteByte(byte(msg.Cause))
 	ww.WriteBool(msg.PleaseRepeat)
 	return ww.Err
