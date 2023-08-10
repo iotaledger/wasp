@@ -47,6 +47,13 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 }
 
 // Overwrites, if block is already in WAL
+// Block format (version 1):
+//   - Version (4 bytes, unsigned int); value 1
+//   - State index (4 bytes, unsigned int)
+//   - Block bytes
+//
+// Block format (legacy = version 0):
+//   - Block bytes
 func (bwT *blockWAL) Write(block state.Block) error {
 	blockIndex := block.StateIndex()
 	commitment := block.L1Commitment()
@@ -65,6 +72,7 @@ func (bwT *blockWAL) Write(block state.Block) error {
 		}
 		defer f.Close()
 		ww := rwutil.NewWriter(f)
+		ww.WriteUint32(1) // Version; 4 bytes (instead of just 1) to lower number of possible collisions with legacy WAL format
 		ww.WriteUint32(blockIndex)
 		if ww.Err != nil {
 			bwT.metrics.IncFailedWrites()
@@ -194,14 +202,38 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 	return nil
 }
 
-func blockInfoFromFilePath[I any](filePath string, getInfoFun func(io.Reader) (I, error)) (I, error) {
+func blockInfoFromFilePath[I any](filePath string, getInfoFun func(uint32, io.Reader) (I, error)) (I, error) {
 	f, err := os.OpenFile(filePath, os.O_RDONLY, 0o666)
+	var info I
 	if err != nil {
-		var info I
 		return info, fmt.Errorf("opening file %s for reading failed: %w", filePath, err)
 	}
 	defer f.Close()
-	return getInfoFun(f)
+	rr := rwutil.NewReader(f)
+	version := rr.ReadUint32()
+	if rr.Err != nil {
+		return info, fmt.Errorf("failed reading file version: %w", rr.Err)
+	}
+	var errV error
+	if version == 1 {
+		info, errV = getInfoFun(version, f)
+		if errV == nil {
+			return info, nil
+		}
+		// error reading as version 1, maybe it's legacy version?
+	}
+	// backwards compatibility - reading legacy version
+	// NOTE: reopening file, because version bytes (or possibly more) has already been read
+	f, err = os.OpenFile(filePath, os.O_RDONLY, 0o666)
+	if err != nil {
+		return info, fmt.Errorf("reopening file %s for reading failed: %w", filePath, err)
+	}
+	defer f.Close()
+	info, err = getInfoFun(0, f)
+	if errV == nil {
+		return info, err
+	}
+	return info, fmt.Errorf("version %v error: %w, legacy version error: %w", version, errV, err)
 }
 
 func blockIndexFromFilePath(filePath string) (uint32, error) {
@@ -212,27 +244,48 @@ func blockFromFilePath(filePath string) (state.Block, error) {
 	return blockInfoFromFilePath(filePath, blockFromReader)
 }
 
-func blockIndexFromReader(r io.Reader) (uint32, error) {
-	rr := rwutil.NewReader(r)
-	info := rr.ReadUint32()
-	return info, rr.Err
+func blockIndexFromReader(version uint32, r io.Reader) (uint32, error) {
+	switch version {
+	case 1:
+		rr := rwutil.NewReader(r)
+		index := rr.ReadUint32()
+		return index, rr.Err
+	case 0:
+		block := state.NewBlock()
+		err := block.Read(r)
+		if err != nil {
+			return 0, err
+		}
+		return block.StateIndex(), nil
+	default:
+		return 0, fmt.Errorf("unknown block version %v", version)
+	}
 }
 
-func blockFromReader(r io.Reader) (state.Block, error) {
-	blockIndex, err := blockIndexFromReader(r)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read block index in header: %w", err)
+func blockFromReader(version uint32, r io.Reader) (state.Block, error) {
+	switch version {
+	case 1:
+		blockIndex, err := blockIndexFromReader(version, r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read block index in header: %w", err)
+		}
+		block := state.NewBlock()
+		err = block.Read(r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read block: %w", err)
+		}
+		if blockIndex != block.StateIndex() {
+			return nil, fmt.Errorf("block index in header %v does not match block index in block %v",
+				blockIndex, block.StateIndex())
+		}
+		return block, nil
+	case 0:
+		block := state.NewBlock()
+		err := block.Read(r)
+		return block, err
+	default:
+		return nil, fmt.Errorf("unknown block version %v", version)
 	}
-	block := state.NewBlock()
-	err = block.Read(r)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read block: %w", err)
-	}
-	if blockIndex != block.StateIndex() {
-		return nil, fmt.Errorf("block index in header %v does not match block index in block %v",
-			blockIndex, block.StateIndex())
-	}
-	return block, nil
 }
 
 func blockWALSubFolderName(blockHash state.BlockHash) string {
