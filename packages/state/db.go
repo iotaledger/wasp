@@ -187,7 +187,5 @@ func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-
-	db.setLatestTrieRoot(root)
 	return nil
 }
