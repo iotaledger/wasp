@@ -30,7 +30,7 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 	prevAOStr := ""
 	if info.PreviousAliasOutput != nil {
 		blockindex = info.PreviousAliasOutput.GetAliasOutput().StateIndex + 1
-		prevAOStr = string(info.PreviousAliasOutput.Bytes())
+		prevAOStr = iotago.EncodeHex(info.PreviousAliasOutput.Bytes())
 	}
 	return &BlockInfoResponse{
 		BlockIndex:            blockindex,

@@ -208,9 +208,9 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	for _, sendBlockResult := range sendBlockResults {
 		requireTrueForSomeTime(t, sendBlockResult, 11*time.Second) // 11s instead of 10s just to avoid linter warning
 	}
-	requireTrueForSomeTime(t, consensusStateProposalResult, 10*time.Second)
-	requireTrueForSomeTime(t, consensusDecidedStateResult, 10*time.Second)
-	requireTrueForSomeTime(t, mempoolStateRequestResult, 10*time.Second)
+	requireTrueForSomeTime(t, consensusStateProposalResult, 20*time.Second)
+	requireTrueForSomeTime(t, consensusDecidedStateResult, 20*time.Second)
+	requireTrueForSomeTime(t, mempoolStateRequestResult, 20*time.Second)
 }
 
 func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {

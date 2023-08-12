@@ -3,12 +3,9 @@ package sm_snapshots
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -25,34 +22,6 @@ func newSnapshotter(store state.Store) snapshotter {
 }
 
 func (sn *snapshotterImpl) storeSnapshot(snapshotInfo SnapshotInfo, w io.Writer) error {
-	snapshot := mapdb.NewMapDB()
-	err := sn.store.TakeSnapshot(snapshotInfo.TrieRoot(), snapshot)
-	if err != nil {
-		return fmt.Errorf("failed to read store: %w", err)
-	}
-	err = writeSnapshot(snapshotInfo, snapshot, w)
-	if err != nil {
-		return fmt.Errorf("failed writing snapshot: %w", err)
-	}
-	return nil
-}
-
-func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) error {
-	readSnapshotInfo, snapshot, err := readSnapshot(r)
-	if err != nil {
-		return fmt.Errorf("failed reading snapshot: %w", err)
-	}
-	if !readSnapshotInfo.Equals(snapshotInfo) {
-		return fmt.Errorf("snapshot read %s is different than expected %v", readSnapshotInfo, snapshotInfo)
-	}
-	err = sn.store.RestoreSnapshot(readSnapshotInfo.TrieRoot(), snapshot)
-	if err != nil {
-		return fmt.Errorf("failed restoring snapshot: %w", err)
-	}
-	return nil
-}
-
-func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Writer) error {
 	indexArray := make([]byte, 4) // Size of block index, which is of type uint32: 4 bytes
 	binary.LittleEndian.PutUint32(indexArray, snapshotInfo.StateIndex())
 	err := writeBytes(indexArray, w)
@@ -66,27 +35,26 @@ func writeSnapshot(snapshotInfo SnapshotInfo, snapshot kvstore.KVStore, w io.Wri
 		return fmt.Errorf("failed writing L1 commitment %s: %w", snapshotInfo.Commitment(), err)
 	}
 
-	iterErr := snapshot.Iterate(kvstore.EmptyPrefix, func(key kvstore.Key, value kvstore.Value) bool {
-		e := writeBytes(key, w)
-		if e != nil {
-			err = fmt.Errorf("failed writing key %v: %w", key, e)
-			return false
-		}
-
-		e = writeBytes(value, w)
-		if e != nil {
-			err = fmt.Errorf("failed writing key's %v value %v: %w", key, value, e)
-			return false
-		}
-
-		return true
-	})
-
-	if iterErr != nil {
-		return iterErr
+	err = sn.store.TakeSnapshot(snapshotInfo.TrieRoot(), w)
+	if err != nil {
+		return fmt.Errorf("failed to store snapshot: %w", err)
 	}
+	return nil
+}
 
-	return err
+func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) error {
+	readSnapshotInfo, err := readSnapshotInfo(r)
+	if err != nil {
+		return fmt.Errorf("failed reading snapshot info: %w", err)
+	}
+	if !readSnapshotInfo.Equals(snapshotInfo) {
+		return fmt.Errorf("snapshot read %s is different than expected %v", readSnapshotInfo, snapshotInfo)
+	}
+	err = sn.store.RestoreSnapshot(readSnapshotInfo.TrieRoot(), r)
+	if err != nil {
+		return fmt.Errorf("failed restoring snapshot: %w", err)
+	}
+	return nil
 }
 
 func readSnapshotInfo(r io.Reader) (SnapshotInfo, error) {
@@ -109,30 +77,6 @@ func readSnapshotInfo(r io.Reader) (SnapshotInfo, error) {
 	}
 
 	return NewSnapshotInfo(index, commitment), nil
-}
-
-func readSnapshot(r io.Reader) (SnapshotInfo, kvstore.KVStore, error) {
-	snapshotInfo, err := readSnapshotInfo(r)
-	if err != nil {
-		return nil, nil, err
-	}
-	snapshot := mapdb.NewMapDB()
-	for key, err := readBytes(r); !errors.Is(err, io.EOF); key, err = readBytes(r) {
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to read key: %w", err)
-		}
-
-		value, err := readBytes(r)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to read value of key %v: %w", key, err)
-		}
-
-		err = snapshot.Set(key, value)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to set key's %v value %v to snapshot: %w", key, value, err)
-		}
-	}
-	return snapshotInfo, snapshot, nil
 }
 
 func writeBytes(bytes []byte, w io.Writer) error {

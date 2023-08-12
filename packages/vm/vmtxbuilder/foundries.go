@@ -44,9 +44,9 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	}
 	f.Amount = parameters.L1().Protocol.RentStructure.MinRent(f)
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
-		serialNumber: f.SerialNumber,
-		in:           nil,
-		out:          f,
+		serialNumber:     f.SerialNumber,
+		accountingInput:  nil,
+		accountingOutput: f,
 	}
 	return f.SerialNumber, f.Amount
 }
@@ -60,14 +60,14 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotag
 		panic(vm.ErrFoundryDoesNotExist)
 	}
 	// check if the loaded foundry matches the nativeTokenID
-	if nativeTokenID != f.in.MustNativeTokenID() {
+	if nativeTokenID != f.accountingInput.MustNativeTokenID() {
 		panic(fmt.Errorf("%v: requested token ID: %s, foundry token id: %s",
-			vm.ErrCantModifySupplyOfTheToken, nativeTokenID.String(), f.in.MustNativeTokenID().String()))
+			vm.ErrCantModifySupplyOfTheToken, nativeTokenID.String(), f.accountingInput.MustNativeTokenID().String()))
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
-	simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
+	simpleTokenScheme := util.MustTokenScheme(f.accountingOutput.TokenScheme)
 
 	// check the supply bounds
 	var newMinted, newMelted *big.Int
@@ -88,7 +88,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotag
 	simpleTokenScheme.MeltedTokens = newMelted
 	txb.invokedFoundries[sn] = f
 
-	adjustment += int64(f.in.Amount) - int64(f.out.Amount)
+	adjustment += int64(f.accountingInput.Amount) - int64(f.accountingOutput.Amount)
 	return adjustment
 }
 
@@ -103,10 +103,10 @@ func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
 		return nil
 	}
 	f := &foundryInvoked{
-		serialNumber: foundryOutput.SerialNumber,
-		outputID:     outputID,
-		in:           foundryOutput,
-		out:          cloneFoundryOutput(foundryOutput),
+		serialNumber:      foundryOutput.SerialNumber,
+		accountingInputID: outputID,
+		accountingInput:   foundryOutput,
+		accountingOutput:  cloneFoundryOutput(foundryOutput),
 	}
 	txb.invokedFoundries[sn] = f
 	return f
@@ -118,14 +118,14 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	if f == nil {
 		panic(vm.ErrFoundryDoesNotExist)
 	}
-	if f.in == nil {
+	if f.accountingInput == nil {
 		panic(vm.ErrCantDestroyFoundryBeingCreated)
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
-	f.out = nil
-	return f.in.Amount
+	f.accountingOutput = nil
+	return f.accountingInput.Amount
 }
 
 func (txb *AnchorTransactionBuilder) nextFoundrySerialNumber() uint32 {
@@ -172,27 +172,27 @@ func (txb *AnchorTransactionBuilder) FoundriesToBeUpdated() ([]uint32, []uint32)
 func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[uint32]*iotago.FoundryOutput {
 	ret := make(map[uint32]*iotago.FoundryOutput)
 	for _, sn := range serNums {
-		ret[sn] = txb.invokedFoundries[sn].out
+		ret[sn] = txb.invokedFoundries[sn].accountingOutput
 	}
 	return ret
 }
 
 type foundryInvoked struct {
-	serialNumber uint32
-	outputID     iotago.OutputID       // if in != nil
-	in           *iotago.FoundryOutput // nil if created
-	out          *iotago.FoundryOutput // nil if destroyed
+	serialNumber      uint32
+	accountingInputID iotago.OutputID       // if in != nil
+	accountingInput   *iotago.FoundryOutput // nil if created
+	accountingOutput  *iotago.FoundryOutput // nil if destroyed
 }
 
 func (f *foundryInvoked) Clone() *foundryInvoked {
 	outputID := iotago.OutputID{}
-	copy(outputID[:], f.outputID[:])
+	copy(outputID[:], f.accountingInputID[:])
 
 	return &foundryInvoked{
-		serialNumber: f.serialNumber,
-		outputID:     outputID,
-		in:           cloneFoundryOutput(f.in),
-		out:          cloneFoundryOutput(f.out),
+		serialNumber:      f.serialNumber,
+		accountingInputID: outputID,
+		accountingInput:   cloneFoundryOutput(f.accountingInput),
+		accountingOutput:  cloneFoundryOutput(f.accountingOutput),
 	}
 }
 
@@ -201,20 +201,20 @@ func (f *foundryInvoked) isNewCreated() bool {
 }
 
 func (f *foundryInvoked) requiresExistingAccountingUTXOAsInput() bool {
-	if f.in == nil {
+	if f.accountingInput == nil {
 		return false
 	}
-	if identicalFoundries(f.in, f.out) {
+	if identicalFoundries(f.accountingInput, f.accountingOutput) {
 		return false
 	}
 	return true
 }
 
 func (f *foundryInvoked) producesAccountingOutput() bool {
-	if f.out == nil {
+	if f.accountingOutput == nil {
 		return false
 	}
-	if identicalFoundries(f.in, f.out) {
+	if identicalFoundries(f.accountingInput, f.accountingOutput) {
 		return false
 	}
 	return true

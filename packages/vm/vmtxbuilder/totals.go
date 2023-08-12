@@ -45,10 +45,10 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 		if !ok {
 			s = new(big.Int)
 		}
-		s.Add(s, ntb.in.NativeTokens[0].Amount)
+		s.Add(s, ntb.accountingInput.NativeTokens[0].Amount)
 		totals.NativeTokenBalances[id] = s
 		// sum up storage deposit in inputs of internal UTXOs
-		totals.TotalBaseTokensInStorageDeposit += ntb.in.Amount
+		totals.TotalBaseTokensInStorageDeposit += ntb.accountingInput.Amount
 	}
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
@@ -65,16 +65,16 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	}
 	for _, f := range txb.invokedFoundries {
 		if f.requiresExistingAccountingUTXOAsInput() {
-			totals.TotalBaseTokensInStorageDeposit += f.in.Amount
-			simpleTokenScheme := util.MustTokenScheme(f.in.TokenScheme)
-			totals.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).
+			totals.TotalBaseTokensInStorageDeposit += f.accountingInput.Amount
+			simpleTokenScheme := util.MustTokenScheme(f.accountingInput.TokenScheme)
+			totals.TokenCirculatingSupplies[f.accountingInput.MustNativeTokenID()] = new(big.Int).
 				Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 		}
 	}
 
 	for _, nft := range txb.nftsIncluded {
-		if !isc.IsEmptyOutputID(nft.outputID) {
-			totals.TotalBaseTokensInStorageDeposit += nft.in.Amount
+		if !isc.IsEmptyOutputID(nft.accountingInputID) {
+			totals.TotalBaseTokensInStorageDeposit += nft.accountingInput.Amount
 		}
 	}
 
@@ -111,10 +111,10 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		if !f.producesAccountingOutput() {
 			continue
 		}
-		totals.TotalBaseTokensInStorageDeposit += f.out.Amount
-		id := f.out.MustNativeTokenID()
+		totals.TotalBaseTokensInStorageDeposit += f.accountingOutput.Amount
+		id := f.accountingOutput.MustNativeTokenID()
 		totals.TokenCirculatingSupplies[id] = big.NewInt(0)
-		simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
+		simpleTokenScheme := util.MustTokenScheme(f.accountingOutput.TokenScheme)
 		totals.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 	}
 	for _, o := range txb.postedOutputs {
@@ -131,7 +131,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	}
 	for _, nft := range txb.nftsIncluded {
 		if !nft.sentOutside {
-			totals.TotalBaseTokensInStorageDeposit += nft.out.Amount
+			totals.TotalBaseTokensInStorageDeposit += nft.resultingOutput.Amount
 		}
 	}
 	return totals
