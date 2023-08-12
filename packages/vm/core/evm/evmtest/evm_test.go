@@ -1809,6 +1809,17 @@ func TestGasPrice(t *testing.T) {
 
 	price3 := env.evmChain.GasPrice().Uint64()
 	require.EqualValues(t, price2*2, price3)
+
+	{
+		feePolicy := env.soloChain.GetGasFeePolicy()
+		feePolicy.GasPerToken.A = 0
+		feePolicy.GasPerToken.B = 0
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+
+	price4 := env.evmChain.GasPrice().Uint64()
+	require.EqualValues(t, 0, price4)
 }
 
 func TestTraceTransaction(t *testing.T) {
