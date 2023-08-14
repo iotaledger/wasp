@@ -378,15 +378,16 @@ func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
 func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 	if !smT.wal.Contains(msg.block.Hash()) {
 		if err := smT.wal.Write(msg.block); err != nil {
-			smT.log.Warnf("Preliminary block %v cannot be saved to the WAL: %v", msg.block.L1Commitment(), err)
+			smT.log.Warnf("Preliminary block index %v %s cannot be saved to the WAL: %v",
+				msg.block.StateIndex(), msg.block.L1Commitment(), err)
 			msg.Respond(err)
 			return
 		}
-		smT.log.Warnf("Preliminary block %v saved to the WAL.", msg.block.L1Commitment())
+		smT.log.Warnf("Preliminary block index %v %s saved to the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
 		msg.Respond(nil)
 		return
 	}
-	smT.log.Warnf("Preliminary block %v already exist in the WAL.", msg.block.L1Commitment())
+	smT.log.Warnf("Preliminary block index %v %s already exist in the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
 	msg.Respond(nil)
 }
 
