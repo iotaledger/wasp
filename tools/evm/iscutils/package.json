@@ -19,5 +19,5 @@
   "bugs": {
     "url": "https://github.com/iotaledger/wasp/issues"
   },
-  "homepage": "https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/README.md"
+  "homepage": "https://github.com/iotaledger/wasp/blob/develop/tools/evm/iscutils/README.md"
 }
