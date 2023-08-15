@@ -445,7 +445,7 @@ func (e *EVMChain) GasPrice() *big.Int {
 	feePolicy := governance.MustGetGasFeePolicy(governancePartition)
 
 	// special case '0:0' for free request
-	if feePolicy.GasPerToken.B == 0 && feePolicy.GasPerToken.A == 0 {
+	if feePolicy.GasPerToken.IsZero() {
 		return big.NewInt(0)
 	}
 
