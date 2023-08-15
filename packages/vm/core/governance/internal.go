@@ -17,7 +17,7 @@ import (
 // If succeeds, it means this block is fake.
 // If fails, return nil
 func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
-	ret, err := codec.DecodeAddress(state.Get(StateVarRotateToAddress), nil)
+	ret, err := codec.DecodeAddress(state.Get(VarRotateToAddress), nil)
 	if err != nil {
 		return nil
 	}
@@ -66,11 +66,11 @@ func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInf
 }
 
 func MustGetMinCommonAccountBalance(state kv.KVStoreReader) uint64 {
-	return kvdecoder.New(state).MustGetUint64(StateVarMinBaseTokensOnCommonAccount)
+	return kvdecoder.New(state).MustGetUint64(VarMinBaseTokensOnCommonAccount)
 }
 
 func MustGetPayoutAgentID(state kv.KVStoreReader) isc.AgentID {
-	return kvdecoder.New(state).MustGetAgentID(StateVarPayoutAgentID)
+	return kvdecoder.New(state).MustGetAgentID(VarPayoutAgentID)
 }
 
 func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
@@ -104,7 +104,7 @@ func GetGasLimits(state kv.KVStoreReader) (*gas.Limits, error) {
 }
 
 func GetBlockKeepAmount(state kv.KVStoreReader) int32 {
-	return codec.MustDecodeInt32(state.Get(VarBlockKeepAmount), BlockKeepAmountDefault)
+	return codec.MustDecodeInt32(state.Get(VarBlockKeepAmount), DefaultBlockKeepAmount)
 }
 
 func SetPublicURL(state kv.KVStore, url string) {

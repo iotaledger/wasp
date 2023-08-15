@@ -107,7 +107,7 @@ func initDeployCmd() *cobra.Command {
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	waspcmd.WithPeersFlag(cmd, &peers)
 	cmd.Flags().Uint16VarP(&evmChainID, "evm-chainid", "", evm.DefaultChainID, "ChainID")
-	cmd.Flags().Int32VarP(&blockKeepAmount, "block-keep-amount", "", governance.BlockKeepAmountDefault, "Amount of blocks to keep in the blocklog (-1 to keep all blocks)")
+	cmd.Flags().Int32VarP(&blockKeepAmount, "block-keep-amount", "", governance.DefaultBlockKeepAmount, "Amount of blocks to keep in the blocklog (-1 to keep all blocks)")
 	cmd.Flags().StringVar(&chainName, "chain", "", "name of the chain")
 	log.Check(cmd.MarkFlagRequired("chain"))
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")

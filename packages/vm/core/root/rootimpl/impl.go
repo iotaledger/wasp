@@ -35,13 +35,13 @@ var Processor = root.Contract.Processor(nil,
 )
 
 func SetInitialState(state kv.KVStore) {
-	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
+	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
 	if contractRegistry.Len() != 0 {
 		panic("contract registry must be empty on chain start")
 	}
 
 	// forbid deployment of custom contracts by default
-	state.Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(true))
+	state.Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(true))
 
 	{
 		// register core contracts
@@ -114,7 +114,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).SetAt(deployer.Bytes(), []byte{0x01})
+	collections.NewMap(ctx.State(), root.VarDeployPermissions).SetAt(deployer.Bytes(), []byte{0x01})
 	eventGrant(ctx, deployer)
 	return nil
 }
@@ -125,7 +125,7 @@ func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).DelAt(deployer.Bytes())
+	collections.NewMap(ctx.State(), root.VarDeployPermissions).DelAt(deployer.Bytes())
 	eventRevoke(ctx, deployer)
 	return nil
 }
@@ -133,7 +133,7 @@ func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
-	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
+	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
 	return nil
 }
 
@@ -156,7 +156,7 @@ func findContract(ctx isc.SandboxView) dict.Dict {
 
 func getContractRecords(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	dst := collections.NewMap(ret, root.StateVarContractRegistry)
+	dst := collections.NewMap(ret, root.VarContractRegistry)
 	root.GetContractRegistryR(ctx.StateR()).Iterate(func(elemKey []byte, value []byte) bool {
 		dst.SetAt(elemKey, value)
 		return true

@@ -55,26 +55,26 @@ func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 func setPayoutAgentID(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAgentID)
-	ctx.State().Set(governance.StateVarPayoutAgentID, codec.EncodeAgentID(agent))
+	ctx.State().Set(governance.VarPayoutAgentID, codec.EncodeAgentID(agent))
 	return nil
 }
 
 func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	ret.Set(governance.ParamSetPayoutAgentID, ctx.StateR().Get(governance.StateVarPayoutAgentID))
+	ret.Set(governance.ParamSetPayoutAgentID, ctx.StateR().Get(governance.VarPayoutAgentID))
 	return ret
 }
 
 func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
-	ctx.State().Set(governance.StateVarMinBaseTokensOnCommonAccount, codec.EncodeUint64(minCommonAccountBalance))
+	ctx.State().Set(governance.VarMinBaseTokensOnCommonAccount, codec.EncodeUint64(minCommonAccountBalance))
 	return nil
 }
 
 func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
 	return dict.Dict{
-		governance.ParamSetMinCommonAccountBalance: ctx.StateR().Get(governance.StateVarMinBaseTokensOnCommonAccount),
+		governance.ParamSetMinCommonAccountBalance: ctx.StateR().Get(governance.VarMinBaseTokensOnCommonAccount),
 	}
 }
 

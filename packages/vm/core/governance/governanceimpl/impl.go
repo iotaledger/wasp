@@ -60,6 +60,6 @@ func SetInitialState(state kv.KVStore, chainOwner isc.AgentID, blockKeepAmount i
 	state.Set(governance.VarGasLimitsBytes, gas.LimitsDefault.Bytes())
 	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 	state.Set(governance.VarBlockKeepAmount, codec.EncodeInt32(blockKeepAmount))
-	state.Set(governance.StateVarMinBaseTokensOnCommonAccount, codec.EncodeUint64(governance.DefaultMinBaseTokensOnCommonAccount))
-	state.Set(governance.StateVarPayoutAgentID, chainOwner.Bytes())
+	state.Set(governance.VarMinBaseTokensOnCommonAccount, codec.EncodeUint64(governance.DefaultMinBaseTokensOnCommonAccount))
+	state.Set(governance.VarPayoutAgentID, chainOwner.Bytes())
 }

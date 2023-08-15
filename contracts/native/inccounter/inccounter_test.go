@@ -134,7 +134,7 @@ func TestSpawn(t *testing.T) {
 
 	res, err := chain.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
 	require.NoError(t, err)
-	creg := collections.NewMapReadOnly(res, root.StateVarContractRegistry)
+	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
 	require.True(t, int(creg.Len()) == len(corecontracts.All)+2)
 }
 

@@ -39,7 +39,7 @@ func CheckNonce(state kv.KVStoreReader, agentID isc.AgentID, nonce uint64) error
 	}
 	expected := accountNonce(state, agentID)
 	if nonce != expected {
-		return fmt.Errorf("Invalid nonce, expected %d, got %d", expected, nonce)
+		return fmt.Errorf("invalid nonce, expected %d, got %d", expected, nonce)
 	}
 	return nil
 }

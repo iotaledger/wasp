@@ -36,7 +36,7 @@ func (e *ChainEnv) checkCoreContracts() {
 			CallView(context.Background(), root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.StateVarContractRegistry))
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		for _, rec := range corecontracts.All {
 			cr := contractRegistry[rec.Hname()]

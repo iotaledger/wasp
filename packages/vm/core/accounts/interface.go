@@ -7,6 +7,17 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 var (
+	// Funcs
+	FuncDeposit                = coreutil.Func("deposit")
+	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
+	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
+	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
+	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
+	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
+	FuncWithdraw               = coreutil.Func("withdraw")
+	// TODO implement grant/claim protocol of moving ownership of the foundry
+	//  Including ownership of the foundry by the common account/chain owner
+
 	// Views
 	ViewAccountFoundries             = coreutil.ViewFunc("accountFoundries")
 	ViewAccountNFTAmount             = coreutil.ViewFunc("accountNFTAmount")
@@ -22,19 +33,9 @@ var (
 	ViewGetNativeTokenIDRegistry     = coreutil.ViewFunc("getNativeTokenIDRegistry")
 	ViewNFTData                      = coreutil.ViewFunc("nftData")
 	ViewTotalAssets                  = coreutil.ViewFunc("totalAssets")
-
-	// Funcs
-	FuncDeposit                = coreutil.Func("deposit")
-	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
-	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
-	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
-	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
-	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
-	FuncWithdraw               = coreutil.Func("withdraw")
-	// TODO implement grant/claim protocol of moving ownership of the foundry
-	//  Including ownership of the foundry by the common account/chain owner
 )
 
+// request parameters
 const (
 	ParamAccountNonce           = "n"
 	ParamAgentID                = "a"

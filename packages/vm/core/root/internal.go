@@ -9,11 +9,11 @@ import (
 )
 
 func GetContractRegistry(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, StateVarContractRegistry)
+	return collections.NewMap(state, VarContractRegistry)
 }
 
 func GetContractRegistryR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, StateVarContractRegistry)
+	return collections.NewMapReadOnly(state, VarContractRegistry)
 }
 
 // FindContract is an internal utility function which finds a contract in the KVStore
