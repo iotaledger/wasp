@@ -1,9 +1,9 @@
 package sm_gpa_utils
 
 import (
-	"bufio"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type blockWAL struct {
@@ -46,13 +47,20 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metric
 }
 
 // Overwrites, if block is already in WAL
+// Block format (version 1):
+//   - Version (4 bytes, unsigned int); value 1
+//   - State index (4 bytes, unsigned int)
+//   - Block bytes
+//
+// Block format (legacy = version 0):
+//   - Block bytes
 func (bwT *blockWAL) Write(block state.Block) error {
 	blockIndex := block.StateIndex()
 	commitment := block.L1Commitment()
 	subfolderName := blockWALSubFolderName(commitment.BlockHash())
 	folderPath := filepath.Join(bwT.dir, subfolderName)
 	if err := ioutils.CreateDirectory(folderPath, 0o777); err != nil {
-		return fmt.Errorf("failed create folder %v for writing block index %v: %w", folderPath, blockIndex, err)
+		return fmt.Errorf("failed to create folder %s for writing block: %w", folderPath, err)
 	}
 	tmpFileName := blockWALTmpFileName(commitment.BlockHash())
 	tmpFilePath := filepath.Join(folderPath, tmpFileName)
@@ -60,18 +68,20 @@ func (bwT *blockWAL) Write(block state.Block) error {
 		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 		if err != nil {
 			bwT.metrics.IncFailedWrites()
-			return fmt.Errorf("failed to create temporary file %s for writing block index %v: %w", tmpFileName, blockIndex, err)
+			return fmt.Errorf("failed to create temporary file %s for writing block: %w", tmpFilePath, err)
 		}
 		defer f.Close()
-		blockBytes := block.Bytes()
-		n, err := f.Write(blockBytes)
+		ww := rwutil.NewWriter(f)
+		ww.WriteUint32(1) // Version; 4 bytes (instead of just 1) to lower number of possible collisions with legacy WAL format
+		ww.WriteUint32(blockIndex)
+		if ww.Err != nil {
+			bwT.metrics.IncFailedWrites()
+			return fmt.Errorf("failed to write block index into temporary file %s: %w", tmpFilePath, ww.Err)
+		}
+		err = block.Write(f)
 		if err != nil {
 			bwT.metrics.IncFailedWrites()
-			return fmt.Errorf("writing block index %v data to temporary file %s failed: %w", blockIndex, tmpFileName, err)
-		}
-		if len(blockBytes) != n {
-			bwT.metrics.IncFailedWrites()
-			return fmt.Errorf("only %v of total %v bytes of block index %v were written to temporary file %s", n, len(blockBytes), blockIndex, tmpFileName)
+			return fmt.Errorf("writing block to temporary file %s failed: %w", tmpFilePath, err)
 		}
 		return nil
 	}()
@@ -87,7 +97,7 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	}
 
 	bwT.metrics.BlockWritten(block.StateIndex())
-	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, finalFileName)
+	bwT.LogDebugf("Block index %v %s written to wal; file name - %s", blockIndex, commitment, finalFilePath)
 	return nil
 }
 
@@ -137,13 +147,12 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		if !strings.HasSuffix(filePath, constBlockWALFileSuffix) {
 			return
 		}
-		fileBlock, fileErr := blockFromFilePath(filePath)
-		if fileErr != nil {
+		stateIndex, err := blockIndexFromFilePath(filePath)
+		if err != nil {
 			bwT.metrics.IncFailedReads()
-			bwT.LogWarn("Unable to read %v: %v", filePath, fileErr)
+			bwT.LogWarn("Unable to read %v: %v", filePath, err)
 			return
 		}
-		stateIndex := fileBlock.StateIndex()
 		stateIndexPaths, found := blocksByStateIndex[stateIndex]
 		if found {
 			stateIndexPaths = append(stateIndexPaths, filePath)
@@ -193,29 +202,90 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 	return nil
 }
 
-func blockFromFilePath(filePath string) (state.Block, error) {
+func blockInfoFromFilePath[I any](filePath string, getInfoFun func(uint32, io.Reader) (I, error)) (I, error) {
 	f, err := os.OpenFile(filePath, os.O_RDONLY, 0o666)
+	var info I
 	if err != nil {
-		return nil, fmt.Errorf("opening file %s for reading failed: %w", filePath, err)
+		return info, fmt.Errorf("opening file %s for reading failed: %w", filePath, err)
 	}
 	defer f.Close()
-	stat, err := f.Stat()
+	rr := rwutil.NewReader(f)
+	version := rr.ReadUint32()
+	if rr.Err != nil {
+		return info, fmt.Errorf("failed reading file version: %w", rr.Err)
+	}
+	var errV error
+	if version == 1 {
+		info, errV = getInfoFun(version, f)
+		if errV == nil {
+			return info, nil
+		}
+		// error reading as version 1, maybe it's legacy version?
+	}
+	// backwards compatibility - reading legacy version
+	// NOTE: reopening file, because version bytes (or possibly more) has already been read
+	f, err = os.OpenFile(filePath, os.O_RDONLY, 0o666)
 	if err != nil {
-		return nil, fmt.Errorf("reading file %s information failed: %w", filePath, err)
+		return info, fmt.Errorf("reopening file %s for reading failed: %w", filePath, err)
 	}
-	blockBytes := make([]byte, stat.Size())
-	n, err := bufio.NewReader(f).Read(blockBytes)
-	if err != nil {
-		return nil, fmt.Errorf("reading file %s failed: %w", filePath, err)
+	defer f.Close()
+	info, err = getInfoFun(0, f)
+	if errV == nil {
+		return info, err
 	}
-	if int64(n) != stat.Size() {
-		return nil, fmt.Errorf("only %v of total %v bytes of file %s were read", n, stat.Size(), filePath)
+	return info, fmt.Errorf("version %v error: %w, legacy version error: %w", version, errV, err)
+}
+
+func blockIndexFromFilePath(filePath string) (uint32, error) {
+	return blockInfoFromFilePath(filePath, blockIndexFromReader)
+}
+
+func blockFromFilePath(filePath string) (state.Block, error) {
+	return blockInfoFromFilePath(filePath, blockFromReader)
+}
+
+func blockIndexFromReader(version uint32, r io.Reader) (uint32, error) {
+	switch version {
+	case 1:
+		rr := rwutil.NewReader(r)
+		index := rr.ReadUint32()
+		return index, rr.Err
+	case 0:
+		block := state.NewBlock()
+		err := block.Read(r)
+		if err != nil {
+			return 0, err
+		}
+		return block.StateIndex(), nil
+	default:
+		return 0, fmt.Errorf("unknown block version %v", version)
 	}
-	block, err := state.BlockFromBytes(blockBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing block from bytes read from file %s: %w", filePath, err)
+}
+
+func blockFromReader(version uint32, r io.Reader) (state.Block, error) {
+	switch version {
+	case 1:
+		blockIndex, err := blockIndexFromReader(version, r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read block index in header: %w", err)
+		}
+		block := state.NewBlock()
+		err = block.Read(r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read block: %w", err)
+		}
+		if blockIndex != block.StateIndex() {
+			return nil, fmt.Errorf("block index in header %v does not match block index in block %v",
+				blockIndex, block.StateIndex())
+		}
+		return block, nil
+	case 0:
+		block := state.NewBlock()
+		err := block.Read(r)
+		return block, err
+	default:
+		return nil, fmt.Errorf("unknown block version %v", version)
 	}
-	return block, nil
 }
 
 func blockWALSubFolderName(blockHash state.BlockHash) string {

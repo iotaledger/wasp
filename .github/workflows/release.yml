@@ -115,10 +115,16 @@ jobs:
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
       
-  release-iscmagic:
-    uses: ./.github/workflows/publish-iscmagic.yml
+
+  release-npm-packacges:
     needs: release-docker
-    with:
-      version: ${{ needs.release-docker.outputs.version }}
-    secrets: 
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workingDirectory: ['./packages/vm/core/evm/iscmagic', './tools/evm/iscutils']
+    steps:
+      - name: Release NPM package
+        uses: ./.github/workflows/publish-npm.yml
+        with:
+          version: ${{ needs.release-docker.outputs.version }}
+          workingDirectory: ${{ matrix.workingDirectory }}
