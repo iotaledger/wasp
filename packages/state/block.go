@@ -41,7 +41,7 @@ func (b *block) Bytes() []byte {
 
 func (b *block) essenceBytes() []byte {
 	ww := rwutil.NewBytesWriter()
-	ww.WriteFromFunc(b.writeEssence)
+	b.writeEssence(ww)
 	return ww.Bytes()
 }
 
@@ -85,20 +85,18 @@ func (b *block) TrieRoot() trie.Hash {
 func (b *block) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadN(b.trieRoot[:])
-	rr.ReadFromFunc(b.readEssence)
+	b.readEssence(rr)
 	return rr.Err
 }
 
 func (b *block) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(b.trieRoot[:])
-	ww.WriteFromFunc(b.writeEssence)
+	b.writeEssence(ww)
 	return ww.Err
 }
 
-func (b *block) readEssence(r io.Reader) (int, error) {
-	rr := rwutil.NewReader(r)
-	counter := rwutil.NewReadCounter(rr)
+func (b *block) readEssence(rr *rwutil.Reader) {
 	b.mutations = buffered.NewMutations()
 	rr.Read(b.mutations)
 	hasPrevL1Commitment := rr.ReadBool()
@@ -106,17 +104,14 @@ func (b *block) readEssence(r io.Reader) (int, error) {
 		b.previousL1Commitment = new(L1Commitment)
 		rr.Read(b.previousL1Commitment)
 	}
-	return counter.Count(), rr.Err
 }
 
-func (b *block) writeEssence(w io.Writer) (int, error) {
-	ww := rwutil.NewWriter(w)
+func (b *block) writeEssence(ww *rwutil.Writer) {
 	ww.Write(b.mutations)
 	ww.WriteBool(b.previousL1Commitment != nil)
 	if b.previousL1Commitment != nil {
 		ww.Write(b.previousL1Commitment)
 	}
-	return len(ww.Bytes()), ww.Err
 }
 
 // test only function

@@ -58,6 +58,7 @@ typedefs:
 # ##################################
 
 state:
+  active: Bool
   # basic datatypes, using String
   arrayOfStringArray: StringArray[]
   arrayOfStringMap: StringMap[]
@@ -75,6 +76,13 @@ state:
 # ##################################
 
 funcs:
+  activate:
+    params:
+      seconds: Uint32
+
+  deactivate:
+    access: self # only SC itself can invoke this function
+
   stringMapOfStringArrayAppend:
     params:
       name: String
@@ -208,6 +216,10 @@ funcs:
 # ##################################
 
 views:
+  getActive:
+    results:
+      active: Bool
+
   stringMapOfStringArrayLength:
     params:
       name: String

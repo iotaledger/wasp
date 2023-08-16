@@ -75,7 +75,7 @@ func initRotateWithDKGCmd() *cobra.Command {
 	withChainFlag(cmd, &chain)
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().BoolVar(&skipMaintenance, "skip-maintenance", false, "quorum (default: 3/4s of the number of committee nodes)")
-	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
+	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", true,
 		"post an off-ledger request",
 	)
 

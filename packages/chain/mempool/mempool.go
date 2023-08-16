@@ -48,7 +48,6 @@ import (
 	"time"
 
 	"github.com/samber/lo"
-	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
@@ -129,7 +128,7 @@ type mempoolImpl struct {
 	tangleTime                     time.Time
 	timePool                       TimePool
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest]
-	offLedgerPool                  RequestPool[isc.OffLedgerRequest]
+	offLedgerPool                  *TypedPoolByNonce[isc.OffLedgerRequest]
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
 	chainHeadState                 state.State
@@ -214,7 +213,7 @@ func New(
 		tangleTime:                     time.Time{},
 		timePool:                       NewTimePool(metrics.SetTimePoolSize, log.Named("TIM")),
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
-		offLedgerPool:                  NewTypedPool[isc.OffLedgerRequest](waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
+		offLedgerPool:                  NewTypedPoolByNonce[isc.OffLedgerRequest](waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
 		chainHeadAO:                    nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
@@ -480,11 +479,11 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 		return fmt.Errorf("bad nonce, expected: %d", accountNonce)
 	}
 
-	governanceState := governance.NewStateAccess(mpi.chainHeadState)
 	// check user has on-chain balance
 	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
 	if !accountsState.AccountExists(req.SenderAccount()) {
 		// make an exception for gov calls (sender is chan owner and target is gov contract)
+		governanceState := governance.NewStateAccess(mpi.chainHeadState)
 		chainOwner := governanceState.ChainOwnerID()
 		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
 		if !isGovRequest {
@@ -530,17 +529,12 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 	mpi.handleConsensusProposalForChainHead(recv)
 }
 
-type reqRefNonce struct {
-	ref   *isc.RequestRef
-	nonce uint64
-}
-
 func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 	//
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
-		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest, ts time.Time) bool {
+		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest, _ time.Time) bool {
 			if isc.RequestIsExpired(request, mpi.tangleTime) {
 				return false // Drop it from the mempool
 			}
@@ -551,53 +545,37 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 		})
 	}
 
-	expectedAccountNonces := map[string]uint64{} // string is isc.AgentID.String()
-	requestsNonces := map[string][]reqRefNonce{} // string is isc.AgentID.String()
-
-	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
-		ref := isc.RequestRefFromRequest(request)
-		reqRefs = append(reqRefs, ref)
-
-		// collect the nonces for each account
-		senderKey := request.SenderAccount().String()
-		_, ok := expectedAccountNonces[senderKey]
-		if !ok {
-			// get the current state nonce so we can detect gaps with it
-			expectedAccountNonces[senderKey] = mpi.nonce(request.SenderAccount())
+	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry[isc.OffLedgerRequest]) {
+		agentID, err := isc.AgentIDFromString(account)
+		if err != nil {
+			panic(fmt.Errorf("invalid agentID string: %s", err.Error()))
 		}
-		requestsNonces[senderKey] = append(requestsNonces[senderKey], reqRefNonce{ref: ref, nonce: request.Nonce()})
-
-		return true // Keep them for now
-	})
-
-	// remove any gaps in the nonces of each account
-	{
-		doNotPropose := []*isc.RequestRef{}
-		for account, refNonces := range requestsNonces {
-			// sort by nonce
-			slices.SortFunc(refNonces, func(a, b reqRefNonce) bool {
-				return a.nonce < b.nonce
-			})
-			// check for gaps with the state nonce
-			if expectedAccountNonces[account] != refNonces[0].nonce {
-				// if the first one doesn't match the nonce required from the state, don't propose any of the following
-				for _, ref := range refNonces {
-					doNotPropose = append(doNotPropose, ref.ref)
-				}
+		accountNonce := mpi.nonce(agentID)
+		for _, e := range entries {
+			reqNonce := e.req.Nonce()
+			if reqNonce < accountNonce {
+				// nonce too old, delete
+				mpi.log.Debugf("refsToPropose, account: %s, removing request (%s) with old nonce (%d) from the pool", account, e.req.ID(), e.req.Nonce())
+				mpi.offLedgerPool.Remove(e.req)
 				continue
 			}
-			// check for gaps within the request list
-			for i := 1; i < len(refNonces); i++ {
-				if refNonces[i].nonce != refNonces[i-1].nonce+1 {
-					doNotPropose = append(doNotPropose, refNonces[i].ref)
-				}
+			if e.old {
+				// this request was marked as "old", do not propose it
+				mpi.log.Debugf("refsToPropose, account: %s, skipping old request: %s", account, e.req.ID().String())
+				continue
+			}
+			if reqNonce == accountNonce {
+				// expected nonce, add it to the list to propose
+				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", account, e.req.ID().String(), e.req.Nonce())
+				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+				accountNonce++ // increment the account nonce to match the next valid request
+			}
+			if reqNonce > accountNonce {
+				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nonce %d which is too high (expected %d), won't be proposed", account, e.req.ID().String(), e.req.Nonce(), accountNonce)
+				return // no more valid nonces for this account, continue to the next account
 			}
 		}
-		// remove undesirable requests from the proposal
-		reqRefs = lo.Filter(reqRefs, func(x *isc.RequestRef, _ int) bool {
-			return !slices.Contains(doNotPropose, x)
-		})
-	}
+	})
 
 	return reqRefs
 }

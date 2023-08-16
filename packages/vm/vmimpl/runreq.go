@@ -28,7 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
-// runRequest processes a single isc.Request in the batch
+// runRequest processes a single isc.Request in the batch, returning an error means the request will be skipped
 func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, maintenanceMode bool) (
 	res *vm.RequestResult,
 	unprocessableToRetry []isc.OnLedgerRequest,

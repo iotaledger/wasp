@@ -207,6 +207,6 @@ func TestRotateOnOrigin(t *testing.T) {
 	w.MustRun("chain", "rotate-with-dkg", "--node=1", "--peers=2,3", "--skip-maintenance") // NOTE: must skip "start/stop maintenance" because node1 isn't part of the committee
 	w.MustRun("chain", "deposit", "base:10000000", "--node=1")                             // deposit works
 	// assert `rotate-with-dkg` works with maintenance (when the node is part of the initial/final committee)
-	w.MustRun("chain", "rotate-with-dkg", "--node=1")          // NOTE: must skip "start/stop maintenance" because node1 isn't part of the committee
+	w.MustRun("chain", "rotate-with-dkg", "--node=1")
 	w.MustRun("chain", "deposit", "base:10000000", "--node=1") // deposit works
 }

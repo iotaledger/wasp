@@ -17,6 +17,7 @@ type WaspConfigParams struct {
 	ValidatorKeyPair             *cryptolib.KeyPair
 	ValidatorAddress             string // bech32 encoded address of ValidatorKeyPair
 	PruningMinStatesToKeep       int
+	AuthScheme                   string
 }
 
 var WaspConfig = `
@@ -115,17 +116,9 @@ var WaspConfig = `
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.APIPort}}",
     "auth": {
-      "scheme": "none",
+      "scheme": "{{.AuthScheme}}",
       "jwt": {
         "duration": "24h"
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": [
-          "0.0.0.0"
-        ]
       }
     },
     "limits": {
