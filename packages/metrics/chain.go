@@ -17,6 +17,7 @@ type ChainMetrics struct {
 	Mempool      *ChainMempoolMetrics
 	Message      *ChainMessageMetrics
 	StateManager *ChainStateManagerMetrics
+	Snapshots    *ChainSnapshotsMetrics
 	NodeConn     *ChainNodeConnMetrics
 	WebAPI       *ChainWebAPIMetrics
 	State        *ChainStateMetrics
@@ -33,6 +34,7 @@ type ChainMetricsProvider struct {
 	Mempool      *ChainMempoolMetricsProvider
 	Message      *ChainMessageMetricsProvider
 	StateManager *ChainStateManagerMetricsProvider
+	Snapshots    *ChainSnapshotsMetricsProvider
 	NodeConn     *ChainNodeConnMetricsProvider
 	WebAPI       *ChainWebAPIMetricsProvider
 	State        *ChainStateMetricsProvider
@@ -48,6 +50,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 		Mempool:      newChainMempoolMetricsProvider(),
 		Message:      newChainMessageMetricsProvider(),
 		StateManager: newChainStateManagerMetricsProvider(),
+		Snapshots:    newChainSnapshotsMetricsProvider(),
 		NodeConn:     newChainNodeConnMetricsProvider(),
 		WebAPI:       newChainWebAPIMetricsProvider(),
 		State:        newChainStateMetricsProvider(),
@@ -61,6 +64,7 @@ func (m *ChainMetricsProvider) Register(reg prometheus.Registerer) {
 	m.Mempool.register(reg)
 	m.Message.register(reg)
 	m.StateManager.register(reg)
+	m.Snapshots.register(reg)
 	m.NodeConn.register(reg)
 	m.WebAPI.register(reg)
 	m.State.register(reg)
@@ -80,6 +84,7 @@ func (m *ChainMetricsProvider) GetChainMetrics(chainID isc.ChainID) *ChainMetric
 		Mempool:      m.Mempool.createForChain(chainID),
 		Message:      m.Message.createForChain(chainID),
 		StateManager: m.StateManager.createForChain(chainID),
+		Snapshots:    m.Snapshots.createForChain(chainID),
 		NodeConn:     m.NodeConn.createForChain(chainID),
 		WebAPI:       m.WebAPI.createForChain(chainID),
 		State:        m.State.createForChain(chainID),
