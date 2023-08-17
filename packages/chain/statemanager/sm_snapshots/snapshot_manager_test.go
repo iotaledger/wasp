@@ -30,7 +30,7 @@ func TestSnapshotManagerLocal(t *testing.T) {
 		require.NoError(t, err)
 		return snapshotManager
 	}
-	defer cleanupAfterTest(t)
+	defer cleanupAfterSnapshotManagerTest(t)
 
 	testSnapshotManagerSimple(t, createFun, func(isc.ChainID, []SnapshotInfo) {})
 }
@@ -52,7 +52,7 @@ func TestSnapshotManagerNetwork(t *testing.T) {
 		require.NoError(t, err)
 		return snapshotManager
 	}
-	defer cleanupAfterTest(t)
+	defer cleanupAfterSnapshotManagerTest(t)
 
 	createIndexFileFun := func(chainID isc.ChainID, snapshotInfos []SnapshotInfo) {
 		indexFilePath := filepath.Join(localSnapshotsPathConst, chainID.String(), constIndexFileName)
@@ -162,7 +162,7 @@ func ensureTrue(t *testing.T, title string, predicate func() bool, maxIterations
 	return false
 }
 
-func cleanupAfterTest(t *testing.T) {
+func cleanupAfterSnapshotManagerTest(t *testing.T) {
 	err := os.RemoveAll(localSnapshotsPathConst)
 	require.NoError(t, err)
 }
