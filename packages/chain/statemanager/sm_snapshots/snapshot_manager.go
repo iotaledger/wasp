@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -406,27 +405,17 @@ func snapshotFileNameString(index, blockHash string) string {
 
 func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout time.Duration) (context.CancelFunc, io.Reader, error) {
 	downloadCtx, downloadCtxCancel := context.WithTimeout(ctx, timeout)
-
-	request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
+	downloader, err := NewDownloader(downloadCtx, url)
 	if err != nil {
-		return downloadCtxCancel, nil, fmt.Errorf("failed creating request with url %s: %v", url, err)
-	}
-
-	response, err := http.DefaultClient.Do(request) //nolint:bodyclose// it will be closed, when the caller calls `cancelFun`
-	if err != nil {
-		return downloadCtxCancel, nil, fmt.Errorf("http request to file url %s failed: %v", url, err)
+		return downloadCtxCancel, nil, fmt.Errorf("failed to start downloading file from url %s: %v", url, err)
 	}
 	cancelFun := func() {
-		response.Body.Close()
+		downloader.Close()
 		downloadCtxCancel()
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return cancelFun, nil, fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
-	}
-
-	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(response.ContentLength))
-	reader := io.TeeReader(response.Body, progressReporter)
+	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(downloader.GetLength()))
+	reader := io.TeeReader(downloader, progressReporter)
 	return cancelFun, reader, nil
 }
 

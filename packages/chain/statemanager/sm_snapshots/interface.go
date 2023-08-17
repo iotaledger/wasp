@@ -46,3 +46,10 @@ type snapshotter interface {
 	storeSnapshot(SnapshotInfo, io.Writer) error
 	loadSnapshot(SnapshotInfo, io.Reader) error
 }
+
+type Downloader interface {
+	io.Reader
+	io.Closer
+	io.ReadCloser
+	GetLength() int
+}

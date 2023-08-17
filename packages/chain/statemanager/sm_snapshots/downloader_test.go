@@ -166,9 +166,9 @@ func testDownloader(t *testing.T, writeFun func(io.Writer), readFun func(io.Read
 
 	// NOTE: if downloading by chunks is not supported, chunkSize is going to be 0
 	if len(chunkSize) > 0 {
-		require.Equal(t, chunkSize[0], d.(*downloader).chunkSize)
+		require.Equal(t, chunkSize[0], d.(*downloaderImpl).chunkSize)
 	} else {
-		require.Equal(t, defaultChunkSizeConst, d.(*downloader).chunkSize)
+		require.Equal(t, defaultChunkSizeConst, d.(*downloaderImpl).chunkSize)
 	}
 }
 

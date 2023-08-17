@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type downloader struct {
+type downloaderImpl struct {
 	ctx         context.Context
 	chunkReader io.ReadCloser
 	filePath    string
@@ -19,9 +19,10 @@ type downloader struct {
 }
 
 var (
-	_ io.Reader     = &downloader{}
-	_ io.Closer     = &downloader{}
-	_ io.ReadCloser = &downloader{}
+	_ io.Reader     = &downloaderImpl{}
+	_ io.Closer     = &downloaderImpl{}
+	_ io.ReadCloser = &downloaderImpl{}
+	_ Downloader    = &downloaderImpl{}
 )
 
 const defaultChunkSizeConst = 1024
@@ -30,7 +31,7 @@ func NewDownloader(
 	ctx context.Context,
 	filePath string,
 	chunkSize ...int,
-) (io.ReadCloser, error) {
+) (Downloader, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodHead, filePath, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make head request to %s: %w", filePath, err)
@@ -48,7 +49,7 @@ func NewDownloader(
 	acceptRanges := head.Header.Get("Accept-Ranges")
 	fileSizeStr := head.Header.Get("Content-Length")
 	fileSize, err := strconv.Atoi(fileSizeStr)
-	result := &downloader{
+	result := &downloaderImpl{
 		ctx:      ctx,
 		filePath: filePath,
 		fileSize: fileSize,
@@ -76,7 +77,7 @@ func NewDownloader(
 	return result, nil
 }
 
-func (d *downloader) setReader() error {
+func (d *downloaderImpl) setReader() error {
 	request, err := http.NewRequestWithContext(d.ctx, http.MethodGet, d.filePath, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("failed to make get request to %s: %w", d.filePath, err)
@@ -108,7 +109,7 @@ func (d *downloader) setReader() error {
 	return nil
 }
 
-func (d *downloader) Read(b []byte) (int, error) {
+func (d *downloaderImpl) Read(b []byte) (int, error) {
 	n, err := d.chunkReader.Read(b)
 	if err == io.EOF {
 		if d.chunkEnd >= d.fileSize {
@@ -126,6 +127,10 @@ func (d *downloader) Read(b []byte) (int, error) {
 	return n, err
 }
 
-func (d *downloader) Close() error {
+func (d *downloaderImpl) Close() error {
 	return d.chunkReader.Close()
+}
+
+func (d *downloaderImpl) GetLength() int {
+	return d.fileSize
 }
