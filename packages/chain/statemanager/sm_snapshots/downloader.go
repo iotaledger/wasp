@@ -41,6 +41,10 @@ func NewDownloader(
 	}
 	defer head.Body.Close()
 
+	if head.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("head request to %s got status code %v", filePath, head.StatusCode)
+	}
+
 	acceptRanges := head.Header.Get("Accept-Ranges")
 	fileSizeStr := head.Header.Get("Content-Length")
 	fileSize, err := strconv.Atoi(fileSizeStr)
@@ -64,6 +68,9 @@ func NewDownloader(
 	}
 	err = result.setReader()
 	if err != nil {
+		if result.chunkReader != nil {
+			result.chunkReader.Close()
+		}
 		return nil, err
 	}
 	return result, nil
@@ -75,6 +82,7 @@ func (d *downloader) setReader() error {
 		return fmt.Errorf("failed to make get request to %s: %w", d.filePath, err)
 	}
 	chunkPartStr := ""
+	var expectedStatusCode int
 	if d.chunkSize > 0 {
 		start := d.chunkEnd
 		end := start + d.chunkSize
@@ -84,14 +92,19 @@ func (d *downloader) setReader() error {
 		request.Header.Add("Range", "bytes="+strconv.Itoa(start)+"-"+strconv.Itoa(end-1))
 		chunkPartStr = fmt.Sprintf(" byte %v to %v", start, end)
 		d.chunkEnd = end
+		expectedStatusCode = http.StatusPartialContent
 	} else {
 		d.chunkEnd = d.fileSize
+		expectedStatusCode = http.StatusOK
 	}
 	chunk, err := http.DefaultClient.Do(request) //nolint:bodyclose// closing is handled differently; linter cannot understand that
 	if err != nil {
 		return fmt.Errorf("failed to get file%s from %s: %w", chunkPartStr, d.filePath, err)
 	}
 	d.chunkReader = chunk.Body
+	if chunk.StatusCode != expectedStatusCode {
+		return fmt.Errorf("get%s request to %s got status code %v", chunkPartStr, d.filePath, chunk.StatusCode)
+	}
 	return nil
 }
 
