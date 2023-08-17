@@ -19,10 +19,9 @@ type downloaderImpl struct {
 }
 
 var (
-	_ io.Reader     = &downloaderImpl{}
-	_ io.Closer     = &downloaderImpl{}
-	_ io.ReadCloser = &downloaderImpl{}
-	_ Downloader    = &downloaderImpl{}
+	_ io.Reader  = &downloaderImpl{}
+	_ io.Closer  = &downloaderImpl{}
+	_ Downloader = &downloaderImpl{}
 )
 
 const defaultChunkSizeConst = 1024
