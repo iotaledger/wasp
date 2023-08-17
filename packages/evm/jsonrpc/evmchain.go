@@ -444,6 +444,11 @@ func (e *EVMChain) GasPrice() *big.Int {
 	governancePartition := subrealm.NewReadOnly(iscState, kv.Key(governance.Contract.Hname().Bytes()))
 	feePolicy := governance.MustGetGasFeePolicy(governancePartition)
 
+	// special case '0:0' for free request
+	if feePolicy.GasPerToken.IsZero() {
+		return big.NewInt(0)
+	}
+
 	// convert to wei (18 decimals)
 	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
 	price := big.NewInt(10)
