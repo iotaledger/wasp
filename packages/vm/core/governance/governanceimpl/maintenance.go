@@ -9,7 +9,7 @@ import (
 )
 
 // Maintenance mode means no requests will be processed except calls to the governance contract
-// NOTE: Maintenance mode is not available if the governing address is a Contract on the chain itself. (otherwise setting maintence ON will result in a deadlock)
+// NOTE: Maintenance mode is not available if the governing address is a Contract on the chain itself. (otherwise setting maintenance ON will result in a deadlock)
 
 func startMaintenance(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()

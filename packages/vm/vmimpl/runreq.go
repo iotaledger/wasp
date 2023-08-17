@@ -140,6 +140,17 @@ func (reqctx *requestContext) checkAllowance() {
 }
 
 func (reqctx *requestContext) shouldChargeGasFee() bool {
+	// freeGasPerToken checks whether we charge token per gas
+	// If it is free, then we will still burn the gas, but it doesn't charge tokens
+	// NOT FOR PUBLIC NETWORK
+	var freeGasPerToken bool
+	reqctx.callCore(governance.Contract, func(s kv.KVStore) {
+		gasPerToken := governance.MustGetGasFeePolicy(s).GasPerToken
+		freeGasPerToken = gasPerToken.A == 0 && gasPerToken.B == 0
+	})
+	if freeGasPerToken {
+		return false
+	}
 	if reqctx.req.SenderAccount() == nil {
 		return false
 	}
@@ -312,7 +323,7 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 		return reqctx.vm.chainInfo.GasLimits.MaxGasExternalViewCall, math.MaxUint64
 	}
 
-	// make sure the gasBuget is at least >= than the allowed minimum
+	// make sure the gasBudget is at least >= than the allowed minimum
 	if gasBudget < reqctx.vm.chainInfo.GasLimits.MinGasPerRequest {
 		gasBudget = reqctx.vm.chainInfo.GasLimits.MinGasPerRequest
 	}

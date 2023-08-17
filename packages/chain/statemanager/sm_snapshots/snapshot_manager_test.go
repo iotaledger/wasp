@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -25,7 +26,7 @@ const localSnapshotsPathConst = "testSnapshots"
 
 func TestSnapshotManagerLocal(t *testing.T) {
 	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
-		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, localSnapshotsPathConst, []string{}, store, log)
+		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, localSnapshotsPathConst, []string{}, store, mockSnapshotsMetrics(), log)
 		require.NoError(t, err)
 		return snapshotManager
 	}
@@ -47,7 +48,7 @@ func TestSnapshotManagerNetwork(t *testing.T) {
 
 	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
 		networkPaths := []string{"http://localhost" + port + "/"}
-		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, "nonexistent", networkPaths, store, log)
+		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, "nonexistent", networkPaths, store, mockSnapshotsMetrics(), log)
 		require.NoError(t, err)
 		return snapshotManager
 	}
@@ -82,7 +83,7 @@ func testSnapshotManagerSimple(
 	factory := sm_gpa_utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	storeOrig := factory.GetStore()
-	snapshotManagerOrig, err := NewSnapshotManager(context.Background(), nil, factory.GetChainID(), uint32(snapshotCreatePeriod), localSnapshotsPathConst, []string{}, storeOrig, log)
+	snapshotManagerOrig, err := NewSnapshotManager(context.Background(), nil, factory.GetChainID(), uint32(snapshotCreatePeriod), localSnapshotsPathConst, []string{}, storeOrig, mockSnapshotsMetrics(), log)
 	require.NoError(t, err)
 
 	// "Running" node, making snapshots
@@ -164,4 +165,8 @@ func ensureTrue(t *testing.T, title string, predicate func() bool, maxIterations
 func cleanupAfterTest(t *testing.T) {
 	err := os.RemoveAll(localSnapshotsPathConst)
 	require.NoError(t, err)
+}
+
+func mockSnapshotsMetrics() *metrics.ChainSnapshotsMetrics {
+	return metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID()).Snapshots
 }

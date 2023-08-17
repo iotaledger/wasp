@@ -337,6 +337,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		c.snapshotFolderPath,
 		c.snapshotNetworkPaths,
 		chainStore,
+		chainMetrics.Snapshots,
 		chainLog,
 	)
 	if err != nil {

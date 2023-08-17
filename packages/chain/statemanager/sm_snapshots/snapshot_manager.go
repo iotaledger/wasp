@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -34,6 +35,7 @@ type snapshotManagerImpl struct {
 	log     *logger.Logger
 	ctx     context.Context
 	chainID isc.ChainID
+	metrics *metrics.ChainSnapshotsMetrics
 
 	lastIndexSnapshotted      uint32
 	lastIndexSnapshottedMutex sync.Mutex
@@ -69,6 +71,7 @@ func NewSnapshotManager(
 	baseLocalPath string,
 	baseNetworkPaths []string,
 	store state.Store,
+	metrics *metrics.ChainSnapshotsMetrics,
 	log *logger.Logger,
 ) (SnapshotManager, error) {
 	chainIDString := chainID.String()
@@ -86,6 +89,7 @@ func NewSnapshotManager(
 		log:                       snapMLog,
 		ctx:                       ctx,
 		chainID:                   chainID,
+		metrics:                   metrics,
 		lastIndexSnapshotted:      0,
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
@@ -134,6 +138,7 @@ func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
 }
 
 func (smiT *snapshotManagerImpl) handleUpdate() {
+	start := time.Now()
 	result := shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]]()
 	smiT.handleUpdateLocal(result)
 	smiT.handleUpdateNetwork(result)
@@ -141,6 +146,7 @@ func (smiT *snapshotManagerImpl) handleUpdate() {
 	smiT.availableSnapshotsMutex.Lock()
 	smiT.availableSnapshots = result
 	smiT.availableSnapshotsMutex.Unlock()
+	smiT.metrics.SnapshotsUpdated(time.Since(start))
 }
 
 // Snapshot manager makes snapshot of every `period`th state only, if this state hasn't
@@ -152,6 +158,7 @@ func (smiT *snapshotManagerImpl) handleUpdate() {
 // that another go routine is already making a snapshot and returns. For this reason
 // it is important to delete all temporary files on snapshot manager start.
 func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo) {
+	start := time.Now()
 	stateIndex := snapshotInfo.StateIndex()
 	var lastIndexSnapshotted uint32
 	smiT.lastIndexSnapshottedMutex.Lock()
@@ -198,11 +205,13 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 			}
 			smiT.lastIndexSnapshottedMutex.Unlock()
 			smiT.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
+			smiT.metrics.SnapshotCreated(time.Since(start), stateIndex)
 		}()
 	}
 }
 
 func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
+	start := time.Now()
 	smiT.log.Debugf("Loading snapshot %s", snapshotInfo)
 	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
 	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.StateIndex())
@@ -262,6 +271,7 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, c
 		if e == nil {
 			smiT.log.Debugf("Loading snapshot %s succeeded", snapshotInfo)
 			callback <- nil
+			smiT.metrics.SnapshotLoaded(time.Since(start))
 			return
 		}
 		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, e)
