@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -490,7 +489,7 @@ func (ch *Chain) GetControlAddresses() *isc.ControlAddresses {
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
+	req := NewCallParams(governance.Contract.Name, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithMaxAffordableGasBudget()
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -499,7 +498,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
+	req := NewCallParams(governance.Contract.Name, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithMaxAffordableGasBudget()
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -508,7 +507,7 @@ func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryp
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
-	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.ViewGetAllowedStateControllerAddresses.Name)
+	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetAllowedStateControllerAddresses.Name)
 	require.NoError(ch.Env.T, err)
 	if len(res) == 0 {
 		return nil
@@ -526,8 +525,8 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // We assume self-governed chain here.
 // Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
-		coreutil.ParamStateControllerAddress, newStateAddr,
+	req := NewCallParams(governance.Contract.Name, governance.FuncRotateStateController.Name,
+		governance.ParamStateControllerAddress, newStateAddr,
 	).WithMaxAffordableGasBudget()
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if result.Receipt.Error == nil {
