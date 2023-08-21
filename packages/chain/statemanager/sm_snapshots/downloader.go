@@ -28,7 +28,7 @@ var (
 )
 
 const (
-	defaultChunkSizeConst = uint64(1024)
+	defaultChunkSizeConst = uint64(1024 * 1024) // 1Mb
 	tempFileSuffixConst   = ".part"
 )
 
