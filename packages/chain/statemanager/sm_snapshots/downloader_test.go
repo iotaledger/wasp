@@ -136,7 +136,7 @@ func TestDownloaderReadTooMuch(t *testing.T) {
 	)
 }
 
-func testDownloader(t *testing.T, writeFun func(io.Writer), readFun func(io.Reader), chunkSize ...int) {
+func testDownloader(t *testing.T, writeFun func(io.Writer), readFun func(io.Reader), chunkSize ...uint64) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	defer cleanupAfterDownloaderTest(t)

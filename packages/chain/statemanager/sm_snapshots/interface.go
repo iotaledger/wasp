@@ -50,5 +50,5 @@ type snapshotter interface {
 type Downloader interface {
 	io.Reader
 	io.Closer
-	GetLength() int
+	GetLength() uint64
 }
