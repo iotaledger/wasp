@@ -66,8 +66,12 @@ function checkError(ctx: WasmClientContext) {
     expect(ctx.Err == null).toBeTruthy();
 }
 
+let svc: WasmClientService;
+
 function setupClient() {
-    const svc = new WasmClientService(WASPAPI);
+    if (!svc) {
+        svc = new WasmClientService(WASPAPI);
+    }
     expect (svc.isHealthy()).toBeTruthy();
     const err = svc.setDefaultChainID();
     expect(err == null).toBeTruthy();

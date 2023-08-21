@@ -365,8 +365,8 @@ func TestMaintenanceMode(t *testing.T) {
 }
 
 var (
-	claimOwnershipFunc = coreutil.Func("claimOwnership")
-	startMaintenceFunc = coreutil.Func("initMaintenance")
+	claimOwnershipFunc   = coreutil.Func("claimOwnership")
+	startMaintenanceFunc = coreutil.Func("initMaintenance")
 )
 
 func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
@@ -375,7 +375,7 @@ func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
 		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncClaimChainOwnership.Hname(), nil, nil)
 		}),
-		startMaintenceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+		startMaintenanceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncStartMaintenance.Hname(), nil, nil)
 		}),
 	)
@@ -440,7 +440,7 @@ func TestDisallowMaintenanceDeadlock2(t *testing.T) {
 
 	// the "owner contract" is unable to start maintenance
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(ownerContract.Name, startMaintenceFunc.Name).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(ownerContract.Name, startMaintenanceFunc.Name).WithMaxAffordableGasBudget(),
 		userWallet,
 	)
 	require.ErrorContains(t, err, "unauthorized")
@@ -631,6 +631,88 @@ func TestGovernanceGasFee(t *testing.T) {
 	ch.SetGasFeePolicy(nil, fp) // should not fail with "gas budget exceeded"
 }
 
+func TestGovernanceZeroGasFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+
+	user1, userAddr1 := env.NewKeyPairWithFunds()
+	userAgentID1 := isc.NewAgentID(userAddr1)
+	_, userAddr2 := env.NewKeyPairWithFunds()
+	userAgentID2 := isc.NewAgentID(userAddr2)
+
+	fp := &gas.FeePolicy{
+		EVMGasRatio: gas.DefaultEVMGasRatio,
+		GasPerToken: util.Ratio32{
+			A: 0,
+			B: 0,
+		},
+		ValidatorFeeShare: 1,
+	}
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name,
+			governance.FuncSetFeePolicy.Name,
+			governance.VarGasFeePolicyBytes,
+			fp.Bytes(),
+		).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	estimateGas, estimateGasFee, err := ch.EstimateGasOnLedger(solo.NewCallParams(
+		accounts.Contract.Name,
+		accounts.FuncDeposit.Name,
+	), user1, true)
+	require.NoError(t, err)
+	require.Zero(t, estimateGasFee)
+
+	userL2Bal1 := ch.L2BaseTokens(userAgentID1)
+	userL1Bal1 := ch.Env.L1BaseTokens(userAddr1)
+
+	gasGreaterThanEstimatedGas := estimateGas + 100
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncTransferAllowanceTo.Name,
+			dict.Dict{
+				accounts.ParamAgentID: codec.EncodeAgentID(userAgentID2),
+			},
+		).
+			AddBaseTokens(gasGreaterThanEstimatedGas).
+			AddAllowanceBaseTokens(gasGreaterThanEstimatedGas).
+			WithGasBudget(gasGreaterThanEstimatedGas),
+		user1,
+	)
+	require.NoError(t, err)
+
+	userL2Bal2 := ch.L2BaseTokens(userAgentID1)
+	userL1Bal2 := ch.Env.L1BaseTokens(userAddr1)
+	require.Equal(t, userL2Bal1, userL2Bal2)
+	require.Equal(t, userL1Bal1-gasGreaterThanEstimatedGas, userL1Bal2)
+	require.Greater(t, ch.LastReceipt().GasBurned, uint64(0))
+	require.Zero(t, ch.LastReceipt().GasFeeCharged)
+
+	gasLessThanEstimatedGas := estimateGas - 100
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name,
+			accounts.FuncTransferAllowanceTo.Name,
+			dict.Dict{
+				accounts.ParamAgentID: codec.EncodeAgentID(userAgentID2),
+			},
+		).
+			AddBaseTokens(gasLessThanEstimatedGas).
+			WithGasBudget(gasLessThanEstimatedGas),
+		user1,
+	)
+	require.NoError(t, err)
+
+	userL2Bal3 := ch.L2BaseTokens(userAgentID1)
+	require.Equal(t, userL2Bal2+gasLessThanEstimatedGas, userL2Bal3)
+	require.Greater(t, ch.LastReceipt().GasBurned, uint64(0))
+	require.Zero(t, ch.LastReceipt().GasFeeCharged)
+}
+
 func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
@@ -748,7 +830,7 @@ func TestGasPayout(t *testing.T) {
 	require.NoError(t, err)
 	gasFees := ch.LastReceipt().GasFeeCharged
 
-	// asert gas payout works as expected, owner gets the fees
+	// assert gas payout works as expected, owner gets the fees
 	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal2 := ch.L2CommonAccountAssets()
 	user1Bal2 := ch.L2Assets(user1AgentID)
