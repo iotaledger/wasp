@@ -15,6 +15,10 @@ var (
 	_ io.ReadCloser = &readerWithClose{}
 )
 
+// Adds `Close` method to the `Reader`. This is useful, when `ReadCloser` must be
+// wrapped in some other `Reader`, which does not provide close method. The result
+// is that by calling `Close` to the wrapping `Reader`, the wrapped `ReadCloser`
+// is closed.
 func NewReaderWithClose(r io.Reader, closeFun func() error) io.ReadCloser {
 	return &readerWithClose{
 		reader: r,
