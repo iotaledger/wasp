@@ -114,7 +114,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).SetAt(deployer.Bytes(), []byte{0xFF})
+	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).SetAt(deployer.Bytes(), []byte{0x01})
 	eventGrant(ctx, deployer)
 	return nil
 }
