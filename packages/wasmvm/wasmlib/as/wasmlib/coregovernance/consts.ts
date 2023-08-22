@@ -27,7 +27,6 @@ export const ParamSetMinSD      = 'ms';
 export const ResultAccessNodeCandidates = 'an';
 export const ResultAccessNodes          = 'ac';
 export const ResultChainID              = 'c';
-export const ResultChainOwner           = 'o';
 export const ResultChainOwnerID         = 'o';
 export const ResultControllers          = 'a';
 export const ResultFeePolicy            = 'g';

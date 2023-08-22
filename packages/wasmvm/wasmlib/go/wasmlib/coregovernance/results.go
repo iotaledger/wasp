@@ -211,8 +211,8 @@ type ImmutableGetChainOwnerResults struct {
 }
 
 // chain owner
-func (s ImmutableGetChainOwnerResults) ChainOwner() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwner))
+func (s ImmutableGetChainOwnerResults) ChainOwnerID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
 type MutableGetChainOwnerResults struct {
@@ -224,8 +224,8 @@ func NewMutableGetChainOwnerResults() MutableGetChainOwnerResults {
 }
 
 // chain owner
-func (s MutableGetChainOwnerResults) ChainOwner() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwner))
+func (s MutableGetChainOwnerResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
 type ImmutableGetEVMGasRatioResults struct {

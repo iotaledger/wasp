@@ -155,7 +155,7 @@ views:
   # Returns the AgentID of the chain owner.
   getChainOwner:
     results:
-      chainOwner=o: AgentID # chain owner
+      chainOwnerID=o: AgentID # chain owner
 
   # fees
 

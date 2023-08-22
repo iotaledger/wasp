@@ -34,7 +34,6 @@ const (
 	ResultAccessNodeCandidates = "an"
 	ResultAccessNodes          = "ac"
 	ResultChainID              = "c"
-	ResultChainOwner           = "o"
 	ResultChainOwnerID         = "o"
 	ResultControllers          = "a"
 	ResultFeePolicy            = "g"

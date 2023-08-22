@@ -265,7 +265,7 @@ func TestGetChainOwner(t *testing.T) {
 	f := coregovernance.ScFuncs.GetChainOwner(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	require.Equal(t, ctx.ChainOwnerID(), f.Results.ChainOwner().Value())
+	require.Equal(t, ctx.ChainOwnerID(), f.Results.ChainOwnerID().Value())
 }
 
 func TestGetChainNodes(t *testing.T) {

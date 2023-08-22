@@ -174,15 +174,15 @@ export class MutableGetChainNodesResults extends wasmtypes.ScProxy {
 
 export class ImmutableGetChainOwnerResults extends wasmtypes.ScProxy {
     // chain owner
-    chainOwner(): wasmtypes.ScImmutableAgentID {
-        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwner));
+    chainOwnerID(): wasmtypes.ScImmutableAgentID {
+        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
     }
 }
 
 export class MutableGetChainOwnerResults extends wasmtypes.ScProxy {
     // chain owner
-    chainOwner(): wasmtypes.ScMutableAgentID {
-        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwner));
+    chainOwnerID(): wasmtypes.ScMutableAgentID {
+        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ResultChainOwnerID));
     }
 }
 
