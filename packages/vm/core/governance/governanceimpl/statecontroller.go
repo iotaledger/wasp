@@ -51,7 +51,7 @@ func addAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
-	amap.SetAt(isc.AddressToBytes(addr), []byte{0xFF})
+	amap.SetAt(isc.AddressToBytes(addr), []byte{0x01})
 	return nil
 }
 
