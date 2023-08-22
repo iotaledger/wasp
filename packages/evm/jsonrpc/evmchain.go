@@ -712,34 +712,42 @@ func blockchainDB(chainState state.State) *emulator.BlockchainDB {
 }
 
 func stateDB(chainState state.State) *emulator.StateDB {
-	accountsPartition := subrealm.NewReadOnly(chainState, kv.Key(accounts.Contract.Hname().Bytes()))
-	return emulator.NewStateDB(
-		buffered.NewBufferedKVStore(evm.EmulatorStateSubrealmR(evm.ContractPartitionR(chainState))),
-		newL2Balance(accountsPartition),
-	)
+	return emulator.NewStateDB(newL2StateForEmulatorR(chainState))
 }
 
-type l2BalanceR struct {
-	accounts kv.KVStoreReader
+type l2StateForEmulator struct {
+	kv.KVStore
+	chainState state.State
 }
 
-func newL2Balance(accounts kv.KVStoreReader) *l2BalanceR {
-	return &l2BalanceR{
-		accounts: accounts,
+func newL2StateForEmulatorR(chainState state.State) *l2StateForEmulator {
+	return &l2StateForEmulator{
+		KVStore:    buffered.NewBufferedKVStore(evm.EmulatorStateSubrealmR(evm.ContractPartitionR(chainState))),
+		chainState: chainState,
 	}
 }
 
-func (b *l2BalanceR) Get(addr common.Address) *big.Int {
-	bal := accounts.GetBaseTokensBalance(b.accounts, isc.NewEthereumAddressAgentID(addr))
-	decimals := parameters.L1().BaseToken.Decimals
-	ret := new(big.Int).SetUint64(bal)
-	return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
+func (*l2StateForEmulator) Decimals() uint32 {
+	return parameters.L1().BaseToken.Decimals
 }
 
-func (b *l2BalanceR) Add(addr common.Address, amount *big.Int) {
+func (l2 *l2StateForEmulator) GetBalance(addr common.Address) uint64 {
+	accountsPartition := subrealm.NewReadOnly(l2.chainState, kv.Key(accounts.Contract.Hname().Bytes()))
+	return accounts.GetBaseTokensBalance(accountsPartition, isc.NewEthereumAddressAgentID(addr))
+}
+
+func (l2 *l2StateForEmulator) AddBalance(addr common.Address, amount uint64) {
 	panic("should not be called")
 }
 
-func (b *l2BalanceR) Sub(addr common.Address, amount *big.Int) {
+func (l2 *l2StateForEmulator) SubBalance(addr common.Address, amount uint64) {
+	panic("should not be called")
+}
+
+func (*l2StateForEmulator) RevertToSnapshot(int) {
+	panic("should not be called")
+}
+
+func (*l2StateForEmulator) TakeSnapshot() int {
 	panic("should not be called")
 }

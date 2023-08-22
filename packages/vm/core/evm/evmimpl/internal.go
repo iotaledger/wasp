@@ -4,7 +4,6 @@
 package evmimpl
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -42,12 +40,11 @@ func getTracer(ctx isc.Sandbox) tracers.Tracer {
 func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
 	chainInfo := ctx.ChainInfo()
 	return emulator.NewEVMEmulator(
-		evm.EmulatorStateSubrealm(ctx.State()),
+		newL2StateForEmulator(ctx),
 		timestamp(ctx.Timestamp()),
 		gasLimits(chainInfo),
 		chainInfo.BlockKeepAmount,
 		newMagicContract(ctx),
-		newL2Balance(ctx),
 	)
 }
 
@@ -64,7 +61,7 @@ func saveExecutedTx(
 	createBlockchainDB(evmPartition, chainInfo).AddTransaction(tx, receipt)
 	// make sure the nonce is incremented if the state was rolled back by the VM
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		emulator.NewStateDB(evm.EmulatorStateSubrealm(evmPartition), nil).IncNonce(evmutil.MustGetSender(tx))
+		emulator.IncNonce(emulator.StateDBSubrealm(evm.EmulatorStateSubrealm(evmPartition)), evmutil.MustGetSender(tx))
 	}
 }
 
@@ -87,60 +84,45 @@ func result(value []byte) dict.Dict {
 	return dict.Dict{evm.FieldResult: value}
 }
 
-type l2BalanceR struct {
-	ctx isc.SandboxBase
-}
-
-func newL2BalanceR(ctx isc.SandboxBase) *l2BalanceR {
-	return &l2BalanceR{
-		ctx: ctx,
-	}
-}
-
-type l2Balance struct {
-	*l2BalanceR
+type l2StateForEmulator struct {
+	kv.KVStore
 	ctx isc.Sandbox
 }
 
-func newL2Balance(ctx isc.Sandbox) *l2Balance {
-	return &l2Balance{
-		l2BalanceR: newL2BalanceR(ctx),
-		ctx:        ctx,
+var _ emulator.L2State = &l2StateForEmulator{}
+
+func newL2StateForEmulator(ctx isc.Sandbox) *l2StateForEmulator {
+	return &l2StateForEmulator{
+		KVStore: evm.EmulatorStateSubrealm(ctx.State()),
+		ctx:     ctx,
 	}
 }
 
-func (b *l2BalanceR) Get(addr common.Address) *big.Int {
-	res := b.ctx.CallView(
+func (*l2StateForEmulator) Decimals() uint32 {
+	return parameters.L1().BaseToken.Decimals
+}
+
+func (l2 *l2StateForEmulator) GetBalance(addr common.Address) uint64 {
+	res := l2.ctx.CallView(
 		accounts.Contract.Hname(),
 		accounts.ViewBalanceBaseToken.Hname(),
 		dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 	)
-	decimals := parameters.L1().BaseToken.Decimals
-	ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.Get(accounts.ParamBalance), 0))
-	return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
+	return codec.MustDecodeUint64(res.Get(accounts.ParamBalance), 0)
 }
 
-func (b *l2BalanceR) Add(addr common.Address, amount *big.Int) {
-	panic("should not be called")
+func (l2 *l2StateForEmulator) AddBalance(addr common.Address, amount uint64) {
+	l2.ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), isc.NewAssetsBaseTokens(amount))
 }
 
-func (b *l2BalanceR) Sub(addr common.Address, amount *big.Int) {
-	panic("should not be called")
+func (l2 *l2StateForEmulator) SubBalance(addr common.Address, amount uint64) {
+	l2.ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), isc.NewAssetsBaseTokens(amount))
 }
 
-func assetsForFeeFromEthereumDecimals(amount *big.Int) *isc.Assets {
-	decimals := parameters.L1().BaseToken.Decimals
-	amt := util.EthereumDecimalsToCustomTokenDecimals(amount, decimals)
-	return isc.NewAssetsBaseTokens(amt.Uint64())
+func (l2 *l2StateForEmulator) TakeSnapshot() int {
+	return l2.ctx.TakeStateSnapshot()
 }
 
-func (b *l2Balance) Add(addr common.Address, amount *big.Int) {
-	tokens := assetsForFeeFromEthereumDecimals(amount)
-	b.ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
-}
-
-func (b *l2Balance) Sub(addr common.Address, amount *big.Int) {
-	tokens := assetsForFeeFromEthereumDecimals(amount)
-	account := isc.NewEthereumAddressAgentID(addr)
-	b.ctx.Privileged().DebitFromAccount(account, tokens)
+func (l2 *l2StateForEmulator) RevertToSnapshot(i int) {
+	l2.ctx.RevertToStateSnapshot(i)
 }

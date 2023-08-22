@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -45,32 +45,30 @@ func accountSuicidedKey(addr common.Address) kv.Key {
 	return accountKey(keyAccountSuicided, addr)
 }
 
-type L2Balance interface {
-	Get(addr common.Address) *big.Int
-	Add(addr common.Address, amount *big.Int)
-	Sub(addr common.Address, amount *big.Int)
-}
-
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
 // The Ethereum account balance is tied to the L1 balance.
 type StateDB struct {
-	kv        kv.KVStore
-	logs      []*types.Log
-	refund    uint64
-	l2Balance L2Balance
+	l2     L2State
+	kv     kv.KVStore // subrealm of L2State
+	logs   []*types.Log
+	refund uint64
 }
 
 var _ vm.StateDB = &StateDB{}
 
-func NewStateDB(store kv.KVStore, l2Balance L2Balance) *StateDB {
+func NewStateDB(l2 L2State) *StateDB {
 	return &StateDB{
-		kv:        StateDBSubrealm(store),
-		l2Balance: l2Balance,
+		l2: l2,
+		kv: StateDBSubrealm(l2),
 	}
 }
 
+func CreateAccount(kv kv.KVStore, addr common.Address) {
+	SetNonce(kv, addr, 0)
+}
+
 func (s *StateDB) CreateAccount(addr common.Address) {
-	s.SetNonce(addr, 0)
+	CreateAccount(s.kv, addr)
 }
 
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
@@ -80,7 +78,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.l2Balance.Sub(addr, amount)
+	s.l2.SubBalance(addr, util.EthereumDecimalsToCustomTokenDecimals(amount, s.l2.Decimals()).Uint64())
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
@@ -90,11 +88,13 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.l2Balance.Add(addr, amount)
+	s.l2.AddBalance(addr, util.EthereumDecimalsToCustomTokenDecimals(amount, s.l2.Decimals()).Uint64())
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	return s.l2Balance.Get(addr)
+	bal := s.l2.GetBalance(addr)
+	ret := new(big.Int).SetUint64(bal)
+	return util.CustomTokensDecimalsToEthereumDecimals(ret, s.l2.Decimals())
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
@@ -105,12 +105,20 @@ func (s *StateDB) GetNonce(addr common.Address) uint64 {
 	return GetNonce(s.kv, addr)
 }
 
+func IncNonce(kv kv.KVStore, addr common.Address) {
+	SetNonce(kv, addr, GetNonce(kv, addr)+1)
+}
+
 func (s *StateDB) IncNonce(addr common.Address) {
-	s.SetNonce(addr, s.GetNonce(addr)+1)
+	IncNonce(s.kv, addr)
+}
+
+func SetNonce(kv kv.KVStore, addr common.Address, n uint64) {
+	kv.Set(accountNonceKey(addr), codec.EncodeUint64(n))
 }
 
 func (s *StateDB) SetNonce(addr common.Address, n uint64) {
-	s.kv.Set(accountNonceKey(addr), codec.EncodeUint64(n))
+	SetNonce(s.kv, addr, n)
 }
 
 func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
@@ -122,12 +130,16 @@ func (s *StateDB) GetCode(addr common.Address) []byte {
 	return s.kv.Get(accountCodeKey(addr))
 }
 
-func (s *StateDB) SetCode(addr common.Address, code []byte) {
+func SetCode(kv kv.KVStore, addr common.Address, code []byte) {
 	if code == nil {
-		s.kv.Del(accountCodeKey(addr))
+		kv.Del(accountCodeKey(addr))
 	} else {
-		s.kv.Set(accountCodeKey(addr), code)
+		kv.Set(accountCodeKey(addr), code)
 	}
+}
+
+func (s *StateDB) SetCode(addr common.Address, code []byte) {
+	SetCode(s.kv, addr, code)
 }
 
 func (s *StateDB) GetCodeSize(addr common.Address) int {
@@ -158,8 +170,12 @@ func (s *StateDB) GetState(addr common.Address, key common.Hash) common.Hash {
 	return common.BytesToHash(s.kv.Get(accountStateKey(addr, key)))
 }
 
+func SetState(kv kv.KVStore, addr common.Address, key, value common.Hash) {
+	kv.Set(accountStateKey(addr, key), value.Bytes())
+}
+
 func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
-	s.kv.Set(accountStateKey(addr, key), value.Bytes())
+	SetState(s.kv, addr, key, value)
 }
 
 func (s *StateDB) Suicide(addr common.Address) bool {
@@ -181,7 +197,7 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 
 	// for some reason the EVM engine calls AddBalance to the beneficiary address,
 	// but not SubBalance for the suicided address.
-	s.l2Balance.Sub(addr, s.l2Balance.Get(addr))
+	s.l2.SubBalance(addr, s.l2.GetBalance(addr))
 
 	s.kv.Set(accountSuicidedKey(addr), []byte{1})
 
@@ -235,11 +251,13 @@ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 	_ = slot
 }
 
-func (s *StateDB) RevertToSnapshot(int) {
-	panic("unsupported operation")
+func (s *StateDB) Snapshot() int {
+	return s.l2.TakeSnapshot()
 }
 
-func (s *StateDB) Snapshot() int { return 0 }
+func (s *StateDB) RevertToSnapshot(i int) {
+	s.l2.RevertToSnapshot(i)
+}
 
 func (s *StateDB) AddLog(log *types.Log) {
 	log.Index = uint(len(s.logs))
@@ -256,10 +274,6 @@ func (s *StateDB) ForEachStorage(common.Address, func(common.Hash, common.Hash) 
 	panic("not implemented")
 }
 
-func (s *StateDB) Buffered() *BufferedStateDB {
-	return NewBufferedStateDB(s)
-}
-
 // GetTransientState implements vm.StateDB
 func (*StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
 	panic("unimplemented")
@@ -273,31 +287,4 @@ func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase co
 // SetTransientState implements vm.StateDB
 func (*StateDB) SetTransientState(addr common.Address, key common.Hash, value common.Hash) {
 	panic("unimplemented")
-}
-
-// BufferedStateDB is a wrapper for StateDB that writes all mutations into an in-memory buffer,
-// leaving the original state unmodified until the mutations are applied manually with Commit().
-type BufferedStateDB struct {
-	buf       *buffered.BufferedKVStore
-	base      kv.KVStore
-	l2Balance L2Balance
-}
-
-func NewBufferedStateDB(base *StateDB) *BufferedStateDB {
-	return &BufferedStateDB{
-		buf:       buffered.NewBufferedKVStore(base.kv),
-		base:      base.kv,
-		l2Balance: base.l2Balance,
-	}
-}
-
-func (b *BufferedStateDB) StateDB() *StateDB {
-	return &StateDB{
-		kv:        b.buf,
-		l2Balance: b.l2Balance,
-	}
-}
-
-func (b *BufferedStateDB) Commit() {
-	b.buf.Mutations().ApplyTo(b.base)
 }
