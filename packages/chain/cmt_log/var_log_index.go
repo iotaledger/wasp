@@ -1,5 +1,26 @@
 package cmt_log
 
+// TODO: On the quorum to start.
+// Assume 3/4 committee, nodes A, B, C, D.
+// Assume node D send NextLI/ConsDone(y) to A and B and crashed; node C is lagging several instances back (x < y).
+// A and B received NextLI/ConsDone(y) from A, B and D, thus proceed to the LogIndex=y, but ACS is stuck, because 3 nodes are needed.
+// Node C cannot support A and B in LI=y because, C cannot proceed with LI=x, because other nodes already dropped that old consensus instance.
+// Node D cannot support A and B, because its minLI=y and it asks to recover to LI=y+1.
+// As a consequence, we need to introduce NextLI/Started with a quorum F+1. Each node sends it after the consensus is started on that node.
+// This way any other node knows there exist at least 1 correct node started the consensus.
+//   ==> This implies it received NextLI/ConsDone (or others) from N-F nodes, thus at least F+1 correct nodes.
+//   ##> We need at least F+1 proposals with the new AO to avoid producing duplicate TXes.
+//
+// TODO: On the mempool and missing requests.
+// Assume 3/4 committee, nodes A, B, C, D.
+// Nodes A and B completed the consensus, node C is lagging several instances back, node D died during the consensus, after ACS is done.
+// A and B cannot proceed to the next LI, because they have NextLI from 2 nodes only (A and B).
+// D is still down.
+// C cannot complete the consensus, because it has OnLedger request missing. It cannot be shared between the nodes.
+//   ==> WHAT TO DO?
+//   ==> Don't count L1RepAO and ConsOut separately. That's not needed anymore with the current approach I guess.
+//   ==> TODO: Nah. Send NextLI/L1RepAO for known LIs as well.
+
 import (
 	"fmt"
 
@@ -31,6 +52,9 @@ type VarLogIndex interface {
 
 	// This is called when we have to move to the next log index based on the AO received from L1.
 	L1ReplacedBaseAliasOutput() gpa.OutMessages
+
+	// This is called, if an AO is confirmed for which we know a log index (was pending).
+	L1ConfirmedAliasOutput(li LogIndex) gpa.OutMessages
 
 	// Messages are exchanged, so this function handles them.
 	MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages
@@ -102,6 +126,7 @@ type varLogIndexImpl struct {
 	qcConsOut *QuorumCounter
 	qcL1AORep *QuorumCounter
 	qcRecover *QuorumCounter
+	qcStarted *QuorumCounter
 	outputCB  func(li LogIndex)
 	log       *logger.Logger
 }
@@ -122,8 +147,9 @@ func NewVarLogIndex(
 		agreedLI:  NilLogIndex(),
 		lastMsgs:  map[gpa.NodeID]*MsgNextLogIndex{},
 		qcConsOut: NewQuorumCounter(MsgNextLogIndexCauseConsOut, nodeIDs, log),
-		qcL1AORep: NewQuorumCounter(MsgNextLogIndexCauseL1ReplacedAO, nodeIDs, log),
+		qcL1AORep: NewQuorumCounter(MsgNextLogIndexCauseL1RepAO, nodeIDs, log),
 		qcRecover: NewQuorumCounter(MsgNextLogIndexCauseRecover, nodeIDs, log),
+		qcStarted: NewQuorumCounter(MsgNextLogIndexCauseStarted, nodeIDs, log),
 		outputCB:  outputCB,
 		log:       log,
 	}
@@ -152,15 +178,17 @@ func (vli *varLogIndexImpl) LogIndexUsed(li LogIndex) { // TODO: Call it. Or rem
 
 func (vli *varLogIndexImpl) ConsensusOutputReceived(consensusLI LogIndex) gpa.OutMessages {
 	vli.log.Debugf("ConsensusOutputReceived: consensusLI=%v", consensusLI)
-	msgs := vli.qcConsOut.MaybeSendVote(consensusLI.Next())
-	vli.tryOutputOnConsOut()
+	msgs := gpa.NoMessages()
+	msgs.AddAll(vli.qcConsOut.MaybeSendVote(consensusLI.Next()))
+	msgs.AddAll(vli.tryOutputOnConsOut())
 	return msgs
 }
 
 func (vli *varLogIndexImpl) ConsensusRecoverReceived(consensusLI LogIndex) gpa.OutMessages {
 	vli.log.Debugf("ConsensusRecoverReceived: consensusLI=%v", consensusLI)
-	msgs := vli.qcRecover.MaybeSendVote(consensusLI.Next())
-	vli.tryOutputOnRecover()
+	msgs := gpa.NoMessages()
+	msgs.AddAll(vli.qcRecover.MaybeSendVote(consensusLI.Next()))
+	msgs.AddAll(vli.tryOutputOnRecover())
 	return msgs
 }
 
@@ -181,7 +209,19 @@ func (vli *varLogIndexImpl) L1ReplacedBaseAliasOutput() gpa.OutMessages {
 	msgs.AddAll(vli.qcL1AORep.MaybeSendVote(voteForLI))
 	//
 	// Report an agreed LI, if any.
-	vli.tryOutputOnL1ReplacedAO()
+	msgs.AddAll(vli.tryOutputOnL1RepAO())
+	return msgs
+}
+
+func (vli *varLogIndexImpl) L1ConfirmedAliasOutput(li LogIndex) gpa.OutMessages {
+	vli.log.Debugf("L1ConfirmedAliasOutput")
+	//
+	// Vote for this LI, if have not voted for any higher.
+	msgs := gpa.NoMessages()
+	msgs.AddAll(vli.qcL1AORep.MaybeSendVote(li))
+	//
+	// Report an agreed LI, if any.
+	msgs.AddAll(vli.tryOutputOnL1RepAO())
 	return msgs
 }
 
@@ -195,22 +235,22 @@ func (vli *varLogIndexImpl) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.Ou
 
 	switch msg.Cause {
 	case MsgNextLogIndexCauseConsOut:
-		vli.msgNextLogIndexOnConsOut(msg)
-		return nil
+		return vli.msgNextLogIndexOnConsOut(msg)
 	case MsgNextLogIndexCauseRecover:
 		return vli.msgNextLogIndexOnRecover(msg)
-	case MsgNextLogIndexCauseL1ReplacedAO:
-		vli.msgNextLogIndexOnL1ReplacedAO(msg)
-		return nil
+	case MsgNextLogIndexCauseL1RepAO:
+		return vli.msgNextLogIndexOnL1RepAO(msg)
+	case MsgNextLogIndexCauseStarted:
+		return vli.msgNextLogIndexOnStarted(msg)
 	default:
 		vli.log.Warnf("⊢ MsgNextLogIndex with unexpected cause: %+v", msg)
 		return nil
 	}
 }
 
-func (vli *varLogIndexImpl) msgNextLogIndexOnConsOut(msg *MsgNextLogIndex) {
+func (vli *varLogIndexImpl) msgNextLogIndexOnConsOut(msg *MsgNextLogIndex) gpa.OutMessages {
 	vli.qcConsOut.VoteReceived(msg)
-	vli.tryOutputOnConsOut()
+	return vli.tryOutputOnConsOut()
 }
 
 func (vli *varLogIndexImpl) msgNextLogIndexOnRecover(msg *MsgNextLogIndex) gpa.OutMessages {
@@ -224,40 +264,53 @@ func (vli *varLogIndexImpl) msgNextLogIndexOnRecover(msg *MsgNextLogIndex) gpa.O
 		}
 		msgs = vli.qcConsOut.LastMessageForPeer(msg.Sender(), msgs)
 		msgs = vli.qcL1AORep.LastMessageForPeer(msg.Sender(), msgs)
+		msgs = vli.qcStarted.LastMessageForPeer(msg.Sender(), msgs)
 	}
-	vli.tryOutputOnRecover()
+	msgs.AddAll(vli.tryOutputOnRecover())
 	return msgs
 }
 
-func (vli *varLogIndexImpl) msgNextLogIndexOnL1ReplacedAO(msg *MsgNextLogIndex) {
+func (vli *varLogIndexImpl) msgNextLogIndexOnL1RepAO(msg *MsgNextLogIndex) gpa.OutMessages {
 	vli.qcL1AORep.VoteReceived(msg)
-	vli.tryOutputOnL1ReplacedAO()
+	return vli.tryOutputOnL1RepAO()
+}
+
+func (vli *varLogIndexImpl) msgNextLogIndexOnStarted(msg *MsgNextLogIndex) gpa.OutMessages {
+	vli.qcStarted.VoteReceived(msg)
+	return vli.tryOutputOnStarted()
 }
 
 // If we voted for that LI based on consensus output, and there is N-F supporters, then proceed.
-func (vli *varLogIndexImpl) tryOutputOnConsOut() {
+func (vli *varLogIndexImpl) tryOutputOnConsOut() gpa.OutMessages {
 	ali := vli.qcConsOut.EnoughVotes(vli.n - vli.f)
-	vli.tryOutput(ali)
+	return vli.tryOutput(ali)
 }
 
-func (vli *varLogIndexImpl) tryOutputOnRecover() {
+func (vli *varLogIndexImpl) tryOutputOnRecover() gpa.OutMessages {
 	ali := vli.qcRecover.EnoughVotes(vli.n - vli.f)
-	vli.tryOutput(ali)
+	return vli.tryOutput(ali)
 }
 
-func (vli *varLogIndexImpl) tryOutputOnL1ReplacedAO() {
+func (vli *varLogIndexImpl) tryOutputOnL1RepAO() gpa.OutMessages {
 	ali := vli.qcL1AORep.EnoughVotes(vli.n - vli.f)
-	vli.tryOutput(ali)
+	return vli.tryOutput(ali)
+}
+
+func (vli *varLogIndexImpl) tryOutputOnStarted() gpa.OutMessages {
+	ali := vli.qcStarted.EnoughVotes(vli.f + 1)
+	return vli.tryOutput(ali)
 }
 
 // That's output for the consensus. We will start consensus instances with strictly increasing LIs with non-nil AOs.
-func (vli *varLogIndexImpl) tryOutput(li LogIndex) {
+func (vli *varLogIndexImpl) tryOutput(li LogIndex) gpa.OutMessages {
 	if li <= vli.agreedLI || li < vli.minLI {
-		return
+		return nil
 	}
+	msgs := vli.qcStarted.MaybeSendVote(li)
 	vli.agreedLI = li
 	vli.log.Debugf("⊢ Output, li=%v", vli.agreedLI)
 	vli.outputCB(vli.agreedLI)
+	return msgs
 }
 
 func (vli *varLogIndexImpl) knownNodeID(nodeID gpa.NodeID) bool {

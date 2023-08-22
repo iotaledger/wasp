@@ -54,7 +54,7 @@ func (sm *varLocalViewSM) L1ExternalAOConfirmed(t *rapid.T) {
 	//
 	// The AO from L1 is always respected as the correct one.
 	newAO := sm.nextAO()
-	tipAO, tipChanged := sm.lv.AliasOutputConfirmed(newAO)
+	tipAO, tipChanged, _ := sm.lv.AliasOutputConfirmed(newAO)
 	require.True(t, tipChanged)            // BaseAO is replaced or set.
 	require.Equal(t, newAO, tipAO)         // BaseAO is replaced or set.
 	require.Equal(t, newAO, sm.lv.Value()) // BaseAO is replaced or set.
@@ -79,7 +79,7 @@ func (sm *varLocalViewSM) L1PendingApproved(t *rapid.T) {
 	// Notify the LocalView on the CNF.
 	cnfAO := sm.pending[0]
 	prevAO := sm.lv.Value()
-	_, tipChanged := sm.lv.AliasOutputConfirmed(cnfAO)
+	_, tipChanged, _ := sm.lv.AliasOutputConfirmed(cnfAO)
 	//
 	// Update the model.
 	sm.confirmed = append(sm.confirmed, cnfAO)

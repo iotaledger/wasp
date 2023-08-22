@@ -277,9 +277,13 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 // > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
 // >   ...
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
-	if _, tipUpdated := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput); tipUpdated {
+	_, tipUpdated, cnfLogIndex := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput)
+	if tipUpdated {
 		cl.varOutput.Suspended(false)
 		return cl.varLogIndex.L1ReplacedBaseAliasOutput()
+	}
+	if !cnfLogIndex.IsNil() {
+		return cl.varLogIndex.L1ConfirmedAliasOutput(cnfLogIndex)
 	}
 	return nil
 }

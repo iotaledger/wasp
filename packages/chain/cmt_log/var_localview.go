@@ -91,7 +91,8 @@ type VarLocalView interface {
 	//
 	// Corresponds to the `ao_received` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
-	AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool)
+	// Also it returns confirmed log index, if a received AO confirms it, or NIL otherwise.
+	AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool, LogIndex)
 	//
 	// Corresponds to the `tx_rejected` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
@@ -105,6 +106,7 @@ type varLocalViewEntry struct {
 	output   *isc.AliasOutputWithID // The AO published.
 	consumed iotago.OutputID        // The AO used as an input for the TX.
 	rejected bool                   // True, if the AO as rejected. We keep them to detect the other rejected AOs.
+	logIndex LogIndex               // LogIndex of the consensus produced the output, if any.
 }
 
 type varLocalViewImpl struct {
@@ -173,6 +175,7 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed iot
 		output:   published,
 		consumed: consumed,
 		rejected: false,
+		logIndex: logIndex,
 	})
 	lvi.pending.Set(stateIndex, entries)
 	//
@@ -189,8 +192,9 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed iot
 // A confirmed AO is received from L1. Base on that, we either truncate our local
 // history until the received AO (if we know it was posted before), or we replace
 // the entire history with an unseen AO (probably produced not by this chain×cmt).
-func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool) {
+func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) (*isc.AliasOutputWithID, bool, LogIndex) {
 	lvi.log.Debugf("AliasOutputConfirmed: confirmed=%v", confirmed)
+	cnfLogIndex := NilLogIndex()
 	stateIndex := confirmed.GetStateIndex()
 	oldTip := lvi.findLatestPending()
 	lvi.confirmed = confirmed
@@ -199,6 +203,9 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWith
 			if si <= stateIndex {
 				for _, e := range es {
 					lvi.log.Debugf("⊳ Removing[%v≤%v] %v", si, stateIndex, e.output)
+					if e.output.Equals(lvi.confirmed) {
+						cnfLogIndex = e.logIndex
+					}
 				}
 				lvi.pending.Delete(si)
 			}
@@ -214,7 +221,8 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWith
 			return true
 		})
 	}
-	return lvi.outputIfChanged(oldTip, lvi.findLatestPending())
+	outAO, outChanged := lvi.outputIfChanged(oldTip, lvi.findLatestPending())
+	return outAO, outChanged, cnfLogIndex
 }
 
 // Mark the specified AO as rejected.
