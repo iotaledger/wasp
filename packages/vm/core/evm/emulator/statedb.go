@@ -235,8 +235,11 @@ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 	_ = slot
 }
 
-func (s *StateDB) RevertToSnapshot(int) {}
-func (s *StateDB) Snapshot() int        { return 0 }
+func (s *StateDB) RevertToSnapshot(int) {
+	panic("unsupported operation")
+}
+
+func (s *StateDB) Snapshot() int { return 0 }
 
 func (s *StateDB) AddLog(log *types.Log) {
 	log.Index = uint(len(s.logs))

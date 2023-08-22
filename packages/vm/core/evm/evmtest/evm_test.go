@@ -90,6 +90,25 @@ func TestStorageContract(t *testing.T) {
 	testdbhash.VerifyDBHash(env.solo, t.Name())
 }
 
+func TestLowLevelCallRevert(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	contract := env.deployContract(ethKey, evmtest.RevertTestContractABI, evmtest.RevertTestContractBytecode)
+
+	getCount := func() uint32 {
+		var v uint32
+		require.NoError(t, contract.callView("count", nil, &v))
+		return v
+	}
+
+	require.Equal(t, uint32(0), getCount())
+
+	_, err := contract.callFn([]ethCallOptions{{gasLimit: 200000}}, "selfCallRevert")
+	require.NoError(t, err)
+	require.Equal(t, uint32(0), getCount())
+}
+
 func TestERC20Contract(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()

@@ -1,0 +1,1 @@
+[{"inputs":[],"name":"count","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"incrementThenRevert","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"selfCallRevert","outputs":[],"stateMutability":"nonpayable","type":"function"}]
