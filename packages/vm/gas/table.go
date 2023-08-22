@@ -14,7 +14,7 @@ const (
 	BurnCodeGetNFTData
 	BurnCodeCallContract
 	BurnCodeDeployContract
-	BurnCodeEmitEventFixed
+	BurnCodeEmitEvent1P
 	BurnCodeTransferAllowance
 	BurnCodeEstimateStorageDepositCost
 	BurnCodeSendL1Request
@@ -47,13 +47,13 @@ var burnTable = BurnTable{
 	BurnCodeGetBalance:                 {"balance", constValue(20)},
 	BurnCodeGetNFTData:                 {"nft data", constValue(10)},
 	BurnCodeCallContract:               {"call", constValue(100)},
-	BurnCodeEmitEventFixed:             {"event", constValue(10)},
+	BurnCodeEmitEvent1P:                {"event", linear(1)}, // 1 gas per byte
 	BurnCodeGetAllowance:               {"allowance", constValue(10)},
 	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
 	BurnCodeEstimateStorageDepositCost: {"storage deposit estimate", constValue(5)},
 	BurnCodeSendL1Request:              {"send", linear(Coef1Send)},
 	BurnCodeDeployContract:             {"deploy", constValue(10)},
-	BurnCodeStorage1P:                  {"storage", linear(1)}, // 1 gas per byte
+	BurnCodeStorage1P:                  {"storage", linear(55)}, // 55 gas per byte
 	BurnCodeReadFromState1P:            {"state read", linear(1)},
 	BurnCodeWasm1P:                     {"wasm", linear(1)},
 	BurnCodeUtilsHashingBlake2b:        {"blake2b", constValue(50)},

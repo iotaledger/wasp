@@ -105,7 +105,7 @@ func NewImmutableTransferAccountToChainParams() ImmutableTransferAccountToChainP
 }
 
 // Optional gas amount to reserve in the allowance for the internal
-// call to transferAllowanceTo(). Default 100 (MinGasFee).
+// call to transferAllowanceTo(). Default 10_000 (MinGasFee).
 func (s ImmutableTransferAccountToChainParams) GasReserve() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ParamGasReserve))
 }
@@ -115,7 +115,7 @@ type MutableTransferAccountToChainParams struct {
 }
 
 // Optional gas amount to reserve in the allowance for the internal
-// call to transferAllowanceTo(). Default 100 (MinGasFee).
+// call to transferAllowanceTo(). Default 10_000 (MinGasFee).
 func (s MutableTransferAccountToChainParams) GasReserve() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamGasReserve))
 }

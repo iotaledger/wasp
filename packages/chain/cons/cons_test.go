@@ -34,6 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
@@ -346,7 +347,7 @@ func testChained(t *testing.T, n, f, b int) {
 				inccounter.FuncIncCounter.Hname(),
 				dict.New(),
 				uint64(i*reqPerBlock+ii),
-				20000,
+				gas.LimitsDefault.MinGasPerRequest,
 			).Sign(scClient)
 			reqs = append(reqs, scRequest)
 			incTotal++

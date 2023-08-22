@@ -86,7 +86,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 				Metadata: &isc.SendMetadata{
 					TargetContract: accounts.Contract.Hname(),
 					EntryPoint:     accounts.FuncDeposit.Hname(),
-					GasBudget:      10_000,
+					GasBudget:      2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},
 		},
@@ -117,7 +117,7 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 						root.ParamName:        inccounter.Contract.Name,
 						inccounter.VarCounter: 0,
 					}),
-					GasBudget: 10_000,
+					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},
 		},

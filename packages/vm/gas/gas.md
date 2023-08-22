@@ -11,13 +11,13 @@ Current gas costs are still experimental and will change.
 | GetBalance                         | 20        | get balance of account on the chain                                  |
 | BurnCodeGetNFTData                 | 10        | get data about the NFT (issuer/metadata)                             |
 | CallContract                       | 10        | call a target (another SC in the same chain)                         |
-| EmitEventFixed                     | 10        | emit event                                                           |
+| EmitEvent                          | 1*B       | emit event (B = number of bytes)                                     |
 | GetAllowance                       | 10        | get allowance                                                        |
 | TransferAllowance                  | 10        | transfer allowance                                                   |
 | BurnCodeEstimateStorageDepositCost | 5         | estimate the storage deposit cost of a L1 request to be sent         |
 | SendL1Request                      | 200*N     | send a L1 transaction (N = number of issued txs in the current call) |
 | DeployContract                     | 10        | deploy a contract                                                    |
-| Storage                            | 1*B       | storage (B = number of bytes)                                        |
+| Storage                            | 55*B      | storage (B = number of bytes)                                        |
 | ReadFromState                      | 1*(B/100) | read from state (B = number of bytes, adjusted in the call)          |
 | Wasm                               | X         | wasm code execution (X = gas returnted by WASM VM)                   |
 | UtilsHashingBlake2b                | 5*B       | blake2b hash function (B = number of bytes)                          |

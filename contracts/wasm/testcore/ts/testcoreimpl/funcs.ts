@@ -9,8 +9,8 @@ import * as sc from "../testcore/index";
 
 const CONTRACT_NAME_DEPLOYED = "exampleDeployTR";
 const MSG_CORE_ONLY_PANIC = "========== core only =========";
-const MSG_FULL_PANIC = "========== panic FULL ENTRY POINT =========";
-const MSG_VIEW_PANIC = "========== panic VIEW =========";
+const MSG_FULL_PANIC = "========== panic FULL ENTRY POINT ==========";
+const MSG_VIEW_PANIC = "========== panic VIEW ==========";
 
 export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainContext): void {
     let paramInt = f.params.n().value();
@@ -228,14 +228,14 @@ export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.Withdraw
     const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance());
     ctx.transferAllowed(ctx.accountID(), transfer);
 
-    // This is just a test contract, but normally these numbers should
-    // be parameters because there is no way for the contract to figure
-    // out the gas fees on the other chain, and it's also silly to run
-    // the costly calculation to determine storage deposit every time
-    // unless absolutely necessary. Better to just make sure that the
-    // storage deposit is large enough, since it will be returned anyway.
-    const gasFee: u64 = wasmlib.MinGasFee;
-    const gasReserve: u64 = wasmlib.MinGasFee;
+    let gasReserveTransferAccountToChain: u64 = wasmlib.MinGasFee;
+    if (f.params.gasReserveTransferAccountToChain().exists()) {
+        gasReserveTransferAccountToChain = f.params.gasReserveTransferAccountToChain().value();
+    }
+    let gasReserve: u64 = wasmlib.MinGasFee;
+    if (f.params.gasReserve().exists()) {
+        gasReserve = f.params.gasReserve().value();
+    }
     const storageDeposit: u64 = wasmlib.StorageDeposit;
 
     // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
@@ -244,7 +244,7 @@ export function funcWithdrawFromChain(ctx: wasmlib.ScFuncContext, f: sc.Withdraw
     // NOTE: make sure you READ THE DOCS before calling this function
     const xfer = coreaccounts.ScFuncs.transferAccountToChain(ctx);
     xfer.params.gasReserve().setValue(gasReserve);
-    xfer.func.transferBaseTokens(storageDeposit + gasFee + gasReserve)
+    xfer.func.transferBaseTokens(storageDeposit + gasReserveTransferAccountToChain + gasReserve)
         .allowanceBaseTokens(withdrawal + storageDeposit + gasReserve)
         .postToChain(targetChain);
 }

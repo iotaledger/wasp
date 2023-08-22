@@ -252,11 +252,15 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
 				evm.FieldTokenDecimals:      codec.EncodeUint8(decimals),
 				evm.FieldFoundryTokenScheme: codec.EncodeTokenScheme(tokenScheme),
 			},
+			// FIXME why does this gas budget is higher than the allowance below
+			GasBudget: 50 * gas.LimitsDefault.MinGasPerRequest,
 		},
 	}
 	sd := ctx.EstimateRequiredStorageDeposit(req)
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(sd))
-	req.Assets.AddBaseTokens(sd)
+	// this request is sent by contract account,
+	// so we move enough allowance for the gas fee below in the req.Assets.AddBaseTokens() function call
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(sd+10*gas.LimitsDefault.MinGasPerRequest))
+	req.Assets.AddBaseTokens(sd + 10*gas.LimitsDefault.MinGasPerRequest)
 	ctx.Send(req)
 
 	return nil

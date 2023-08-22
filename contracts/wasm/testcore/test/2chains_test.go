@@ -125,11 +125,16 @@ func Test2Chains(t *testing.T) {
 
 		// allowance for accounts.transferAccountToChain(): SD + GAS1 + GAS2
 		xferDeposit := wasmlib.StorageDeposit
-		xferAllowance := xferDeposit + wasmlib.MinGasFee + wasmlib.MinGasFee
+		const gasFeeTransferAccountToChain = 10 * wasmlib.MinGasFee
+		const gasReserve = 10 * wasmlib.MinGasFee
+		const gasWithdrawFromChain = 10 * wasmlib.MinGasFee
+		xferAllowance := xferDeposit + gasReserve + gasFeeTransferAccountToChain
 		f := testcore.ScFuncs.WithdrawFromChain(ctx2.Sign(user))
 		f.Params.ChainID().SetValue(ctx1.CurrentChainID())
 		f.Params.BaseTokens().SetValue(withdrawalAmount)
-		f.Func.TransferBaseTokens(xferAllowance + isc.Million).
+		f.Params.GasReserve().SetValue(gasReserve)
+		f.Params.GasReserveTransferAccountToChain().SetValue(gasFeeTransferAccountToChain)
+		f.Func.TransferBaseTokens(xferAllowance + gasWithdrawFromChain).
 			AllowanceBaseTokens(xferAllowance).Post()
 		require.NoError(t, ctx2.Err)
 
@@ -153,21 +158,21 @@ func Test2Chains(t *testing.T) {
 		// chain2.testcore account will be credited with SD+GAS1+GAS2, pay actual GAS1,
 		// and be debited by SD+GAS2+'withdrawalAmount'
 		bal1.UpdateFeeBalances(ctxAcc1.GasFee)
-		bal1.Add(testcore2, xferDeposit+wasmlib.MinGasFee+wasmlib.MinGasFee-ctxAcc1.GasFee-xferDeposit-wasmlib.MinGasFee-withdrawalAmount)
+		bal1.Add(testcore2, xferDeposit+gasWithdrawFromChain+gasWithdrawFromChain-ctxAcc1.GasFee-xferDeposit-gasReserve-withdrawalAmount)
 		// verify these changes against the actual chain1 account balances
 		bal1.VerifyBalances(t)
 
-		userL1 -= xferAllowance + isc.Million
+		userL1 -= xferAllowance + gasWithdrawFromChain
 		require.Equal(t, userL1, user.Balance())
 
 		// The gas fees will be credited to chain1.Originator
 		bal2.UpdateFeeBalances(withdrawalReceipt.GasFeeCharged)
 		bal2.UpdateFeeBalances(transferReceipt.GasFeeCharged)
 		// deduct coretest.WithdrawFromChain() gas fee from user's cool million
-		bal2.Add(user, isc.Million-withdrawalReceipt.GasFeeCharged)
+		bal2.Add(user, gasWithdrawFromChain-withdrawalReceipt.GasFeeCharged)
 		// chain2.accounts1 will be credited with SD+GAS2+'withdrawalAmount', pay actual GAS2,
 		// and be debited by SD+'withdrawalAmount', leaving zero
-		bal2.Add(accounts1, xferDeposit+wasmlib.MinGasFee+withdrawalAmount-transferReceipt.GasFeeCharged-xferDeposit-withdrawalAmount)
+		bal2.Add(accounts1, xferDeposit+gasReserve+withdrawalAmount-transferReceipt.GasFeeCharged-xferDeposit-withdrawalAmount)
 		// chain2.testcore account receives the withdrawn tokens and storage deposit
 		bal2.Account += withdrawalAmount + xferDeposit
 		// verify these changes against the actual chain2 account balances

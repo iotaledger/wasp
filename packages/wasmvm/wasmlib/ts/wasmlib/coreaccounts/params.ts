@@ -70,7 +70,7 @@ export class MutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
 
 export class ImmutableTransferAccountToChainParams extends wasmtypes.ScProxy {
     // Optional gas amount to reserve in the allowance for the internal
-    // call to transferAllowanceTo(). Default 100 (MinGasFee).
+    // call to transferAllowanceTo(). Default 10_000 (MinGasFee).
     gasReserve(): wasmtypes.ScImmutableUint64 {
         return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamGasReserve));
     }
@@ -78,7 +78,7 @@ export class ImmutableTransferAccountToChainParams extends wasmtypes.ScProxy {
 
 export class MutableTransferAccountToChainParams extends wasmtypes.ScProxy {
     // Optional gas amount to reserve in the allowance for the internal
-    // call to transferAllowanceTo(). Default 100 (MinGasFee).
+    // call to transferAllowanceTo(). Default 10_000 (MinGasFee).
     gasReserve(): wasmtypes.ScMutableUint64 {
         return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamGasReserve));
     }

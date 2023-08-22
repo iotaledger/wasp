@@ -8,8 +8,8 @@ use crate::*;
 
 const CONTRACT_NAME_DEPLOYED: &str = "exampleDeployTR";
 const MSG_CORE_ONLY_PANIC: &str = "========== core only =========";
-const MSG_FULL_PANIC: &str = "========== panic FULL ENTRY POINT =========";
-const MSG_VIEW_PANIC: &str = "========== panic VIEW =========";
+const MSG_FULL_PANIC: &str = "========== panic FULL ENTRY POINT ==========";
+const MSG_VIEW_PANIC: &str = "========== panic VIEW ==========";
 
 pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
     let param_int = f.params.n().value();
@@ -255,14 +255,15 @@ pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContex
     let transfer = ScTransfer::from_balances(&ctx.allowance());
     ctx.transfer_allowed(&ctx.account_id(), &transfer);
 
-    // This is just a test contract, but normally these numbers should
-    // be parameters because there is no way for the contract to figure
-    // out the gas fees on the other chain, and it's also silly to run
-    // the costly calculation to determine storage deposit every time
-    // unless absolutely necessary. Better to just make sure that the
-    // storage deposit is large enough, since it will be returned anyway.
-    let gas_fee: u64 = MIN_GAS_FEE;
-    let gas_reserve: u64 = MIN_GAS_FEE;
+    let mut gas_reserve_transfer_account_to_chain: u64 = MIN_GAS_FEE;
+    if f.params.gas_reserve_transfer_account_to_chain().exists() {
+        gas_reserve_transfer_account_to_chain =
+            f.params.gas_reserve_transfer_account_to_chain().value();
+    }
+    let mut gas_reserve: u64 = MIN_GAS_FEE;
+    if f.params.gas_reserve().exists() {
+        gas_reserve = f.params.gas_reserve().value();
+    }
     let storage_deposit: u64 = STORAGE_DEPOSIT;
 
     // note: gasReserve is the gas necessary to run accounts.transferAllowanceTo
@@ -272,7 +273,7 @@ pub fn func_withdraw_from_chain(ctx: &ScFuncContext, f: &WithdrawFromChainContex
     let xfer = coreaccounts::ScFuncs::transfer_account_to_chain(ctx);
     xfer.params.gas_reserve().set_value(gas_reserve);
     xfer.func
-        .transfer_base_tokens(storage_deposit + gas_fee + gas_reserve)
+        .transfer_base_tokens(storage_deposit + gas_reserve_transfer_account_to_chain + gas_reserve)
         .allowance_base_tokens(withdrawal + storage_deposit + gas_reserve)
         .post_to_chain(target_chain);
 }

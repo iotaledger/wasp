@@ -93,6 +93,8 @@ funcs:
     params:
       chainID: ChainID
       baseTokens: Uint64
+      gasReserve: Uint64?
+      gasReserveTransferAccountToChain: Uint64?
 
 views:
   checkContextFromViewEP:
