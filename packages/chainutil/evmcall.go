@@ -21,7 +21,7 @@ func EVMCall(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethere
 	}
 
 	iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
-	res, err := runISCRequest(ch, aliasOutput, time.Now(), iscReq)
+	res, err := runISCRequest(ch, aliasOutput, time.Now(), iscReq, false)
 	if err != nil {
 		return nil, err
 	}
