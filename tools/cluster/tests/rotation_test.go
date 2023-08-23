@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -56,7 +55,7 @@ func TestBasicRotation(t *testing.T) {
 	require.NoError(t, err)
 
 	tx, err = govClient.PostRequest(
-		coreutil.CoreEPRotateStateController,
+		governance.FuncRotateStateController.Name,
 		chainclient.PostRequestParams{
 			Args: dict.Dict{
 				governance.ParamStateControllerAddress: codec.Encode(newCmtAddr),
