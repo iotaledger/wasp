@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/require"
@@ -75,7 +76,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 	var lastErr error
 	for hi >= lo {
 		callMsg.Gas = (lo + hi) / 2
-		res, err := e.CallContract(callMsg, true, nil)
+		res, err := e.CallContract(callMsg, true)
 		if err != nil {
 			return 0, fmt.Errorf("CallContract failed: %w", err)
 		}
@@ -118,7 +119,7 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx, nil, nil)
+	receipt, res, err := emu.SendTransaction(tx, nil)
 	require.NoError(t, err)
 	if res.Err != nil {
 		t.Logf("Execution failed: %v", res.Err)
@@ -128,48 +129,73 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	return receipt
 }
 
-type mockL2State struct {
-	dict.Dict
+type context struct {
+	state     dict.Dict
 	bal       map[common.Address]uint64
-	snapshots []*mockL2State
+	snapshots []*context
+	timestamp uint64
 }
 
-var _ L2State = &mockL2State{}
+var _ Context = &context{}
 
-func newMockL2State(supply map[common.Address]uint64) *mockL2State {
-	return &mockL2State{
-		Dict: dict.Dict{},
-		bal:  supply,
+func newContext(supply map[common.Address]uint64) *context {
+	return &context{
+		state: dict.Dict{},
+		bal:   supply,
 	}
 }
 
-func (l2 *mockL2State) GetBalance(addr common.Address) uint64 {
-	return l2.bal[addr]
+func (*context) BlockKeepAmount() int32 {
+	return BlockKeepAll
 }
 
-func (l2 *mockL2State) AddBalance(addr common.Address, amount uint64) {
-	l2.bal[addr] += l2.bal[addr]
+func (*context) GasBurnEnable(bool) {
+	panic("unimplemented")
 }
 
-func (l2 *mockL2State) SubBalance(addr common.Address, amount uint64) {
-	l2.bal[addr] -= amount
+func (*context) GasLimits() GasLimits {
+	return gasLimits
 }
 
-func (*mockL2State) Decimals() uint32 {
+func (*context) MagicContracts() map[common.Address]vm.ISCMagicContract {
+	return nil
+}
+
+func (ctx *context) State() kv.KVStore {
+	return ctx.state
+}
+
+func (ctx *context) Timestamp() uint64 {
+	return ctx.timestamp
+}
+
+func (ctx *context) GetBaseTokensBalance(addr common.Address) uint64 {
+	return ctx.bal[addr]
+}
+
+func (ctx *context) AddBaseTokensBalance(addr common.Address, amount uint64) {
+	ctx.bal[addr] += ctx.bal[addr]
+}
+
+func (ctx *context) SubBaseTokensBalance(addr common.Address, amount uint64) {
+	ctx.bal[addr] -= amount
+}
+
+func (*context) BaseTokensDecimals() uint32 {
 	return 18 // same as ether decimals
 }
 
-func (l2 *mockL2State) RevertToSnapshot(i int) {
-	l2.Dict = l2.snapshots[i].Dict
-	l2.bal = l2.snapshots[i].bal
+func (ctx *context) RevertToSnapshot(i int) {
+	ctx.state = ctx.snapshots[i].state
+	ctx.bal = ctx.snapshots[i].bal
 }
 
-func (l2 *mockL2State) TakeSnapshot() int {
-	l2.snapshots = append(l2.snapshots, &mockL2State{
-		Dict: l2.Dict.Clone(),
-		bal:  maps.Clone(l2.bal),
+func (ctx *context) TakeSnapshot() int {
+	ctx.snapshots = append(ctx.snapshots, &context{
+		state: ctx.state.Clone(),
+		bal:   maps.Clone(ctx.bal),
 	})
-	return len(l2.snapshots) - 1
+	return len(ctx.snapshots) - 1
 }
 
 func TestBlockchain(t *testing.T) {
@@ -180,12 +206,13 @@ func TestBlockchain(t *testing.T) {
 	faucetSupply := uint64(math.MaxUint64)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	l2 := newMockL2State(map[common.Address]uint64{
+	ctx := newContext(map[common.Address]uint64{
 		faucetAddress: faucetSupply,
 	})
 
-	Init(l2, evm.DefaultChainID, gasLimits, 0, genesisAlloc)
-	emu := NewEVMEmulator(l2, 1, gasLimits, BlockKeepAll, nil)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	ctx.timestamp++
+	emu := NewEVMEmulator(ctx)
 
 	// some assertions
 	{
@@ -235,6 +262,7 @@ func TestBlockchain(t *testing.T) {
 		evmtest.StorageContractBytecode,
 		uint32(42),
 	)
+	ctx.timestamp++
 
 	require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
 	block := emu.BlockchainDB().GetCurrentBlock()
@@ -252,14 +280,15 @@ func TestBlockchainPersistence(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	l2 := newMockL2State(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]uint64{})
 
-	Init(l2, evm.DefaultChainID, gasLimits, 0, genesisAlloc)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	ctx.timestamp++
 
 	// deploy a contract using one instance of EVMEmulator
 	var contractAddress common.Address
 	func() {
-		emu := NewEVMEmulator(l2, 1, gasLimits, BlockKeepAll, nil)
+		emu := NewEVMEmulator(ctx)
 		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 		require.NoError(t, err)
 
@@ -271,11 +300,12 @@ func TestBlockchainPersistence(t *testing.T) {
 			evmtest.StorageContractBytecode,
 			uint32(42),
 		)
+		ctx.timestamp++
 	}()
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(l2, 2, gasLimits, BlockKeepAll, nil)
+		emu := NewEVMEmulator(ctx)
 		// check the contract address
 		require.NotEmpty(t, emu.StateDB().GetCode(contractAddress))
 	}
@@ -315,7 +345,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	receipt, res, err := emu.SendTransaction(tx, nil, nil)
+	receipt, res, err := emu.SendTransaction(tx, nil)
 	require.NoError(t, err)
 	require.NoError(t, res.Err)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
@@ -367,10 +397,11 @@ func TestStorageContract(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	l2 := newMockL2State(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]uint64{})
 
-	Init(l2, evm.DefaultChainID, gasLimits, 0, genesisAlloc)
-	emu := NewEVMEmulator(l2, 1, gasLimits, BlockKeepAll, nil)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	ctx.timestamp++
+	emu := NewEVMEmulator(ctx)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -383,6 +414,7 @@ func TestStorageContract(t *testing.T) {
 		evmtest.StorageContractBytecode,
 		uint32(42),
 	)
+	ctx.timestamp++
 
 	// call `retrieve` view, get 42
 	{
@@ -390,7 +422,7 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, callArguments)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, false, nil)
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, false)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -406,6 +438,7 @@ func TestStorageContract(t *testing.T) {
 	// send tx that calls `store(43)`
 	{
 		callFn(faucet, 0, "store", uint32(43))
+		ctx.timestamp++
 		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber())
 	}
 
@@ -417,7 +450,7 @@ func TestStorageContract(t *testing.T) {
 		res, err := emu.CallContract(ethereum.CallMsg{
 			To:   &contractAddress,
 			Data: callArguments,
-		}, false, nil)
+		}, false)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -433,10 +466,11 @@ func TestStorageContract(t *testing.T) {
 
 func TestERC20Contract(t *testing.T) {
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	l2 := newMockL2State(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]uint64{})
 
-	Init(l2, evm.DefaultChainID, gasLimits, 0, genesisAlloc)
-	emu := NewEVMEmulator(l2, 1, gasLimits, BlockKeepAll, nil)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	ctx.timestamp++
+	emu := NewEVMEmulator(ctx)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
@@ -454,12 +488,13 @@ func TestERC20Contract(t *testing.T) {
 		"TestCoin",
 		"TEST",
 	)
+	ctx.timestamp++
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
 		callArguments, err2 := contractABI.Pack(name, args...)
 		require.NoError(t, err2)
 
-		res, err2 := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, false, nil)
+		res, err2 := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, false)
 		require.NoError(t, err2)
 
 		v := new(big.Int)
@@ -484,6 +519,7 @@ func TestERC20Contract(t *testing.T) {
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
 	receipt := callFn(erc20Owner, 0, "transfer", recipientAddress, transferAmount)
+	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
@@ -492,6 +528,7 @@ func TestERC20Contract(t *testing.T) {
 
 	// call `transferFrom` as recipient without allowance => get error
 	receipt = callFn(recipient, gasLimits.Call, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusFailed, receipt.Status)
 	require.Equal(t, 0, len(receipt.Logs))
 
@@ -500,11 +537,13 @@ func TestERC20Contract(t *testing.T) {
 
 	// call `approve` as erc20Owner
 	receipt = callFn(erc20Owner, 0, "approve", recipientAddress, transferAmount)
+	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `transferFrom` as recipient with allowance => ok
 	receipt = callFn(recipient, 0, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
@@ -512,16 +551,17 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }
 
-func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, kv.KVStore) {
+func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, *context) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(b, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	l2 := newMockL2State(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]uint64{})
 
-	Init(l2, evm.DefaultChainID, gasLimits, 0, genesisAlloc)
-	emu := NewEVMEmulator(l2, 1, gasLimits, BlockKeepAll, nil)
+	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
+	ctx.timestamp++
+	emu := NewEVMEmulator(ctx)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)
@@ -534,6 +574,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, kv.KVStore
 		evmtest.StorageContractBytecode,
 		uint32(42),
 	)
+	ctx.timestamp++
 
 	txs := make([]*types.Transaction, b.N)
 	for i := 0; i < b.N; i++ {
@@ -556,7 +597,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, kv.KVStore
 		require.NoError(b, err)
 	}
 
-	return emu, txs, l2
+	return emu, txs, ctx
 }
 
 // benchmarkEVMEmulator is a benchmark for the EVMEmulator that sends N EVM transactions
@@ -568,7 +609,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, kv.KVStore
 // Then: go tool pprof -http :8080 {cpu,mem}.out
 func benchmarkEVMEmulator(b *testing.B, k int) {
 	// setup: deploy the storage contract and prepare N transactions to send
-	emu, txs, db := initBenchmark(b)
+	emu, txs, ctx := initBenchmark(b)
 
 	var chunks [][]*types.Transaction
 	var chunk []*types.Transaction
@@ -586,7 +627,8 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 	b.ResetTimer()
 	for _, chunk := range chunks {
 		for _, tx := range chunk {
-			receipt, res, err := emu.SendTransaction(tx, nil, nil)
+			receipt, res, err := emu.SendTransaction(tx, nil)
+			ctx.timestamp++
 			require.NoError(b, err)
 			require.NoError(b, res.Err)
 			require.Equal(b, types.ReceiptStatusSuccessful, receipt.Status)
@@ -594,7 +636,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 		emu.MintBlock()
 	}
 
-	b.ReportMetric(dbSize(db)/float64(b.N), "db:bytes/op")
+	b.ReportMetric(dbSize(ctx.State())/float64(b.N), "db:bytes/op")
 }
 
 func BenchmarkEVMEmulator1(b *testing.B)   { benchmarkEVMEmulator(b, 1) }

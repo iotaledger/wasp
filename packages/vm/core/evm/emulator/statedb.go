@@ -48,18 +48,18 @@ func accountSuicidedKey(addr common.Address) kv.Key {
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
 // The Ethereum account balance is tied to the L1 balance.
 type StateDB struct {
-	l2     L2State
-	kv     kv.KVStore // subrealm of L2State
+	ctx    Context
+	kv     kv.KVStore // subrealm of ctx.State()
 	logs   []*types.Log
 	refund uint64
 }
 
 var _ vm.StateDB = &StateDB{}
 
-func NewStateDB(l2 L2State) *StateDB {
+func NewStateDB(ctx Context) *StateDB {
 	return &StateDB{
-		l2: l2,
-		kv: StateDBSubrealm(l2),
+		ctx: ctx,
+		kv:  StateDBSubrealm(ctx.State()),
 	}
 }
 
@@ -78,7 +78,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.l2.SubBalance(addr, util.EthereumDecimalsToCustomTokenDecimals(amount, s.l2.Decimals()).Uint64())
+	s.ctx.SubBaseTokensBalance(addr, util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals()))
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
@@ -88,13 +88,11 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.l2.AddBalance(addr, util.EthereumDecimalsToCustomTokenDecimals(amount, s.l2.Decimals()).Uint64())
+	s.ctx.AddBaseTokensBalance(addr, util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals()))
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	bal := s.l2.GetBalance(addr)
-	ret := new(big.Int).SetUint64(bal)
-	return util.CustomTokensDecimalsToEthereumDecimals(ret, s.l2.Decimals())
+	return util.BaseTokensDecimalsToEthereumDecimals(s.ctx.GetBaseTokensBalance(addr), s.ctx.BaseTokensDecimals())
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
@@ -126,8 +124,12 @@ func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
 	return crypto.Keccak256Hash(s.GetCode(addr))
 }
 
+func GetCode(s kv.KVStoreReader, addr common.Address) []byte {
+	return s.Get(accountCodeKey(addr))
+}
+
 func (s *StateDB) GetCode(addr common.Address) []byte {
-	return s.kv.Get(accountCodeKey(addr))
+	return GetCode(s.kv, addr)
 }
 
 func SetCode(kv kv.KVStore, addr common.Address, code []byte) {
@@ -166,8 +168,12 @@ func (s *StateDB) GetCommittedState(addr common.Address, key common.Hash) common
 	return s.GetState(addr, key)
 }
 
+func GetState(s kv.KVStoreReader, addr common.Address, key common.Hash) common.Hash {
+	return common.BytesToHash(s.Get(accountStateKey(addr, key)))
+}
+
 func (s *StateDB) GetState(addr common.Address, key common.Hash) common.Hash {
-	return common.BytesToHash(s.kv.Get(accountStateKey(addr, key)))
+	return GetState(s.kv, addr, key)
 }
 
 func SetState(kv kv.KVStore, addr common.Address, key, value common.Hash) {
@@ -197,7 +203,7 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 
 	// for some reason the EVM engine calls AddBalance to the beneficiary address,
 	// but not SubBalance for the suicided address.
-	s.l2.SubBalance(addr, s.l2.GetBalance(addr))
+	s.ctx.SubBaseTokensBalance(addr, s.ctx.GetBaseTokensBalance(addr))
 
 	s.kv.Set(accountSuicidedKey(addr), []byte{1})
 
@@ -252,11 +258,11 @@ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 }
 
 func (s *StateDB) Snapshot() int {
-	return s.l2.TakeSnapshot()
+	return s.ctx.TakeSnapshot()
 }
 
 func (s *StateDB) RevertToSnapshot(i int) {
-	s.l2.RevertToSnapshot(i)
+	s.ctx.RevertToSnapshot(i)
 }
 
 func (s *StateDB) AddLog(log *types.Log) {

@@ -294,8 +294,9 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 	if err != nil {
 		return nil, err
 	}
-	db := stateDB(chainState)
-	return db.GetBalance(address), nil
+	accountsPartition := subrealm.NewReadOnly(chainState, kv.Key(accounts.Contract.Hname().Bytes()))
+	baseTokens := accounts.GetBaseTokensBalance(accountsPartition, isc.NewEthereumAddressAgentID(address))
+	return util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.L1().BaseToken.Decimals), nil
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
@@ -304,8 +305,7 @@ func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumb
 	if err != nil {
 		return nil, err
 	}
-	db := stateDB(chainState)
-	return db.GetCode(address), nil
+	return emulator.GetCode(stateDBSubrealmR(chainState), address), nil
 }
 
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
@@ -415,8 +415,7 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash *r
 	if err != nil {
 		return 0, err
 	}
-	db := stateDB(chainState)
-	return db.GetNonce(address), nil
+	return emulator.GetNonce(stateDBSubrealmR(chainState), address), nil
 }
 
 func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
@@ -464,12 +463,11 @@ func (e *EVMChain) GasPrice() *big.Int {
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (common.Hash, error) {
 	e.log.Debugf("StorageAt(address=%v, key=%v, blockNumberOrHash=%v)", address, key, blockNumberOrHash)
-	latestState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
+	chainState, err := e.iscStateFromEVMBlockNumberOrHash(blockNumberOrHash)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	db := stateDB(latestState)
-	return db.GetState(address, key), nil
+	return emulator.GetState(stateDBSubrealmR(chainState), address, key), nil
 }
 
 func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) uint64 {
@@ -711,43 +709,6 @@ func blockchainDB(chainState state.State) *emulator.BlockchainDB {
 	)
 }
 
-func stateDB(chainState state.State) *emulator.StateDB {
-	return emulator.NewStateDB(newL2StateForEmulatorR(chainState))
-}
-
-type l2StateForEmulator struct {
-	kv.KVStore
-	chainState state.State
-}
-
-func newL2StateForEmulatorR(chainState state.State) *l2StateForEmulator {
-	return &l2StateForEmulator{
-		KVStore:    buffered.NewBufferedKVStore(evm.EmulatorStateSubrealmR(evm.ContractPartitionR(chainState))),
-		chainState: chainState,
-	}
-}
-
-func (*l2StateForEmulator) Decimals() uint32 {
-	return parameters.L1().BaseToken.Decimals
-}
-
-func (l2 *l2StateForEmulator) GetBalance(addr common.Address) uint64 {
-	accountsPartition := subrealm.NewReadOnly(l2.chainState, kv.Key(accounts.Contract.Hname().Bytes()))
-	return accounts.GetBaseTokensBalance(accountsPartition, isc.NewEthereumAddressAgentID(addr))
-}
-
-func (l2 *l2StateForEmulator) AddBalance(addr common.Address, amount uint64) {
-	panic("should not be called")
-}
-
-func (l2 *l2StateForEmulator) SubBalance(addr common.Address, amount uint64) {
-	panic("should not be called")
-}
-
-func (*l2StateForEmulator) RevertToSnapshot(int) {
-	panic("should not be called")
-}
-
-func (*l2StateForEmulator) TakeSnapshot() int {
-	panic("should not be called")
+func stateDBSubrealmR(chainState state.State) kv.KVStoreReader {
+	return emulator.StateDBSubrealmR(evm.EmulatorStateSubrealmR(evm.ContractPartitionR(chainState)))
 }
