@@ -334,7 +334,7 @@ func TestEstimateContractGas(t *testing.T) {
 		1*isc.Million,
 		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(contract.address)),
 	)
- 	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
+	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
 		From: contract.address,
 		To:   &ethAddr,
 	}, nil)
@@ -1756,46 +1756,6 @@ func TestChangeGasPerToken(t *testing.T) {
 }
 
 func TestGasPriceIgnored(t *testing.T) {
-	env := initEVM(t)
-
-	var gasLimit []uint64
-	var gasUsed []uint64
-
-	for _, gasPrice := range []*big.Int{
-		nil,
-		big.NewInt(0),
-		big.NewInt(10),
-		big.NewInt(100),
-	} {
-		t.Run(fmt.Sprintf("%v", gasPrice), func(t *testing.T) { //nolint:gocritic // false positive
-			ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-			storage := env.deployStorageContract(ethKey)
-
-			gas, err := storage.estimateGas([]ethCallOptions{{
-				sender:   ethKey,
-				gasPrice: gasPrice,
-			}}, "store", uint32(3))
-			require.NoError(t, err)
-
-			res, err := storage.store(uint32(3), ethCallOptions{
-				sender:   ethKey,
-				gasLimit: gas,
-				gasPrice: gasPrice,
-			})
-			require.NoError(t, err)
-
-			gasLimit = append(gasLimit, gas)
-			gasUsed = append(gasUsed, res.evmReceipt.GasUsed)
-		})
-	}
-
-	t.Log("gas limit", gasLimit)
-	t.Log("gas used", gasUsed)
-	require.Len(t, lo.Uniq(gasLimit), 1)
-	require.Len(t, lo.Uniq(gasUsed), 1)
-}
-
-func TestGasPriceOnContract(t *testing.T) {
 	env := initEVM(t)
 
 	var gasLimit []uint64
