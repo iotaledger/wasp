@@ -164,6 +164,7 @@ type Gas interface {
 	Burn(burnCode gas.BurnCode, par ...uint64)
 	Budget() uint64
 	Burned() uint64
+	EstimateGasMode() bool
 }
 
 // StateAnchor contains properties of the anchor output/transaction in the current context

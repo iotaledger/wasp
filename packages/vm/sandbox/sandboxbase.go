@@ -130,6 +130,10 @@ func (s *SandboxBase) Budget() uint64 {
 	return s.Ctx.GasBudgetLeft()
 }
 
+func (s *SandboxBase) EstimateGasMode() bool {
+	return s.Ctx.GasEstimateMode()
+}
+
 // -- helper methods
 func (s *SandboxBase) Requiref(cond bool, format string, args ...interface{}) {
 	s.assert().Requiref(cond, format, args...)

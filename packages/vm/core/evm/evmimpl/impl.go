@@ -157,7 +157,6 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
-
 	// revert the changes in the state / txbuilder in case of error
 	ctx.RequireNoError(revertErr)
 
@@ -416,8 +415,8 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
 	emu := createEmulator(ctx)
-
-	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
+	res, err := emu.CallContract(callMsg, ctx.Gas().EstimateGasMode(), ctx.Privileged().GasBurnEnable)
+	fmt.Printf("gas used: %d\n", res.UsedGas)
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(tryGetRevertError(res))
 

@@ -180,7 +180,7 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 	}
 }
 
-func coreMsgFromCallMsg(call ethereum.CallMsg, statedb *StateDB) *core.Message {
+func coreMsgFromCallMsg(call ethereum.CallMsg, gasEstimateMode bool, statedb *StateDB) *core.Message {
 	return &core.Message{
 		To:                call.To,
 		From:              call.From,
@@ -192,12 +192,12 @@ func coreMsgFromCallMsg(call ethereum.CallMsg, statedb *StateDB) *core.Message {
 		GasTipCap:         call.GasTipCap,
 		Data:              call.Data,
 		AccessList:        call.AccessList,
-		SkipAccountChecks: false,
+		SkipAccountChecks: gasEstimateMode,
 	}
 }
 
 // CallContract executes a contract call, without committing changes to the state
-func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasEstimateMode bool, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
 	if call.Gas == 0 {
 		call.Gas = e.gasLimits.Call
@@ -211,7 +211,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	return e.applyMessage(coreMsgFromCallMsg(call, statedb), statedb, pendingHeader, gasBurnEnable, nil)
+	return e.applyMessage(coreMsgFromCallMsg(call, gasEstimateMode, statedb), statedb, pendingHeader, gasBurnEnable, nil)
 }
 
 func (e *EVMEmulator) applyMessage(

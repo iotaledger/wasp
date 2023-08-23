@@ -42,6 +42,10 @@ func (s *SoloSandbox) Burned() uint64 {
 	panic("implement Burned")
 }
 
+func (s *SoloSandbox) EstimateGasMode() bool {
+	panic("implement GetEstimateGasMode")
+}
+
 var (
 	_ wasmhost.ISandbox = new(SoloSandbox)
 	_ isc.Gas           = new(SoloSandbox)

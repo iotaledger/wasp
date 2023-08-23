@@ -90,6 +90,15 @@ var (
 	GasTestExecutionTimeContractBytecode    = common.FromHex(strings.TrimSpace(gasTestExecutionTimeContractBytecodeHex))
 )
 
+//go:generate solc --abi --bin --overwrite GasTestSendContract.sol -o .
+var (
+	//go:embed GasTestSendContract.abi
+	GasTestSendContractABI string
+	//go:embed GasTestSendContract.bin
+	gasTestSendContractBytecodeHex string
+	GasTestSendContractBytecode    = common.FromHex(strings.TrimSpace(gasTestSendContractBytecodeHex))
+)
+
 //go:generate sh -c "solc --abi --bin --overwrite @iscmagic=`realpath ../../vm/core/evm/iscmagic` ERC20Example.sol -o ."
 var (
 	//go:embed ERC20Example.abi
