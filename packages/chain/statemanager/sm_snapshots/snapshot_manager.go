@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -59,6 +58,7 @@ const (
 	constSnapshotIndexHashFileNameSepparator = "-"
 	constSnapshotFileSuffix                  = ".snap"
 	constSnapshotTmpFileSuffix               = ".tmp"
+	constSnapshotDownloaded                  = "net"
 	constIndexFileName                       = "INDEX" // Index file contains a new-line separated list of snapshot files
 	constLocalAddress                        = "local://"
 )
@@ -99,14 +99,14 @@ func NewSnapshotManager(
 		localPath:                 localPath,
 		networkPaths:              networkPaths,
 	}
+	if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
+		return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
+	}
 	if result.createSnapshotsNeeded() {
-		if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
-			return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
-		}
 		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
 		snapMLog.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
 	} else {
-		snapMLog.Debugf("Snapshot manager created; no snapshots will be produced")
+		snapMLog.Debugf("Snapshot manager created; folder %v is used to download snapshots; no snapshots will be produced", localPath)
 	}
 	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, snapMLog)
 	return result, nil
@@ -247,13 +247,14 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, c
 		defer f.Close()
 		return loadSnapshotFun(f)
 	}
-	loadNetworkFun := func(ctx context.Context, url string) error {
-		closeFun, reader, err := downloadFile(ctx, smiT.log, url, constDownloadTimeout)
-		defer closeFun()
+	loadNetworkFun := func(url string) error {
+		fileNameLocal := downloadedSnapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash())
+		filePathLocal := filepath.Join(smiT.localPath, fileNameLocal)
+		localPathFun, err := DownloadToFile(smiT.ctx, url, filePathLocal, constDownloadTimeout, smiT.addProgressReporter)
 		if err != nil {
 			return err
 		}
-		return loadSnapshotFun(reader)
+		return loadLocalFun(localPathFun)
 	}
 	loadFun := func(source string) error {
 		if strings.HasPrefix(source, constLocalAddress) {
@@ -262,7 +263,7 @@ func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, c
 			return loadLocalFun(filePath)
 		}
 		smiT.log.Debugf("Loading snapshot %s: downloading file %s", snapshotInfo, source)
-		return loadNetworkFun(smiT.ctx, source)
+		return loadNetworkFun(source)
 	}
 
 	var err error
@@ -348,12 +349,12 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 				smiT.log.Errorf("Update network: unable to join paths %s and %s: %v", networkPath, constIndexFileName, err)
 				return
 			}
-			cancelFun, reader, err := downloadFile(smiT.ctx, smiT.log, indexFilePath, constDownloadTimeout)
-			defer cancelFun()
+			reader, err := smiT.initiateDownload(indexFilePath, constDownloadTimeout)
 			if err != nil {
 				smiT.log.Errorf("Update network: failed to download index file: %v", err)
 				return
 			}
+			defer reader.Close()
 			snapshotCount := 0
 			scanner := bufio.NewScanner(reader) // Defaults to splitting input by newline character
 			for scanner.Scan() {
@@ -364,12 +365,12 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 						smiT.log.Errorf("Update network: unable to join paths %s and %s: %v", networkPath, snapshotFileName, er)
 						return
 					}
-					sCancelFun, sReader, er := downloadFile(smiT.ctx, smiT.log, snapshotFilePath, constDownloadTimeout)
-					defer sCancelFun()
+					sReader, er := smiT.initiateDownload(snapshotFilePath, constDownloadTimeout)
 					if er != nil {
 						smiT.log.Errorf("Update network: failed to download snapshot file: %v", er)
 						return
 					}
+					defer sReader.Close()
 					snapshotInfo, er := readSnapshotInfo(sReader)
 					if er != nil {
 						smiT.log.Errorf("Update network: failed to read snapshot info from %s: %v", snapshotFilePath, er)
@@ -388,6 +389,20 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 	}
 }
 
+func (smiT *snapshotManagerImpl) initiateDownload(url string, timeout time.Duration) (io.ReadCloser, error) {
+	downloader, err := NewDownloaderWithTimeout(smiT.ctx, url, timeout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start downloading file from url %s: %v", url, err)
+	}
+	r := smiT.addProgressReporter(downloader, url, downloader.GetLength())
+	return NewReaderWithClose(r, downloader.Close), nil
+}
+
+func (smiT *snapshotManagerImpl) addProgressReporter(r io.Reader, url string, length uint64) io.Reader {
+	progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("downloading file %s", url), length)
+	return io.TeeReader(r, progressReporter)
+}
+
 func tempSnapshotFileName(index uint32, blockHash state.BlockHash) string {
 	return tempSnapshotFileNameString(fmt.Sprint(index), blockHash.String())
 }
@@ -404,30 +419,13 @@ func snapshotFileNameString(index, blockHash string) string {
 	return index + constSnapshotIndexHashFileNameSepparator + blockHash + constSnapshotFileSuffix
 }
 
-func downloadFile(ctx context.Context, log *logger.Logger, url string, timeout time.Duration) (context.CancelFunc, io.Reader, error) {
-	downloadCtx, downloadCtxCancel := context.WithTimeout(ctx, timeout)
+func downloadedSnapshotFileName(index uint32, blockHash state.BlockHash) string {
+	return downloadedSnapshotFileNameString(fmt.Sprint(index), blockHash.String())
+}
 
-	request, err := http.NewRequestWithContext(downloadCtx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		return downloadCtxCancel, nil, fmt.Errorf("failed creating request with url %s: %v", url, err)
-	}
-
-	response, err := http.DefaultClient.Do(request) //nolint:bodyclose// it will be closed, when the caller calls `cancelFun`
-	if err != nil {
-		return downloadCtxCancel, nil, fmt.Errorf("http request to file url %s failed: %v", url, err)
-	}
-	cancelFun := func() {
-		response.Body.Close()
-		downloadCtxCancel()
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return cancelFun, nil, fmt.Errorf("http request to %s got status code %v", url, response.StatusCode)
-	}
-
-	progressReporter := NewProgressReporter(log, fmt.Sprintf("downloading file %s", url), uint64(response.ContentLength))
-	reader := io.TeeReader(response.Body, progressReporter)
-	return cancelFun, reader, nil
+func downloadedSnapshotFileNameString(index, blockHash string) string {
+	return index + constSnapshotIndexHashFileNameSepparator + blockHash +
+		constSnapshotIndexHashFileNameSepparator + constSnapshotDownloaded + constSnapshotFileSuffix
 }
 
 func addSource(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
