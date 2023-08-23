@@ -45,7 +45,7 @@ func (s *kvStoreReaderWithGasBurn) Get(name kv.Key) []byte {
 func getWithGasBurn(r kv.KVStoreReader, name kv.Key, gasctx GasContext) []byte {
 	v := r.Get(name)
 	// don't burn gas on GetNonce ("\xc1\x02\xcb\assn") or GetCode ("\xc1\x02\xcb\assc") calls
-	if !name.HasPrefix("\xc1\x02\xcb\assn") && !name.HasPrefix("\xc1\x02\xcb\assc") {
+	if !name.HasPrefix("\xc1\x02\xcb\assn") && !name.HasPrefix("\xc1\x02\xcb\assc") && gasctx.GasEstimateMode() {
 		gasctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(v)/100)+1) // minimum 1
 	}
 	return v
