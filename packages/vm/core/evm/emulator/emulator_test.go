@@ -73,7 +73,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 	var lastErr error
 	for hi >= lo {
 		callMsg.Gas = (lo + hi) / 2
-		res, err := e.CallContract(callMsg, nil)
+		res, err := e.CallContract(callMsg, true, nil)
 		if err != nil {
 			return 0, fmt.Errorf("CallContract failed: %w", err)
 		}
@@ -371,7 +371,7 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, callArguments)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, false, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -398,7 +398,7 @@ func TestStorageContract(t *testing.T) {
 		res, err := emu.CallContract(ethereum.CallMsg{
 			To:   &contractAddress,
 			Data: callArguments,
-		}, nil)
+		}, false, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -441,7 +441,7 @@ func TestERC20Contract(t *testing.T) {
 		callArguments, err2 := contractABI.Pack(name, args...)
 		require.NoError(t, err2)
 
-		res, err2 := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		res, err2 := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, false, nil)
 		require.NoError(t, err2)
 
 		v := new(big.Int)
