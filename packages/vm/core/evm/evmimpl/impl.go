@@ -416,7 +416,6 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 
 	emu := createEmulator(ctx)
 	res, err := emu.CallContract(callMsg, ctx.Gas().EstimateGasMode(), ctx.Privileged().GasBurnEnable)
-	fmt.Printf("gas used: %d\n", res.UsedGas)
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(tryGetRevertError(res))
 
