@@ -176,6 +176,10 @@ func (ctx *ViewContext) GasBurned() uint64 {
 	return ctx.chainInfo.GasLimits.MaxGasExternalViewCall - ctx.gasBudget
 }
 
+func (ctx *ViewContext) GasEstimateMode() bool {
+	return false
+}
+
 func (ctx *ViewContext) Infof(format string, params ...interface{}) {
 	ctx.log.Infof(format, params...)
 }

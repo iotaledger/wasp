@@ -317,6 +317,31 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 	require.LessOrEqual(t, res.evmReceipt.GasUsed, estimatedGas)
 }
 
+func TestEstimateContractGas(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	contract := env.deployERC20Contract(ethKey, "TEST", "tst")
+
+	base := env.ERC20BaseTokens(ethKey)
+	initialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+	_, err := base.callFn(nil, "transfer", contract.address, big.NewInt(int64(1*isc.Million)))
+	require.NoError(t, err)
+	require.LessOrEqual(t,
+		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+		initialBalance-1*isc.Million,
+	)
+	require.EqualValues(t,
+		1*isc.Million,
+		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(contract.address)),
+	)
+	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
+		From: contract.address,
+		To:   &ethAddr,
+	}, nil)
+	require.NoError(t, err)
+	require.NotZero(t, estimatedGas)
+}
+
 func TestCallViewGasLimit(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()

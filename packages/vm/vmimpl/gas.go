@@ -47,3 +47,7 @@ func (reqctx *requestContext) GasBudgetLeft() uint64 {
 func (reqctx *requestContext) GasBurned() uint64 {
 	return reqctx.gas.burned
 }
+
+func (reqctx *requestContext) GasEstimateMode() bool {
+	return reqctx.vm.task.EstimateGasMode
+}
