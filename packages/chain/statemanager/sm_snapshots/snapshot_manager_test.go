@@ -96,11 +96,11 @@ func testSnapshotManagerSimple(
 		snapshotManagerOrig.BlockCommittedAsync(NewSnapshotInfo(block.StateIndex(), block.L1Commitment()))
 	}
 	for i := snapshotCreatePeriod - 1; i < numberOfBlocks; i += snapshotCreatePeriod {
-		require.True(t, waitForBlock(t, snapshotManagerOrig, blocks[i], 10, 50*time.Millisecond))
+		require.True(t, waitForBlock(t, factory.GetChainID(), blocks[i], 10, 50*time.Millisecond))
 	}
 	createdSnapshots := make([]SnapshotInfo, 0)
 	for _, block := range blocks {
-		exists := snapshotManagerOrig.SnapshotExists(block.StateIndex(), block.L1Commitment())
+		exists := snapshotExists(t, factory.GetChainID(), block.StateIndex(), block.L1Commitment())
 		if block.StateIndex()%uint32(snapshotCreatePeriod) == 0 {
 			require.True(t, exists)
 			createdSnapshots = append(createdSnapshots, NewSnapshotInfo(block.StateIndex(), block.L1Commitment()))
@@ -112,45 +112,33 @@ func testSnapshotManagerSimple(
 
 	// Node is restarted
 	storeNew := state.NewStore(mapdb.NewMapDB())
-	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), storeNew, log)
-
-	// Wait for node to read the list of snapshots
-	lastBlock := blocks[len(blocks)-1]
-	require.True(t, waitForBlock(t, snapshotManagerNew, lastBlock, 10, 50*time.Millisecond))
-	require.True(t, loadAndWaitLoaded(t, snapshotManagerNew, NewSnapshotInfo(lastBlock.StateIndex(), lastBlock.L1Commitment()), 10, 50*time.Millisecond))
+	createNewNodeFun(factory.GetChainID(), storeNew, log)
 
 	// Check the loaded snapshot
 	for i := 0; i < len(blocks)-1; i++ {
 		require.False(t, storeNew.HasTrieRoot(blocks[i].TrieRoot()))
 	}
+	lastBlock := blocks[len(blocks)-1]
 	require.True(t, storeNew.HasTrieRoot(lastBlock.TrieRoot()))
 
 	sm_gpa_utils.CheckBlockInStore(t, storeNew, lastBlock)
 	sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, lastBlock.L1Commitment())
 }
 
-func waitForBlock(t *testing.T, snapshotManager SnapshotManager, block state.Block, maxIterations int, sleep time.Duration) bool {
-	updateAndWaitFun := func() {
-		snapshotManager.UpdateAsync()
-		time.Sleep(sleep)
-	}
-	snapshotExistsFun := func() bool { return snapshotManager.SnapshotExists(block.StateIndex(), block.L1Commitment()) }
-	return ensureTrue(t, fmt.Sprintf("block %v to be committed", block.StateIndex()), snapshotExistsFun, maxIterations, updateAndWaitFun)
+func snapshotExists(t *testing.T, chainID isc.ChainID, stateIndex uint32, commitment *state.L1Commitment) bool {
+	path := filepath.Join(localSnapshotsCreatePathConst, chainID.String(), snapshotFileName(stateIndex, commitment.BlockHash()))
+	exists, isDir, err := ioutils.PathExists(path)
+	require.False(t, isDir)
+	require.NoError(t, err)
+	return exists
 }
 
-func loadAndWaitLoaded(t *testing.T, snapshotManager SnapshotManager, snapshotInfo SnapshotInfo, maxIterations int, sleep time.Duration) bool {
-	respChan := snapshotManager.LoadSnapshotAsync(snapshotInfo)
-	loadCompletedFun := func() bool {
-		select {
-		case result := <-respChan:
-			require.NoError(t, result)
-			return true
-		default:
-			return false
-		}
+func waitForBlock(t *testing.T, chainID isc.ChainID, block state.Block, maxIterations int, sleep time.Duration) bool {
+	updateAndWaitFun := func() {
+		time.Sleep(sleep)
 	}
-	waitFun := func() { time.Sleep(sleep) }
-	return ensureTrue(t, fmt.Sprintf("state %v to be loaded", snapshotInfo.StateIndex()), loadCompletedFun, maxIterations, waitFun)
+	snapshotExistsFun := func() bool { return snapshotExists(t, chainID, block.StateIndex(), block.L1Commitment()) }
+	return ensureTrue(t, fmt.Sprintf("block %v to be committed", block.StateIndex()), snapshotExistsFun, maxIterations, updateAndWaitFun)
 }
 
 func ensureTrue(t *testing.T, title string, predicate func() bool, maxIterations int, step func()) bool {

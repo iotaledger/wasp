@@ -13,20 +13,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
-
-type commitmentSources struct {
-	commitment *state.L1Commitment
-	sources    []string
-}
 
 type snapshotManagerImpl struct {
 	*snapshotManagerRunner
@@ -41,11 +34,7 @@ type snapshotManagerImpl struct {
 	createPeriod              uint32
 	snapshotter               snapshotter
 
-	availableSnapshots      *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]
-	availableSnapshotsMutex sync.RWMutex
-
-	localPath    string
-	networkPaths []string
+	localPath string
 }
 
 var (
@@ -74,16 +63,7 @@ func NewSnapshotManager(
 	metrics *metrics.ChainSnapshotsMetrics,
 	log *logger.Logger,
 ) (SnapshotManager, error) {
-	chainIDString := chainID.String()
-	localPath := filepath.Join(baseLocalPath, chainIDString)
-	networkPaths := make([]string, len(baseNetworkPaths))
-	var err error
-	for i := range baseNetworkPaths {
-		networkPaths[i], err = url.JoinPath(baseNetworkPaths[i], chainIDString)
-		if err != nil {
-			return nil, fmt.Errorf("cannot append chain ID to network path %s: %v", baseNetworkPaths[i], err)
-		}
-	}
+	localPath := filepath.Join(baseLocalPath, chainID.String())
 	snapMLog := log.Named("Snap")
 	result := &snapshotManagerImpl{
 		log:                       snapMLog,
@@ -94,10 +74,7 @@ func NewSnapshotManager(
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
 		snapshotter:               newSnapshotter(store),
-		availableSnapshots:        shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]](),
-		availableSnapshotsMutex:   sync.RWMutex{},
 		localPath:                 localPath,
-		networkPaths:              networkPaths,
 	}
 	if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
 		return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
@@ -108,6 +85,9 @@ func NewSnapshotManager(
 	} else {
 		snapMLog.Debugf("Snapshot manager created; folder %v is used to download snapshots; no snapshots will be produced", localPath)
 	}
+	if store.IsEmpty() {
+		result.loadSnapshot(baseNetworkPaths)
+	}
 	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, snapMLog)
 	return result, nil
 }
@@ -116,18 +96,7 @@ func NewSnapshotManager(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *state.L1Commitment) bool {
-	smiT.availableSnapshotsMutex.RLock()
-	defer smiT.availableSnapshotsMutex.RUnlock()
-
-	commitments, exists := smiT.availableSnapshots.Get(stateIndex)
-	if !exists {
-		return false
-	}
-	return commitments.ContainsBy(func(elem *commitmentSources) bool { return elem.commitment.Equals(commitment) && len(elem.sources) > 0 })
-}
-
-// NOTE: other implementations are inherited from snapshotManagerRunner
+// NOTE: implementation is inherited from snapshotManagerRunner
 
 // -------------------------------------
 // Implementations of snapshotManagerCore interface
@@ -135,18 +104,6 @@ func (smiT *snapshotManagerImpl) SnapshotExists(stateIndex uint32, commitment *s
 
 func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
 	return smiT.createPeriod > 0
-}
-
-func (smiT *snapshotManagerImpl) handleUpdate() {
-	start := time.Now()
-	result := shrinkingmap.New[uint32, *util.SliceStruct[*commitmentSources]]()
-	smiT.handleUpdateLocal(result)
-	smiT.handleUpdateNetwork(result)
-
-	smiT.availableSnapshotsMutex.Lock()
-	smiT.availableSnapshots = result
-	smiT.availableSnapshotsMutex.Unlock()
-	smiT.metrics.SnapshotsUpdated(time.Since(start))
 }
 
 // Snapshot manager makes snapshot of every `period`th state only, if this state hasn't
@@ -210,77 +167,6 @@ func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo)
 	}
 }
 
-func (smiT *snapshotManagerImpl) handleLoadSnapshot(snapshotInfo SnapshotInfo, callback chan<- error) {
-	start := time.Now()
-	smiT.log.Debugf("Loading snapshot %s", snapshotInfo)
-	// smiT.availableSnapshotsMutex.RLock() // Probably locking is not needed as it happens on the same thread as editing available snapshots
-	commitments, exists := smiT.availableSnapshots.Get(snapshotInfo.StateIndex())
-	// smiT.availableSnapshotsMutex.RUnlock()
-	if !exists {
-		err := fmt.Errorf("failed to obtain snapshot commitments of index %v", snapshotInfo.StateIndex())
-		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, err)
-		callback <- err
-		return
-	}
-	cs, exists := commitments.Find(func(c *commitmentSources) bool {
-		return c.commitment.Equals(snapshotInfo.Commitment())
-	})
-	if !exists {
-		err := fmt.Errorf("failed to obtain sources of snapshot %s", snapshotInfo)
-		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, err)
-		callback <- err
-		return
-	}
-
-	loadSnapshotFun := func(r io.Reader) error {
-		err := smiT.snapshotter.loadSnapshot(snapshotInfo, r)
-		if err != nil {
-			return fmt.Errorf("loading snapshot failed: %v", err)
-		}
-		return nil
-	}
-	loadLocalFun := func(path string) error {
-		f, err := os.Open(path)
-		if err != nil {
-			return fmt.Errorf("failed to open snapshot file %s", path)
-		}
-		defer f.Close()
-		return loadSnapshotFun(f)
-	}
-	loadNetworkFun := func(url string) error {
-		fileNameLocal := downloadedSnapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash())
-		filePathLocal := filepath.Join(smiT.localPath, fileNameLocal)
-		localPathFun, err := DownloadToFile(smiT.ctx, url, filePathLocal, constDownloadTimeout, smiT.addProgressReporter)
-		if err != nil {
-			return err
-		}
-		return loadLocalFun(localPathFun)
-	}
-	loadFun := func(source string) error {
-		if strings.HasPrefix(source, constLocalAddress) {
-			filePath := strings.TrimPrefix(source, constLocalAddress)
-			smiT.log.Debugf("Loading snapshot %s: reading local file %s", snapshotInfo, filePath)
-			return loadLocalFun(filePath)
-		}
-		smiT.log.Debugf("Loading snapshot %s: downloading file %s", snapshotInfo, source)
-		return loadNetworkFun(source)
-	}
-
-	var err error
-	for _, source := range cs.sources {
-		e := loadFun(source)
-		if e == nil {
-			smiT.log.Debugf("Loading snapshot %s succeeded", snapshotInfo)
-			callback <- nil
-			smiT.metrics.SnapshotLoaded(time.Since(start))
-			return
-		}
-		smiT.log.Errorf("Loading snapshot %s: %v", snapshotInfo, e)
-		err = errors.Join(err, e)
-	}
-	callback <- err
-}
-
 // -------------------------------------
 // Internal functions
 // -------------------------------------
@@ -308,17 +194,49 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]) {
+func (smiT *snapshotManagerImpl) loadSnapshot(baseNetworkPaths []string) {
+	snapshotPaths := make([]string, 0)
+	snapshotInfos := make([]SnapshotInfo, 0)
+	largestIndex := uint32(0)
+	considerSnapshotFun := func(snapshotInfo SnapshotInfo, path string) {
+		if snapshotInfo.StateIndex() < largestIndex {
+			smiT.log.Debugf("Snapshot %s found in %s; it is ignored as its index is lower than current largest index %v", path, snapshotInfo, largestIndex)
+			return
+		}
+		if snapshotInfo.StateIndex() == largestIndex {
+			snapshotPaths = append(snapshotPaths, path)
+			snapshotInfos = append(snapshotInfos, snapshotInfo)
+			smiT.log.Debugf("Snapshot %s found in %s; it is added to the list of considered snapshots", path, snapshotInfo)
+			return
+		}
+		// NOTE: snapshotInfo.StateIndex() > largestIndex
+		snapshotPaths = []string{path}
+		snapshotInfos = []SnapshotInfo{snapshotInfo}
+		smiT.log.Debugf("Snapshot %s found in %s; it is now the only considered snapshot as its index is larger than former largest index %v", path, snapshotInfo, largestIndex)
+		largestIndex = snapshotInfo.StateIndex()
+	}
+
+	smiT.searchLocalSnapshots(considerSnapshotFun)
+	smiT.searchNetworkSnapshots(baseNetworkPaths, considerSnapshotFun)
+	smiT.log.Debugf("%v snapshots with state index %v will be considered for loading in this order: %v", len(snapshotPaths), largestIndex, snapshotPaths)
+
+	for i := range snapshotPaths {
+		err := smiT.loadSnapshotFromPath(snapshotInfos[i], snapshotPaths[i])
+		if err == nil {
+			smiT.log.Debugf("Snapshot %s successfully loaded from %s", snapshotInfos[i], snapshotPaths[i])
+			return
+		}
+		smiT.log.Errorf("Failed to load snapshot %s from %s: %v", snapshotInfos[i], snapshotPaths[i], err)
+	}
+	smiT.log.Warnf("Failed to load any snapshot; will continue with empty store")
+}
+
+func (smiT *snapshotManagerImpl) searchLocalSnapshots(considerSnapshotFun func(SnapshotInfo, string)) {
 	fileRegExp := snapshotFileNameString("*", "*")
 	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
 	files, err := filepath.Glob(fileRegExpWithPath)
 	if err != nil {
-		if smiT.createSnapshotsNeeded() {
-			smiT.log.Errorf("Update local: failed to obtain snapshot file list: %v", err)
-		} else {
-			// If snapshots are not created, snapshot dir is not supposed to exists; unless, it was created by other runs of Wasp or manually
-			smiT.log.Warnf("Update local: cannot obtain snapshot file list (possibly, it does not exist): %v", err)
-		}
+		smiT.log.Errorf("Search local snapshots: failed to obtain snapshot file list: %v", err)
 		return
 	}
 	snapshotCount := 0
@@ -326,32 +244,34 @@ func (smiT *snapshotManagerImpl) handleUpdateLocal(result *shrinkingmap.Shrinkin
 		func() { // Function to make the defers sooner
 			f, err := os.Open(file)
 			if err != nil {
-				smiT.log.Errorf("Update local: failed to open snapshot file %s: %v", file, err)
+				smiT.log.Errorf("Search local snapshots: failed to open snapshot file %s: %v", file, err)
+				return
 			}
 			defer f.Close()
 			snapshotInfo, err := readSnapshotInfo(f)
 			if err != nil {
-				smiT.log.Errorf("Update local: failed to read snapshot info from file %s: %v", file, err)
+				smiT.log.Errorf("Search local snapshots: failed to read snapshot info from file %s: %v", file, err)
 				return
 			}
-			addSource(result, snapshotInfo, constLocalAddress+file)
+			considerSnapshotFun(snapshotInfo, constLocalAddress+file)
 			snapshotCount++
 		}()
 	}
-	smiT.log.Debugf("Update local: %v snapshot files found", snapshotCount)
+	smiT.log.Debugf("Search local snapshots: %v snapshot files found", snapshotCount)
 }
 
-func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]]) {
-	for _, networkPath := range smiT.networkPaths {
+func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []string, considerSnapshotFun func(SnapshotInfo, string)) {
+	chainIDString := smiT.chainID.String()
+	for _, baseNetworkPath := range baseNetworkPaths {
 		func() { // Function to make the defers sooner
-			indexFilePath, err := url.JoinPath(networkPath, constIndexFileName)
+			indexFilePath, err := url.JoinPath(baseNetworkPath, chainIDString, constIndexFileName)
 			if err != nil {
-				smiT.log.Errorf("Update network: unable to join paths %s and %s: %v", networkPath, constIndexFileName, err)
+				smiT.log.Errorf("Search network snapshots: unable to join paths %s, %s and %s: %v", baseNetworkPath, chainIDString, constIndexFileName, err)
 				return
 			}
 			reader, err := smiT.initiateDownload(indexFilePath, constDownloadTimeout)
 			if err != nil {
-				smiT.log.Errorf("Update network: failed to download index file: %v", err)
+				smiT.log.Errorf("Search network snapshots: failed to download index file: %v", indexFilePath, err)
 				return
 			}
 			defer reader.Close()
@@ -360,33 +280,68 @@ func (smiT *snapshotManagerImpl) handleUpdateNetwork(result *shrinkingmap.Shrink
 			for scanner.Scan() {
 				func() {
 					snapshotFileName := scanner.Text()
-					snapshotFilePath, er := url.JoinPath(networkPath, snapshotFileName)
+					snapshotFilePath, er := url.JoinPath(baseNetworkPath, chainIDString, snapshotFileName)
 					if er != nil {
-						smiT.log.Errorf("Update network: unable to join paths %s and %s: %v", networkPath, snapshotFileName, er)
+						smiT.log.Errorf("Search network snapshots: unable to join paths %s, %s and %s: %v", baseNetworkPath, chainIDString, snapshotFileName, er)
 						return
 					}
 					sReader, er := smiT.initiateDownload(snapshotFilePath, constDownloadTimeout)
 					if er != nil {
-						smiT.log.Errorf("Update network: failed to download snapshot file: %v", er)
+						smiT.log.Errorf("Search network snapshots: failed to download snapshot file: %v", er)
 						return
 					}
 					defer sReader.Close()
 					snapshotInfo, er := readSnapshotInfo(sReader)
 					if er != nil {
-						smiT.log.Errorf("Update network: failed to read snapshot info from %s: %v", snapshotFilePath, er)
+						smiT.log.Errorf("Search network snapshots: failed to read snapshot info from %s: %v", snapshotFilePath, er)
 						return
 					}
-					addSource(result, snapshotInfo, snapshotFilePath)
+					considerSnapshotFun(snapshotInfo, snapshotFilePath)
 					snapshotCount++
 				}()
 			}
 			err = scanner.Err()
 			if err != nil && !errors.Is(err, io.EOF) {
-				smiT.log.Errorf("Update network: failed reading index file %s: %v", indexFilePath, err)
+				smiT.log.Errorf("Search network snapshots: failed reading index file %s: %v", indexFilePath, err)
 			}
-			smiT.log.Debugf("Update network: %v snapshot files found on %s", snapshotCount, networkPath)
+			smiT.log.Debugf("Search network snapshots: %v snapshot files found on %s", snapshotCount, baseNetworkPath)
 		}()
 	}
+}
+
+func (smiT *snapshotManagerImpl) loadSnapshotFromPath(snapshotInfo SnapshotInfo, path string) error {
+	loadSnapshotFun := func(r io.Reader) error {
+		err := smiT.snapshotter.loadSnapshot(snapshotInfo, r)
+		if err != nil {
+			return fmt.Errorf("loading snapshot failed: %v", err)
+		}
+		return nil
+	}
+	loadLocalFun := func(path string) error {
+		f, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open snapshot file %s", path)
+		}
+		defer f.Close()
+		return loadSnapshotFun(f)
+	}
+	loadNetworkFun := func(url string) error {
+		fileNameLocal := downloadedSnapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash())
+		filePathLocal := filepath.Join(smiT.localPath, fileNameLocal)
+		err := DownloadToFile(smiT.ctx, url, filePathLocal, constDownloadTimeout, smiT.addProgressReporter)
+		if err != nil {
+			return err
+		}
+		return loadLocalFun(filePathLocal)
+	}
+
+	if strings.HasPrefix(path, constLocalAddress) {
+		filePath := strings.TrimPrefix(path, constLocalAddress)
+		smiT.log.Debugf("Loading snapshot %s from file %s...", snapshotInfo, filePath)
+		return loadLocalFun(filePath)
+	}
+	smiT.log.Debugf("Loading snapshot %s from url %s...", snapshotInfo, path)
+	return loadNetworkFun(path)
 }
 
 func (smiT *snapshotManagerImpl) initiateDownload(url string, timeout time.Duration) (io.ReadCloser, error) {
@@ -426,25 +381,4 @@ func downloadedSnapshotFileName(index uint32, blockHash state.BlockHash) string 
 func downloadedSnapshotFileNameString(index, blockHash string) string {
 	return index + constSnapshotIndexHashFileNameSepparator + blockHash +
 		constSnapshotIndexHashFileNameSepparator + constSnapshotDownloaded + constSnapshotFileSuffix
-}
-
-func addSource(result *shrinkingmap.ShrinkingMap[uint32, *util.SliceStruct[*commitmentSources]], si SnapshotInfo, path string) {
-	makeNewComSourcesFun := func() *commitmentSources {
-		return &commitmentSources{
-			commitment: si.Commitment(),
-			sources:    []string{path},
-		}
-	}
-	comSourcesArray, exists := result.Get(si.StateIndex())
-	if exists {
-		comSources, ok := comSourcesArray.Find(func(elem *commitmentSources) bool { return elem.commitment.Equals(si.Commitment()) })
-		if ok {
-			comSources.sources = append(comSources.sources, path)
-		} else {
-			comSourcesArray.Add(makeNewComSourcesFun())
-		}
-	} else {
-		comSourcesArray = util.NewSliceStruct[*commitmentSources](makeNewComSourcesFun())
-		result.Set(si.StateIndex(), comSourcesArray)
-	}
 }

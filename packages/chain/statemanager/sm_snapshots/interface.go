@@ -16,10 +16,7 @@ import (
 // store/load the snapshot, snapshot manager depends on `snapshotter`.
 // Snapshot manager is also responsible for deciding if snapshot has to be created.
 type SnapshotManager interface {
-	UpdateAsync()
 	BlockCommittedAsync(SnapshotInfo)
-	SnapshotExists(uint32, *state.L1Commitment) bool
-	LoadSnapshotAsync(SnapshotInfo) <-chan error
 }
 
 type SnapshotInfo interface {
@@ -33,9 +30,7 @@ type SnapshotInfo interface {
 
 type snapshotManagerCore interface {
 	createSnapshotsNeeded() bool
-	handleUpdate()
 	handleBlockCommitted(SnapshotInfo)
-	handleLoadSnapshot(SnapshotInfo, chan<- error)
 }
 
 // snapshotter is responsible for moving the snapshot between store and external
