@@ -233,9 +233,6 @@ func TestGetAllowedStateControllerAddresses(t *testing.T) {
 	require.Equal(t, uint32(len(users)), f.Results.Controllers().Length())
 	for i := range users {
 		retScAddress := f.Results.Controllers().GetAddress(uint32(i)).Value()
-		// FIXME why isn't it the same as ctx.Chain.StateControllerAddress
-		// if 'AddAllowedStateControllerAddress' is not called, then the return of GetAllowedStateControllerAddresses is zero
-		// require.Equal(t, ctx.Chain.StateControllerAddress, retScAddress)
 		require.True(t, ifContainAddress(users, retScAddress))
 	}
 }
