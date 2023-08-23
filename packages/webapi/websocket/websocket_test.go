@@ -20,6 +20,7 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 	_ = appLogger.InitGlobalLogger(configuration.New())
 	log := logger.NewLogger("Test")
 
+	//nolint:contextcheck
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log})
 
 	websocketHub := websockethub.NewHub(log.Named("Hub"), &websocketserver.AcceptOptions{InsecureSkipVerify: true}, 500, 500, 500)
