@@ -25,7 +25,7 @@ import (
 
 func TestOrigin(t *testing.T) {
 	l1commitment := origin.L1Commitment(nil, 0)
-	store := state.NewStore(mapdb.NewMapDB())
+	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	initBlock := origin.InitChain(store, nil, 0)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
@@ -151,7 +151,7 @@ func TestMetadataBad(t *testing.T) {
 
 	for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
 		db := mapdb.NewMapDB()
-		st := state.NewStore(db)
+		st := state.NewStoreWithUniqueWriteMutex(db)
 		block1A := origin.InitChain(st, initParams, deposit)
 		block1B := origin.InitChain(st, initParams, 10*isc.Million-deposit)
 		block1C := origin.InitChain(st, initParams, 10*isc.Million+deposit)
@@ -180,7 +180,7 @@ func TestDictBytes(t *testing.T) {
 
 // example values taken from a test on the testnet
 func TestMismatchOriginCommitment(t *testing.T) {
-	store := state.NewStore(mapdb.NewMapDB())
+	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	oid, err := iotago.OutputIDFromHex("0xcf72dd6a8c8cd76eab93c80ae192677a17c554b91334a41bed5079eff37effc40000")
 	require.NoError(t, err)
 	originMetadata, err := iotago.DecodeHex("0x03016102e607016204ffffffff016322010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067")

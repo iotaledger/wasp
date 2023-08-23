@@ -143,12 +143,16 @@ func (db *storeDB) buffered() (*bufferedKVStore, *storeDB) {
 	return buf, &storeDB{buf}
 }
 
+// increment when changing the snapshot format
+const snapshotVersion = 0
+
 func (db *storeDB) takeSnapshot(root trie.Hash, w io.Writer) error {
 	block, err := db.readBlock(root)
 	if err != nil {
 		return err
 	}
 	ww := rwutil.NewWriter(w)
+	ww.WriteUint8(snapshotVersion)
 	ww.WriteBytes(block.Bytes())
 	if ww.Err != nil {
 		return ww.Err
@@ -162,6 +166,10 @@ func (db *storeDB) takeSnapshot(root trie.Hash, w io.Writer) error {
 
 func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
 	rr := rwutil.NewReader(r)
+	v := rr.ReadUint8()
+	if v != snapshotVersion {
+		return errors.New("snapshot version mismatch")
+	}
 	blockBytes := rr.ReadBytes()
 	if rr.Err != nil {
 		return rr.Err
@@ -179,7 +187,5 @@ func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-
-	db.setLatestTrieRoot(root)
 	return nil
 }

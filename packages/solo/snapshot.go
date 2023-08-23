@@ -85,7 +85,7 @@ func (env *Solo) LoadSnapshot(fname string) {
 		val, err := isc.AgentIDFromBytes(chainSnapshot.ValidatorFeeTarget)
 		require.NoError(env.T, err)
 
-		db, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
+		db, _, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 		require.NoError(env.T, err)
 		for i := 0; i < len(chainSnapshot.DB); i += 2 {
 			err = db.Set(chainSnapshot.DB[i], chainSnapshot.DB[i+1])

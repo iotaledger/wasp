@@ -733,7 +733,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stores[i] = state.NewStore(mapdb.NewMapDB())
+		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err := origin.InitChainByAliasOutput(te.stores[i], te.originAO)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())

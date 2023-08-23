@@ -88,7 +88,7 @@ func newVariedTestEnv(
 		smLog := log.Named(nodeID.ShortString())
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
-		store := state.NewStore(mapdb.NewMapDB())
+		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapshotManager := createSnapMFun(nodeID, bf.GetStore(), store, parameters.TimeProvider, smLog)
 		snapshotExistsFun := snapshotManager.SnapshotExists
 		origin.InitChain(store, chainInitParameters, 0)

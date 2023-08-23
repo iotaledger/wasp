@@ -18,7 +18,7 @@ import (
 
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.NewStore(db)
+	cs := state.NewStoreWithUniqueWriteMutex(db)
 	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
@@ -79,7 +79,7 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.NewStore(db)
+	cs := state.NewStoreWithUniqueWriteMutex(db)
 	origin.InitChain(cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)

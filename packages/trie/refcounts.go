@@ -18,6 +18,10 @@ func newRefcounts(store KVStore) *Refcounts {
 	}
 }
 
+func (r *Refcounts) GetNode(commitment Hash) uint32 {
+	return getRefcount(r.nodes, commitment[:])
+}
+
 func (r *Refcounts) Inc(node *bufferedNode) (uint32, uint32) {
 	nodeCount, valueCount := r.incNodeAndValue(node.nodeData)
 	node.nodeData.iterateChildren(func(i byte, commitment Hash) bool {

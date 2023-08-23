@@ -20,9 +20,8 @@ import (
 // The purpose of the Store is to store not only the latest version of the chain
 // state, but also past versions (up to a limit).
 //
-// Each version of the key-value pairs is stored in an immutable trie (provided by
-// the trie.go package). Therefore each *state index* corresponds to a unique
-// *trie root*.
+// Each version of the key-value pairs is stored in an immutable trie.
+// Each *state index* corresponds to a unique *trie root*.
 //
 // For each trie root, the Store also stores a Block, which contains the mutations
 // between the previous and current states, and allows to calculate the L1 commitment.

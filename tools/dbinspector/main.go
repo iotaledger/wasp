@@ -52,7 +52,7 @@ func main() {
 }
 
 func getState(kvs kvstore.KVStore, index int64) state.State {
-	store := indexedstore.New(state.NewStore(kvs))
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(kvs))
 	if index < 0 {
 		state, err := store.LatestState()
 		mustNoError(err)

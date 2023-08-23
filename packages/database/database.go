@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
@@ -33,6 +34,7 @@ type Database struct {
 	engine                hivedb.Engine
 	compactionSupported   bool
 	compactionRunningFunc func() bool
+	writeMutex            sync.Mutex
 }
 
 // New creates a new Database instance.

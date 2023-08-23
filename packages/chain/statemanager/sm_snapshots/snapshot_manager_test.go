@@ -111,7 +111,7 @@ func testSnapshotManagerSimple(
 	snapshotsAvailableFun(factory.GetChainID(), createdSnapshots)
 
 	// Node is restarted
-	storeNew := state.NewStore(mapdb.NewMapDB())
+	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), storeNew, log)
 
 	// Wait for node to read the list of snapshots

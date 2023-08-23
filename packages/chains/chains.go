@@ -291,7 +291,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		}
 	}
 
-	chainKVStore, err := c.chainStateStoreProvider(chainID)
+	chainKVStore, writeMutex, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
@@ -322,7 +322,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	stateManagerParameters.SnapshotManagerUpdatePeriod = c.snapshotUpdatePeriod
 
 	// Initialize Snapshotter
-	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State))
+	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, writeMutex, chainMetrics.State))
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {

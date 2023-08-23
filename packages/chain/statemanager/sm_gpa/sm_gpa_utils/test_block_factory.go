@@ -59,7 +59,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
 	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	aliasOutputs[originCommitment.BlockHash()] = originOutput
-	chainStore := state.NewStore(mapdb.NewMapDB())
+	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	origin.InitChain(chainStore, chainInitParams, 0)
 	return &BlockFactory{
 		t:                   t,

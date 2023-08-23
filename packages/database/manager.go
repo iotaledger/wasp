@@ -20,7 +20,7 @@ const (
 	StoreVersionChainState byte = 1
 )
 
-type ChainStateKVStoreProvider func(chainID isc.ChainID) (kvstore.KVStore, error)
+type ChainStateKVStoreProvider func(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex, error)
 
 type ChainStateDatabaseManager struct {
 	mutex sync.RWMutex
@@ -101,16 +101,16 @@ func (m *ChainStateDatabaseManager) DBHash() (ret hashing.HashValue) {
 	return
 }
 
-func (m *ChainStateDatabaseManager) chainStateKVStore(chainID isc.ChainID) kvstore.KVStore {
+func (m *ChainStateDatabaseManager) chainStateKVStore(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
 	databaseChainState, exists := m.databases[chainID]
 	if !exists {
-		return nil
+		return nil, nil
 	}
 
-	return databaseChainState.database.KVStore()
+	return databaseChainState.database.KVStore(), &databaseChainState.database.writeMutex
 }
 
 func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databaseWithHealthTracker, error) {
@@ -130,17 +130,17 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 	return databaseChainState, nil
 }
 
-func (m *ChainStateDatabaseManager) ChainStateKVStore(chainID isc.ChainID) (kvstore.KVStore, error) {
-	if store := m.chainStateKVStore(chainID); store != nil {
-		return store, nil
+func (m *ChainStateDatabaseManager) ChainStateKVStore(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex, error) {
+	if store, writeMutex := m.chainStateKVStore(chainID); store != nil {
+		return store, writeMutex, nil
 	}
 
 	databaseChainState, err := m.createDatabase(chainID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return databaseChainState.database.KVStore(), nil
+	return databaseChainState.database.KVStore(), &databaseChainState.database.writeMutex, nil
 }
 
 func (m *ChainStateDatabaseManager) FlushAndCloseStores() error {
