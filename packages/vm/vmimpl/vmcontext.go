@@ -56,6 +56,13 @@ type requestContext struct {
 	sdCharged uint64
 	// requests that the sender asked to retry
 	unprocessableToRetry []isc.OnLedgerRequest
+	// snapshots taken via ctx.TakeStateSnapshot()
+	snapshots []stateSnapshot
+}
+
+type stateSnapshot struct {
+	txb   *vmtxbuilder.AnchorTransactionBuilder
+	state *buffered.BufferedKVStore
 }
 
 type requestGas struct {

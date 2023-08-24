@@ -15,12 +15,16 @@ func adaptDecimals(value *big.Int, fromDecimals, toDecimals uint32) *big.Int {
 	return v.Div(v, exp)
 }
 
-// wei => custom token
-func EthereumDecimalsToCustomTokenDecimals(value *big.Int, customTokenDecimals uint32) *big.Int {
-	return adaptDecimals(value, ethereumDecimals, customTokenDecimals)
+// wei => base tokens
+func EthereumDecimalsToBaseTokenDecimals(value *big.Int, baseTokenDecimals uint32) uint64 {
+	v := adaptDecimals(value, ethereumDecimals, baseTokenDecimals)
+	if !v.IsUint64() {
+		panic("cannot convert ether value to base tokens: too large")
+	}
+	return v.Uint64()
 }
 
-// custom token => wei
-func CustomTokensDecimalsToEthereumDecimals(value *big.Int, customTokenDecimals uint32) *big.Int {
-	return adaptDecimals(value, customTokenDecimals, ethereumDecimals)
+// base tokens => wei
+func BaseTokensDecimalsToEthereumDecimals(value uint64, baseTokenDecimals uint32) *big.Int {
+	return adaptDecimals(new(big.Int).SetUint64(value), baseTokenDecimals, ethereumDecimals)
 }

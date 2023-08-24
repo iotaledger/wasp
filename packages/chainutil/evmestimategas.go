@@ -42,7 +42,7 @@ func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call
 	executable := func(gas uint64) (failed bool, used uint64, err error) {
 		call.Gas = gas
 		iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
-		res, err := runISCRequest(ch, aliasOutput, blockTime, iscReq)
+		res, err := runISCRequest(ch, aliasOutput, blockTime, iscReq, true)
 		if err != nil {
 			return true, 0, err
 		}

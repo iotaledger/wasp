@@ -73,6 +73,10 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 	if readOnly && !method.IsConstant() {
 		return nil, gas, errReadOnlyContext
 	}
+
+	c.ctx.Privileged().GasBurnEnable(true)
+	defer c.ctx.Privileged().GasBurnEnable(false)
+
 	ret = callHandler(c.ctx, caller, method, args)
 	return ret, gas, nil
 }
