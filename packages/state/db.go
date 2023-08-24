@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/chaindb"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -18,6 +19,7 @@ import (
 var (
 	ErrTrieRootNotFound      = errors.New("trie root not found")
 	ErrUnknownLatestTrieRoot = errors.New("latest trie root is unknown")
+	ErrNoBlocksPruned        = errors.New("no blocks were pruned from the store yet")
 )
 
 func keyBlockByTrieRoot(root trie.Hash) []byte {
@@ -26,6 +28,10 @@ func keyBlockByTrieRoot(root trie.Hash) []byte {
 
 func keyLatestTrieRoot() []byte {
 	return []byte{chaindb.PrefixLatestTrieRoot}
+}
+
+func keyLargestPrunedBlockIndex() []byte {
+	return []byte{chaindb.PrefixLargestPrunedBlockIndex}
 }
 
 func mustNoErr(err error) {
@@ -59,6 +65,23 @@ func (db *storeDB) hasLatestTrieRoot() bool {
 
 func (db *storeDB) setLatestTrieRoot(root trie.Hash) {
 	db.mustSet(keyLatestTrieRoot(), root.Bytes())
+}
+
+func (db *storeDB) largestPrunedBlockIndex() (uint32, error) {
+	if !db.hasLargestPrunedBlockIndex() {
+		return 0, ErrNoBlocksPruned
+	}
+	b := db.mustGet(keyLargestPrunedBlockIndex())
+	ret := codec.MustDecodeUint32(b)
+	return ret, nil
+}
+
+func (db *storeDB) hasLargestPrunedBlockIndex() bool {
+	return db.mustHas(keyLargestPrunedBlockIndex())
+}
+
+func (db *storeDB) setLargestPrunedBlockIndex(blockIndex uint32) {
+	db.mustSet(keyLargestPrunedBlockIndex(), codec.EncodeUint32(blockIndex))
 }
 
 func trieStore(db kvstore.KVStore) trie.KVStore {
