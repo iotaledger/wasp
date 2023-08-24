@@ -36,15 +36,19 @@ contract MyEVMContract {
     using PRNG for PRNG.PRNGState;
 
     event PseudoRNG(uint256 value);
+    event PseudoRNGHash(bytes32 value);
     
     PRNG.PRNGState private prngState;
 
     function emitValue() public {
         bytes32 e = ISC.sandbox.getEntropy();
         prngState.seed(e);
+        bytes32 randomHash = prngState.generateRandomHash();
+        emit PseudoRNGHash(randomHash);
         uint256 random = prngState.generateRandomNumber();
         emit PseudoRNG(random);
+        uint256 randomRange = prngState.generateRandomNumberInRange(111, 1111111);
+        emit PseudoRNG(randomRange);
     }
 }
-
 ```
