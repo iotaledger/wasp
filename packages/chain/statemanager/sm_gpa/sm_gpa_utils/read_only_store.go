@@ -75,6 +75,10 @@ func (ros *readOnlyStore) Prune(trie.Hash) (trie.PruneStats, error) {
 	panic("Cannot prune read-only store")
 }
 
+func (ros *readOnlyStore) LargestPrunedBlockIndex() (uint32, error) {
+	return ros.store.LargestPrunedBlockIndex()
+}
+
 func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, w io.Writer) error {
 	return ros.store.TakeSnapshot(trieRoot, w)
 }

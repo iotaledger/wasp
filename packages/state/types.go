@@ -71,6 +71,8 @@ type Store interface {
 
 	// Prune deletes the trie with the given root from the DB
 	Prune(trie.Hash) (trie.PruneStats, error)
+	// The largest index of block, which was pruned; err is returned if no blocks were pruned
+	LargestPrunedBlockIndex() (uint32, error)
 
 	// TakeSnapshot takes a snapshot of the block and trie at the given trie root.
 	TakeSnapshot(trie.Hash, io.Writer) error
