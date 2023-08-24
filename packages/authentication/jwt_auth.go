@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 // Errors
@@ -28,11 +29,11 @@ type JWTAuth struct {
 	secret   []byte
 }
 
-func NewJWTAuth(duration time.Duration, nodeID string, secret []byte) *JWTAuth {
+func NewJWTAuth(duration time.Duration, nodeIDKeypair *cryptolib.KeyPair) *JWTAuth {
 	return &JWTAuth{
 		duration: duration,
-		nodeID:   nodeID,
-		secret:   secret,
+		nodeID:   nodeIDKeypair.Address().String(),
+		secret:   nodeIDKeypair.GetPrivateKey().AsBytes(),
 	}
 }
 
@@ -43,7 +44,7 @@ func (j *JWTAuth) IssueJWT(username string, claims *WaspClaims) (string, error) 
 	registeredClaims := jwt.RegisteredClaims{
 		Subject:   username,
 		Issuer:    j.nodeID,
-		Audience:  jwt.ClaimStrings{j.nodeID},
+		Audience:  jwt.ClaimStrings{username},
 		ID:        fmt.Sprintf("%d", now.Unix()),
 		IssuedAt:  jwt.NewNumericDate(now),
 		NotBefore: jwt.NewNumericDate(now),

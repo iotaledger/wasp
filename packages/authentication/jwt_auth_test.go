@@ -13,6 +13,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/users"
 )
 
@@ -32,9 +33,11 @@ func TestGetJWTAuthMiddleware(t *testing.T) {
 			Name: "wasp",
 		})
 
+		nodeIDKeypair := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("abc")))
+
 		_, middleware := authentication.GetJWTAuthMiddleware(
 			authentication.JWTAuthConfiguration{},
-			[]byte("abc"),
+			nodeIDKeypair,
 			userManager,
 		)
 		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -47,13 +50,13 @@ func TestGetJWTAuthMiddleware(t *testing.T) {
 		e.Use(middleware)
 
 		req := httptest.NewRequest(http.MethodGet, "/test-route", http.NoBody)
-		req.Header.Set(echo.HeaderAuthorization, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3YXNwIiwic3ViIjoid2FzcCIsImF1ZCI6WyJ3YXNwIl0sImV4cCI6NDg0NTUwNjQ5MiwibmJmIjoxNjg5ODYxNDM2LCJpYXQiOjE2ODk4NjE0MzYsImp0aSI6IjE2ODk4NjE0MzYiLCJwZXJtaXNzaW9ucyI6eyJ3cml0ZSI6e319fQ.VP--725H3xO2Spz6L9twB6Tsm37a26IXVU87cSqRoOM")
+		req.Header.Set(echo.HeaderAuthorization, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIweGNjYTUzMmNmN2RjNWNhNGExNmJiZjE5OTM5ZThiODlkMDMzN2FhNTk5ZDVjOGQxZGY4MDdlNDM4ZjA3MjExOTEiLCJzdWIiOiJ3YXNwIiwiYXVkIjpbIndhc3AiXSwiZXhwIjo2ODI0NjUwMzMyLCJuYmYiOjE2OTI1OTEyODksImlhdCI6MTY5MjU5MTI4OSwianRpIjoiMTY5MjU5MTI4OSIsInBlcm1pc3Npb25zIjp7IndyaXRlIjp7fX19.nFXeqX4i6K7Jmt3nEdaqJXYp2sp35an4EXdz-U5mWtQ")
 		res := httptest.NewRecorder()
 
 		e.ServeHTTP(res, req)
 
 		require.Equal(t, http.StatusOK, res.Code)
-		require.Equal(t, "{\"iss\":\"wasp\",\"sub\":\"wasp\",\"aud\":[\"wasp\"],\"exp\":4845506492,\"nbf\":1689861436,\"iat\":1689861436,\"jti\":\"1689861436\",\"permissions\":{\"write\":{}}}\n", res.Body.String())
+		require.Equal(t, "{\"iss\":\"0xcca532cf7dc5ca4a16bbf19939e8b89d0337aa599d5c8d1df807e438f0721191\",\"sub\":\"wasp\",\"aud\":[\"wasp\"],\"exp\":6824650332,\"nbf\":1692591289,\"iat\":1692591289,\"jti\":\"1692591289\",\"permissions\":{\"write\":{}}}\n", res.Body.String())
 	})
 
 	t.Run("skip", func(t *testing.T) {
@@ -74,7 +77,7 @@ func TestGetJWTAuthMiddleware(t *testing.T) {
 
 		_, middleware := authentication.GetJWTAuthMiddleware(
 			authentication.JWTAuthConfiguration{},
-			[]byte(""),
+			cryptolib.NewKeyPair(),
 			&users.UserManager{},
 		)
 		e.Use(middleware)
@@ -98,10 +101,10 @@ func TestJWTAuthIssueAndVerify(t *testing.T) {
 		return c.JSON(http.StatusOK, token.Claims)
 	})
 
-	privateKey := []byte("abc")
 	duration := 20 * time.Hour
 	username := "wasp"
-	jwtAuth := authentication.NewJWTAuth(duration, username, privateKey)
+	nodeIDKeypair := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("abc")))
+	jwtAuth := authentication.NewJWTAuth(duration, nodeIDKeypair)
 
 	jwtString, err := jwtAuth.IssueJWT(username, &authentication.WaspClaims{
 		Permissions: map[string]struct{}{
@@ -119,7 +122,7 @@ func TestJWTAuthIssueAndVerify(t *testing.T) {
 
 	_, middleware := authentication.GetJWTAuthMiddleware(
 		authentication.JWTAuthConfiguration{Duration: duration},
-		privateKey,
+		nodeIDKeypair,
 		userManager,
 	)
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
