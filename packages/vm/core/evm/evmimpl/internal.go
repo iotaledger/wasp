@@ -4,11 +4,11 @@
 package evmimpl
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -40,15 +39,7 @@ func getTracer(ctx isc.Sandbox) tracers.Tracer {
 }
 
 func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
-	chainInfo := ctx.ChainInfo()
-	return emulator.NewEVMEmulator(
-		evm.EmulatorStateSubrealm(ctx.State()),
-		timestamp(ctx.Timestamp()),
-		gasLimits(chainInfo),
-		chainInfo.BlockKeepAmount,
-		newMagicContract(ctx),
-		newL2Balance(ctx),
-	)
+	return emulator.NewEVMEmulator(newEmulatorContext(ctx))
 }
 
 func createBlockchainDB(evmPartition kv.KVStore, chainInfo *isc.ChainInfo) *emulator.BlockchainDB {
@@ -64,7 +55,7 @@ func saveExecutedTx(
 	createBlockchainDB(evmPartition, chainInfo).AddTransaction(tx, receipt)
 	// make sure the nonce is incremented if the state was rolled back by the VM
 	if receipt.Status != types.ReceiptStatusSuccessful {
-		emulator.NewStateDB(evm.EmulatorStateSubrealm(evmPartition), nil).IncNonce(evmutil.MustGetSender(tx))
+		emulator.IncNonce(emulator.StateDBSubrealm(evm.EmulatorStateSubrealm(evmPartition)), evmutil.MustGetSender(tx))
 	}
 }
 
@@ -87,60 +78,63 @@ func result(value []byte) dict.Dict {
 	return dict.Dict{evm.FieldResult: value}
 }
 
-type l2BalanceR struct {
-	ctx isc.SandboxBase
+type emulatorContext struct {
+	sandbox isc.Sandbox
 }
 
-func newL2BalanceR(ctx isc.SandboxBase) *l2BalanceR {
-	return &l2BalanceR{
-		ctx: ctx,
+var _ emulator.Context = &emulatorContext{}
+
+func newEmulatorContext(sandbox isc.Sandbox) *emulatorContext {
+	return &emulatorContext{
+		sandbox: sandbox,
 	}
 }
 
-type l2Balance struct {
-	*l2BalanceR
-	ctx isc.Sandbox
+func (ctx *emulatorContext) BlockKeepAmount() int32 {
+	return ctx.sandbox.ChainInfo().BlockKeepAmount
 }
 
-func newL2Balance(ctx isc.Sandbox) *l2Balance {
-	return &l2Balance{
-		l2BalanceR: newL2BalanceR(ctx),
-		ctx:        ctx,
-	}
+func (ctx *emulatorContext) GasLimits() emulator.GasLimits {
+	return gasLimits(ctx.sandbox.ChainInfo())
 }
 
-func (b *l2BalanceR) Get(addr common.Address) *big.Int {
-	res := b.ctx.CallView(
+func (ctx *emulatorContext) MagicContracts() map[common.Address]vm.ISCMagicContract {
+	return newMagicContract(ctx.sandbox)
+}
+
+func (ctx *emulatorContext) State() kv.KVStore {
+	return evm.EmulatorStateSubrealm(ctx.sandbox.State())
+}
+
+func (ctx *emulatorContext) Timestamp() uint64 {
+	return timestamp(ctx.sandbox.Timestamp())
+}
+
+func (*emulatorContext) BaseTokensDecimals() uint32 {
+	return parameters.L1().BaseToken.Decimals
+}
+
+func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) uint64 {
+	res := ctx.sandbox.CallView(
 		accounts.Contract.Hname(),
 		accounts.ViewBalanceBaseToken.Hname(),
 		dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 	)
-	decimals := parameters.L1().BaseToken.Decimals
-	ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.Get(accounts.ParamBalance), 0))
-	return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
+	return codec.MustDecodeUint64(res.Get(accounts.ParamBalance), 0)
 }
 
-func (b *l2BalanceR) Add(addr common.Address, amount *big.Int) {
-	panic("should not be called")
+func (ctx *emulatorContext) AddBaseTokensBalance(addr common.Address, amount uint64) {
+	ctx.sandbox.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), isc.NewAssetsBaseTokens(amount))
 }
 
-func (b *l2BalanceR) Sub(addr common.Address, amount *big.Int) {
-	panic("should not be called")
+func (ctx *emulatorContext) SubBaseTokensBalance(addr common.Address, amount uint64) {
+	ctx.sandbox.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), isc.NewAssetsBaseTokens(amount))
 }
 
-func assetsForFeeFromEthereumDecimals(amount *big.Int) *isc.Assets {
-	decimals := parameters.L1().BaseToken.Decimals
-	amt := util.EthereumDecimalsToCustomTokenDecimals(amount, decimals)
-	return isc.NewAssetsBaseTokens(amt.Uint64())
+func (ctx *emulatorContext) TakeSnapshot() int {
+	return ctx.sandbox.TakeStateSnapshot()
 }
 
-func (b *l2Balance) Add(addr common.Address, amount *big.Int) {
-	tokens := assetsForFeeFromEthereumDecimals(amount)
-	b.ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
-}
-
-func (b *l2Balance) Sub(addr common.Address, amount *big.Int) {
-	tokens := assetsForFeeFromEthereumDecimals(amount)
-	account := isc.NewEthereumAddressAgentID(addr)
-	b.ctx.Privileged().DebitFromAccount(account, tokens)
+func (ctx *emulatorContext) RevertToSnapshot(i int) {
+	ctx.sandbox.RevertToStateSnapshot(i)
 }

@@ -22,7 +22,7 @@
 //   - [github.com/iotaledger/wasp/packages/evm/evmtest]: common Solidity
 //     code used in tests
 //
-// # Handling of Ethereum Transactions
+// # Handling Ethereum Transactions
 //
 // Let's follow the path of an Ethereum transaction.
 //
@@ -68,13 +68,58 @@
 //     which in turn calls [emulator.EVMEmulator.applyMessage], which calls
 //     [core.ApplyMessage]. This actually executes the EVM code.
 //
+// # Gas Estimation
+//
+// Metamask usually calls [eth_estimateGas] before [eth_sendRawTransaction].
+// This is processed differently:
+//
+//   - The method [jsonrpc.EthService.EstimateGas] is invoked instead, with the
+//     unsigned call parameters instead of a signed transaction.
+//
+//   - [jsonrpc.ChainBackend.EVMEstimateGas] is called
+//     ([jsonrpc.WaspEVMBackend.EVMEstimateGas] in the production environment),
+//     which, in turn, calls [chainutil.EVMEstimateGas].
+//
+//   - [chainutil.EVMEstimateGas] performs a binary search, executing the call
+//     with different gas limit values.
+//
+//     Each call is performed by wrapping it into a "fake" request, by calling
+//     [isc.NewEVMOffLedgerCallRequest], and executing a VM run as if it was
+//     run by the consensus. Any state changes are discarded afterwards.
+//
+//   - The fake off-ledger request calls the [evm.FuncCallContract] entry point of
+//     the evm core contract.
+//
+//   - The entry point handler function, `callContract` calls
+//     [emulator.EVMEmulator.CallContract], which in turn calls
+//     [emulator.EVMEmulator.applyMessage], just like when processing a regular
+//     transaction.
+//
+// # View Calls
+//
+// When Metamask calls [eth_call] to perform a view call, the execution path is
+// similar to the gas estimation case:
+//
+//   - The method [jsonrpc.EthService.Call] is invoked.
+//
+//   - [jsonrpc.ChainBackend.EVMCall] is called
+//     ([jsonrpc.WaspEVMBackend.EVMCall] in the production environment),
+//     which, in turn, calls [chainutil.EVMCall].
+//
+//   - The call is wrapped in a fake off-ledger request via
+//     [isc.NewEVMOffLedgerCallRequest], which is processed the same way as in
+//     the gas estimation case.
+//
 // [eth_sendRawTransaction]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sendrawtransaction
+// [eth_estimateGas]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_estimategas
+// [eth_call]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_call
 package evmdoc
 
 import (
 	"github.com/ethereum/go-ethereum/core"
 
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -91,6 +136,7 @@ var (
 	_ = &iscmagic.Address
 	_ *jsonrpc.EthService
 	_ = isc.NewEVMOffLedgerTxRequest
+	_ = chainutil.EVMEstimateGas
 	_ chain.ChainRequests
 	_ core.BlockChain
 )

@@ -48,13 +48,14 @@ func runISCRequest(
 	aliasOutput *isc.AliasOutputWithID,
 	blockTime time.Time,
 	req isc.Request,
+	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
 		ch,
 		aliasOutput,
 		blockTime,
 		[]isc.Request{req},
-		true,
+		estimateGasMode,
 		nil,
 	)
 	if err != nil {

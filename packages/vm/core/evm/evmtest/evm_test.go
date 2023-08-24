@@ -90,6 +90,25 @@ func TestStorageContract(t *testing.T) {
 	testdbhash.VerifyDBHash(env.solo, t.Name())
 }
 
+func TestLowLevelCallRevert(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	contract := env.deployContract(ethKey, evmtest.RevertTestContractABI, evmtest.RevertTestContractBytecode)
+
+	getCount := func() uint32 {
+		var v uint32
+		require.NoError(t, contract.callView("count", nil, &v))
+		return v
+	}
+
+	require.Equal(t, uint32(0), getCount())
+
+	_, err := contract.callFn([]ethCallOptions{{gasLimit: 200000}}, "selfCallRevert")
+	require.NoError(t, err)
+	require.Equal(t, uint32(0), getCount())
+}
+
 func TestERC20Contract(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
@@ -1448,8 +1467,8 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	// issue a tx with non-0 amount (try to send ETH/basetoken)
 	// try sending 1 million base tokens (expressed in ethereum decimals)
-	value := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(1*isc.Million),
+	value := util.BaseTokensDecimalsToEthereumDecimals(
+		1*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 	sendTx(value)
@@ -1475,8 +1494,8 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
-	oneMillionInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(1*isc.Million),
+	oneMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		1*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
@@ -1488,8 +1507,8 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
 
 	// attempt to send more than the contract will have available
-	twoMillionInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(2*isc.Million),
+	twoMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		2*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
@@ -1528,8 +1547,8 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		l1Wallet,
 	)
 
-	tenMillionInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(10*isc.Million),
+	tenMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		10*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
@@ -1558,8 +1577,8 @@ func TestSendEntireBalance(t *testing.T) {
 	// send all initial
 	initial := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 	// try sending funds to `someEthereumAddr` by sending a "value tx"
-	initialBalanceInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(initial),
+	initialBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		initial,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
@@ -1578,8 +1597,8 @@ func TestSendEntireBalance(t *testing.T) {
 	// now try sending all balance, minus the funds needed for gas
 	currentBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 
-	currentBalanceInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(currentBalance),
+	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		currentBalance,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
@@ -1597,8 +1616,8 @@ func TestSendEntireBalance(t *testing.T) {
 
 	gasLimit := feePolicy.GasBudgetFromTokens(tokensForGasBudget)
 
-	valueToSendInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(currentBalance-tokensForGasBudget),
+	valueToSendInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		currentBalance-tokensForGasBudget,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 	unsignedTx = types.NewTransaction(1, someEthereumAddr, valueToSendInEthDecimals, gasLimit, util.Big0, []byte{})
