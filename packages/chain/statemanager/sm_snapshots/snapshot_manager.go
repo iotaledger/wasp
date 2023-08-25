@@ -32,6 +32,7 @@ type snapshotManagerImpl struct {
 	lastIndexSnapshotted      uint32
 	lastIndexSnapshottedMutex sync.Mutex
 	createPeriod              uint32
+	loadedSnapshotStateIndex  uint32
 	snapshotter               snapshotter
 
 	localPath string
@@ -73,6 +74,7 @@ func NewSnapshotManager(
 		lastIndexSnapshotted:      0,
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
+		loadedSnapshotStateIndex:  0,
 		snapshotter:               newSnapshotter(store),
 		localPath:                 localPath,
 	}
@@ -96,7 +98,11 @@ func NewSnapshotManager(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-// NOTE: implementation is inherited from snapshotManagerRunner
+func (smiT *snapshotManagerImpl) GetLoadedSnapshotStateIndex() uint32 {
+	return smiT.loadedSnapshotStateIndex
+}
+
+// NOTE: other implementation is inherited from snapshotManagerRunner
 
 // -------------------------------------
 // Implementations of snapshotManagerCore interface
@@ -223,6 +229,7 @@ func (smiT *snapshotManagerImpl) loadSnapshot(baseNetworkPaths []string) {
 	for i := range snapshotPaths {
 		err := smiT.loadSnapshotFromPath(snapshotInfos[i], snapshotPaths[i])
 		if err == nil {
+			smiT.loadedSnapshotStateIndex = snapshotInfos[i].StateIndex()
 			smiT.log.Debugf("Snapshot %s successfully loaded from %s", snapshotInfos[i], snapshotPaths[i])
 			return
 		}

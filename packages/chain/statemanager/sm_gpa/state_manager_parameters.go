@@ -26,8 +26,6 @@ type StateManagerParameters struct {
 	PruningMinStatesToKeep int
 	// On single store pruning attempt at most this number of states will be deleted
 	PruningMaxStatesToDelete int
-	// How often snapshot manager should update list of known snapshots
-	SnapshotManagerUpdatePeriod time.Duration
 
 	TimeProvider sm_gpa_utils.TimeProvider
 }
@@ -48,7 +46,6 @@ func NewStateManagerParameters(tpOpt ...sm_gpa_utils.TimeProvider) StateManagerP
 		StateManagerTimerTickPeriod:       1 * time.Second,
 		PruningMinStatesToKeep:            10000,
 		PruningMaxStatesToDelete:          1000,
-		SnapshotManagerUpdatePeriod:       5 * time.Minute,
 		TimeProvider:                      tp,
 	}
 }

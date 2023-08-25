@@ -27,6 +27,7 @@ type BlockFactory struct {
 	t                   require.TestingT
 	store               state.Store
 	chainID             isc.ChainID
+	chainInitParams     dict.Dict
 	lastBlockCommitment *state.L1Commitment
 	aliasOutputs        map[state.BlockHash]*isc.AliasOutputWithID
 }
@@ -65,6 +66,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 		t:                   t,
 		store:               chainStore,
 		chainID:             chainID,
+		chainInitParams:     chainInitParams,
 		lastBlockCommitment: originCommitment,
 		aliasOutputs:        aliasOutputs,
 	}
@@ -72,6 +74,10 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 
 func (bfT *BlockFactory) GetChainID() isc.ChainID {
 	return bfT.chainID
+}
+
+func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
+	return bfT.chainInitParams
 }
 
 func (bfT *BlockFactory) GetOriginOutput() *isc.AliasOutputWithID {

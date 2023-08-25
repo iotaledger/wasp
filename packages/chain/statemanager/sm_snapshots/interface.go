@@ -16,6 +16,7 @@ import (
 // store/load the snapshot, snapshot manager depends on `snapshotter`.
 // Snapshot manager is also responsible for deciding if snapshot has to be created.
 type SnapshotManager interface {
+	GetLoadedSnapshotStateIndex() uint32
 	BlockCommittedAsync(SnapshotInfo)
 }
 

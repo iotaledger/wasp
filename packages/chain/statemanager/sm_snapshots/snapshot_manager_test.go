@@ -90,6 +90,7 @@ func testSnapshotManagerSimple(
 	storeOrig := factory.GetStore()
 	snapshotManagerOrig, err := NewSnapshotManager(context.Background(), nil, factory.GetChainID(), uint32(snapshotCreatePeriod), localSnapshotsCreatePathConst, []string{}, storeOrig, mockSnapshotsMetrics(), log)
 	require.NoError(t, err)
+	require.Equal(t, uint32(0), snapshotManagerOrig.GetLoadedSnapshotStateIndex())
 
 	// "Running" node, making snapshots
 	for _, block := range blocks {
@@ -112,7 +113,8 @@ func testSnapshotManagerSimple(
 
 	// Node is restarted
 	storeNew := state.NewStore(mapdb.NewMapDB())
-	createNewNodeFun(factory.GetChainID(), storeNew, log)
+	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), storeNew, log)
+	require.Equal(t, uint32(numberOfBlocks), snapshotManagerNew.GetLoadedSnapshotStateIndex())
 
 	// Check the loaded snapshot
 	for i := 0; i < len(blocks)-1; i++ {
