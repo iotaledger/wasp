@@ -38,10 +38,9 @@ type ParametersStateManager struct {
 }
 
 type ParametersSnapshotManager struct {
-	Period       uint32        `default:"0" usage:"how often state snapshots should be made: 1000 meaning \"every 1000th state\", 0 meaning \"making snapshots is disabled\""`
-	LocalPath    string        `default:"waspdb/snap" usage:"the path to the snapshots folder in this node's disk"`
-	NetworkPaths []string      `default:"" usage:"the list of paths to the remote (http(s)) snapshot locations; each of listed locations must contain 'INDEX' file with list of snapshot files"`
-	UpdatePeriod time.Duration `default:"5m" usage:"how often known snapshots list should be updated"`
+	Period       uint32   `default:"0" usage:"how often state snapshots should be made: 1000 meaning \"every 1000th state\", 0 meaning \"making snapshots is disabled\""`
+	LocalPath    string   `default:"waspdb/snap" usage:"the path to the snapshots folder in this node's disk"`
+	NetworkPaths []string `default:"" usage:"the list of paths to the remote (http(s)) snapshot locations; each of listed locations must contain 'INDEX' file with list of snapshot files"`
 }
 
 var (

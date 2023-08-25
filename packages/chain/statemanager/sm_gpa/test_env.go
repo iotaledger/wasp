@@ -49,7 +49,8 @@ func newTestEnv(
 	return result
 }
 
-func newTestEnvVariedNodes(
+// Commented to please the linter; left for completeness
+/*func newTestEnvVariedNodes(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
@@ -59,7 +60,7 @@ func newTestEnvVariedNodes(
 	result := newTestEnvNoNodes(t, parametersOpt...)
 	result.addVariedNodes(nodeIDs, createWALFun, createSnapMFun)
 	return result
-}
+}*/
 
 func newTestEnvNoNodes(
 	t *testing.T,

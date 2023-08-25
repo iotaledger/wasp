@@ -1,7 +1,5 @@
 package sm_snapshots
 
-import ()
-
 type snapshotManagerEmpty struct{}
 
 var _ SnapshotManager = &snapshotManagerEmpty{}

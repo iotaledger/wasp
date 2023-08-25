@@ -8,11 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
-type snapshotInfoCallback struct {
-	SnapshotInfo
-	callback chan<- error
-}
-
 // To avoid code duplication, a common parts of regular and mocked snapshot managers
 // are extracted to `snapshotManagerRunner`.
 type snapshotManagerRunner struct {

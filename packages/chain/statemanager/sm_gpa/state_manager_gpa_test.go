@@ -343,7 +343,6 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	newCommitment := newBlocks[len(newBlocks)-1].L1Commitment()
 	require.Panics(env.t, func() { env.sendChainFetchStateDiff(oldCommitment, newCommitment, nodeIDs[1]) })
 	require.Panics(env.t, func() { env.sendChainFetchStateDiff(oldCommitment, newCommitment, nodeIDs[2]) })
-
 }
 
 // Single node setting, pruning leaves 10 historic blocks.
