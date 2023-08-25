@@ -44,8 +44,6 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	snapshotCreateNodeCount := 2
 	snapshotCreatePeriod := uint32(7)
 	snapshotCommitTime := 170 * time.Millisecond
-	snapshotLoadTime := 320 * time.Millisecond
-	snapshotUpdatePeriod := 510 * time.Millisecond
 
 	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
@@ -66,7 +64,6 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
-	parameters.SnapshotManagerUpdatePeriod = snapshotUpdatePeriod
 	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManager {
 		var createPeriod uint32
 		if createSnapshots {
@@ -74,7 +71,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 		} else {
 			createPeriod = 0
 		}
-		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, bf.GetStore(), store, snapshotCommitTime, snapshotLoadTime, parameters.TimeProvider, log)
+		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, bf.GetStore(), store, nil, snapshotCommitTime, parameters.TimeProvider, log)
 	}
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
@@ -100,13 +97,6 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 			parameters,
 		)
 		require.NoError(t, err)
-	}
-	for i := 0; i < snapshotCreateNodeCount; i++ {
-		snapMs[i].(*sm_snapshots.MockedSnapshotManager).SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
-			for j := snapshotCreateNodeCount; j < len(snapMs); j++ {
-				snapMs[j].(*sm_snapshots.MockedSnapshotManager).SnapshotReady(snapshotInfo)
-			}
-		})
 	}
 	blocks := bf.GetBlocks(blockCount, 1)
 	stateDrafts := make([]state.StateDraft, blockCount)

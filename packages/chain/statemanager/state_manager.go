@@ -87,8 +87,6 @@ type stateManager struct {
 	nodePubKeysPipe      pipe.Pipe[*reqChainNodesUpdated]
 	preliminaryBlockPipe pipe.Pipe[*reqPreliminaryBlock]
 	snapshotManager      sm_snapshots.SnapshotManager
-	snapshotRespChannel  <-chan error
-	snapshotRespInfo     sm_snapshots.SnapshotInfo
 	wal                  sm_gpa_utils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
@@ -125,10 +123,7 @@ func New(
 ) (StateMgr, error) {
 	smLog := log.Named("SM")
 	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
-	snapshotExistsFun := func(stateIndex uint32, commitment *state.L1Commitment) bool {
-		return snapshotManager.SnapshotExists(stateIndex, commitment)
-	}
-	stateManagerGPA, err := sm_gpa.New(chainID, nr, wal, snapshotExistsFun, store, metrics, smLog, parameters)
+	stateManagerGPA, err := sm_gpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
 		smLog.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err
@@ -284,11 +279,6 @@ func (smT *stateManager) run() { //nolint:gocyclo
 			} else {
 				preliminaryBlockPipeCh = nil
 			}
-		case result, ok := <-smT.snapshotRespChannel:
-			if ok {
-				smT.handleSnapshotDone(result)
-			}
-			smT.snapshotRespChannel = nil
 		case now, ok := <-timerTickCh:
 			if ok {
 				smT.handleTimerTick(now)
@@ -326,18 +316,8 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 
 func (smT *stateManager) handleOutput() {
 	output := smT.stateManagerGPA.Output().(sm_gpa.StateManagerOutput)
-	if smT.snapshotRespChannel == nil {
-		snapshotInfo := output.TakeSnapshotToLoad()
-		if snapshotInfo != nil {
-			smT.snapshotRespChannel = smT.snapshotManager.LoadSnapshotAsync(snapshotInfo)
-			smT.snapshotRespInfo = snapshotInfo
-		}
-	}
 	for _, snapshotInfo := range output.TakeBlocksCommitted() {
 		smT.snapshotManager.BlockCommittedAsync(snapshotInfo)
-	}
-	if output.TakeUpdateSnapshots() {
-		smT.snapshotManager.UpdateAsync()
 	}
 }
 
@@ -389,10 +369,6 @@ func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 	}
 	smT.log.Warnf("Preliminary block index %v %s already exist in the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
 	msg.Respond(nil)
-}
-
-func (smT *stateManager) handleSnapshotDone(result error) {
-	smT.handleInput(sm_inputs.NewSnapshotManagerSnapshotDone(smT.snapshotRespInfo.StateIndex(), smT.snapshotRespInfo.Commitment(), result))
 }
 
 func (smT *stateManager) handleTimerTick(now time.Time) {

@@ -97,8 +97,6 @@ func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 		return smT.handleConsensusBlockProduced(inputCasted)
 	case *sm_inputs.ChainFetchStateDiff: // From mempool
 		return smT.handleChainFetchStateDiff(inputCasted)
-	case *sm_inputs.SnapshotManagerSnapshotDone: // From snapshot manager
-		return smT.handleSnapshotManagerSnapshotDone(inputCasted)
 	case *sm_inputs.StateManagerTimerTick: // From state manager go routine
 		return smT.handleStateManagerTimerTick(inputCasted.GetTime())
 	default:
@@ -365,26 +363,6 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.Ch
 		input.GetNewStateIndex(), input.GetNewL1Commitment(), len(newChainOfBlocks), len(oldChainOfBlocks),
 		commonIndex, commonCommitment)
 	smT.metrics.ChainFetchStateDiffHandled(time.Since(start))
-}
-
-func (smT *stateManagerGPA) handleSnapshotManagerSnapshotDone(input *sm_inputs.SnapshotManagerSnapshotDone) gpa.OutMessages {
-	stateIndex := input.GetStateIndex()
-	commitment := input.GetCommitment()
-	smT.log.Debugf("Input snapshot manager snapshot %v %s done received, result=%v...", stateIndex, commitment, input.GetResult())
-	fetcher := smT.blocksFetched.takeFetcher(input.GetCommitment())
-	if fetcher == nil {
-		smT.log.Warnf("Input snapshot manager snapshot %v %s done: snapshot no longer needed, ignoring it", stateIndex, commitment)
-		return nil // No messages to send
-	}
-	if input.GetResult() != nil {
-		// TODO: maybe downloading snapshot should be retried?
-		smT.log.Errorf("Input snapshot manager snapshot %v %s done: retrieving snapshot failed %v", stateIndex, commitment, input.GetResult())
-		smT.blocksToFetch.addFetcher(fetcher)
-		return smT.makeGetBlockRequestMessages(commitment)
-	}
-	result := smT.markFetched(fetcher, false)
-	smT.log.Debugf("Input snapshot manager snapshot %v %s done handled.", stateIndex, commitment)
-	return result
 }
 
 func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
