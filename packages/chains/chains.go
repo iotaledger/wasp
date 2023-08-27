@@ -50,6 +50,7 @@ type Chains struct {
 	deriveAliasOutputByQuorum        bool
 	pipeliningLimit                  int
 	consensusDelay                   time.Duration
+	recoveryTimeout                  time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -106,6 +107,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	recoveryTimeout time.Duration,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
@@ -155,6 +157,7 @@ func New(
 		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
 		pipeliningLimit:                     pipeliningLimit,
 		consensusDelay:                      consensusDelay,
+		recoveryTimeout:                     recoveryTimeout,
 		networkProvider:                     networkProvider,
 		trustedNetworkManager:               trustedNetworkManager,
 		chainStateStoreProvider:             chainStateStoreProvider,
@@ -366,6 +369,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
 		c.consensusDelay,
+		c.recoveryTimeout,
 		validatorAgentID,
 		stateManagerParameters,
 	)

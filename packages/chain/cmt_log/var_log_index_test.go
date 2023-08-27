@@ -21,7 +21,7 @@ func TestVarLogIndexV2Basic(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex) {}, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex) {}, nil, log)
 	//
 	nextLI := initLI.Next()
 	require.NotEqual(t, nextLI, vli.Value())
@@ -42,7 +42,7 @@ func TestVarLogIndexV2Other(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(4)
 	initLI := NilLogIndex().Next()
 	//
-	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex) {}, log)
+	vli := NewVarLogIndex(nodeIDs, n, f, initLI, func(li LogIndex) {}, nil, log)
 	li15 := LogIndex(15)
 	li16 := LogIndex(16)
 	li18 := LogIndex(18)

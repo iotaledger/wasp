@@ -86,6 +86,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -179,6 +180,7 @@ type chainMgrImpl struct {
 	nodeIDFromPubKey        func(pubKey *cryptolib.PublicKey) gpa.NodeID
 	deriveAOByQuorum        bool // Config parameter.
 	pipeliningLimit         int  // Config parameter.
+	metrics                 *metrics.ChainCmtLogMetrics
 	log                     *logger.Logger
 }
 
@@ -200,6 +202,7 @@ func New(
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
+	metrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (ChainMgr, error) {
 	cmi := &chainMgrImpl{
@@ -219,6 +222,7 @@ func New(
 		nodeIDFromPubKey:        nodeIDFromPubKey,
 		deriveAOByQuorum:        deriveAOByQuorum,
 		pipeliningLimit:         pipeliningLimit,
+		metrics:                 metrics,
 		log:                     log,
 	}
 	cmi.output = &Output{cmi: cmi}
@@ -575,7 +579,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 	}
 
 	clInst, err := cmt_log.New(
-		cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.deriveAOByQuorum, cmi.pipeliningLimit,
+		cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.deriveAOByQuorum, cmi.pipeliningLimit, cmi.metrics,
 		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsEd25519Address().String()[:10])),
 	)
 	if err != nil {

@@ -1,6 +1,6 @@
 package cmt_log
 
-// TODO: On the quorum to start.
+// CASE: On the quorum to start.
 // Assume 3/4 committee, nodes A, B, C, D.
 // Assume node D send NextLI/ConsDone(y) to A and B and crashed; node C is lagging several instances back (x < y).
 // A and B received NextLI/ConsDone(y) from A, B and D, thus proceed to the LogIndex=y, but ACS is stuck, because 3 nodes are needed.
@@ -11,15 +11,28 @@ package cmt_log
 //   ==> This implies it received NextLI/ConsDone (or others) from N-F nodes, thus at least F+1 correct nodes.
 //   ##> We need at least F+1 proposals with the new AO to avoid producing duplicate TXes.
 //
-// TODO: On the mempool and missing requests.
+// CASE: On the mempool and missing requests.
 // Assume 3/4 committee, nodes A, B, C, D.
 // Nodes A and B completed the consensus, node C is lagging several instances back, node D died during the consensus, after ACS is done.
 // A and B cannot proceed to the next LI, because they have NextLI from 2 nodes only (A and B).
 // D is still down.
 // C cannot complete the consensus, because it has OnLedger request missing. It cannot be shared between the nodes.
-//   ==> WHAT TO DO?
-//   ==> Don't count L1RepAO and ConsOut separately. That's not needed anymore with the current approach I guess.
-//   ==> TODO: Nah. Send NextLI/L1RepAO for known LIs as well.
+//   ??> WHAT TO DO?
+//   ??> Don't count L1RepAO and ConsOut separately. That's not needed anymore with the current approach I guess.
+//   ==> Nah, Just send NextLI/L1RepAO for known LIs as well.
+//
+// TODO CASE: After a recovery, a node joins a round for which the OnLedger request is already consumed.
+// Assume 3/4 committee, nodes A, B, C, D.
+// Nodes A, B and D are running consensus instance x, node C is lagging and was rebooted.
+// Node D crashes before finishing the consensus, but A and B manage to complete it and publish the TX.
+// Node C received AO of that TX, and recovers to LI=X with that AO as input.
+// In the end, C cannot proceed in LI=X, because don't have an OnLedger request decided by ACS, and consumed with the TX.
+// Nodes A and B cannot proceed to LI=X+1, because N-F=3 quorum is needed, but only 2 votes are received.
+//   ??> If consensus InputAO=OutputAO, then proceed to the next? How general is that?
+//   ??> In general, it is useless to try to complete LI=X, because L1 inputs are already consumed.
+//   !!> Too much lagging nodes are effectively faulty nodes. That makes the adversary more powerful, if they are fast.
+//   ==> ?
+//
 
 import (
 	"fmt"
@@ -28,6 +41,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 type VarLogIndex interface {
@@ -128,6 +142,7 @@ type varLogIndexImpl struct {
 	qcRecover *QuorumCounter
 	qcStarted *QuorumCounter
 	outputCB  func(li LogIndex)
+	metrics   *metrics.ChainCmtLogMetrics
 	log       *logger.Logger
 }
 
@@ -137,6 +152,7 @@ func NewVarLogIndex(
 	f int,
 	persistedLI LogIndex,
 	outputCB func(li LogIndex),
+	metrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) VarLogIndex {
 	vli := &varLogIndexImpl{
@@ -151,6 +167,7 @@ func NewVarLogIndex(
 		qcRecover: NewQuorumCounter(MsgNextLogIndexCauseRecover, nodeIDs, log),
 		qcStarted: NewQuorumCounter(MsgNextLogIndexCauseStarted, nodeIDs, log),
 		outputCB:  outputCB,
+		metrics:   metrics,
 		log:       log,
 	}
 	return vli
@@ -283,26 +300,26 @@ func (vli *varLogIndexImpl) msgNextLogIndexOnStarted(msg *MsgNextLogIndex) gpa.O
 // If we voted for that LI based on consensus output, and there is N-F supporters, then proceed.
 func (vli *varLogIndexImpl) tryOutputOnConsOut() gpa.OutMessages {
 	ali := vli.qcConsOut.EnoughVotes(vli.n - vli.f)
-	return vli.tryOutput(ali)
+	return vli.tryOutput(ali, MsgNextLogIndexCauseConsOut)
 }
 
 func (vli *varLogIndexImpl) tryOutputOnRecover() gpa.OutMessages {
 	ali := vli.qcRecover.EnoughVotes(vli.n - vli.f)
-	return vli.tryOutput(ali)
+	return vli.tryOutput(ali, MsgNextLogIndexCauseRecover)
 }
 
 func (vli *varLogIndexImpl) tryOutputOnL1RepAO() gpa.OutMessages {
 	ali := vli.qcL1AORep.EnoughVotes(vli.n - vli.f)
-	return vli.tryOutput(ali)
+	return vli.tryOutput(ali, MsgNextLogIndexCauseL1RepAO)
 }
 
 func (vli *varLogIndexImpl) tryOutputOnStarted() gpa.OutMessages {
 	ali := vli.qcStarted.EnoughVotes(vli.f + 1)
-	return vli.tryOutput(ali)
+	return vli.tryOutput(ali, MsgNextLogIndexCauseStarted)
 }
 
 // That's output for the consensus. We will start consensus instances with strictly increasing LIs with non-nil AOs.
-func (vli *varLogIndexImpl) tryOutput(li LogIndex) gpa.OutMessages {
+func (vli *varLogIndexImpl) tryOutput(li LogIndex, cause MsgNextLogIndexCause) gpa.OutMessages {
 	if li <= vli.agreedLI || li < vli.minLI {
 		return nil
 	}
@@ -310,6 +327,18 @@ func (vli *varLogIndexImpl) tryOutput(li LogIndex) gpa.OutMessages {
 	vli.agreedLI = li
 	vli.log.Debugf("⊢ Output, li=%v", vli.agreedLI)
 	vli.outputCB(vli.agreedLI)
+	if vli.metrics != nil {
+		switch cause {
+		case MsgNextLogIndexCauseConsOut:
+			vli.metrics.NextLogIndexCauseConsOut()
+		case MsgNextLogIndexCauseRecover:
+			vli.metrics.NextLogIndexCauseRecover()
+		case MsgNextLogIndexCauseL1RepAO:
+			vli.metrics.NextLogIndexCauseL1RepAO()
+		case MsgNextLogIndexCauseStarted:
+			vli.metrics.NextLogIndexCauseStarted()
+		}
+	}
 	return msgs
 }
 

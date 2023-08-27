@@ -465,6 +465,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			true,
 			-1,
 			10*time.Millisecond,
+			10*time.Second,
 			accounts.CommonAccount(),
 			sm_gpa.NewStateManagerParameters(),
 		)

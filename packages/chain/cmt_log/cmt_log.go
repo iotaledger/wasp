@@ -99,6 +99,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/byz_quorum"
@@ -174,6 +175,7 @@ func New(
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
+	cclMetrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (CmtLog, error) {
 	cmtAddr := dkShare.GetSharedPublic().AsEd25519Address()
@@ -227,7 +229,7 @@ func New(
 			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}
 	}, log.Named("VO"))
-	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, cl.varOutput.LogIndexAgreed, log.Named("VLI"))
+	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, cl.varOutput.LogIndexAgreed, cclMetrics, log.Named("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, cl.varOutput.TipAOChanged, log.Named("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
