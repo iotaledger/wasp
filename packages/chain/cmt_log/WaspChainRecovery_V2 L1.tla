@@ -1,7 +1,7 @@
 -------------------------- MODULE WaspChainRecovery_V2 -------------------------
 (*
 This specification is concerned with a Chain's committee recovery in the case,
-when we have more than F nodes failed by crashing and probably loosing the
+when we have more than F nodes failed by crashing and probably losing the
 persistent storage (the SC state still has to be available).
 
 The goal is to define rules for a node to recover and join the committee.
