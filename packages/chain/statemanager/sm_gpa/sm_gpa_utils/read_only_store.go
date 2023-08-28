@@ -19,6 +19,10 @@ func NewReadOnlyStore(store state.Store) state.Store {
 	return &readOnlyStore{store: store}
 }
 
+func (ros *readOnlyStore) IsEmpty() bool {
+	return ros.store.IsEmpty()
+}
+
 func (ros *readOnlyStore) HasTrieRoot(trieRoot trie.Hash) bool {
 	return ros.store.HasTrieRoot(trieRoot)
 }

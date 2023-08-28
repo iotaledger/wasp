@@ -20,6 +20,7 @@ var (
 	ErrTrieRootNotFound      = errors.New("trie root not found")
 	ErrUnknownLatestTrieRoot = errors.New("latest trie root is unknown")
 	ErrNoBlocksPruned        = errors.New("no blocks were pruned from the store yet")
+	ErrDBNotEmptyMustBeTrue  = errors.New("value `false` for DBNotEmpty variable in store is not allowed")
 )
 
 func keyBlockByTrieRoot(root trie.Hash) []byte {
@@ -32,6 +33,10 @@ func keyLatestTrieRoot() []byte {
 
 func keyLargestPrunedBlockIndex() []byte {
 	return []byte{chaindb.PrefixLargestPrunedBlockIndex}
+}
+
+func keyDBNotEmpty() []byte {
+	return []byte{chaindb.PrefixDBNotEmpty}
 }
 
 func mustNoErr(err error) {
@@ -82,6 +87,23 @@ func (db *storeDB) hasLargestPrunedBlockIndex() bool {
 
 func (db *storeDB) setLargestPrunedBlockIndex(blockIndex uint32) {
 	db.mustSet(keyLargestPrunedBlockIndex(), codec.EncodeUint32(blockIndex))
+}
+
+func (db *storeDB) isEmpty() bool {
+	has := db.mustHas(keyDBNotEmpty())
+	if !has {
+		return true
+	}
+	dbNotEmptyBytes := db.mustGet(keyDBNotEmpty())
+	dbNotEmpty := codec.MustDecodeBool(dbNotEmptyBytes)
+	if !dbNotEmpty {
+		panic(ErrDBNotEmptyMustBeTrue)
+	}
+	return false
+}
+
+func (db *storeDB) setNotEmpty() {
+	db.mustSet(keyDBNotEmpty(), codec.EncodeBool(true))
 }
 
 func trieStore(db kvstore.KVStore) trie.KVStore {
@@ -204,5 +226,6 @@ func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
 	}
 
 	db.setLatestTrieRoot(root)
+	db.setNotEmpty()
 	return nil
 }
