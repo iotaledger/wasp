@@ -370,6 +370,9 @@ func TestPruning(t *testing.T) {
 				trieRoot := r.cs.BlockByIndex(p).TrieRoot()
 				stats, err := r.cs.Prune(trieRoot)
 				require.NoError(t, err)
+				lpbIndex, err := r.cs.LargestPrunedBlockIndex()
+				require.NoError(t, err)
+				require.Equal(t, p, lpbIndex)
 
 				t.Logf("pruned block %d: %+v %s", p, stats, trieRoot)
 				{
@@ -381,6 +384,9 @@ func TestPruning(t *testing.T) {
 					require.ErrorContains(t, err, "not found")
 				}
 				require.False(t, r.cs.HasTrieRoot(trieRoot))
+			} else {
+				_, err := r.cs.LargestPrunedBlockIndex()
+				require.Error(t, err)
 			}
 
 			sizes = append(sizes, dbSize(r.db))
@@ -415,12 +421,22 @@ func TestPruning2(t *testing.T) {
 		trieRoots[i], trieRoots[j] = trieRoots[j], trieRoots[i]
 	})
 
+	lpbIndexExpected := uint32(0)
+	_, err := r.cs.LargestPrunedBlockIndex()
+	require.Error(t, err)
 	for len(trieRoots) > 3 {
 		// prune 2 random trie roots
 		for i := 0; i < 2; i++ {
 			trieRoot := trieRoots[0]
+			block := r.cs.BlockByTrieRoot(trieRoot)
 			stats, err := r.cs.Prune(trieRoot)
 			require.NoError(t, err)
+			if block.StateIndex() > lpbIndexExpected {
+				lpbIndexExpected = block.StateIndex()
+			}
+			lpbIndex, err := r.cs.LargestPrunedBlockIndex()
+			require.NoError(t, err)
+			require.Equal(t, lpbIndexExpected, lpbIndex)
 			t.Logf("pruned trie root %x: %+v", trieRoot, stats)
 			trieRoots = trieRoots[1:]
 
@@ -479,4 +495,38 @@ func TestSnapshot(t *testing.T) {
 	}
 	require.EqualValues(t, []byte{10}, state.Get("k"))
 	require.EqualValues(t, []byte(strings.Repeat("v", 70)), state.Get("x"))
+}
+
+func TestPrunedSnapshot(t *testing.T) {
+	r := newRandomState(t)
+	for i := 1; i <= 20; i++ {
+		block := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
+		index := block.StateIndex()
+		t.Logf("committed block %d", index)
+	}
+	_, err := r.cs.LargestPrunedBlockIndex()
+	require.Error(t, err)
+
+	for i := 0; i <= 10; i++ {
+		block := r.cs.BlockByIndex(uint32(i))
+		var stats trie.PruneStats
+		stats, err = r.cs.Prune(block.TrieRoot())
+		require.NoError(t, err)
+		var lpbIndex uint32
+		lpbIndex, err = r.cs.LargestPrunedBlockIndex()
+		require.NoError(t, err)
+		require.Equal(t, uint32(i), lpbIndex)
+		t.Logf("pruned trie block index %v: %+v", i, stats)
+	}
+
+	snapshot := new(bytes.Buffer)
+	err = r.cs.TakeSnapshot(r.cs.LatestBlock().TrieRoot(), snapshot)
+	require.NoError(t, err)
+
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{state.NewStore(db)}
+	err = cs.RestoreSnapshot(r.cs.LatestBlock().TrieRoot(), bytes.NewReader(snapshot.Bytes()))
+	require.NoError(t, err)
+	_, err = r.cs.LargestPrunedBlockIndex()
+	require.Error(t, err)
 }
