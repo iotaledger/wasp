@@ -519,14 +519,16 @@ func TestPrunedSnapshot(t *testing.T) {
 		t.Logf("pruned trie block index %v: %+v", i, stats)
 	}
 
+	blockToSnapshot := r.cs.LatestBlock()
 	snapshot := new(bytes.Buffer)
-	err = r.cs.TakeSnapshot(r.cs.LatestBlock().TrieRoot(), snapshot)
+	err = r.cs.TakeSnapshot(blockToSnapshot.TrieRoot(), snapshot)
 	require.NoError(t, err)
+	t.Logf("snapshotted block index %v", blockToSnapshot.StateIndex())
 
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{state.NewStore(db)}
-	err = cs.RestoreSnapshot(r.cs.LatestBlock().TrieRoot(), bytes.NewReader(snapshot.Bytes()))
+	err = cs.RestoreSnapshot(blockToSnapshot.TrieRoot(), bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
-	_, err = r.cs.LargestPrunedBlockIndex()
+	_, err = cs.LargestPrunedBlockIndex()
 	require.Error(t, err)
 }
