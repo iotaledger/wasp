@@ -118,8 +118,8 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeI
 	for nid := range bps {
 		peers = append(peers, nid)
 	}
-	slices.SortFunc(peers, func(a gpa.NodeID, b gpa.NodeID) bool {
-		return bytes.Compare(a[:], b[:]) < 0
+	slices.SortFunc(peers, func(a gpa.NodeID, b gpa.NodeID) int {
+		return bytes.Compare(a[:], b[:])
 	})
 	rnd := util.NewPseudoRand(aggregatedTime.UnixNano())
 	return peers[rnd.Intn(len(bps))]
