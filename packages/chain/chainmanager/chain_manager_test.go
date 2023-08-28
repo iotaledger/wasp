@@ -97,7 +97,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		}
 		cm, err := chainmanager.New(
 			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, updateCommitteeNodesCB, true, -1,
+			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, updateCommitteeNodesCB, true, -1, nil,
 			log.Named(nid.ShortString()),
 		)
 		require.NoError(t, err)

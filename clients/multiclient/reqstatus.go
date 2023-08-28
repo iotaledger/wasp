@@ -28,6 +28,10 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.R
 			Execute()
 		return err
 	})
+	if err != nil {
+		// Add some context info to the error.
+		err = fmt.Errorf("failed WaitUntilRequestProcessed(reqID=%v): %w", reqID, err)
+	}
 	return receipt, err
 }
 
