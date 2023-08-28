@@ -5,5 +5,6 @@ const (
 	PrefixTrie                    = 1
 	PrefixLatestTrieRoot          = 2
 	PrefixLargestPrunedBlockIndex = 3
+	PrefixDBNotEmpty              = 4
 	PrefixHealthTracker           = 255
 )

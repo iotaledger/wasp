@@ -48,6 +48,10 @@ func (s *store) blockByTrieRoot(root trie.Hash) (Block, error) {
 	return s.db.readBlock(root)
 }
 
+func (s *store) IsEmpty() bool {
+	return s.db.isEmpty()
+}
+
 func (s *store) HasTrieRoot(root trie.Hash) bool {
 	return s.db.hasBlock(root)
 }
@@ -146,6 +150,7 @@ func (s *store) Commit(d StateDraft) Block {
 	start := time.Now()
 	block, muts, stats := s.extractBlock(d)
 	s.db.commitToDB(muts)
+	s.db.setNotEmpty()
 	if s.metrics != nil {
 		s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
 	}
