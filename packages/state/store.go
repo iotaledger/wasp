@@ -150,7 +150,6 @@ func (s *store) Commit(d StateDraft) Block {
 	start := time.Now()
 	block, muts, stats := s.extractBlock(d)
 	s.db.commitToDB(muts)
-	s.db.setNotEmpty()
 	if s.metrics != nil {
 		s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
 	}
