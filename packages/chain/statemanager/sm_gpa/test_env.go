@@ -118,13 +118,13 @@ func (teT *testEnv) addVariedNodes(
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
 		store := state.NewStore(mapdb.NewMapDB())
-		origin.InitChain(store, teT.bf.GetChainInitParameters(), 0)
 		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)
 		loadedSnapshotStateIndex := snapshotManager.GetLoadedSnapshotStateIndex()
 		stores[nodeID] = store
 		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
+		origin.InitChain(store, teT.bf.GetChainInitParameters(), 0)
 	}
 	teT.nodeIDs = nodeIDs
 	teT.sms = sms
