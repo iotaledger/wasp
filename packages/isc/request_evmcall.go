@@ -106,8 +106,13 @@ func (req *evmOffLedgerCallRequest) SenderAccount() AgentID {
 }
 
 func (req *evmOffLedgerCallRequest) String() string {
-	tx, _ := json.Marshal(req.callMsg)
-	return fmt.Sprintf("%T(%s)\ncallMsg: %v", req, req.ID(), string(tx))
+	// ignore error so String does not crash the app
+	data, _ := json.MarshalIndent(req.callMsg, " ", " ")
+	return fmt.Sprintf("%T::{ ID: %s, callMsg: %s }",
+		req,
+		req.ID(),
+		data,
+	)
 }
 
 func (req *evmOffLedgerCallRequest) TargetAddress() iotago.Address {
