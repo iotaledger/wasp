@@ -30,8 +30,7 @@ type SnapshotInfo interface {
 }
 
 type snapshotManagerCore interface {
-	createSnapshotsNeeded() bool
-	handleBlockCommitted(SnapshotInfo)
+	createSnapshot(SnapshotInfo)
 }
 
 // snapshotter is responsible for moving the snapshot between store and external

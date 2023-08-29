@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -29,11 +28,8 @@ type snapshotManagerImpl struct {
 	chainID isc.ChainID
 	metrics *metrics.ChainSnapshotsMetrics
 
-	lastIndexSnapshotted      uint32
-	lastIndexSnapshottedMutex sync.Mutex
-	createPeriod              uint32
-	loadedSnapshotStateIndex  uint32
-	snapshotter               snapshotter
+	loadedSnapshotStateIndex uint32
+	snapshotter              snapshotter
 
 	localPath string
 }
@@ -68,30 +64,23 @@ func NewSnapshotManager(
 	localPath := filepath.Join(baseLocalPath, chainID.String())
 	snapMLog := log.Named("Snap")
 	result := &snapshotManagerImpl{
-		log:                       snapMLog,
-		ctx:                       ctx,
-		chainID:                   chainID,
-		metrics:                   metrics,
-		lastIndexSnapshotted:      0,
-		lastIndexSnapshottedMutex: sync.Mutex{},
-		createPeriod:              createPeriod,
-		loadedSnapshotStateIndex:  0,
-		snapshotter:               newSnapshotter(store),
-		localPath:                 localPath,
+		log:                      snapMLog,
+		ctx:                      ctx,
+		chainID:                  chainID,
+		metrics:                  metrics,
+		loadedSnapshotStateIndex: 0,
+		snapshotter:              newSnapshotter(store),
+		localPath:                localPath,
 	}
 	if err := ioutils.CreateDirectory(localPath, 0o777); err != nil {
 		return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
 	}
-	if result.createSnapshotsNeeded() {
-		result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `handleBlockCommitted` function
-		snapMLog.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
-	} else {
-		snapMLog.Debugf("Snapshot manager created; folder %v is used to download snapshots; no snapshots will be produced", localPath)
-	}
+	result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `createSnapshot` function
 	if store.IsEmpty() {
 		result.loadSnapshot(snapshotToLoad, baseNetworkPaths)
 	}
-	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, snapMLog)
+	snapMLog.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, createPeriod, result, snapMLog)
 	return result, nil
 }
 
@@ -109,69 +98,53 @@ func (smiT *snapshotManagerImpl) GetLoadedSnapshotStateIndex() uint32 {
 // Implementations of snapshotManagerCore interface
 // -------------------------------------
 
-func (smiT *snapshotManagerImpl) createSnapshotsNeeded() bool {
-	return smiT.createPeriod > 0
-}
-
-// Snapshot manager makes snapshot of every `period`th state only, if this state hasn't
-// been snapshotted before. The snapshot file name includes state index and state hash.
-// Snapshot manager first writes the state to temporary file and only then moves it to
-// permanent location. Writing is done in separate thread to not interfere with
-// normal State manager routine, as it may be lengthy. If snapshot manager detects that
-// the temporary file, needed to create a snapshot, already exists, it assumes
-// that another go routine is already making a snapshot and returns. For this reason
-// it is important to delete all temporary files on snapshot manager start.
-func (smiT *snapshotManagerImpl) handleBlockCommitted(snapshotInfo SnapshotInfo) {
+// Snapshot file name includes state index and state hash. Snapshot manager first
+// writes the state to temporary file and only then moves it to permanent location.
+// Writing is done in separate thread to not interfere with normal snapshot manager
+// routine, as it may be lengthy. If snapshot manager detects that the temporary
+// file, needed to create a snapshot, already exists, it assumes that another go
+// routine is already making a snapshot and returns. For this reason it is important
+// to delete all temporary files on snapshot manager start.
+func (smiT *snapshotManagerImpl) createSnapshot(snapshotInfo SnapshotInfo) {
 	start := time.Now()
 	stateIndex := snapshotInfo.StateIndex()
-	var lastIndexSnapshotted uint32
-	smiT.lastIndexSnapshottedMutex.Lock()
-	lastIndexSnapshotted = smiT.lastIndexSnapshotted
-	smiT.lastIndexSnapshottedMutex.Unlock()
-	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smiT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
-		commitment := snapshotInfo.Commitment()
-		smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
-		tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
-		tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
-		exists, _, _ := ioutils.PathExists(tmpFilePath)
-		if exists {
-			smiT.log.Debugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
-			return
-		}
-		f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
-		if err != nil {
-			smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
-			f.Close()
-			return
-		}
-		go func() {
-			defer f.Close()
-
-			smiT.log.Debugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
-			err := smiT.snapshotter.storeSnapshot(snapshotInfo, f)
-			if err != nil {
-				smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
-				return
-			}
-
-			finalFileName := snapshotFileName(stateIndex, commitment.BlockHash())
-			finalFilePath := filepath.Join(smiT.localPath, finalFileName)
-			err = os.Rename(tmpFilePath, finalFilePath)
-			if err != nil {
-				smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
-					stateIndex, commitment, tmpFilePath, finalFilePath, err)
-				return
-			}
-
-			smiT.lastIndexSnapshottedMutex.Lock()
-			if stateIndex > smiT.lastIndexSnapshotted {
-				smiT.lastIndexSnapshotted = stateIndex
-			}
-			smiT.lastIndexSnapshottedMutex.Unlock()
-			smiT.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
-			smiT.metrics.SnapshotCreated(time.Since(start), stateIndex)
-		}()
+	commitment := snapshotInfo.Commitment()
+	smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
+	tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
+	tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
+	exists, _, _ := ioutils.PathExists(tmpFilePath)
+	if exists {
+		smiT.log.Debugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
+		return
 	}
+	f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+	if err != nil {
+		smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
+		f.Close()
+		return
+	}
+	go func() {
+		defer f.Close()
+
+		smiT.log.Debugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
+		err := smiT.snapshotter.storeSnapshot(snapshotInfo, f)
+		if err != nil {
+			smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
+			return
+		}
+
+		finalFileName := snapshotFileName(stateIndex, commitment.BlockHash())
+		finalFilePath := filepath.Join(smiT.localPath, finalFileName)
+		err = os.Rename(tmpFilePath, finalFilePath)
+		if err != nil {
+			smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
+				stateIndex, commitment, tmpFilePath, finalFilePath, err)
+			return
+		}
+		smiT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
+		smiT.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
+		smiT.metrics.SnapshotCreated(time.Since(start), stateIndex)
+	}()
 }
 
 // -------------------------------------

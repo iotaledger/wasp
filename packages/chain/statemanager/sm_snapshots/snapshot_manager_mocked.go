@@ -65,7 +65,7 @@ func NewMockedSnapshotManager(
 	if nodeStore.IsEmpty() && snapshotToLoad != nil {
 		result.loadSnapshot(origStore, nodeStore, snapshotToLoad)
 	}
-	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, result, result.log)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, createPeriod, result, result.log)
 	return result
 }
 
@@ -114,24 +114,18 @@ func (msmT *MockedSnapshotManager) WaitSnapshotCreateFinalisedCount(count uint32
 // Implementations of snapshotManagerCore interface
 // -------------------------------------
 
-func (msmT *MockedSnapshotManager) createSnapshotsNeeded() bool {
-	return msmT.createPeriod > 0
-}
-
-func (msmT *MockedSnapshotManager) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.StateIndex()
-	if stateIndex%msmT.createPeriod == 0 {
-		msmT.snapshotCreateRequestCount.Add(1)
-		msmT.log.Debugf("Creating snapshot %s...", snapshotInfo)
-		go func() {
-			<-msmT.timeProvider.After(msmT.snapshotCommitTime)
-			msmT.snapshotCreatedCount.Add(1)
-			msmT.snapshotReady(snapshotInfo)
-			msmT.afterSnapshotCreatedFun(snapshotInfo)
-			msmT.log.Debugf("Creating snapshot %s: completed", snapshotInfo)
-			msmT.snapshotCreateFinalisedCount.Add(1)
-		}()
-	}
+func (msmT *MockedSnapshotManager) createSnapshot(snapshotInfo SnapshotInfo) {
+	msmT.snapshotCreateRequestCount.Add(1)
+	msmT.log.Debugf("Creating snapshot %s...", snapshotInfo)
+	go func() {
+		<-msmT.timeProvider.After(msmT.snapshotCommitTime)
+		msmT.snapshotCreatedCount.Add(1)
+		msmT.snapshotReady(snapshotInfo)
+		msmT.afterSnapshotCreatedFun(snapshotInfo)
+		msmT.log.Debugf("Creating snapshot %s: completed", snapshotInfo)
+		msmT.snapshotCreateFinalisedCount.Add(1)
+		msmT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
+	}()
 }
 
 func wait(predicateFun func() bool, sleepTime time.Duration, maxSleepCount int) bool {
