@@ -169,9 +169,10 @@ func (vmctx *vmContext) runRequests(
 	allReqs := lo.CopySlice(reqs)
 
 	// main loop over the batch of requests
+	requestIndexCounter := 0
 	for reqIndex := 0; reqIndex < len(allReqs); reqIndex++ {
 		req := allReqs[reqIndex]
-		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, uint16(reqIndex), maintenanceMode)
+		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, uint16(requestIndexCounter), maintenanceMode)
 		if skipReason != nil {
 			if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, skipReason) {
 				unprocessable = append(unprocessable, req.(isc.OnLedgerRequest))
@@ -182,6 +183,8 @@ func (vmctx *vmContext) runRequests(
 				req.ID().String(), skipReason)
 			continue
 		}
+
+		requestIndexCounter++
 		results = append(results, result)
 		if req.IsOffLedger() {
 			numOffLedger++
@@ -193,6 +196,7 @@ func (vmctx *vmContext) runRequests(
 		}
 		numSuccess++
 
+		// TODO: replace reqIndex with requestIndexCounter?
 		isRetry := reqIndex >= len(reqs)
 		if isRetry {
 			vmctx.removeUnprocessable(req.ID())
