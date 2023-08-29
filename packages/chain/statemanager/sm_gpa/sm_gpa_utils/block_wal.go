@@ -130,7 +130,7 @@ func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
 	if !exists {
 		return nil, fmt.Errorf("block hash %s is not present in WAL", blockHash)
 	}
-	block, err := blockFromFilePath(filePath)
+	block, err := BlockFromFilePath(filePath)
 	if err != nil {
 		bwT.metrics.IncFailedReads()
 		return nil, err
@@ -147,7 +147,7 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 		if !strings.HasSuffix(filePath, constBlockWALFileSuffix) {
 			return
 		}
-		stateIndex, err := blockIndexFromFilePath(filePath)
+		stateIndex, err := BlockIndexFromFilePath(filePath)
 		if err != nil {
 			bwT.metrics.IncFailedReads()
 			bwT.LogWarn("Unable to read %v: %v", filePath, err)
@@ -188,7 +188,7 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 	for _, stateIndex := range allStateIndexes {
 		stateIndexPaths := blocksByStateIndex[stateIndex]
 		for _, stateIndexPath := range stateIndexPaths {
-			fileBlock, fileErr := blockFromFilePath(stateIndexPath)
+			fileBlock, fileErr := BlockFromFilePath(stateIndexPath)
 			if fileErr != nil {
 				bwT.metrics.IncFailedReads()
 				bwT.LogWarn("Unable to read %v: %v", stateIndexPath, err)
@@ -236,11 +236,11 @@ func blockInfoFromFilePath[I any](filePath string, getInfoFun func(uint32, io.Re
 	return info, fmt.Errorf("version %v error: %w, legacy version error: %w", version, errV, err)
 }
 
-func blockIndexFromFilePath(filePath string) (uint32, error) {
+func BlockIndexFromFilePath(filePath string) (uint32, error) {
 	return blockInfoFromFilePath(filePath, blockIndexFromReader)
 }
 
-func blockFromFilePath(filePath string) (state.Block, error) {
+func BlockFromFilePath(filePath string) (state.Block, error) {
 	return blockInfoFromFilePath(filePath, blockFromReader)
 }
 

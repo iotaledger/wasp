@@ -1,6 +1,7 @@
 package isc
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -124,7 +125,8 @@ func (req *evmOffLedgerTxRequest) SenderAccount() AgentID {
 }
 
 func (req *evmOffLedgerTxRequest) String() string {
-	return fmt.Sprintf("%T(%s)", req, req.ID())
+	tx, _ := json.Marshal(req.tx)
+	return fmt.Sprintf("%T(%s)\ntx: %v", req, req.ID(), string(tx))
 }
 
 func (req *evmOffLedgerTxRequest) TargetAddress() iotago.Address {
