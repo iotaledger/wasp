@@ -87,9 +87,9 @@ func initDecodeWALCmd() *cobra.Command {
 			b := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 			b.IterateKeys(blocklog.PrefixBlockRegistry, func(key kv.Key) bool {
 				val2 := b.Get(key)
-				info, err := blocklog.BlockInfoFromBytes(val2)
+				info, blockErr := blocklog.BlockInfoFromBytes(val2)
 
-				if err == nil {
+				if blockErr == nil {
 					blockInfos = append(blockInfos, info)
 				}
 
@@ -122,10 +122,8 @@ func initDecodeWALCmd() *cobra.Command {
 						fmt.Printf("%v\n", receipt.String())
 					}
 					fmt.Printf("\n\n")
-
 				}
 			}
-
 		},
 	}
 }
