@@ -69,10 +69,6 @@ func initDecodeCmd() *cobra.Command {
 	}
 }
 
-func Dump() {
-
-}
-
 func initDecodeWALCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "decode-wal <path>",
@@ -100,7 +96,7 @@ func initDecodeWALCmd() *cobra.Command {
 				return true
 			})
 
-			fmt.Println("Found BlockInfos:\n")
+			fmt.Printf("Found BlockInfos:\n\n")
 			if len(blockInfos) == 0 {
 				fmt.Println("None")
 			} else {
@@ -123,10 +119,9 @@ func initDecodeWALCmd() *cobra.Command {
 				} else {
 					for i, receipt := range receipts {
 						fmt.Printf("%v:\n", i)
-						fmt.Println(receipt.String())
-						fmt.Println("\n")
+						fmt.Printf("%v\n", receipt.String())
 					}
-					fmt.Println("\n")
+					fmt.Printf("\n\n")
 
 				}
 			}
