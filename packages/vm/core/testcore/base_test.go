@@ -568,3 +568,23 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, receipt)
 }
+
+func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
+	env := solo.New(t)
+	ch := env.NewChain()
+	user, _ := env.NewKeyPairWithFunds()
+	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(10*isc.Million), user)
+	require.NoError(t, err)
+
+	// create a request with an invalid nonce that must be skipped
+	skipReq := isc.NewOffLedgerRequest(ch.ID(), isc.Hn("contract"), isc.Hn("entrypoint"), nil, 0, math.MaxUint64).WithNonce(9999).Sign(user)
+	validReq := isc.NewOffLedgerRequest(ch.ID(), isc.Hn("contract"), isc.Hn("entrypoint"), nil, 0, math.MaxUint64).WithNonce(0).Sign(user)
+
+	ch.RunRequestsSync([]isc.Request{skipReq, validReq}, "")
+
+	// block has been created with only 1 request, calling 	`GetRequestReceiptsForBlock` must yield 1 receipt as expected
+	bi := ch.GetLatestBlockInfo()
+	require.EqualValues(t, 1, bi.TotalRequests)
+	receipts := ch.GetRequestReceiptsForBlock(bi.BlockIndex())
+	require.Len(t, receipts, 1)
+}
