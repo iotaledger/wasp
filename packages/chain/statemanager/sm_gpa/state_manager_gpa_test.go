@@ -329,7 +329,7 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 		} else {
 			snapshotToLoad = sm_snapshots.NewSnapshotInfo(newSnapshottedBlock.StateIndex(), newSnapshottedBlock.L1Commitment())
 		}
-		return sm_snapshots.NewMockedSnapshotManager(t, 0, origStore, nodeStore, snapshotToLoad, 0*time.Second, timeProvider, log)
+		return sm_snapshots.NewMockedSnapshotManager(t, 0, 0, origStore, nodeStore, snapshotToLoad, 0*time.Second, timeProvider, log)
 	}
 	env.addVariedNodes(nodeIDs, newMockedTestBlockWALFun, newMockedSnapshotManagerFun)
 
@@ -477,17 +477,15 @@ func TestPruningTooMuch(t *testing.T) {
 func TestSnapshots(t *testing.T) {
 	blockCount := 30
 	snapshotCreatePeriod := uint32(5)
+	snapshotDelayPeriod := uint32(2)
 	snapshotCreateTime := 1 * time.Second
-	snapshotCount := uint32(blockCount) / snapshotCreatePeriod
-	snapshotCreatedFun := func(index uint32) bool {
-		return (index+1)%snapshotCreatePeriod == 0
-	}
+	snapshotCount := (uint32(blockCount) - snapshotDelayPeriod) / snapshotCreatePeriod
 	timerTickPeriod := 150 * time.Millisecond
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	nodeID := nodeIDs[0]
 	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
-		return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
+		return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, snapshotDelayPeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
 	}
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newMockedSnapshotManagerFun)
 	defer env.finalize()
@@ -528,7 +526,7 @@ func TestSnapshots(t *testing.T) {
 	}
 	require.True(env.t, snapM.WaitSnapshotCreatedCount(snapshotCount, 10*time.Millisecond, 100)) // To allow threads, that "create snapshots", to wake up
 	for i := range blocks {
-		if snapshotCreatedFun(uint32(i)) {
+		if (uint32(i)+1)%snapshotCreatePeriod == 0 && i < blockCount-int(snapshotDelayPeriod) {
 			snapshotsReady[i] = true
 		}
 	}

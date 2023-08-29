@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -21,6 +23,8 @@ type snapshotManagerRunner struct {
 	lastIndexSnapshotted      uint32
 	lastIndexSnapshottedMutex sync.Mutex
 	createPeriod              uint32
+	delayPeriod               uint32
+	queue                     []SnapshotInfo
 
 	core snapshotManagerCore
 }
@@ -29,6 +33,7 @@ func newSnapshotManagerRunner(
 	ctx context.Context,
 	shutdownCoordinator *shutdown.Coordinator,
 	createPeriod uint32,
+	delayPeriod uint32,
 	core snapshotManagerCore,
 	log *logger.Logger,
 ) *snapshotManagerRunner {
@@ -40,6 +45,8 @@ func newSnapshotManagerRunner(
 		lastIndexSnapshotted:      0,
 		lastIndexSnapshottedMutex: sync.Mutex{},
 		createPeriod:              createPeriod,
+		delayPeriod:               delayPeriod,
+		queue:                     make([]SnapshotInfo, 0),
 		core:                      core,
 	}
 	go result.run()
@@ -63,10 +70,11 @@ func (smrT *snapshotManagerRunner) BlockCommittedAsync(snapshotInfo SnapshotInfo
 func (smrT *snapshotManagerRunner) snapshotCreated(snapshotInfo SnapshotInfo) {
 	stateIndex := snapshotInfo.StateIndex()
 	smrT.lastIndexSnapshottedMutex.Lock()
+	defer smrT.lastIndexSnapshottedMutex.Unlock()
 	if stateIndex > smrT.lastIndexSnapshotted {
 		smrT.lastIndexSnapshotted = stateIndex
+		smrT.queue = lo.Filter(smrT.queue, func(si SnapshotInfo, index int) bool { return si.StateIndex() > smrT.lastIndexSnapshotted })
 	}
-	smrT.lastIndexSnapshottedMutex.Unlock()
 }
 
 // -------------------------------------
@@ -104,12 +112,24 @@ func (smrT *snapshotManagerRunner) createSnapshotsNeeded() bool {
 }
 
 func (smrT *snapshotManagerRunner) handleBlockCommitted(snapshotInfo SnapshotInfo) {
-	stateIndex := snapshotInfo.StateIndex()
-	var lastIndexSnapshotted uint32
-	smrT.lastIndexSnapshottedMutex.Lock()
-	lastIndexSnapshotted = smrT.lastIndexSnapshotted
-	smrT.lastIndexSnapshottedMutex.Unlock()
-	if (stateIndex > lastIndexSnapshotted) && (stateIndex%smrT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
-		smrT.core.createSnapshot(snapshotInfo)
+	sisToCreate := func() []SnapshotInfo { // Function to unlock the mutex quicker
+		stateIndex := snapshotInfo.StateIndex()
+		var lastIndexSnapshotted uint32
+		smrT.lastIndexSnapshottedMutex.Lock()
+		defer smrT.lastIndexSnapshottedMutex.Unlock()
+		lastIndexSnapshotted = smrT.lastIndexSnapshotted
+		if (stateIndex > lastIndexSnapshotted) && (stateIndex%smrT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
+			smrT.queue = append(smrT.queue, snapshotInfo)
+		}
+		stateIndexToCommit := stateIndex - smrT.delayPeriod
+		if (stateIndexToCommit > lastIndexSnapshotted) && (stateIndexToCommit%smrT.createPeriod == 0) {
+			return lo.Filter(smrT.queue, func(si SnapshotInfo, index int) bool { return si.StateIndex() == stateIndexToCommit })
+		}
+		return []SnapshotInfo{}
+	}()
+	for i, siToCreate := range sisToCreate {
+		if !(lo.ContainsBy(sisToCreate[:i], func(si SnapshotInfo) bool { return si.Equals(siToCreate) })) {
+			smrT.core.createSnapshot(siToCreate)
+		}
 	}
 }

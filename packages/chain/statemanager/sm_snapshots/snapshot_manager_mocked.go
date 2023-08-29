@@ -44,6 +44,7 @@ var (
 func NewMockedSnapshotManager(
 	t *testing.T,
 	createPeriod uint32,
+	delayPeriod uint32,
 	origStore state.Store,
 	nodeStore state.Store,
 	snapshotToLoad SnapshotInfo,
@@ -65,7 +66,7 @@ func NewMockedSnapshotManager(
 	if nodeStore.IsEmpty() && snapshotToLoad != nil {
 		result.loadSnapshot(origStore, nodeStore, snapshotToLoad)
 	}
-	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, createPeriod, result, result.log)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, createPeriod, delayPeriod, result, result.log)
 	return result
 }
 

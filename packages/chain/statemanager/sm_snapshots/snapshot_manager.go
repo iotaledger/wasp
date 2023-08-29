@@ -55,6 +55,7 @@ func NewSnapshotManager(
 	chainID isc.ChainID,
 	snapshotToLoad *state.BlockHash,
 	createPeriod uint32,
+	delayPeriod uint32,
 	baseLocalPath string,
 	baseNetworkPaths []string,
 	store state.Store,
@@ -80,7 +81,7 @@ func NewSnapshotManager(
 		result.loadSnapshot(snapshotToLoad, baseNetworkPaths)
 	}
 	snapMLog.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
-	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, createPeriod, result, snapMLog)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, createPeriod, delayPeriod, result, snapMLog)
 	return result, nil
 }
 

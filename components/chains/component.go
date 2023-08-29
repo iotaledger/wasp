@@ -114,6 +114,7 @@ func provide(c *dig.Container) error {
 				ParamsStateManager.PruningMaxStatesToDelete,
 				ParamsSnapshotManager.SnapshotsToLoad,
 				ParamsSnapshotManager.Period,
+				ParamsSnapshotManager.Delay,
 				ParamsSnapshotManager.LocalPath,
 				ParamsSnapshotManager.NetworkPaths,
 				deps.ChainRecordRegistryProvider,

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -62,6 +63,7 @@ func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 				chainID,
 				snapshotToLoad,
 				0,
+				0,
 				localSnapshotsCreatePathConst,
 				[]string{},
 				store,
@@ -89,6 +91,7 @@ func getNetworkFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 				nil,
 				chainID,
 				snapshotToLoad,
+				0,
 				0,
 				localSnapshotsDownloadPathConst,
 				networkPaths,
@@ -138,9 +141,10 @@ func testSnapshotManagerAny(
 	defer log.Sync()
 	defer cleanupAfterSnapshotManagerTest(t)
 
-	numberOfBlocks := 10
-	snapshotCreatePeriod := 2
-	snapshotToLoadStateIndex := numberOfBlocks - snapshotCreatePeriod*numberBeforeLast
+	numberOfBlocks := 20
+	snapshotCreatePeriod := 4
+	snapshotDelayPeriod := 3
+	snapshotToLoadStateIndex := numberOfBlocks - snapshotCreatePeriod*(numberBeforeLast+int(math.Ceil(float64(snapshotDelayPeriod)/float64(snapshotCreatePeriod))))
 
 	var err error
 	factory := sm_gpa_utils.NewBlockFactory(t)
@@ -152,6 +156,7 @@ func testSnapshotManagerAny(
 		factory.GetChainID(),
 		nil,
 		uint32(snapshotCreatePeriod),
+		uint32(snapshotDelayPeriod),
 		localSnapshotsCreatePathConst,
 		[]string{},
 		storeOrig,
@@ -165,13 +170,13 @@ func testSnapshotManagerAny(
 	for _, block := range blocks {
 		snapshotManagerOrig.BlockCommittedAsync(NewSnapshotInfo(block.StateIndex(), block.L1Commitment()))
 	}
-	for i := snapshotCreatePeriod - 1; i < numberOfBlocks; i += snapshotCreatePeriod {
+	for i := snapshotCreatePeriod - 1; i < numberOfBlocks-snapshotDelayPeriod; i += snapshotCreatePeriod {
 		require.True(t, waitForBlock(t, factory.GetChainID(), blocks[i], 10, 50*time.Millisecond))
 	}
 	createdSnapshots := make([]SnapshotInfo, 0)
 	for _, block := range blocks {
 		exists := snapshotExists(t, factory.GetChainID(), block.StateIndex(), block.L1Commitment())
-		if block.StateIndex()%uint32(snapshotCreatePeriod) == 0 {
+		if block.StateIndex()%uint32(snapshotCreatePeriod) == 0 && block.StateIndex() <= uint32(numberOfBlocks-snapshotDelayPeriod) {
 			require.True(t, exists)
 			createdSnapshots = append(createdSnapshots, NewSnapshotInfo(block.StateIndex(), block.L1Commitment()))
 		} else {

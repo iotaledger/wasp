@@ -71,6 +71,7 @@ type Chains struct {
 	defaultSnapshotToLoad               *state.BlockHash
 	snapshotsToLoad                     map[isc.ChainIDKey]state.BlockHash
 	snapshotPeriod                      uint32
+	snapshotDelay                       uint32
 	snapshotFolderPath                  string
 	snapshotNetworkPaths                []string
 
@@ -124,6 +125,7 @@ func New(
 	smPruningMaxStatesToDelete int,
 	snapshotsToLoad []string,
 	snapshotPeriod uint32,
+	snapshotDelay uint32,
 	snapshotFolderPath string,
 	snapshotNetworkPaths []string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
@@ -172,6 +174,7 @@ func New(
 		smPruningMinStatesToKeep:            smPruningMinStatesToKeep,
 		smPruningMaxStatesToDelete:          smPruningMaxStatesToDelete,
 		snapshotPeriod:                      snapshotPeriod,
+		snapshotDelay:                       snapshotDelay,
 		snapshotFolderPath:                  snapshotFolderPath,
 		snapshotNetworkPaths:                snapshotNetworkPaths,
 		chainRecordRegistryProvider:         chainRecordRegistryProvider,
@@ -372,6 +375,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		chainID,
 		snapshotToLoad,
 		c.snapshotPeriod,
+		c.snapshotDelay,
 		c.snapshotFolderPath,
 		c.snapshotNetworkPaths,
 		chainStore,
