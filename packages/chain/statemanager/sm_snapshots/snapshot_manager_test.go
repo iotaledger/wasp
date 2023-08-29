@@ -24,26 +24,57 @@ import (
 
 const localSnapshotsPathConst = "testSnapshots"
 
+type (
+	createNewNodeFun      func(isc.ChainID, *state.BlockHash, state.Store, *logger.Logger) SnapshotManager
+	snapshotsAvailableFun func(isc.ChainID, []SnapshotInfo)
+)
+
 var (
 	localSnapshotsCreatePathConst   = filepath.Join(localSnapshotsPathConst, "create")
 	localSnapshotsDownloadPathConst = filepath.Join(localSnapshotsPathConst, "download")
 )
 
 func TestSnapshotManagerLocal(t *testing.T) {
-	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
-		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, localSnapshotsCreatePathConst, []string{}, store, mockSnapshotsMetrics(), log)
-		require.NoError(t, err)
-		return snapshotManager
-	}
-	defer cleanupAfterSnapshotManagerTest(t)
-
-	testSnapshotManagerSimple(t, createFun, func(isc.ChainID, []SnapshotInfo) {})
+	createFun, nopFun := getLocalFuns(t)
+	testSnapshotManagerLast(t, createFun, nopFun)
 }
 
 func TestSnapshotManagerNetwork(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	createFun, createIndexFileFun := getNetworkFuns(t)
+	testSnapshotManagerLast(t, createFun, createIndexFileFun)
+}
 
+func TestSnapshotManagerLoadMiddleLocal(t *testing.T) {
+	createFun, nopFun := getLocalFuns(t)
+	testSnapshotManagerMiddle(t, createFun, nopFun)
+}
+
+func TestSnapshotManagerLoadMiddleNetwork(t *testing.T) {
+	createFun, createIndexFileFun := getNetworkFuns(t)
+	testSnapshotManagerMiddle(t, createFun, createIndexFileFun)
+}
+
+func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
+	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log *logger.Logger) SnapshotManager {
+			snapshotManager, err := NewSnapshotManager(
+				context.Background(),
+				nil,
+				chainID,
+				snapshotToLoad,
+				0,
+				localSnapshotsCreatePathConst,
+				[]string{},
+				store,
+				mockSnapshotsMetrics(),
+				log,
+			)
+			require.NoError(t, err)
+			return snapshotManager
+		},
+		func(isc.ChainID, []SnapshotInfo) {}
+}
+
+func getNetworkFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 	err := ioutils.CreateDirectory(localSnapshotsCreatePathConst, 0o777)
 	require.NoError(t, err)
 
@@ -51,44 +82,82 @@ func TestSnapshotManagerNetwork(t *testing.T) {
 	handler := http.FileServer(http.Dir(localSnapshotsCreatePathConst))
 	go http.ListenAndServe(port, handler)
 
-	createFun := func(chainID isc.ChainID, store state.Store, log *logger.Logger) SnapshotManager {
-		networkPaths := []string{"http://localhost" + port + "/"}
-		snapshotManager, err := NewSnapshotManager(context.Background(), nil, chainID, 0, localSnapshotsDownloadPathConst, networkPaths, store, mockSnapshotsMetrics(), log)
-		require.NoError(t, err)
-		return snapshotManager
-	}
-	defer cleanupAfterSnapshotManagerTest(t)
-
-	createIndexFileFun := func(chainID isc.ChainID, snapshotInfos []SnapshotInfo) {
-		indexFilePath := filepath.Join(localSnapshotsCreatePathConst, chainID.String(), constIndexFileName)
-		f, err := os.OpenFile(indexFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
-		require.NoError(t, err)
-		defer f.Close()
-		w := bufio.NewWriter(f)
-		for _, snapshotInfo := range snapshotInfos {
-			w.WriteString(snapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash()) + "\n")
+	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log *logger.Logger) SnapshotManager {
+			networkPaths := []string{"http://localhost" + port + "/"}
+			snapshotManager, err := NewSnapshotManager(
+				context.Background(),
+				nil,
+				chainID,
+				snapshotToLoad,
+				0,
+				localSnapshotsDownloadPathConst,
+				networkPaths,
+				store,
+				mockSnapshotsMetrics(),
+				log,
+			)
+			require.NoError(t, err)
+			return snapshotManager
+		},
+		func(chainID isc.ChainID, snapshotInfos []SnapshotInfo) {
+			indexFilePath := filepath.Join(localSnapshotsCreatePathConst, chainID.String(), constIndexFileName)
+			f, err := os.OpenFile(indexFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+			require.NoError(t, err)
+			defer f.Close()
+			w := bufio.NewWriter(f)
+			for _, snapshotInfo := range snapshotInfos {
+				w.WriteString(snapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash()) + "\n")
+			}
+			w.Flush()
 		}
-		w.Flush()
-	}
-	testSnapshotManagerSimple(t, createFun, createIndexFileFun)
 }
 
-func testSnapshotManagerSimple(
+func testSnapshotManagerLast(
 	t *testing.T,
-	createNewNodeFun func(isc.ChainID, state.Store, *logger.Logger) SnapshotManager,
-	snapshotsAvailableFun func(isc.ChainID, []SnapshotInfo),
+	createNewNodeFun createNewNodeFun,
+	snapshotsAvailableFun snapshotsAvailableFun,
+) {
+	testSnapshotManagerAny(t, createNewNodeFun, snapshotsAvailableFun, 0)
+}
+
+func testSnapshotManagerMiddle(
+	t *testing.T,
+	createNewNodeFun createNewNodeFun,
+	snapshotsAvailableFun snapshotsAvailableFun,
+) {
+	testSnapshotManagerAny(t, createNewNodeFun, snapshotsAvailableFun, 2)
+}
+
+func testSnapshotManagerAny(
+	t *testing.T,
+	createNewNodeFun createNewNodeFun,
+	snapshotsAvailableFun snapshotsAvailableFun,
+	numberBeforeLast int,
 ) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
+	defer cleanupAfterSnapshotManagerTest(t)
 
 	numberOfBlocks := 10
 	snapshotCreatePeriod := 2
+	snapshotToLoadStateIndex := numberOfBlocks - snapshotCreatePeriod*numberBeforeLast
 
 	var err error
 	factory := sm_gpa_utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	storeOrig := factory.GetStore()
-	snapshotManagerOrig, err := NewSnapshotManager(context.Background(), nil, factory.GetChainID(), uint32(snapshotCreatePeriod), localSnapshotsCreatePathConst, []string{}, storeOrig, mockSnapshotsMetrics(), log)
+	snapshotManagerOrig, err := NewSnapshotManager(
+		context.Background(),
+		nil,
+		factory.GetChainID(),
+		nil,
+		uint32(snapshotCreatePeriod),
+		localSnapshotsCreatePathConst,
+		[]string{},
+		storeOrig,
+		mockSnapshotsMetrics(),
+		log,
+	)
 	require.NoError(t, err)
 	require.Equal(t, uint32(0), snapshotManagerOrig.GetLoadedSnapshotStateIndex())
 
@@ -112,19 +181,27 @@ func testSnapshotManagerSimple(
 	snapshotsAvailableFun(factory.GetChainID(), createdSnapshots)
 
 	// Node is restarted
+	var snapshotToLoad *state.BlockHash
+	if numberBeforeLast > 0 {
+		blockHash := blocks[snapshotToLoadStateIndex-1].Hash()
+		snapshotToLoad = &blockHash
+	} else {
+		snapshotToLoad = nil
+	}
 	storeNew := state.NewStore(mapdb.NewMapDB())
-	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), storeNew, log)
-	require.Equal(t, uint32(numberOfBlocks), snapshotManagerNew.GetLoadedSnapshotStateIndex())
+	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), snapshotToLoad, storeNew, log)
+	require.Equal(t, uint32(snapshotToLoadStateIndex), snapshotManagerNew.GetLoadedSnapshotStateIndex())
 
 	// Check the loaded snapshot
-	for i := 0; i < len(blocks)-1; i++ {
-		require.False(t, storeNew.HasTrieRoot(blocks[i].TrieRoot()))
+	for i := 0; i < len(blocks); i++ {
+		if i == snapshotToLoadStateIndex-1 {
+			require.True(t, storeNew.HasTrieRoot(blocks[i].TrieRoot()))
+			sm_gpa_utils.CheckBlockInStore(t, storeNew, blocks[i])
+			sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, blocks[i].L1Commitment())
+		} else {
+			require.False(t, storeNew.HasTrieRoot(blocks[i].TrieRoot()))
+		}
 	}
-	lastBlock := blocks[len(blocks)-1]
-	require.True(t, storeNew.HasTrieRoot(lastBlock.TrieRoot()))
-
-	sm_gpa_utils.CheckBlockInStore(t, storeNew, lastBlock)
-	sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, lastBlock.L1Commitment())
 }
 
 func snapshotExists(t *testing.T, chainID isc.ChainID, stateIndex uint32, commitment *state.L1Commitment) bool {

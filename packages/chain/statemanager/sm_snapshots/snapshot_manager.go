@@ -57,6 +57,7 @@ func NewSnapshotManager(
 	ctx context.Context,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainID isc.ChainID,
+	snapshotToLoad *state.BlockHash,
 	createPeriod uint32,
 	baseLocalPath string,
 	baseNetworkPaths []string,
@@ -88,7 +89,7 @@ func NewSnapshotManager(
 		snapMLog.Debugf("Snapshot manager created; folder %v is used to download snapshots; no snapshots will be produced", localPath)
 	}
 	if store.IsEmpty() {
-		result.loadSnapshot(baseNetworkPaths)
+		result.loadSnapshot(snapshotToLoad, baseNetworkPaths)
 	}
 	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, shutdownCoordinator, result, snapMLog)
 	return result, nil
@@ -200,31 +201,52 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
-func (smiT *snapshotManagerImpl) loadSnapshot(baseNetworkPaths []string) {
+func (smiT *snapshotManagerImpl) loadSnapshot(snapshotToLoad *state.BlockHash, baseNetworkPaths []string) {
 	snapshotPaths := make([]string, 0)
 	snapshotInfos := make([]SnapshotInfo, 0)
-	largestIndex := uint32(0)
-	considerSnapshotFun := func(snapshotInfo SnapshotInfo, path string) {
-		if snapshotInfo.StateIndex() < largestIndex {
-			smiT.log.Debugf("Snapshot %s found in %s; it is ignored as its index is lower than current largest index %v", path, snapshotInfo, largestIndex)
-			return
+
+	var considerSnapshotFun func(snapshotInfo SnapshotInfo, path string)
+	var searchCondition string
+	if snapshotToLoad == nil {
+		largestIndex := uint32(0)
+		considerSnapshotFun = func(snapshotInfo SnapshotInfo, path string) {
+			if snapshotInfo.StateIndex() < largestIndex {
+				smiT.log.Debugf("Snapshot %s found in %s; it is ignored, because its index is lower than current largest index %v",
+					path, snapshotInfo, largestIndex)
+				return
+			}
+			if snapshotInfo.StateIndex() == largestIndex {
+				snapshotPaths = append(snapshotPaths, path)
+				snapshotInfos = append(snapshotInfos, snapshotInfo)
+				smiT.log.Debugf("Snapshot %s found in %s; it is added to the list of considered snapshots, because its index mathec current largest index",
+					path, snapshotInfo)
+				return
+			}
+			// NOTE: snapshotInfo.StateIndex() > largestIndex
+			snapshotPaths = []string{path}
+			snapshotInfos = []SnapshotInfo{snapshotInfo}
+			smiT.log.Debugf("Snapshot %s found in %s; it is now the only considered snapshot, because its index is larger than former largest index %v",
+				path, snapshotInfo, largestIndex)
+			largestIndex = snapshotInfo.StateIndex()
 		}
-		if snapshotInfo.StateIndex() == largestIndex {
-			snapshotPaths = append(snapshotPaths, path)
-			snapshotInfos = append(snapshotInfos, snapshotInfo)
-			smiT.log.Debugf("Snapshot %s found in %s; it is added to the list of considered snapshots", path, snapshotInfo)
-			return
+		searchCondition = fmt.Sprintf("state index %v", largestIndex)
+	} else {
+		considerSnapshotFun = func(snapshotInfo SnapshotInfo, path string) {
+			if snapshotInfo.BlockHash().Equals(*snapshotToLoad) {
+				snapshotPaths = append(snapshotPaths, path)
+				snapshotInfos = append(snapshotInfos, snapshotInfo)
+				smiT.log.Debugf("Snapshot %s found in %s; it is added to the list of considered snapshots, because its hash matches what was requested",
+					path, snapshotInfo)
+				return
+			}
+			smiT.log.Debugf("Snapshot %s found in %s; it is ignored, because its hash does not match what was requested", path, snapshotInfo)
 		}
-		// NOTE: snapshotInfo.StateIndex() > largestIndex
-		snapshotPaths = []string{path}
-		snapshotInfos = []SnapshotInfo{snapshotInfo}
-		smiT.log.Debugf("Snapshot %s found in %s; it is now the only considered snapshot as its index is larger than former largest index %v", path, snapshotInfo, largestIndex)
-		largestIndex = snapshotInfo.StateIndex()
+		searchCondition = fmt.Sprintf("block hash %s", *snapshotToLoad)
 	}
 
 	smiT.searchLocalSnapshots(considerSnapshotFun)
 	smiT.searchNetworkSnapshots(baseNetworkPaths, considerSnapshotFun)
-	smiT.log.Debugf("%v snapshots with state index %v will be considered for loading in this order: %v", len(snapshotPaths), largestIndex, snapshotPaths)
+	smiT.log.Debugf("%v snapshots with %s will be considered for loading in this order: %v", len(snapshotPaths), searchCondition, snapshotPaths)
 
 	for i := range snapshotPaths {
 		err := smiT.loadSnapshotFromPath(snapshotInfos[i], snapshotPaths[i])

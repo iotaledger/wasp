@@ -13,7 +13,7 @@ import (
 )
 
 type MockedLedgers struct {
-	ledgers              map[string]*MockedLedger
+	ledgers              map[isc.ChainIDKey]*MockedLedger
 	milestones           *event.Event1[*nodebridge.Milestone]
 	pushMilestonesNeeded bool
 	log                  *logger.Logger
@@ -22,7 +22,7 @@ type MockedLedgers struct {
 
 func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	result := &MockedLedgers{
-		ledgers:    make(map[string]*MockedLedger),
+		ledgers:    make(map[isc.ChainIDKey]*MockedLedger),
 		milestones: event.New1[*nodebridge.Milestone](),
 		log:        log.Named("mls"),
 	}

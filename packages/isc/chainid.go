@@ -19,7 +19,10 @@ var emptyChainID = ChainID{}
 
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
-type ChainID iotago.AliasID
+type (
+	ChainID    iotago.AliasID
+	ChainIDKey string
+)
 
 // EmptyChainID returns an empty ChainID.
 func EmptyChainID() ChainID {
@@ -50,6 +53,14 @@ func ChainIDFromString(bech32 string) (ChainID, error) {
 		return ChainID{}, fmt.Errorf("chainID must be an alias address (%s)", bech32)
 	}
 	return ChainIDFromAddress(addr.(*iotago.AliasAddress)), nil
+}
+
+func ChainIDFromKey(key ChainIDKey) ChainID {
+	chainID, err := ChainIDFromString(string(key))
+	if err != nil {
+		panic(err)
+	}
+	return chainID
 }
 
 // RandomChainID creates a random chain ID. Used for testing only
@@ -92,8 +103,8 @@ func (id ChainID) Equals(other ChainID) bool {
 	return id == other
 }
 
-func (id ChainID) Key() string {
-	return id.AsAliasID().String()
+func (id ChainID) Key() ChainIDKey {
+	return ChainIDKey(id.AsAliasID().String())
 }
 
 func (id ChainID) IsSameChain(agentID AgentID) bool {

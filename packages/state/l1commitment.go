@@ -31,6 +31,16 @@ func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	}
 }
 
+func BlockHashFromString(hash string) (BlockHash, error) {
+	byteSlice, err := iotago.DecodeHex(hash)
+	if err != nil {
+		return BlockHash{}, err
+	}
+	var ret BlockHash
+	copy(ret[:], byteSlice)
+	return ret, nil
+}
+
 func (bh BlockHash) String() string {
 	return iotago.EncodeHex(bh[:])
 }
