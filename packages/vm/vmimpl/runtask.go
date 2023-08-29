@@ -196,7 +196,6 @@ func (vmctx *vmContext) runRequests(
 		}
 		numSuccess++
 
-		// TODO: replace reqIndex with requestIndexCounter?
 		isRetry := reqIndex >= len(reqs)
 		if isRetry {
 			vmctx.removeUnprocessable(req.ID())
