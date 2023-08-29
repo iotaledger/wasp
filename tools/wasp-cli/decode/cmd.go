@@ -2,14 +2,18 @@ package decode
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	wasp_util "github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -20,6 +24,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initDecodeMetadataCmd())
 	rootCmd.AddCommand(initDecodeGasFeePolicy())
 	rootCmd.AddCommand(initEncodeGasFeePolicy())
+	rootCmd.AddCommand(initDecodeWALCmd())
 }
 
 func initDecodeCmd() *cobra.Command {
@@ -58,6 +63,65 @@ func initDecodeCmd() *cobra.Command {
 					log.Printf("%s: <nil>\n", skey)
 				} else {
 					log.Printf("%s: %s\n", skey, util.ValueToString(vtype, val))
+				}
+			}
+		},
+	}
+}
+
+func initDecodeWALCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "decode-wal <path>",
+		Short: "Parses and dumps a WAL file",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Reading WAL file '%s'\n", args[0])
+
+			block, err := sm_gpa_utils.BlockFromFilePath(args[0])
+			log.Check(err)
+
+			fmt.Printf("Block Number: %v\n", block.StateIndex())
+			fmt.Printf("L1 Commitment: %v\n", block.L1Commitment().String())
+
+			blockInfos := make([]*blocklog.BlockInfo, 0)
+			b := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
+			b.IterateKeys(blocklog.PrefixBlockRegistry, func(key kv.Key) bool {
+				val2 := b.Get(key)
+				info, blockErr := blocklog.BlockInfoFromBytes(val2)
+
+				if blockErr == nil {
+					blockInfos = append(blockInfos, info)
+				}
+
+				return true
+			})
+
+			fmt.Printf("Found BlockInfos:\n\n")
+			if len(blockInfos) == 0 {
+				fmt.Println("None")
+			} else {
+				for i, info := range blockInfos {
+					fmt.Printf("%v:\n", i)
+					fmt.Println(info)
+					fmt.Println("")
+				}
+			}
+
+			receipts, err := blocklog.RequestReceiptsFromBlock(block)
+			fmt.Printf("\nRequests:\n\n")
+
+			if err != nil {
+				fmt.Println("Failed to decode receipts")
+				fmt.Println(err)
+			} else {
+				if len(receipts) == 0 {
+					fmt.Printf("No requests\n")
+				} else {
+					for i, receipt := range receipts {
+						fmt.Printf("%v:\n", i)
+						fmt.Printf("%v\n", receipt.String())
+					}
+					fmt.Printf("\n\n")
 				}
 			}
 		},
