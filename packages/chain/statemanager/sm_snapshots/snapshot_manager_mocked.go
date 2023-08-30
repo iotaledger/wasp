@@ -26,9 +26,8 @@ type MockedSnapshotManager struct {
 	readySnapshots      map[uint32]*util.SliceStruct[*state.L1Commitment]
 	readySnapshotsMutex sync.Mutex
 
-	snapshotCommitTime      time.Duration
-	timeProvider            sm_gpa_utils.TimeProvider
-	afterSnapshotCreatedFun func(SnapshotInfo)
+	snapshotCommitTime time.Duration
+	timeProvider       sm_gpa_utils.TimeProvider
 
 	origStore      state.Store
 	nodeStore      state.Store
@@ -56,17 +55,16 @@ func NewMockedSnapshotManager(
 	log *logger.Logger,
 ) *MockedSnapshotManager {
 	result := &MockedSnapshotManager{
-		t:                       t,
-		log:                     log.Named("MSnap"),
-		createPeriod:            createPeriod,
-		readySnapshots:          make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
-		readySnapshotsMutex:     sync.Mutex{},
-		snapshotCommitTime:      snapshotCommitTime,
-		timeProvider:            timeProvider,
-		afterSnapshotCreatedFun: func(SnapshotInfo) {},
-		origStore:               origStore,
-		nodeStore:               nodeStore,
-		snapshotToLoad:          snapshotToLoad,
+		t:                   t,
+		log:                 log.Named("MSnap"),
+		createPeriod:        createPeriod,
+		readySnapshots:      make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
+		readySnapshotsMutex: sync.Mutex{},
+		snapshotCommitTime:  snapshotCommitTime,
+		timeProvider:        timeProvider,
+		origStore:           origStore,
+		nodeStore:           nodeStore,
+		snapshotToLoad:      snapshotToLoad,
 	}
 	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nodeStore, nil, createPeriod, delayPeriod, result, result.log)
 	return result
@@ -93,10 +91,6 @@ func (msmT *MockedSnapshotManager) IsSnapshotReady(snapshotInfo SnapshotInfo) bo
 	return commitments.ContainsBy(func(elem *state.L1Commitment) bool { return elem.Equals(snapshotInfo.Commitment()) })
 }
 
-func (msmT *MockedSnapshotManager) SetAfterSnapshotCreated(fun func(SnapshotInfo)) {
-	msmT.afterSnapshotCreatedFun = fun
-}
-
 func (msmT *MockedSnapshotManager) WaitSnapshotCreateRequestCount(count uint32, sleepTime time.Duration, maxSleepCount int) bool {
 	return wait(func() bool { return msmT.snapshotCreateRequestCount.Load() == count }, sleepTime, maxSleepCount)
 }
@@ -120,7 +114,6 @@ func (msmT *MockedSnapshotManager) createSnapshot(snapshotInfo SnapshotInfo) {
 		<-msmT.timeProvider.After(msmT.snapshotCommitTime)
 		msmT.snapshotCreatedCount.Add(1)
 		msmT.snapshotReady(snapshotInfo)
-		msmT.afterSnapshotCreatedFun(snapshotInfo)
 		msmT.log.Debugf("Creating snapshot %s: completed", snapshotInfo)
 		msmT.snapshotCreateFinalisedCount.Add(1)
 		msmT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
