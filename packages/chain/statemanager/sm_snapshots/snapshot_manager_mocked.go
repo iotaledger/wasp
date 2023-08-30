@@ -26,10 +26,13 @@ type MockedSnapshotManager struct {
 	readySnapshots      map[uint32]*util.SliceStruct[*state.L1Commitment]
 	readySnapshotsMutex sync.Mutex
 
-	snapshotCommitTime       time.Duration
-	timeProvider             sm_gpa_utils.TimeProvider
-	afterSnapshotCreatedFun  func(SnapshotInfo)
-	loadedSnapshotStateIndex uint32
+	snapshotCommitTime      time.Duration
+	timeProvider            sm_gpa_utils.TimeProvider
+	afterSnapshotCreatedFun func(SnapshotInfo)
+
+	origStore      state.Store
+	nodeStore      state.Store
+	snapshotToLoad SnapshotInfo
 
 	snapshotCreateRequestCount   atomic.Uint32
 	snapshotCreatedCount         atomic.Uint32
@@ -53,20 +56,19 @@ func NewMockedSnapshotManager(
 	log *logger.Logger,
 ) *MockedSnapshotManager {
 	result := &MockedSnapshotManager{
-		t:                        t,
-		log:                      log.Named("MSnap"),
-		createPeriod:             createPeriod,
-		readySnapshots:           make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
-		readySnapshotsMutex:      sync.Mutex{},
-		snapshotCommitTime:       snapshotCommitTime,
-		timeProvider:             timeProvider,
-		afterSnapshotCreatedFun:  func(SnapshotInfo) {},
-		loadedSnapshotStateIndex: 0,
+		t:                       t,
+		log:                     log.Named("MSnap"),
+		createPeriod:            createPeriod,
+		readySnapshots:          make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
+		readySnapshotsMutex:     sync.Mutex{},
+		snapshotCommitTime:      snapshotCommitTime,
+		timeProvider:            timeProvider,
+		afterSnapshotCreatedFun: func(SnapshotInfo) {},
+		origStore:               origStore,
+		nodeStore:               nodeStore,
+		snapshotToLoad:          snapshotToLoad,
 	}
-	if nodeStore.IsEmpty() && snapshotToLoad != nil {
-		result.loadSnapshot(origStore, nodeStore, snapshotToLoad)
-	}
-	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nil, createPeriod, delayPeriod, result, result.log)
+	result.snapshotManagerRunner = newSnapshotManagerRunner(context.Background(), nodeStore, nil, createPeriod, delayPeriod, result, result.log)
 	return result
 }
 
@@ -74,11 +76,7 @@ func NewMockedSnapshotManager(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-func (msmT *MockedSnapshotManager) GetLoadedSnapshotStateIndex() uint32 {
-	return msmT.loadedSnapshotStateIndex
-}
-
-// NOTE: other implementation are inherited from snapshotManagerRunner
+// NOTE: implementation are inherited from snapshotManagerRunner
 
 // -------------------------------------
 // Additional API functions of MockedSnapshotManager
@@ -129,6 +127,24 @@ func (msmT *MockedSnapshotManager) createSnapshot(snapshotInfo SnapshotInfo) {
 	}()
 }
 
+func (msmT *MockedSnapshotManager) loadSnapshot() SnapshotInfo {
+	if msmT.snapshotToLoad == nil {
+		return nil
+	}
+	msmT.log.Debugf("Loading snapshot %s...", msmT.snapshotToLoad)
+	snapshot := new(bytes.Buffer)
+	err := msmT.origStore.TakeSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
+	require.NoError(msmT.t, err)
+	err = msmT.nodeStore.RestoreSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
+	require.NoError(msmT.t, err)
+	msmT.log.Debugf("Loading snapshot %s: snapshot loaded", msmT.snapshotToLoad)
+	return msmT.snapshotToLoad
+}
+
+// -------------------------------------
+// Internal functions
+// -------------------------------------
+
 func wait(predicateFun func() bool, sleepTime time.Duration, maxSleepCount int) bool {
 	if predicateFun() {
 		return true
@@ -140,21 +156,6 @@ func wait(predicateFun func() bool, sleepTime time.Duration, maxSleepCount int) 
 		}
 	}
 	return false
-}
-
-// -------------------------------------
-// Internal functions
-// -------------------------------------
-
-func (msmT *MockedSnapshotManager) loadSnapshot(origStore state.Store, nodeStore state.Store, snapshotInfo SnapshotInfo) {
-	msmT.log.Debugf("Loading snapshot %s...", snapshotInfo)
-	snapshot := new(bytes.Buffer)
-	err := origStore.TakeSnapshot(snapshotInfo.TrieRoot(), snapshot)
-	require.NoError(msmT.t, err)
-	err = nodeStore.RestoreSnapshot(snapshotInfo.TrieRoot(), snapshot)
-	require.NoError(msmT.t, err)
-	msmT.loadedSnapshotStateIndex = snapshotInfo.StateIndex()
-	msmT.log.Debugf("Loading snapshot %s: snapshot loaded", snapshotInfo)
 }
 
 func (msmT *MockedSnapshotManager) snapshotReady(snapshotInfo SnapshotInfo) {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
@@ -22,6 +23,7 @@ type snapshotManagerRunner struct {
 
 	lastIndexSnapshotted      uint32
 	lastIndexSnapshottedMutex sync.Mutex
+	loadedSnapshotStateIndex  uint32
 	createPeriod              uint32
 	delayPeriod               uint32
 	queue                     []SnapshotInfo
@@ -31,6 +33,7 @@ type snapshotManagerRunner struct {
 
 func newSnapshotManagerRunner(
 	ctx context.Context,
+	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
 	createPeriod uint32,
 	delayPeriod uint32,
@@ -44,10 +47,17 @@ func newSnapshotManagerRunner(
 		blockCommittedPipe:        pipe.NewInfinitePipe[SnapshotInfo](),
 		lastIndexSnapshotted:      0,
 		lastIndexSnapshottedMutex: sync.Mutex{},
+		loadedSnapshotStateIndex:  0,
 		createPeriod:              createPeriod,
 		delayPeriod:               delayPeriod,
 		queue:                     make([]SnapshotInfo, 0),
 		core:                      core,
+	}
+	if store.IsEmpty() {
+		loadedSnapshotInfo := result.core.loadSnapshot()
+		if loadedSnapshotInfo != nil {
+			result.loadedSnapshotStateIndex = loadedSnapshotInfo.StateIndex()
+		}
 	}
 	go result.run()
 	return result
@@ -56,6 +66,10 @@ func newSnapshotManagerRunner(
 // -------------------------------------
 // Implementations of SnapshotManager interface
 // -------------------------------------
+
+func (smrT *snapshotManagerRunner) GetLoadedSnapshotStateIndex() uint32 {
+	return smrT.loadedSnapshotStateIndex
+}
 
 func (smrT *snapshotManagerRunner) BlockCommittedAsync(snapshotInfo SnapshotInfo) {
 	if smrT.createSnapshotsNeeded() {
