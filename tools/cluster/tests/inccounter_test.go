@@ -88,7 +88,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		recs, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).CallView(context.Background(), root.ViewGetContractRecords.Name, nil)
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, len(corecontracts.All)+1, len(contractRegistry))
 

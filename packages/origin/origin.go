@@ -57,7 +57,7 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	}
 
 	evmChainID := codec.MustDecodeUint16(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
-	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamBlockKeepAmount), governance.BlockKeepAmountDefault)
+	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamBlockKeepAmount), governance.DefaultBlockKeepAmount)
 	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
 
 	// init the state of each core contract

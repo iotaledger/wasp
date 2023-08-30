@@ -6,16 +6,27 @@ import (
 
 var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
 
-// state variables
-const (
-	StateVarSchemaVersion = "v"
+var (
+	// Funcs
+	FuncDeployContract           = coreutil.Func("deployContract")
+	FuncGrantDeployPermission    = coreutil.Func("grantDeployPermission")
+	FuncRevokeDeployPermission   = coreutil.Func("revokeDeployPermission")
+	FuncRequireDeployPermissions = coreutil.Func("requireDeployPermissions")
 
-	StateVarContractRegistry         = "r"
-	StateVarDeployPermissionsEnabled = "a"
-	StateVarDeployPermissions        = "p"
+	// Views
+	ViewFindContract       = coreutil.ViewFunc("findContract")
+	ViewGetContractRecords = coreutil.ViewFunc("getContractRecords")
 )
 
-// param variables
+// state variables
+const (
+	VarSchemaVersion            = "v"
+	VarContractRegistry         = "r"
+	VarDeployPermissionsEnabled = "a"
+	VarDeployPermissions        = "p"
+)
+
+// request parameters
 const (
 	ParamDeployer                 = "dp"
 	ParamHname                    = "hn"
@@ -24,14 +35,4 @@ const (
 	ParamContractRecData          = "dt"
 	ParamContractFound            = "cf"
 	ParamDeployPermissionsEnabled = "de"
-)
-
-// function names
-var (
-	FuncDeployContract           = coreutil.Func("deployContract")
-	FuncGrantDeployPermission    = coreutil.Func("grantDeployPermission")
-	FuncRevokeDeployPermission   = coreutil.Func("revokeDeployPermission")
-	FuncRequireDeployPermissions = coreutil.Func("requireDeployPermissions")
-	ViewFindContract             = coreutil.ViewFunc("findContract")
-	ViewGetContractRecords       = coreutil.ViewFunc("getContractRecords")
 )

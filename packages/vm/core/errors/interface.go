@@ -6,17 +6,18 @@ import (
 
 var Contract = coreutil.NewContract(coreutil.CoreContractErrors)
 
-const (
-	prefixErrorTemplateMap = "a"
-)
-
 var (
-	FuncRegisterError         = coreutil.Func("registerError")
+	FuncRegisterError = coreutil.Func("registerError")
+
 	ViewGetErrorMessageFormat = coreutil.ViewFunc("getErrorMessageFormat")
 )
 
-// parameters
+// request parameters
 const (
 	ParamErrorCode          = "c"
 	ParamErrorMessageFormat = "m"
+)
+
+const (
+	prefixErrorTemplateMap = "a"
 )

@@ -11,7 +11,7 @@ import (
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
-	permissionsEnabled, err := codec.DecodeBool(ctx.State().Get(root.StateVarDeployPermissionsEnabled))
+	permissionsEnabled, err := codec.DecodeBool(ctx.State().Get(root.VarDeployPermissionsEnabled))
 	if err != nil {
 		return false
 	}
@@ -29,7 +29,7 @@ func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
 		return true
 	}
 
-	return collections.NewMap(ctx.State(), root.StateVarDeployPermissions).HasAt(caller.Bytes())
+	return collections.NewMap(ctx.State(), root.VarDeployPermissions).HasAt(caller.Bytes())
 }
 
 var errContractAlreadyExists = coreerrors.Register("contract with hname %08x already exists")

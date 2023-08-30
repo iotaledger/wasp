@@ -29,8 +29,8 @@ var (
 
 	// gas
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
-	ViewGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
 	FuncSetGasLimits = coreutil.Func("setGasLimits")
+	ViewGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
 	ViewGetGasLimits = coreutil.ViewFunc("getGasLimits")
 
 	// evm fees
@@ -58,15 +58,12 @@ var (
 
 // state variables
 const (
-	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
-	DefaultMinBaseTokensOnCommonAccount = uint64(3000)
-
 	// state controller
-	StateVarAllowedStateControllerAddresses = "a"
-	StateVarRotateToAddress                 = "r"
+	VarAllowedStateControllerAddresses = "a"
+	VarRotateToAddress                 = "r"
 
-	StateVarPayoutAgentID                = "pa"
-	StateVarMinBaseTokensOnCommonAccount = "vs"
+	VarPayoutAgentID                = "pa"
+	VarMinBaseTokensOnCommonAccount = "vs"
 
 	// chain owner
 	VarChainOwnerID          = "o"
@@ -93,7 +90,7 @@ const (
 	VarBlockKeepAmount = "b"
 )
 
-// params
+// request parameters
 const (
 	// state controller
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
@@ -129,13 +126,20 @@ const (
 	ParamPublicURL = "x"
 
 	// state pruning
-	ParamBlockKeepAmount   = "b"
-	BlockKeepAll           = -1
-	BlockKeepAmountDefault = 10_000
+	ParamBlockKeepAmount = "b"
 
 	// set payout AgentID
 	ParamSetPayoutAgentID = "s"
 
 	// set min SD
 	ParamSetMinCommonAccountBalance = "ms"
+)
+
+// contract constants
+const (
+	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
+	DefaultMinBaseTokensOnCommonAccount = uint64(3000)
+
+	BlockKeepAll           = -1
+	DefaultBlockKeepAmount = 10_000
 )

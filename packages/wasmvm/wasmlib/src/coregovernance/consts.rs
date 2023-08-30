@@ -29,7 +29,6 @@ pub(crate) const PARAM_SET_MIN_SD      : &str = "ms";
 pub(crate) const RESULT_ACCESS_NODE_CANDIDATES : &str = "an";
 pub(crate) const RESULT_ACCESS_NODES           : &str = "ac";
 pub(crate) const RESULT_CHAIN_ID               : &str = "c";
-pub(crate) const RESULT_CHAIN_OWNER            : &str = "o";
 pub(crate) const RESULT_CHAIN_OWNER_ID         : &str = "o";
 pub(crate) const RESULT_CONTROLLERS            : &str = "a";
 pub(crate) const RESULT_FEE_POLICY             : &str = "g";

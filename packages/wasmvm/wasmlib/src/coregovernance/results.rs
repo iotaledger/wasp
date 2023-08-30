@@ -254,8 +254,8 @@ pub struct ImmutableGetChainOwnerResults {
 
 impl ImmutableGetChainOwnerResults {
     // chain owner
-    pub fn chain_owner(&self) -> ScImmutableAgentID {
-        ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER))
+    pub fn chain_owner_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 }
 
@@ -272,8 +272,8 @@ impl MutableGetChainOwnerResults {
     }
 
     // chain owner
-    pub fn chain_owner(&self) -> ScMutableAgentID {
-        ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER))
+    pub fn chain_owner_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER_ID))
     }
 }
 

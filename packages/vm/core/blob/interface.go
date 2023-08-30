@@ -8,12 +8,16 @@ import (
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlob)
 
-const (
-	// request parameters
-	ParamHash  = "hash"
-	ParamField = "field"
-	ParamBytes = "bytes"
+var (
+	FuncStoreBlob = coreutil.Func("storeBlob")
 
+	ViewGetBlobInfo  = coreutil.ViewFunc("getBlobInfo")
+	ViewGetBlobField = coreutil.ViewFunc("getBlobField")
+	ViewListBlobs    = coreutil.ViewFunc("listBlobs")
+)
+
+// state variables
+const (
 	// variable names of standard blob's field
 	// user-defined field must be different
 	VarFieldProgramBinary      = "p"
@@ -21,11 +25,11 @@ const (
 	VarFieldProgramDescription = "d"
 )
 
-var (
-	FuncStoreBlob    = coreutil.Func("storeBlob")
-	ViewGetBlobInfo  = coreutil.ViewFunc("getBlobInfo")
-	ViewGetBlobField = coreutil.ViewFunc("getBlobField")
-	ViewListBlobs    = coreutil.ViewFunc("listBlobs")
+// request parameters
+const (
+	ParamHash  = "hash"
+	ParamField = "field"
+	ParamBytes = "bytes"
 )
 
 // FieldValueKey returns key of the blob field value in the SC state.

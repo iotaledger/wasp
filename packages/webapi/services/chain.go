@@ -185,7 +185,7 @@ func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot st
 		return nil, err
 	}
 
-	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
+	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
 	if err != nil {
 		return nil, err
 	}

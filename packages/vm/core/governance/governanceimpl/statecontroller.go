@@ -20,17 +20,17 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 	newStateControllerAddr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
 	// check is address is allowed
 	state := ctx.State()
-	amap := collections.NewMapReadOnly(state, governance.StateVarAllowedStateControllerAddresses)
+	amap := collections.NewMapReadOnly(state, governance.VarAllowedStateControllerAddresses)
 	if !amap.HasAt(isc.AddressToBytes(newStateControllerAddr)) {
 		panic(vm.ErrUnauthorized)
 	}
 
 	if !newStateControllerAddr.Equal(ctx.StateAnchor().StateController) {
 		// rotate request to another address has been issued. State update will be taken over by VM and will have no effect
-		// By setting StateVarRotateToAddress we signal the VM this special situation
-		// StateVarRotateToAddress value should never persist in the state
+		// By setting VarRotateToAddress we signal the VM this special situation
+		// VarRotateToAddress value should never persist in the state
 		ctx.Log().Infof("Governance::RotateStateController: newStateControllerAddress=%s", newStateControllerAddr.String())
-		state.Set(governance.StateVarRotateToAddress, isc.AddressToBytes(newStateControllerAddr))
+		state.Set(governance.VarRotateToAddress, isc.AddressToBytes(newStateControllerAddr))
 		return nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output
@@ -50,7 +50,7 @@ func rotateStateController(ctx isc.Sandbox) dict.Dict {
 func addAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
-	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
+	amap := collections.NewMap(ctx.State(), governance.VarAllowedStateControllerAddresses)
 	amap.SetAt(isc.AddressToBytes(addr), []byte{0x01})
 	return nil
 }
@@ -58,13 +58,13 @@ func addAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 func removeAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	addr := ctx.Params().MustGetAddress(governance.ParamStateControllerAddress)
-	amap := collections.NewMap(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
+	amap := collections.NewMap(ctx.State(), governance.VarAllowedStateControllerAddresses)
 	amap.DelAt(isc.AddressToBytes(addr))
 	return nil
 }
 
 func getAllowedStateControllerAddresses(ctx isc.SandboxView) dict.Dict {
-	amap := collections.NewMapReadOnly(ctx.StateR(), governance.StateVarAllowedStateControllerAddresses)
+	amap := collections.NewMapReadOnly(ctx.StateR(), governance.VarAllowedStateControllerAddresses)
 	if amap.Len() == 0 {
 		return nil
 	}
