@@ -44,8 +44,6 @@ func (s *kvStoreReaderWithGasBurn) Get(name kv.Key) []byte {
 
 func getWithGasBurn(r kv.KVStoreReader, name kv.Key, gasctx GasContext) []byte {
 	v := r.Get(name)
-	if v != nil {
-		gasctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(v)/100)+1) // minimum 1
-	}
+	gasctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(v)/100)+1) // minimum 1
 	return v
 }

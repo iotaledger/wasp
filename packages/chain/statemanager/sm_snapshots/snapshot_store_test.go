@@ -75,7 +75,7 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 	factory := sm_gpa_utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	storeOrig := factory.GetStore()
-	storeNew := state.NewStore(mapdb.NewMapDB())
+	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 
 	intermediateBlock := blocks[intermediateBlockIndex]
 	intermediateCommitment := intermediateBlock.L1Commitment()

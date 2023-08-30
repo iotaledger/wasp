@@ -80,7 +80,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	stores := map[gpa.NodeID]state.Store{}
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
-		stores[nid] = state.NewStore(mapdb.NewMapDB())
+		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err := origin.InitChainByAliasOutput(stores[nid], originAO)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
@@ -97,7 +97,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		}
 		cm, err := chainmanager.New(
 			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
-			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, updateCommitteeNodesCB, true, -1,
+			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, updateCommitteeNodesCB, true, -1, nil,
 			log.Named(nid.ShortString()),
 		)
 		require.NoError(t, err)
@@ -127,7 +127,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	step2AO, step2TX := tcl.FakeRotationTX(originAO, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
-		fake2ST := indexedstore.NewFake(state.NewStore(mapdb.NewMapDB()))
+		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 		origin.InitChain(fake2ST, nil, 0)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)

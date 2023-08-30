@@ -12,12 +12,13 @@ import (
 func SimulateRequest(
 	ch chain.ChainCore,
 	req isc.Request,
+	estimateGas bool,
 ) (*blocklog.RequestReceipt, error) {
 	aliasOutput, err := ch.LatestAliasOutput(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
 	}
-	res, err := runISCRequest(ch, aliasOutput, time.Now(), req)
+	res, err := runISCRequest(ch, aliasOutput, time.Now(), req, estimateGas)
 	if err != nil {
 		return nil, err
 	}

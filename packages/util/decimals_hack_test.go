@@ -8,7 +8,7 @@ import (
 )
 
 func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
-	value := big.NewInt(12345678)
+	value := uint64(12345678)
 	tests := []struct {
 		decimals uint32
 		expected string
@@ -29,34 +29,34 @@ func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
 	for _, test := range tests {
 		require.EqualValues(t,
 			test.expected,
-			CustomTokensDecimalsToEthereumDecimals(value, test.decimals).String(),
+			BaseTokensDecimalsToEthereumDecimals(value, test.decimals).String(),
 		)
 	}
 }
 
 func TestEthereumDecimalsToBaseTokenDecimals(t *testing.T) {
-	value := big.NewInt(123456789123456789)
+	value := uint64(123456789123456789)
 	tests := []struct {
 		decimals uint32
-		expected string
+		expected uint64
 	}{
 		{
 			decimals: 6,
-			expected: "123456", // extra decimal cases will be ignored
+			expected: 123456, // extra decimal cases will be ignored
 		},
 		{
 			decimals: 18,
-			expected: value.String(),
+			expected: value,
 		},
 		{
 			decimals: 20,
-			expected: value.String() + "00",
+			expected: value * 100,
 		},
 	}
 	for _, test := range tests {
 		require.EqualValues(t,
 			test.expected,
-			EthereumDecimalsToCustomTokenDecimals(value, test.decimals).String(),
+			EthereumDecimalsToBaseTokenDecimals(new(big.Int).SetUint64(value), test.decimals),
 		)
 	}
 }

@@ -98,3 +98,12 @@ var (
 	erc20ExampleContractBytecodeHex string
 	ERC20ExampleContractBytecode    = common.FromHex(strings.TrimSpace(erc20ExampleContractBytecodeHex))
 )
+
+//go:generate solc --abi --bin --overwrite RevertTest.sol -o .
+var (
+	//go:embed RevertTest.abi
+	RevertTestContractABI string
+	//go:embed RevertTest.bin
+	RevertTestContractBytecodeHex string
+	RevertTestContractBytecode    = common.FromHex(strings.TrimSpace(RevertTestContractBytecodeHex))
+)

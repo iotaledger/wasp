@@ -193,7 +193,7 @@ func testSnapshotManagerAny(
 	} else {
 		snapshotToLoad = nil
 	}
-	storeNew := state.NewStore(mapdb.NewMapDB())
+	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), snapshotToLoad, storeNew, log)
 	require.Equal(t, uint32(snapshotToLoadStateIndex), snapshotManagerNew.GetLoadedSnapshotStateIndex())
 

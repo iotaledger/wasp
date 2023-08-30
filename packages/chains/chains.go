@@ -51,6 +51,7 @@ type Chains struct {
 	deriveAliasOutputByQuorum        bool
 	pipeliningLimit                  int
 	consensusDelay                   time.Duration
+	recoveryTimeout                  time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -109,6 +110,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	recoveryTimeout time.Duration,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
@@ -159,6 +161,7 @@ func New(
 		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
 		pipeliningLimit:                     pipeliningLimit,
 		consensusDelay:                      consensusDelay,
+		recoveryTimeout:                     recoveryTimeout,
 		networkProvider:                     networkProvider,
 		trustedNetworkManager:               trustedNetworkManager,
 		chainStateStoreProvider:             chainStateStoreProvider,
@@ -325,7 +328,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		}
 	}
 
-	chainKVStore, err := c.chainStateStoreProvider(chainID)
+	chainKVStore, writeMutex, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
@@ -355,7 +358,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
 
 	// Initialize Snapshotter
-	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, chainMetrics.State))
+	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, writeMutex, chainMetrics.State))
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {
@@ -409,6 +412,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
 		c.consensusDelay,
+		c.recoveryTimeout,
 		validatorAgentID,
 		stateManagerParameters,
 	)

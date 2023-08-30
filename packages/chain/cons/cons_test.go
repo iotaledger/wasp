@@ -166,7 +166,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
-		chainStates[nid] = state.NewStore(mapdb.NewMapDB())
+		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		origin.InitChainByAliasOutput(chainStates[nid], ao0)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
@@ -364,7 +364,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
-		testNodeStates[nid] = state.NewStore(mapdb.NewMapDB())
+		testNodeStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		origin.InitChainByAliasOutput(testNodeStates[nid], originAO)
 	}
 	testChainInsts := make([]testConsInst, b)

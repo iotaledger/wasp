@@ -33,7 +33,7 @@ import (
 // L1Commitment calculates the L1 commitment for the origin state
 // originDeposit must exclude the minSD for the AliasOutput
 func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
-	block := InitChain(state.NewStore(mapdb.NewMapDB()), initParams, originDeposit)
+	block := InitChain(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()), initParams, originDeposit)
 	return block.L1Commitment()
 }
 

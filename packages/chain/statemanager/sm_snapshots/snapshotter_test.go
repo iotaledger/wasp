@@ -32,7 +32,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	err = f.Close()
 	require.NoError(t, err)
 
-	store := state.NewStore(mapdb.NewMapDB())
+	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	snapshotterNew := newSnapshotter(store)
 	f, err = os.Open(fileName)
 	require.NoError(t, err)

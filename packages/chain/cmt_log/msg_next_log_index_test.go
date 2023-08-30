@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -17,7 +16,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 		msg := &MsgNextLogIndex{
 			gpa.BasicMessage{},
 			LogIndex(rand.Int31()),
-			isc.RandomAliasOutputWithID(),
+			MsgNextLogIndexCauseRecover,
 			false,
 		}
 
@@ -26,7 +25,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 	msg := &MsgNextLogIndex{
 		gpa.BasicMessage{},
 		LogIndex(rand.Int31()),
-		isc.RandomAliasOutputWithID(),
+		MsgNextLogIndexCauseRecover,
 		true,
 	}
 

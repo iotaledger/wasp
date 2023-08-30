@@ -22,7 +22,7 @@ var _ rapid.StateMachine = &stateSM{}
 // State Machine initialization.
 func newStateSM() *stateSM {
 	sm := new(stateSM)
-	sm.store = NewStore(mapdb.NewMapDB())
+	sm.store = NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
 	sm.model = mapdb.NewMapDB()
 	return sm
@@ -100,7 +100,7 @@ func TestRapid(t *testing.T) {
 
 func TestRapidReproduced(t *testing.T) {
 	var err error
-	store := NewStore(mapdb.NewMapDB())
+	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})
@@ -124,7 +124,7 @@ func TestRapidReproduced(t *testing.T) {
 }
 
 func TestRapidReproduced2(t *testing.T) {
-	store := NewStore(mapdb.NewMapDB())
+	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})

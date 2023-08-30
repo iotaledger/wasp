@@ -56,11 +56,10 @@ import (
 )
 
 const (
-	recoveryTimeout              = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod             = 2 * time.Second  // TODO: Make it configurable?
-	printStatusPeriod            = 3 * time.Second  // TODO: Make it configurable?
-	consensusInstsInAdvance  int = 3                // TODO: Make it configurable?
-	awaitReceiptCleanupEvery int = 100              // TODO: Make it configurable?
+	redeliveryPeriod             = 2 * time.Second // TODO: Make it configurable?
+	printStatusPeriod            = 3 * time.Second // TODO: Make it configurable?
+	consensusInstsInAdvance  int = 3               // TODO: Make it configurable?
+	awaitReceiptCleanupEvery int = 100             // TODO: Make it configurable?
 
 	msgTypeChainMgr byte = iota
 )
@@ -169,6 +168,7 @@ type chainNodeImpl struct {
 	//
 	// Configuration values.
 	consensusDelay   time.Duration
+	recoveryTimeout  time.Duration
 	validatorAgentID isc.AgentID
 	//
 	// Information for other components.
@@ -276,6 +276,7 @@ func New(
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
+	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
 	smParameters sm_gpa.StateManagerParameters,
 ) (Chain, error) {
@@ -309,6 +310,7 @@ func New(
 		stateTrackerCnf:        nil, // Set bellow.
 		blockWAL:               blockWAL,
 		consensusDelay:         consensusDelay,
+		recoveryTimeout:        recoveryTimeout,
 		validatorAgentID:       validatorAgentID,
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
@@ -388,6 +390,7 @@ func New(
 		},
 		deriveAliasOutputByQuorum,
 		pipeliningLimit,
+		cni.chainMetrics.CmtLog,
 		cni.log.Named("CM"),
 	)
 	if err != nil {
@@ -871,7 +874,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
 				cni.validatorAgentID,
-				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
+				cni.recoveryTimeout, redeliveryPeriod, printStatusPeriod,
 				cni.chainMetrics.Consensus,
 				cni.chainMetrics.Pipe,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),

@@ -1,7 +1,6 @@
 package authentication
 
 import (
-	"crypto/subtle"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/users"
 )
 
@@ -18,7 +18,7 @@ var DefaultJWTDuration time.Duration
 
 func GetJWTAuthMiddleware(
 	config JWTAuthConfiguration,
-	privateKey []byte,
+	nodeIDKeypair *cryptolib.KeyPair,
 	userManager *users.UserManager,
 ) (*JWTAuth, echo.MiddlewareFunc) {
 	duration := config.Duration
@@ -27,8 +27,7 @@ func GetJWTAuthMiddleware(
 		duration = DefaultJWTDuration
 	}
 
-	// FIXME: replace "wasp" as nodeID
-	jwtAuth := NewJWTAuth(duration, "wasp", privateKey)
+	jwtAuth := NewJWTAuth(duration, nodeIDKeypair)
 
 	authMiddleware := echojwt.WithConfig(echojwt.Config{
 		ContextKey: JWTContextKey,
@@ -75,19 +74,15 @@ func GetJWTAuthMiddleware(
 				return nil, fmt.Errorf("wrong JWT claim type")
 			}
 
+			userMap := userManager.Users()
 			audience, err := claims.GetAudience()
 			if err != nil {
 				return nil, err
 			}
-			b, err := audience.MarshalJSON()
-			if err != nil {
-				return nil, err
-			}
-			if subtle.ConstantTimeCompare(b, []byte(fmt.Sprintf("[%q]", jwtAuth.nodeID))) == 0 {
+			if _, ok := userMap[audience[0]]; !ok {
 				return nil, fmt.Errorf("not in audience")
 			}
 
-			userMap := userManager.Users()
 			if _, ok := userMap[claims.Subject]; !ok {
 				return nil, fmt.Errorf("invalid subject")
 			}

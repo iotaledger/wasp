@@ -116,7 +116,7 @@ func (b *block) writeEssence(ww *rwutil.Writer) {
 
 // test only function
 func RandomBlock() Block {
-	store := NewStore(mapdb.NewMapDB())
+	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	for i := 0; i < 3; i++ {
 		draft.Set(kv.Key([]byte{byte(rand.Intn(math.MaxInt8))}), []byte{byte(rand.Intn(math.MaxInt8))})

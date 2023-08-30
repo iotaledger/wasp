@@ -242,11 +242,11 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	transfer := wasmlib.ScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
-	var gasReserveTransferAccountToChain = wasmlib.MinGasFee
+	gasReserveTransferAccountToChain := wasmlib.MinGasFee
 	if f.Params.GasReserveTransferAccountToChain().Exists() {
 		gasReserveTransferAccountToChain = f.Params.GasReserveTransferAccountToChain().Value()
 	}
-	var gasReserve = wasmlib.MinGasFee
+	gasReserve := wasmlib.MinGasFee
 	if f.Params.GasReserve().Exists() {
 		gasReserve = f.Params.GasReserve().Value()
 	}

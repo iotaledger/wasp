@@ -19,7 +19,7 @@ var (
 	FuncSendTransaction = coreutil.Func(evmnames.FuncSendTransaction)
 
 	// FuncCallContract is the entry point called by an evmOffLedgerCallRequest
-	// in order to process a view call (e.g. eth_call).
+	// in order to process a view call or gas estimation (e.g. eth_call, eth_estimateGas).
 	FuncCallContract = coreutil.Func(evmnames.FuncCallContract)
 
 	FuncGetChainID = coreutil.ViewFunc(evmnames.FuncGetChainID)

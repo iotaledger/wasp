@@ -123,6 +123,11 @@ type Sandbox interface {
 	// (e.g. with the debug_traceTransaction JSONRPC method).
 	EVMTracer() *EVMTracer
 
+	// TakeStateSnapshot takes a snapshot of the state. This is useful to implement the try/catch
+	// behavior in Solidity, where the state is reverted after a low level call fails.
+	TakeStateSnapshot() int
+	RevertToStateSnapshot(int)
+
 	// Privileged is a sub-interface of the sandbox which should not be called by VM plugins
 	Privileged() Privileged
 }
@@ -164,6 +169,7 @@ type Gas interface {
 	Burn(burnCode gas.BurnCode, par ...uint64)
 	Budget() uint64
 	Burned() uint64
+	EstimateGasMode() bool
 }
 
 // StateAnchor contains properties of the anchor output/transaction in the current context

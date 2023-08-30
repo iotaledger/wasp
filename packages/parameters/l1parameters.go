@@ -68,7 +68,7 @@ var (
 func isTestContext() bool {
 	return strings.HasSuffix(os.Args[0], ".test") ||
 		strings.HasSuffix(os.Args[0], ".test.exe") ||
-		strings.HasSuffix(os.Args[0], "__debug_bin")
+		strings.Contains(os.Args[0], "__debug_bin")
 }
 
 func L1() *L1Params {

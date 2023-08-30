@@ -107,12 +107,28 @@ func (tr *TrieReader) DebugDump() {
 		if len(nodeKey) > 0 {
 			key = fmt.Sprintf("[%d]", nodeKey[len(nodeKey)-1])
 		}
-		fmt.Printf("%s %v %s\n", strings.Repeat(" ", depth*4), key, n)
+		indent := strings.Repeat(" ", depth*4)
+		fmt.Printf("%s %v %s\n", indent, key, n)
 		if n.Terminal != nil && !n.Terminal.IsValue {
-			fmt.Printf("%s [v: %x -> %q]\n", strings.Repeat(" ", len(nodeKey)+1), n.Terminal.Data, tr.nodeStore.valueStore.Get(n.Terminal.Bytes()))
+			fmt.Printf(
+				"%s     [v: %x -> %q]\n",
+				indent,
+				n.Terminal.Data,
+				ellipsis(tr.nodeStore.valueStore.Get(n.Terminal.Bytes()), 20),
+			)
 		}
 		return IterateContinue
 	})
+}
+
+func ellipsis(b []byte, maxLen int) string {
+	if len(b) <= maxLen {
+		return string(b)
+	}
+	if maxLen < 3 {
+		maxLen = 3
+	}
+	return string(b[0:maxLen-3]) + "..."
 }
 
 // DebugDump prints the structure of the whole DB to stdout, for debugging purposes.

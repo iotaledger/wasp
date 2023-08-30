@@ -117,7 +117,7 @@ func (teT *testEnv) addVariedNodes(
 		smLog := teT.log.Named(nodeID.ShortString())
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
-		store := state.NewStore(mapdb.NewMapDB())
+		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)
 		loadedSnapshotStateIndex := snapshotManager.GetLoadedSnapshotStateIndex()
 		stores[nodeID] = store

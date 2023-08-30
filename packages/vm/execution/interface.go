@@ -25,6 +25,7 @@ type WaspContext interface {
 type GasContext interface {
 	GasBurnEnable(enable bool)
 	GasBurn(burnCode gas.BurnCode, par ...uint64)
+	GasEstimateMode() bool
 }
 
 type WaspCallContext interface {

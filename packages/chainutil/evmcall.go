@@ -21,7 +21,8 @@ func EVMCall(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethere
 	}
 
 	iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
-	res, err := runISCRequest(ch, aliasOutput, time.Now(), iscReq)
+	// TODO: setting EstimateGasMode = true feels wrong here
+	res, err := runISCRequest(ch, aliasOutput, time.Now(), iscReq, true)
 	if err != nil {
 		return nil, err
 	}

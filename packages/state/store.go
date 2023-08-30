@@ -6,6 +6,7 @@ package state
 import (
 	"errors"
 	"io"
+	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -26,21 +27,32 @@ type store struct {
 	stateCache *lru.Cache[trie.Hash, *state]
 
 	metrics *metrics.ChainStateMetrics
+
+	// writeMutex ensures that writes cannot be executed in parallel, because
+	// the trie refcounts are mutable
+	writeMutex *sync.Mutex
 }
 
-func NewStore(db kvstore.KVStore) Store {
-	return NewStoreWithMetrics(db, nil)
+func NewStore(db kvstore.KVStore, writeMutex *sync.Mutex) Store {
+	return NewStoreWithMetrics(db, writeMutex, nil)
 }
 
-func NewStoreWithMetrics(db kvstore.KVStore, metrics *metrics.ChainStateMetrics) Store {
+// Use only for testing -- writes will not be protected from parallel execution
+func NewStoreWithUniqueWriteMutex(db kvstore.KVStore) Store {
+	return NewStoreWithMetrics(db, new(sync.Mutex), nil)
+}
+
+func NewStoreWithMetrics(db kvstore.KVStore, writeMutex *sync.Mutex, metrics *metrics.ChainStateMetrics) Store {
 	stateCache, err := lru.New[trie.Hash, *state](100)
 	if err != nil {
 		panic(err)
 	}
+
 	return &store{
 		db:         &storeDB{db},
 		stateCache: stateCache,
 		metrics:    metrics,
+		writeMutex: writeMutex,
 	}
 }
 
@@ -147,6 +159,9 @@ func (s *store) ExtractBlock(d StateDraft) Block {
 }
 
 func (s *store) Commit(d StateDraft) Block {
+	s.writeMutex.Lock()
+	defer s.writeMutex.Unlock()
+
 	start := time.Now()
 	block, muts, stats := s.extractBlock(d)
 	s.db.commitToDB(muts)
@@ -157,6 +172,9 @@ func (s *store) Commit(d StateDraft) Block {
 }
 
 func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
+	s.writeMutex.Lock()
+	defer s.writeMutex.Unlock()
+
 	start := time.Now()
 	state, err := s.StateByTrieRoot(trieRoot)
 	if err != nil {
@@ -190,6 +208,9 @@ func (s *store) LargestPrunedBlockIndex() (uint32, error) {
 }
 
 func (s *store) SetLatest(trieRoot trie.Hash) error {
+	s.writeMutex.Lock()
+	defer s.writeMutex.Unlock()
+
 	_, err := s.BlockByTrieRoot(trieRoot)
 	if err != nil {
 		return err
@@ -238,5 +259,9 @@ func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader) error {
 	if s.db.hasBlock(root) {
 		return nil
 	}
+
+	s.writeMutex.Lock()
+	defer s.writeMutex.Unlock()
+
 	return s.db.restoreSnapshot(root, r)
 }

@@ -111,7 +111,7 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 }
 
 func initializedStore(db kvstore.KVStore) state.Store {
-	st := state.NewStore(db)
+	st := state.NewStoreWithUniqueWriteMutex(db)
 	origin.InitChain(st, nil, 0)
 	return st
 }
@@ -133,8 +133,8 @@ func TestOriginBlock(t *testing.T) {
 	require.EqualValues(t, 0, s.BlockIndex())
 	require.True(t, s.Timestamp().IsZero())
 
-	validateBlock0(state.NewStore(db).BlockByTrieRoot(block0.TrieRoot()))
-	validateBlock0(state.NewStore(db).LatestBlock())
+	validateBlock0(state.NewStoreWithUniqueWriteMutex(db).BlockByTrieRoot(block0.TrieRoot()))
+	validateBlock0(state.NewStoreWithUniqueWriteMutex(db).LatestBlock())
 
 	require.EqualValues(t, 0, cs.LatestBlockIndex())
 }
@@ -143,14 +143,14 @@ func TestOriginBlockDeterminism(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		deposit := rapid.Uint64().Draw(t, "deposit")
 		db := mapdb.NewMapDB()
-		st := state.NewStore(db)
+		st := state.NewStoreWithUniqueWriteMutex(db)
 		require.True(t, st.IsEmpty())
 		blockA := origin.InitChain(st, nil, deposit)
 		blockB := origin.InitChain(st, nil, deposit)
 		require.False(t, st.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
-		st2 := state.NewStore(db2)
+		st2 := state.NewStoreWithUniqueWriteMutex(db2)
 		require.True(t, st2.IsEmpty())
 		blockC := origin.InitChain(st2, nil, deposit)
 		require.False(t, st2.IsEmpty())
@@ -461,36 +461,43 @@ func TestPruning2(t *testing.T) {
 	}
 }
 
-func TestSnapshot(t *testing.T) {
-	snapshot := new(bytes.Buffer)
-
-	trieRoot, blockHash := func() (trie.Hash, state.BlockHash) {
-		db := mapdb.NewMapDB()
-		cs := mustChainStore{initializedStore(db)}
-		require.False(t, cs.IsEmpty())
-		for i := byte(1); i <= 10; i++ {
-			d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
-			d.Set(kv.Key(fmt.Sprintf("k%d", i)), []byte("v"))
-			d.Set("k", []byte{i})
-			if i == 1 {
-				d.Set("x", []byte(strings.Repeat("v", 70)))
-			}
-			block := cs.Commit(d)
-			require.False(t, cs.IsEmpty())
-			err := cs.SetLatest(block.TrieRoot())
-			require.NoError(t, err)
+func makeRandomDB(t *testing.T, nBlocks int) (mustChainStore, kvstore.KVStore) {
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{initializedStore(db)}
+	require.False(t, cs.IsEmpty())
+	for i := 1; i <= nBlocks; i++ {
+		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+		d.Set(kv.Key(fmt.Sprintf("k%d", i)), []byte("v"))
+		d.Set("k", []byte{byte(i)})
+		if i == 1 {
+			d.Set("x", []byte(strings.Repeat("v", 70)))
 		}
-		block := cs.LatestBlock()
-		err := cs.TakeSnapshot(block.TrieRoot(), snapshot)
+		block := cs.Commit(d)
+		require.False(t, cs.IsEmpty())
+		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
-		return block.TrieRoot(), block.Hash()
-	}()
+	}
+	return cs, db
+}
+
+func makeRandomDBSnapshot(t *testing.T, nBlocks int) (trie.Hash, state.BlockHash, *bytes.Buffer) {
+	cs, _ := makeRandomDB(t, nBlocks)
+	block := cs.LatestBlock()
+	snapshot := new(bytes.Buffer)
+	err := cs.TakeSnapshot(block.TrieRoot(), snapshot)
+	require.NoError(t, err)
+	return block.TrieRoot(), block.Hash(), snapshot
+}
+
+func TestSnapshot(t *testing.T) {
+	trieRoot, blockHash, snapshot := makeRandomDBSnapshot(t, 10)
 
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{state.NewStore(db)}
+	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
 	require.True(t, cs.IsEmpty())
 	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
+	cs.SetLatest(trieRoot)
 	require.False(t, cs.IsEmpty())
 
 	block := cs.LatestBlock()
@@ -506,6 +513,39 @@ func TestSnapshot(t *testing.T) {
 	}
 	require.EqualValues(t, []byte{10}, state.Get("k"))
 	require.EqualValues(t, []byte(strings.Repeat("v", 70)), state.Get("x"))
+}
+
+func TestRestoreSnapshotEmptyDB(t *testing.T) {
+	trieRoot, _, snapshot := makeRandomDBSnapshot(t, 10)
+
+	// restore the snapshot on empty DB
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
+	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
+	require.NoError(t, err)
+
+	// at this point the DB contains a single trie root with all refcounts = 1
+	// let's prune it and assert that the DB is left empty
+	_, err = cs.Prune(trieRoot)
+	require.NoError(t, err)
+	require.Empty(t, toMap(db))
+}
+
+func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
+	trieRoot, _, snapshot := makeRandomDBSnapshot(t, 10)
+
+	cs, db := makeRandomDB(t, 10)
+	dbCopy := toMap(db)
+
+	// restore the snapshot, then prune it -- the DB should be left unchanged
+	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
+	require.NoError(t, err)
+	_, err = cs.Prune(trieRoot)
+	require.NoError(t, err)
+
+	dbCopy2 := toMap(db)
+
+	require.EqualValues(t, dbCopy, dbCopy2)
 }
 
 func TestPrunedSnapshot(t *testing.T) {
@@ -540,11 +580,20 @@ func TestPrunedSnapshot(t *testing.T) {
 	t.Logf("snapshotted block index %v", blockToSnapshot.StateIndex())
 
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{state.NewStore(db)}
+	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
 	require.True(t, cs.IsEmpty())
 	err = cs.RestoreSnapshot(blockToSnapshot.TrieRoot(), bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
 	_, err = cs.LargestPrunedBlockIndex()
 	require.Error(t, err)
 	require.False(t, cs.IsEmpty())
+}
+
+func toMap(store kvstore.KVStore) map[string][]byte {
+	m := make(map[string][]byte)
+	store.Iterate(kvstore.EmptyPrefix, func(k, v []byte) bool {
+		m[string(k)] = v
+		return true
+	})
+	return m
 }

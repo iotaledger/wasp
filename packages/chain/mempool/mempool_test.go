@@ -195,16 +195,8 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 
 func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleTime time.Time) *isc.AliasOutputWithID {
 	// sort reqs by nonce
-	slices.SortFunc(reqs, func(a, b isc.Request) bool {
-		offledgerReqA, ok := a.(isc.OffLedgerRequest)
-		if !ok {
-			return false
-		}
-		offledgerReqB, ok := b.(isc.OffLedgerRequest)
-		if !ok {
-			return false
-		}
-		return offledgerReqA.Nonce() < offledgerReqB.Nonce()
+	slices.SortFunc(reqs, func(a, b isc.Request) int {
+		return int(a.(isc.OffLedgerRequest).Nonce() - b.(isc.OffLedgerRequest).Nonce())
 	})
 
 	store := te.stores[0]
@@ -733,7 +725,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stores[i] = state.NewStore(mapdb.NewMapDB())
+		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err := origin.InitChainByAliasOutput(te.stores[i], te.originAO)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())

@@ -41,6 +41,10 @@ func (b *BufferedKVStore) Mutations() *Mutations {
 	return b.muts
 }
 
+func (b *BufferedKVStore) SetMutations(muts *Mutations) {
+	b.muts = muts
+}
+
 // DangerouslyDumpToDict returns a Dict with the whole contents of the
 // backing store + applied mutations.
 func (b *BufferedKVStore) DangerouslyDumpToDict() dict.Dict {

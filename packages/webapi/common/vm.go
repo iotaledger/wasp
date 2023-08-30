@@ -62,7 +62,7 @@ func CallView(ch chainpkg.Chain, contractName, functionName isc.Hname, params di
 }
 
 func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
-	rec, err := chainutil.SimulateRequest(ch, req)
+	rec, err := chainutil.SimulateRequest(ch, req, true)
 	if err != nil {
 		return nil, err
 	}

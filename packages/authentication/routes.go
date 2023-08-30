@@ -68,10 +68,10 @@ func AddAuthentication(
 	switch authConfig.Scheme {
 	case AuthJWT:
 		var jwtAuth *JWTAuth
-		privateKey := nodeIdentityProvider.NodeIdentity().GetPrivateKey().AsBytes()
+		nodeIDKeypair := nodeIdentityProvider.NodeIdentity()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth, middleware = GetJWTAuthMiddleware(authConfig.JWTConfig, privateKey, userManager)
+		jwtAuth, middleware = GetJWTAuthMiddleware(authConfig.JWTConfig, nodeIDKeypair, userManager)
 		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
 		handler = authHandler.JWTLoginHandler
 
