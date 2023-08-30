@@ -525,10 +525,14 @@ func TestRestoreSnapshotEmptyDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// at this point the DB contains a single trie root with all refcounts = 1
-	// let's prune it and assert that the DB is left empty
+	// let's prune it and assert that the DB is left (almost) empty: as pruning
+	// adds largest pruned block index into the store, it still remains there
+	// even if all the other information is deleted. See addLargestPrunedBlockIndex
+	// for details.
 	_, err = cs.Prune(trieRoot)
 	require.NoError(t, err)
-	require.Empty(t, toMap(db))
+	expectedMap := addLargestPrunedBlockIndex(map[string][]byte{}, 10)
+	require.EqualValues(t, expectedMap, toMap(db))
 }
 
 func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
@@ -537,7 +541,9 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 	cs, db := makeRandomDB(t, 10)
 	dbCopy := toMap(db)
 
-	// restore the snapshot, then prune it -- the DB should be left unchanged
+	// restore the snapshot, then prune it -- the DB should be left unchanged,
+	// except largest pruned block index, which is added after pruning. See
+	// addLargestPrunedBlockIndex for details.
 	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
 	_, err = cs.Prune(trieRoot)
@@ -545,7 +551,7 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 
 	dbCopy2 := toMap(db)
 
-	require.EqualValues(t, dbCopy, dbCopy2)
+	require.EqualValues(t, addLargestPrunedBlockIndex(dbCopy, 10), dbCopy2)
 }
 
 func TestPrunedSnapshot(t *testing.T) {
@@ -596,4 +602,14 @@ func toMap(store kvstore.KVStore) map[string][]byte {
 		return true
 	})
 	return m
+}
+
+// Just for testing; works for small indexes (0-127). Key of added entry is
+// `[]byte{3}` (see keyLargestPrunedBlockIndex function) converted to string.
+// Value of added entry is state index put in four bytes little endian format.
+// If state index is not larger than 127, its value fits in the least significant
+// byte and other three bytes are 0.
+func addLargestPrunedBlockIndex(db map[string][]byte, indexOfLeastSignificantByte byte) map[string][]byte {
+	db["\x03"] = []byte{indexOfLeastSignificantByte, 0, 0, 0}
+	return db
 }
