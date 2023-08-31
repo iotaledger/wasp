@@ -64,11 +64,16 @@ func MapNFTDataResponse(nft *isc.NFT) *NFTDataResponse {
 		return nil
 	}
 
+	ownerString := ""
+	if nft.Owner != nil {
+		ownerString = nft.Owner.String()
+	}
+
 	return &NFTDataResponse{
 		ID:       nft.ID.ToHex(),
 		Issuer:   nft.Issuer.String(),
 		Metadata: iotago.EncodeHex(nft.Metadata),
-		Owner:    nft.Owner.String(),
+		Owner:    ownerString,
 	}
 }
 
