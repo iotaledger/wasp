@@ -42,6 +42,8 @@ const (
 	PrefixNFTs = "n"
 	// PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
 	PrefixNFTsByCollection = "c"
+	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
+	prefixNewlyMintedNFTs = "N"
 	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	PrefixFoundries = "f"
 
@@ -172,4 +174,5 @@ func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	updateNativeTokenOutputIDs(state, anchorTxID)
 	updateFoundryOutputIDs(state, anchorTxID)
 	updateNFTOutputIDs(state, anchorTxID)
+	updateNewlyMintedNFTOutputIDs(state, anchorTxID)
 }

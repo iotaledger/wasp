@@ -134,6 +134,9 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 			totals.TotalBaseTokensInStorageDeposit += nft.resultingOutput.Amount
 		}
 	}
+	for _, nft := range txb.nftsMinted {
+		totals.SentOutBaseTokens += nft.Deposit()
+	}
 	return totals
 }
 

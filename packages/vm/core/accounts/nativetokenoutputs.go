@@ -21,7 +21,7 @@ func nativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // SaveNativeTokenOutput map nativeTokenID -> foundryRec
-func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex uint32, outputIndex uint16) {
+func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
 		// TransactionID is unknown yet, will be filled next block
 		OutputID:          iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),

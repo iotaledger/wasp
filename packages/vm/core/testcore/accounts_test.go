@@ -1429,3 +1429,74 @@ func TestNonces(t *testing.T) {
 	_, err = ch.PostRequestOffLedger(req, senderWallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 }
+
+func TestNFTMint(t *testing.T) {
+	env := solo.New(t)
+	ch := env.NewChain()
+	wallet, address := env.NewKeyPairWithFunds()
+	agentID := isc.NewAgentID(address)
+
+	t.Run("mint to self", func(t *testing.T) {
+		// mint NFT to self and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamAgentID, agentID.Bytes(),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		_, err := ch.PostRequestSync(req, wallet)
+		require.NoError(t, err)
+		require.Len(t, ch.L2NFTs(agentID), 0)
+
+		// post some random request to make the chain progress to the next block
+		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+		require.Len(t, ch.L2NFTs(agentID), 1)
+	})
+
+	t.Run("mint for another user", func(t *testing.T) {
+		anotherUserAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
+
+		// mint NFT to self and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		_, err := ch.PostRequestSync(req, wallet)
+		require.NoError(t, err)
+		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+
+		// post some random request to make the chain progress to the next block
+		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+		require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
+	})
+
+	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
+		anotherUserAddr := tpkg.RandEd25519Address()
+		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
+
+		// mint NFT to self and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
+			accounts.ParamNFTWithdrawOnMint, codec.Encode(true),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		require.Len(t, env.L1NFTs(anotherUserAddr), 0)
+		_, err := ch.PostRequestSync(req, wallet)
+		require.NoError(t, err)
+		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+		require.Len(t, env.L1NFTs(anotherUserAddr), 1)
+	})
+}

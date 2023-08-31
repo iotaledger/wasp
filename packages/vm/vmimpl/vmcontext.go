@@ -193,16 +193,15 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// IMPORTANT: do not iterate by this map, order of the slice above must be respected
 	foundryOutputsMap := vmctx.txbuilder.FoundryOutputsBySN(foundryIDsToBeUpdated)
 
-	NFTOutputsToBeAdded, NFTOutputsToBeRemoved := vmctx.txbuilder.NFTOutputsToBeUpdated()
+	NFTOutputsToBeAdded, NFTOutputsToBeRemoved, MintedNFTOutputs := vmctx.txbuilder.NFTOutputsToBeUpdated()
 
-	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 	outputIndex := uint16(1)
 
 	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
 		// update native token outputs
 		for _, ntID := range nativeTokenIDsToBeUpdated {
 			vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", ntID, outputIndex)
-			accounts.SaveNativeTokenOutput(s, nativeTokensMap[ntID], blockIndex, outputIndex)
+			accounts.SaveNativeTokenOutput(s, nativeTokensMap[ntID], outputIndex)
 			outputIndex++
 		}
 		for _, id := range nativeTokensToBeRemoved {
@@ -213,7 +212,7 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 		// update foundry UTXOs
 		for _, foundryID := range foundryIDsToBeUpdated {
 			vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", foundryID, outputIndex)
-			accounts.SaveFoundryOutput(s, foundryOutputsMap[foundryID], blockIndex, outputIndex)
+			accounts.SaveFoundryOutput(s, foundryOutputsMap[foundryID], outputIndex)
 			outputIndex++
 		}
 		for _, sn := range foundriesToBeRemoved {
@@ -224,12 +223,18 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 		// update NFT Outputs
 		for _, out := range NFTOutputsToBeAdded {
 			vmctx.task.Log.Debugf("saving NFT %s, outputIndex: %d", out.NFTID, outputIndex)
-			accounts.SaveNFTOutput(s, out, blockIndex, outputIndex)
+			accounts.SaveNFTOutput(s, out, outputIndex)
 			outputIndex++
 		}
 		for _, out := range NFTOutputsToBeRemoved {
 			vmctx.task.Log.Debugf("deleting NFT %s", out.NFTID)
 			accounts.DeleteNFTOutput(s, out.NFTID)
+		}
+
+		for positionInMintedList := range MintedNFTOutputs {
+			vmctx.task.Log.Debugf("minted NFT on output index: %d", outputIndex)
+			accounts.SaveMintedNFTOutput(s, uint16(positionInMintedList), outputIndex)
+			outputIndex++
 		}
 	})
 

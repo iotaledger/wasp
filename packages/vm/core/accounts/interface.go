@@ -12,6 +12,7 @@ var (
 	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
 	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
+	FuncMintNFT                = coreutil.Func("mintNFT")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw               = coreutil.Func("withdraw")
@@ -50,6 +51,8 @@ const (
 	ParamNFTData                = "e"
 	ParamNFTID                  = "z"
 	ParamNFTIDs                 = "i"
+	ParamNFTImmutableData       = "I"
+	ParamNFTWithdrawOnMint      = "w"
 	ParamNativeTokenID          = "N"
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"

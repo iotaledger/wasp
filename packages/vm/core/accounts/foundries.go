@@ -29,7 +29,7 @@ func allFoundriesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // SaveFoundryOutput stores foundry output into the map of all foundry outputs (compressed form)
-func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, blockIndex uint32, outputIndex uint16) {
+func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, outputIndex uint16) {
 	foundryRec := foundryOutputRec{
 		// TransactionID is unknown yet, will be filled next block
 		OutputID:    iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),

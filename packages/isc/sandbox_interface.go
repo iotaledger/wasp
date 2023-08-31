@@ -138,6 +138,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
+	MintNFT(addr iotago.Address, immutableMetadata []byte) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, assets *Assets)
 	DebitFromAccount(AgentID, *Assets)
