@@ -174,7 +174,7 @@ func DownloadToFile(
 	filePathLocal string,
 	timeout time.Duration,
 	addProgressReporter func(io.Reader, string, uint64) io.Reader,
-) (string, error) {
+) error {
 	filePathTemp := filePathLocal + tempFileSuffixConst
 	err := func() error { // Function is used to make defered close occur when it is needed even if write is successful
 		downloader, e := NewDownloaderWithTimeout(ctx, filePathNetwork, timeout)
@@ -201,12 +201,12 @@ func DownloadToFile(
 		return nil
 	}()
 	if err != nil {
-		return "", err
+		return err
 	}
 	err = os.Rename(filePathTemp, filePathLocal)
 	if err != nil {
-		return "", fmt.Errorf("failed to move temporary file %s to permanent location %s: %v",
+		return fmt.Errorf("failed to move temporary file %s to permanent location %s: %v",
 			filePathTemp, filePathLocal, err)
 	}
-	return filePathLocal, nil
+	return nil
 }

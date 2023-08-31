@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -68,10 +69,12 @@ type Chains struct {
 	smStateManagerTimerTickPeriod       time.Duration
 	smPruningMinStatesToKeep            int
 	smPruningMaxStatesToDelete          int
+	defaultSnapshotToLoad               *state.BlockHash
+	snapshotsToLoad                     map[isc.ChainIDKey]state.BlockHash
 	snapshotPeriod                      uint32
+	snapshotDelay                       uint32
 	snapshotFolderPath                  string
 	snapshotNetworkPaths                []string
-	snapshotUpdatePeriod                time.Duration
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -122,10 +125,11 @@ func New(
 	smStateManagerTimerTickPeriod time.Duration,
 	smPruningMinStatesToKeep int,
 	smPruningMaxStatesToDelete int,
+	snapshotsToLoad []string,
 	snapshotPeriod uint32,
+	snapshotDelay uint32,
 	snapshotFolderPath string,
 	snapshotNetworkPaths []string,
-	snapshotUpdatePeriod time.Duration,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -173,9 +177,9 @@ func New(
 		smPruningMinStatesToKeep:            smPruningMinStatesToKeep,
 		smPruningMaxStatesToDelete:          smPruningMaxStatesToDelete,
 		snapshotPeriod:                      snapshotPeriod,
+		snapshotDelay:                       snapshotDelay,
 		snapshotFolderPath:                  snapshotFolderPath,
 		snapshotNetworkPaths:                snapshotNetworkPaths,
-		snapshotUpdatePeriod:                snapshotUpdatePeriod,
 		chainRecordRegistryProvider:         chainRecordRegistryProvider,
 		dkShareRegistryProvider:             dkShareRegistryProvider,
 		nodeIdentityProvider:                nodeIdentityProvider,
@@ -185,8 +189,38 @@ func New(
 		chainMetricsProvider:                chainMetricsProvider,
 		validatorFeeAddr:                    validatorFeeAddr,
 	}
+	ret.initSnapshotsToLoad(snapshotsToLoad)
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
+}
+
+func (c *Chains) initSnapshotsToLoad(configs []string) {
+	c.defaultSnapshotToLoad = nil
+	c.snapshotsToLoad = make(map[isc.ChainIDKey]state.BlockHash)
+	for _, config := range configs {
+		configSplit := strings.Split(config, ":")
+		// NOTE: Split does not return 0 length slice if second parameter is not zero length string; this is not checked
+		if len(configSplit) == 1 {
+			blockHash, err := state.BlockHashFromString(configSplit[0])
+			if err != nil {
+				c.log.Warnf("Parsing snapshots to load: %s is not a block hash: %v", configSplit[0], err)
+				continue
+			}
+			c.defaultSnapshotToLoad = &blockHash
+		} else {
+			chainID, err := isc.ChainIDFromString(configSplit[0])
+			if err != nil {
+				c.log.Warnf("Parsing snapshots to load: %s in %s is not a chain ID: %v", configSplit[0], config, err)
+				continue
+			}
+			blockHash, err := state.BlockHashFromString(configSplit[1])
+			if err != nil {
+				c.log.Warnf("Parsing snapshots to load: %s in %s is not a block hash: %v", configSplit[1], config, err)
+				continue
+			}
+			c.snapshotsToLoad[chainID.Key()] = blockHash
+		}
+	}
 }
 
 func (c *Chains) Run(ctx context.Context) error {
@@ -322,7 +356,6 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
 	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
-	stateManagerParameters.SnapshotManagerUpdatePeriod = c.snapshotUpdatePeriod
 
 	// Initialize Snapshotter
 	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, writeMutex, chainMetrics.State))
@@ -332,11 +365,20 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		validatorAgentID = isc.NewAgentID(c.validatorFeeAddr)
 	}
 	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
+	blockHash, ok := c.snapshotsToLoad[chainID.Key()]
+	var snapshotToLoad *state.BlockHash
+	if ok {
+		snapshotToLoad = &blockHash
+	} else {
+		snapshotToLoad = c.defaultSnapshotToLoad
+	}
 	chainSnapshotManager, err := sm_snapshots.NewSnapshotManager(
 		chainCtx,
 		chainShutdownCoordinator.Nested("SnapMgr"),
 		chainID,
+		snapshotToLoad,
 		c.snapshotPeriod,
+		c.snapshotDelay,
 		c.snapshotFolderPath,
 		c.snapshotNetworkPaths,
 		chainStore,

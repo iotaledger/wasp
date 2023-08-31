@@ -42,7 +42,7 @@ func (r *ChainRecord) ChainID() isc.ChainID {
 	return r.id
 }
 
-func (r *ChainRecord) Clone() onchangemap.Item[string, isc.ChainID] {
+func (r *ChainRecord) Clone() onchangemap.Item[isc.ChainIDKey, isc.ChainID] {
 	return &ChainRecord{
 		id:          r.id,
 		Active:      r.Active,
@@ -152,7 +152,7 @@ type ChainRecordRegistryEvents struct {
 }
 
 type ChainRecordRegistryImpl struct {
-	onChangeMap *onchangemap.OnChangeMap[string, isc.ChainID, *ChainRecord]
+	onChangeMap *onchangemap.OnChangeMap[isc.ChainIDKey, isc.ChainID, *ChainRecord]
 
 	events *ChainRecordRegistryEvents
 
@@ -176,7 +176,7 @@ func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, erro
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
-		onchangemap.WithChangedCallback[string, isc.ChainID](registry.writeChainRecordsJSON),
+		onchangemap.WithChangedCallback[isc.ChainIDKey, isc.ChainID](registry.writeChainRecordsJSON),
 	)
 
 	// load chain records on startup

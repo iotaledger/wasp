@@ -144,12 +144,16 @@ func TestOriginBlockDeterminism(t *testing.T) {
 		deposit := rapid.Uint64().Draw(t, "deposit")
 		db := mapdb.NewMapDB()
 		st := state.NewStoreWithUniqueWriteMutex(db)
+		require.True(t, st.IsEmpty())
 		blockA := origin.InitChain(st, nil, deposit)
 		blockB := origin.InitChain(st, nil, deposit)
+		require.False(t, st.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
 		st2 := state.NewStoreWithUniqueWriteMutex(db2)
+		require.True(t, st2.IsEmpty())
 		blockC := origin.InitChain(st2, nil, deposit)
+		require.False(t, st2.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
 	})
 }
@@ -157,14 +161,17 @@ func TestOriginBlockDeterminism(t *testing.T) {
 func Test1Block(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{initializedStore(db)}
+	require.False(t, cs.IsEmpty())
 
 	block1 := func() state.Block {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("a", []byte{1})
 
 		require.EqualValues(t, []byte{1}, d.Get("a"))
+		block := cs.Commit(d)
+		require.False(t, cs.IsEmpty())
 
-		return cs.Commit(d)
+		return block
 	}()
 	err := cs.SetLatest(block1.TrieRoot())
 	require.NoError(t, err)
@@ -370,6 +377,9 @@ func TestPruning(t *testing.T) {
 				trieRoot := r.cs.BlockByIndex(p).TrieRoot()
 				stats, err := r.cs.Prune(trieRoot)
 				require.NoError(t, err)
+				lpbIndex, err := r.cs.LargestPrunedBlockIndex()
+				require.NoError(t, err)
+				require.Equal(t, p, lpbIndex)
 
 				t.Logf("pruned block %d: %+v %s", p, stats, trieRoot)
 				{
@@ -381,6 +391,9 @@ func TestPruning(t *testing.T) {
 					require.ErrorContains(t, err, "not found")
 				}
 				require.False(t, r.cs.HasTrieRoot(trieRoot))
+			} else {
+				_, err := r.cs.LargestPrunedBlockIndex()
+				require.Error(t, err)
 			}
 
 			sizes = append(sizes, dbSize(r.db))
@@ -415,12 +428,22 @@ func TestPruning2(t *testing.T) {
 		trieRoots[i], trieRoots[j] = trieRoots[j], trieRoots[i]
 	})
 
+	lpbIndexExpected := uint32(0)
+	_, err := r.cs.LargestPrunedBlockIndex()
+	require.Error(t, err)
 	for len(trieRoots) > 3 {
 		// prune 2 random trie roots
 		for i := 0; i < 2; i++ {
 			trieRoot := trieRoots[0]
+			block := r.cs.BlockByTrieRoot(trieRoot)
 			stats, err := r.cs.Prune(trieRoot)
 			require.NoError(t, err)
+			if block.StateIndex() > lpbIndexExpected {
+				lpbIndexExpected = block.StateIndex()
+			}
+			lpbIndex, err := r.cs.LargestPrunedBlockIndex()
+			require.NoError(t, err)
+			require.Equal(t, lpbIndexExpected, lpbIndex)
 			t.Logf("pruned trie root %x: %+v", trieRoot, stats)
 			trieRoots = trieRoots[1:]
 
@@ -441,6 +464,7 @@ func TestPruning2(t *testing.T) {
 func makeRandomDB(t *testing.T, nBlocks int) (mustChainStore, kvstore.KVStore) {
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{initializedStore(db)}
+	require.False(t, cs.IsEmpty())
 	for i := 1; i <= nBlocks; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set(kv.Key(fmt.Sprintf("k%d", i)), []byte("v"))
@@ -449,6 +473,7 @@ func makeRandomDB(t *testing.T, nBlocks int) (mustChainStore, kvstore.KVStore) {
 			d.Set("x", []byte(strings.Repeat("v", 70)))
 		}
 		block := cs.Commit(d)
+		require.False(t, cs.IsEmpty())
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
 	}
@@ -469,9 +494,11 @@ func TestSnapshot(t *testing.T) {
 
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
+	require.True(t, cs.IsEmpty())
 	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
 	cs.SetLatest(trieRoot)
+	require.False(t, cs.IsEmpty())
 
 	block := cs.LatestBlock()
 	require.EqualValues(t, 10, block.StateIndex())
@@ -498,10 +525,14 @@ func TestRestoreSnapshotEmptyDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// at this point the DB contains a single trie root with all refcounts = 1
-	// let's prune it and assert that the DB is left empty
+	// let's prune it and assert that the DB is left (almost) empty: as pruning
+	// adds largest pruned block index into the store, it still remains there
+	// even if all the other information is deleted. See addLargestPrunedBlockIndex
+	// for details.
 	_, err = cs.Prune(trieRoot)
 	require.NoError(t, err)
-	require.Empty(t, toMap(db))
+	expectedMap := addLargestPrunedBlockIndex(map[string][]byte{}, 10)
+	require.EqualValues(t, expectedMap, toMap(db))
 }
 
 func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
@@ -510,7 +541,9 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 	cs, db := makeRandomDB(t, 10)
 	dbCopy := toMap(db)
 
-	// restore the snapshot, then prune it -- the DB should be left unchanged
+	// restore the snapshot, then prune it -- the DB should be left unchanged,
+	// except largest pruned block index, which is added after pruning. See
+	// addLargestPrunedBlockIndex for details.
 	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
 	require.NoError(t, err)
 	_, err = cs.Prune(trieRoot)
@@ -518,7 +551,48 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 
 	dbCopy2 := toMap(db)
 
-	require.EqualValues(t, dbCopy, dbCopy2)
+	require.EqualValues(t, addLargestPrunedBlockIndex(dbCopy, 10), dbCopy2)
+}
+
+func TestPrunedSnapshot(t *testing.T) {
+	r := newRandomState(t)
+	for i := 1; i <= 20; i++ {
+		block := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
+		require.False(t, r.cs.IsEmpty())
+		index := block.StateIndex()
+		t.Logf("committed block %d", index)
+	}
+	_, err := r.cs.LargestPrunedBlockIndex()
+	require.Error(t, err)
+
+	for i := 0; i <= 10; i++ {
+		block := r.cs.BlockByIndex(uint32(i))
+		var stats trie.PruneStats
+		stats, err = r.cs.Prune(block.TrieRoot())
+		require.NoError(t, err)
+		var lpbIndex uint32
+		lpbIndex, err = r.cs.LargestPrunedBlockIndex()
+		require.NoError(t, err)
+		require.Equal(t, uint32(i), lpbIndex)
+		require.False(t, r.cs.IsEmpty())
+		t.Logf("pruned trie block index %v: %+v", i, stats)
+	}
+
+	blockToSnapshot := r.cs.LatestBlock()
+	snapshot := new(bytes.Buffer)
+	err = r.cs.TakeSnapshot(blockToSnapshot.TrieRoot(), snapshot)
+	require.NoError(t, err)
+	require.False(t, r.cs.IsEmpty())
+	t.Logf("snapshotted block index %v", blockToSnapshot.StateIndex())
+
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
+	require.True(t, cs.IsEmpty())
+	err = cs.RestoreSnapshot(blockToSnapshot.TrieRoot(), bytes.NewReader(snapshot.Bytes()))
+	require.NoError(t, err)
+	_, err = cs.LargestPrunedBlockIndex()
+	require.Error(t, err)
+	require.False(t, cs.IsEmpty())
 }
 
 func toMap(store kvstore.KVStore) map[string][]byte {
@@ -528,4 +602,14 @@ func toMap(store kvstore.KVStore) map[string][]byte {
 		return true
 	})
 	return m
+}
+
+// Just for testing; works for small indexes (0-127). Key of added entry is
+// `[]byte{3}` (see keyLargestPrunedBlockIndex function) converted to string.
+// Value of added entry is state index put in four bytes little endian format.
+// If state index is not larger than 127, its value fits in the least significant
+// byte and other three bytes are 0.
+func addLargestPrunedBlockIndex(db map[string][]byte, indexOfLeastSignificantByte byte) map[string][]byte {
+	db["\x03"] = []byte{indexOfLeastSignificantByte, 0, 0, 0}
+	return db
 }

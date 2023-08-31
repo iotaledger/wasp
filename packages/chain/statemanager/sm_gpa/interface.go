@@ -9,11 +9,7 @@ import (
 
 type StateManagerOutput interface {
 	addBlockCommitted(uint32, *state.L1Commitment)
-	addSnapshotToLoad(uint32, *state.L1Commitment)
-	setUpdateSnapshots()
 	TakeBlocksCommitted() []sm_snapshots.SnapshotInfo
-	TakeSnapshotToLoad() sm_snapshots.SnapshotInfo
-	TakeUpdateSnapshots() bool
 }
 
 type SnapshotExistsFun func(uint32, *state.L1Commitment) bool

@@ -26,6 +26,10 @@ import (
 // For each trie root, the Store also stores a Block, which contains the mutations
 // between the previous and current states, and allows to calculate the L1 commitment.
 type Store interface {
+	// IsEmpty returns true if no blocks were committed into the database and
+	// no snapshot has been loaded.
+	IsEmpty() bool
+
 	// HasTrieRoot returns true if the given trie root exists in the store
 	HasTrieRoot(trie.Hash) bool
 	// BlockByTrieRoot fetches the Block that corresponds to the given trie root
@@ -70,6 +74,9 @@ type Store interface {
 
 	// Prune deletes the trie with the given root from the DB
 	Prune(trie.Hash) (trie.PruneStats, error)
+	// LargestPrunedBlockIndex returns the largest index of block, which was pruned.
+	// An error is returned if no blocks were pruned.
+	LargestPrunedBlockIndex() (uint32, error)
 
 	// TakeSnapshot takes a snapshot of the block and trie at the given trie root.
 	TakeSnapshot(trie.Hash, io.Writer) error
