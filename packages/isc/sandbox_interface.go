@@ -116,8 +116,6 @@ type Sandbox interface {
 	EstimateRequiredStorageDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
-	// MintNFT mints an NFT
-	// MintNFT(metadata []byte) // TODO returns a temporary ID
 
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
 	// (e.g. with the debug_traceTransaction JSONRPC method).

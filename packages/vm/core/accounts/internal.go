@@ -44,6 +44,8 @@ const (
 	PrefixNFTsByCollection = "c"
 	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
 	prefixNewlyMintedNFTs = "N"
+	// prefixInternalNFTIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
+	prefixInternalNFTIDMap = "M"
 	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	PrefixFoundries = "f"
 
@@ -60,7 +62,7 @@ const (
 	// keyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
 	keyNFTOutputRecords = "NO"
 	// keyNFTData stores a map of <NFTID> => isc.NFT
-	keyNFTData = "ND"
+	keyNFTData = "ND" // TODO can this be removed? it's duplicated data, since we save the NFTOutput itself.
 
 	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
 	keyNewNativeTokens = "TN"
@@ -170,9 +172,9 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64) {
 	DebitFromAccount(ctx.State(), CommonAccount(), storageDepositAssets)
 }
 
-func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID) {
+func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {
 	updateNativeTokenOutputIDs(state, anchorTxID)
 	updateFoundryOutputIDs(state, anchorTxID)
 	updateNFTOutputIDs(state, anchorTxID)
-	updateNewlyMintedNFTOutputIDs(state, anchorTxID)
+	updateNewlyMintedNFTOutputIDs(state, anchorTxID, blockIndex)
 }

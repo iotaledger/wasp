@@ -37,7 +37,11 @@ func (rec *mintedNFTRecord) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteUint16(rec.positionInMintedList)
 	ww.WriteUint16(rec.outputIndex)
-	ww.Write(rec.owner)
+	if rec.owner != nil {
+		ww.Write(rec.owner)
+	} else {
+		ww.Write(&isc.NilAgentID{})
+	}
 	ww.WriteSerialized(rec.output)
 	ww.Write(rec.nft)
 	return ww.Err
@@ -57,6 +61,14 @@ func mintedNFTRecordFromBytes(data []byte) *mintedNFTRecord {
 
 func newlyMintedNFTsMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixNewlyMintedNFTs)
+}
+
+func mintIDMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, prefixInternalNFTIDMap)
+}
+
+func mintIDMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, prefixInternalNFTIDMap)
 }
 
 var (
@@ -89,6 +101,13 @@ func mintParams(ctx isc.Sandbox) (iotago.Address, isc.AgentID, []byte) {
 	}
 }
 
+func internalNFTID(blockIndex uint32, positionInMintedList uint16) []byte {
+	ret := make([]byte, 6)
+	copy(ret[0:], codec.EncodeUint32(blockIndex))
+	copy(ret[4:], codec.EncodeUint16(positionInMintedList))
+	return ret
+}
+
 // NFTs are always minted with the minimumSD and that must be provided via allowance
 func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// TODO can we even do "NFT collections"?
@@ -99,10 +118,6 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// debit the SD required for the NFT from the sender account
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount))      // claim tokens from allowance
 	DebitFromAccount(ctx.State(), ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount)) // debit from this SC account
-
-	if ownerAgentID == nil {
-		return nil // no need to save, it was minted directly to an external L1 address
-	}
 
 	rec := mintedNFTRecord{
 		positionInMintedList: positionInMintedList,
@@ -119,7 +134,16 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
-	return nil // TODO return some sort of reference so contracts can keep track of minted NFTs // maybe <BlockIndex + position>
+	return dict.Dict{
+		ParamInternalMintID: internalNFTID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
+	}
+}
+
+func viewNFTIDbyMintID(ctx isc.SandboxView) dict.Dict {
+	internalMintID := ctx.Params().MustGetBytes(ParamInternalMintID)
+	return dict.Dict{
+		ParamNFTID: mintIDMapR(ctx.StateR()).GetAt(internalMintID),
+	}
 }
 
 // ----  output management
@@ -136,7 +160,7 @@ func SaveMintedNFTOutput(state kv.KVStore, positionInMintedList, outputIndex uin
 	mintMap.SetAt(key, rec.Bytes())
 }
 
-func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
+func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {
 	mintMap := newlyMintedNFTsMap(state)
 	nftMap := NFTOutputMap(state)
 	mintMap.Iterate(func(_, recBytes []byte) bool {
@@ -144,16 +168,21 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 		// calculate the NFTID from the anchor txID	+ outputIndex
 		outputID := iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, mintedRec.outputIndex)
 		nftID := iotago.NFTIDFromOutputID(outputID)
-		mintedRec.output.NFTID = nftID
-		mintedRec.nft.ID = nftID
-		outputRec := NFTOutputRec{
-			OutputID: outputID,
-			Output:   mintedRec.output,
+
+		if mintedRec.owner.Kind() != isc.AgentIDKindNil { // when owner is nil, means the NFT was minted directly to a L1 wallet
+			mintedRec.output.NFTID = nftID
+			mintedRec.nft.ID = nftID
+			outputRec := NFTOutputRec{
+				OutputID: outputID,
+				Output:   mintedRec.output,
+			}
+			// save the updated data in the NFT map
+			nftMap.SetAt(nftID[:], outputRec.Bytes())
+			// credit the NFT to the target owner
+			creditNFTToAccount(state, mintedRec.owner, mintedRec.nft)
 		}
-		// save the updated data in the NFT map
-		nftMap.SetAt(nftID[:], outputRec.Bytes())
-		// credit the NFT to the target owner
-		creditNFTToAccount(state, mintedRec.owner, mintedRec.nft)
+		// save the mapping of [internalID => NFTID]
+		mintIDMap(state).SetAt(internalNFTID(blockIndex, mintedRec.positionInMintedList), nftID[:])
 		return true
 	})
 	mintMap.Erase()

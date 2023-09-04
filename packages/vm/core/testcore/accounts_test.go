@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -1494,9 +1495,22 @@ func TestNFTMint(t *testing.T) {
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, env.L1NFTs(anotherUserAddr), 0)
-		_, err := ch.PostRequestSync(req, wallet)
+		ret, err := ch.PostRequestSync(req, wallet)
+		internalID := ret.Get(accounts.ParamInternalMintID)
 		require.NoError(t, err)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
-		require.Len(t, env.L1NFTs(anotherUserAddr), 1)
+		userL1NFTs := env.L1NFTs(anotherUserAddr)
+		NFTID := lo.Keys(userL1NFTs)[0]
+		require.Len(t, userL1NFTs, 1)
+
+		// post a dummy request to make the chain progress to the next block
+		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+
+		// check that the internal ID mapping  matches the L1 NFT
+		ret, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTIDbyMintID.Name,
+			accounts.ParamInternalMintID, internalID)
+		require.NoError(t, err)
+		storedNFTID := ret.Get(accounts.ParamNFTID)
+		require.True(t, slices.Equal(storedNFTID, NFTID[:]))
 	})
 }

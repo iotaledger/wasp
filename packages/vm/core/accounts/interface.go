@@ -25,6 +25,7 @@ var (
 	ViewAccountNFTAmountInCollection = coreutil.ViewFunc("accountNFTAmountInCollection")
 	ViewAccountNFTs                  = coreutil.ViewFunc("accountNFTs")
 	ViewAccountNFTsInCollection      = coreutil.ViewFunc("accountNFTsInCollection")
+	ViewNFTIDbyMintID                = coreutil.ViewFunc("NFTIDbyMintID")
 	ViewAccounts                     = coreutil.ViewFunc("accounts")
 	ViewBalance                      = coreutil.ViewFunc("balance")
 	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
@@ -53,6 +54,7 @@ const (
 	ParamNFTIDs                 = "i"
 	ParamNFTImmutableData       = "I"
 	ParamNFTWithdrawOnMint      = "w"
+	ParamInternalMintID         = "D"
 	ParamNativeTokenID          = "N"
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"
