@@ -620,28 +620,8 @@ func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInf
 		return nil, nil, err
 	}
 	iscBlockIndex := iscState.BlockIndex()
-	reqIDs, err := blocklog.GetRequestIDsForBlock(iscState, iscBlockIndex)
-	if err != nil {
-		return nil, nil, err
-	}
-	reqs := make([]isc.Request, len(reqIDs))
-	for i, reqID := range reqIDs {
-		var receipt *blocklog.RequestReceipt
-		receipt, err = blocklog.GetRequestReceipt(iscState, reqID)
-		if err != nil {
-			return nil, nil, err
-		}
-		reqs[i] = receipt.Request
-	}
 	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	block, ok := blocklog.GetBlockInfo(blocklogStatePartition, iscBlockIndex)
-	if !ok {
-		return nil, nil, fmt.Errorf("block not found: %d", evmBlockNumber)
-	}
-	if err != nil {
-		return nil, nil, err
-	}
-	return block, reqs, nil
+	return blocklog.GetRequestsInBlock(blocklogStatePartition, iscBlockIndex)
 }
 
 func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {

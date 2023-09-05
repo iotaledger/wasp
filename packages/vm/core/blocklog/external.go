@@ -24,6 +24,26 @@ func EventsFromViewResult(viewResult dict.Dict) (ret []*isc.Event, err error) {
 	return ret, nil
 }
 
+func GetRequestsInBlock(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, []isc.Request, error) {
+	blockInfo, ok := GetBlockInfo(partition, blockIndex)
+	if !ok {
+		return nil, nil, fmt.Errorf("block not found: %d", blockIndex)
+	}
+	reqs := make([]isc.Request, blockInfo.TotalRequests)
+	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
+		recBin, ok := getRequestRecordDataByRef(partition, blockIndex, reqIdx)
+		if !ok {
+			return nil, nil, fmt.Errorf("request not found: %d/%d", blockIndex, reqIdx)
+		}
+		rec, err := RequestReceiptFromBytes(recBin, blockIndex, reqIdx)
+		if err != nil {
+			return nil, nil, err
+		}
+		reqs[reqIdx] = rec.Request
+	}
+	return blockInfo, reqs, nil
+}
+
 // GetRequestIDsForBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
 func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]isc.RequestID, error) {
@@ -38,7 +58,7 @@ func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]i
 	}
 	ret := make([]isc.RequestID, len(recsBin))
 	for i, d := range recsBin {
-		rec, err := RequestReceiptFromBytes(d)
+		rec, err := RequestReceiptFromBytes(d, blockIndex, uint16(i))
 		if err != nil {
 			panic(err)
 		}
@@ -47,9 +67,10 @@ func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]i
 	return ret, nil
 }
 
+// GetRequestReceipt returns the receipt for the given request, or nil if not found
 func GetRequestReceipt(stateReader kv.KVStoreReader, requestID isc.RequestID) (*RequestReceipt, error) {
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
-	return isRequestProcessedInternal(partition, requestID)
+	return getRequestReceipt(partition, requestID)
 }
 
 // IsRequestProcessed check if requestID is stored in the chain state as processed
@@ -93,15 +114,15 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 		if !found {
 			return nil, errors.New("inconsistency: request log record wasn't found by exact reference")
 		}
-		rec, err := RequestReceiptFromBytes(recBin)
+		rec, err := RequestReceiptFromBytes(recBin, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
 		if err != nil {
 			return nil, err
 		}
 		if rec.Request.ID().Equals(reqID) {
 			return &GetRequestReceiptResult{
 				ReceiptBin:   recBin,
-				BlockIndex:   lookupKeyList[i].BlockIndex(),
-				RequestIndex: lookupKeyList[i].RequestIndex(),
+				BlockIndex:   rec.BlockIndex,
+				RequestIndex: rec.RequestIndex,
 			}, nil
 		}
 	}
@@ -162,11 +183,10 @@ func ReceiptsFromViewCallResult(res dict.Dict) ([]*RequestReceipt, error) {
 	}
 
 	for i := range ret {
-		ret[i], err = RequestReceiptFromBytes(receipts.GetAt(uint32(i)))
+		ret[i], err = RequestReceiptFromBytes(receipts.GetAt(uint32(i)), blockIndex, uint16(i))
 		if err != nil {
 			return nil, err
 		}
-		ret[i].WithBlockData(blockIndex, uint16(i))
 	}
 	return ret, nil
 }

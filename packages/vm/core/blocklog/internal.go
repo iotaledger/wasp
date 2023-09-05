@@ -22,14 +22,6 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
 func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, l1commitment *state.L1Commitment) {
-	registry := collections.NewArray(partition, PrefixBlockRegistry)
-	lastBlockIndex := registry.Len() - 1
-	blockInfoBuffer := registry.GetAt(lastBlockIndex)
-	blockInfo, err := BlockInfoFromBytes(blockInfoBuffer)
-	if err != nil {
-		panic(err)
-	}
-	registry.SetAt(lastBlockIndex, blockInfo.Bytes())
 	updateUnprocessableRequestsOutputID(partition, anchorTxID)
 }
 
@@ -90,21 +82,18 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 	records := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes := records.GetAt(lookupKey.Bytes())
-		rec, err := RequestReceiptFromBytes(recBytes)
+		rec, err := RequestReceiptFromBytes(recBytes, lookupKey.BlockIndex(), lookupKey.RequestIndex())
 		if err != nil {
 			return nil, fmt.Errorf("RequestReceiptFromBytes returned: %w", err)
 		}
 		if rec.Request.ID().Equals(reqID) {
-			rec.BlockIndex = lookupKey.BlockIndex()
-			rec.RequestIndex = lookupKey.RequestIndex()
 			return rec, nil
 		}
 	}
 	return nil, nil
 }
 
-// isRequestProcessedInternal does quick lookup to check if it wasn't seen yet
-func isRequestProcessedInternal(partition kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
+func getRequestReceipt(partition kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
 	lst := mustGetLookupKeyListFromReqID(partition, reqID)
 	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
 	if err != nil {
@@ -231,7 +220,7 @@ func pruneRequestLogRecordsByBlockIndex(partition kv.KVStore, blockIndex uint32,
 			continue
 		}
 
-		receipt, err := RequestReceiptFromBytes(receiptBytes)
+		receipt, err := RequestReceiptFromBytes(receiptBytes, blockIndex, reqIdx)
 		if err != nil {
 			panic(err)
 		}

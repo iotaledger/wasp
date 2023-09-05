@@ -24,7 +24,7 @@ func TestSerdeRequestReceipt(t *testing.T) {
 		Request: signedReq,
 	}
 	forward := rec.Bytes()
-	back, err := RequestReceiptFromBytes(forward)
+	back, err := RequestReceiptFromBytes(forward, rec.BlockIndex, rec.RequestIndex)
 	require.NoError(t, err)
 	require.EqualValues(t, forward, back.Bytes())
 }

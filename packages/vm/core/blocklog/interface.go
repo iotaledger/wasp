@@ -41,14 +41,26 @@ const (
 )
 
 const (
-	PrefixBlockRegistry      = "a"
-	prefixRequestLookupIndex = "b"
-	prefixRequestReceipts    = "c"
-	prefixRequestEvents      = "d"
+	// Array of blockIndex => BlockInfo (pruned)
+	PrefixBlockRegistry = "a"
 
-	// map of == request ID => unprocessableRequestRecord
+	// Map of request.ID().LookupDigest() => []RequestLookupKey (pruned)
+	//   LookupDigest = reqID[:6] | outputIndex
+	//   RequestLookupKey = blockIndex | requestIndex
+	prefixRequestLookupIndex = "b"
+
+	// Map of RequestLookupKey => RequestReceipt (pruned)
+	//   RequestLookupKey = blockIndex | requestIndex
+	prefixRequestReceipts = "c"
+
+	// Map of EventLookupKey => event (pruned)
+	//   EventLookupKey = blockIndex | requestIndex | eventIndex
+	prefixRequestEvents = "d"
+
+	// Map of requestID => unprocessableRequestRecord
 	prefixUnprocessableRequests = "u"
-	// array of request ID: list of unprocessable requests that
-	// need updating the outputID field
+
+	// Array of requestID.
+	// Temporary list of unprocessable requests that need updating the outputID field
 	prefixNewUnprocessableRequests = "U"
 )
