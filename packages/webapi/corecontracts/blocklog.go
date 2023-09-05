@@ -111,27 +111,20 @@ func GetRequestReceipt(ch chain.Chain, requestID isc.RequestID, blockIndexOrTrie
 	}
 
 	resultDecoder := kvdecoder.New(ret)
+
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil {
 		return nil, err
 	}
-
-	requestReceipt, err := blocklog.RequestReceiptFromBytes(binRec)
+	blockIndex, err := resultDecoder.GetUint32(blocklog.ParamBlockIndex)
 	if err != nil {
 		return nil, err
 	}
-
-	requestReceipt.BlockIndex, err = resultDecoder.GetUint32(blocklog.ParamBlockIndex)
+	requestIndex, err := resultDecoder.GetUint16(blocklog.ParamRequestIndex)
 	if err != nil {
 		return nil, err
 	}
-
-	requestReceipt.RequestIndex, err = resultDecoder.GetUint16(blocklog.ParamRequestIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	return requestReceipt, err
+	return blocklog.RequestReceiptFromBytes(binRec, blockIndex, requestIndex)
 }
 
 func GetRequestReceiptsForBlock(ch chain.Chain, blockIndex uint32, blockIndexOrTrieRoot string) ([]*blocklog.RequestReceipt, error) {

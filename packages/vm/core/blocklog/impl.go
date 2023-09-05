@@ -73,8 +73,8 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 
 	ret := dict.New()
 	requestIDs := collections.NewArray(ret, ParamRequestID)
-	for _, receipt := range receipts {
-		requestReceipt, err := RequestReceiptFromBytes(receipt)
+	for i, receipt := range receipts {
+		requestReceipt, err := RequestReceiptFromBytes(receipt, blockIndex, uint16(i))
 		ctx.RequireNoError(err)
 		requestIDs.Push(requestReceipt.Request.ID().Bytes())
 	}
@@ -123,7 +123,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	requestReceipt, err := isRequestProcessedInternal(ctx.StateR(), requestID)
+	requestReceipt, err := getRequestReceipt(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
 	return dict.Dict{
 		ParamRequestProcessed: codec.EncodeBool(requestReceipt != nil),
