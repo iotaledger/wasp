@@ -155,7 +155,10 @@ func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
 func viewNFTData(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewNFTData")
 	nftID := ctx.Params().MustGetNFTID(ParamNFTID)
-	data := MustGetNFTData(ctx.StateR(), nftID)
+	data := GetNFTData(ctx.StateR(), nftID)
+	if data == nil {
+		panic("NFTID not found")
+	}
 	return dict.Dict{
 		ParamNFTData: data.Bytes(),
 	}

@@ -20,7 +20,7 @@ var ResetAccountAssets = migrations.Migration{
 		erasePrefix(accountsState, accounts.PrefixNFTs)
 		erasePrefix(accountsState, accounts.PrefixNFTsByCollection)
 		accounts.NFTOutputMap(accountsState).Erase()
-		accounts.NFTDataMap(accountsState).Erase()
+		accounts.NFTToOwnerMap(accountsState).Erase()
 		return nil
 	},
 }

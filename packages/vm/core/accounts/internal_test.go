@@ -309,14 +309,32 @@ func TestTransferNFTs(t *testing.T) {
 		Issuer:   tpkg.RandEd25519Address(),
 		Metadata: []byte("foobar"),
 	}
-	CreditNFTToAccount(state, agentID1, NFT1)
+	CreditNFTToAccount(state, agentID1, &iotago.NFTOutput{
+		Amount:       0,
+		NativeTokens: []*iotago.NativeToken{},
+		NFTID:        NFT1.ID,
+		ImmutableFeatures: []iotago.Feature{
+			&iotago.IssuerFeature{Address: NFT1.Issuer},
+			&iotago.MetadataFeature{Data: NFT1.Metadata},
+		},
+	})
 	// nft is credited
 	user1NFTs := getAccountNFTs(state, agentID1)
 	require.Len(t, user1NFTs, 1)
 	require.Equal(t, user1NFTs[0], NFT1.ID)
 
-	// nft data is saved
-	nftData := MustGetNFTData(state, NFT1.ID)
+	// nft data is saved (accounts.SaveNFTOutput must be called)
+	SaveNFTOutput(state, &iotago.NFTOutput{
+		Amount:       0,
+		NativeTokens: []*iotago.NativeToken{},
+		NFTID:        NFT1.ID,
+		ImmutableFeatures: []iotago.Feature{
+			&iotago.IssuerFeature{Address: NFT1.Issuer},
+			&iotago.MetadataFeature{Data: NFT1.Metadata},
+		},
+	}, 0)
+
+	nftData := GetNFTData(state, NFT1.ID)
 	require.Equal(t, nftData.ID, NFT1.ID)
 	require.Equal(t, nftData.Issuer, NFT1.Issuer)
 	require.Equal(t, nftData.Metadata, NFT1.Metadata)
@@ -338,7 +356,7 @@ func TestTransferNFTs(t *testing.T) {
 	// remove the NFT from the chain
 	DebitNFTFromAccount(state, agentID2, NFT1.ID)
 	require.Panics(t, func() {
-		MustGetNFTData(state, NFT1.ID)
+		GetNFTData(state, NFT1.ID)
 	})
 }
 
@@ -366,7 +384,15 @@ func TestCreditDebitNFT1(t *testing.T) {
 		Issuer:   tpkg.RandEd25519Address(),
 		Metadata: []byte("foobar"),
 	}
-	CreditNFTToAccount(state, agentID1, &nft)
+	CreditNFTToAccount(state, agentID1, &iotago.NFTOutput{
+		Amount:       0,
+		NativeTokens: []*iotago.NativeToken{},
+		NFTID:        nft.ID,
+		ImmutableFeatures: []iotago.Feature{
+			&iotago.IssuerFeature{Address: nft.Issuer},
+			&iotago.MetadataFeature{Data: nft.Metadata},
+		},
+	})
 
 	accNFTs := GetAccountNFTs(state, agentID1)
 	require.Len(t, accNFTs, 1)

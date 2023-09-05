@@ -14,7 +14,7 @@ const MaxPostedOutputsInOneRequest = 4
 func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.NFTID) *isc.NFT {
 	var nft *isc.NFT
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		nft = accounts.MustGetNFTData(s, nftID)
+		nft = accounts.GetNFTData(s, nftID)
 	})
 	return nft
 }

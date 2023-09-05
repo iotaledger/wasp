@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func nftsMapKey(agentID isc.AgentID) string {
@@ -31,13 +31,12 @@ func accountToNFTsMap(state kv.KVStore, agentID isc.AgentID) *collections.Map {
 	return collections.NewMap(state, nftsMapKey(agentID))
 }
 
-// TODO rename to NFTToOwnerMap, deprecate NFTData, take info from the NFT output
-func NFTDataMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, keyNFTData)
+func NFTToOwnerMap(state kv.KVStore) *collections.Map {
+	return collections.NewMap(state, keyNFTOwner)
 }
 
-func nftDataMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, keyNFTData)
+func NFTToOwnerMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(state, keyNFTOwner)
 }
 
 func nftCollectionKey(issuer iotago.Address) kv.Key {
@@ -64,89 +63,89 @@ func hasNFT(state kv.KVStoreReader, agentID isc.AgentID, nftID iotago.NFTID) boo
 	return accountToNFTsMapR(state, agentID).HasAt(nftID[:])
 }
 
-func saveNFTData(state kv.KVStore, nft *isc.NFT) {
-	ww := rwutil.NewBytesWriter()
-	// note we store the NFT data without the leading id bytes
-	ww.Skip().ReadN(nft.ID[:])
-	ww.Write(nft)
-	NFTDataMap(state).SetAt(nft.ID[:], ww.Bytes())
-}
-
-func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
-	allNFTs := NFTDataMap(state)
-	if !allNFTs.HasAt(id[:]) {
-		panic("deleteNFTData: inconsistency - NFT data doesn't exists")
+func removeNFTOwner(state kv.KVStore, nftID iotago.NFTID, agentID isc.AgentID) bool {
+	// remove the mapping of NFTID => owner
+	nftMap := NFTToOwnerMap(state)
+	if !nftMap.HasAt(nftID[:]) {
+		return false
 	}
-	allNFTs.DelAt(id[:])
-}
+	nftMap.DelAt(nftID[:])
 
-func getNFTData(state kv.KVStoreReader, id iotago.NFTID) (*isc.NFT, error) {
-	allNFTs := nftDataMapR(state)
-	nftData := allNFTs.GetAt(id[:])
-	if len(nftData) == 0 {
-		return nil, ErrNFTIDNotFound
+	// add to the mapping of agentID => []NFTIDs
+	nfts := accountToNFTsMap(state, agentID)
+	if !nfts.HasAt(nftID[:]) {
+		return false
 	}
-
-	rr := rwutil.NewBytesReader(nftData)
-	// note we stored the NFT data without the leading id bytes
-	rr.PushBack().WriteN(id[:])
-	return isc.NFTFromReader(rr)
+	nfts.DelAt(nftID[:])
+	return true
 }
 
-func MustGetNFTData(state kv.KVStoreReader, id iotago.NFTID) *isc.NFT {
-	nft, err := getNFTData(state, id)
+func setNFTOwner(state kv.KVStore, nftID iotago.NFTID, agentID isc.AgentID) {
+	// add to the mapping of NFTID => owner
+	nftMap := NFTToOwnerMap(state)
+	nftMap.SetAt(nftID[:], agentID.Bytes())
+
+	// add to the mapping of agentID => []NFTIDs
+	nfts := accountToNFTsMap(state, agentID)
+	nfts.SetAt(nftID[:], codec.EncodeBool(true))
+}
+
+func GetNFTData(state kv.KVStoreReader, nftID iotago.NFTID) *isc.NFT {
+	o, oID := GetNFTOutput(state, nftID)
+	if o == nil {
+		return nil
+	}
+	owner, err := isc.AgentIDFromBytes(NFTToOwnerMapR(state).GetAt(nftID[:]))
 	if err != nil {
-		panic(err)
+		panic("error parsing AgentID in NFTToOwnerMap")
 	}
-	return nft
+	return &isc.NFT{
+		ID:       util.NFTIDFromNFTOutput(o, oID),
+		Issuer:   o.ImmutableFeatureSet().IssuerFeature().Address,
+		Metadata: o.ImmutableFeatureSet().MetadataFeature().Data,
+		Owner:    owner,
+	}
 }
 
 // CreditNFTToAccount credits an NFT to the on chain ledger
-func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
-	if nft == nil {
-		return
-	}
-	if nft.ID.Empty() {
+func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftOutput *iotago.NFTOutput) {
+	if nftOutput.NFTID.Empty() {
 		panic("empty NFTID")
 	}
 
-	creditNFTToAccount(state, agentID, nft)
+	creditNFTToAccount(state, agentID, nftOutput.NFTID, nftOutput.ImmutableFeatureSet().IssuerFeature().Address)
 	touchAccount(state, agentID)
+
+	// save the NFTOutput with a temporary outputIndex so the NFTData is readily available (it will be updated upon block closing)
+	SaveNFTOutput(state, nftOutput, 0)
 }
 
-func creditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
-	nft.Owner = agentID
-	saveNFTData(state, nft)
+func creditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID, issuer iotago.Address) {
+	setNFTOwner(state, nftID, agentID)
 
-	nfts := accountToNFTsMap(state, agentID)
-	nfts.SetAt(nft.ID[:], codec.EncodeBool(true))
-
-	collectionKey := nftCollectionKey(nft.Issuer)
+	collectionKey := nftCollectionKey(issuer)
 	nftsByCollection := nftsByCollectionMap(state, agentID, collectionKey)
-	nftsByCollection.SetAt(nft.ID[:], codec.EncodeBool(true))
+	nftsByCollection.SetAt(nftID[:], codec.EncodeBool(true))
 }
 
 // DebitNFTFromAccount removes an NFT from an account.
 // If the account does not own the nft, it panics.
-func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID) {
-	nft, err := getNFTData(state, id)
-	if err != nil {
-		panic(err)
+func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID) {
+	nft := GetNFTData(state, nftID)
+	if nft == nil {
+		panic(fmt.Errorf("cannot debit unknown NFT %s", nftID.String()))
 	}
 	if !debitNFTFromAccount(state, agentID, nft) {
-		panic(fmt.Errorf("cannot debit NFT from %s: %w", agentID, ErrNotEnoughFunds))
+		panic(fmt.Errorf("cannot debit NFT %s from %s: %w", nftID.String(), agentID, ErrNotEnoughFunds))
 	}
-	deleteNFTData(state, id)
 	touchAccount(state, agentID)
 }
 
 // DebitNFTFromAccount removes an NFT from the internal map of an account
 func debitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) bool {
-	nfts := accountToNFTsMap(state, agentID)
-	if !nfts.HasAt(nft.ID[:]) {
+	if !removeNFTOwner(state, nft.ID, agentID) {
 		return false
 	}
-	nfts.DelAt(nft.ID[:])
 
 	collectionKey := nftCollectionKey(nft.Issuer)
 	nftsByCollection := nftsByCollectionMap(state, agentID, collectionKey)
@@ -178,7 +177,7 @@ func getAccountNFTsInCollection(state kv.KVStoreReader, agentID isc.AgentID, col
 }
 
 func getL2TotalNFTs(state kv.KVStoreReader) []iotago.NFTID {
-	return collectNFTIDs(nftDataMapR(state))
+	return collectNFTIDs(NFTToOwnerMapR(state))
 }
 
 // GetAccountNFTs returns all NFTs belonging to the agentID on the state

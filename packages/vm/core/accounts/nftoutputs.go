@@ -41,12 +41,12 @@ func updateNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	newNFTs.Erase()
 }
 
-func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
-	NFTOutputMap(state).DelAt(id[:])
+func DeleteNFTOutput(state kv.KVStore, nftID iotago.NFTID) {
+	NFTOutputMap(state).DelAt(nftID[:])
 }
 
-func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
-	data := nftOutputMapR(state).GetAt(id[:])
+func GetNFTOutput(state kv.KVStoreReader, nftID iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
+	data := nftOutputMapR(state).GetAt(nftID[:])
 	if data == nil {
 		return nil, iotago.OutputID{}
 	}

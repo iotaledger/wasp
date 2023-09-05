@@ -89,24 +89,21 @@ func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
 func (reqctx *requestContext) creditAssetsToChain() {
-	req := reqctx.req
-	if req.IsOffLedger() {
+	req, ok := reqctx.req.(isc.OnLedgerRequest)
+	if !ok {
 		// off ledger request does not bring any deposit
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
-	storageDepositNeeded := reqctx.vm.txbuilder.Consume(req.(isc.OnLedgerRequest))
+	storageDepositNeeded := reqctx.vm.txbuilder.Consume(req)
 
 	// if sender is specified, all assets goes to sender's sender
 	// Otherwise it all goes to the common sender and panics is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		if req.IsOffLedger() {
-			panic("nil sender on offledger requests should never happen")
-		}
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req.NFT())
+		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req)
 		creditToAccount(reqctx.uncommittedState, payoutAgentID, req.Assets())
 
 		// debit any SD required for accounting UTXOs
@@ -124,7 +121,7 @@ func (reqctx *requestContext) creditAssetsToChain() {
 	}
 
 	creditToAccount(reqctx.uncommittedState, sender, req.Assets())
-	creditNFTToAccount(reqctx.uncommittedState, sender, req.NFT())
+	creditNFTToAccount(reqctx.uncommittedState, sender, req)
 	if storageDepositNeeded > 0 {
 		reqctx.sdCharged = storageDepositNeeded
 		debitFromAccount(reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded))

@@ -18,7 +18,6 @@ type mintedNFTRecord struct {
 	outputIndex          uint16
 	owner                isc.AgentID
 	output               *iotago.NFTOutput
-	nft                  *isc.NFT
 }
 
 func (rec *mintedNFTRecord) Read(r io.Reader) error {
@@ -28,8 +27,6 @@ func (rec *mintedNFTRecord) Read(r io.Reader) error {
 	rec.owner = isc.AgentIDFromReader(rr)
 	rec.output = new(iotago.NFTOutput)
 	rr.ReadSerialized(rec.output)
-	rec.nft = new(isc.NFT)
-	rr.Read(rec.nft)
 	return rr.Err
 }
 
@@ -43,7 +40,6 @@ func (rec *mintedNFTRecord) Write(w io.Writer) error {
 		ww.Write(&isc.NilAgentID{})
 	}
 	ww.WriteSerialized(rec.output)
-	ww.Write(rec.nft)
 	return ww.Err
 }
 
@@ -154,12 +150,6 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 		outputIndex:          0, // to be filled on block close by `SaveMintedNFTOutput`
 		owner:                params.ownerAgentID,
 		output:               nftOutput,
-		nft: &isc.NFT{
-			ID:       [32]byte{},
-			Issuer:   params.issuerAddress,
-			Metadata: params.immutableMetadata,
-			Owner:    params.ownerAgentID,
-		},
 	}
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
@@ -201,7 +191,6 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 		nftID := iotago.NFTIDFromOutputID(outputID)
 
 		if mintedRec.owner.Kind() != isc.AgentIDKindNil { // when owner is nil, means the NFT was minted directly to a L1 wallet
-			mintedRec.nft.ID = nftID
 			outputRec := NFTOutputRec{
 				OutputID: outputID,
 				Output:   mintedRec.output,
@@ -209,7 +198,7 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 			// save the updated data in the NFT map
 			nftMap.SetAt(nftID[:], outputRec.Bytes())
 			// credit the NFT to the target owner
-			creditNFTToAccount(state, mintedRec.owner, mintedRec.nft)
+			creditNFTToAccount(state, mintedRec.owner, nftID, mintedRec.output.ImmutableFeatureSet().IssuerFeature().Address)
 		}
 		// save the mapping of [internalID => NFTID]
 		mintIDMap(state).SetAt(internalNFTID(blockIndex, mintedRec.positionInMintedList), nftID[:])

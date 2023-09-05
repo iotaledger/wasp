@@ -120,7 +120,7 @@ func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 }
 
 func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
-	return accounts.MustGetNFTData(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), nftID)
+	return accounts.GetNFTData(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), nftID)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {
