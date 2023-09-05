@@ -47,6 +47,7 @@ func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]i
 	return ret, nil
 }
 
+// GetRequestReceipt returns the receipt for the given request, or nil if not found
 func GetRequestReceipt(stateReader kv.KVStoreReader, requestID isc.RequestID) (*RequestReceipt, error) {
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 	return isRequestProcessedInternal(partition, requestID)

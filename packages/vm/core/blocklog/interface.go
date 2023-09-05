@@ -41,6 +41,7 @@ const (
 )
 
 const (
+	// array of BlockInfo
 	PrefixBlockRegistry      = "a"
 	prefixRequestLookupIndex = "b"
 	prefixRequestReceipts    = "c"

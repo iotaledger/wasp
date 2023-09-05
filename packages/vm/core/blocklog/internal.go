@@ -22,14 +22,6 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
 func UpdateLatestBlockInfo(partition kv.KVStore, anchorTxID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, l1commitment *state.L1Commitment) {
-	registry := collections.NewArray(partition, PrefixBlockRegistry)
-	lastBlockIndex := registry.Len() - 1
-	blockInfoBuffer := registry.GetAt(lastBlockIndex)
-	blockInfo, err := BlockInfoFromBytes(blockInfoBuffer)
-	if err != nil {
-		panic(err)
-	}
-	registry.SetAt(lastBlockIndex, blockInfo.Bytes())
 	updateUnprocessableRequestsOutputID(partition, anchorTxID)
 }
 
