@@ -1437,26 +1437,6 @@ func TestNFTMint(t *testing.T) {
 	wallet, address := env.NewKeyPairWithFunds()
 	agentID := isc.NewAgentID(address)
 
-	t.Run("mint to self", func(t *testing.T) {
-		// mint NFT to self and keep it on chain
-		req := solo.NewCallParams(
-			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
-			accounts.ParamAgentID, agentID.Bytes(),
-		).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
-
-		_, err := ch.PostRequestSync(req, wallet)
-		require.NoError(t, err)
-		require.Len(t, ch.L2NFTs(agentID), 0)
-
-		// post some random request to make the chain progress to the next block
-		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
-		require.Len(t, ch.L2NFTs(agentID), 1)
-	})
-
 	t.Run("mint for another user", func(t *testing.T) {
 		anotherUserAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
 
@@ -1474,7 +1454,7 @@ func TestNFTMint(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
 
-		// post some random request to make the chain progress to the next block
+		// post a dummy request to make the chain progress to the next block
 		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
 	})
@@ -1496,11 +1476,11 @@ func TestNFTMint(t *testing.T) {
 
 		require.Len(t, env.L1NFTs(anotherUserAddr), 0)
 		ret, err := ch.PostRequestSync(req, wallet)
-		internalID := ret.Get(accounts.ParamInternalMintID)
+		mintID := ret.Get(accounts.ParamMintID)
 		require.NoError(t, err)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
 		userL1NFTs := env.L1NFTs(anotherUserAddr)
-		NFTID := lo.Keys(userL1NFTs)[0]
+		NFTID := iotago.NFTIDFromOutputID(lo.Keys(userL1NFTs)[0])
 		require.Len(t, userL1NFTs, 1)
 
 		// post a dummy request to make the chain progress to the next block
@@ -1508,9 +1488,65 @@ func TestNFTMint(t *testing.T) {
 
 		// check that the internal ID mapping  matches the L1 NFT
 		ret, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTIDbyMintID.Name,
-			accounts.ParamInternalMintID, internalID)
+			accounts.ParamMintID, mintID)
 		require.NoError(t, err)
 		storedNFTID := ret.Get(accounts.ParamNFTID)
 		require.True(t, slices.Equal(storedNFTID, NFTID[:]))
+	})
+
+	t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
+		// mint NFT to self and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamAgentID, agentID.Bytes(),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		_, err := ch.PostRequestSync(req, wallet)
+		require.NoError(t, err)
+		require.Len(t, ch.L2NFTs(agentID), 0)
+
+		// post a dummy request to make the chain progress to the next block
+		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+		require.Len(t, env.L1NFTs(address), 0)
+		userL2NFTs := ch.L2NFTs(agentID)
+		require.Len(t, userL2NFTs, 1)
+
+		// try minting another NFT using the first one as the collection
+		fistNFTID := userL2NFTs[0]
+
+		req = solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte("foobar_collection"),
+			accounts.ParamAgentID, agentID.Bytes(),
+			accounts.ParamCollectionID, codec.Encode(fistNFTID),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		ret, err := ch.PostRequestSync(req, wallet)
+		require.NoError(t, err)
+		mintID := ret.Get(accounts.ParamMintID)
+
+		// post a dummy request to make the chain progress to the next block
+		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+
+		ret, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTIDbyMintID.Name,
+			accounts.ParamMintID, mintID)
+		require.NoError(t, err)
+		NFTIDInCollection := ret.Get(accounts.ParamNFTID)
+
+		ret, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTData.Name,
+			accounts.ParamNFTID, NFTIDInCollection)
+		require.NoError(t, err)
+
+		nftData, err := isc.NFTFromBytes(ret.Get(accounts.ParamNFTData))
+		require.NoError(t, err)
+		require.True(t, nftData.Issuer.Equal(fistNFTID.ToAddress()))
+		require.True(t, nftData.Owner.Equals(agentID))
 	})
 }

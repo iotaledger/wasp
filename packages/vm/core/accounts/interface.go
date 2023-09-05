@@ -54,7 +54,7 @@ const (
 	ParamNFTIDs                 = "i"
 	ParamNFTImmutableData       = "I"
 	ParamNFTWithdrawOnMint      = "w"
-	ParamInternalMintID         = "D"
+	ParamMintID                 = "D"
 	ParamNativeTokenID          = "N"
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"

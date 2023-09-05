@@ -72,30 +72,57 @@ func mintIDMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 var (
-	errMintNFTWithdraw = coreerrors.Register("can only withdraw on mint to a L1 address").Create()
-	errInvalidAgentID  = coreerrors.Register("invalid agentID").Create()
+	errMintNFTWithdraw      = coreerrors.Register("can only withdraw on mint to a L1 address").Create()
+	errInvalidAgentID       = coreerrors.Register("invalid agentID").Create()
+	errCollectionNotAllowed = coreerrors.Register("caller doesn't own the collection").Create()
 )
 
-func mintParams(ctx isc.Sandbox) (iotago.Address, isc.AgentID, []byte) {
+type mintParameters struct {
+	immutableMetadata []byte
+	targetAddress     iotago.Address
+	issuerAddress     iotago.Address
+	ownerAgentID      isc.AgentID
+	withdrawOnMint    bool
+}
+
+func mintParams(ctx isc.Sandbox) mintParameters {
 	params := ctx.Params()
 
 	immutableMetadata := params.MustGetBytes(ParamNFTImmutableData)
 	targetAgentID := params.MustGetAgentID(ParamAgentID)
 	withdrawOnMint := params.MustGetBool(ParamNFTWithdrawOnMint, false)
+	emptyNFTID := iotago.NFTID{}
+	collectionID := params.MustGetNFTID(ParamCollectionID, emptyNFTID)
 
 	chainAddress := ctx.ChainID().AsAddress()
+	ret := mintParameters{
+		immutableMetadata: immutableMetadata,
+		targetAddress:     chainAddress,
+		issuerAddress:     chainAddress,
+		ownerAgentID:      targetAgentID,
+		withdrawOnMint:    withdrawOnMint,
+	}
+
+	if collectionID != emptyNFTID {
+		// assert the NFT of collectionID is on-chain and owned by the caller
+		if !hasNFT(ctx.State(), ctx.Caller(), collectionID) {
+			panic(errCollectionNotAllowed)
+		}
+		ret.issuerAddress = collectionID.ToAddress()
+	}
+
 	switch targetAgentID.Kind() {
 	case isc.AgentIDKindContract, isc.AgentIDKindEthereumAddress:
 		if withdrawOnMint {
 			panic(errMintNFTWithdraw)
 		}
-		return chainAddress, targetAgentID, immutableMetadata
+		return ret
 	case isc.AgentIDKindAddress:
 		if withdrawOnMint {
-			targetAddress := targetAgentID.(*isc.AddressAgentID).Address()
-			return targetAddress, nil, immutableMetadata
+			ret.targetAddress = targetAgentID.(*isc.AddressAgentID).Address()
+			return ret
 		}
-		return chainAddress, targetAgentID, immutableMetadata
+		return ret
 	default:
 		panic(errInvalidAgentID)
 	}
@@ -110,10 +137,13 @@ func internalNFTID(blockIndex uint32, positionInMintedList uint16) []byte {
 
 // NFTs are always minted with the minimumSD and that must be provided via allowance
 func mintNFT(ctx isc.Sandbox) dict.Dict {
-	// TODO can we even do "NFT collections"?
-	targetAddress, ownerAgentID, immutableMetadata := mintParams(ctx)
+	params := mintParams(ctx)
 
-	positionInMintedList, nftOutput := ctx.Privileged().MintNFT(targetAddress, immutableMetadata)
+	positionInMintedList, nftOutput := ctx.Privileged().MintNFT(
+		params.targetAddress,
+		params.immutableMetadata,
+		params.issuerAddress,
+	)
 
 	// debit the SD required for the NFT from the sender account
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount))      // claim tokens from allowance
@@ -121,28 +151,29 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 
 	rec := mintedNFTRecord{
 		positionInMintedList: positionInMintedList,
-		outputIndex:          0,
-		owner:                ownerAgentID,
+		outputIndex:          0, // to be filled on block close by `SaveMintedNFTOutput`
+		owner:                params.ownerAgentID,
 		output:               nftOutput,
 		nft: &isc.NFT{
 			ID:       [32]byte{},
-			Issuer:   ctx.ChainID().AsAddress(),
-			Metadata: immutableMetadata,
-			Owner:    ownerAgentID,
+			Issuer:   params.issuerAddress,
+			Metadata: params.immutableMetadata,
+			Owner:    params.ownerAgentID,
 		},
 	}
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
 	return dict.Dict{
-		ParamInternalMintID: internalNFTID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
+		ParamMintID: internalNFTID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
 	}
 }
 
 func viewNFTIDbyMintID(ctx isc.SandboxView) dict.Dict {
-	internalMintID := ctx.Params().MustGetBytes(ParamInternalMintID)
+	internalMintID := ctx.Params().MustGetBytes(ParamMintID)
+	nftID := mintIDMapR(ctx.StateR()).GetAt(internalMintID)
 	return dict.Dict{
-		ParamNFTID: mintIDMapR(ctx.StateR()).GetAt(internalMintID),
+		ParamNFTID: nftID,
 	}
 }
 
@@ -170,7 +201,6 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 		nftID := iotago.NFTIDFromOutputID(outputID)
 
 		if mintedRec.owner.Kind() != isc.AgentIDKindNil { // when owner is nil, means the NFT was minted directly to a L1 wallet
-			mintedRec.output.NFTID = nftID
 			mintedRec.nft.ID = nftID
 			outputRec := NFTOutputRec{
 				OutputID: outputID,

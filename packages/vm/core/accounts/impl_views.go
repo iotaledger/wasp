@@ -116,7 +116,7 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
 	return dict.Dict{
-		ParamNFTAmount: codec.EncodeUint32(nftsMapR(ctx.StateR(), aid).Len()),
+		ParamNFTAmount: codec.EncodeUint32(accountToNFTsMapR(ctx.StateR(), aid).Len()),
 	}
 }
 

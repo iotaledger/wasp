@@ -50,9 +50,9 @@ func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int
 	return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
-func (reqctx *requestContext) MintNFT(addr iotago.Address, immutableMetadata []byte) (uint16, *iotago.NFTOutput) {
+func (reqctx *requestContext) MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput) {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata)
+	return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
 }
 
 func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID iotago.OutputID) {

@@ -2,7 +2,7 @@ package vmtxbuilder
 
 import (
 	"bytes"
-	"sort"
+	"slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -50,8 +50,8 @@ func (txb *AnchorTransactionBuilder) nftsSorted() []*nftIncluded {
 	for _, nft := range txb.nftsIncluded {
 		ret = append(ret, nft)
 	}
-	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i].ID[:], ret[j].ID[:]) == -1
+	slices.SortFunc(ret, func(a, b *nftIncluded) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	return ret
 }
@@ -152,11 +152,41 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	return int64(in.Deposit())
 }
 
-func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetadata []byte) (uint16, *iotago.NFTOutput) {
+func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput) {
+	if !issuer.Equal(txb.anchorOutput.Chain().ToAddress()) {
+		// include collection issuer NFT output in the txbuilder
+		nftAddr, ok := issuer.(*iotago.NFTAddress)
+		if !ok {
+			panic("issuer must be an NFTID or the chain itself")
+		}
+		nftID := nftAddr.NFTID()
+		if txb.nftsIncluded[nftID] == nil {
+			if txb.InputsAreFull() {
+				panic(vmexceptions.ErrInputLimitExceeded)
+			}
+			if txb.outputsAreFull() {
+				panic(vmexceptions.ErrOutputLimitExceeded)
+			}
+			o, oID := txb.accountsView.NFTOutput(nftAddr.NFTID())
+			clonedOutput := o.Clone()
+			resultingOutput := clonedOutput.(*iotago.NFTOutput)
+			if o.NFTID.Empty() {
+				resultingOutput.NFTID = nftID
+			}
+			txb.nftsIncluded[nftID] = &nftIncluded{
+				ID:                nftID,
+				accountingInputID: oID,
+				accountingInput:   o,
+				resultingOutput:   resultingOutput,
+				sentOutside:       false,
+			}
+		}
+	}
+
 	if txb.outputsAreFull() {
 		panic(vmexceptions.ErrOutputLimitExceeded)
 	}
-	issuer := txb.anchorOutput.Chain().ToAddress()
+
 	nftOutput := &iotago.NFTOutput{
 		NFTID: iotago.NFTID{},
 		Conditions: iotago.UnlockConditions{

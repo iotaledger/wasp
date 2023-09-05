@@ -145,8 +145,8 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.reqctx.ModifyFoundrySupply(sn, delta)
 }
 
-func (s *contractSandbox) MintNFT(addr iotago.Address, immutableMetadata []byte) (uint16, *iotago.NFTOutput) {
-	return s.reqctx.MintNFT(addr, immutableMetadata)
+func (s *contractSandbox) MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput) {
+	return s.reqctx.MintNFT(addr, immutableMetadata, issuer)
 }
 
 func (s *contractSandbox) GasBurnEnable(enable bool) {
