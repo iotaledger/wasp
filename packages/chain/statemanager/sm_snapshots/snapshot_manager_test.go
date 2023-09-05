@@ -36,23 +36,36 @@ var (
 )
 
 func TestSnapshotManagerLocal(t *testing.T) {
-	createFun, nopFun := getLocalFuns(t)
-	testSnapshotManagerLast(t, createFun, nopFun)
+	testSnapshotManager(t, getLocalFuns, testSnapshotManagerLast)
 }
 
-func TestSnapshotManagerNetwork(t *testing.T) {
-	createFun, createIndexFileFun := getNetworkFuns(t)
-	testSnapshotManagerLast(t, createFun, createIndexFileFun)
+func TestSnapshotManagerNetworkHTTP(t *testing.T) {
+	testSnapshotManager(t, getNetworkHTTPFuns, testSnapshotManagerLast)
+}
+
+func TestSnapshotManagerNetworkFile(t *testing.T) {
+	testSnapshotManager(t, getNetworkFileFuns, testSnapshotManagerLast)
 }
 
 func TestSnapshotManagerLoadMiddleLocal(t *testing.T) {
-	createFun, nopFun := getLocalFuns(t)
-	testSnapshotManagerMiddle(t, createFun, nopFun)
+	testSnapshotManager(t, getLocalFuns, testSnapshotManagerMiddle)
 }
 
-func TestSnapshotManagerLoadMiddleNetwork(t *testing.T) {
-	createFun, createIndexFileFun := getNetworkFuns(t)
-	testSnapshotManagerMiddle(t, createFun, createIndexFileFun)
+func TestSnapshotManagerLoadMiddleNetworkHTTP(t *testing.T) {
+	testSnapshotManager(t, getNetworkHTTPFuns, testSnapshotManagerMiddle)
+}
+
+func TestSnapshotManagerLoadMiddleNetworkFile(t *testing.T) {
+	testSnapshotManager(t, getNetworkFileFuns, testSnapshotManagerMiddle)
+}
+
+func testSnapshotManager(
+	t *testing.T,
+	getFunsFun func(*testing.T) (createNewNodeFun, snapshotsAvailableFun),
+	runTestFun func(*testing.T, createNewNodeFun, snapshotsAvailableFun),
+) {
+	createFun, snapshotAvailableFun := getFunsFun(t)
+	runTestFun(t, createFun, snapshotAvailableFun)
 }
 
 func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
@@ -76,7 +89,7 @@ func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 		func(isc.ChainID, []SnapshotInfo) {}
 }
 
-func getNetworkFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
+func getNetworkHTTPFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 	err := ioutils.CreateDirectory(localSnapshotsCreatePathConst, 0o777)
 	require.NoError(t, err)
 
@@ -84,8 +97,15 @@ func getNetworkFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 	handler := http.FileServer(http.Dir(localSnapshotsCreatePathConst))
 	go http.ListenAndServe(port, handler)
 
+	return getNetworkFuns(t, []string{"http://localhost" + port + "/"})
+}
+
+func getNetworkFileFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
+	return getNetworkFuns(t, []string{"file://" + localSnapshotsCreatePathConst + "/"})
+}
+
+func getNetworkFuns(t *testing.T, networkPaths []string) (createNewNodeFun, snapshotsAvailableFun) {
 	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log *logger.Logger) SnapshotManager {
-			networkPaths := []string{"http://localhost" + port + "/"}
 			snapshotManager, err := NewSnapshotManager(
 				context.Background(),
 				nil,
