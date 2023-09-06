@@ -42,9 +42,6 @@ func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) []*vm.RequestResult {
 func (ch *Chain) RunRequestsSync(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
-
-	ch.mempool.ReceiveRequests(reqs...)
-
 	return ch.runRequestsNolock(reqs, trace)
 }
 
