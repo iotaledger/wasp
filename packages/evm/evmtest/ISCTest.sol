@@ -190,4 +190,10 @@ contract ISCTest {
         }
         revert();
     }
+
+    error CustomError(uint8);
+
+    function revertWithCustomError() public pure {
+        revert CustomError(42);
+    }
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/crypto/sha3"
 
+	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -54,14 +55,31 @@ func (e *EthService) resolveError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
-		resolvedErr, resolveErr := vmerrors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestState()))
-		if resolveErr != nil {
-			return fmt.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)
+
+	var resolvedErr *isc.VMError
+
+	ok := errors.As(err, &resolvedErr)
+	if !ok {
+		var vmError *isc.UnresolvedVMError
+		ok := errors.As(err, &vmError)
+		if !ok {
+			return err
 		}
-		return resolvedErr.AsGoError()
+		var resolveErr error
+		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestState()))
+		if resolveErr != nil {
+			return fmt.Errorf("could not resolve VMError: %w: %v", err, resolveErr)
+		}
 	}
-	return err
+
+	revertData, extractErr := evmerrors.ExtractRevertData(resolvedErr)
+	if extractErr != nil {
+		return fmt.Errorf("could not extract revert data: %w: %v", err, extractErr)
+	}
+	if len(revertData) > 0 {
+		return newRevertError(revertData)
+	}
+	return resolvedErr.AsGoError()
 }
 
 func (e *EthService) getTransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {

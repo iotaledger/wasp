@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -25,6 +26,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -1643,14 +1645,20 @@ func TestSolidityRevertMessage(t *testing.T) {
 		Gas:  100_000,
 		Data: callData,
 	}, nil)
-	require.Error(t, err)
-	require.EqualValues(t, "execution reverted: foobar", err.Error())
+	require.ErrorContains(t, err, "execution reverted")
+
+	revertData, err := evmerrors.ExtractRevertData(err)
+	require.NoError(t, err)
+	revertString, err := abi.UnpackRevert(revertData)
+	require.NoError(t, err)
+
+	require.Equal(t, "foobar", revertString)
 
 	res, err := iscTest.callFn([]ethCallOptions{{
 		gasLimit: 100_000, // needed because gas estimation would fail
 	}}, "testRevertReason")
 	require.Error(t, err)
-	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
+	require.Regexp(t, `execution reverted: \w+`, res.iscReceipt.ResolvedError)
 }
 
 func TestCallContractCannotCauseStackOverflow(t *testing.T) {
@@ -1946,4 +1954,23 @@ func TestCaller(t *testing.T) {
 	err = iscTest.callView("testCallViewCaller", nil, &r)
 	require.NoError(t, err)
 	require.EqualValues(t, 42, big.NewInt(0).SetBytes(r).Uint64())
+}
+
+func TestCustomError(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+	_, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100000,
+	}}, "revertWithCustomError")
+	require.ErrorContains(t, err, "execution reverted")
+
+	revertData, err := evmerrors.ExtractRevertData(err)
+	require.NoError(t, err)
+
+	args, err := evmerrors.UnpackCustomError(revertData, iscTest.abi.Errors["CustomError"])
+	require.NoError(t, err)
+
+	require.Len(t, args, 1)
+	require.EqualValues(t, 42, args[0])
 }

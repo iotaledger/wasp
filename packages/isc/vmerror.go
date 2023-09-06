@@ -288,7 +288,7 @@ func validateParams(params []any) {
 		switch t.Kind() {
 		case reflect.String:
 			s := v.String()
-			if len(s) > 255 {
+			if len(s) > 1024 {
 				panic("string param too long")
 			}
 
