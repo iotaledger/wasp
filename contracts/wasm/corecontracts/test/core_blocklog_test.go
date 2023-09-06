@@ -110,15 +110,15 @@ func TestGetRequestReceipt(t *testing.T) {
 	require.Equal(t, blockIndex, f.Results.BlockIndex().Value())
 	require.Equal(t, reqIndex, f.Results.RequestIndex().Value())
 
-	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestReceipt().Value())
+	receipt, err := blocklog.RequestReceiptFromBytes(
+		f.Results.RequestReceipt().Value(),
+		f.Results.BlockIndex().Value(),
+		f.Results.RequestIndex().Value(),
+	)
 	require.NoError(t, err)
 	soloreceipt, err := ctx.Chain.GetRequestReceipt(reqs[0])
 	require.NoError(t, err)
 
-	// note: this is what ctx.Chain.GetRequestReceipt() does as well,
-	// so we better make sure they are equal before comparing
-	receipt.BlockIndex = f.Results.BlockIndex().Value()
-	receipt.RequestIndex = f.Results.RequestIndex().Value()
 	require.Equal(t, soloreceipt, receipt)
 }
 
@@ -136,9 +136,12 @@ func TestGetRequestReceiptsForBlock(t *testing.T) {
 		receipts := f.Results.RequestReceipts()
 		recNum := receipts.Length()
 		for j := uint32(0); j < recNum; j++ {
-			receipt, err := blocklog.RequestReceiptFromBytes(receipts.GetBytes(j).Value())
+			receipt, err := blocklog.RequestReceiptFromBytes(
+				receipts.GetBytes(j).Value(),
+				soloreceipts[j].BlockIndex,
+				soloreceipts[j].RequestIndex,
+			)
 			require.NoError(t, err)
-			receipt.BlockIndex = soloreceipts[j].BlockIndex
 			require.Equal(t, soloreceipts[j], receipt)
 		}
 	}

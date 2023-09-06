@@ -399,12 +399,13 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceip
 	if err != nil || binRec == nil {
 		return nil, err
 	}
-	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
 
+	ret1, err := blocklog.RequestReceiptFromBytes(
+		binRec,
+		resultDecoder.MustGetUint32(blocklog.ParamBlockIndex),
+		resultDecoder.MustGetUint16(blocklog.ParamRequestIndex),
+	)
 	require.NoError(ch.Env.T, err)
-	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
-	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
-
 	return ret1, nil
 }
 

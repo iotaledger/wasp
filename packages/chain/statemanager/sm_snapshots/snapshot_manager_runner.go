@@ -2,16 +2,15 @@ package sm_snapshots
 
 import (
 	"context"
+	"sync"
+
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/shutdown"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
-
-type snapshotInfoCallback struct {
-	SnapshotInfo
-	callback chan<- error
-}
 
 // To avoid code duplication, a common parts of regular and mocked snapshot managers
 // are extracted to `snapshotManagerRunner`.
@@ -20,27 +19,45 @@ type snapshotManagerRunner struct {
 	ctx                 context.Context
 	shutdownCoordinator *shutdown.Coordinator
 
-	updatePipe         pipe.Pipe[bool]
 	blockCommittedPipe pipe.Pipe[SnapshotInfo]
-	loadSnapshotPipe   pipe.Pipe[*snapshotInfoCallback]
+
+	lastIndexSnapshotted      uint32
+	lastIndexSnapshottedMutex sync.Mutex
+	loadedSnapshotStateIndex  uint32
+	createPeriod              uint32
+	delayPeriod               uint32
+	queue                     []SnapshotInfo
 
 	core snapshotManagerCore
 }
 
 func newSnapshotManagerRunner(
 	ctx context.Context,
+	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
+	createPeriod uint32,
+	delayPeriod uint32,
 	core snapshotManagerCore,
 	log *logger.Logger,
 ) *snapshotManagerRunner {
 	result := &snapshotManagerRunner{
-		log:                 log,
-		ctx:                 ctx,
-		shutdownCoordinator: shutdownCoordinator,
-		updatePipe:          pipe.NewInfinitePipe[bool](),
-		blockCommittedPipe:  pipe.NewInfinitePipe[SnapshotInfo](),
-		loadSnapshotPipe:    pipe.NewInfinitePipe[*snapshotInfoCallback](),
-		core:                core,
+		log:                       log,
+		ctx:                       ctx,
+		shutdownCoordinator:       shutdownCoordinator,
+		blockCommittedPipe:        pipe.NewInfinitePipe[SnapshotInfo](),
+		lastIndexSnapshotted:      0,
+		lastIndexSnapshottedMutex: sync.Mutex{},
+		loadedSnapshotStateIndex:  0,
+		createPeriod:              createPeriod,
+		delayPeriod:               delayPeriod,
+		queue:                     make([]SnapshotInfo, 0),
+		core:                      core,
+	}
+	if store.IsEmpty() {
+		loadedSnapshotInfo := result.core.loadSnapshot()
+		if loadedSnapshotInfo != nil {
+			result.loadedSnapshotStateIndex = loadedSnapshotInfo.StateIndex()
+		}
 	}
 	go result.run()
 	return result
@@ -50,23 +67,28 @@ func newSnapshotManagerRunner(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-func (smrT *snapshotManagerRunner) UpdateAsync() {
-	smrT.updatePipe.In() <- true
+func (smrT *snapshotManagerRunner) GetLoadedSnapshotStateIndex() uint32 {
+	return smrT.loadedSnapshotStateIndex
 }
 
 func (smrT *snapshotManagerRunner) BlockCommittedAsync(snapshotInfo SnapshotInfo) {
-	if smrT.core.createSnapshotsNeeded() {
+	if smrT.createSnapshotsNeeded() {
 		smrT.blockCommittedPipe.In() <- snapshotInfo
 	}
 }
 
-func (smrT *snapshotManagerRunner) LoadSnapshotAsync(snapshotInfo SnapshotInfo) <-chan error {
-	callback := make(chan error, 1)
-	smrT.loadSnapshotPipe.In() <- &snapshotInfoCallback{
-		SnapshotInfo: snapshotInfo,
-		callback:     callback,
+// -------------------------------------
+// Api for snapshotManagerCore implementations
+// -------------------------------------
+
+func (smrT *snapshotManagerRunner) snapshotCreated(snapshotInfo SnapshotInfo) {
+	stateIndex := snapshotInfo.StateIndex()
+	smrT.lastIndexSnapshottedMutex.Lock()
+	defer smrT.lastIndexSnapshottedMutex.Unlock()
+	if stateIndex > smrT.lastIndexSnapshotted {
+		smrT.lastIndexSnapshotted = stateIndex
+		smrT.queue = lo.Filter(smrT.queue, func(si SnapshotInfo, index int) bool { return si.StateIndex() > smrT.lastIndexSnapshotted })
 	}
-	return callback
 }
 
 // -------------------------------------
@@ -74,9 +96,7 @@ func (smrT *snapshotManagerRunner) LoadSnapshotAsync(snapshotInfo SnapshotInfo) 
 // -------------------------------------
 
 func (smrT *snapshotManagerRunner) run() {
-	updatePipeCh := smrT.updatePipe.Out()
 	blockCommittedPipeCh := smrT.blockCommittedPipe.Out()
-	loadSnapshotPipeCh := smrT.loadSnapshotPipe.Out()
 	for {
 		if smrT.ctx.Err() != nil {
 			if smrT.shutdownCoordinator == nil {
@@ -89,29 +109,41 @@ func (smrT *snapshotManagerRunner) run() {
 			}
 		}
 		select {
-		case _, ok := <-updatePipeCh:
-			if ok {
-				smrT.core.handleUpdate()
-			} else {
-				updatePipeCh = nil
-			}
 		case snapshotInfo, ok := <-blockCommittedPipeCh:
 			if ok {
-				smrT.core.handleBlockCommitted(snapshotInfo)
+				smrT.handleBlockCommitted(snapshotInfo)
 			} else {
 				blockCommittedPipeCh = nil
 			}
-		case snapshotInfoC, ok := <-loadSnapshotPipeCh:
-			if ok {
-				func() {
-					defer close(snapshotInfoC.callback)
-					smrT.core.handleLoadSnapshot(snapshotInfoC.SnapshotInfo, snapshotInfoC.callback)
-				}()
-			} else {
-				loadSnapshotPipeCh = nil
-			}
 		case <-smrT.ctx.Done():
 			continue
+		}
+	}
+}
+
+func (smrT *snapshotManagerRunner) createSnapshotsNeeded() bool {
+	return smrT.createPeriod > 0
+}
+
+func (smrT *snapshotManagerRunner) handleBlockCommitted(snapshotInfo SnapshotInfo) {
+	sisToCreate := func() []SnapshotInfo { // Function to unlock the mutex quicker
+		stateIndex := snapshotInfo.StateIndex()
+		var lastIndexSnapshotted uint32
+		smrT.lastIndexSnapshottedMutex.Lock()
+		defer smrT.lastIndexSnapshottedMutex.Unlock()
+		lastIndexSnapshotted = smrT.lastIndexSnapshotted
+		if (stateIndex > lastIndexSnapshotted) && (stateIndex%smrT.createPeriod == 0) { // TODO: what if snapshotted state has been reverted?
+			smrT.queue = append(smrT.queue, snapshotInfo)
+		}
+		stateIndexToCommit := stateIndex - smrT.delayPeriod
+		if (stateIndexToCommit > lastIndexSnapshotted) && (stateIndexToCommit%smrT.createPeriod == 0) {
+			return lo.Filter(smrT.queue, func(si SnapshotInfo, index int) bool { return si.StateIndex() == stateIndexToCommit })
+		}
+		return []SnapshotInfo{}
+	}()
+	for i, siToCreate := range sisToCreate {
+		if !(lo.ContainsBy(sisToCreate[:i], func(si SnapshotInfo) bool { return si.Equals(siToCreate) })) {
+			smrT.core.createSnapshot(siToCreate)
 		}
 	}
 }

@@ -19,6 +19,10 @@ func NewReadOnlyStore(store state.Store) state.Store {
 	return &readOnlyStore{store: store}
 }
 
+func (ros *readOnlyStore) IsEmpty() bool {
+	return ros.store.IsEmpty()
+}
+
 func (ros *readOnlyStore) HasTrieRoot(trieRoot trie.Hash) bool {
 	return ros.store.HasTrieRoot(trieRoot)
 }
@@ -73,6 +77,10 @@ func (ros *readOnlyStore) ExtractBlock(stateDraft state.StateDraft) state.Block 
 
 func (ros *readOnlyStore) Prune(trie.Hash) (trie.PruneStats, error) {
 	panic("Cannot prune read-only store")
+}
+
+func (ros *readOnlyStore) LargestPrunedBlockIndex() (uint32, error) {
+	return ros.store.LargestPrunedBlockIndex()
 }
 
 func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, w io.Writer) error {

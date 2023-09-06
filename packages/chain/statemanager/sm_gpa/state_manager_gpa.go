@@ -22,22 +22,21 @@ import (
 )
 
 type stateManagerGPA struct {
-	log                     *logger.Logger
-	chainID                 isc.ChainID
-	blockCache              sm_gpa_utils.BlockCache
-	blocksToFetch           blockFetchers
-	blocksFetched           blockFetchers
-	nodeRandomiser          sm_utils.NodeRandomiser
-	snapshotExistsFun       SnapshotExistsFun
-	store                   state.Store
-	output                  StateManagerOutput
-	parameters              StateManagerParameters
-	lastGetBlocksTime       time.Time
-	lastCleanBlockCacheTime time.Time
-	lastCleanRequestsTime   time.Time
-	lastStatusLogTime       time.Time
-	lastSnapshotsUpdateTime time.Time
-	metrics                 *metrics.ChainStateManagerMetrics
+	log                      *logger.Logger
+	chainID                  isc.ChainID
+	blockCache               sm_gpa_utils.BlockCache
+	blocksToFetch            blockFetchers
+	blocksFetched            blockFetchers
+	loadedSnapshotStateIndex uint32
+	nodeRandomiser           sm_utils.NodeRandomiser
+	store                    state.Store
+	output                   StateManagerOutput
+	parameters               StateManagerParameters
+	lastGetBlocksTime        time.Time
+	lastCleanBlockCacheTime  time.Time
+	lastCleanRequestsTime    time.Time
+	lastStatusLogTime        time.Time
+	metrics                  *metrics.ChainStateManagerMetrics
 }
 
 var _ gpa.GPA = &stateManagerGPA{}
@@ -49,9 +48,9 @@ const (
 
 func New(
 	chainID isc.ChainID,
+	loadedSnapshotStateIndex uint32,
 	nr sm_utils.NodeRandomiser,
 	wal sm_gpa_utils.BlockWAL,
-	snapshotExistsFun SnapshotExistsFun,
 	store state.Store,
 	metrics *metrics.ChainStateManagerMetrics,
 	log *logger.Logger,
@@ -64,22 +63,21 @@ func New(
 		return nil, fmt.Errorf("error creating block cache: %v", err)
 	}
 	result := &stateManagerGPA{
-		log:                     smLog,
-		chainID:                 chainID,
-		blockCache:              blockCache,
-		blocksToFetch:           newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksFetching, metrics.DecBlocksFetching, metrics.StateManagerBlockFetched)),
-		blocksFetched:           newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksPending, metrics.DecBlocksPending, bfmNopDurationFun)),
-		nodeRandomiser:          nr,
-		snapshotExistsFun:       snapshotExistsFun,
-		store:                   store,
-		output:                  newOutput(),
-		parameters:              parameters,
-		lastGetBlocksTime:       time.Time{},
-		lastCleanBlockCacheTime: time.Time{},
-		lastCleanRequestsTime:   time.Time{},
-		lastStatusLogTime:       time.Time{},
-		lastSnapshotsUpdateTime: time.Time{},
-		metrics:                 metrics,
+		log:                      smLog,
+		chainID:                  chainID,
+		blockCache:               blockCache,
+		blocksToFetch:            newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksFetching, metrics.DecBlocksFetching, metrics.StateManagerBlockFetched)),
+		blocksFetched:            newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksPending, metrics.DecBlocksPending, bfmNopDurationFun)),
+		loadedSnapshotStateIndex: loadedSnapshotStateIndex,
+		nodeRandomiser:           nr,
+		store:                    store,
+		output:                   newOutput(),
+		parameters:               parameters,
+		lastGetBlocksTime:        time.Time{},
+		lastCleanBlockCacheTime:  time.Time{},
+		lastCleanRequestsTime:    time.Time{},
+		lastStatusLogTime:        time.Time{},
+		metrics:                  metrics,
 	}
 
 	return result, nil
@@ -99,8 +97,6 @@ func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 		return smT.handleConsensusBlockProduced(inputCasted)
 	case *sm_inputs.ChainFetchStateDiff: // From mempool
 		return smT.handleChainFetchStateDiff(inputCasted)
-	case *sm_inputs.SnapshotManagerSnapshotDone: // From snapshot manager
-		return smT.handleSnapshotManagerSnapshotDone(inputCasted)
 	case *sm_inputs.StateManagerTimerTick: // From state manager go routine
 		return smT.handleStateManagerTimerTick(inputCasted.GetTime())
 	default:
@@ -369,26 +365,6 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.Ch
 	smT.metrics.ChainFetchStateDiffHandled(time.Since(start))
 }
 
-func (smT *stateManagerGPA) handleSnapshotManagerSnapshotDone(input *sm_inputs.SnapshotManagerSnapshotDone) gpa.OutMessages {
-	stateIndex := input.GetStateIndex()
-	commitment := input.GetCommitment()
-	smT.log.Debugf("Input snapshot manager snapshot %v %s done received, result=%v...", stateIndex, commitment, input.GetResult())
-	fetcher := smT.blocksFetched.takeFetcher(input.GetCommitment())
-	if fetcher == nil {
-		smT.log.Warnf("Input snapshot manager snapshot %v %s done: snapshot no longer needed, ignoring it", stateIndex, commitment)
-		return nil // No messages to send
-	}
-	if input.GetResult() != nil {
-		// TODO: maybe downloading snapshot should be retried?
-		smT.log.Errorf("Input snapshot manager snapshot %v %s done: retrieving snapshot failed %v", stateIndex, commitment, input.GetResult())
-		smT.blocksToFetch.addFetcher(fetcher)
-		return smT.makeGetBlockRequestMessages(commitment)
-	}
-	result := smT.markFetched(fetcher, false)
-	smT.log.Debugf("Input snapshot manager snapshot %v %s done handled.", stateIndex, commitment)
-	return result
-}
-
 func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
 	block := smT.blockCache.GetBlock(commitment)
 	if block != nil {
@@ -451,10 +427,17 @@ func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) gpa.OutMessage
 	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
 		block := smT.blockCache.GetBlock(commitment)
 		if block == nil {
-			if smT.snapshotExistsFun(stateIndex, commitment) {
-				smT.output.addSnapshotToLoad(stateIndex, commitment)
-				smT.blocksFetched.addFetcher(fetcher)
-				return nil // No messages to send
+			stateIndexBoundary, err := smT.store.LargestPrunedBlockIndex()
+			if err != nil {
+				smT.log.Warnf("Cannot obtain largest pruned block: %v", err)
+				stateIndexBoundary = 0
+			}
+			if smT.loadedSnapshotStateIndex > stateIndexBoundary {
+				stateIndexBoundary = smT.loadedSnapshotStateIndex
+			}
+			if stateIndex <= stateIndexBoundary { // NOTE: stateIndex cannot be 0 here as origin block is already in store
+				smT.log.Panicf("Cannot find block index %v %s, because its index is not above boundary %v",
+					stateIndex, commitment, stateIndexBoundary)
 			}
 			smT.blocksToFetch.addFetcher(fetcher)
 			smT.log.Debugf("Block %s is missing, starting fetching it", commitment)
@@ -577,13 +560,6 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 		smT.metrics.SetRequestsWaiting(waitingCallbacks)
 		smT.log.Debugf("Callbacks of block fetchers cleaned, %v waiting callbacks remained, next cleaning not earlier than %v",
 			waitingCallbacks, smT.lastCleanRequestsTime.Add(smT.parameters.StateManagerRequestCleaningPeriod))
-	}
-	nextSnapshotsUpdateTime := smT.lastSnapshotsUpdateTime.Add(smT.parameters.SnapshotManagerUpdatePeriod)
-	if now.After(nextSnapshotsUpdateTime) {
-		smT.output.setUpdateSnapshots()
-		smT.lastSnapshotsUpdateTime = now
-		smT.log.Debugf("Ordered snapshot update, next update not earlier than %v",
-			smT.lastSnapshotsUpdateTime.Add(smT.parameters.SnapshotManagerUpdatePeriod))
 	}
 	smT.metrics.StateManagerTimerTickHandled(time.Since(start))
 	return result

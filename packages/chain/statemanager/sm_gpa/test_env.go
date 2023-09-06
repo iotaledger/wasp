@@ -26,17 +26,15 @@ import (
 )
 
 type testEnv struct {
-	t            *testing.T
-	bf           *sm_gpa_utils.BlockFactory
-	nodeIDs      []gpa.NodeID
-	timeProvider sm_gpa_utils.TimeProvider
-	sms          map[gpa.NodeID]gpa.GPA
-	stores       map[gpa.NodeID]state.Store
-	snapms       map[gpa.NodeID]sm_snapshots.SnapshotManager
-	snaprchs     map[gpa.NodeID]<-chan error
-	snaprsis     map[gpa.NodeID]sm_snapshots.SnapshotInfo
-	tc           *gpa.TestContext
-	log          *logger.Logger
+	t          *testing.T
+	bf         *sm_gpa_utils.BlockFactory
+	nodeIDs    []gpa.NodeID
+	parameters StateManagerParameters
+	sms        map[gpa.NodeID]gpa.GPA
+	stores     map[gpa.NodeID]state.Store
+	snapms     map[gpa.NodeID]sm_snapshots.SnapshotManager
+	tc         *gpa.TestContext
+	log        *logger.Logger
 }
 
 func newTestEnv(
@@ -46,28 +44,29 @@ func newTestEnv(
 	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
-	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
-		return createWALFun()
-	}
-	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
-		return createSnapMFun(origStore, nodeStore, tp, log)
-	}
-	return newVariedTestEnv(t, nodeIDs, createWALVariedFun, createSnapMVariedFun, parametersOpt...)
+	result := newTestEnvNoNodes(t, parametersOpt...)
+	result.addNodes(nodeIDs, createWALFun, createSnapMFun)
+	return result
 }
 
-func newVariedTestEnv(
+// Commented to please the linter; left for completeness
+/*func newTestEnvVariedNodes(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
 	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
+	result := newTestEnvNoNodes(t, parametersOpt...)
+	result.addVariedNodes(nodeIDs, createWALFun, createSnapMFun)
+	return result
+}*/
+
+func newTestEnvNoNodes(
+	t *testing.T,
+	parametersOpt ...StateManagerParameters,
+) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
-	sms := make(map[gpa.NodeID]gpa.GPA)
-	stores := make(map[gpa.NodeID]state.Store)
-	snapms := make(map[gpa.NodeID]sm_snapshots.SnapshotManager)
-	snaprchs := make(map[gpa.NodeID]<-chan error)
-	snaprsis := make(map[gpa.NodeID]sm_snapshots.SnapshotInfo)
 	var parameters StateManagerParameters
 	var chainInitParameters dict.Dict
 	if len(parametersOpt) > 0 {
@@ -80,60 +79,66 @@ func newVariedTestEnv(
 	}
 
 	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
-	chainID := bf.GetChainID()
 	log := testlogger.NewLogger(t)
 	parameters.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
+	return &testEnv{
+		t:          t,
+		bf:         bf,
+		parameters: parameters,
+		log:        log,
+	}
+}
+
+func (teT *testEnv) addNodes(
+	nodeIDs []gpa.NodeID,
+	createWALFun func() sm_gpa_utils.TestBlockWAL,
+	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
+) {
+	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
+		return createWALFun()
+	}
+	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
+		return createSnapMFun(origStore, nodeStore, tp, log)
+	}
+	teT.addVariedNodes(nodeIDs, createWALVariedFun, createSnapMVariedFun)
+}
+
+func (teT *testEnv) addVariedNodes(
+	nodeIDs []gpa.NodeID,
+	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
+) {
+	sms := make(map[gpa.NodeID]gpa.GPA)
+	stores := make(map[gpa.NodeID]state.Store)
+	snapms := make(map[gpa.NodeID]sm_snapshots.SnapshotManager)
+	chainID := teT.bf.GetChainID()
 	for _, nodeID := range nodeIDs {
 		var err error
-		smLog := log.Named(nodeID.ShortString())
+		smLog := teT.log.Named(nodeID.ShortString())
 		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
 		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		snapshotManager := createSnapMFun(nodeID, bf.GetStore(), store, parameters.TimeProvider, smLog)
-		snapshotExistsFun := snapshotManager.SnapshotExists
-		origin.InitChain(store, chainInitParameters, 0)
+		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)
+		loadedSnapshotStateIndex := snapshotManager.GetLoadedSnapshotStateIndex()
 		stores[nodeID] = store
-		sms[nodeID], err = New(chainID, nr, wal, snapshotExistsFun, store, mockStateManagerMetrics(), smLog, parameters)
-		require.NoError(t, err)
+		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
+		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
-		snaprchs[nodeID] = nil
-		snaprsis[nodeID] = nil
+		origin.InitChain(store, teT.bf.GetChainInitParameters(), 0)
 	}
-	result := &testEnv{
-		t:            t,
-		bf:           bf,
-		nodeIDs:      nodeIDs,
-		timeProvider: parameters.TimeProvider,
-		sms:          sms,
-		snapms:       snapms,
-		snaprchs:     snaprchs,
-		snaprsis:     snaprsis,
-		stores:       stores,
-		log:          log,
-	}
-	result.tc = gpa.NewTestContext(sms).WithOutputHandler(func(nodeID gpa.NodeID, outputOrig gpa.Output) {
+	teT.nodeIDs = nodeIDs
+	teT.sms = sms
+	teT.snapms = snapms
+	teT.stores = stores
+	teT.tc = gpa.NewTestContext(sms).WithOutputHandler(func(nodeID gpa.NodeID, outputOrig gpa.Output) {
 		output, ok := outputOrig.(StateManagerOutput)
-		require.True(result.t, ok)
-		result.checkSnapshotsLoaded()
-		snapshotManager, ok := result.snapms[nodeID]
-		require.True(result.t, ok)
-		snapshotRespChannel, ok := result.snaprchs[nodeID]
-		require.True(result.t, ok)
-		if snapshotRespChannel == nil {
-			snapshotInfo := output.TakeSnapshotToLoad()
-			if snapshotInfo != nil {
-				result.snaprchs[nodeID] = snapshotManager.LoadSnapshotAsync(snapshotInfo)
-				result.snaprsis[nodeID] = snapshotInfo
-			}
-		}
+		require.True(teT.t, ok)
+		snapshotManager, ok := teT.snapms[nodeID]
+		require.True(teT.t, ok)
 		for _, snapshotInfo := range output.TakeBlocksCommitted() {
 			snapshotManager.BlockCommittedAsync(snapshotInfo)
 		}
-		if output.TakeUpdateSnapshots() {
-			snapshotManager.UpdateAsync()
-		}
 	})
-	return result
 }
 
 func (teT *testEnv) finalize() {
@@ -150,24 +155,6 @@ func (teT *testEnv) doesNotContainBlock(nodeID gpa.NodeID, block state.Block) {
 	store, ok := teT.stores[nodeID]
 	require.True(teT.t, ok)
 	require.False(teT.t, store.HasTrieRoot(block.TrieRoot()))
-}
-
-func (teT *testEnv) checkSnapshotsLoaded() {
-	inputs := make(map[gpa.NodeID]gpa.Input)
-	for nodeID, ch := range teT.snaprchs {
-		select {
-		case result, ok := <-ch:
-			if ok {
-				snapshotInfo, ok := teT.snaprsis[nodeID]
-				require.True(teT.t, ok)
-				input := sm_inputs.NewSnapshotManagerSnapshotDone(snapshotInfo.StateIndex(), snapshotInfo.Commitment(), result)
-				inputs[nodeID] = input
-			}
-			teT.snaprchs[nodeID] = nil
-		default:
-		}
-	}
-	teT.tc.WithInputs(inputs).RunAll()
 }
 
 func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, timeStep time.Duration, blocks ...state.Block) {
@@ -345,8 +332,8 @@ func (teT *testEnv) ensureTrue(title string, predicate func() bool, maxTimeItera
 }
 
 func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
-	now := teT.timeProvider.GetNow().Add(delay)
-	teT.timeProvider.SetNow(now)
+	now := teT.parameters.TimeProvider.GetNow().Add(delay)
+	teT.parameters.TimeProvider.SetNow(now)
 	teT.t.Logf("Time %v is sent to nodes %s", now, util.SliceShortString(teT.nodeIDs))
 	teT.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
 		return sm_inputs.NewStateManagerTimerTick(now)

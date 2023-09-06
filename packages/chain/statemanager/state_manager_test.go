@@ -43,9 +43,8 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	mempoolStateRequestCount := 50
 	snapshotCreateNodeCount := 2
 	snapshotCreatePeriod := uint32(7)
+	snapshotDelayPeriod := uint32(4)
 	snapshotCommitTime := 170 * time.Millisecond
-	snapshotLoadTime := 320 * time.Millisecond
-	snapshotUpdatePeriod := 510 * time.Millisecond
 
 	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
@@ -66,15 +65,17 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
-	parameters.SnapshotManagerUpdatePeriod = snapshotUpdatePeriod
 	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManager {
 		var createPeriod uint32
+		var delayPeriod uint32
 		if createSnapshots {
 			createPeriod = snapshotCreatePeriod
+			delayPeriod = snapshotDelayPeriod
 		} else {
 			createPeriod = 0
+			delayPeriod = 0
 		}
-		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, bf.GetStore(), store, snapshotCommitTime, snapshotLoadTime, parameters.TimeProvider, log)
+		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, delayPeriod, bf.GetStore(), store, nil, snapshotCommitTime, parameters.TimeProvider, log)
 	}
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
@@ -100,13 +101,6 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 			parameters,
 		)
 		require.NoError(t, err)
-	}
-	for i := 0; i < snapshotCreateNodeCount; i++ {
-		snapMs[i].(*sm_snapshots.MockedSnapshotManager).SetAfterSnapshotCreated(func(snapshotInfo sm_snapshots.SnapshotInfo) {
-			for j := snapshotCreateNodeCount; j < len(snapMs); j++ {
-				snapMs[j].(*sm_snapshots.MockedSnapshotManager).SnapshotReady(snapshotInfo)
-			}
-		})
 	}
 	blocks := bf.GetBlocks(blockCount, 1)
 	stateDrafts := make([]state.StateDraft, blockCount)
@@ -206,7 +200,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 
 	// Check results
 	for _, sendBlockResult := range sendBlockResults {
-		requireTrueForSomeTime(t, sendBlockResult, 11*time.Second) // 11s instead of 10s just to avoid linter warning
+		requireTrueForSomeTime(t, sendBlockResult, 10*time.Second)
 	}
 	requireTrueForSomeTime(t, consensusStateProposalResult, 20*time.Second)
 	requireTrueForSomeTime(t, consensusDecidedStateResult, 20*time.Second)

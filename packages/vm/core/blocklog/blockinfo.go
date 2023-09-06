@@ -22,7 +22,7 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
-	PreviousAliasOutput   *isc.AliasOutputWithID // if new schema => always not nil
+	PreviousAliasOutput   *isc.AliasOutputWithID // nil for block #0
 	GasBurned             uint64
 	GasFeeCharged         uint64
 }

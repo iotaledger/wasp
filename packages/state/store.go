@@ -60,6 +60,10 @@ func (s *store) blockByTrieRoot(root trie.Hash) (Block, error) {
 	return s.db.readBlock(root)
 }
 
+func (s *store) IsEmpty() bool {
+	return s.db.isEmpty()
+}
+
 func (s *store) HasTrieRoot(root trie.Hash) bool {
 	return s.db.hasBlock(root)
 }
@@ -172,6 +176,11 @@ func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
 	defer s.writeMutex.Unlock()
 
 	start := time.Now()
+	state, err := s.StateByTrieRoot(trieRoot)
+	if err != nil {
+		return trie.PruneStats{}, err
+	}
+	blockIndex := state.BlockIndex()
 	buf, bufDB := s.db.buffered()
 	stats, err := trie.Prune(trieStore(bufDB), trieRoot)
 	if err != nil {
@@ -180,10 +189,22 @@ func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
 	s.db.pruneBlock(trieRoot)
 	s.db.commitToDB(buf.muts)
 	s.stateCache.Remove(trieRoot)
+	largestPrunedBlockIndex, err := s.db.largestPrunedBlockIndex()
+	if errors.Is(err, ErrNoBlocksPruned) {
+		s.db.setLargestPrunedBlockIndex(blockIndex)
+	} else if err != nil {
+		panic(err) // should not happen: no other error can be returned from `largestPrunedBlockIndex`
+	} else if blockIndex > largestPrunedBlockIndex {
+		s.db.setLargestPrunedBlockIndex(blockIndex)
+	}
 	if s.metrics != nil {
 		s.metrics.BlockPruned(time.Since(start), stats.DeletedNodes, stats.DeletedValues)
 	}
 	return stats, nil
+}
+
+func (s *store) LargestPrunedBlockIndex() (uint32, error) {
+	return s.db.largestPrunedBlockIndex()
 }
 
 func (s *store) SetLatest(trieRoot trie.Hash) error {
