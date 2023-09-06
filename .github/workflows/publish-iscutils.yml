@@ -17,16 +17,13 @@ jobs:
       run:
         working-directory: ./tools/evm/iscutils
     steps:
-      - uses: actions/checkout@v3
-      -
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
         with:
           node-version: lts/*
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
           scope: iota
-      -
-        run: npm version ${{ inputs.version }}
-      -
-        run: npm publish --access public
+      - run: npm version ${{ inputs.version }}
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
