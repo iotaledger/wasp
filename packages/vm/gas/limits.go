@@ -50,8 +50,8 @@ func (gl *Limits) String() string {
 	return fmt.Sprintf(
 		"GasLimits(max/block: %d, min/req: %d, max/req: %d, max/view: %d",
 		gl.MaxGasPerBlock,
-		gl.MaxGasPerBlock,
 		gl.MinGasPerRequest,
+		gl.MaxGasPerRequest,
 		gl.MaxGasExternalViewCall,
 	)
 }
