@@ -3,6 +3,7 @@ package solo
 import (
 	"encoding/json"
 	"os"
+	"sync"
 
 	"github.com/stretchr/testify/require"
 
@@ -99,6 +100,7 @@ func (env *Solo) LoadSnapshot(fname string) {
 			OriginatorPrivateKey:   okp,
 			ValidatorFeeTarget:     val,
 			db:                     db,
+			writeMutex:             &sync.Mutex{},
 		}
 		env.addChain(chainData)
 	}

@@ -41,6 +41,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -363,6 +364,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		log:                    env.logger.Named(chData.Name),
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
 		mempool:                newMempool(env.utxoDB.GlobalTime),
+		migrationScheme:        allmigrations.DefaultScheme,
 	}
 	env.chains[chData.ChainID] = ch
 	go ch.batchLoop()

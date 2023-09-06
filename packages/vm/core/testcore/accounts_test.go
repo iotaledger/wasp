@@ -1434,10 +1434,9 @@ func TestNonces(t *testing.T) {
 func TestNFTMint(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	wallet, address := env.NewKeyPairWithFunds()
-	agentID := isc.NewAgentID(address)
 
 	t.Run("mint for another user", func(t *testing.T) {
+		wallet, _ := env.NewKeyPairWithFunds()
 		anotherUserAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
 
 		// mint NFT to self and keep it on chain
@@ -1460,6 +1459,8 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
+		wallet, _ := env.NewKeyPairWithFunds()
+
 		anotherUserAddr := tpkg.RandEd25519Address()
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
@@ -1495,6 +1496,9 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
+		wallet, address := env.NewKeyPairWithFunds()
+		agentID := isc.NewAgentID(address)
+
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
@@ -1548,5 +1552,15 @@ func TestNFTMint(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, nftData.Issuer.Equal(fistNFTID.ToAddress()))
 		require.True(t, nftData.Owner.Equals(agentID))
+
+		// withdraw both NFTs
+		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(fistNFTID), wallet)
+		require.NoError(t, err)
+
+		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(iotago.NFTID(NFTIDInCollection)), wallet)
+		require.NoError(t, err)
+
+		require.Len(t, env.L1NFTs(address), 2)
+		require.Len(t, ch.L2NFTs(agentID), 0)
 	})
 }

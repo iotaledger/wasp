@@ -72,7 +72,7 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 	toBeAdded = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	toBeRemoved = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	for _, nft := range txb.nftsSorted() {
-		if nft.accountingInput != nil {
+		if nft.accountingInput != nil && nft.sentOutside {
 			// to remove if input is not nil (nft exists in accounting), and it's sent to outside the chain
 			toBeRemoved = append(toBeRemoved, nft.resultingOutput)
 			continue

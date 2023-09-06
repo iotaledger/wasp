@@ -11,8 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 )
 
-// TODO write tests for this migration
-
 // for testnet -- delete when deploying ShimmerEVM
 var DeprecateNFTData = migrations.Migration{
 	Contract: accounts.Contract,
