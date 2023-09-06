@@ -18,7 +18,7 @@ jobs:
           apt install -y build-essential libstdc++6 software-properties-common make gcc git curl tar
       - name: Check out code into the Go module directory
         id: checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
       - name: install go
         id: go
         uses: actions/setup-go@v4
@@ -39,7 +39,7 @@ jobs:
           working-directory: tools/wasp-cli
           version: v1.53.2
           args: --timeout 10m0s
-          skip-pkg-cache: true 
+          skip-pkg-cache: true
 
       - name: Get the job name
         id: get_job_name
@@ -97,7 +97,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
-  
+
   contract-test:
     name: Wasm contract tests
     runs-on:
@@ -119,7 +119,7 @@ jobs:
           apt install -y build-essential libstdc++6 software-properties-common make gcc git wget curl tar
       - name: checkout to the directory
         id: checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
       - name: install golang
         id: go
         uses: actions/setup-go@v4
@@ -185,7 +185,7 @@ jobs:
           elif [ $TEST_LANG == "rswasm" ]; then
             go test ./... -rswasm
           fi
-  
+
       - name: Get the job name
         id: get_job_name
         if: "${{ failure() }}"
@@ -242,7 +242,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
-  
+
   test:
     name: Test
     runs-on:
@@ -256,7 +256,7 @@ jobs:
           apt install -y build-essential libstdc++6 software-properties-common make gcc git curl tar
       - name: Check out code into the Go module directory
         id: checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
 
       - name: Set up Go 1.x
         id: go
@@ -276,7 +276,7 @@ jobs:
             /usr/local/bin/inx-faucet
       - name: Checkout Hornet
         id: hornet
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
         if: steps.cache_hornet.outputs.cache-hit != 'true'
         with:
           repository: iotaledger/hornet
@@ -294,7 +294,7 @@ jobs:
       - name: Checkout Indexer
         id: inx-indexer
         if: steps.cache_hornet.outputs.cache-hit != 'true'
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
         with:
           repository: iotaledger/inx-indexer
           ref: ${{ vars.INX_INDEXER_VERSION }}
@@ -311,7 +311,7 @@ jobs:
       - name: Checkout Coordinator
         id: inx_coordinator
         if: steps.cache_hornet.outputs.cache-hit != 'true'
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
         with:
           repository: iotaledger/inx-coordinator
           ref: ${{ vars.INX_COORDINATOR_VERSION }}
@@ -328,7 +328,7 @@ jobs:
       - name: Checkout Faucet
         id: inx-faucet
         if: steps.cache_hornet.outputs.cache-hit != 'true'
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+        uses: actions/checkout@v4
         with:
           repository: iotaledger/inx-faucet
           ref: ${{ vars.INX_FAUCET_VERSION }}
