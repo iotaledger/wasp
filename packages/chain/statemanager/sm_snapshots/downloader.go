@@ -176,7 +176,7 @@ func DownloadToFile(
 	addProgressReporter func(io.Reader, string, uint64) io.Reader,
 ) error {
 	filePathTemp := filePathLocal + tempFileSuffixConst
-	err := func() error { // Function is used to make defered close occur when it is needed even if write is successful
+	err := func() error { // Function is used to make deferred close occur when it is needed even if write is successful
 		downloader, e := NewDownloaderWithTimeout(ctx, filePathNetwork, timeout)
 		if e != nil {
 			return fmt.Errorf("failed to start downloading %s: %w", filePathNetwork, e)
