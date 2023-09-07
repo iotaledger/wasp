@@ -170,32 +170,27 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]inter
 		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
 		"gasUsed":           hexutil.Uint64(r.GasUsed),
 		"contractAddress":   r.ContractAddress,
-		"logs":              RPCMarshalLogs(r),
+		"logs":              rpcMarshalLogs(r),
 		"logsBloom":         r.Bloom,
 		"status":            hexutil.Uint64(r.Status),
 	}
 }
 
-func RPCMarshalLogs(r *types.Receipt) []interface{} {
+func rpcMarshalLogs(r *types.Receipt) []interface{} {
 	ret := make([]interface{}, len(r.Logs))
-	for i := range r.Logs {
-		ret[i] = RPCMarshalLog(r, uint(i))
+	for i, log := range r.Logs {
+		ret[i] = map[string]interface{}{
+			"logIndex":         hexutil.Uint(log.Index),
+			"blockNumber":      hexutil.Uint(log.BlockNumber),
+			"blockHash":        log.BlockHash,
+			"transactionHash":  log.TxHash,
+			"transactionIndex": hexutil.Uint(log.TxIndex),
+			"address":          log.Address,
+			"data":             hexutil.Bytes(log.Data),
+			"topics":           log.Topics,
+		}
 	}
 	return ret
-}
-
-func RPCMarshalLog(r *types.Receipt, logIndex uint) map[string]interface{} {
-	log := r.Logs[logIndex]
-	return map[string]interface{}{
-		"logIndex":         hexutil.Uint64(logIndex),
-		"blockNumber":      (*hexutil.Big)(r.BlockNumber),
-		"blockHash":        r.BlockHash,
-		"transactionHash":  r.TxHash,
-		"transactionIndex": hexutil.Uint64(r.TransactionIndex),
-		"address":          log.Address,
-		"data":             hexutil.Bytes(log.Data),
-		"topics":           log.Topics,
-	}
 }
 
 type RPCCallArgs struct {

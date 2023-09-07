@@ -4,6 +4,7 @@
 package emulator
 
 import (
+	"fmt"
 	"io"
 	"math/big"
 
@@ -131,14 +132,18 @@ func (bc *BlockchainDB) GetPendingHeader(timestamp uint64) *types.Header {
 	}
 }
 
-func (bc *BlockchainDB) GetLatestPendingReceipt() *types.Receipt {
+func (bc *BlockchainDB) getPendingCumulativeGasUsed() uint64 {
 	blockNumber := bc.GetPendingBlockNumber()
 	receiptArray := bc.getReceiptArray(blockNumber)
 	n := receiptArray.Len()
 	if n == 0 {
-		return nil
+		return 0
 	}
-	return bc.GetReceiptByBlockNumberAndIndex(blockNumber, n-1)
+	r, err := evmtypes.DecodeReceipt(receiptArray.GetAt(n - 1))
+	if err != nil {
+		panic(err)
+	}
+	return r.CumulativeGasUsed
 }
 
 func (bc *BlockchainDB) AddTransaction(tx *types.Transaction, receipt *types.Receipt) {
@@ -300,7 +305,7 @@ func (bc *BlockchainDB) addBlock(header *types.Header) {
 	bc.setNumber(blockNumber)
 }
 
-func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, txIndex uint32) *types.Receipt {
+func (bc *BlockchainDB) getRawReceiptByBlockNumberAndIndex(blockNumber uint64, txIndex uint32) *types.Receipt {
 	receipts := bc.getReceiptArray(blockNumber)
 	if txIndex >= receipts.Len() {
 		return nil
@@ -309,7 +314,18 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, txIn
 	if err != nil {
 		panic(err)
 	}
+	return r
+}
+
+func (bc *BlockchainDB) getReceiptByBlockNumberAndIndex(
+	blockNumber uint64,
+	txIndex uint32,
+	cumulativeGasUsed uint64,
+	logIndex uint,
+) *types.Receipt {
+	r := bc.getRawReceiptByBlockNumberAndIndex(blockNumber, txIndex)
 	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
+
 	r.TxHash = tx.Hash()
 	r.BlockHash = bc.GetBlockHashByBlockNumber(blockNumber)
 	for i, log := range r.Logs {
@@ -317,21 +333,15 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, txIn
 		log.TxIndex = uint(txIndex)
 		log.BlockHash = r.BlockHash
 		log.BlockNumber = blockNumber
-		log.Index = uint(i)
+		log.Index = logIndex + uint(i)
 	}
 	if tx.To() == nil {
 		from, _ := types.Sender(evmutil.Signer(big.NewInt(int64(bc.GetChainID()))), tx)
 		r.ContractAddress = crypto.CreateAddress(from, tx.Nonce())
 	}
-	r.GasUsed = r.CumulativeGasUsed
-	if txIndex > 0 {
-		prev, err := evmtypes.DecodeReceipt(receipts.GetAt(txIndex - 1))
-		if err != nil {
-			panic(err)
-		}
-		r.GasUsed -= prev.CumulativeGasUsed
-	}
+	r.GasUsed = r.CumulativeGasUsed - cumulativeGasUsed
 	r.BlockNumber = new(big.Int).SetUint64(blockNumber)
+	r.TransactionIndex = uint(txIndex)
 	return r
 }
 
@@ -357,7 +367,11 @@ func (bc *BlockchainDB) GetReceiptByTxHash(txHash common.Hash) *types.Receipt {
 		return nil
 	}
 	i := bc.GetTxIndexInBlockByTxHash(txHash)
-	return bc.GetReceiptByBlockNumberAndIndex(blockNumber, i)
+	receipts := bc.GetReceiptsByBlockNumber(blockNumber)
+	if int(i) >= len(receipts) {
+		panic(fmt.Sprintf("cannot find evm receipt for tx %s", txHash))
+	}
+	return receipts[i]
 }
 
 func (bc *BlockchainDB) GetTransactionByBlockNumberAndIndex(blockNumber uint64, i uint32) *types.Transaction {
@@ -479,8 +493,17 @@ func (bc *BlockchainDB) GetTransactionsByBlockNumber(blockNumber uint64) []*type
 func (bc *BlockchainDB) GetReceiptsByBlockNumber(blockNumber uint64) []*types.Receipt {
 	txArray := bc.getTxArray(blockNumber)
 	receipts := make([]*types.Receipt, txArray.Len())
+	logIndex := uint(0)
+	cumulativeGasUsed := uint64(0)
 	for i := range receipts {
-		receipts[i] = bc.GetReceiptByBlockNumberAndIndex(blockNumber, uint32(i))
+		receipts[i] = bc.getReceiptByBlockNumberAndIndex(
+			blockNumber,
+			uint32(i),
+			cumulativeGasUsed,
+			logIndex,
+		)
+		logIndex += uint(len(receipts[i].Logs))
+		cumulativeGasUsed = receipts[i].CumulativeGasUsed
 	}
 	return receipts
 }

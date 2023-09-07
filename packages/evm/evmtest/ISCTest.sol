@@ -196,4 +196,11 @@ contract ISCTest {
     function revertWithCustomError() public pure {
         revert CustomError(42);
     }
+
+    event SomeEvent();
+
+    function emitEventAndRevert() public {
+        emit SomeEvent();
+        revert();
+    }
 }
