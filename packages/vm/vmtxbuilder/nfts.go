@@ -90,7 +90,7 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 func (txb *AnchorTransactionBuilder) internalNFTOutputFromRequest(nftOutput *iotago.NFTOutput, outputID iotago.OutputID) *nftIncluded {
 	out := nftOutput.Clone().(*iotago.NFTOutput)
 	out.Amount = 0
-	chainAddr := txb.anchorOutput.AliasID.ToAddress()
+	chainAddr := txb.chainAddress()
 	out.NativeTokens = nil
 	out.Conditions = iotago.UnlockConditions{
 		&iotago.AddressUnlockCondition{
@@ -154,7 +154,8 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 }
 
 func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput) {
-	if !issuer.Equal(txb.anchorOutput.Chain().ToAddress()) {
+	chainAddr := txb.chainAddress()
+	if !issuer.Equal(chainAddr) {
 		// include collection issuer NFT output in the txbuilder
 		nftAddr, ok := issuer.(*iotago.NFTAddress)
 		if !ok {
@@ -192,6 +193,11 @@ func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetad
 		NFTID: iotago.NFTID{},
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: addr},
+		},
+		Features: iotago.Features{
+			&iotago.SenderFeature{
+				Address: chainAddr, // must set the chainID as the sender (so its recognized as an internalUTXO)
+			},
 		},
 		ImmutableFeatures: iotago.Features{
 			&iotago.IssuerFeature{Address: issuer},
