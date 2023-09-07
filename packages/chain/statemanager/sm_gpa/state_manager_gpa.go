@@ -427,15 +427,20 @@ func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) gpa.OutMessage
 	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
 		block := smT.blockCache.GetBlock(commitment)
 		if block == nil {
+			var stateIndexBoundaryValid bool
 			stateIndexBoundary, err := smT.store.LargestPrunedBlockIndex()
 			if err != nil {
 				smT.log.Warnf("Cannot obtain largest pruned block: %v", err)
 				stateIndexBoundary = 0
+				stateIndexBoundaryValid = false
+			} else {
+				stateIndexBoundaryValid = true
 			}
 			if smT.loadedSnapshotStateIndex > stateIndexBoundary {
 				stateIndexBoundary = smT.loadedSnapshotStateIndex
+				stateIndexBoundaryValid = true
 			}
-			if stateIndex <= stateIndexBoundary { // NOTE: stateIndex cannot be 0 here as origin block is already in store
+			if (stateIndex <= stateIndexBoundary) && stateIndexBoundaryValid {
 				smT.log.Panicf("Cannot find block index %v %s, because its index is not above boundary %v",
 					stateIndex, commitment, stateIndexBoundary)
 			}
