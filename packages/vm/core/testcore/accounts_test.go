@@ -1439,7 +1439,7 @@ func TestNFTMint(t *testing.T) {
 		wallet, _ := env.NewKeyPairWithFunds()
 		anotherUserAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
 
-		// mint NFT to self and keep it on chain
+		// mint NFT to another user and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
 			accounts.ParamNFTImmutableData, []byte("foobar"),
@@ -1449,9 +1449,9 @@ func TestNFTMint(t *testing.T) {
 			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
+		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
 		_, err := ch.PostRequestSync(req, wallet)
 		require.NoError(t, err)
-		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
 
 		// post a dummy request to make the chain progress to the next block
 		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
@@ -1464,7 +1464,7 @@ func TestNFTMint(t *testing.T) {
 		anotherUserAddr := tpkg.RandEd25519Address()
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
-		// mint NFT to self and keep it on chain
+		// mint NFT to another user and withdraw it
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
 			accounts.ParamNFTImmutableData, []byte("foobar"),
@@ -1509,9 +1509,9 @@ func TestNFTMint(t *testing.T) {
 			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
+		require.Len(t, ch.L2NFTs(agentID), 0)
 		_, err := ch.PostRequestSync(req, wallet)
 		require.NoError(t, err)
-		require.Len(t, ch.L2NFTs(agentID), 0)
 
 		// post a dummy request to make the chain progress to the next block
 		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)

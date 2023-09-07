@@ -454,16 +454,16 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 
 func (ch *Chain) CallViewAtState(chainState state.State, scName, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log().Debugf("callView: %s::%s", scName, funName)
-	return ch.CallViewByHnameAtState(chainState, isc.Hn(scName), isc.Hn(funName), params...)
+	return ch.callViewByHnameAtState(chainState, isc.Hn(scName), isc.Hn(funName), params...)
 }
 
 func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	latestState, err := ch.store.LatestState()
 	require.NoError(ch.Env.T, err)
-	return ch.CallViewByHnameAtState(latestState, hContract, hFunction, params...)
+	return ch.callViewByHnameAtState(latestState, hContract, hFunction, params...)
 }
 
-func (ch *Chain) CallViewByHnameAtState(chainState state.State, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) callViewByHnameAtState(chainState state.State, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)

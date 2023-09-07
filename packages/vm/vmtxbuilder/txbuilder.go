@@ -427,3 +427,7 @@ func retryOutputFromOnLedgerRequest(req isc.OnLedgerRequest, chainAliasID iotago
 	}
 	return out
 }
+
+func (txb *AnchorTransactionBuilder) chainAddress() iotago.Address {
+	return txb.anchorOutput.AliasID.ToAddress()
+}
