@@ -60,6 +60,9 @@ func (p *FeePolicy) FeeFromGas(gasUnits uint64) uint64 {
 }
 
 func (p *FeePolicy) MinFee() uint64 {
+	if p.GasPerToken.A == 0 {
+		return 0
+	}
 	return p.FeeFromGas(BurnCodeMinimumGasPerRequest1P.Cost())
 }
 

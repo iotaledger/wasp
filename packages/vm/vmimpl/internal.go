@@ -184,6 +184,9 @@ func (vmctx *vmContext) storeUnprocessable(chainState kv.KVStore, unprocessable 
 
 	withContractState(chainState, blocklog.Contract, func(s kv.KVStore) {
 		for _, r := range unprocessable {
+			if r.SenderAccount() == nil {
+				continue
+			}
 			txsnapshot := vmctx.createTxBuilderSnapshot()
 			err := panicutil.CatchPanic(func() {
 				position := vmctx.txbuilder.ConsumeUnprocessable(r)

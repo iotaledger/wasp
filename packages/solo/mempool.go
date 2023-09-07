@@ -49,6 +49,9 @@ func (mi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) {
 	mi.mu.Lock()
 	defer mi.mu.Unlock()
 	for _, req := range reqs {
+		if req.SenderAccount() == nil {
+			continue // ignore requests without a sender
+		}
 		if _, ok := mi.requests[req.ID()]; !ok {
 			mi.info.TotalPool++
 			mi.info.InPoolCounter++

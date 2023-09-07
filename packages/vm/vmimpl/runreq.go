@@ -98,15 +98,16 @@ func (reqctx *requestContext) creditAssetsToChain() {
 	storageDepositNeeded := reqctx.vm.txbuilder.Consume(req)
 
 	// if sender is specified, all assets goes to sender's sender
-	// Otherwise it all goes to the common sender and panics is logged in the SC call
+	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
+		if storageDepositNeeded > req.Assets().BaseTokens {
+			panic(vmexceptions.ErrNotEnoughFundsForSD) // if sender is not specified, and extra tokens are needed to pay for SD, the request cannot be processed.
+		}
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
 		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req)
 		creditToAccount(reqctx.uncommittedState, payoutAgentID, req.Assets())
-
-		// debit any SD required for accounting UTXOs
 		if storageDepositNeeded > 0 {
 			debitFromAccount(reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded))
 		}
@@ -115,7 +116,8 @@ func (reqctx *requestContext) creditAssetsToChain() {
 
 	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalance(sender)
 
-	if senderBaseTokens < storageDepositNeeded {
+	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee()
+	if senderBaseTokens < storageDepositNeeded+minReqCost {
 		// user doesn't have enough funds to pay for the SD needs of this request
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}

@@ -649,6 +649,10 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 		mpi.log.Warnf("dropping request, because it has ReturnAmount, ID=%v", requestID)
 		return
 	}
+	if request.SenderAccount() == nil {
+		// do not process requests without the sender feature
+		return
+	}
 	//
 	// Check, maybe mempool already has it.
 	if mpi.onLedgerPool.Has(requestRef) || mpi.timePool.Has(requestRef) {

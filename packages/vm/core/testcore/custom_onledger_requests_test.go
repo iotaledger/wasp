@@ -106,7 +106,7 @@ func TestNoSenderFeature(t *testing.T) {
 
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	results := ch.RunRequestsSync(reqs, "post")
+	results := ch.RunRequestsSync(reqs, "post") // under normal circumstances this request won't reach the mempool
 	require.Len(t, results, 1)
 	require.NotNil(t, results[0].Receipt.Error)
 	err = ch.ResolveVMError(results[0].Receipt.Error)
