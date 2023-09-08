@@ -51,6 +51,8 @@ type AnchorTransactionBuilder struct {
 	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
 	// all nfts loaded during the batch run
 	nftsIncluded map[iotago.NFTID]*nftIncluded
+	// all nfts minted
+	nftsMinted []iotago.Output
 	// invoked foundries. Foundry serial number is used as a key
 	invokedFoundries map[uint32]*foundryInvoked
 	// requests posted by smart contracts
@@ -74,6 +76,7 @@ func NewAnchorTransactionBuilder(
 		postedOutputs:              make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:           make(map[uint32]*foundryInvoked),
 		nftsIncluded:               make(map[iotago.NFTID]*nftIncluded),
+		nftsMinted:                 make([]iotago.Output, 0),
 	}
 }
 
@@ -92,6 +95,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		postedOutputs:              util.CloneSlice(txb.postedOutputs),
 		invokedFoundries:           util.CloneMap(txb.invokedFoundries),
 		nftsIncluded:               util.CloneMap(txb.nftsIncluded),
+		nftsMinted:                 util.CloneSlice(txb.nftsMinted),
 	}
 }
 
@@ -299,7 +303,9 @@ func (txb *AnchorTransactionBuilder) CreateAnchorOutput(stateMetadata []byte) *i
 // 0. Anchor Output
 // 1. NativeTokens
 // 2. Foundries
-// 3. NFTs
+// 3. received NFTs
+// 4. minted NFTs
+// 5. other outputs (posted from requests)
 func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Outputs {
 	ret := make(iotago.Outputs, 0, 1+len(txb.balanceNativeTokens)+len(txb.postedOutputs))
 
@@ -317,11 +323,14 @@ func (txb *AnchorTransactionBuilder) outputs(stateMetadata []byte) iotago.Output
 	for _, sn := range foundriesToBeUpdated {
 		ret = append(ret, txb.invokedFoundries[sn].accountingOutput)
 	}
-	// creating outputs for new NFTs
+	// creating outputs for received NFTs
 	nftOuts := txb.NFTOutputs()
 	for _, nftOut := range nftOuts {
 		ret = append(ret, nftOut)
 	}
+	// creating outputs for minted NFTs
+	ret = append(ret, txb.nftsMinted...)
+
 	// creating outputs for posted on-ledger requests
 	ret = append(ret, txb.postedOutputs...)
 	return ret
@@ -362,6 +371,7 @@ func (txb *AnchorTransactionBuilder) numOutputs() int {
 			ret++
 		}
 	}
+	ret += len(txb.nftsMinted)
 	return ret
 }
 
@@ -416,4 +426,8 @@ func retryOutputFromOnLedgerRequest(req isc.OnLedgerRequest, chainAliasID iotago
 		panic("unexpected output type")
 	}
 	return out
+}
+
+func (txb *AnchorTransactionBuilder) chainAddress() iotago.Address {
+	return txb.anchorOutput.AliasID.ToAddress()
 }

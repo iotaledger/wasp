@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"errors"
+	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -42,6 +43,10 @@ const (
 	PrefixNFTs = "n"
 	// PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
 	PrefixNFTsByCollection = "c"
+	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
+	prefixNewlyMintedNFTs = "N"
+	// prefixInternalNFTIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
+	prefixInternalNFTIDMap = "M"
 	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	PrefixFoundries = "f"
 
@@ -57,8 +62,8 @@ const (
 	keyFoundryOutputRecords = "FO"
 	// keyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
 	keyNFTOutputRecords = "NO"
-	// keyNFTData stores a map of <NFTID> => isc.NFT
-	keyNFTData = "ND"
+	// keyNFTOwner stores a map of <NFTID> => isc.AgentID
+	keyNFTOwner = "NW"
 
 	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
 	keyNewNativeTokens = "TN"
@@ -135,14 +140,14 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, a
 	creditToAccount(state, accountKey(toAgentID), assets)
 
 	for _, nftID := range assets.NFTs {
-		nft, err := getNFTData(state, nftID)
-		if err != nil {
-			return err
+		nft := GetNFTData(state, nftID)
+		if nft == nil {
+			return fmt.Errorf("MoveBetweenAccounts: unknown NFT %s", nftID)
 		}
 		if !debitNFTFromAccount(state, fromAgentID, nft) {
 			return errors.New("MoveBetweenAccounts: NFT not found in origin account")
 		}
-		creditNFTToAccount(state, toAgentID, nft)
+		creditNFTToAccount(state, toAgentID, nft.ID, nft.Issuer)
 	}
 
 	touchAccount(state, fromAgentID)
@@ -168,8 +173,9 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64) {
 	DebitFromAccount(ctx.State(), CommonAccount(), storageDepositAssets)
 }
 
-func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID) {
+func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {
 	updateNativeTokenOutputIDs(state, anchorTxID)
 	updateFoundryOutputIDs(state, anchorTxID)
 	updateNFTOutputIDs(state, anchorTxID)
+	updateNewlyMintedNFTOutputIDs(state, anchorTxID, blockIndex)
 }

@@ -116,7 +116,7 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
 	return dict.Dict{
-		ParamNFTAmount: codec.EncodeUint32(nftsMapR(ctx.StateR(), aid).Len()),
+		ParamNFTAmount: codec.EncodeUint32(accountToNFTsMapR(ctx.StateR(), aid).Len()),
 	}
 }
 
@@ -155,7 +155,10 @@ func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
 func viewNFTData(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewNFTData")
 	nftID := ctx.Params().MustGetNFTID(ParamNFTID)
-	data := MustGetNFTData(ctx.StateR(), nftID)
+	data := GetNFTData(ctx.StateR(), nftID)
+	if data == nil {
+		panic("NFTID not found")
+	}
 	return dict.Dict{
 		ParamNFTData: data.Bytes(),
 	}

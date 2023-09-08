@@ -7,6 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -25,9 +26,18 @@ func creditToAccount(chainState kv.KVStore, agentID isc.AgentID, ftokens *isc.As
 	})
 }
 
-func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
+func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, req isc.OnLedgerRequest) {
+	nft := req.NFT()
+	if nft == nil {
+		return
+	}
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditNFTToAccount(s, agentID, nft)
+		o := req.Output()
+		nftOutput := o.(*iotago.NFTOutput)
+		if nftOutput.NFTID.Empty() {
+			nftOutput.NFTID = util.NFTIDFromNFTOutput(nftOutput, req.OutputID()) // handle NFTs that were minted diractly to the chain
+		}
+		accounts.CreditNFTToAccount(s, agentID, nftOutput)
 	})
 }
 
@@ -109,7 +119,7 @@ func (reqctx *requestContext) GetAccountNFTs(agentID isc.AgentID) (ret []iotago.
 
 func (reqctx *requestContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.MustGetNFTData(s, nftID)
+		ret = accounts.GetNFTData(s, nftID)
 	})
 	return ret
 }
@@ -174,6 +184,9 @@ func (vmctx *vmContext) storeUnprocessable(chainState kv.KVStore, unprocessable 
 
 	withContractState(chainState, blocklog.Contract, func(s kv.KVStore) {
 		for _, r := range unprocessable {
+			if r.SenderAccount() == nil {
+				continue
+			}
 			txsnapshot := vmctx.createTxBuilderSnapshot()
 			err := panicutil.CatchPanic(func() {
 				position := vmctx.txbuilder.ConsumeUnprocessable(r)

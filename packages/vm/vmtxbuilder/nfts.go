@@ -2,7 +2,8 @@ package vmtxbuilder
 
 import (
 	"bytes"
-	"sort"
+
+	"golang.org/x/exp/slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -50,8 +51,8 @@ func (txb *AnchorTransactionBuilder) nftsSorted() []*nftIncluded {
 	for _, nft := range txb.nftsIncluded {
 		ret = append(ret, nft)
 	}
-	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i].ID[:], ret[j].ID[:]) == -1
+	slices.SortFunc(ret, func(a, b *nftIncluded) int {
+		return bytes.Compare(a.ID[:], b.ID[:])
 	})
 	return ret
 }
@@ -67,29 +68,29 @@ func (txb *AnchorTransactionBuilder) NFTOutputs() []*iotago.NFTOutput {
 	return outs
 }
 
-func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRemoved []*iotago.NFTOutput) {
+func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRemoved []*iotago.NFTOutput, minted []iotago.Output) {
 	toBeAdded = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	toBeRemoved = make([]*iotago.NFTOutput, 0, len(txb.nftsIncluded))
 	for _, nft := range txb.nftsSorted() {
-		if nft.accountingInput != nil {
-			// to remove if input is not nil (nft exists in accounting), and its sent to outside the chain
+		if nft.accountingInput != nil && nft.sentOutside {
+			// to remove if input is not nil (nft exists in accounting), and it's sent to outside the chain
 			toBeRemoved = append(toBeRemoved, nft.resultingOutput)
 			continue
 		}
 		if nft.sentOutside {
-			// do nothing if input is nil (doesn't exist in accounting) and its sent outside (comes in and leaves on the same block)
+			// do nothing if input is nil (doesn't exist in accounting) and it's sent outside (comes in and leaves on the same block)
 			continue
 		}
-		// to add if input is nil (doesn't exist in accounting), and its not sent outside the chain
+		// to add if input is nil (doesn't exist in accounting), and it's not sent outside the chain
 		toBeAdded = append(toBeAdded, nft.resultingOutput)
 	}
-	return toBeAdded, toBeRemoved
+	return toBeAdded, toBeRemoved, txb.nftsMinted
 }
 
 func (txb *AnchorTransactionBuilder) internalNFTOutputFromRequest(nftOutput *iotago.NFTOutput, outputID iotago.OutputID) *nftIncluded {
 	out := nftOutput.Clone().(*iotago.NFTOutput)
 	out.Amount = 0
-	chainAddr := txb.anchorOutput.AliasID.ToAddress()
+	chainAddr := txb.chainAddress()
 	out.NativeTokens = nil
 	out.Conditions = iotago.UnlockConditions{
 		&iotago.AddressUnlockCondition{
@@ -150,4 +151,60 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	txb.nftsIncluded[o.NFTID] = toInclude
 
 	return int64(in.Deposit())
+}
+
+func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput) {
+	chainAddr := txb.chainAddress()
+	if !issuer.Equal(chainAddr) {
+		// include collection issuer NFT output in the txbuilder
+		nftAddr, ok := issuer.(*iotago.NFTAddress)
+		if !ok {
+			panic("issuer must be an NFTID or the chain itself")
+		}
+		nftID := nftAddr.NFTID()
+		if txb.nftsIncluded[nftID] == nil {
+			if txb.InputsAreFull() {
+				panic(vmexceptions.ErrInputLimitExceeded)
+			}
+			if txb.outputsAreFull() {
+				panic(vmexceptions.ErrOutputLimitExceeded)
+			}
+			o, oID := txb.accountsView.NFTOutput(nftAddr.NFTID())
+			clonedOutput := o.Clone()
+			resultingOutput := clonedOutput.(*iotago.NFTOutput)
+			if o.NFTID.Empty() {
+				resultingOutput.NFTID = nftID
+			}
+			txb.nftsIncluded[nftID] = &nftIncluded{
+				ID:                nftID,
+				accountingInputID: oID,
+				accountingInput:   o,
+				resultingOutput:   resultingOutput,
+				sentOutside:       false,
+			}
+		}
+	}
+
+	if txb.outputsAreFull() {
+		panic(vmexceptions.ErrOutputLimitExceeded)
+	}
+
+	nftOutput := &iotago.NFTOutput{
+		NFTID: iotago.NFTID{},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: addr},
+		},
+		Features: iotago.Features{
+			&iotago.SenderFeature{
+				Address: chainAddr, // must set the chainID as the sender (so its recognized as an internalUTXO)
+			},
+		},
+		ImmutableFeatures: iotago.Features{
+			&iotago.IssuerFeature{Address: issuer},
+			&iotago.MetadataFeature{Data: immutableMetadata},
+		},
+	}
+	nftOutput.Amount = parameters.L1().Protocol.RentStructure.MinRent(nftOutput)
+	txb.nftsMinted = append(txb.nftsMinted, nftOutput)
+	return uint16(len(txb.nftsMinted) - 1), nftOutput
 }

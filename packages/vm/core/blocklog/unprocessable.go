@@ -130,7 +130,8 @@ func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
 	if err != nil {
 		panic(ErrUnprocessableUnexpected)
 	}
-	if !rec.SenderAccount().Equals(ctx.Request().SenderAccount()) {
+	recSender := rec.SenderAccount()
+	if rec.SenderAccount() == nil || !recSender.Equals(ctx.Request().SenderAccount()) {
 		panic(ErrUnprocessableWrongSender)
 	}
 	ctx.Privileged().RetryUnprocessable(rec, outputID)

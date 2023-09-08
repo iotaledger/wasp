@@ -58,6 +58,8 @@ func Encode(v interface{}) []byte {
 		return EncodeRequestID(*vt)
 	case isc.Hname:
 		return vt.Bytes()
+	case iotago.NFTID:
+		return EncodeNFTID(vt)
 	case isc.VMErrorCode:
 		return vt.Bytes()
 	case time.Time:

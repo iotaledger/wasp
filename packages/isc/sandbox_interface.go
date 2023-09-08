@@ -116,8 +116,6 @@ type Sandbox interface {
 	EstimateRequiredStorageDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
-	// MintNFT mints an NFT
-	// MintNFT(metadata []byte) // TODO returns a temporary ID
 
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
 	// (e.g. with the debug_traceTransaction JSONRPC method).
@@ -138,6 +136,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
+	MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, assets *Assets)
 	DebitFromAccount(AgentID, *Assets)

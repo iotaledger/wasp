@@ -779,7 +779,7 @@ func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, 
 		}
 		output := transaction.BasicOutputFromPostData(
 			tpkg.RandEd25519Address(),
-			isc.Hn("dummySenderContract"),
+			0,
 			requestParams,
 		)
 		outputID := tpkg.RandOutputID(uint16(i))

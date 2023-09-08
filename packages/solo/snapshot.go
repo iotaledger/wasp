@@ -3,6 +3,7 @@ package solo
 import (
 	"encoding/json"
 	"os"
+	"sync"
 
 	"github.com/stretchr/testify/require"
 
@@ -29,8 +30,8 @@ type soloChainSnapshot struct {
 
 // SaveSnapshot generates a snapshot of the Solo environment
 func (env *Solo) SaveSnapshot(fname string) {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
 
 	snapshot := soloSnapshot{
 		UtxoDB: env.utxoDB.State(),
@@ -62,8 +63,8 @@ func (env *Solo) SaveSnapshot(fname string) {
 
 // LoadSnapshot restores the Solo environment from the given snapshot
 func (env *Solo) LoadSnapshot(fname string) {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
 
 	b, err := os.ReadFile(fname)
 	require.NoError(env.T, err)
@@ -99,6 +100,7 @@ func (env *Solo) LoadSnapshot(fname string) {
 			OriginatorPrivateKey:   okp,
 			ValidatorFeeTarget:     val,
 			db:                     db,
+			writeMutex:             &sync.Mutex{},
 		}
 		env.addChain(chainData)
 	}

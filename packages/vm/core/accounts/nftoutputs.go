@@ -18,8 +18,7 @@ func nftOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, keyNFTOutputRecords)
 }
 
-// SaveNFTOutput map tokenID -> foundryRec
-func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, blockIndex uint32, outputIndex uint16) {
+func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, outputIndex uint16) {
 	tokenRec := NFTOutputRec{
 		// TransactionID is unknown yet, will be filled next block
 		OutputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
@@ -34,20 +33,20 @@ func updateNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	allNFTs := NFTOutputMap(state)
 	n := newNFTs.Len()
 	for i := uint32(0); i < n; i++ {
-		k := newNFTs.GetAt(i)
-		rec := mustNFTOutputRecFromBytes(allNFTs.GetAt(k))
+		nftID := newNFTs.GetAt(i)
+		rec := mustNFTOutputRecFromBytes(allNFTs.GetAt(nftID))
 		rec.OutputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.OutputID.Index())
-		allNFTs.SetAt(k, rec.Bytes())
+		allNFTs.SetAt(nftID, rec.Bytes())
 	}
 	newNFTs.Erase()
 }
 
-func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
-	NFTOutputMap(state).DelAt(id[:])
+func DeleteNFTOutput(state kv.KVStore, nftID iotago.NFTID) {
+	NFTOutputMap(state).DelAt(nftID[:])
 }
 
-func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
-	data := nftOutputMapR(state).GetAt(id[:])
+func GetNFTOutput(state kv.KVStoreReader, nftID iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
+	data := nftOutputMapR(state).GetAt(nftID[:])
 	if data == nil {
 		return nil, iotago.OutputID{}
 	}

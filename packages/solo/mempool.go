@@ -8,6 +8,7 @@ package solo
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -30,18 +31,27 @@ type mempoolImpl struct {
 	requests    map[isc.RequestID]isc.Request
 	info        MempoolInfo
 	currentTime func() time.Time
+	chainID     isc.ChainID
+	mu          sync.Mutex
 }
 
-func newMempool(currentTime func() time.Time) Mempool {
+func newMempool(currentTime func() time.Time, chainID isc.ChainID) Mempool {
 	return &mempoolImpl{
 		requests:    map[isc.RequestID]isc.Request{},
 		info:        MempoolInfo{},
 		currentTime: currentTime,
+		chainID:     chainID,
+		mu:          sync.Mutex{},
 	}
 }
 
 func (mi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) {
+	mi.mu.Lock()
+	defer mi.mu.Unlock()
 	for _, req := range reqs {
+		if req.SenderAccount() == nil {
+			continue // ignore requests without a sender
+		}
 		if _, ok := mi.requests[req.ID()]; !ok {
 			mi.info.TotalPool++
 			mi.info.InPoolCounter++
@@ -51,6 +61,8 @@ func (mi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) {
 }
 
 func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
+	mi.mu.Lock()
+	defer mi.mu.Unlock()
 	now := mi.currentTime()
 	batch := []isc.Request{}
 	for rid, request := range mi.requests {
@@ -78,6 +90,8 @@ func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
 }
 
 func (mi *mempoolImpl) RemoveRequest(rID isc.RequestID) {
+	mi.mu.Lock()
+	defer mi.mu.Unlock()
 	if _, ok := mi.requests[rID]; ok {
 		mi.info.OutPoolCounter++
 		mi.info.TotalPool--

@@ -41,6 +41,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -59,7 +60,7 @@ type Solo struct {
 	logger                          *logger.Logger
 	chainStateDatabaseManager       *database.ChainStateDatabaseManager
 	utxoDB                          *utxodb.UtxoDB
-	glbMutex                        sync.RWMutex
+	chainsMutex                     sync.RWMutex
 	ledgerMutex                     sync.RWMutex
 	chains                          map[isc.ChainID]*Chain
 	processorConfig                 *processors.Config
@@ -212,8 +213,8 @@ func (env *Solo) Publisher() *publisher.Publisher {
 }
 
 func (env *Solo) GetChainByName(name string) *Chain {
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
 	for _, ch := range env.chains {
 		if ch.Name == name {
 			return ch
@@ -343,8 +344,8 @@ func (env *Solo) NewChainExt(
 ) (*Chain, *iotago.Transaction) {
 	chData, originTx := env.deployChain(chainOriginator, initBaseTokens, name, originParams...)
 
-	env.glbMutex.Lock()
-	defer env.glbMutex.Unlock()
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
 	ch := env.addChain(chData)
 
 	ch.log.Infof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
@@ -362,7 +363,8 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    env.logger.Named(chData.Name),
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
-		mempool:                newMempool(env.utxoDB.GlobalTime),
+		mempool:                newMempool(env.utxoDB.GlobalTime, chData.ChainID),
+		migrationScheme:        allmigrations.DefaultScheme,
 	}
 	env.chains[chData.ChainID] = ch
 	go ch.batchLoop()
@@ -377,8 +379,8 @@ func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
 func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID isc.ChainID) ([]isc.Request, error) {
-	env.glbMutex.RLock()
-	defer env.glbMutex.RUnlock()
+	env.chainsMutex.RLock()
+	defer env.chainsMutex.RUnlock()
 
 	m := env.requestsByChain(tx)
 	ret, ok := m[chainID]
@@ -397,18 +399,13 @@ func (env *Solo) requestsByChain(tx *iotago.Transaction) map[isc.ChainID][]isc.R
 
 // AddRequestsToMempool adds all the requests to the chain mempool,
 func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
-	env.glbMutex.RLock()
-	defer env.glbMutex.RUnlock()
-	ch.runVMMutex.Lock()
-	defer ch.runVMMutex.Unlock()
-
 	ch.mempool.ReceiveRequests(reqs...)
 }
 
 // EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
 func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
-	env.glbMutex.RLock()
-	defer env.glbMutex.RUnlock()
+	env.chainsMutex.RLock()
+	defer env.chainsMutex.RUnlock()
 
 	requests := env.requestsByChain(tx)
 
@@ -418,11 +415,7 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 			env.logger.Infof("dispatching requests. Unknown chain: %s", chainID.String())
 			continue
 		}
-		ch.runVMMutex.Lock()
-
 		ch.mempool.ReceiveRequests(reqs...)
-
-		ch.runVMMutex.Unlock()
 	}
 }
 

@@ -12,6 +12,7 @@ var (
 	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
 	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
+	FuncMintNFT                = coreutil.Func("mintNFT")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
 	FuncWithdraw               = coreutil.Func("withdraw")
@@ -24,6 +25,7 @@ var (
 	ViewAccountNFTAmountInCollection = coreutil.ViewFunc("accountNFTAmountInCollection")
 	ViewAccountNFTs                  = coreutil.ViewFunc("accountNFTs")
 	ViewAccountNFTsInCollection      = coreutil.ViewFunc("accountNFTsInCollection")
+	ViewNFTIDbyMintID                = coreutil.ViewFunc("NFTIDbyMintID")
 	ViewAccounts                     = coreutil.ViewFunc("accounts")
 	ViewBalance                      = coreutil.ViewFunc("balance")
 	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
@@ -50,6 +52,9 @@ const (
 	ParamNFTData                = "e"
 	ParamNFTID                  = "z"
 	ParamNFTIDs                 = "i"
+	ParamNFTImmutableData       = "I"
+	ParamNFTWithdrawOnMint      = "w"
+	ParamMintID                 = "D"
 	ParamNativeTokenID          = "N"
 	ParamSupplyDeltaAbs         = "d"
 	ParamTokenScheme            = "t"
