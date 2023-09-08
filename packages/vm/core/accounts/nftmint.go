@@ -60,11 +60,11 @@ func newlyMintedNFTsMap(state kv.KVStore) *collections.Map {
 }
 
 func mintIDMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixInternalNFTIDMap)
+	return collections.NewMap(state, prefixMintIDMap)
 }
 
 func mintIDMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, prefixInternalNFTIDMap)
+	return collections.NewMapReadOnly(state, prefixMintIDMap)
 }
 
 var (
@@ -124,7 +124,7 @@ func mintParams(ctx isc.Sandbox) mintParameters {
 	}
 }
 
-func internalNFTID(blockIndex uint32, positionInMintedList uint16) []byte {
+func mintID(blockIndex uint32, positionInMintedList uint16) []byte {
 	ret := make([]byte, 6)
 	copy(ret[0:], codec.EncodeUint32(blockIndex))
 	copy(ret[4:], codec.EncodeUint16(positionInMintedList))
@@ -155,7 +155,7 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
 	return dict.Dict{
-		ParamMintID: internalNFTID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
+		ParamMintID: mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
 	}
 }
 
@@ -200,8 +200,8 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 			// credit the NFT to the target owner
 			creditNFTToAccount(state, mintedRec.owner, nftID, mintedRec.output.ImmutableFeatureSet().IssuerFeature().Address)
 		}
-		// save the mapping of [internalID => NFTID]
-		mintIDMap(state).SetAt(internalNFTID(blockIndex, mintedRec.positionInMintedList), nftID[:])
+		// save the mapping of [mintID => NFTID]
+		mintIDMap(state).SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])
 		return true
 	})
 	mintMap.Erase()

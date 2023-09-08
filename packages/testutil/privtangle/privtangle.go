@@ -330,6 +330,7 @@ func (pt *PrivTangle) waitAllHealthy(timeout time.Duration) {
 		for i := range pt.NodeCommands {
 			ok, err := pt.nodeClient(i).Health(pt.ctx)
 			if err != nil || !ok {
+				pt.logf("Waiting healthy... node #%d not ready yet. time waiting: %v", i, time.Since(ts).Truncate(time.Millisecond))
 				allOK = false
 			}
 		}
