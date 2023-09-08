@@ -45,8 +45,8 @@ const (
 	PrefixNFTsByCollection = "c"
 	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
 	prefixNewlyMintedNFTs = "N"
-	// prefixInternalNFTIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
-	prefixInternalNFTIDMap = "M"
+	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
+	prefixMintIDMap = "M"
 	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	PrefixFoundries = "f"
 
