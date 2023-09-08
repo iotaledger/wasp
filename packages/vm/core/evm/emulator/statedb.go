@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -48,18 +49,20 @@ func accountSuicidedKey(addr common.Address) kv.Key {
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
 // The Ethereum account balance is tied to the L1 balance.
 type StateDB struct {
-	ctx    Context
-	kv     kv.KVStore // subrealm of ctx.State()
-	logs   []*types.Log
-	refund uint64
+	ctx       Context
+	kv        kv.KVStore // subrealm of ctx.State()
+	logs      []*types.Log
+	snapshots map[int][]*types.Log
+	refund    uint64
 }
 
 var _ vm.StateDB = &StateDB{}
 
 func NewStateDB(ctx Context) *StateDB {
 	return &StateDB{
-		ctx: ctx,
-		kv:  StateDBSubrealm(ctx.State()),
+		ctx:       ctx,
+		kv:        StateDBSubrealm(ctx.State()),
+		snapshots: make(map[int][]*types.Log),
 	}
 }
 
@@ -258,19 +261,21 @@ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
 }
 
 func (s *StateDB) Snapshot() int {
-	return s.ctx.TakeSnapshot()
+	i := s.ctx.TakeSnapshot()
+	s.snapshots[i] = slices.Clone(s.logs)
+	return i
 }
 
 func (s *StateDB) RevertToSnapshot(i int) {
 	s.ctx.RevertToSnapshot(i)
+	s.logs = s.snapshots[i]
 }
 
 func (s *StateDB) AddLog(log *types.Log) {
-	log.Index = uint(len(s.logs))
 	s.logs = append(s.logs, log)
 }
 
-func (s *StateDB) GetLogs(_ common.Hash) []*types.Log {
+func (s *StateDB) GetLogs() []*types.Log {
 	return s.logs
 }
 

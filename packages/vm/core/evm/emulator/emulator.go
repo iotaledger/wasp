@@ -311,23 +311,13 @@ func (e *EVMEmulator) SendTransaction(
 	if result != nil {
 		gasUsed = result.UsedGas
 	}
-
-	cumulativeGasUsed := gasUsed
-	index := uint(0)
-	latest := e.BlockchainDB().GetLatestPendingReceipt()
-	if latest != nil {
-		cumulativeGasUsed += latest.CumulativeGasUsed
-		index = latest.TransactionIndex + 1
-	}
+	cumulativeGasUsed := e.BlockchainDB().getPendingCumulativeGasUsed() + gasUsed
 
 	receipt = &types.Receipt{
 		Type:              tx.Type(),
 		CumulativeGasUsed: cumulativeGasUsed,
-		TxHash:            tx.Hash(),
 		GasUsed:           gasUsed,
-		Logs:              statedb.GetLogs(tx.Hash()),
-		BlockNumber:       pendingHeader.Number,
-		TransactionIndex:  index,
+		Logs:              statedb.GetLogs(),
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 

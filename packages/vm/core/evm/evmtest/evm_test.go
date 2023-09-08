@@ -1974,3 +1974,14 @@ func TestCustomError(t *testing.T) {
 	require.Len(t, args, 1)
 	require.EqualValues(t, 42, args[0])
 }
+
+func TestEmitEventAndRevert(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+	res, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100000,
+	}}, "emitEventAndRevert")
+	require.ErrorContains(t, err, "execution reverted")
+	require.Empty(t, res.evmReceipt.Logs)
+}

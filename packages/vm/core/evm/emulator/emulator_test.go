@@ -97,7 +97,16 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 	return lastOk, nil
 }
 
-func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte, gasLimit uint64) *types.Receipt {
+func sendTransaction(
+	t testing.TB,
+	emu *EVMEmulator,
+	sender *ecdsa.PrivateKey,
+	receiverAddress common.Address,
+	amount *big.Int,
+	data []byte,
+	gasLimit uint64,
+	mintBlock bool,
+) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	if gasLimit == 0 {
@@ -124,7 +133,9 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	if res.Err != nil {
 		t.Logf("Execution failed: %v", res.Err)
 	}
-	emu.MintBlock()
+	if mintBlock {
+		emu.MintBlock()
+	}
 
 	return receipt
 }
@@ -267,7 +278,9 @@ func TestBlockchain(t *testing.T) {
 	require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
 	block := emu.BlockchainDB().GetCurrentBlock()
 	require.EqualValues(t, 1, block.Header().Number.Uint64())
-	receipt := emu.BlockchainDB().GetReceiptByBlockNumberAndIndex(1, 0)
+	receipts := emu.BlockchainDB().GetReceiptsByBlockNumber(1)
+	require.Len(t, receipts, 1)
+	receipt := receipts[0]
 	require.EqualValues(t, receipt.Bloom, block.Bloom())
 	require.EqualValues(t, receipt.GasUsed, block.GasUsed())
 	require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(0).Hash(), block.ParentHash())
@@ -311,7 +324,13 @@ func TestBlockchainPersistence(t *testing.T) {
 	}
 }
 
-type contractFnCaller func(sender *ecdsa.PrivateKey, gasLimit uint64, name string, args ...interface{}) *types.Receipt
+type contractFnCaller func(
+	mintBlock bool,
+	sender *ecdsa.PrivateKey,
+	gasLimit uint64,
+	name string,
+	args ...interface{},
+) *types.Receipt
 
 func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
@@ -370,10 +389,16 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		}
 	}
 
-	callFn := func(sender *ecdsa.PrivateKey, gasLimit uint64, name string, args ...interface{}) *types.Receipt {
+	callFn := func(
+		mintBlock bool,
+		sender *ecdsa.PrivateKey,
+		gasLimit uint64,
+		name string,
+		args ...interface{},
+	) *types.Receipt {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
-		receipt := sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments, gasLimit)
+		receipt := sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments, gasLimit, mintBlock)
 		t.Logf("callFn %s Status: %d", name, receipt.Status)
 		t.Log("Logs:")
 		for _, log := range receipt.Logs {
@@ -437,7 +462,7 @@ func TestStorageContract(t *testing.T) {
 
 	// send tx that calls `store(43)`
 	{
-		callFn(faucet, 0, "store", uint32(43))
+		callFn(true, faucet, 0, "store", uint32(43))
 		ctx.timestamp++
 		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber())
 	}
@@ -518,7 +543,7 @@ func TestERC20Contract(t *testing.T) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	receipt := callFn(erc20Owner, 0, "transfer", recipientAddress, transferAmount)
+	receipt := callFn(true, erc20Owner, 0, "transfer", recipientAddress, transferAmount)
 	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
@@ -527,7 +552,7 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
 	// call `transferFrom` as recipient without allowance => get error
-	receipt = callFn(recipient, gasLimits.Call, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	receipt = callFn(true, recipient, gasLimits.Call, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
 	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusFailed, receipt.Status)
 	require.Equal(t, 0, len(receipt.Logs))
@@ -536,19 +561,55 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
 	// call `approve` as erc20Owner
-	receipt = callFn(erc20Owner, 0, "approve", recipientAddress, transferAmount)
+	receipt = callFn(true, erc20Owner, 0, "approve", recipientAddress, transferAmount)
 	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `transferFrom` as recipient with allowance => ok
-	receipt = callFn(recipient, 0, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	receipt = callFn(true, recipient, 0, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
 	ctx.timestamp++
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 2 * 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
+
+	// call `transfer` 10 times on the same block, check receipt and logs derived fields
+	{
+		for i := 0; i < 10; i++ {
+			receipt := callFn(false, erc20Owner, 0, "transfer", recipientAddress, transferAmount)
+			require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+			require.Equal(t, 1, len(receipt.Logs))
+		}
+		emu.MintBlock()
+		ctx.timestamp++
+	}
+	{
+		blockNumber := emu.BlockchainDB().GetNumber()
+		block := emu.BlockchainDB().GetBlockByNumber(blockNumber)
+		receipts := emu.BlockchainDB().GetReceiptsByBlockNumber(blockNumber)
+		require.Len(t, receipts, 10)
+		gas := uint64(0)
+		for i, r := range receipts {
+			tx := emu.BlockchainDB().GetTransactionByBlockNumberAndIndex(blockNumber, uint32(i))
+			require.Equal(t, tx.Hash(), r.TxHash)
+			require.NotZero(t, r.GasUsed)
+			gas += r.GasUsed
+			require.Equal(t, block.Hash(), r.BlockHash)
+			require.Equal(t, blockNumber, r.BlockNumber.Uint64())
+			require.EqualValues(t, i, r.TransactionIndex)
+
+			require.Len(t, r.Logs, 1)
+			log := r.Logs[0]
+			require.Equal(t, blockNumber, log.BlockNumber)
+			require.Equal(t, tx.Hash(), log.TxHash)
+			require.EqualValues(t, i, log.TxIndex)
+			require.Equal(t, block.Hash(), log.BlockHash)
+			require.EqualValues(t, i, log.Index)
+		}
+		require.Equal(t, gas, receipts[len(receipts)-1].CumulativeGasUsed, gas)
+	}
 }
 
 func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, *context) {
