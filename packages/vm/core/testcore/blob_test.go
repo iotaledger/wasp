@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"crypto/rand"
 	"fmt"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 const (
@@ -27,6 +29,29 @@ func TestUploadBlob(t *testing.T) {
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 
 		h, err := ch.UploadBlob(nil, "field", "dummy data")
+		require.NoError(t, err)
+
+		_, ok := ch.GetBlobInfo(h)
+		require.True(t, ok)
+	})
+	t.Run("huge", func(t *testing.T) {
+		env := solo.New(t)
+		ch := env.NewChain()
+
+		err := ch.DepositBaseTokensToL2(1_000_000, nil)
+		require.NoError(t, err)
+
+		limits := *gas.LimitsDefault
+		limits.MaxGasPerRequest = 10 * limits.MaxGasPerRequest
+		limits.MaxGasExternalViewCall = 10 * limits.MaxGasExternalViewCall
+		ch.SetGasLimits(nil, &limits)
+		ch.WaitForRequestsMark()
+
+		size := int64(1 * 900 * 1024) // 900 KB
+		randomData := make([]byte, size+1)
+		_, err = rand.Read(randomData)
+		require.NoError(t, err)
+		h, err := ch.UploadBlob(nil, "field", randomData)
 		require.NoError(t, err)
 
 		_, ok := ch.GetBlobInfo(h)

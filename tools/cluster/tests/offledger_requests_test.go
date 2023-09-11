@@ -18,6 +18,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
@@ -107,15 +109,49 @@ func testOffledgerRequest900KB(t *testing.T, e *ChainEnv) {
 	paramsDict := dict.Dict{"data": randomData}
 	expectedHash := blob.MustGetBlobHash(paramsDict)
 
+	// raise gas limits, gas cost for 900KB has exceeded the limits
+	{
+		limits1 := *gas.LimitsDefault
+		limits1.MaxGasPerRequest = 10 * limits1.MaxGasPerRequest
+		limits1.MaxGasExternalViewCall = 10 * limits1.MaxGasExternalViewCall
+		govClient := e.Chain.SCClient(governance.Contract.Hname(), e.Chain.OriginatorKeyPair)
+		gasLimitsReq, err1 := govClient.PostOffLedgerRequest(
+			governance.FuncSetGasLimits.Name,
+			chainclient.PostRequestParams{
+				Args: dict.Dict{
+					governance.ParamGasLimitsBytes: limits1.Bytes(),
+				},
+			},
+		)
+		require.NoError(t, err1)
+		_, _, err = e.Clu.WaspClient(0).ChainsApi.
+			WaitForRequest(context.Background(), e.Chain.ChainID.String(), gasLimitsReq.ID().String()).
+			TimeoutSeconds(10).
+			Execute()
+		require.NoError(t, err)
+
+		retDict, err1 := govClient.CallView(context.Background(),
+			governance.ViewGetGasLimits.Name,
+			dict.Dict{},
+		)
+		require.NoError(t, err1)
+		limits2, err1 := gas.LimitsFromBytes(retDict.Get(governance.ParamGasLimitsBytes))
+		require.Equal(t, limits1, *limits2)
+		require.NoError(t, err1)
+	}
+
 	offledgerReq, err := chClient.PostOffLedgerRequest(context.Background(),
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
-			Args: paramsDict,
-		})
+			Args:      paramsDict,
+			Allowance: isc.NewAssetsBaseTokens(10 * isc.Million),
+		},
+	)
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().
+		WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 
 	// ensure blob was stored by the cluster
