@@ -52,13 +52,14 @@ func controllerAddrDefaultFallback(addr string) iotago.Address {
 
 func initDeployCmd() *cobra.Command {
 	var (
-		node             string
-		peers            []string
-		quorum           int
-		evmChainID       uint16
-		blockKeepAmount  int32
-		govControllerStr string
-		chainName        string
+		node              string
+		peers             []string
+		quorum            int
+		evmChainID        uint16
+		blockKeepAmount   int32
+		govControllerStr  string
+		migrationAdminStr string
+		chainName         string
 	)
 
 	cmd := &cobra.Command{
@@ -77,6 +78,19 @@ func initDeployCmd() *cobra.Command {
 
 			govController := controllerAddrDefaultFallback(govControllerStr)
 
+			initParams := dict.Dict{
+				origin.ParamChainOwner:      isc.NewAgentID(govController).Bytes(),
+				origin.ParamEVMChainID:      codec.EncodeUint16(evmChainID),
+				origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
+				origin.ParamWaspVersion:     codec.EncodeString(app.Version),
+			}
+
+			if migrationAdminStr != "" {
+				migrationAdmin, err := isc.AgentIDFromString(migrationAdminStr)
+				log.Check(err)
+				initParams.Set(origin.ParamLegacyMigrationAdmin, migrationAdmin.Bytes())
+			}
+
 			stateController := doDKG(node, peers, quorum)
 
 			par := apilib.CreateChainParams{
@@ -87,12 +101,7 @@ func initDeployCmd() *cobra.Command {
 				OriginatorKeyPair:    wallet.Load().KeyPair,
 				Textout:              os.Stdout,
 				GovernanceController: govController,
-				InitParams: dict.Dict{
-					origin.ParamChainOwner:      isc.NewAgentID(govController).Bytes(),
-					origin.ParamEVMChainID:      codec.EncodeUint16(evmChainID),
-					origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
-					origin.ParamWaspVersion:     codec.EncodeString(app.Version),
-				},
+				InitParams:           initParams,
 			}
 
 			chainID, err := apilib.DeployChain(par, stateController, govController)
@@ -112,5 +121,6 @@ func initDeployCmd() *cobra.Command {
 	log.Check(cmd.MarkFlagRequired("chain"))
 	cmd.Flags().IntVar(&quorum, "quorum", 0, "quorum (default: 3/4s of the number of committee nodes)")
 	cmd.Flags().StringVar(&govControllerStr, "gov-controller", "", "governance controller address")
+	cmd.Flags().StringVar(&migrationAdminStr, "migration-admin", "", "migration admin agentID")
 	return cmd
 }

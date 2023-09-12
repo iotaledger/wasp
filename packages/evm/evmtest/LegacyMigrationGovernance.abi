@@ -1,0 +1,1 @@
+[{"inputs":[{"components":[{"internalType":"bytes","name":"data","type":"bytes"}],"internalType":"struct L1Address","name":"chain","type":"tuple"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"}]

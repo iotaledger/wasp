@@ -39,10 +39,11 @@ func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitmen
 }
 
 const (
-	ParamEVMChainID      = "a"
-	ParamBlockKeepAmount = "b"
-	ParamChainOwner      = "c"
-	ParamWaspVersion     = "d"
+	ParamEVMChainID           = "a"
+	ParamBlockKeepAmount      = "b"
+	ParamChainOwner           = "c"
+	ParamWaspVersion          = "d"
+	ParamLegacyMigrationAdmin = "e"
 )
 
 func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
@@ -69,7 +70,12 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	errors.SetInitialState(contractState(errors.Contract))
 	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(contractState(evm.Contract), evmChainID)
-	legacymigration.SetInitialState(contractState(legacymigration.Contract))
+
+	// only init the migration contract if the migration admin is set
+	if initParams.Has(ParamLegacyMigrationAdmin) {
+		migrationAdmin := codec.MustDecodeAgentID(initParams.Get(ParamLegacyMigrationAdmin))
+		legacymigration.SetInitialState(contractState(legacymigration.Contract), migrationAdmin)
+	}
 
 	block := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {

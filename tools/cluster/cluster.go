@@ -186,7 +186,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDKG(committee, committee, uint16(quorum))
+	return clu.DeployChainWithDKG(committee, committee, uint16(quorum), nil)
 }
 
 func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
@@ -221,15 +221,15 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
+func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, legacyMigrationAdmin isc.AgentID, blockKeepAmount ...int32) (*Chain, error) {
 	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}
-	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, blockKeepAmount...)
+	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, legacyMigrationAdmin, blockKeepAmount...)
 }
 
-func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address, blockKeepAmount ...int32) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address, legacyMigrationAdmin isc.AgentID, blockKeepAmount ...int32) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
@@ -263,6 +263,9 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	initParams := dict.Dict{
 		origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
 		origin.ParamWaspVersion: codec.EncodeString(app.Version),
+	}
+	if legacyMigrationAdmin != nil {
+		initParams[origin.ParamLegacyMigrationAdmin] = codec.EncodeAgentID(legacyMigrationAdmin)
 	}
 	if len(blockKeepAmount) > 0 {
 		initParams[origin.ParamBlockKeepAmount] = codec.EncodeInt32(blockKeepAmount[0])

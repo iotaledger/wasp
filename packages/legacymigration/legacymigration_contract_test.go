@@ -10,7 +10,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/legacymigration"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
@@ -20,7 +22,7 @@ func init() {
 
 func TestContract(t *testing.T) {
 	env := solo.New(t)
-	ch := env.NewChain()
+	ch, _ := env.NewChainExt(nil, 0, "ch", dict.Dict{origin.ParamLegacyMigrationAdmin: isc.NewRandomAgentID().Bytes()})
 
 	// fill the legacy migration contract with funds - must be >= the total tokens in the test csv
 	contractAgentID := isc.NewContractAgentID(ch.ID(), legacymigration.Contract.Hname())
@@ -66,7 +68,7 @@ func TestContract(t *testing.T) {
 
 func TestWalletRsGeneratedBin(t *testing.T) {
 	env := solo.New(t)
-	ch := env.NewChain()
+	ch, _ := env.NewChainExt(nil, 0, "ch", dict.Dict{origin.ParamLegacyMigrationAdmin: isc.NewRandomAgentID().Bytes()})
 
 	// fill the legacy migration contract with funds - must be >= the total tokens in the test csv
 	contractAgentID := isc.NewContractAgentID(ch.ID(), legacymigration.Contract.Hname())

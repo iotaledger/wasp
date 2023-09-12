@@ -32,7 +32,7 @@ func TestValidatorFees(t *testing.T) {
 	}
 	clu := newCluster(t, waspClusterOpts{nNodes: 4, modifyConfig: modifyConfig})
 	cmt := []int{0, 1, 2, 3}
-	chain, err := clu.DeployChainWithDKG(cmt, cmt, 4)
+	chain, err := clu.DeployChainWithDKG(cmt, cmt, 4, nil)
 	require.NoError(t, err)
 	chainID := chain.ChainID
 

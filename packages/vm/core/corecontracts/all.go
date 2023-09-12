@@ -25,6 +25,9 @@ var All = map[isc.Hname]*coreutil.ContractInfo{
 }
 
 func IsCoreHname(hname isc.Hname) bool {
+	if hname == legacymigration.Contract.Hname() {
+		return false // add exception here so the migration contract can receive funds
+	}
 	_, ok := All[hname]
 	return ok
 }

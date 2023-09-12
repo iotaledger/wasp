@@ -46,3 +46,12 @@ func (sa *StateAccess) ValidMigrationRequest(req isc.Request) bool {
 	}, uint64(0))
 	return fundsToMigrate > 0
 }
+
+func (sa *StateAccess) Admin() isc.AgentID {
+	return adminAgentID(sa.state)
+}
+
+func (sa *StateAccess) IsMigrationChain() bool {
+	// only considered a migration chain if the admin parameter was provided in chain origin
+	return sa.state.Has(keyAdminAgentID)
+}

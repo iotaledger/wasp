@@ -17,9 +17,14 @@ var (
 )
 
 // Funcs
-var FuncMigrate = coreutil.Func("migrate")
+var (
+	FuncMigrate = coreutil.Func("migrate")
+	FuncBurn    = coreutil.Func("burn")
+)
 
 const (
-	ParamAddress = "a"
-	ParamBundle  = "b"
+	ParamAddress              = "a"
+	ParamBundle               = "b"
+	ParamTotalMigrationAmount = "total"
+	ParamBalance              = "balance"
 )

@@ -22,13 +22,14 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-// TODO EVM governance BURN functionality
-
 var Processor = Contract.Processor(nil,
 	// view
 	ViewMigratableBalance.WithHandler(viewMigratableBalance),
+	ViewTotalBalance.WithHandler(viewTotalBalance),
+
 	// funcs
 	FuncMigrate.WithHandler(migrate),
+	FuncBurn.WithHandler(burn),
 )
 
 //go:embed migratable.csv
@@ -37,7 +38,9 @@ var migrationData []byte
 //go:embed migratable_test.csv
 var migrationDataTest []byte
 
-func SetInitialState(state kv.KVStore) {
+func SetInitialState(state kv.KVStore, admin isc.AgentID) {
+	// set the admin agentID
+	setAdminAgentID(state, admin)
 	// read migration map from the provided file
 	migrationMap := accountsMigrationMap(state)
 	var csvReader *csv.Reader
@@ -91,9 +94,9 @@ func migrate(ctx isc.Sandbox) dict.Dict {
 
 	// issue event with amount+bundle
 	ww := rwutil.NewBytesWriter()
-	ww.WriteUint64(tokensToMigrate)                          // tokens migrated
-	ww.WriteBytes(targetAddress.(*iotago.Ed25519Address)[:]) // target address
-	ww.WriteUint8(uint8(len(migratedAddresses)))             // list of migrated addresses
+	ww.WriteUint64(tokensToMigrate)                  // tokens migrated
+	ww.WriteBytes(isc.AddressToBytes(targetAddress)) // target address
+	ww.WriteUint8(uint8(len(migratedAddresses)))     // list of migrated addresses
 	for _, a := range migratedAddresses {
 		ww.WriteBytes(a)
 	}
@@ -132,12 +135,43 @@ func migratableBalance(state kv.KVStoreReader, legacyAddr []byte) uint64 {
 	return codec.MustDecodeUint64(migrationMap.GetAt(legacyAddr), 0)
 }
 
+func burn(ctx isc.Sandbox) dict.Dict {
+	ctx.Requiref(ctx.Request().SenderAccount().Equals(adminAgentID(ctx.State())), "only the admin can call the burn function")
+	ctx.Send(isc.RequestParameters{
+		TargetAddress: &iotago.Ed25519Address{0}, // send to the Zero address (0x00000...)
+		Assets: &isc.Assets{
+			BaseTokens: ctx.BalanceBaseTokens(), // burn the entire balance of this contract
+		},
+	})
+	return nil
+}
+
+func viewTotalBalance(ctx isc.SandboxView) dict.Dict {
+	return dict.Dict{
+		ParamTotalMigrationAmount: codec.Encode(calcTotalAmount(ctx.StateR())),
+		ParamBalance:              codec.Encode(ctx.BalanceBaseTokens()),
+	}
+}
+
 // --- contract state
 
 const (
 	keyLegacyAccounts = "a"
 	keyTotalAmount    = "t"
+	keyAdminAgentID   = "d"
 )
+
+func adminAgentID(state kv.KVReader) isc.AgentID {
+	a, err := isc.AgentIDFromBytes(state.Get(keyAdminAgentID))
+	if err != nil {
+		panic("invalid admin agentID")
+	}
+	return a
+}
+
+func setAdminAgentID(state kv.KVStore, a isc.AgentID) {
+	state.Set(keyAdminAgentID, a.Bytes())
+}
 
 func setTotalAmount(state kv.KVStore, amount uint64) {
 	state.Set(keyTotalAmount, codec.Encode(amount))
@@ -147,8 +181,8 @@ func getTotalAmount(state kv.KVStoreReader) uint64 {
 	return codec.MustDecodeUint64(state.Get(keyTotalAmount))
 }
 
-func calcTotalAmount(state kv.KVStore) uint64 {
-	migrationsMap := accountsMigrationMap(state)
+func calcTotalAmount(state kv.KVStoreReader) uint64 {
+	migrationsMap := accountsMigrationMapR(state)
 	accTotal := uint64(0)
 	migrationsMap.Iterate(func(elemKey []byte, value []byte) bool {
 		accTotal += codec.MustDecodeUint64(value)

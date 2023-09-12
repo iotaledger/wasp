@@ -90,7 +90,7 @@ func TestRotation(t *testing.T) {
 	rotation2 := newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3)
 
 	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address, nil)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 
@@ -153,7 +153,7 @@ func TestRotationFromSingle(t *testing.T) {
 	rotation2 := newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4}, 3)
 
 	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address, nil)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 
@@ -249,7 +249,7 @@ func TestRotationMany(t *testing.T) {
 	}
 
 	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotations[0].Committee, rotations[0].Quorum, rotations[0].Address, nil)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 

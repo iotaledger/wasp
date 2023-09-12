@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -27,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 type clusterTestEnv struct {
@@ -87,22 +89,24 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	} else {
 		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
-	tx, err := e.Chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+	targetAgentID := isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)
+	depositToAgentID(e.t, e.Chain, amount, targetAgentID, walletKey)
+	return ethKey, ethAddr
+}
+
+func depositToAgentID(t *testing.T, chain *cluster.Chain, amount uint64, target isc.AgentID, wallet *cryptolib.KeyPair) {
+	tx, err := chain.Client(wallet).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: codec.EncodeAgentID(
-				isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr),
-			),
+			accounts.ParamAgentID: codec.EncodeAgentID(target),
 		},
 		Allowance: isc.NewAssetsBaseTokens(amount),
 	})
-	require.NoError(e.T, err)
+	require.NoError(t, err)
 
 	// We have to wait not only for the committee to process the request, but also for access nodes to get that info.
-	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(e.T, err)
-
-	return ethKey, ethAddr
+	_, err = chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, false, 30*time.Second)
+	require.NoError(t, err)
 }
 
 // executed in cluster_test.go
@@ -117,7 +121,7 @@ func testEVMJsonRPCCluster(t *testing.T, env *ChainEnv) {
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
-	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
+	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3), nil)
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 	e := newClusterTestEnv(t, env, 4) // node #4 is an access node
@@ -126,7 +130,7 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 
 func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
-	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
+	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3), nil)
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 	e := newClusterTestEnv(t, env, 4) // node #4 is an access node

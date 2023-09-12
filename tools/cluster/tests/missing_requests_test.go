@@ -23,7 +23,7 @@ func TestMissingRequests(t *testing.T) {
 	addr, err := clu.RunDKG(cmt, threshold)
 	require.NoError(t, err)
 
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), cmt, threshold, addr)
+	chain, err := clu.DeployChain(clu.Config.AllNodes(), cmt, threshold, addr, nil)
 	require.NoError(t, err)
 	chainID := chain.ChainID
 

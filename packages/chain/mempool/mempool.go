@@ -523,10 +523,13 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 		return fmt.Errorf("chainHeadState is nil")
 	}
 
-	// make an exception for legacy migration requests
-	legacyMigrationSA := legacymigration.NewStateAccess(mpi.chainHeadState)
-	if !legacyMigrationSA.ValidMigrationRequest(req) {
-		// skip regular checks for valid legacy-migration requests
+	if mpi.isMigrationChain() {
+		governanceState := governance.NewStateAccess(mpi.chainHeadState)
+		legacyMigrationSA := legacymigration.NewStateAccess(mpi.chainHeadState)
+		if !req.SenderAccount().Equals(governanceState.ChainOwnerID()) && !legacyMigrationSA.ValidMigrationRequest(req) {
+			return fmt.Errorf("only migration requests are accepted")
+		}
+	} else {
 		if err := req.VerifySignature(); err != nil {
 			return fmt.Errorf("invalid signature")
 		}
@@ -717,7 +720,26 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 	})
 }
 
+//nolint:gocyclo
 func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
+	if mpi.isMigrationChain() {
+		switch request.CallTarget().Contract {
+		case governance.Contract.Hname():
+			// allow calls to governance (add access nodes, etc)
+		case accounts.Contract.Hname():
+			// allow calls to accounts (to fund the migration contract)
+			break
+		case legacymigration.Contract.Hname():
+			legacyMigrationSA := legacymigration.NewStateAccess(mpi.chainHeadState)
+			sender := request.SenderAccount()
+			if !sender.Equals(legacyMigrationSA.Admin()) {
+				// only accept requests from the migration admin (migration bundles are expected to be sent via off-ledger)
+				return
+			}
+		default:
+			return
+		}
+	}
 	requestID := request.ID()
 	requestRef := isc.RequestRefFromRequest(request)
 	//
@@ -1002,4 +1024,11 @@ func unprocessedPredicate[V isc.Request](chainState state.State, log *logger.Log
 
 		return true
 	}
+}
+
+func (mpi *mempoolImpl) isMigrationChain() bool {
+	if mpi.chainHeadState == nil {
+		return false
+	}
+	return legacymigration.NewStateAccess(mpi.chainHeadState).IsMigrationChain()
 }

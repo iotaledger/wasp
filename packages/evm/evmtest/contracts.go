@@ -107,3 +107,15 @@ var (
 	RevertTestContractBytecodeHex string
 	RevertTestContractBytecode    = common.FromHex(strings.TrimSpace(RevertTestContractBytecodeHex))
 )
+
+//go:generate sh -c "solc --abi --bin --overwrite @iscmagic=`realpath ../../vm/core/evm/iscmagic` LegacyMigrationGovernance.sol -o ."
+var (
+	//go:embed LegacyMigrationGovernance.abi
+	LegacyMigrationGovernanceABI string
+	//go:embed LegacyMigrationGovernance.bin
+	legacyMigrationGovernanceBytecodeHex string
+	LegacyMigrationGovernanceBytecode    = common.FromHex(strings.TrimSpace(legacyMigrationGovernanceBytecodeHex))
+	// //go:embed LegacyMigrationGovernance.bin-runtime
+	// legacyMigrationGovernanceRuntimeBytecodeHex string
+	// LegacyMigrationGovernanceRuntimeBytecode    = common.FromHex(strings.TrimSpace(legacyMigrationGovernanceRuntimeBytecodeHex))
+)
