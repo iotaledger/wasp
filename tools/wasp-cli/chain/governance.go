@@ -75,7 +75,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 	return cmd
 }
 
-func initDisableGasPolicyCmd() *cobra.Command {
+func initDisableFeePolicyCmd() *cobra.Command {
 	var offLedger bool
 	var node string
 	var chain string

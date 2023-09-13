@@ -46,7 +46,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initRotateCmd())
 	chainCmd.AddCommand(initRotateWithDKGCmd())
 	chainCmd.AddCommand(initChangeAccessNodesCmd())
-	chainCmd.AddCommand(initDisableGasPolicyCmd())
+	chainCmd.AddCommand(initDisableFeePolicyCmd())
 	chainCmd.AddCommand(initPermissionlessAccessNodesCmd())
 	chainCmd.AddCommand(initAddChainCmd())
 	chainCmd.AddCommand(initRegisterERC20NativeTokenCmd())

@@ -145,7 +145,7 @@ func initDecodeMetadataCmd() *cobra.Command {
 
 func initDecodeGasFeePolicy() *cobra.Command {
 	return &cobra.Command{
-		Use:   "decode-gaspolicy <0x...>",
+		Use:   "decode-feepolicy <0x...>",
 		Short: "Translates gas fee policy from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -164,29 +164,29 @@ func initEncodeGasFeePolicy() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "encode-gaspolicy",
+		Use:   "encode-feepolicy",
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			gasPolicy := gas.DefaultFeePolicy()
+			feePolicy := gas.DefaultFeePolicy()
 
 			if gasPerToken != "" {
 				ratio, err := wasp_util.Ratio32FromString(gasPerToken)
 				log.Check(err)
-				gasPolicy.GasPerToken = ratio
+				feePolicy.GasPerToken = ratio
 			}
 
 			if evmGasRatio != "" {
 				ratio, err := wasp_util.Ratio32FromString(evmGasRatio)
 				log.Check(err)
-				gasPolicy.EVMGasRatio = ratio
+				feePolicy.EVMGasRatio = ratio
 			}
 
 			if validatorFeeShare <= 100 {
-				gasPolicy.ValidatorFeeShare = validatorFeeShare
+				feePolicy.ValidatorFeeShare = validatorFeeShare
 			}
 
-			log.Printf(iotago.EncodeHex(gasPolicy.Bytes()))
+			log.Printf(iotago.EncodeHex(feePolicy.Bytes()))
 		},
 	}
 

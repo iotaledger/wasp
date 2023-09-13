@@ -72,7 +72,7 @@ func TestZeroGasFee(t *testing.T) {
 	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
 	require.NoError(t, err)
 	require.Contains(t, outs, "Gas fee: gas units * (100/1)")
-	_, err = w.Run("chain", "disable-gas-policy", "--node=0")
+	_, err = w.Run("chain", "disable-feepolicy", "--node=0")
 	require.NoError(t, err)
 	outs, err = w.Run("chain", "info", "--node=0", "--node=0")
 	require.NoError(t, err)

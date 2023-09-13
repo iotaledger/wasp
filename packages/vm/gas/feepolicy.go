@@ -13,7 +13,7 @@ import (
 var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
 
 // GasPerToken + ValidatorFeeShare + EVMGasRatio
-const GasPolicyByteSize = util.RatioByteSize + serializer.OneByte + util.RatioByteSize
+const FeePolicyByteSize = util.RatioByteSize + serializer.OneByte + util.RatioByteSize
 
 type FeePolicy struct {
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas
