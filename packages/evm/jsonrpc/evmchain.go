@@ -296,7 +296,11 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 		return nil, err
 	}
 	accountsPartition := subrealm.NewReadOnly(chainState, kv.Key(accounts.Contract.Hname().Bytes()))
-	baseTokens := accounts.GetBaseTokensBalance(accountsPartition, isc.NewEthereumAddressAgentID(address))
+	baseTokens := accounts.GetBaseTokensBalance(
+		accountsPartition,
+		isc.NewEthereumAddressAgentID(*e.backend.ISCChainID(), address),
+		*e.backend.ISCChainID(),
+	)
 	return util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.L1().BaseToken.Decimals), nil
 }
 

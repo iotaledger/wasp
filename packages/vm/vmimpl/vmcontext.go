@@ -181,7 +181,7 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 		vmctx.task.Log.Debugf("adjusting commonAccount because AO SD cost changed, old:%d new:%d", oldMinSD, newMinSD)
 		// update the commonAccount with the change in SD cost
 		withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-			accounts.AdjustAccountBaseTokens(s, accounts.CommonAccount(), changeInSD)
+			accounts.AdjustAccountBaseTokens(s, accounts.CommonAccount(), changeInSD, vmctx.ChainID())
 		})
 	}
 

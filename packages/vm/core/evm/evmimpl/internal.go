@@ -118,17 +118,23 @@ func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) uint64 {
 	res := ctx.sandbox.CallView(
 		accounts.Contract.Hname(),
 		accounts.ViewBalanceBaseToken.Hname(),
-		dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
+		dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr).Bytes()},
 	)
 	return codec.MustDecodeUint64(res.Get(accounts.ParamBalance), 0)
 }
 
 func (ctx *emulatorContext) AddBaseTokensBalance(addr common.Address, amount uint64) {
-	ctx.sandbox.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), isc.NewAssetsBaseTokens(amount))
+	ctx.sandbox.Privileged().CreditToAccount(
+		isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr),
+		isc.NewAssetsBaseTokens(amount),
+	)
 }
 
 func (ctx *emulatorContext) SubBaseTokensBalance(addr common.Address, amount uint64) {
-	ctx.sandbox.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), isc.NewAssetsBaseTokens(amount))
+	ctx.sandbox.Privileged().DebitFromAccount(
+		isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr),
+		isc.NewAssetsBaseTokens(amount),
+	)
 }
 
 func (ctx *emulatorContext) TakeSnapshot() int {

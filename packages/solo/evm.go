@@ -131,7 +131,7 @@ func init() {
 func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	key := EthereumAccounts[i]
 	addr := crypto.PubkeyToAddress(key.PublicKey)
-	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr
 }
 
@@ -145,6 +145,6 @@ func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 
 func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := NewEthereumAccount()
-	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr
 }

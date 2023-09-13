@@ -25,7 +25,12 @@ contract ERC20NativeTokens {
         return __iscSandbox.erc20NativeTokensFoundrySerialNumber(address(this));
     }
 
-    function nativeTokenID() public virtual view returns (NativeTokenID memory) {
+    function nativeTokenID()
+        public
+        view
+        virtual
+        returns (NativeTokenID memory)
+    {
         return __iscSandbox.getNativeTokenID(foundrySerialNumber());
     }
 
@@ -41,7 +46,7 @@ contract ERC20NativeTokens {
         return _decimals;
     }
 
-    function totalSupply() public virtual view returns (uint256) {
+    function totalSupply() public view virtual returns (uint256) {
         return
             __iscSandbox
                 .getNativeTokenScheme(foundrySerialNumber())
@@ -49,8 +54,10 @@ contract ERC20NativeTokens {
     }
 
     function balanceOf(address tokenOwner) public view returns (uint256) {
+        ISCChainID chainID = __iscSandbox.getChainID();
         ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
-            tokenOwner
+            tokenOwner,
+            chainID
         );
         return
             __iscAccounts.getL2BalanceNativeTokens(
@@ -59,10 +66,10 @@ contract ERC20NativeTokens {
             );
     }
 
-    function transfer(address receiver, uint256 numTokens)
-        public
-        returns (bool)
-    {
+    function transfer(
+        address receiver,
+        uint256 numTokens
+    ) public returns (bool) {
         ISCAssets memory assets;
         assets.nativeTokens = new NativeToken[](1);
         assets.nativeTokens[0].ID = nativeTokenID();
@@ -72,20 +79,24 @@ contract ERC20NativeTokens {
         return true;
     }
 
-    function approve(address delegate, uint256 numTokens)
-        public
-        returns (bool)
-    {
-        __iscPrivileged.setAllowanceNativeTokens(msg.sender, delegate, nativeTokenID(), numTokens);
+    function approve(
+        address delegate,
+        uint256 numTokens
+    ) public returns (bool) {
+        __iscPrivileged.setAllowanceNativeTokens(
+            msg.sender,
+            delegate,
+            nativeTokenID(),
+            numTokens
+        );
         emit Approval(msg.sender, delegate, numTokens);
         return true;
     }
 
-    function allowance(address owner, address delegate)
-        public
-        view
-        returns (uint256)
-    {
+    function allowance(
+        address owner,
+        address delegate
+    ) public view returns (uint256) {
         ISCAssets memory assets = __iscSandbox.getAllowance(owner, delegate);
         NativeTokenID memory myID = nativeTokenID();
         for (uint256 i = 0; i < assets.nativeTokens.length; i++) {
@@ -95,11 +106,10 @@ contract ERC20NativeTokens {
         return 0;
     }
 
-    function bytesEqual(bytes memory a, bytes memory b)
-        internal
-        pure
-        returns (bool)
-    {
+    function bytesEqual(
+        bytes memory a,
+        bytes memory b
+    ) internal pure returns (bool) {
         if (a.length != b.length) return false;
         for (uint256 i = 0; i < a.length; i++) {
             if (a[i] != b[i]) return false;

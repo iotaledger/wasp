@@ -12,7 +12,7 @@ import (
 // It automatically adjusts amount of base tokens required for the storage deposit
 func BasicOutputFromPostData(
 	senderAddress iotago.Address,
-	senderContract isc.Hname,
+	senderContract isc.ContractIdentity,
 	par isc.RequestParameters,
 ) *iotago.BasicOutput {
 	metadata := par.Metadata
@@ -89,7 +89,7 @@ func MakeBasicOutput(
 
 func NFTOutputFromPostData(
 	senderAddress iotago.Address,
-	senderContract isc.Hname,
+	senderContract isc.ContractIdentity,
 	par isc.RequestParameters,
 	nft *isc.NFT,
 ) *iotago.NFTOutput {

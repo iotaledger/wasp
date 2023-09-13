@@ -301,7 +301,7 @@ func TestAccountNFTAmountInCollection(t *testing.T) {
 	require.NoError(t, err)
 
 	_, ethAddr := ctx.Chain.NewEthereumAccountWithL2Funds()
-	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+	ethAgentID := isc.NewEthereumAddressAgentID(ctx.Chain.ID(), ethAddr)
 
 	collectionMetadata := isc.NewIRC27NFTMetadata(
 		"text/html",
@@ -371,7 +371,7 @@ func TestAccountNFTsInCollection(t *testing.T) {
 	require.NoError(t, err)
 
 	_, ethAddr := ctx.Chain.NewEthereumAccountWithL2Funds()
-	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+	ethAgentID := isc.NewEthereumAddressAgentID(ctx.Chain.ID(), ethAddr)
 
 	collectionMetadata := isc.NewIRC27NFTMetadata(
 		"text/html",

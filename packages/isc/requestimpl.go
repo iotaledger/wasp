@@ -194,7 +194,7 @@ func (rid *RequestID) Write(w io.Writer) error {
 // region RequestMetadata //////////////////////////////////////////////////
 
 type RequestMetadata struct {
-	SenderContract Hname `json:"senderContract"`
+	SenderContract ContractIdentity `json:"senderContract"`
 	// ID of the target smart contract
 	TargetContract Hname `json:"targetContract"`
 	// entry point code

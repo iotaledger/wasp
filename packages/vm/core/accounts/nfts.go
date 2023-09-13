@@ -108,13 +108,13 @@ func GetNFTData(state kv.KVStoreReader, nftID iotago.NFTID) *isc.NFT {
 }
 
 // CreditNFTToAccount credits an NFT to the on chain ledger
-func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftOutput *iotago.NFTOutput) {
+func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftOutput *iotago.NFTOutput, chainID isc.ChainID) {
 	if nftOutput.NFTID.Empty() {
 		panic("empty NFTID")
 	}
 
 	creditNFTToAccount(state, agentID, nftOutput.NFTID, nftOutput.ImmutableFeatureSet().IssuerFeature().Address)
-	touchAccount(state, agentID)
+	touchAccount(state, agentID, chainID)
 
 	// save the NFTOutput with a temporary outputIndex so the NFTData is readily available (it will be updated upon block closing)
 	SaveNFTOutput(state, nftOutput, 0)
@@ -130,7 +130,7 @@ func creditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFTI
 
 // DebitNFTFromAccount removes an NFT from an account.
 // If the account does not own the nft, it panics.
-func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID) {
+func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID, chainID isc.ChainID) {
 	nft := GetNFTData(state, nftID)
 	if nft == nil {
 		panic(fmt.Errorf("cannot debit unknown NFT %s", nftID.String()))
@@ -138,7 +138,7 @@ func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFT
 	if !debitNFTFromAccount(state, agentID, nft) {
 		panic(fmt.Errorf("cannot debit NFT %s from %s: %w", nftID.String(), agentID, ErrNotEnoughFunds))
 	}
-	touchAccount(state, agentID)
+	touchAccount(state, agentID, chainID)
 }
 
 // DebitNFTFromAccount removes an NFT from the internal map of an account

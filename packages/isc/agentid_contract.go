@@ -45,6 +45,16 @@ func (a *ContractAgentID) ChainID() ChainID {
 	return a.chainID
 }
 
+func (a *ContractAgentID) BelongsToChain(cID ChainID) bool {
+	return a.chainID.Equals(cID)
+}
+
+func (a *ContractAgentID) BytesWithoutChainID() []byte {
+	ww := rwutil.NewBytesWriter()
+	ww.Write(&a.hname)
+	return ww.Bytes()
+}
+
 func (a *ContractAgentID) Equals(other AgentID) bool {
 	if other == nil {
 		return false
@@ -65,7 +75,7 @@ func (a *ContractAgentID) Kind() AgentIDKind {
 }
 
 func (a *ContractAgentID) String() string {
-	return a.hname.String() + "@" + a.chainID.String()
+	return a.hname.String() + AgentIDStringSeparator + a.chainID.String()
 }
 
 func (a *ContractAgentID) Read(r io.Reader) error {

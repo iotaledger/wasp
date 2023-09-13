@@ -106,10 +106,10 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		}
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req)
-		creditToAccount(reqctx.uncommittedState, payoutAgentID, req.Assets())
+		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req, reqctx.ChainID())
+		creditToAccount(reqctx.uncommittedState, payoutAgentID, req.Assets(), reqctx.ChainID())
 		if storageDepositNeeded > 0 {
-			debitFromAccount(reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded))
+			debitFromAccount(reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
 		}
 		return
 	}
@@ -122,11 +122,11 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
-	creditToAccount(reqctx.uncommittedState, sender, req.Assets())
-	creditNFTToAccount(reqctx.uncommittedState, sender, req)
+	creditToAccount(reqctx.uncommittedState, sender, req.Assets(), reqctx.ChainID())
+	creditNFTToAccount(reqctx.uncommittedState, sender, req, reqctx.ChainID())
 	if storageDepositNeeded > 0 {
 		reqctx.sdCharged = storageDepositNeeded
-		debitFromAccount(reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded))
+		debitFromAccount(reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
 	}
 }
 
@@ -395,7 +395,13 @@ func (reqctx *requestContext) chargeGasFee() {
 	if sendToValidator != 0 {
 		transferToValidator := &isc.Assets{}
 		transferToValidator.BaseTokens = sendToValidator
-		mustMoveBetweenAccounts(reqctx.uncommittedState, sender, reqctx.vm.task.ValidatorFeeTarget, transferToValidator)
+		mustMoveBetweenAccounts(
+			reqctx.uncommittedState,
+			sender,
+			reqctx.vm.task.ValidatorFeeTarget,
+			transferToValidator,
+			reqctx.ChainID(),
+		)
 	}
 
 	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
@@ -414,11 +420,22 @@ func (reqctx *requestContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		mustMoveBetweenAccounts(reqctx.uncommittedState, sender, accounts.CommonAccount(), isc.NewAssetsBaseTokens(transferToCommonAcc))
+		mustMoveBetweenAccounts(reqctx.uncommittedState,
+			sender,
+			accounts.CommonAccount(),
+			isc.NewAssetsBaseTokens(transferToCommonAcc),
+			reqctx.ChainID(),
+		)
 	}
 	if sendToPayout > 0 {
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		mustMoveBetweenAccounts(reqctx.uncommittedState, sender, payoutAgentID, isc.NewAssetsBaseTokens(sendToPayout))
+		mustMoveBetweenAccounts(
+			reqctx.uncommittedState,
+			sender,
+			payoutAgentID,
+			isc.NewAssetsBaseTokens(sendToPayout),
+			reqctx.ChainID(),
+		)
 	}
 }
 
