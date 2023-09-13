@@ -211,7 +211,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		}
 		out := transaction.BasicOutputFromPostData(
 			txb.anchorOutput.AliasID.ToAddress(),
-			isc.Hn("test"),
+			isc.ContractIdentityFromHname(isc.Hn("test")),
 			isc.RequestParameters{
 				TargetAddress:                 tpkg.RandEd25519Address(),
 				Assets:                        outAssets,
@@ -449,7 +449,7 @@ func TestFoundries(t *testing.T) {
 func TestSerDe(t *testing.T) {
 	t.Run("serde BasicOutput", func(t *testing.T) {
 		reqMetadata := isc.RequestMetadata{
-			SenderContract: 0,
+			SenderContract: isc.EmptyContractIdentity(),
 			TargetContract: 0,
 			EntryPoint:     0,
 			Params:         dict.New(),

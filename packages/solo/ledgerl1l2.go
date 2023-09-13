@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -27,6 +28,24 @@ func (ch *Chain) L2Accounts() []isc.AgentID {
 	keys := d.KeysSorted()
 	ret := make([]isc.AgentID, 0, len(keys)-1)
 	for _, key := range keys {
+		if len(key) < isc.ChainIDLength {
+			// short form saved (withoutChainID)
+			var aid isc.AgentID
+			switch len(key) {
+			case 4:
+				hn, err := isc.HnameFromBytes([]byte(key))
+				require.NoError(ch.Env.T, err)
+				aid = isc.NewContractAgentID(ch.ChainID, hn)
+			case common.AddressLength:
+				var ethAddr common.Address
+				copy(ethAddr[:], []byte(key))
+				aid = isc.NewEthereumAddressAgentID(ethAddr, ch.ChainID)
+			default:
+				panic("bad key length")
+			}
+			ret = append(ret, aid)
+			continue
+		}
 		aid, err := codec.DecodeAgentID([]byte(key))
 		require.NoError(ch.Env.T, err)
 		ret = append(ret, aid)

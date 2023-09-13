@@ -83,6 +83,7 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 			s,
 			senderAccount,
 			reqNonce,
+			reqctx.ChainID(),
 		)
 	})
 	return nonceErr

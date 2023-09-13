@@ -33,7 +33,7 @@ func NewEVMOffLedgerTxRequest(chainID ChainID, tx *types.Transaction) (OffLedger
 	return &evmOffLedgerTxRequest{
 		chainID: chainID,
 		tx:      tx,
-		sender:  NewEthereumAddressAgentID(sender),
+		sender:  NewEthereumAddressAgentID(sender, chainID),
 	}, nil
 }
 
@@ -54,7 +54,7 @@ func (req *evmOffLedgerTxRequest) Read(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	req.sender = NewEthereumAddressAgentID(sender)
+	req.sender = NewEthereumAddressAgentID(sender, req.chainID)
 	return rr.Err
 }
 

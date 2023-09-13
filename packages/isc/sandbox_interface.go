@@ -144,6 +144,7 @@ type Privileged interface {
 	RetryUnprocessable(req Request, outputID iotago.OutputID)
 	OnWriteReceipt(CoreCallbackFunc)
 	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
+	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
 }
 
 type CoreCallbackFunc func(contractPartition kv.KVStore)

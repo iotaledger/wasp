@@ -103,7 +103,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	tx, err := evmtypes.DecodeTransaction(ctx.Params().Get(evm.FieldTransaction))
 	ctx.RequireNoError(err)
 
-	ctx.RequireCaller(isc.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
+	ctx.RequireCaller(isc.NewEthereumAddressAgentID(evmutil.MustGetSender(tx), ctx.ChainID()))
 
 	emu := createEmulator(ctx)
 
@@ -404,7 +404,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().Get(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
-	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
+	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From, ctx.ChainID()))
 
 	emu := createEmulator(ctx)
 	res, err := emu.CallContract(callMsg, ctx.Gas().EstimateGasMode())

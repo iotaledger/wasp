@@ -19,8 +19,12 @@ func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.NFTID) *i
 	return nft
 }
 
-// Send implements sandbox function of sending cross-chain request
 func (reqctx *requestContext) send(par isc.RequestParameters) {
+	reqctx.doSend(isc.ContractIdentityFromHname(reqctx.CurrentContractHname()), par)
+}
+
+// Send implements sandbox function of sending cross-chain request
+func (reqctx *requestContext) doSend(caller isc.ContractIdentity, par isc.RequestParameters) {
 	if len(par.Assets.NFTs) > 1 {
 		panic(vm.ErrSendMultipleNFTs)
 	}
@@ -29,18 +33,18 @@ func (reqctx *requestContext) send(par isc.RequestParameters) {
 		nft := reqctx.vm.getNFTData(reqctx.chainStateWithGasBurn(), par.Assets.NFTs[0])
 		out := transaction.NFTOutputFromPostData(
 			reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
-			reqctx.CurrentContractHname(),
+			caller,
 			par,
 			nft,
 		)
-		debitNFTFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), nft.ID)
+		debitNFTFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), nft.ID, reqctx.ChainID())
 		reqctx.sendOutput(out)
 		return
 	}
 	// create extended output
 	out := transaction.BasicOutputFromPostData(
 		reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
-		reqctx.CurrentContractHname(),
+		caller,
 		par,
 	)
 	reqctx.sendOutput(out)
@@ -62,5 +66,5 @@ func (reqctx *requestContext) sendOutput(o iotago.Output) {
 	reqctx.adjustL2BaseTokensIfNeeded(baseTokenAdjustmentL2, reqctx.CurrentContractAccountID())
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
-	debitFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), assets)
+	debitFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), assets, reqctx.ChainID())
 }

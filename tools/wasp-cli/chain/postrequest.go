@@ -33,7 +33,7 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 			scClient.ChainClient.KeyPair.Address(),
 			params.Transfer,
 			&isc.RequestMetadata{
-				SenderContract: 0,
+				SenderContract: isc.EmptyContractIdentity(),
 				TargetContract: isc.Hn(hname),
 				EntryPoint:     isc.Hn(fname),
 				Params:         params.Args,
@@ -65,12 +65,13 @@ func initPostRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
+			chainID := config.GetChain(chain)
 			hname := args[0]
 			fname := args[1]
 
 			allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
 			params := chainclient.PostRequestParams{
-				Args:      util.EncodeParams(args[2:]),
+				Args:      util.EncodeParams(args[2:], chainID),
 				Transfer:  util.ParseFungibleTokens(postRequestParams.transfer),
 				Allowance: allowanceTokens,
 			}

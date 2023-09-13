@@ -18,10 +18,10 @@ func NewStateAccess(store kv.KVStoreReader) *StateAccess {
 	return &StateAccess{state: state}
 }
 
-func (sa *StateAccess) Nonce(agentID isc.AgentID) uint64 {
-	return accountNonce(sa.state, agentID)
+func (sa *StateAccess) Nonce(agentID isc.AgentID, chainID isc.ChainID) uint64 {
+	return accountNonce(sa.state, agentID, chainID)
 }
 
-func (sa *StateAccess) AccountExists(agentID isc.AgentID) bool {
-	return accountExists(sa.state, agentID)
+func (sa *StateAccess) AccountExists(agentID isc.AgentID, chainID isc.ChainID) bool {
+	return accountExists(sa.state, agentID, chainID)
 }

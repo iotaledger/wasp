@@ -68,9 +68,9 @@ func initBalanceCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			agentID := util.AgentIDFromArgs(args)
-			client := cliclients.WaspClient(node)
 			chainID := config.GetChain(chain)
+			agentID := util.AgentIDFromArgs(args, chainID)
+			client := cliclients.WaspClient(node)
 
 			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
@@ -102,9 +102,9 @@ func initAccountNFTsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			agentID := util.AgentIDFromArgs(args)
-			client := cliclients.WaspClient(node)
 			chainID := config.GetChain(chain)
+			agentID := util.AgentIDFromArgs(args, chainID)
+			client := cliclients.WaspClient(node)
 
 			nfts, _, err := client.CorecontractsApi.
 				AccountsGetAccountNFTIDs(context.Background(), chainID.String(), agentID.String()).
@@ -179,7 +179,7 @@ func initDepositCmd() *cobra.Command {
 				})
 			} else {
 				// deposit to some other agentID
-				agentID := util.AgentIDFromString(args[0])
+				agentID := util.AgentIDFromString(args[0], chainID)
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 
 				allowance := tokens.Clone()

@@ -57,7 +57,8 @@ func initDecodeCmd() *cobra.Command {
 				skey := args[i*2+1]
 				vtype := args[i*2+2]
 
-				key := kv.Key(util.ValueFromString(ktype, skey))
+				// chainID is only used to fallback user input, the decode command uses data directly from the server, it's okay to pass empty chainID
+				key := kv.Key(util.ValueFromString(ktype, skey, isc.ChainID{}))
 				val := d.Get(key)
 				if val == nil {
 					log.Printf("%s: <nil>\n", skey)

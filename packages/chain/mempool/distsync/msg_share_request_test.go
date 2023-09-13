@@ -34,7 +34,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 	{
 		sender := tpkg.RandAliasAddress()
 		requestMetadata := &isc.RequestMetadata{
-			SenderContract: isc.Hn("sender_contract"),
+			SenderContract: isc.ContractIdentityFromHname(isc.Hn("sender_contract")),
 			TargetContract: isc.Hn("target_contract"),
 			EntryPoint:     isc.Hn("entrypoint"),
 			Allowance:      isc.NewAssetsBaseTokens(1),

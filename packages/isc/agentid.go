@@ -24,9 +24,13 @@ const (
 	AgentIDIsNil AgentIDKind = 0x80
 )
 
+const AgentIDStringSeparator = "@"
+
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
 	Bytes() []byte
+	BelongsToChain(ChainID) bool
+	BytesWithoutChainID() []byte
 	Equals(other AgentID) bool
 	Kind() AgentIDKind
 	Read(r io.Reader) error
@@ -109,28 +113,28 @@ func AgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}
-	var hnamePart, addrPart string
+	var contractPart, addrPart string
 	{
-		parts := strings.Split(s, "@")
+		parts := strings.Split(s, AgentIDStringSeparator)
 		switch len(parts) {
 		case 1:
 			addrPart = parts[0]
 		case 2:
 			addrPart = parts[1]
-			hnamePart = parts[0]
+			contractPart = parts[0]
 		default:
 			return nil, errors.New("invalid AgentID format")
 		}
 	}
 
-	if hnamePart != "" {
-		return contractAgentIDFromString(hnamePart, addrPart)
+	if contractPart != "" {
+		if strings.HasPrefix(contractPart, "0x") {
+			return ethAgentIDFromString(contractPart, addrPart)
+		}
+		return contractAgentIDFromString(contractPart, addrPart)
 	}
 	if strings.HasPrefix(addrPart, string(parameters.L1().Protocol.Bech32HRP)) {
 		return addressAgentIDFromString(s)
-	}
-	if strings.HasPrefix(addrPart, "0x") {
-		return ethAgentIDFromString(s)
 	}
 	return nil, errors.New("invalid AgentID string")
 }
