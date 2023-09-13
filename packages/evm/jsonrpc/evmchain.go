@@ -198,11 +198,12 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 		return fmt.Errorf("could not fetch sender balance: %w", err)
 	}
 	gasFeePolicy := e.GasFeePolicy()
-	iscGasBudgetAffordable := gasFeePolicy.GasBudgetFromTokens(balance.Uint64())
-
-	iscGasBudgetTx := gas.EVMGasToISC(evmGas, &gasRatio)
 
 	gasLimits := e.gasLimits()
+
+	iscGasBudgetAffordable := gasFeePolicy.GasBudgetFromTokens(balance.Uint64(), gasLimits)
+
+	iscGasBudgetTx := gas.EVMGasToISC(evmGas, &gasRatio)
 
 	if iscGasBudgetTx > gasLimits.MaxGasPerRequest {
 		iscGasBudgetTx = gasLimits.MaxGasPerRequest
