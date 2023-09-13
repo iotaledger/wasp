@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	MaxCustomMetadataLength = iotago.MaxMetadataLength - serializer.OneByte - serializer.UInt32ByteSize - state.L1CommitmentSize - gas.GasPolicyByteSize - serializer.UInt16ByteSize
+	MaxCustomMetadataLength = iotago.MaxMetadataLength - serializer.OneByte - serializer.UInt32ByteSize - state.L1CommitmentSize - gas.FeePolicyByteSize - serializer.UInt16ByteSize
 )
 
 func setMetadata(ctx isc.Sandbox) dict.Dict {
