@@ -80,7 +80,7 @@ func (h *magicContractHandler) Send(
 	h.moveAssetsToCommonAccount(req.Assets)
 
 	h.ctx.Privileged().SendOnBehalfOf(
-		isc.ContractIdentityFromEvmAddress(h.caller.Address()),
+		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
 		req,
 	)
 }
