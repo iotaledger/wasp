@@ -77,6 +77,10 @@ func TestZeroGasFee(t *testing.T) {
 	outs, err = w.Run("chain", "info", "--node=0", "--node=0")
 	require.NoError(t, err)
 	require.Contains(t, outs, "Gas fee: gas units * (0/0)")
+
+	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
+	w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
+	checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
 }
 
 func TestWaspCLI1Chain(t *testing.T) {
