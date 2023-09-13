@@ -19,8 +19,8 @@ type EthereumAddressAgentID struct {
 
 var _ AgentID = &EthereumAddressAgentID{}
 
-func NewEthereumAddressAgentID(eth common.Address, chainID ChainID) *EthereumAddressAgentID {
-	return &EthereumAddressAgentID{eth: eth, chainID: chainID}
+func NewEthereumAddressAgentID(chainID ChainID, eth common.Address) *EthereumAddressAgentID {
+	return &EthereumAddressAgentID{chainID: chainID, eth: eth}
 }
 
 func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAgentID, error) {

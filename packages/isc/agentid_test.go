@@ -24,7 +24,7 @@ func TestAgentIDSerialization(t *testing.T) {
 	rwutil.BytesTest(t, AgentID(c), AgentIDFromBytes)
 	rwutil.StringTest(t, AgentID(c), AgentIDFromString)
 
-	e := NewEthereumAddressAgentID(common.HexToAddress("1074"), chainID)
+	e := NewEthereumAddressAgentID(chainID, common.HexToAddress("1074"))
 	rwutil.BytesTest(t, AgentID(e), AgentIDFromBytes)
 	rwutil.StringTest(t, AgentID(e), AgentIDFromString)
 	rwutil.StringTest(t, AgentID(e), AgentIDFromString)

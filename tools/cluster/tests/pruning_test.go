@@ -53,7 +53,7 @@ func TestPruning(t *testing.T) {
 	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
-	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr, chain.ChainID)
+	evmAgentID := isc.NewEthereumAddressAgentID(chain.ChainID, evmAddr)
 	env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter

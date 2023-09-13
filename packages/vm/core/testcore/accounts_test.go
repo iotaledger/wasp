@@ -707,7 +707,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 
 		// sent the last 50 tokens to an evm account
 		_, someEthereumAddr := solo.NewEthereumAccount()
-		someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr, v.ch.ChainID)
+		someEthereumAgentID := isc.NewEthereumAddressAgentID(v.ch.ChainID, someEthereumAddr)
 
 		err = v.ch.TransferAllowanceTo(isc.NewEmptyAssets().AddNativeTokens(v.nativeTokenID, 50),
 			someEthereumAgentID,

@@ -90,7 +90,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 		Transfer: isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID: codec.EncodeAgentID(
-				isc.NewEthereumAddressAgentID(ethAddr, e.Chain.ChainID),
+				isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr),
 			),
 		},
 		Allowance: isc.NewAssetsBaseTokens(amount),

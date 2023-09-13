@@ -75,7 +75,7 @@ func (c *ContractIdentity) AgentID(chainID ChainID) AgentID {
 	case contractIdentityKindHname:
 		return NewContractAgentID(chainID, c.hname)
 	case contractIdentityKindEthereum:
-		return NewEthereumAddressAgentID(c.evmAddr, chainID)
+		return NewEthereumAddressAgentID(chainID, c.evmAddr)
 	}
 	return &NilAgentID{}
 }

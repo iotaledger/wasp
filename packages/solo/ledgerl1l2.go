@@ -39,7 +39,7 @@ func (ch *Chain) L2Accounts() []isc.AgentID {
 			case common.AddressLength:
 				var ethAddr common.Address
 				copy(ethAddr[:], []byte(key))
-				aid = isc.NewEthereumAddressAgentID(ethAddr, ch.ChainID)
+				aid = isc.NewEthereumAddressAgentID(ch.ChainID, ethAddr)
 			default:
 				panic("bad key length")
 			}

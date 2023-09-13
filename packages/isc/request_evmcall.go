@@ -102,7 +102,7 @@ func (req *evmOffLedgerCallRequest) Params() dict.Dict {
 }
 
 func (req *evmOffLedgerCallRequest) SenderAccount() AgentID {
-	return NewEthereumAddressAgentID(req.callMsg.From, req.chainID)
+	return NewEthereumAddressAgentID(req.chainID, req.callMsg.From)
 }
 
 func (req *evmOffLedgerCallRequest) String() string {
