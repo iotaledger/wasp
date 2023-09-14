@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -62,7 +63,8 @@ func getIotaSDKLibName() string {
 func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 	// LoadLibrary (windows) and dlLoad (linux) have different search path behaviors
 	// For now, use a relative path - as it will eventually be shipped with a release.
-	wd, err := os.Getwd()
+	ex, err := os.Executable()
+	wd := filepath.Dir(ex)
 	log.Check(err)
 
 	libPath := path.Join(wd, getIotaSDKLibName())
