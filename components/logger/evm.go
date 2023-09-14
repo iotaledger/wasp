@@ -6,15 +6,18 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 )
 
+var format = log.TerminalFormat(false)
+
 func initGoEthLogger(waspLogger *logger.Logger) {
 	log.Root().SetHandler(log.FuncHandler(func(r *log.Record) error {
+		s := string(format.Format(r))
 		switch r.Lvl {
 		case log.LvlCrit, log.LvlError:
-			waspLogger.Errorf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			waspLogger.Error(s)
 		case log.LvlTrace, log.LvlDebug:
-			waspLogger.Debugf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			waspLogger.Debug(s)
 		default:
-			waspLogger.Infof("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			waspLogger.Info(s)
 		}
 		return nil
 	}))

@@ -9,10 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 )
 
+var format = log.TerminalFormat(false)
+
 func InitGoEthLogger(t testing.TB) {
 	log.Root().SetHandler(log.FuncHandler(func(r *log.Record) error {
 		if r.Lvl <= log.LvlWarn {
-			t.Logf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			t.Log(string(format.Format(r)))
 		}
 		return nil
 	}))
