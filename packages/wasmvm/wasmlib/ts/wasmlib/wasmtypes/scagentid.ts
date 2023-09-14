@@ -32,11 +32,26 @@ export class ScAgentID {
     kind: u8;
     _address: ScAddress;
     _hname: ScHname;
+    eth: ScAddress;
 
     constructor(address: ScAddress, hname: ScHname) {
         this.kind = ScAgentIDContract;
         this._address = address;
         this._hname = hname;
+        this.eth = new ScAddress();
+    }
+
+    public static forEthereum(chainAddress: ScAddress, ethAddress: ScAddress): ScAgentID {
+        if (chainAddress.id[0] != ScAddressAlias) {
+            panic("invalid eth AgentID: chain address");
+        }
+        if (ethAddress.id[0] != ScAddressEth) {
+            panic("invalid eth AgentID: eth address");
+        }
+        const agentID = new ScAgentID(chainAddress, new ScHname(0));
+        agentID.kind = ScAgentIDEthereum;
+        agentID.eth = ethAddress;
+        return agentID;
     }
 
     public static fromAddress(address: ScAddress): ScAgentID {
@@ -46,7 +61,7 @@ export class ScAgentID {
                 break;
             }
             case ScAddressEth: {
-                agentID.kind = ScAgentIDEthereum;
+                panic("invalid eth AgentID: need chain address");
                 break;
             }
             default: {
@@ -64,6 +79,10 @@ export class ScAgentID {
 
     public address(): ScAddress {
         return this._address;
+    }
+
+    public ethAddress(): ScAddress {
+        return this.eth;
     }
 
     public hname(): ScHname {
@@ -122,12 +141,15 @@ export function agentIDFromBytes(buf: Uint8Array | null): ScAgentID {
             const hname = hnameFromBytes(buf.subarray(ScChainIDLength));
             return new ScAgentID(chainID.address(), hname);
         }
-        case ScAgentIDEthereum:
+        case ScAgentIDEthereum: {
             buf = buf.subarray(1);
-            if (buf.length != ScLengthEth) {
+            if (buf.length != ScChainIDLength + ScLengthEth) {
                 panic('invalid AgentID length: eth agentID');
             }
-            return ScAgentID.fromAddress(addressFromBytes(buf));
+            const chainID = chainIDFromBytes(buf.subarray(0, ScChainIDLength));
+            const ethAddress = addressFromBytes(buf.subarray(ScChainIDLength));
+            return ScAgentID.forEthereum(chainID.address(), ethAddress);
+        }
         case ScAgentIDNil:
             break;
         default: {
@@ -149,8 +171,11 @@ export function agentIDToBytes(value: ScAgentID): Uint8Array {
             buf[0] = value.kind;
             return concat(buf, hnameToBytes(value._hname));
         }
-        case ScAgentIDEthereum:
-            return concat(buf, addressToBytes(value._address));
+        case ScAgentIDEthereum: {
+            buf = addressToBytes(value._address);
+            buf[0] = value.kind;
+            return concat(buf, addressToBytes(value.eth));
+        }
         case ScAgentIDNil:
             return buf;
         default: {
@@ -171,7 +196,10 @@ export function agentIDFromString(value: string): ScAgentID {
         case 1:
             return ScAgentID.fromAddress(addressFromString(parts[0]));
         case 2:
-            return new ScAgentID(addressFromString(parts[1]), hnameFromString(parts[0]));
+            if (!value.startsWith('0x')) {
+                return new ScAgentID(addressFromString(parts[1]), hnameFromString(parts[0]));
+            }
+            return ScAgentID.forEthereum(addressFromString(parts[1]), addressFromString(parts[0]));
         default:
             panic('invalid AgentID string');
             return agentIDFromBytes(null);
@@ -186,7 +214,7 @@ export function agentIDToString(value: ScAgentID): string {
             return hnameToString(value.hname()) + '@' + addressToString(value.address());
         }
         case ScAgentIDEthereum:
-            return addressToString(value.address());
+            return addressToString(value.ethAddress()) + '@' + addressToString(value.address());
         case ScAgentIDNil:
             return nilAgentIDString;
         default: {

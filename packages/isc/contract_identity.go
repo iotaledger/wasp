@@ -90,7 +90,7 @@ func (c *ContractIdentity) Hname() (Hname, error) {
 }
 
 func (c *ContractIdentity) EVMAddress() (common.Address, error) {
-	if c.kind == contractIdentityKindHname {
+	if c.kind == contractIdentityKindEthereum {
 		return c.evmAddr, nil
 	}
 	return common.Address{}, fmt.Errorf("not an EVM contract")
