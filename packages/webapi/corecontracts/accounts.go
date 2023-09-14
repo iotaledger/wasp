@@ -20,7 +20,7 @@ func GetAccounts(ch chain.Chain, blockIndexOrTrieRoot string) ([]isc.AgentID, er
 
 	ret := make([]isc.AgentID, 0)
 	for accountID := range accountIDs {
-		agentID, err := codec.DecodeAgentID([]byte(accountID))
+		agentID, err := accounts.AgentIDFromKey(accountID, ch.ID())
 		if err != nil {
 			return nil, err
 		}
