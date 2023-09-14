@@ -186,7 +186,7 @@ func (req *OffLedgerRequestData) SenderAccount() AgentID {
 }
 
 // Sign signs the essence
-func (req *offLedgerRequestData) Sign(key cryptolib.VariantKeyPair) OffLedgerRequest {
+func (req *OffLedgerRequestData) Sign(key cryptolib.VariantKeyPair) OffLedgerRequest {
 	req.signature = offLedgerSignature{
 		publicKey: key.GetPublicKey(),
 		signature: key.SignBytes(req.messageToSign()),
