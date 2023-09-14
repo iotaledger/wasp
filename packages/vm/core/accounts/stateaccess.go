@@ -29,6 +29,7 @@ func (sa *StateAccess) AccountExists(agentID isc.AgentID, chainID isc.ChainID) b
 	return accountExists(sa.state, agentID, chainID)
 }
 
+// converts an account key from the accounts contract (shortform without chainID) to an AgentID
 func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 	if len(key) < isc.ChainIDLength {
 		// short form saved (withoutChainID)
