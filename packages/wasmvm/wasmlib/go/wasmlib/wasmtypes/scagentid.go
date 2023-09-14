@@ -20,6 +20,7 @@ type ScAgentID struct {
 	kind    byte
 	address ScAddress
 	hname   ScHname
+	eth     ScAddress
 }
 
 const nilAgentIDString = "-"
@@ -28,12 +29,22 @@ func NewScAgentID(address ScAddress, hname ScHname) ScAgentID {
 	return ScAgentID{kind: ScAgentIDContract, address: address, hname: hname}
 }
 
+func ScAgentIDForEthereum(chainAddress ScAddress, ethAddress ScAddress) ScAgentID {
+	if chainAddress.id[0] != ScAddressAlias {
+		panic("invalid eth AgentID: chain address")
+	}
+	if ethAddress.id[0] != ScAddressEth {
+		panic("invalid eth AgentID: eth address")
+	}
+	return ScAgentID{kind: ScAgentIDEthereum, address: chainAddress, eth: ethAddress}
+}
+
 func ScAgentIDFromAddress(address ScAddress) ScAgentID {
 	switch address.id[0] {
 	case ScAddressAlias:
 		return ScAgentID{kind: ScAgentIDContract, address: address, hname: 0}
 	case ScAddressEth:
-		return ScAgentID{kind: ScAgentIDEthereum, address: address, hname: 0}
+		panic("invalid eth AgentID: need chain address")
 	default:
 		return ScAgentID{kind: ScAgentIDAddress, address: address, hname: 0}
 	}
@@ -45,6 +56,10 @@ func (o ScAgentID) Address() ScAddress {
 
 func (o ScAgentID) Bytes() []byte {
 	return AgentIDToBytes(o)
+}
+
+func (o ScAgentID) EthAddress() ScAddress {
+	return o.eth
 }
 
 func (o ScAgentID) Hname() ScHname {
@@ -92,10 +107,11 @@ func AgentIDFromBytes(buf []byte) (a ScAgentID) {
 		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
 		a.hname = HnameFromBytes(buf[ScChainIDLength:])
 	case ScAgentIDEthereum:
-		if len(buf) != ScLengthEth {
+		if len(buf) != ScChainIDLength+ScLengthEth {
 			panic("invalid AgentID length: eth agentID")
 		}
-		a.address = AddressFromBytes(buf)
+		a.address = ChainIDFromBytes(buf[:ScChainIDLength]).Address()
+		a.eth = AddressFromBytes(buf[ScChainIDLength:])
 	case ScAgentIDNil:
 		break
 	default:
@@ -113,7 +129,8 @@ func AgentIDToBytes(value ScAgentID) []byte {
 		buf = append(buf, AddressToBytes(value.address)[1:]...)
 		return append(buf, HnameToBytes(value.hname)...)
 	case ScAgentIDEthereum:
-		return append(buf, AddressToBytes(value.address)...)
+		buf = append(buf, AddressToBytes(value.address)[1:]...)
+		return append(buf, AddressToBytes(value.eth)...)
 	case ScAgentIDNil:
 		return buf
 	default:
@@ -131,7 +148,10 @@ func AgentIDFromString(value string) ScAgentID {
 	case 1:
 		return ScAgentIDFromAddress(AddressFromString(parts[0]))
 	case 2:
-		return NewScAgentID(AddressFromString(parts[1]), HnameFromString(parts[0]))
+		if !strings.HasPrefix(value, "0x") {
+			return NewScAgentID(AddressFromString(parts[1]), HnameFromString(parts[0]))
+		}
+		return ScAgentIDForEthereum(AddressFromString(parts[1]), AddressFromString(parts[0]))
 	default:
 		panic("invalid AgentID string")
 	}
@@ -144,7 +164,7 @@ func AgentIDToString(value ScAgentID) string {
 	case ScAgentIDContract:
 		return HnameToString(value.Hname()) + "@" + AddressToString(value.Address())
 	case ScAgentIDEthereum:
-		return AddressToString(value.Address())
+		return AddressToString(value.EthAddress()) + "@" + AddressToString(value.Address())
 	case ScAgentIDNil:
 		// isc.NilAgentID.String() returns "-" which means NilAgentID is "-"
 		return nilAgentIDString

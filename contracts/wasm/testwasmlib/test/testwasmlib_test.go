@@ -311,7 +311,6 @@ func TestMultiRandom(t *testing.T) {
 }
 
 func TestWasmTypes(t *testing.T) {
-	t.Skip() // TODO fix
 	ctx := setupTest(t)
 
 	// check chain id
