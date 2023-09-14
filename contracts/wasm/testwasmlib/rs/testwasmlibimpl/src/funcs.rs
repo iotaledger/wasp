@@ -687,7 +687,7 @@ pub fn view_check_eth_address_and_agent_id(
         "agent_id encode/decode conversion failed",
     );
 
-    let agent_id_from_address = ScAgentID::from_address(&address);
+    let agent_id_from_address = ScAgentID::for_ethereum(&agent_id.address(), &address);
     ctx.require(
         agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)),
         "eth agentID bytes conversion failed",
@@ -697,14 +697,24 @@ pub fn view_check_eth_address_and_agent_id(
         "eth agentID string conversion failed",
     );
 
-    let address_from_agent_id = agent_id.address();
+    let address_from_agent_id = agent_id_from_address.address();
     ctx.require(
         address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)),
-        "eth raw agent_id bytes conversion failed",
+        "eth raw agentID bytes conversion failed",
     );
     ctx.require(
         address_from_agent_id == address_from_string(&address_to_string(&address_from_agent_id)),
-        "eth raw agent_id string conversion failed",
+        "eth raw agentID string conversion failed",
+    );
+
+    let eth_address_from_agent_id = agent_id_from_address.eth_address();
+    ctx.require(
+        eth_address_from_agent_id == address_from_bytes(&address_to_bytes(&eth_address_from_agent_id)),
+        "eth raw agentID bytes conversion failed",
+    );
+    ctx.require(
+        eth_address_from_agent_id == address_from_string(&address_to_string(&eth_address_from_agent_id)),
+        "eth raw agentID string conversion failed",
     );
 }
 
@@ -1321,26 +1331,36 @@ pub fn view_check_eth_empty_address_and_agent_id(
     let mut dec = wasmtypes::WasmDecoder::new(&buf);
     ctx.require(
         agent_id == agent_id_decode(&mut dec),
-        "eth agent_id encode/decode conversion failed",
+        "eth agentID encode/decode conversion failed",
     );
 
-    let agent_id_from_address = ScAgentID::from_address(&address);
+    let agent_id_from_address = ScAgentID::for_ethereum(&agent_id.address(), &address);
     ctx.require(
         agent_id_from_address == agent_id_from_bytes(&agent_id_to_bytes(&agent_id_from_address)),
         "eth agentID bytes conversion failed",
     );
     ctx.require(
-        agent_id_string == agent_id_to_string(&agent_id_from_address),
+        agent_id_from_address == agent_id_from_string(&agent_id_to_string(&agent_id_from_address)),
         "eth agentID string conversion failed",
     );
 
-    let address_from_agent_id = agent_id.address();
+    let address_from_agent_id = agent_id_from_address.address();
     ctx.require(
         address_from_agent_id == address_from_bytes(&address_to_bytes(&address_from_agent_id)),
         "eth raw agentID bytes conversion failed",
     );
     ctx.require(
-        address_string_long == address_to_string(&address_from_agent_id),
+        address_from_agent_id == address_from_string(&address_to_string(&address_from_agent_id)),
+        "eth raw agentID string conversion failed",
+    );
+
+    let eth_address_from_agent_id = agent_id_from_address.eth_address();
+    ctx.require(
+        eth_address_from_agent_id == address_from_bytes(&address_to_bytes(&eth_address_from_agent_id)),
+        "eth raw agentID bytes conversion failed",
+    );
+    ctx.require(
+        eth_address_from_agent_id == address_from_string(&address_to_string(&eth_address_from_agent_id)),
         "eth raw agentID string conversion failed",
     );
 }

@@ -16,6 +16,7 @@ pub struct ScAgentID {
     kind: u8,
     address: ScAddress,
     hname: ScHname,
+    eth: ScAddress,
 }
 
 impl ScAgentID {
@@ -24,6 +25,24 @@ impl ScAgentID {
             kind: SC_AGENT_ID_CONTRACT,
             address: address.clone(),
             hname: hname,
+            eth: ScAddress {
+                id: [0; SC_ADDRESS_LENGTH],
+            },
+        }
+    }
+
+    pub fn for_ethereum(chain: &ScAddress, eth_address: &ScAddress) -> ScAgentID {
+        if chain.id[0] != SC_ADDRESS_ALIAS {
+            panic("invalid eth AgentID: chain address");
+        }
+        if eth_address.id[0] != SC_ADDRESS_ETH {
+            panic("invalid eth AgentID: eth address");
+        }
+        ScAgentID {
+            kind: SC_AGENT_ID_ETHEREUM,
+            address: chain.clone(),
+            hname: ScHname(0),
+            eth: eth_address.clone(),
         }
     }
 
@@ -34,7 +53,8 @@ impl ScAgentID {
                 kind = SC_AGENT_ID_CONTRACT;
             }
             SC_ADDRESS_ETH => {
-                kind = SC_AGENT_ID_ETHEREUM;
+                panic("invalid eth AgentID: need chain address");
+                kind = 0;
             }
             _ => {
                 kind = SC_AGENT_ID_ADDRESS;
@@ -45,11 +65,18 @@ impl ScAgentID {
             kind: kind,
             address: address.clone(),
             hname: ScHname(0),
+            eth: ScAddress {
+                id: [0; SC_ADDRESS_LENGTH],
+            },
         }
     }
 
     pub fn address(&self) -> ScAddress {
         self.address.clone()
+    }
+
+    pub fn eth_address(&self) -> ScAddress {
+        self.eth.clone()
     }
 
     pub fn hname(&self) -> ScHname {
@@ -90,6 +117,9 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
             kind: SC_AGENT_ID_NIL,
             address: address_from_bytes(buf),
             hname: ScHname(0),
+            eth: ScAddress {
+                id: [0; SC_ADDRESS_LENGTH],
+            },
         };
     }
     let len = len - 1;
@@ -112,10 +142,12 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         }
         SC_AGENT_ID_ETHEREUM => {
             let buf: &[u8] = &buf[1..];
-            if len != SC_LENGTH_ETH {
+            if len != SC_CHAIN_ID_LENGTH + SC_LENGTH_ETH {
                 panic("invalid AgentID length: eth agentID");
             }
-            return ScAgentID::from_address(&address_from_bytes(&buf));
+            let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
+            let eth_address = address_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
+            return ScAgentID::for_ethereum(&chain_id.address(), &eth_address);
         }
         SC_AGENT_ID_NIL => {}
         _ => panic("AgentIDFromBytes: invalid AgentID type"),
@@ -124,6 +156,9 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
         kind: SC_AGENT_ID_NIL,
         address: address_from_bytes(&[]),
         hname: ScHname(0),
+        eth: ScAddress {
+            id: [0; SC_ADDRESS_LENGTH],
+        },
     }
 }
 
@@ -139,7 +174,8 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
             buf.extend_from_slice(&hname_to_bytes(value.hname));
         }
         SC_AGENT_ID_ETHEREUM => {
-            buf.extend_from_slice(&address_to_bytes(&value.address));
+            buf.extend_from_slice(&address_to_bytes(&value.address)[1..]);
+            buf.extend_from_slice(&address_to_bytes(&value.eth));
         }
         SC_AGENT_ID_NIL => (),
         _ => panic("AgentIDToBytes: invalid AgentID type"),
@@ -155,10 +191,18 @@ pub fn agent_id_from_string(value: &str) -> ScAgentID {
     let parts: Vec<&str> = value.split("@").collect();
     return match parts.len() {
         1 => ScAgentID::from_address(&address_from_string(&parts[0])),
-        2 => ScAgentID::new(
-            &address_from_string(&parts[1]),
-            hname_from_string(&parts[0]),
-        ),
+        2 => {
+            if !value.starts_with("0x") {
+                return ScAgentID::new(
+                    &address_from_string(&parts[1]),
+                    hname_from_string(&parts[0]),
+                );
+            }
+            return ScAgentID::for_ethereum(
+                &address_from_string(&parts[1]),
+                &address_from_string(&parts[0]),
+            );
+        },
         _ => {
             panic("invalid AgentID string");
             agent_id_from_bytes(&[])
@@ -175,7 +219,7 @@ pub fn agent_id_to_string(value: &ScAgentID) -> String {
             return value.hname().to_string() + "@" + &value.address().to_string();
         }
         SC_AGENT_ID_ETHEREUM => {
-            return value.address().to_string();
+            return value.eth_address().to_string() + "@" + &value.address().to_string();
         }
         SC_AGENT_ID_NIL => {
             return NIL_AGENT_ID_STRING.to_string();

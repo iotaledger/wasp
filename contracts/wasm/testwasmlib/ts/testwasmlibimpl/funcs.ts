@@ -491,13 +491,17 @@ export function viewCheckEthAddressAndAgentID(ctx: wasmlib.ScViewContext, f: sc.
     dec = new wasmtypes.WasmDecoder(enc.buf());
     ctx.require(agentID.equals(wasmtypes.agentIDDecode(dec)), 'eth agentID encode/decode failed');
 
-    const agentIDFromAddress = wasmtypes.ScAgentID.fromAddress(address);
+    const agentIDFromAddress = wasmtypes.ScAgentID.forEthereum(agentID.address(), address);
     ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), 'eth agentID bytes conversion failed');
     ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(agentIDFromAddress))), 'eth agentID string conversion failed');
 
-    const addressFromAgentID = agentID.address();
+    const addressFromAgentID = agentIDFromAddress.address();
     ctx.require(addressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(addressFromAgentID))), 'eth raw agentID bytes conversion failed');
     ctx.require(addressFromAgentID.equals(wasmtypes.addressFromString(wasmtypes.addressToString(addressFromAgentID))), 'eth raw agentID string conversion failed');
+
+    const ethAddressFromAgentID = agentIDFromAddress.ethAddress();
+    ctx.require(ethAddressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(ethAddressFromAgentID))), 'eth raw agentID bytes conversion failed');
+    ctx.require(ethAddressFromAgentID.equals(wasmtypes.addressFromString(wasmtypes.addressToString(ethAddressFromAgentID))), 'eth raw agentID string conversion failed');
 }
 
 export function viewCheckHash(ctx: wasmlib.ScViewContext, f: sc.CheckHashContext): void {
@@ -768,13 +772,17 @@ export function viewCheckEthEmptyAddressAndAgentID(ctx: wasmlib.ScViewContext, f
     dec = new wasmtypes.WasmDecoder(enc.buf());
     ctx.require(agentID.equals(wasmtypes.agentIDDecode(dec)), 'eth agentID encode/decode failed');
 
-    let agentIDFromAddress = wasmtypes.ScAgentID.fromAddress(address);
-    ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), "eth agentID bytes conversion failed");
-    ctx.require(agentIDString == wasmtypes.agentIDToString(agentIDFromAddress), "eth agentID string conversion failed");
+    const agentIDFromAddress = wasmtypes.ScAgentID.forEthereum(agentID.address(), address);
+    ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromBytes(wasmtypes.agentIDToBytes(agentIDFromAddress))), 'eth agentID bytes conversion failed');
+    ctx.require(agentIDFromAddress.equals(wasmtypes.agentIDFromString(wasmtypes.agentIDToString(agentIDFromAddress))), 'eth agentID string conversion failed');
 
-    let addressFromAgentID = agentID.address();
-    ctx.require(addressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(addressFromAgentID))), "eth raw agentID bytes conversion failed");
-    ctx.require(addressStringLong == wasmtypes.addressToString(addressFromAgentID), "eth raw agentID string conversion failed");
+    const addressFromAgentID = agentIDFromAddress.address();
+    ctx.require(addressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(addressFromAgentID))), 'eth raw agentID bytes conversion failed');
+    ctx.require(addressFromAgentID.equals(wasmtypes.addressFromString(wasmtypes.addressToString(addressFromAgentID))), 'eth raw agentID string conversion failed');
+
+    const ethAddressFromAgentID = agentIDFromAddress.ethAddress();
+    ctx.require(ethAddressFromAgentID.equals(wasmtypes.addressFromBytes(wasmtypes.addressToBytes(ethAddressFromAgentID))), 'eth raw agentID bytes conversion failed');
+    ctx.require(ethAddressFromAgentID.equals(wasmtypes.addressFromString(wasmtypes.addressToString(ethAddressFromAgentID))), 'eth raw agentID string conversion failed');
 }
 
 export function viewCheckEthInvalidEmptyAddressFromString(ctx: wasmlib.ScViewContext, f: sc.CheckEthInvalidEmptyAddressFromStringContext): void {
