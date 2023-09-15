@@ -90,6 +90,7 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *solo
 		AutoAdjustStorageDeposit: true,
 		Debug:                    true,
 		PrintStackTrace:          true,
+		GasBurnLogEnabled:        false,
 	})
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)

@@ -65,6 +65,7 @@ type Solo struct {
 	chains                          map[isc.ChainID]*Chain
 	processorConfig                 *processors.Config
 	disableAutoAdjustStorageDeposit bool
+	enableGasBurnLogging            bool
 	seed                            cryptolib.Seed
 	publisher                       *publisher.Publisher
 	ctx                             context.Context
@@ -129,6 +130,7 @@ type InitOptions struct {
 	AutoAdjustStorageDeposit bool
 	Debug                    bool
 	PrintStackTrace          bool
+	GasBurnLogEnabled        bool
 	Seed                     cryptolib.Seed
 	Log                      *logger.Logger
 }
@@ -139,6 +141,7 @@ func DefaultInitOptions() *InitOptions {
 		PrintStackTrace:          false,
 		Seed:                     cryptolib.Seed{},
 		AutoAdjustStorageDeposit: false, // is OFF by default
+		GasBurnLogEnabled:        true,  // is ON by default
 	}
 }
 
@@ -176,6 +179,7 @@ func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 		chains:                          make(map[isc.ChainID]*Chain),
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
+		enableGasBurnLogging:            opt.GasBurnLogEnabled,
 		seed:                            opt.Seed,
 		publisher:                       publisher.New(opt.Log.Named("publisher")),
 		ctx:                             ctx,
