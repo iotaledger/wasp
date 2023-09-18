@@ -61,11 +61,17 @@ func TestGetJWTAuthMiddleware(t *testing.T) {
 
 	t.Run("skip", func(t *testing.T) {
 		e := echo.New()
+		testRootURL := "http://fake-root"
 		skipPaths := []string{
 			"/",
 			shared.AuthRoute(),
 			shared.AuthInfoRoute(),
 			"/doc",
+		}
+		notSkipPaths := []string{
+			"/aa/",
+			"/user/" + shared.AuthRoute(),
+			"/bb/doc",
 		}
 		for _, path := range skipPaths {
 			e.GET(path, func(c echo.Context) error {
@@ -83,13 +89,23 @@ func TestGetJWTAuthMiddleware(t *testing.T) {
 		e.Use(middleware)
 
 		for _, path := range skipPaths {
-			req := httptest.NewRequest(http.MethodGet, path, http.NoBody)
+			req := httptest.NewRequest(http.MethodGet, testRootURL+path, http.NoBody)
 			res := httptest.NewRecorder()
 
 			e.ServeHTTP(res, req)
 
 			require.Equal(t, http.StatusOK, res.Code)
 			require.Equal(t, "\"\"\n", res.Body.String())
+		}
+
+		for _, path := range notSkipPaths {
+			req := httptest.NewRequest(http.MethodGet, testRootURL+path, http.NoBody)
+			req.Header.Set(echo.HeaderAuthorization, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIweGNjYTUzMmNmN2RjNWNhNGExNmJiZjE5OTM5ZThiODlkMDMzN2FhNTk5ZDVjOGQxZGY4MDdlNDM4ZjA3MjExOTEiLCJzdWIiOiJ3YXNwIiwiYXVkIjpbIndhc3AiXSwiZXhwIjo2ODI0NjUwMzMyLCJuYmYiOjE2OTI1OTEyODksImlhdCI6MTY5MjU5MTI4OSwianRpIjoiMTY5MjU5MTI4OSIsInBlcm1pc3Npb25zIjp7IndyaXRlIjp7fX19.nFXeqX4i6K7Jmt3nEdaqJXYp2sp35an4EXdz-U5mWtQ")
+			res := httptest.NewRecorder()
+
+			e.ServeHTTP(res, req)
+
+			require.Equal(t, http.StatusUnauthorized, res.Code)
 		}
 	})
 }
