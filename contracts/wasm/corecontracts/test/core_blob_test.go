@@ -14,7 +14,7 @@ import (
 )
 
 // this is the expected blob hash for key0/val0 key1/val1
-const expectedBlobHash = "0x5fec3bfc701d80bdf75e337cb3dcb401c2423d15fc17a74d5b644dae143118b1"
+const expectedBlobHash = "0x54cb8e9c45ca6d368dba92da34cfa47ce617f04807af19f67de333fad0039e6b"
 
 func setupBlob(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
@@ -78,15 +78,14 @@ func TestListBlobs(t *testing.T) {
 
 	fStore := coreblob.ScFuncs.StoreBlob(ctx)
 	fStore.Params.Blobs().GetBytes("key0").SetValue([]byte("val0"))
-	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("_val1"))
+	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
 	fStore.Func.Post()
 	require.NoError(t, ctx.Err)
-	expectedHash := "0x462af4abe5977f4dd985a0a097705925b9fa6c033c9d931c1e2171f710693462"
-	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
+	require.Equal(t, expectedBlobHash, fStore.Results.Hash().Value().String())
 
 	fList := coreblob.ScFuncs.ListBlobs(ctx)
 	fList.Func.Call()
-	size := fList.Results.BlobSizes().GetInt32(wasmtypes.HashFromString(expectedHash)).Value()
-	// The sum of the size of the value of `key0` and `key1` is len("val0")+len("_val1") = 9
-	require.Equal(t, int32(9), size)
+	size := fList.Results.BlobSizes().GetInt32(wasmtypes.HashFromString(expectedBlobHash)).Value()
+	// The sum of the size of the value of `key0` and `key1` is len("val0")+len("val1") = 8
+	require.Equal(t, int32(8), size)
 }
