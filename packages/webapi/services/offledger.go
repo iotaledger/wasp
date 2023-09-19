@@ -26,6 +26,10 @@ func NewOffLedgerService(chainService interfaces.ChainService, networkProvider p
 }
 
 func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequest, error) {
+	// check offledger kind (avoid deserialization otherwise)
+	if !isc.IsOffledgerKind(binaryRequest[0]) {
+		return nil, errors.New("error parsing request: off-ledger request expected")
+	}
 	request, err := isc.RequestFromBytes(binaryRequest)
 	if err != nil {
 		return nil, errors.New("error parsing request from payload")

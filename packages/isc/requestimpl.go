@@ -22,6 +22,14 @@ const (
 	requestKindOffLedgerEVMCall
 )
 
+func IsOffledgerKind(b byte) bool {
+	switch RequestKind(b) {
+	case requestKindOffLedgerISC, requestKindOffLedgerEVMTx:
+		return true
+	}
+	return false
+}
+
 func RequestFromBytes(data []byte) (Request, error) {
 	rr := rwutil.NewBytesReader(data)
 	return RequestFromReader(rr), rr.Err
