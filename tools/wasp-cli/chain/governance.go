@@ -81,7 +81,7 @@ func initDisableFeePolicyCmd() *cobra.Command {
 	var chain string
 
 	cmd := &cobra.Command{
-		Use:   "disable-gas-policy",
+		Use:   "disable-feepolicy",
 		Short: "set token charged by each gas to free.",
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
