@@ -18,11 +18,11 @@ import (
 // Here we store just an aggregated info.
 type AggregatedBatchProposals struct {
 	shouldBeSkipped        bool
+	batchProposalSet       batchProposalSet
 	decidedIndexProposals  map[gpa.NodeID][]int
 	decidedBaseAliasOutput *isc.AliasOutputWithID
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
-	validatorFeeTarget     isc.AgentID
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
@@ -51,11 +51,11 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	aggregatedTime := bps.aggregatedTime(f)
 	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
 	abp := &AggregatedBatchProposals{
+		batchProposalSet:       bps,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
-		validatorFeeTarget:     bps.selectedFeeDestination(aggregatedTime),
 	}
 	if abp.decidedBaseAliasOutput == nil || len(abp.decidedRequestRefs) == 0 || abp.aggregatedTime.IsZero() {
 		log.Debugf(
@@ -92,11 +92,11 @@ func (abp *AggregatedBatchProposals) AggregatedTime() time.Time {
 	return abp.aggregatedTime
 }
 
-func (abp *AggregatedBatchProposals) ValidatorFeeTarget() isc.AgentID {
+func (abp *AggregatedBatchProposals) ValidatorFeeTarget(randomness hashing.HashValue) isc.AgentID {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.validatorFeeTarget
+	return abp.batchProposalSet.selectedFeeDestination(abp.aggregatedTime, randomness)
 }
 
 func (abp *AggregatedBatchProposals) DecidedRequestRefs() []*isc.RequestRef {

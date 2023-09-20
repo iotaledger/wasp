@@ -5,6 +5,7 @@ package bp
 
 import (
 	"bytes"
+	"encoding/binary"
 	"sort"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -113,7 +113,7 @@ func (bps batchProposalSet) aggregatedTime(f int) time.Time {
 	return ts[proposalCount-f-1] // Max(|acsProposals|-F Lowest) ~= 66 percentile.
 }
 
-func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeID {
+func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomness hashing.HashValue) gpa.NodeID {
 	peers := make([]gpa.NodeID, 0, len(bps))
 	for nid := range bps {
 		peers = append(peers, nid)
@@ -121,11 +121,18 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time) gpa.NodeI
 	slices.SortFunc(peers, func(a gpa.NodeID, b gpa.NodeID) int {
 		return bytes.Compare(a[:], b[:])
 	})
-	rnd := util.NewPseudoRand(aggregatedTime.UnixNano())
-	return peers[rnd.Intn(len(bps))]
+	uint64Bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(uint64Bytes, uint64(aggregatedTime.UnixNano()))
+	hashed := hashing.HashDataBlake2b(
+		uint64Bytes,
+		randomness[:],
+	)
+	randomUint := binary.BigEndian.Uint64(hashed[:])
+	randomPos := int(randomUint % uint64(len(bps)))
+	return peers[randomPos]
 }
 
-func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time) isc.AgentID {
-	bp := bps[bps.selectedProposal(aggregatedTime)]
+func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time, randomness hashing.HashValue) isc.AgentID {
+	bp := bps[bps.selectedProposal(aggregatedTime, randomness)]
 	return bp.validatorFeeDestination
 }
