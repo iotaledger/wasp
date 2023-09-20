@@ -2,6 +2,7 @@ package logger
 
 import (
 	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 )
 
 func init() {
@@ -14,7 +15,6 @@ func init() {
 var Component *app.Component
 
 func configure() error {
-	initGoEthLogger(Component.App().NewLogger("go-ethereum"))
-
+	evmlogger.Init(Component.App().NewLogger("go-ethereum"))
 	return nil
 }

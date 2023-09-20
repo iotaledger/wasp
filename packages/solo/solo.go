@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -159,6 +160,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
 		}
 	}
+	evmlogger.Init(opt.Log)
 
 	chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl("")
 	require.NoError(t, err)

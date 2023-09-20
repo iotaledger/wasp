@@ -38,8 +38,6 @@ type soloTestEnv struct {
 }
 
 func newSoloTestEnv(t testing.TB) *soloTestEnv {
-	evmtest.InitGoEthLogger(t)
-
 	var log *logger.Logger
 	if _, ok := t.(*testing.B); ok {
 		log = testlogger.NewSilentLogger(t.Name(), true)
