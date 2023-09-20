@@ -2,6 +2,7 @@ package solo
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 type jsonRPCSoloBackend struct {
 	Chain     *Chain
 	baseToken *parameters.BaseToken
+	snapshots []*Snapshot
 }
 
 func newJSONRPCSoloBackend(chain *Chain, baseToken *parameters.BaseToken) jsonrpc.ChainBackend {
@@ -97,6 +99,20 @@ func (b *jsonRPCSoloBackend) BaseToken() *parameters.BaseToken {
 
 func (b *jsonRPCSoloBackend) ISCChainID() *isc.ChainID {
 	return &b.Chain.ChainID
+}
+
+func (b *jsonRPCSoloBackend) RevertToSnapshot(i int) error {
+	if i < 0 || i >= len(b.snapshots) {
+		return errors.New("invalid snapshot index")
+	}
+	b.Chain.Env.RestoreSnapshot(b.snapshots[i])
+	b.snapshots = b.snapshots[:i]
+	return nil
+}
+
+func (b *jsonRPCSoloBackend) TakeSnapshot() (int, error) {
+	b.snapshots = append(b.snapshots, b.Chain.Env.TakeSnapshot())
+	return len(b.snapshots) - 1, nil
 }
 
 func (ch *Chain) EVM() *jsonrpc.EVMChain {

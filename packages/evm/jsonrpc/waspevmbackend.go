@@ -4,6 +4,7 @@
 package jsonrpc
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -140,4 +141,14 @@ func (b *WaspEVMBackend) ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, er
 func (b *WaspEVMBackend) ISCChainID() *isc.ChainID {
 	chID := b.chain.ID()
 	return &chID
+}
+
+var errNotImplemented = errors.New("method not implemented")
+
+func (*WaspEVMBackend) RevertToSnapshot(int) error {
+	return errNotImplemented
+}
+
+func (*WaspEVMBackend) TakeSnapshot() (int, error) {
+	return 0, errNotImplemented
 }

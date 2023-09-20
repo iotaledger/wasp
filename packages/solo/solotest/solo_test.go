@@ -47,7 +47,7 @@ func TestSaveSnapshot(t *testing.T) {
 
 	require.NotEmpty(t, ch.L2NFTs(ch.OriginatorAgentID))
 
-	ch.Env.SaveSnapshot("snapshot.db")
+	ch.Env.SaveSnapshot(ch.Env.TakeSnapshot(), "snapshot.db")
 }
 
 // This test is an example of how to restore a Solo snapshot.
@@ -57,7 +57,7 @@ func TestLoadSnapshot(t *testing.T) {
 	t.SkipNow()
 
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
-	env.LoadSnapshot("snapshot.db")
+	env.RestoreSnapshot(env.LoadSnapshot("snapshot.db"))
 
 	ch := env.GetChainByName("chain1")
 

@@ -25,6 +25,7 @@ func NewServer(
 		{"eth", NewEthService(evmChain, accountManager, metrics)},
 		{"debug", NewDebugService(evmChain, metrics)},
 		{"txpool", NewTxPoolService()},
+		{"evm", NewEVMService(evmChain)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
 		if err != nil {
