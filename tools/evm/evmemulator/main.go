@@ -72,12 +72,13 @@ func main() {
 
 evmemulator does the following:
 
-- Starts a Solo environment (a framework for running local ISC chains in-memory)
-- Deploys an ISC chain
+- Starts an ISC chain in a Solo environment
 - Initializes 10 ethereum accounts with funds (private keys and addresses printed after init)
-- Starts a JSON-RPC server
+- Starts a JSONRPC server
 
-You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use it for testing Ethereum contracts running on ISCP.
+You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use it for testing Ethereum contracts.
+
+Note: chain data is stored in-memory and will be lost upon termination.
 `,
 		),
 	}
