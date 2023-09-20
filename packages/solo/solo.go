@@ -56,7 +56,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                               testing.TB
+	T                               Context
 	logger                          *logger.Logger
 	chainStateDatabaseManager       *database.ChainStateDatabaseManager
 	utxoDB                          *utxodb.UtxoDB
