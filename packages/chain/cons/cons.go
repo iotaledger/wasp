@@ -559,7 +559,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		TimeAssumption:       aggregatedProposals.AggregatedTime(),
 		Entropy:              *randomness,
-		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(),
+		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(*randomness),
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
 		Log:                  c.log.Named("VM"),
