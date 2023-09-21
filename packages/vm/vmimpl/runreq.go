@@ -327,6 +327,10 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 		gasBudget = reqctx.vm.chainInfo.GasLimits.MinGasPerRequest
 	}
 
+	if reqctx.vm.task.EstimateGasMode {
+		return gasBudget, math.MaxUint64
+	}
+
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
 	guaranteedFeeTokens := reqctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget

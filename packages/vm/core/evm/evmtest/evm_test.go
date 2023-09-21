@@ -311,6 +311,23 @@ func TestLoopWithGasLeft(t *testing.T) {
 	require.Greater(t, usedGas[1], usedGas[0])
 }
 
+func TestEstimateGasWithoutFunds(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	callData, err := iscTest.abi.Pack("loopWithGasLeft")
+	require.NoError(t, err)
+	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
+		From: common.Address{},
+		To:   &iscTest.address,
+		Data: callData,
+	}, nil)
+	require.NoError(t, err)
+	require.NotZero(t, estimatedGas)
+	t.Log(estimatedGas)
+}
+
 func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 	env := initEVM(t)
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
