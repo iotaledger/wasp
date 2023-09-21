@@ -684,3 +684,22 @@ func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.Trac
 		},
 	)
 }
+
+type EVMService struct {
+	evmChain *EVMChain
+}
+
+func NewEVMService(evmChain *EVMChain) *EVMService {
+	return &EVMService{
+		evmChain: evmChain,
+	}
+}
+
+func (e *EVMService) Snapshot() (hexutil.Uint, error) {
+	n, err := e.evmChain.backend.TakeSnapshot()
+	return hexutil.Uint(n), err
+}
+
+func (e *EVMService) Revert(snapshot hexutil.Uint) error {
+	return e.evmChain.backend.RevertToSnapshot(int(snapshot))
+}

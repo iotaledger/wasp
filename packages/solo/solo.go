@@ -9,9 +9,9 @@ import (
 	"math/big"
 	"math/rand"
 	"sync"
-	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -56,7 +57,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                               testing.TB
+	T                               Context
 	logger                          *logger.Logger
 	chainStateDatabaseManager       *database.ChainStateDatabaseManager
 	utxoDB                          *utxodb.UtxoDB
@@ -148,7 +149,7 @@ func DefaultInitOptions() *InitOptions {
 // New creates an instance of the Solo environment
 // If solo is used for unit testing, 't' should be the *testing.T instance;
 // otherwise it can be either nil or an instance created with NewTestContext.
-func New(t testing.TB, initOptions ...*InitOptions) *Solo {
+func New(t Context, initOptions ...*InitOptions) *Solo {
 	opt := DefaultInitOptions()
 	if len(initOptions) > 0 {
 		opt = initOptions[0]
@@ -159,6 +160,7 @@ func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
 		}
 	}
+	evmlogger.Init(opt.Log)
 
 	chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl("")
 	require.NoError(t, err)
@@ -197,11 +199,25 @@ func New(t testing.TB, initOptions ...*InitOptions) *Solo {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
 
-	go func() {
-		ret.publisher.Run(ctx)
-	}()
+	go ret.publisher.Run(ctx)
+
+	go ret.batchLoop()
 
 	return ret
+}
+
+func (env *Solo) batchLoop() {
+	for {
+		time.Sleep(50 * time.Millisecond)
+		chains := func() []*Chain {
+			env.chainsMutex.Lock()
+			defer env.chainsMutex.Unlock()
+			return lo.Values(env.chains)
+		}()
+		for _, ch := range chains {
+			ch.collateAndRunBatch()
+		}
+	}
 }
 
 func (env *Solo) GetDBHash() hashing.HashValue {
@@ -371,7 +387,6 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		migrationScheme:        allmigrations.DefaultScheme,
 	}
 	env.chains[chData.ChainID] = ch
-	go ch.batchLoop()
 	return ch
 }
 
@@ -445,14 +460,6 @@ func (ch *Chain) collateBatch() []isc.Request {
 	}
 
 	return requests[:batchSize]
-}
-
-// batchLoop mimics behavior Wasp consensus
-func (ch *Chain) batchLoop() {
-	for {
-		ch.collateAndRunBatch()
-		time.Sleep(50 * time.Millisecond)
-	}
 }
 
 func (ch *Chain) collateAndRunBatch() {

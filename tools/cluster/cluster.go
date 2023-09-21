@@ -32,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -69,6 +70,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		}
 		log = testlogger.NewLogger(t)
 	}
+	evmlogger.Init(log)
 
 	config.setValidatorAddressIfNotSet() // privtangle prefix
 

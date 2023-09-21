@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -36,8 +35,6 @@ type clusterTestEnv struct {
 }
 
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
-	evmtest.InitGoEthLogger(t)
-
 	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", env.Chain.ChainID.String())
 	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)

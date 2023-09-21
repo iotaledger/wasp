@@ -14,7 +14,7 @@ type ChainWebAPIMetricsProvider struct {
 	evmRPCCalls *prometheus.HistogramVec
 }
 
-func newChainWebAPIMetricsProvider() *ChainWebAPIMetricsProvider {
+func NewChainWebAPIMetricsProvider() *ChainWebAPIMetricsProvider {
 	return &ChainWebAPIMetricsProvider{
 		requests: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "iota_wasp",
@@ -40,7 +40,7 @@ func (p *ChainWebAPIMetricsProvider) register(reg prometheus.Registerer) {
 	)
 }
 
-func (p *ChainWebAPIMetricsProvider) createForChain(chainID isc.ChainID) *ChainWebAPIMetrics {
+func (p *ChainWebAPIMetricsProvider) CreateForChain(chainID isc.ChainID) *ChainWebAPIMetrics {
 	return newChainWebAPIMetrics(p, chainID)
 }
 
