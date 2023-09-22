@@ -193,7 +193,7 @@ func (smiT *snapshotManagerImpl) loadSnapshot() SnapshotInfo {
 	for i := range snapshotPaths {
 		err := smiT.loadSnapshotFromPath(snapshotInfos[i], snapshotPaths[i])
 		if err == nil {
-			smiT.log.Debugf("Snapshot %s successfully loaded from %s", snapshotInfos[i], snapshotPaths[i])
+			smiT.log.Infof("Snapshot %s successfully loaded from %s", snapshotInfos[i], snapshotPaths[i])
 			return snapshotInfos[i]
 		}
 		smiT.log.Errorf("Failed to load snapshot %s from %s: %v", snapshotInfos[i], snapshotPaths[i], err)
@@ -272,7 +272,7 @@ func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []strin
 				smiT.log.Errorf("Search network snapshots: unable to parse url %s: %v", baseNetworkPathWithChainID, err)
 				return
 			}
-			reader, err := smiT.getReadCloser(scheme, basePath, constIndexFileName)
+			reader, err := smiT.getReadCloser(scheme, "index file", basePath, constIndexFileName)
 			if err != nil {
 				smiT.log.Errorf("Search network snapshots: failed to open index file: %v", err)
 				return
@@ -283,7 +283,7 @@ func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []strin
 			for scanner.Scan() {
 				func() {
 					snapshotFileName := scanner.Text()
-					sReader, er := smiT.getReadCloser(scheme, basePath, snapshotFileName)
+					sReader, er := smiT.getReadCloser(scheme, "snapshot header", basePath, snapshotFileName)
 					if er != nil {
 						smiT.log.Errorf("Search network snapshots: failed to open snapshot file: %v", er)
 						return
@@ -331,10 +331,14 @@ func (smiT *snapshotManagerImpl) loadSnapshotFromPath(snapshotInfo SnapshotInfo,
 	loadNetworkFun := func(url string) error {
 		fileNameLocal := downloadedSnapshotFileName(snapshotInfo.StateIndex(), snapshotInfo.BlockHash())
 		filePathLocal := filepath.Join(smiT.localPath, fileNameLocal)
-		err := DownloadToFile(smiT.ctx, url, filePathLocal, constDownloadTimeout, smiT.addProgressReporter)
+		addProgressReporterFun := func(r io.Reader, f string, s uint64) io.Reader {
+			return smiT.addProgressReporter(r, fmt.Sprintf("snapshot %s", snapshotInfo), f, s)
+		}
+		err := DownloadToFile(smiT.ctx, url, filePathLocal, constDownloadTimeout, addProgressReporterFun)
 		if err != nil {
 			return err
 		}
+		smiT.log.Debugf("Loading snapshot %s from url %s: snapshot successfully downloaded to %s", snapshotInfo, url, filePathLocal)
 		return loadLocalFun(filePathLocal)
 	}
 
@@ -369,7 +373,7 @@ func (smiT *snapshotManagerImpl) splitURL(uString string) (scheme string, path s
 	}
 }
 
-func (smiT *snapshotManagerImpl) getReadCloser(scheme string, basePath string, file string) (io.ReadCloser, error) {
+func (smiT *snapshotManagerImpl) getReadCloser(scheme string, fileType string, basePath string, file string) (io.ReadCloser, error) {
 	switch scheme {
 	case constSchemeHTTP:
 		fullPath, err := url.JoinPath(basePath, file)
@@ -380,7 +384,7 @@ func (smiT *snapshotManagerImpl) getReadCloser(scheme string, basePath string, f
 		if err != nil {
 			return nil, fmt.Errorf("failed to start downloading file from url %s: %v", fullPath, err)
 		}
-		r := smiT.addProgressReporter(downloader, fullPath, downloader.GetLength())
+		r := smiT.addProgressReporter(downloader, fileType, fullPath, downloader.GetLength())
 		return NewReaderWithClose(r, downloader.Close), nil
 	case constSchemeFile:
 		fullPath := filepath.Join(basePath, file)
@@ -394,8 +398,8 @@ func (smiT *snapshotManagerImpl) getReadCloser(scheme string, basePath string, f
 	}
 }
 
-func (smiT *snapshotManagerImpl) addProgressReporter(r io.Reader, url string, length uint64) io.Reader {
-	progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("downloading file %s", url), length)
+func (smiT *snapshotManagerImpl) addProgressReporter(r io.Reader, fileType string, url string, length uint64) io.Reader {
+	progressReporter := NewProgressReporter(smiT.log, fmt.Sprintf("Downloading %s from url %s", fileType, url), length)
 	return io.TeeReader(r, progressReporter)
 }
 

@@ -35,6 +35,7 @@ func NewProgressReporter(log *logger.Logger, header string, expected uint64) io.
 }
 
 func (pr *progressReporter) Write(p []byte) (int, error) {
+	pr.total += uint64(len(p))
 	now := time.Now()
 	timeDiff := now.Sub(pr.lastReport)
 	if timeDiff >= logStatusPeriodConst {
