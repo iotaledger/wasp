@@ -39,7 +39,6 @@ struct NativeTokenScheme {
     uint256 maximumSupply;
 }
 
-
 // An IOTA NFT ID
 type NFTID is bytes32;
 
@@ -101,7 +100,7 @@ struct ISCDict {
 }
 
 // Parameters for building an on-ledger request
-struct ISCSendMetadata  {
+struct ISCSendMetadata {
     ISCHname targetContract;
     ISCHname entrypoint;
     ISCDict params;
@@ -137,17 +136,30 @@ struct ISCTokenProperties {
 }
 
 library ISCTypes {
-    function L1AddressType(L1Address memory addr) internal pure returns (uint8) {
+    function L1AddressType(
+        L1Address memory addr
+    ) internal pure returns (uint8) {
         return uint8(addr.data[0]);
     }
 
-    function newEthereumAgentID(address addr) internal pure returns (ISCAgentID memory) {
+    function newEthereumAgentID(
+        address addr,
+        ISCChainID iscChainID
+    ) internal pure returns (ISCAgentID memory) {
+        bytes memory chainIDBytes = abi.encodePacked(iscChainID);
         bytes memory addrBytes = abi.encodePacked(addr);
         ISCAgentID memory r;
-        r.data = new bytes(1+addrBytes.length);
+        r.data = new bytes(1 + addrBytes.length + chainIDBytes.length);
         r.data[0] = bytes1(ISCAgentIDKindEthereumAddress);
+
+        //write chainID
+        for (uint i = 0; i < chainIDBytes.length; i++) {
+            r.data[i + 1] = chainIDBytes[i];
+        }
+
+        //write eth addr
         for (uint i = 0; i < addrBytes.length; i++) {
-            r.data[i+1] = addrBytes[i];
+            r.data[i + 1 + chainIDBytes.length] = addrBytes[i];
         }
         return r;
     }
@@ -158,22 +170,35 @@ library ISCTypes {
 
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
         bytes memory b = new bytes(20);
-        for (uint i = 0; i < 20; i++) b[i] = a.data[i+1];
+        //offset of 33 (kind byte + chainID)
+        for (uint i = 0; i < 20; i++) b[i] = a.data[i + 33];
         return address(uint160(bytes20(b)));
+    }
+
+    function chainID(ISCAgentID memory a) internal pure returns (ISCChainID) {
+        bytes32 out;
+        for (uint i = 0; i < 32; i++) {
+            //offset of 1 (kind byte)
+            out |= bytes32(a.data[1 + i] & 0xFF) >> (i * 8);
+        }
+        return ISCChainID.wrap(out);
     }
 
     function asNFTID(uint256 tokenID) internal pure returns (NFTID) {
         return NFTID.wrap(bytes32(tokenID));
     }
 
-    function isInCollection(ISCNFT memory nft, NFTID collectionId) internal pure returns (bool) {
+    function isInCollection(
+        ISCNFT memory nft,
+        NFTID collectionId
+    ) internal pure returns (bool) {
         if (L1AddressType(nft.issuer) != L1AddressTypeNFT) {
             return false;
         }
         assert(nft.issuer.data.length == 33);
         bytes memory collectionIdBytes = abi.encodePacked(collectionId);
         for (uint i = 0; i < 32; i++) {
-            if (collectionIdBytes[i] != nft.issuer.data[i+1]) {
+            if (collectionIdBytes[i] != nft.issuer.data[i + 1]) {
                 return false;
             }
         }

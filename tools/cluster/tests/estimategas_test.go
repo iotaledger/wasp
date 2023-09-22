@@ -23,7 +23,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	// estimate on-ledger request, then send the same request, assert the gas used/fees match
 	output := transaction.BasicOutputFromPostData(
 		tpkg.RandEd25519Address(),
-		0,
+		isc.EmptyContractIdentity(),
 		isc.RequestParameters{
 			TargetAddress: env.Chain.ChainAddress(),
 			Assets:        isc.NewAssetsBaseTokens(1 * isc.Million),

@@ -19,14 +19,20 @@ import (
 func viewBalance(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewBalance")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	return getAccountBalanceDict(ctx.StateR(), accountKey(aid))
+	return getAccountBalanceDict(ctx.StateR(), accountKey(aid, ctx.ChainID()))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
 // Params:
 // - ParamAgentID (optional -- default: caller)
 func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
-	nTokens := getBaseTokens(ctx.StateR(), accountKey(ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())))
+	nTokens := getBaseTokens(
+		ctx.StateR(),
+		accountKey(
+			ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller()),
+			ctx.ChainID(),
+		),
+	)
 	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
 }
 
@@ -40,7 +46,7 @@ func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 	nativeTokenID := params.MustGetNativeTokenID(ParamNativeTokenID)
 	bal := getNativeTokenAmount(
 		ctx.StateR(),
-		accountKey(params.MustGetAgentID(ParamAgentID, ctx.Caller())),
+		accountKey(params.MustGetAgentID(ParamAgentID, ctx.Caller()), ctx.ChainID()),
 		nativeTokenID,
 	)
 	return dict.Dict{ParamBalance: bal.Bytes()}
@@ -60,7 +66,7 @@ func viewAccounts(ctx isc.SandboxView) dict.Dict {
 // nonces are only sent with off-ledger requests
 func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	nonce := accountNonce(ctx.StateR(), account)
+	nonce := accountNonce(ctx.StateR(), account, ctx.ChainID())
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
 	return ret

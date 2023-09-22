@@ -78,6 +78,11 @@ func (rec *RequestReceipt) Read(r io.Reader) error {
 		rec.Error = new(isc.UnresolvedVMError)
 		rr.Read(rec.Error)
 	}
+	if len(rr.Bytes()) != 0 {
+		rec.GasBurnLog = new(gas.BurnLog)
+		rr.Read(rec.GasBurnLog)
+	}
+
 	return rr.Err
 }
 
@@ -92,6 +97,9 @@ func (rec *RequestReceipt) Write(w io.Writer) error {
 	if rec.Error != nil {
 		ww.Write(rec.Error)
 	}
+	if rec.GasBurnLog != nil {
+		ww.Write(rec.GasBurnLog)
+	}
 	return ww.Err
 }
 
@@ -102,6 +110,7 @@ func (rec *RequestReceipt) String() string {
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", rec.GasBudget, rec.GasBurned, rec.GasFeeCharged)
 	ret += fmt.Sprintf("Storage deposit charged: %d\n", rec.SDCharged)
 	ret += fmt.Sprintf("Call data: %s\n", rec.Request)
+	ret += fmt.Sprintf("burn log: %s\n", rec.GasBurnLog)
 	return ret
 }
 
@@ -134,6 +143,7 @@ func (rec *RequestReceipt) ToISCReceipt(resolvedError *isc.VMError) *isc.Receipt
 		BlockIndex:    rec.BlockIndex,
 		RequestIndex:  rec.RequestIndex,
 		ResolvedError: resolvedError.Error(),
+		GasBurnLog:    rec.GasBurnLog,
 	}
 }
 

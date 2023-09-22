@@ -37,7 +37,7 @@ func initStoreBlobCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 
 			chainID := config.GetChain(chain)
-			uploadBlob(cliclients.WaspClient(node), chainID, util.EncodeParams(args))
+			uploadBlob(cliclients.WaspClient(node), chainID, util.EncodeParams(args, chainID))
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

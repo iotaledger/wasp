@@ -55,7 +55,7 @@ func NewChainMetricsProvider() *ChainMetricsProvider {
 		StateManager: newChainStateManagerMetricsProvider(),
 		Snapshots:    newChainSnapshotsMetricsProvider(),
 		NodeConn:     newChainNodeConnMetricsProvider(),
-		WebAPI:       newChainWebAPIMetricsProvider(),
+		WebAPI:       NewChainWebAPIMetricsProvider(),
 		State:        newChainStateMetricsProvider(),
 	}
 }
@@ -91,7 +91,7 @@ func (m *ChainMetricsProvider) GetChainMetrics(chainID isc.ChainID) *ChainMetric
 		StateManager: m.StateManager.createForChain(chainID),
 		Snapshots:    m.Snapshots.createForChain(chainID),
 		NodeConn:     m.NodeConn.createForChain(chainID),
-		WebAPI:       m.WebAPI.createForChain(chainID),
+		WebAPI:       m.WebAPI.CreateForChain(chainID),
 		State:        m.State.createForChain(chainID),
 	}
 	m.chains[chainID] = cm

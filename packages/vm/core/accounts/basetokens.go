@@ -18,15 +18,15 @@ func setBaseTokens(state kv.KVStore, accountKey kv.Key, n uint64) {
 	state.Set(baseTokensKey(accountKey), codec.EncodeUint64(n))
 }
 
-func AdjustAccountBaseTokens(state kv.KVStore, account isc.AgentID, adjustment int64) {
+func AdjustAccountBaseTokens(state kv.KVStore, account isc.AgentID, adjustment int64, chainID isc.ChainID) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(state, account, isc.NewAssets(uint64(adjustment), nil))
+		CreditToAccount(state, account, isc.NewAssets(uint64(adjustment), nil), chainID)
 	case adjustment < 0:
-		DebitFromAccount(state, account, isc.NewAssets(uint64(-adjustment), nil))
+		DebitFromAccount(state, account, isc.NewAssets(uint64(-adjustment), nil), chainID)
 	}
 }
 
-func GetBaseTokensBalance(state kv.KVStoreReader, agentID isc.AgentID) uint64 {
-	return getBaseTokens(state, accountKey(agentID))
+func GetBaseTokensBalance(state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) uint64 {
+	return getBaseTokens(state, accountKey(agentID, chainID))
 }

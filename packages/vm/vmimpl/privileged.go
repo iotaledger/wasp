@@ -64,3 +64,7 @@ func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, target, entryPo
 	reqctx.Debugf("CallOnBehalfOf: caller = %s, target = %s, entryPoint = %s, params = %s", caller.String(), target.String(), entryPoint.String(), params.String())
 	return reqctx.callProgram(target, entryPoint, params, allowance, caller)
 }
+
+func (reqctx *requestContext) SendOnBehalfOf(caller isc.ContractIdentity, metadata isc.RequestParameters) {
+	reqctx.doSend(caller, metadata)
+}

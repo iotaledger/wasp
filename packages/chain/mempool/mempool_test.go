@@ -107,7 +107,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 
 	output := transaction.BasicOutputFromPostData(
 		te.governor.Address(),
-		isc.HnameNil,
+		isc.EmptyContractIdentity(),
 		isc.RequestParameters{
 			TargetAddress: te.chainID.AsAddress(),
 			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
@@ -472,7 +472,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 
 	output := transaction.BasicOutputFromPostData(
 		te.governor.Address(),
-		isc.HnameNil,
+		isc.EmptyContractIdentity(),
 		isc.RequestParameters{
 			TargetAddress: te.chainID.AsAddress(),
 			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
@@ -620,7 +620,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 
 	output := transaction.BasicOutputFromPostData(
 		te.governor.Address(),
-		isc.HnameNil,
+		isc.EmptyContractIdentity(),
 		isc.RequestParameters{
 			TargetAddress: te.chainID.AsAddress(),
 			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
@@ -779,7 +779,7 @@ func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, 
 		}
 		output := transaction.BasicOutputFromPostData(
 			tpkg.RandEd25519Address(),
-			0,
+			isc.EmptyContractIdentity(),
 			requestParams,
 		)
 		outputID := tpkg.RandOutputID(uint16(i))

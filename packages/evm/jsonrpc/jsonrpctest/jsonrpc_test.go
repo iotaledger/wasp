@@ -38,8 +38,6 @@ type soloTestEnv struct {
 }
 
 func newSoloTestEnv(t testing.TB) *soloTestEnv {
-	evmtest.InitGoEthLogger(t)
-
 	var log *logger.Logger
 	if _, ok := t.(*testing.B); ok {
 		log = testlogger.NewSilentLogger(t.Name(), true)
@@ -84,7 +82,7 @@ func TestRPCGetBalance(t *testing.T) {
 	_, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	require.Equal(
 		t,
-		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(nonEmptyAddress))*1e12,
+		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress))*1e12,
 		env.Balance(nonEmptyAddress).Uint64(),
 	)
 }

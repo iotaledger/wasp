@@ -1,20 +1,25 @@
-package logger
+package evmlogger
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/iotaledger/hive.go/logger"
 )
 
-func initGoEthLogger(waspLogger *logger.Logger) {
+var format = log.TerminalFormat(false)
+
+func Init(waspLogger *logger.Logger) {
 	log.Root().SetHandler(log.FuncHandler(func(r *log.Record) error {
+		s := strings.TrimRight(string(format.Format(r)), "\n")
 		switch r.Lvl {
 		case log.LvlCrit, log.LvlError:
-			waspLogger.Errorf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			waspLogger.Error(s)
 		case log.LvlTrace, log.LvlDebug:
-			waspLogger.Debugf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			waspLogger.Debug(s)
 		default:
-			waspLogger.Infof("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+			waspLogger.Info(s)
 		}
 		return nil
 	}))

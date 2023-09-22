@@ -30,6 +30,10 @@ compile-solidity:
 build-cli:
 	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
 
+# use like: make build-tool TOOL=./tools/dbinspector
+build-tool:
+	$(BUILD_CMD) $(TOOL)
+
 build-full: build-cli
 	$(BUILD_CMD) ./...
 
@@ -52,6 +56,10 @@ test-short:
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
+
+# use like: make install-tool TOOL=./tools/dbinspector
+install-tool:
+	$(INSTALL_CMD) $(TOOL)
 
 install-full: install-cli
 	$(INSTALL_CMD) ./...
@@ -103,4 +111,4 @@ deps-versions:
 		awk -F ":" '{ print $$1 }' | \
 		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
-.PHONY: all wasm compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions
+.PHONY: all wasm compile-solidity build-tool install-tool build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions

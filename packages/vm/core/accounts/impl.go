@@ -52,7 +52,7 @@ var Processor = Contract.Processor(nil,
 // this expects the origin amount minus SD
 func SetInitialState(state kv.KVStore, baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	CreditToAccount(state, CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor))
+	CreditToAccount(state, CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -226,7 +226,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	sn, storageDepositConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
 	ctx.Requiref(storageDepositConsumed > 0, "storage deposit Consumed > 0: assert failed")
 	// storage deposit for the foundry is taken from the allowance and removed from L2 ledger
-	debitBaseTokensFromAllowance(ctx, storageDepositConsumed)
+	debitBaseTokensFromAllowance(ctx, storageDepositConsumed, ctx.ChainID())
 
 	// add to the ownership list of the account
 	addFoundryToAccount(ctx.State(), ctx.Caller(), sn)
@@ -263,7 +263,7 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	// the storage deposit goes to the caller's account
 	CreditToAccount(state, caller, &isc.Assets{
 		BaseTokens: storageDepositReleased,
-	})
+	}, ctx.ChainID())
 	eventFoundryDestroyed(ctx, sn)
 	return nil
 }
@@ -307,10 +307,10 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 				},
 			}),
 		)
-		DebitFromAccount(state, accountID, deltaAssets)
+		DebitFromAccount(state, accountID, deltaAssets, ctx.ChainID())
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
-		CreditToAccount(state, caller, deltaAssets)
+		CreditToAccount(state, caller, deltaAssets, ctx.ChainID())
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
@@ -318,10 +318,10 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	switch {
 	case storageDepositAdjustment < 0:
 		// storage deposit is taken from the allowance of the caller
-		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment))
+		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment), ctx.ChainID())
 	case storageDepositAdjustment > 0:
 		// storage deposit is returned to the caller account
-		CreditToAccount(state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)))
+		CreditToAccount(state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
 	}
 	eventFoundryModified(ctx, sn)
 	return nil

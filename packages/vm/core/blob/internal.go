@@ -1,6 +1,7 @@
 package blob
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -25,11 +26,15 @@ func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
 	sorted := fields.KeysSorted() // mind determinism
 	values := make([][]byte, 0, len(sorted))
 	all := make([][]byte, 0, 2*len(sorted))
-	for _, k := range sorted {
-		v := fields.Get(k)
+
+	// hashBlob = hash(KeyLen0|Key0|Val0 | KeyLen1|Key1|Val1 | ... | KeyLenN|KeyN|ValN)
+	// by prepend the key length we can avoid the possible collision
+	for _, key := range sorted {
+		var prefix [4]byte
+		v := fields.Get(key)
 		values = append(values, v)
-		all = append(all, v)
-		all = append(all, []byte(k))
+		binary.LittleEndian.PutUint32(prefix[:], uint32(len(key)))
+		all = append(all, prefix[:], []byte(key), v)
 	}
 	return hashing.HashData(all...), sorted, values
 }

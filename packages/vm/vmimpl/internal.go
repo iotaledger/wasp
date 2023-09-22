@@ -20,13 +20,13 @@ import (
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
-func creditToAccount(chainState kv.KVStore, agentID isc.AgentID, ftokens *isc.Assets) {
+func creditToAccount(chainState kv.KVStore, agentID isc.AgentID, ftokens *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditToAccount(s, agentID, ftokens)
+		accounts.CreditToAccount(s, agentID, ftokens, chainID)
 	})
 }
 
-func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, req isc.OnLedgerRequest) {
+func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, req isc.OnLedgerRequest, chainID isc.ChainID) {
 	nft := req.NFT()
 	if nft == nil {
 		return
@@ -37,29 +37,29 @@ func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, req isc.OnLe
 		if nftOutput.NFTID.Empty() {
 			nftOutput.NFTID = util.NFTIDFromNFTOutput(nftOutput, req.OutputID()) // handle NFTs that were minted diractly to the chain
 		}
-		accounts.CreditNFTToAccount(s, agentID, nftOutput)
+		accounts.CreditNFTToAccount(s, agentID, nftOutput, chainID)
 	})
 }
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func debitFromAccount(chainState kv.KVStore, agentID isc.AgentID, transfer *isc.Assets) {
+func debitFromAccount(chainState kv.KVStore, agentID isc.AgentID, transfer *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.DebitFromAccount(s, agentID, transfer)
+		accounts.DebitFromAccount(s, agentID, transfer, chainID)
 	})
 }
 
 // debitNFTFromAccount removes a NFT from account.
 // should be called only when posting request
-func debitNFTFromAccount(chainState kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID) {
+func debitNFTFromAccount(chainState kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.DebitNFTFromAccount(s, agentID, nftID)
+		accounts.DebitNFTFromAccount(s, agentID, nftID, chainID)
 	})
 }
 
-func mustMoveBetweenAccounts(chainState kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
+func mustMoveBetweenAccounts(chainState kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, assets)
+		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, assets, chainID)
 	})
 }
 
@@ -73,7 +73,7 @@ func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *r
 func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 	var ret uint64
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetBaseTokensBalance(s, agentID)
+		ret = accounts.GetBaseTokensBalance(s, agentID, reqctx.ChainID())
 	})
 	return ret
 }
@@ -81,7 +81,7 @@ func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
 	var ret bool
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.HasEnoughForAllowance(s, agentID, allowance)
+		ret = accounts.HasEnoughForAllowance(s, agentID, allowance, reqctx.ChainID())
 	})
 	return ret
 }
@@ -89,7 +89,7 @@ func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowan
 func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetNativeTokenBalance(s, agentID, nativeTokenID)
+		ret = accounts.GetNativeTokenBalance(s, agentID, nativeTokenID, reqctx.ChainID())
 	})
 	return ret
 }
@@ -105,7 +105,7 @@ func (reqctx *requestContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.Na
 func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
 	var ret iotago.NativeTokens
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetNativeTokens(s, agentID)
+		ret = accounts.GetNativeTokens(s, agentID, reqctx.ChainID())
 	})
 	return ret
 }
@@ -227,7 +227,7 @@ func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, p
 // updateOffLedgerRequestNonce updates stored nonce for ISC off ledger requests
 func (reqctx *requestContext) updateOffLedgerRequestNonce() {
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.IncrementNonce(s, reqctx.req.SenderAccount())
+		accounts.IncrementNonce(s, reqctx.req.SenderAccount(), reqctx.ChainID())
 	})
 }
 
@@ -238,7 +238,7 @@ func (reqctx *requestContext) adjustL2BaseTokensIfNeeded(adjustment int64, accou
 	}
 	err := panicutil.CatchPanicReturnError(func() {
 		reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-			accounts.AdjustAccountBaseTokens(s, account, adjustment)
+			accounts.AdjustAccountBaseTokens(s, account, adjustment, reqctx.ChainID())
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {

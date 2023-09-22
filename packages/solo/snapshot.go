@@ -14,12 +14,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type soloSnapshot struct {
+type Snapshot struct {
 	UtxoDB *utxodb.UtxoDBState
-	Chains []soloChainSnapshot
+	Chains []*ChainSnapshot
 }
 
-type soloChainSnapshot struct {
+type ChainSnapshot struct {
 	Name                   string
 	StateControllerKeyPair []byte
 	ChainID                []byte
@@ -29,16 +29,16 @@ type soloChainSnapshot struct {
 }
 
 // SaveSnapshot generates a snapshot of the Solo environment
-func (env *Solo) SaveSnapshot(fname string) {
+func (env *Solo) TakeSnapshot() *Snapshot {
 	env.chainsMutex.Lock()
 	defer env.chainsMutex.Unlock()
 
-	snapshot := soloSnapshot{
+	snapshot := &Snapshot{
 		UtxoDB: env.utxoDB.State(),
 	}
 
 	for _, ch := range env.chains {
-		chainSnapshot := soloChainSnapshot{
+		chainSnapshot := &ChainSnapshot{
 			Name:                   ch.Name,
 			StateControllerKeyPair: rwutil.WriteToBytes(ch.StateControllerKeyPair),
 			ChainID:                ch.ChainID.Bytes(),
@@ -55,22 +55,13 @@ func (env *Solo) SaveSnapshot(fname string) {
 		snapshot.Chains = append(snapshot.Chains, chainSnapshot)
 	}
 
-	b, err := json.Marshal(snapshot)
-	require.NoError(env.T, err)
-	err = os.WriteFile(fname, b, 0o600)
-	require.NoError(env.T, err)
+	return snapshot
 }
 
 // LoadSnapshot restores the Solo environment from the given snapshot
-func (env *Solo) LoadSnapshot(fname string) {
+func (env *Solo) RestoreSnapshot(snapshot *Snapshot) {
 	env.chainsMutex.Lock()
 	defer env.chainsMutex.Unlock()
-
-	b, err := os.ReadFile(fname)
-	require.NoError(env.T, err)
-	var snapshot soloSnapshot
-	err = json.Unmarshal(b, &snapshot)
-	require.NoError(env.T, err)
 
 	env.utxoDB.SetState(snapshot.UtxoDB)
 	for _, chainSnapshot := range snapshot.Chains {
@@ -104,4 +95,22 @@ func (env *Solo) LoadSnapshot(fname string) {
 		}
 		env.addChain(chainData)
 	}
+}
+
+// SaveSnapshot saves the given snapshot to a file
+func (env *Solo) SaveSnapshot(snapshot *Snapshot, fname string) {
+	b, err := json.Marshal(snapshot)
+	require.NoError(env.T, err)
+	err = os.WriteFile(fname, b, 0o600)
+	require.NoError(env.T, err)
+}
+
+// LoadSnapshot loads a snapshot previously saved with SaveSnapshot
+func (env *Solo) LoadSnapshot(fname string) *Snapshot {
+	b, err := os.ReadFile(fname)
+	require.NoError(env.T, err)
+	var snapshot Snapshot
+	err = json.Unmarshal(b, &snapshot)
+	require.NoError(env.T, err)
+	return &snapshot
 }

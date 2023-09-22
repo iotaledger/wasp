@@ -142,8 +142,8 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	)
 
 	// debit the SD required for the NFT from the sender account
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount))      // claim tokens from allowance
-	DebitFromAccount(ctx.State(), ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount)) // debit from this SC account
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount))                     // claim tokens from allowance
+	DebitFromAccount(ctx.State(), ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount), ctx.ChainID()) // debit from this SC account
 
 	rec := mintedNFTRecord{
 		positionInMintedList: positionInMintedList,

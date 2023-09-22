@@ -12,13 +12,13 @@ import (
 
 // CreditToAccount brings new funds to the on chain ledger
 // NOTE: this function does not take NFTs into account
-func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) {
+func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
-	creditToAccount(state, accountKey(agentID), assets)
+	creditToAccount(state, accountKey(agentID, chainID), assets)
 	creditToAccount(state, l2TotalsAccount, assets)
-	touchAccount(state, agentID)
+	touchAccount(state, agentID, chainID)
 }
 
 // creditToAccount adds assets to the internal account map
@@ -49,17 +49,17 @@ func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
 // NOTE: this function does not take NFTs into account
-func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets) {
+func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
-	if !debitFromAccount(state, accountKey(agentID), assets) {
+	if !debitFromAccount(state, accountKey(agentID, chainID), assets) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", assets, agentID, ErrNotEnoughFunds))
 	}
 	if !debitFromAccount(state, l2TotalsAccount, assets) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
-	touchAccount(state, agentID)
+	touchAccount(state, agentID, chainID)
 }
 
 // debitFromAccount debits assets from the internal accounts map
@@ -128,8 +128,8 @@ func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.Assets {
 }
 
 // GetAccountFungibleTokens returns all fungible tokens belonging to the agentID on the state
-func GetAccountFungibleTokens(state kv.KVStoreReader, agentID isc.AgentID) *isc.Assets {
-	return getFungibleTokens(state, accountKey(agentID))
+func GetAccountFungibleTokens(state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) *isc.Assets {
+	return getFungibleTokens(state, accountKey(agentID, chainID))
 }
 
 func GetTotalL2FungibleTokens(state kv.KVStoreReader) *isc.Assets {

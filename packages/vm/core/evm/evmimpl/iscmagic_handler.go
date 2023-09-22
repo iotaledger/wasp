@@ -83,14 +83,14 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 
 func (h *magicContractHandler) call(target, ep isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
 	return h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		target, ep, params, allowance,
 	)
 }
 
 func (h *magicContractHandler) callView(target, ep isc.Hname, params dict.Dict) dict.Dict {
 	return h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		target, ep, params, nil,
 	)
 }

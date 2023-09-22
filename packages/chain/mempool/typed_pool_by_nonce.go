@@ -67,7 +67,7 @@ func (p *TypedPoolByNonce[V]) Add(request V) {
 	}
 
 	defer func() {
-		p.log.Debugf("ADD %v as key=%v, senderAccount: ", request.ID(), ref, account)
+		p.log.Debugf("ADD %v as key=%v, senderAccount: %s", request.ID(), ref, account)
 		p.sizeMetric(p.refLUT.Size())
 		p.waitReq.MarkAvailable(request)
 	}()

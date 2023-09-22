@@ -53,7 +53,7 @@ func TestPruning(t *testing.T) {
 	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
-	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
+	evmAgentID := isc.NewEthereumAddressAgentID(chain.ChainID, evmAddr)
 	env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter
@@ -202,7 +202,7 @@ func TestPruning(t *testing.T) {
 		t.Parallel()
 		bal, err := archiveClient.BalanceAt(context.Background(), evmAddr, big.NewInt(25))
 		require.NoError(t, err)
-		require.Positive(t, bal.Int64())
+		require.Positive(t, bal.Cmp(big.NewInt(0)))
 	})
 
 	t.Run("eth_getCode", func(t *testing.T) {

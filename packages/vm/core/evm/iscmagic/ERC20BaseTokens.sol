@@ -36,16 +36,18 @@ contract ERC20BaseTokens {
     }
 
     function balanceOf(address tokenOwner) public view returns (uint256) {
+        ISCChainID chainID = __iscSandbox.getChainID();
         ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
-            tokenOwner
+            tokenOwner,
+            chainID
         );
         return __iscAccounts.getL2BalanceBaseTokens(ownerAgentID);
     }
 
-    function transfer(address receiver, uint256 numTokens)
-        public
-        returns (bool)
-    {
+    function transfer(
+        address receiver,
+        uint256 numTokens
+    ) public returns (bool) {
         require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
         assets.baseTokens = uint64(numTokens);
@@ -60,20 +62,19 @@ contract ERC20BaseTokens {
     //       If numTokens > MAX_UINT64, this call will fail.
     //       Exception: as a special case, numTokens == MAX_UINT256 can be
     //       specified as an "infinite" approval.
-    function approve(address delegate, uint256 numTokens)
-        public
-        returns (bool)
-    {
+    function approve(
+        address delegate,
+        uint256 numTokens
+    ) public returns (bool) {
         __iscPrivileged.setAllowanceBaseTokens(msg.sender, delegate, numTokens);
         emit Approval(msg.sender, delegate, numTokens);
         return true;
     }
 
-    function allowance(address owner, address delegate)
-        public
-        view
-        returns (uint256)
-    {
+    function allowance(
+        address owner,
+        address delegate
+    ) public view returns (uint256) {
         ISCAssets memory assets = __iscSandbox.getAllowance(owner, delegate);
         return assets.baseTokens;
     }

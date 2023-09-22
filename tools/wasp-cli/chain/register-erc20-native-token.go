@@ -60,11 +60,12 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
+			chainID := config.GetChain(chain)
 
 			allowanceTokens := util.ParseFungibleTokens(postrequestParams.allowance)
 
 			params := chainclient.PostRequestParams{
-				Args:      util.EncodeParams(funcArgs(cmd)),
+				Args:      util.EncodeParams(funcArgs(cmd), chainID),
 				Transfer:  util.ParseFungibleTokens(postrequestParams.transfer),
 				Allowance: allowanceTokens,
 			}

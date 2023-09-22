@@ -35,6 +35,14 @@ func (a *AddressAgentID) Bytes() []byte {
 	return rwutil.WriteToBytes(a)
 }
 
+func (a *AddressAgentID) BelongsToChain(ChainID) bool {
+	return false
+}
+
+func (a *AddressAgentID) BytesWithoutChainID() []byte {
+	return a.Bytes()
+}
+
 func (a *AddressAgentID) Equals(other AgentID) bool {
 	if other == nil {
 		return false

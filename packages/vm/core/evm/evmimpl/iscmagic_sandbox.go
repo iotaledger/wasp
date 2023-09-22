@@ -45,8 +45,8 @@ func (h *magicContractHandler) Allow(target common.Address, allowance iscmagic.I
 func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance iscmagic.ISCAssets) {
 	taken := subtractFromAllowance(h.ctx, addr, h.caller.Address(), allowance.Unwrap())
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(addr),
-		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), addr),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		taken,
 	)
 }
@@ -79,7 +79,10 @@ func (h *magicContractHandler) Send(
 
 	h.moveAssetsToCommonAccount(req.Assets)
 
-	h.ctx.Send(req)
+	h.ctx.Privileged().SendOnBehalfOf(
+		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
+		req,
+	)
 }
 
 // handler for ISCSandbox::call
@@ -117,7 +120,7 @@ func (h *magicContractHandler) adjustStorageDeposit(req isc.RequestParameters) {
 // account before sending to L1
 func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		h.ctx.AccountID(),
 		assets,
 	)
@@ -126,7 +129,7 @@ func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 // handler for ISCSandbox::registerERC20NativeToken
 func (h *magicContractHandler) RegisterERC20NativeToken(foundrySN uint32, name, symbol string, decimals uint8, allowance iscmagic.ISCAssets) {
 	h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		evm.Contract.Hname(),
 		evm.FuncRegisterERC20NativeToken.Hname(),
 		dict.Dict{

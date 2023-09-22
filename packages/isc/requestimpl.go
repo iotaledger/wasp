@@ -22,6 +22,14 @@ const (
 	requestKindOffLedgerEVMCall
 )
 
+func IsOffledgerKind(b byte) bool {
+	switch RequestKind(b) {
+	case requestKindOffLedgerISC, requestKindOffLedgerEVMTx:
+		return true
+	}
+	return false
+}
+
 func RequestFromBytes(data []byte) (Request, error) {
 	rr := rwutil.NewBytesReader(data)
 	return RequestFromReader(rr), rr.Err
@@ -194,7 +202,7 @@ func (rid *RequestID) Write(w io.Writer) error {
 // region RequestMetadata //////////////////////////////////////////////////
 
 type RequestMetadata struct {
-	SenderContract Hname `json:"senderContract"`
+	SenderContract ContractIdentity `json:"senderContract"`
 	// ID of the target smart contract
 	TargetContract Hname `json:"targetContract"`
 	// entry point code

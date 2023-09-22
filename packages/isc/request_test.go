@@ -26,7 +26,7 @@ func TestRequestDataSerialization(t *testing.T) {
 	t.Run("on ledger", func(t *testing.T) {
 		sender := tpkg.RandAliasAddress()
 		requestMetadata := &RequestMetadata{
-			SenderContract: Hn("sender_contract"),
+			SenderContract: ContractIdentityFromHname(Hn("sender_contract")),
 			TargetContract: Hn("target_contract"),
 			EntryPoint:     Hn("entrypoint"),
 			Allowance:      NewAssetsBaseTokens(1),

@@ -2,7 +2,6 @@ package authentication
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -37,9 +36,9 @@ func GetJWTAuthMiddleware(
 		Skipper: func(c echo.Context) bool {
 			path := c.Request().URL.Path
 			if path == "/" ||
-				strings.HasSuffix(path, shared.AuthRoute()) ||
-				strings.HasSuffix(path, shared.AuthInfoRoute()) ||
-				strings.HasPrefix(path, "/doc") {
+				path == shared.AuthRoute() ||
+				path == shared.AuthInfoRoute() ||
+				path == "/doc" {
 				return true
 			}
 

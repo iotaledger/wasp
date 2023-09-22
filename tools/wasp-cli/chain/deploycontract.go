@@ -38,7 +38,7 @@ func initDeployContractCmd() *cobra.Command {
 			vmtype := args[0]
 			name := args[1]
 			description := args[2]
-			initParams := util.EncodeParams(args[4:])
+			initParams := util.EncodeParams(args[4:], chainID)
 
 			var progHash hashing.HashValue
 

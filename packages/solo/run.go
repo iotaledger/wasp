@@ -67,7 +67,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		// state baseline is always valid in Solo
-		EnableGasBurnLogging: true,
+		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
 		EstimateGasMode:      estimateGas,
 		MigrationsOverride:   ch.migrationScheme,
 	}

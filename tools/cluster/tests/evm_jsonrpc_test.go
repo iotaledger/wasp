@@ -17,13 +17,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type clusterTestEnv struct {
@@ -32,8 +35,6 @@ type clusterTestEnv struct {
 }
 
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
-	evmtest.InitGoEthLogger(t)
-
 	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", env.Chain.ChainID.String())
 	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
@@ -89,7 +90,9 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	tx, err := e.Chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: codec.EncodeAgentID(isc.NewEthereumAddressAgentID(ethAddr)),
+			accounts.ParamAgentID: codec.EncodeAgentID(
+				isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr),
+			),
 		},
 		Allowance: isc.NewAssetsBaseTokens(amount),
 	})
@@ -118,5 +121,44 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 	e := newClusterTestEnv(t, env, 4) // node #4 is an access node
+	e.TestRPCGetLogs()
+}
+
+func TestEVMJsonRPCZeroGasFee(t *testing.T) {
+	clu := newCluster(t, waspClusterOpts{nNodes: 5})
+	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
+	require.NoError(t, err)
+	env := newChainEnv(t, clu, chain)
+	e := newClusterTestEnv(t, env, 4) // node #4 is an access node
+
+	fp1 := gas.DefaultFeePolicy()
+	fp1.GasPerToken = util.Ratio32{
+		A: 0,
+		B: 0,
+	}
+	govClient := e.Chain.SCClient(governance.Contract.Hname(), e.Chain.OriginatorKeyPair)
+	reqTx, err := govClient.PostRequest(
+		governance.FuncSetFeePolicy.Name,
+		chainclient.PostRequestParams{
+			Args: dict.Dict{
+				governance.VarGasFeePolicyBytes: fp1.Bytes(),
+			},
+		},
+	)
+	require.NoError(t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
+	require.NoError(t, err)
+
+	d, err := govClient.CallView(
+		context.Background(),
+		governance.ViewGetFeePolicy.Name,
+		dict.Dict{
+			governance.VarGasFeePolicyBytes: fp1.Bytes(),
+		},
+	)
+	require.NoError(t, err)
+	fp2, err := gas.FeePolicyFromBytes(d.Get(governance.VarGasFeePolicyBytes))
+	require.NoError(t, err)
+	require.Equal(t, fp1, fp2)
 	e.TestRPCGetLogs()
 }

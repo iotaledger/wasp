@@ -1,6 +1,9 @@
 package gas
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type BurnCode uint16
 
@@ -21,4 +24,13 @@ func (c BurnCode) Name() string {
 		return "(undef)"
 	}
 	return r.Name
+}
+
+func BurnCodeFromName(name string) BurnCode {
+	for burnCode := range burnTable {
+		if burnCode.Name() == name {
+			return burnCode
+		}
+	}
+	panic(fmt.Sprintf("name %s not exist", name))
 }
