@@ -209,7 +209,7 @@ func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
 	// Start the CC.
 	subGPA, subMsgs, err := a.msgWrapper.DelegateInput(subsystemCC, round, nil)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to provide input to CC: %v", err))
 	}
 	msgs.AddAll(subMsgs)
 	if out := subGPA.Output(); out != nil {

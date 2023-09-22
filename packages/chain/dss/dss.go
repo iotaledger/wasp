@@ -134,7 +134,8 @@ func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
 			return d.tryHandleDkgOutput(msgs)
 		}
-		panic(fmt.Errorf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped()))
+		d.log.Warnf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped())
+		return nil
 	default:
 		panic(fmt.Errorf("unknown message %T: %v", msg, msg))
 	}

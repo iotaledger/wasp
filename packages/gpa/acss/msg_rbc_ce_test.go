@@ -21,6 +21,7 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 		gpa.BasicMessage{},
 		nil,
 		b,
+		nil,
 	}
 
 	rwutil.ReadWriteTest(t, msg, new(msgRBCCEPayload))

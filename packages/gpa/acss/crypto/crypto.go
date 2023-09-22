@@ -59,7 +59,7 @@ func Secret(g kyber.Group, remotePublic kyber.Point, ownPrivate kyber.Scalar) []
 	dh := g.Point().Mul(ownPrivate, remotePublic)
 	data, err := dh.MarshalBinary()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("cannot marshal a shared secret: %v", err))
 	}
 	return data
 }

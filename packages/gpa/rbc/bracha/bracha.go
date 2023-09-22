@@ -66,12 +66,13 @@ type rbc struct {
 	readySent   bool                                      // Have we sent the READY messages?
 	readyRecv   map[hashing.HashValue]map[gpa.NodeID]bool // Quorum counter for the READY messages.
 	output      []byte
+	log         gpa.Logger
 }
 
 var _ gpa.GPA = &rbc{}
 
 // Create new instance of the RBC.
-func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, predicate func([]byte) bool) gpa.GPA {
+func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, predicate func([]byte) bool, log gpa.Logger) gpa.GPA {
 	r := &rbc{
 		n:           len(peers),
 		f:           f,
@@ -86,6 +87,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 		readySent:   false,
 		readyRecv:   make(map[hashing.HashValue]map[gpa.NodeID]bool),
 		output:      nil,
+		log:         log,
 	}
 	for i := range peers {
 		r.msgRecv[peers[i]] = map[msgBrachaType]bool{}
@@ -126,7 +128,8 @@ func (r *rbc) Message(msg gpa.Message) gpa.OutMessages {
 		case msgBrachaTypeReady:
 			return r.handleReady(msgT)
 		default:
-			panic(fmt.Errorf("unexpected message: %+v", msgT))
+			r.log.Warnf("unexpected brachaType=%v in message: %+v", msgT.brachaType, msgT)
+			return nil
 		}
 	default:
 		panic(fmt.Errorf("unexpected message: %+v", msg))

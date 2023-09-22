@@ -84,7 +84,7 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 		case "false":
 			inputs[nid] = false
 		default:
-			panic("unexpected input type")
+			t.Fatal("unexpected input type")
 		}
 	}
 	t.Logf("Inputs: %v", inputs)
@@ -107,7 +107,7 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 		case "false":
 			require.Equal(t, false, out.Value)
 		default:
-			panic("unexpected input type")
+			t.Fatal("unexpected input type")
 		}
 	}
 }

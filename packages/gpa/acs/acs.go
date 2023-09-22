@@ -88,7 +88,7 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.N
 			return ccCreateFun(nidCopy, round)
 		}
 		nodeIdx[nid] = i
-		rbcInsts[nid] = bracha.New(nodeIDs, f, me, nid, math.MaxInt, func(b []byte) bool { return true }) // TODO: MaxInt.
+		rbcInsts[nid] = bracha.New(nodeIDs, f, me, nid, math.MaxInt, func(b []byte) bool { return true }, log) // TODO: MaxInt.
 		abaInsts[nid] = mostefaoui.New(nodeIDs, me, f, ccCreateFunForNode, log).AsGPA()
 	}
 
@@ -172,8 +172,10 @@ func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
 	case subsystemABA:
 		msgs.AddAll(a.tryHandleABAOutput(a.nodeIDs[msgT.Index()], sub))
 		return msgs
+	default:
+		a.log.Warnf("unexpected subsystem: %v", msgT.Subsystem())
+		return nil
 	}
-	panic(fmt.Errorf("unexpected subsystem: %v", msgT.Subsystem()))
 }
 
 // >   • upon delivery of v_j from RBC_j, if input has not yet been

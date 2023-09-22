@@ -162,8 +162,8 @@ func New(
 		dealCB:        dealCB,
 		peerPKs:       peerPKs,
 		peerIdx:       peers,
-		rbc:           rbc.New(peers, f, me, dealer, math.MaxInt, func(b []byte) bool { return true }), // TODO: Provide meaningful maxMsgSize
-		rbcOut:        nil,                                                                             // Will be set on output from the RBC.
+		rbc:           rbc.New(peers, f, me, dealer, math.MaxInt, func(b []byte) bool { return true }, log), // TODO: Provide meaningful maxMsgSize
+		rbcOut:        nil,                                                                                  // Will be set on output from the RBC.
 		voteOKRecv:    map[gpa.NodeID]bool{},
 		voteREADYRecv: map[gpa.NodeID]bool{},
 		voteREADYSent: false,
@@ -209,7 +209,8 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case subsystemRBC:
 			return a.handleRBCMessage(m)
 		default:
-			panic(fmt.Errorf("unexpected wrapped message: %+v", m))
+			a.log.Warnf("unexpected wrapped message subsystem: %+v", m)
+			return nil
 		}
 	case *msgVote:
 		switch m.kind {
@@ -218,7 +219,8 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case msgVoteREADY:
 			return a.handleVoteREADY(m)
 		default:
-			panic(fmt.Errorf("unexpected vote message: %+v", m))
+			a.log.Warnf("unexpected vote message: %+v", m)
+			return nil
 		}
 	case *msgImplicateRecover:
 		return a.handleImplicateRecoverReceived(m)
@@ -266,7 +268,7 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gp
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed, err := rwutil.ReadFromBytes(out.([]byte), &msgRBCCEPayload{suite: a.suite})
 		if err != nil {
-			panic(fmt.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
+			outParsed = &msgRBCCEPayload{err: err}
 		}
 		msgs.AddAll(a.handleRBCOutput(outParsed))
 	}
@@ -285,14 +287,18 @@ func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) gpa.OutMessages {
 		// Take the first RBC output only.
 		return nil
 	}
+	msgs := gpa.NoMessages()
 	//
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
+	if rbcOutput.err != nil {
+		return a.broadcastImplicate(rbcOutput.err, msgs)
+	}
 	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, rbcOutput.data)
 	if err != nil {
-		panic(errors.New("cannot unmarshal msgRBCCEPayload.data"))
+		return a.broadcastImplicate(errors.New("cannot unmarshal msgRBCCEPayload.data"), msgs)
 	}
 	a.rbcOut = deal
-	msgs := a.handleImplicateRecoverPending(gpa.NoMessages())
+	msgs = a.handleImplicateRecoverPending(msgs)
 	//
 	// Process the RBC output, as described above.
 	secret := crypto.Secret(a.suite, a.rbcOut.PubKey, a.mySK)
@@ -349,7 +355,8 @@ func (a *acssImpl) handleImplicateRecoverReceived(msg *msgImplicateRecover) gpa.
 	case msgImplicateRecoverKindRECOVER:
 		return a.handleRecover(msg)
 	default:
-		panic(fmt.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", msg.kind, msg))
+		a.log.Warnf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", msg.kind, msg)
+		return nil
 	}
 }
 
@@ -377,7 +384,8 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs gpa.OutMessages) gpa.OutMe
 		case msgImplicateRecoverKindRECOVER:
 			msgs.AddAll(a.handleRecover(m))
 		default:
-			panic(fmt.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
+			a.log.Warnf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m)
+			// Don't return here, we are just dropping incorrect message.
 		}
 	}
 	a.pendingIRMsgs = postponedIRMsgs

@@ -54,7 +54,7 @@ func NewDeal(suite suites.Suite, pubKeys []kyber.Point, scalar kyber.Scalar) *De
 
 	salt, err := deal.Commits.MarshalBinary()
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("cannot marshal commits: %v", err))
 	}
 
 	// encrypt the shares for each public key
