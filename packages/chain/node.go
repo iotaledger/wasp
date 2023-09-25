@@ -56,12 +56,14 @@ import (
 )
 
 const (
-	redeliveryPeriod             = 2 * time.Second // TODO: Make it configurable?
-	printStatusPeriod            = 3 * time.Second // TODO: Make it configurable?
-	consensusInstsInAdvance  int = 3               // TODO: Make it configurable?
-	awaitReceiptCleanupEvery int = 100             // TODO: Make it configurable?
-
 	msgTypeChainMgr byte = iota
+)
+
+var (
+	RedeliveryPeriod         = 2 * time.Second
+	PrintStatusPeriod        = 3 * time.Second
+	ConsensusInstsInAdvance  = 3
+	AwaitReceiptCleanupEvery = 100
 )
 
 type ChainRequests interface {
@@ -427,7 +429,7 @@ func New(
 		chainMetrics.Pipe,
 		cni.listener,
 	)
-	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), redeliveryPeriod)
+	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
 	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB, chainMetrics.StateManager.SetChainActiveStateWant, chainMetrics.StateManager.SetChainActiveStateHave, cni.log.Named("ST.ACT"))
@@ -522,7 +524,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	consOutputPipeOutCh := cni.consOutputPipe.Out()
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
-	redeliveryPeriodTicker := time.NewTicker(redeliveryPeriod)
+	redeliveryPeriodTicker := time.NewTicker(RedeliveryPeriod)
 	consensusDelayTicker := time.NewTicker(cni.consensusDelay)
 	for {
 		if ctx.Err() != nil {
@@ -866,7 +868,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	})
 
 	addLogIndex := logIndex
-	for i := 0; i < consensusInstsInAdvance; i++ {
+	for i := 0; i < ConsensusInstsInAdvance; i++ {
 		if !consensusInstances.Has(addLogIndex) {
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
@@ -874,7 +876,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
 				cni.validatorAgentID,
-				cni.recoveryTimeout, redeliveryPeriod, printStatusPeriod,
+				cni.recoveryTimeout, RedeliveryPeriod, PrintStatusPeriod,
 				cni.chainMetrics.Consensus,
 				cni.chainMetrics.Pipe,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
@@ -1080,7 +1082,7 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 		}
 		return nil, fmt.Errorf("have no active state")
 	default:
-		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
+		panic(fmt.Errorf("unexpected StateFreshness: %v", freshness))
 	}
 }
 
@@ -1119,7 +1121,7 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 		}
 		return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
 	default:
-		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
+		panic(fmt.Errorf("unexpected StateFreshness: %v", freshness))
 	}
 }
 

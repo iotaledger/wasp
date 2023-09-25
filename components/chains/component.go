@@ -59,6 +59,11 @@ func initConfigParams(c *dig.Container) error {
 		Component.LogPanic(err)
 	}
 
+	chain.RedeliveryPeriod = ParamsChains.RedeliveryPeriod
+	chain.PrintStatusPeriod = ParamsChains.PrintStatusPeriod
+	chain.ConsensusInstsInAdvance = ParamsChains.ConsensusInstsInAdvance
+	chain.AwaitReceiptCleanupEvery = ParamsChains.AwaitReceiptCleanupEvery
+
 	return nil
 }
 
