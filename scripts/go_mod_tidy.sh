@@ -14,4 +14,7 @@ go mod tidy
 cd ${PARENT_DIR}/tools/gascalibration
 go mod tidy
 
+cd ${PARENT_DIR}/tools/evm/evmemulator
+go mod tidy
+
 cd ${CURRENT_DIR}
