@@ -108,13 +108,6 @@ func (msg *WrappingMsg) SetSender(sender NodeID) {
 // note: never called, unfinished concept version
 func (msg *WrappingMsg) Read(r io.Reader) error {
 	panic("this message is un-marshaled by the gpa.MsgWrapper")
-	//rr := rwutil.NewReader(r)
-	//msg.msgType.ReadAndVerify(rr)
-	//msg.subsystem = rr.ReadByte()
-	//msg.index = int(rr.ReadUint16())
-	//// TODO: allocate proper message instead of msg.wrapped parameter
-	//msg.wrapped, rr.Err = rwutil.ReadFromBytes(rr.ReadBytes(), msg.wrapped)
-	//return rr.Err
 }
 
 func (msg *WrappingMsg) Write(w io.Writer) error {

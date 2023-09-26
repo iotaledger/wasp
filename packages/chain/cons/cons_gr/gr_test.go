@@ -309,7 +309,7 @@ func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput 
 	resp := make(chan state.State, 1)
 	stateCommitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
-		panic(err)
+		tsm.t.Fatal(err)
 	}
 	hash := commitmentHash(stateCommitment)
 	tsm.qDecided[hash] = resp

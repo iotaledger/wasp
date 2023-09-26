@@ -19,6 +19,7 @@ type msgRBCCEPayload struct {
 	gpa.BasicMessage
 	suite suites.Suite
 	data  []byte
+	err   error // Transient field, should not be serialized.
 }
 
 var _ gpa.Message = new(msgRBCCEPayload)

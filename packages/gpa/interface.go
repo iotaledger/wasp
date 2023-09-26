@@ -161,3 +161,7 @@ func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message
 	rr.Read(msg)
 	return msg, rr.Err
 }
+
+type Logger interface {
+	Warnf(msg string, args ...any)
+}

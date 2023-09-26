@@ -349,8 +349,10 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 			return msgs.AddAll(c.subACS.ACSOutputReceived(sub.Output()))
 		case subsystemTypeDSS:
 			return msgs.AddAll(c.subDSS.DSSOutputReceived(sub.Output()))
+		default:
+			c.log.Warnf("unexpected subsystem after check: %+v", msg)
+			return nil
 		}
-		panic(fmt.Errorf("unexpected subsystem after check: %+v", msg))
 	}
 	panic(fmt.Errorf("unexpected message: %v", msg))
 }

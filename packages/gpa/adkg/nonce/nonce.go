@@ -139,7 +139,8 @@ func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case msgWrapperACSS:
 			return n.handleACSSMessage(msgT)
 		default:
-			panic(fmt.Errorf("unexpected message: %+v", msg))
+			n.log.Warnf("unexpected message subsystem: %+v", msg)
+			return nil
 		}
 	default:
 		panic(fmt.Errorf("unexpected message: %+v", msg))
