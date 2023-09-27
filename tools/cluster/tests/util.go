@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -126,8 +127,25 @@ func (e *ChainEnv) getBalancesOnChain() map[string]*isc.Assets {
 		assets, err := apiextensions.AssetsFromAPIResponse(balance)
 		require.NoError(e.t, err)
 
-		ret[string(agentID.Bytes())] = assets
+		ret[agentID.String()] = assets
 	}
+	return ret
+}
+
+func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
+	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+		AccountsGetAccountNFTIDs(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+		Execute()
+	require.NoError(e.t, err)
+
+	ret := make([]iotago.NFTID, len(nftsResp.NftIds))
+	for i, nftIDStr := range nftsResp.NftIds {
+		nftIDBytes, err := iotago.DecodeHex(nftIDStr)
+		require.NoError(e.t, err)
+		ret[i] = iotago.NFTID{}
+		copy(ret[i][:], nftIDBytes)
+	}
+
 	return ret
 }
 
@@ -147,7 +165,7 @@ func (e *ChainEnv) printAccounts(title string) {
 	allBalances := e.getBalancesOnChain()
 	s := fmt.Sprintf("------------------------------------- %s\n", title)
 	for k, bals := range allBalances {
-		aid, err := isc.AgentIDFromBytes([]byte(k))
+		aid, err := isc.AgentIDFromString(k)
 		require.NoError(e.t, err)
 		s += fmt.Sprintf("     %s\n", aid.String())
 		s += fmt.Sprintf("%s\n", bals.String())

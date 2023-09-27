@@ -31,7 +31,7 @@ func runISCTask(
 		TimeAssumption:       blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
-		EnableGasBurnLogging: false,
+		EnableGasBurnLogging: estimateGasMode,
 		EstimateGasMode:      estimateGasMode,
 		EVMTracer:            evmTracer,
 		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),

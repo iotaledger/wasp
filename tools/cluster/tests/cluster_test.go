@@ -68,6 +68,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("inccounter timelock", func(t *testing.T) { run(t, testIncCounterTimelock) })
 
 	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) })
+	t.Run("webapi ISC estimategas onledger NFT", func(t *testing.T) { run(t, testEstimateGasOnLedgerNFT) })
 	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) })
 }
 
