@@ -160,6 +160,11 @@ func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
 }
 
 func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]interface{} {
+	// fix for an already fixed bug where some old failed receipts contain non-empty logs
+	if r.Status != types.ReceiptStatusSuccessful {
+		r.Logs = []*types.Log{}
+		r.Bloom = types.CreateBloom(types.Receipts{r})
+	}
 	return map[string]interface{}{
 		"transactionHash":   r.TxHash,
 		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
