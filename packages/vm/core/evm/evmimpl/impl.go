@@ -138,6 +138,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		receipt.Status = types.ReceiptStatusFailed
 		// remove any events from the receipt
 		receipt.Logs = make([]*types.Log, 0)
+		receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 	}
 
 	// amend the gas usage (to include any ISC gas burned in sandbox calls)
