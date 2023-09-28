@@ -23,6 +23,7 @@ type WaspContext interface {
 }
 
 type GasContext interface {
+	GasBurnEnabled() bool
 	GasBurnEnable(enable bool)
 	GasBurn(burnCode gas.BurnCode, par ...uint64)
 	GasEstimateMode() bool

@@ -164,6 +164,14 @@ func (*context) GasBurnEnable(bool) {
 	panic("unimplemented")
 }
 
+func (*context) GasBurnEnabled() bool {
+	panic("unimplemented")
+}
+
+func (*context) WithoutGasBurn(f func()) {
+	f()
+}
+
 func (*context) GasLimits() GasLimits {
 	return gasLimits
 }

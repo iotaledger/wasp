@@ -103,7 +103,12 @@ func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
 }
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
-	return GetNonce(s.kv, addr)
+	nonce := uint64(0)
+	// do not charge gas for this, internal checks of the emulator require this function to run before executing the request
+	s.ctx.WithoutGasBurn(func() {
+		nonce = GetNonce(s.kv, addr)
+	})
+	return nonce
 }
 
 func IncNonce(kv kv.KVStore, addr common.Address) {

@@ -38,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -554,6 +555,26 @@ func TestISCGetRequestID(t *testing.T) {
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].BlockHash, common.Hash{})
 
 	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), reqid)
+}
+
+func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// set gas policy to a very high price (fails when charging ISC gas)
+	{
+		feePolicy := env.soloChain.GetGasFeePolicy()
+		feePolicy.GasPerToken.A = 1
+		feePolicy.GasPerToken.B = 1000000000
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+
+	res, err := iscTest.callFn(nil, "emitDummyEvent")
+	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, "gas budget exceeded")
+	require.Len(t, res.evmReceipt.Logs, 0)
 }
 
 func TestISCGetSenderAccount(t *testing.T) {

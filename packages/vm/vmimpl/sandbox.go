@@ -153,6 +153,10 @@ func (s *contractSandbox) GasBurnEnable(enable bool) {
 	s.Ctx.GasBurnEnable(enable)
 }
 
+func (s *contractSandbox) GasBurnEnabled() bool {
+	return s.Ctx.GasBurnEnabled()
+}
+
 func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
 	mustMoveBetweenAccounts(s.reqctx.chainStateWithGasBurn(), fromAgentID, toAgentID, assets, s.ChainID())
 	s.checkRemainingTokens(fromAgentID)

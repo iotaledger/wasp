@@ -21,9 +21,20 @@ func (reqctx *requestContext) Call(targetContract, epCode isc.Hname, params dict
 	return reqctx.callProgram(targetContract, epCode, params, allowance, reqctx.CurrentContractAgentID())
 }
 
+func (reqctx *requestContext) withoutGasBurn(f func()) {
+	prev := reqctx.gas.burnEnabled
+	reqctx.GasBurnEnable(false)
+	f()
+	reqctx.GasBurnEnable(prev)
+}
+
 func (reqctx *requestContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets, caller isc.AgentID) dict.Dict {
-	contractRecord := reqctx.GetContractRecord(targetContract)
-	ep := execution.GetEntryPointByProgHash(reqctx, targetContract, epCode, contractRecord.ProgramHash)
+	// don't charge gas for finding the contract (otherwise EVM requests may not produce EVM receipt)
+	var ep isc.VMProcessorEntryPoint
+	reqctx.withoutGasBurn(func() {
+		contractRecord := reqctx.GetContractRecord(targetContract)
+		ep = execution.GetEntryPointByProgHash(reqctx, targetContract, epCode, contractRecord.ProgramHash)
+	})
 
 	reqctx.pushCallContext(targetContract, params, allowance, caller)
 	defer reqctx.popCallContext()

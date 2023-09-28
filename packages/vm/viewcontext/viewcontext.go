@@ -312,3 +312,7 @@ func (ctx *ViewContext) GetContractStateCommitment(hn isc.Hname) ([]byte, error)
 func (ctx *ViewContext) GasBurnEnable(enable bool) {
 	ctx.gasBurnEnabled = enable
 }
+
+func (ctx *ViewContext) GasBurnEnabled() bool {
+	return ctx.gasBurnEnabled
+}

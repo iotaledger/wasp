@@ -138,6 +138,7 @@ type Privileged interface {
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
 	MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
+	GasBurnEnabled() bool
 	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, assets *Assets)
 	DebitFromAccount(AgentID, *Assets)
 	CreditToAccount(AgentID, *Assets)

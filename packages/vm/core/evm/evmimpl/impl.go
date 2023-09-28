@@ -134,7 +134,10 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		func(err error) bool { return err != nil },
 	)
 	if revertErr != nil {
+		// mark receipt as failed
 		receipt.Status = types.ReceiptStatusFailed
+		// remove any events from the receipt
+		receipt.Logs = make([]*types.Log, 0)
 	}
 
 	// amend the gas usage (to include any ISC gas burned in sandbox calls)

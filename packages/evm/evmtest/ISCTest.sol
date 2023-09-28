@@ -35,6 +35,13 @@ contract ISCTest {
         emit RequestIDEvent(reqID);
     }
 
+    event DummyEvent(string s);
+
+    function emitDummyEvent() public {
+        emit DummyEvent("foobar");
+    }
+ 
+
     event SenderAccountEvent(ISCAgentID sender);
 
     function emitSenderAccount() public {

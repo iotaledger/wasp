@@ -1376,10 +1376,10 @@ func TestRequestWithNoGasBudget(t *testing.T) {
 	senderWallet, _ := env.NewKeyPairWithFunds()
 	req := solo.NewCallParams("dummy", "dummy").WithGasBudget(0)
 
-	// offledger request with 0 gas gets "budget exceeded" (the user has no funds on chain)
+	// offledger request with 0 gas
 	_, err := ch.PostRequestOffLedger(req, senderWallet)
-	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 	require.EqualValues(t, 0, ch.LastReceipt().GasBudget)
+	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 
 	// post the request via on-ledger (the account has funds now), the request gets bumped to "minGasBudget"
 	_, err = ch.PostRequestSync(req.WithFungibleTokens(isc.NewAssetsBaseTokens(10*isc.Million)), senderWallet)
