@@ -13,6 +13,10 @@ func (reqctx *requestContext) GasBurnEnable(enable bool) {
 	reqctx.gas.burnEnabled = enable
 }
 
+func (reqctx *requestContext) GasBurnEnabled() bool {
+	return reqctx.gas.burnEnabled
+}
+
 func (reqctx *requestContext) gasSetBudget(gasBudget, maxTokensToSpendForGasFee uint64) {
 	reqctx.gas.budgetAdjusted = gasBudget
 	reqctx.gas.maxTokensToSpendForGasFee = maxTokensToSpendForGasFee

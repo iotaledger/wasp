@@ -48,6 +48,8 @@ type Context interface {
 	GetBaseTokensBalance(addr common.Address) uint64
 	AddBaseTokensBalance(addr common.Address, amount uint64)
 	SubBaseTokensBalance(addr common.Address, amount uint64)
+
+	WithoutGasBurn(f func())
 }
 
 type GasLimits struct {
@@ -146,13 +148,17 @@ func Init(
 func NewEVMEmulator(ctx Context) *EVMEmulator {
 	gasLimits := ctx.GasLimits()
 	bdb := NewBlockchainDB(ctx.State(), gasLimits.Block, ctx.BlockKeepAmount())
-	if !bdb.Initialized() {
-		panic("must initialize genesis block first")
-	}
+	chainID := 0
+	ctx.WithoutGasBurn(func() {
+		if !bdb.Initialized() {
+			panic("must initialize genesis block first")
+		}
+		chainID = int(bdb.GetChainID())
+	})
 
 	return &EVMEmulator{
 		ctx:         ctx,
-		chainConfig: getConfig(int(bdb.GetChainID())),
+		chainConfig: getConfig(chainID),
 		vmConfig: vm.Config{
 			MagicContracts: ctx.MagicContracts(),
 			NoBaseFee:      true, // gas fee is set by ISC
