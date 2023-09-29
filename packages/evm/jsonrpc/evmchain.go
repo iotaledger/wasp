@@ -566,6 +566,9 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
 
 func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log) error {
 	for _, r := range receipts {
+		if r.Status == types.ReceiptStatusFailed {
+			continue
+		}
 		if !evmtypes.BloomFilter(r.Bloom, query.Addresses, query.Topics) {
 			continue
 		}
