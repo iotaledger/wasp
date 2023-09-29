@@ -233,11 +233,10 @@ func (req *onLedgerRequestData) SenderAccount() AgentID {
 		return nil
 	}
 	if req.requestMetadata != nil && !req.requestMetadata.SenderContract.Empty() {
-		if sender.Type() != iotago.AddressAlias {
-			panic("inconsistency: non-alias address cannot have a contract identity")
+		if sender.Type() == iotago.AddressAlias {
+			chainID := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+			return req.requestMetadata.SenderContract.AgentID(chainID)
 		}
-		chainID := ChainIDFromAddress(sender.(*iotago.AliasAddress))
-		return req.requestMetadata.SenderContract.AgentID(chainID)
 	}
 	return NewAgentID(sender)
 }
