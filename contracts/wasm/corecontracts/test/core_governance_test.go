@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -271,11 +272,39 @@ func TestGetChainOwner(t *testing.T) {
 func TestGetChainNodes(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
+	pubkeyBytes := ctx.Chain.OriginatorPrivateKey.GetPrivateKey().Public().AsBytes()
+	accessAPI := "http://my-api/url"
+	certificate := governance.NewNodeOwnershipCertificate(ctx.Chain.OriginatorPrivateKey, ctx.Chain.OriginatorAddress).Bytes()
 
-	// TODO first set up nodes / candidates so we have something to test f.Results for
-	f := coregovernance.ScFuncs.GetChainNodes(ctx)
-	f.Func.Call()
+	fget := coregovernance.ScFuncs.GetChainNodes(ctx)
+	fget.Func.Call()
 	require.NoError(t, ctx.Err)
+
+	// Initially the state is empty.
+	accessNodeCandidatesBytes := fget.Results.AccessNodeCandidates().GetBytes(pubkeyBytes).Value()
+	accessNodes := fget.Results.AccessNodes().GetBool(pubkeyBytes).Value()
+	require.Empty(t, accessNodeCandidatesBytes)
+	require.False(t, accessNodes)
+
+	// add new candidate node
+	fadd := coregovernance.ScFuncs.AddCandidateNode(ctx)
+	fadd.Params.AccessAPI().SetValue(accessAPI)
+	fadd.Params.PubKey().SetValue(pubkeyBytes)
+	fadd.Params.Certificate().SetValue(certificate)
+	fadd.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	fget.Func.Call()
+	require.NoError(t, ctx.Err)
+	accessNodeCandidatesBytes = fget.Results.AccessNodeCandidates().GetBytes(pubkeyBytes).Value()
+	accessNodes = fget.Results.AccessNodes().GetBool(pubkeyBytes).Value()
+	ani, err := governance.AccessNodeInfoFromBytes(pubkeyBytes, accessNodeCandidatesBytes)
+	require.NoError(t, err)
+	require.Equal(t, accessAPI, ani.AccessAPI)
+	require.Equal(t, pubkeyBytes, ani.NodePubKey)
+	require.Equal(t, certificate, ani.Certificate)
+	require.Equal(t, false, ani.ForCommittee)
+	require.True(t, accessNodes)
 }
 
 func TestGetFeePolicy(t *testing.T) {
