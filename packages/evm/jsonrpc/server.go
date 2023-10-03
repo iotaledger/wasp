@@ -9,6 +9,16 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 )
 
+type ParametersJSONRPC struct {
+	MaxBlocksInLogsFilterRange int `default:"1000" usage:"maximum amount of blocks in eth_getLogs filter range"`
+	MaxLogsInResult            int `default:"10000" usage:"maximum amount of logs in eth_getLogs result"`
+}
+
+var Params = &ParametersJSONRPC{
+	MaxBlocksInLogsFilterRange: 1000,
+	MaxLogsInResult:            10000,
+}
+
 func NewServer(
 	evmChain *EVMChain,
 	accountManager *AccountManager,

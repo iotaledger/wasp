@@ -496,7 +496,11 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 }
 
 func (e *EthService) getLogs(q *RPCFilterQuery) ([]*types.Log, error) {
-	logs, err := e.evmChain.Logs((*ethereum.FilterQuery)(q))
+	logs, err := e.evmChain.Logs(
+		(*ethereum.FilterQuery)(q),
+		Params.MaxBlocksInLogsFilterRange,
+		Params.MaxLogsInResult,
+	)
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
