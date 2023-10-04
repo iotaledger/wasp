@@ -1,6 +1,6 @@
 module github.com/iotaledger/wasp
 
-go 1.20
+go 1.21
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.12.0-wasp
@@ -32,7 +32,6 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a
 	github.com/iotaledger/inx/go v1.0.0-rc.2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
-	github.com/iotaledger/wasp/tools/wasp-cli v0.0.0-20230921125516-90a9fd02b441
 	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.1
@@ -45,7 +44,6 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/samber/lo v1.38.1
 	github.com/second-state/WasmEdge-go v0.13.4
-	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	github.com/wasmerio/wasmer-go v1.0.4
@@ -112,7 +110,6 @@ require (
 	github.com/holiman/uint256 v1.2.3 // indirect
 	github.com/huin/goupnp v1.2.0 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20230629181801-64c530ff9d15 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect

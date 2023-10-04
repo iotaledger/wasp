@@ -37,7 +37,8 @@ func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcou
 			childUpdates[idx] = nil
 		} else {
 			child.commitNode(triePartition, valuePartition, refcounts, stats)
-			childUpdates[idx] = &child.nodeData.Commitment
+			hashCopy := child.nodeData.Commitment
+			childUpdates[idx] = &hashCopy
 		}
 	}
 	n.nodeData.update(childUpdates, n.terminal, n.pathExtension)

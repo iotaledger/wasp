@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"slices"
 
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"

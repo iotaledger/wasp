@@ -94,8 +94,7 @@ func getNetworkHTTPFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) 
 	require.NoError(t, err)
 
 	port := ":9999"
-	handler := http.FileServer(http.Dir(localSnapshotsCreatePathConst))
-	go http.ListenAndServe(port, handler)
+	startServer(t, port, http.FileServer(http.Dir(localSnapshotsCreatePathConst)))
 
 	return getNetworkFuns(t, []string{"http://localhost" + port + "/"})
 }

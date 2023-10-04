@@ -5,10 +5,10 @@ package jsonrpc
 
 import (
 	"crypto/ecdsa"
+	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"golang.org/x/exp/slices"
 )
 
 type AccountManager struct {

@@ -36,7 +36,7 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendToOw
 
 	// round up
 	fee = p.FeeFromGas(gasUnits)
-	fee = util.MinUint64(fee, availableTokens)
+	fee = min(fee, availableTokens)
 
 	validatorPercentage := p.ValidatorFeeShare
 	if validatorPercentage > 100 {
