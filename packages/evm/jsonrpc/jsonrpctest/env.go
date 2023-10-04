@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 // Env is a testing environment for the EVM JSON-RPC support, allowing to run the same tests
@@ -58,15 +57,14 @@ func (e *Env) DeployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 	value := big.NewInt(0)
 
 	gasLimit := e.estimateGas(ethereum.CallMsg{
-		From:     creatorAddress,
-		To:       nil, // contract creation
-		GasPrice: evm.GasPrice,
-		Value:    value,
-		Data:     data,
+		From:  creatorAddress,
+		To:    nil, // contract creation
+		Value: value,
+		Data:  data,
 	})
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, gasLimit, e.MustGetGasPrice(), data),
 		e.Signer(),
 		creator,
 	)
@@ -278,6 +276,12 @@ func (e *Env) MustSendTransaction(args *jsonrpc.SendTxArgs) common.Hash {
 	return res
 }
 
+func (e *Env) MustGetGasPrice() *big.Int {
+	res, err := e.Client.SuggestGasPrice(context.Background())
+	require.NoError(e.T, err)
+	return res
+}
+
 func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	logs, err := e.Client.FilterLogs(context.Background(), q)
 	require.NoError(e.T, err)
@@ -312,7 +316,7 @@ func (e *Env) TestRPCGetLogs() {
 		Data:  callArguments,
 	})
 	transferTx, err := types.SignTx(
-		types.NewTransaction(e.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
+		types.NewTransaction(e.NonceAt(creatorAddress), contractAddress, value, gas, e.MustGetGasPrice(), callArguments),
 		e.Signer(),
 		creator,
 	)
@@ -328,7 +332,7 @@ func (e *Env) TestRPCInvalidNonce() {
 	// try sending correct nonces in invalid order 1,2, then 0 - this should succeed
 	createTx := func(nonce uint64) *types.Transaction {
 		tx, err := types.SignTx(
-			types.NewTransaction(nonce, toAddress, big.NewInt(0), math.MaxUint64, evm.GasPrice, nil),
+			types.NewTransaction(nonce, toAddress, big.NewInt(0), math.MaxUint64, e.MustGetGasPrice(), nil),
 			e.Signer(),
 			from,
 		)
@@ -358,7 +362,7 @@ func (e *Env) TestRPCGasLimitTooLow() {
 	nonce := e.NonceAt(fromAddress)
 	gasLimit := uint64(1) // lower than intrinsic gas
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
+		types.NewTransaction(nonce, toAddress, value, gasLimit, e.MustGetGasPrice(), nil),
 		e.Signer(),
 		from,
 	)
@@ -372,8 +376,7 @@ func (e *Env) TestRPCGasLimitTooLow() {
 }
 
 func (e *Env) TestGasPrice() {
-	gasPrice, err := e.Client.SuggestGasPrice(context.Background())
-	require.NoError(e.T, err)
+	gasPrice := e.MustGetGasPrice()
 	require.NotZero(e.T, gasPrice.Uint64())
 }
 

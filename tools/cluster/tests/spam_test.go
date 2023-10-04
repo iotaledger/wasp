@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 // executed in cluster_test.go
@@ -268,7 +267,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 		callArguments, err2 := storageContractABI.Pack("store", uint32(i))
 		require.NoError(t, err2)
 		tx, err2 := types.SignTx(
-			types.NewTransaction(nonce+i, storageContractAddr, big.NewInt(0), 100000, evm.GasPrice, callArguments),
+			types.NewTransaction(nonce+i, storageContractAddr, big.NewInt(0), 100000, env.GetGasPriceEVM(), callArguments),
 			EVMSigner(),
 			evmPvtKey,
 		)

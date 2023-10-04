@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -231,4 +233,8 @@ func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) Unsigne
 		signature: []byte{},
 	}
 	return req
+}
+
+func (*OffLedgerRequestData) EVMTransaction() *types.Transaction {
+	return nil
 }
