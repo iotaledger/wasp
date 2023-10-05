@@ -63,7 +63,7 @@ func NewStateTracker(
 		nextAO:                 nil,
 		nextAOCancel:           nil,
 		nextAOWaitCh:           nil,
-		awaitReceipt:           NewAwaitReceipt(awaitReceiptCleanupEvery, log),
+		awaitReceipt:           NewAwaitReceipt(AwaitReceiptCleanupEvery, log),
 		metricWantStateIndexCB: metricWantStateIndexCB,
 		metricHaveStateIndexCB: metricHaveStateIndexCB,
 		log:                    log,
