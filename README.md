@@ -1,4 +1,4 @@
-![Wasp logo](documentation/static/img/logo/WASP_logo_dark.png)
+![Wasp logo](https://github.com/iotaledger/iota-wiki/blob/main/static/img/logo/WASP_logo_dark.png)
 
 # Welcome to the Wasp repository!
 
