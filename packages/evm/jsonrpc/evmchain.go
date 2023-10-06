@@ -57,6 +57,11 @@ type NewBlockEvent struct {
 	logs  []*types.Log
 }
 
+type LogsLimits struct {
+	MaxBlocksInLogsFilterRange int
+	MaxLogsInResult            int
+}
+
 func NewEVMChain(
 	backend ChainBackend,
 	pub *publisher.Publisher,
@@ -476,16 +481,11 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 	return uint64(len(block.Transactions())), nil
 }
 
-const (
-	maxBlocksInFilterRange = 1_000
-	maxLogsInResult        = 10_000
-)
-
 // Logs executes a log filter operation, blocking during execution and
 // returning all the results in one batch.
 //
 //nolint:gocyclo
-func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*types.Log, error) {
 	e.log.Debugf("Logs(q=%v)", query)
 	logs := make([]*types.Log, 0)
 
@@ -499,7 +499,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
 		}
 		db := blockchainDB(state)
 		receipts := db.GetReceiptsByBlockNumber(uint64(state.BlockIndex()))
-		err = filterAndAppendToLogs(query, receipts, &logs)
+		err = filterAndAppendToLogs(query, receipts, &logs, params.MaxLogsInResult)
 		if err != nil {
 			return nil, err
 		}
@@ -526,7 +526,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
 	{
 		from := from.Uint64()
 		to := to.Uint64()
-		if to > from && to-from > maxBlocksInFilterRange {
+		if to > from && to-from > uint64(params.MaxBlocksInLogsFilterRange) {
 			return nil, errors.New("too many blocks in filter range")
 		}
 		for i := from; i <= to; i++ {
@@ -538,6 +538,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
 				query,
 				blockchainDB(state).GetReceiptsByBlockNumber(i),
 				&logs,
+				params.MaxLogsInResult,
 			)
 			if err != nil {
 				return nil, err
@@ -547,7 +548,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery) ([]*types.Log, error) {
 	return logs, nil
 }
 
-func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log) error {
+func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receipt, logs *[]*types.Log, maxLogsInResult int) error {
 	for _, r := range receipts {
 		if r.Status == types.ReceiptStatusFailed {
 			continue

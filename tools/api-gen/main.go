@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	v2 "github.com/iotaledger/wasp/packages/webapi"
 )
 
@@ -35,7 +36,7 @@ func main() {
 	}
 
 	swagger := webapi.CreateEchoSwagger(e, app.Version)
-	v2.Init(mockLog, swagger, app.Version, nil, nil, nil, nil, nil, nil, &NodeIdentityProviderMock{}, nil, nil, nil, nil, authentication.AuthConfiguration{Scheme: authentication.AuthJWT}, time.Second, nil, "", nil)
+	v2.Init(mockLog, swagger, app.Version, nil, nil, nil, nil, nil, nil, &NodeIdentityProviderMock{}, nil, nil, nil, nil, authentication.AuthConfiguration{Scheme: authentication.AuthJWT}, time.Second, nil, "", nil, jsonrpc.ParametersDefault())
 
 	root, ok := swagger.(*echoswagger.Root)
 	if !ok {

@@ -37,13 +37,20 @@ type EthService struct {
 	evmChain *EVMChain
 	accounts *AccountManager
 	metrics  *metrics.ChainWebAPIMetrics
+	params   *Parameters
 }
 
-func NewEthService(evmChain *EVMChain, accounts *AccountManager, metrics *metrics.ChainWebAPIMetrics) *EthService {
+func NewEthService(
+	evmChain *EVMChain,
+	accounts *AccountManager,
+	metrics *metrics.ChainWebAPIMetrics,
+	params *Parameters,
+) *EthService {
 	return &EthService{
 		evmChain: evmChain,
 		accounts: accounts,
 		metrics:  metrics,
+		params:   params,
 	}
 }
 
@@ -496,7 +503,10 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 }
 
 func (e *EthService) getLogs(q *RPCFilterQuery) ([]*types.Log, error) {
-	logs, err := e.evmChain.Logs((*ethereum.FilterQuery)(q))
+	logs, err := e.evmChain.Logs(
+		(*ethereum.FilterQuery)(q),
+		&e.params.Logs,
+	)
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
