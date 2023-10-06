@@ -339,9 +339,9 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 	// calculate affordableGas gas budget
 	affordableGas := reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
 	// adjust gas budget to what is affordable
-	affordableGas = util.MinUint64(gasBudget, affordableGas)
+	affordableGas = min(gasBudget, affordableGas)
 	// cap gas to the maximum allowed per tx
-	return util.MinUint64(affordableGas, reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest), maxTokensToSpendForGasFee
+	return min(affordableGas, reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest), maxTokensToSpendForGasFee
 }
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,

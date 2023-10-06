@@ -5,9 +5,8 @@ package mempool
 
 import (
 	"fmt"
+	"slices"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"

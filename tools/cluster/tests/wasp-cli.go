@@ -10,12 +10,12 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"

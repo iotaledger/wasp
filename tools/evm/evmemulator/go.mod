@@ -1,6 +1,6 @@
 module github.com/iotaledger/wasp/tools/evm/evmemulator
 
-go 1.20
+go 1.21
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.12.0-wasp

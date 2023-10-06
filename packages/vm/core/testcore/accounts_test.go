@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"strconv"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"

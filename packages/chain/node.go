@@ -19,10 +19,9 @@ package chain
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"

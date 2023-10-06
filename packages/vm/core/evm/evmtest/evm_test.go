@@ -1085,9 +1085,6 @@ func TestISCSendWithArgs(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, ret.iscReceipt.Error)
 
-	senderFinalBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, ethAddr))
-	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
-
 	// wait a bit for the request going out of EVM to be processed by ISC
 	env.soloChain.WaitUntil(func() bool {
 		return env.soloChain.LatestBlockIndex() == blockIndex+2
@@ -1095,6 +1092,13 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	// assert inc counter was incremented
 	checkCounter(1)
+
+	senderBalanceAfterSend := env.soloChain.L2BaseTokensAtStateIndex(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, ethAddr), blockIndex+1)
+	require.Less(t, senderBalanceAfterSend, senderInitialBalance-sendBaseTokens)
+
+	// the assets are deposited in sender account
+	senderFinalBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, ethAddr))
+	require.Greater(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
 }
 
 func TestERC20BaseTokens(t *testing.T) {

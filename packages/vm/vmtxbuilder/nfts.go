@@ -2,8 +2,7 @@ package vmtxbuilder
 
 import (
 	"bytes"
-
-	"golang.org/x/exp/slices"
+	"slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"

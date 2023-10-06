@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 
 	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/hive.go/web/basicauth"
 	"github.com/iotaledger/wasp/packages/onchangemap"

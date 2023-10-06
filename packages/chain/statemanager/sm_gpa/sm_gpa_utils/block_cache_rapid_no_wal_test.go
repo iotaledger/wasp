@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
+
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/logger"

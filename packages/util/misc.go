@@ -34,13 +34,6 @@ func IsZeroBigInt(bi *big.Int) bool {
 	return len(bi.Bits()) == 0
 }
 
-func MinUint64(a, b uint64) uint64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func GetHashValue(obj interface{ Bytes() []byte }) hashing.HashValue {
 	return hashing.HashData(obj.Bytes())
 }
