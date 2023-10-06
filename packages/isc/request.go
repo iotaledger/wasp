@@ -5,6 +5,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -57,6 +59,7 @@ type OffLedgerRequest interface {
 	ChainID() ChainID
 	Nonce() uint64
 	VerifySignature() error
+	EVMTransaction() *types.Transaction
 }
 
 type OnLedgerRequest interface {

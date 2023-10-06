@@ -6,6 +6,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -68,25 +69,35 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 		return err
 	}
 	senderAccount := offledgerReq.SenderAccount()
-	reqNonce := offledgerReq.Nonce()
-	var nonceErr error
 
+	reqNonce := offledgerReq.Nonce()
+	var expectedNonce uint64
 	if evmAgentID, ok := senderAccount.(*isc.EthereumAddressAgentID); ok {
 		withContractState(reqctx.uncommittedState, evm.Contract, func(s kv.KVStore) {
-			nonceErr = evmimpl.CheckNonce(s, evmAgentID.EthAddress(), reqNonce)
+			expectedNonce = evmimpl.Nonce(s, evmAgentID.EthAddress())
 		})
-		return nonceErr
+	} else {
+		withContractState(reqctx.uncommittedState, accounts.Contract, func(s kv.KVStore) {
+			expectedNonce = accounts.AccountNonce(
+				s,
+				senderAccount,
+				reqctx.ChainID(),
+			)
+		})
+	}
+	if reqNonce != expectedNonce {
+		return fmt.Errorf(
+			"invalid nonce (%s): expected %d, got %d",
+			offledgerReq.SenderAccount(), expectedNonce, reqNonce,
+		)
 	}
 
-	withContractState(reqctx.uncommittedState, accounts.Contract, func(s kv.KVStore) {
-		nonceErr = accounts.CheckNonce(
-			s,
-			senderAccount,
-			reqNonce,
-			reqctx.ChainID(),
-		)
-	})
-	return nonceErr
+	if evmTx := offledgerReq.EVMTransaction(); evmTx != nil {
+		if err := evmutil.CheckGasPrice(evmTx, reqctx.vm.chainInfo.GasFeePolicy); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request

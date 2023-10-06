@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"math/big"
 	"strings"
@@ -23,7 +24,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -68,6 +68,8 @@ var gasLimits = GasLimits{
 	Block: gas.EVMBlockGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
 	Call:  gas.EVMCallGasLimit(gas.LimitsDefault, &util.Ratio32{A: 1, B: 1}),
 }
+
+var gasPrice = big.NewInt(0) // ignored in the emulator
 
 func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 	lo := params.TxGas
@@ -122,7 +124,7 @@ func sendTransaction(
 
 	nonce := emu.StateDB().GetNonce(senderAddress)
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, receiverAddress, amount, gasLimit, evm.GasPrice, data),
+		types.NewTransaction(nonce, receiverAddress, amount, gasLimit, gasPrice, data),
 		emu.Signer(),
 		sender,
 	)
@@ -366,7 +368,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	require.NoError(t, err)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, txValue, gasLimit, evm.GasPrice, data),
+		types.NewContractCreation(nonce, txValue, gasLimit, gasPrice, data),
 		emu.Signer(),
 		creator,
 	)
@@ -659,7 +661,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, *context) 
 		gasLimit := uint64(100000)
 
 		txs[i], err = types.SignTx(
-			types.NewTransaction(nonce, contractAddress, amount, gasLimit, evm.GasPrice, callArguments),
+			types.NewTransaction(nonce, contractAddress, amount, gasLimit, gasPrice, callArguments),
 			emu.Signer(),
 			sender,
 		)

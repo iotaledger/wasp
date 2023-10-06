@@ -6,10 +6,9 @@ package bp
 import (
 	"bytes"
 	"encoding/binary"
+	"slices"
 	"sort"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"

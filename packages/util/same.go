@@ -3,7 +3,7 @@
 
 package util
 
-import "golang.org/x/exp/slices"
+import "slices"
 
 type Equated[V any] interface {
 	Equals(other V) bool

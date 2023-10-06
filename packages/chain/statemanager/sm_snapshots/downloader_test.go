@@ -2,7 +2,9 @@ package sm_snapshots
 
 import (
 	"context"
+	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -136,6 +138,19 @@ func TestDownloaderReadTooMuch(t *testing.T) {
 	)
 }
 
+func startServer(t *testing.T, port string, handler http.Handler) {
+	listener, err := net.Listen("tcp", port)
+	require.NoError(t, err)
+	srv := &http.Server{Addr: port, Handler: handler}
+	go func() {
+		err := srv.Serve(listener)
+		if !errors.Is(err, http.ErrServerClosed) {
+			require.NoError(t, err)
+		}
+	}()
+	t.Cleanup(func() { srv.Shutdown(context.Background()) })
+}
+
 func testDownloader(t *testing.T, writeFun func(io.Writer), readFun func(io.Reader), chunkSize ...uint64) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
@@ -145,8 +160,7 @@ func testDownloader(t *testing.T, writeFun func(io.Writer), readFun func(io.Read
 	require.NoError(t, err)
 
 	port := ":9998"
-	handler := http.FileServer(http.Dir(downloaderServerPathConst))
-	go http.ListenAndServe(port, handler)
+	startServer(t, port, http.FileServer(http.Dir(downloaderServerPathConst)))
 
 	fileName := "TestFile.bin"
 	filePathLocal := filepath.Join(downloaderServerPathConst, fileName)

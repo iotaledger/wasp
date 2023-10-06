@@ -148,3 +148,7 @@ func (req *evmOffLedgerTxRequest) VerifySignature() error {
 	}
 	return nil
 }
+
+func (req *evmOffLedgerTxRequest) EVMTransaction() *types.Transaction {
+	return req.tx
+}

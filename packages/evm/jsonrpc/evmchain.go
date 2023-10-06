@@ -185,19 +185,22 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 		return fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), expectedNonce)
 	}
 
-	if err := e.checkEnoughL2FundsForGasBudget(sender, tx.Gas()); err != nil {
+	gasFeePolicy := e.GasFeePolicy()
+	if err := e.checkEnoughL2FundsForGasBudget(sender, tx.Gas(), gasFeePolicy); err != nil {
+		return err
+	}
+	if err := evmutil.CheckGasPrice(tx, gasFeePolicy); err != nil {
 		return err
 	}
 	return e.backend.EVMSendTransaction(tx)
 }
 
-func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas uint64) error {
-	gasRatio := e.GasRatio()
+func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas uint64, gasFeePolicy *gas.FeePolicy) error {
+	gasRatio := gasFeePolicy.EVMGasRatio
 	balance, err := e.Balance(sender, nil)
 	if err != nil {
 		return fmt.Errorf("could not fetch sender balance: %w", err)
 	}
-	gasFeePolicy := e.GasFeePolicy()
 
 	gasLimits := e.gasLimits()
 
@@ -443,27 +446,7 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 
 func (e *EVMChain) GasPrice() *big.Int {
 	e.log.Debugf("GasPrice()")
-
-	iscState := e.backend.ISCLatestState()
-	governancePartition := subrealm.NewReadOnly(iscState, kv.Key(governance.Contract.Hname().Bytes()))
-	feePolicy := governance.MustGetGasFeePolicy(governancePartition)
-
-	// special case '0:0' for free request
-	if feePolicy.GasPerToken.IsZero() {
-		return big.NewInt(0)
-	}
-
-	// convert to wei (18 decimals)
-	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
-	price := big.NewInt(10)
-	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
-
-	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.B)))
-	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.GasPerToken.A)))
-	price.Mul(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.A)))
-	price.Div(price, new(big.Int).SetUint64(uint64(feePolicy.EVMGasRatio.B)))
-
-	return price
+	return e.GasFeePolicy().GasPriceWei(parameters.L1().BaseToken.Decimals)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (common.Hash, error) {
