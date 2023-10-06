@@ -3,6 +3,7 @@ package gas
 import (
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/wasp/packages/util"
@@ -128,4 +129,24 @@ func (p *FeePolicy) Write(w io.Writer) error {
 	ww.Write(&p.GasPerToken)
 	ww.WriteUint8(p.ValidatorFeeShare)
 	return ww.Err
+}
+
+// GasPriceWei returns the gas price converted to wei
+func (p *FeePolicy) GasPriceWei(l1BaseTokenDecimals uint32) *big.Int {
+	// special case '0:0' for free request
+	if p.GasPerToken.IsZero() {
+		return big.NewInt(0)
+	}
+
+	// convert to wei (18 decimals)
+	decimalsDifference := 18 - l1BaseTokenDecimals
+	price := big.NewInt(10)
+	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
+
+	price.Mul(price, new(big.Int).SetUint64(uint64(p.GasPerToken.B)))
+	price.Div(price, new(big.Int).SetUint64(uint64(p.GasPerToken.A)))
+	price.Mul(price, new(big.Int).SetUint64(uint64(p.EVMGasRatio.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(p.EVMGasRatio.B)))
+
+	return price
 }

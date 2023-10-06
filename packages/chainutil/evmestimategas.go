@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -27,12 +28,17 @@ func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call
 		gasCap uint64
 	)
 
-	maximumPossibleGas := getMaxCallGasLimit(ch)
+	info := getChainInfo(ch)
 
+	maximumPossibleGas := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
 	if call.Gas >= params.TxGas {
 		hi = call.Gas
 	} else {
 		hi = maximumPossibleGas
+	}
+
+	if call.GasPrice == nil {
+		call.GasPrice = info.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
 	}
 
 	gasCap = hi
@@ -114,9 +120,8 @@ func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call
 	return hi, nil
 }
 
-func getMaxCallGasLimit(ch chain.ChainCore) uint64 {
-	info := governance.NewStateAccess(mustLatestState(ch)).ChainInfo(ch.ID())
-	return gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
+func getChainInfo(ch chain.ChainCore) *isc.ChainInfo {
+	return governance.NewStateAccess(mustLatestState(ch)).ChainInfo(ch.ID())
 }
 
 func resolveError(ch chain.ChainCore, receiptError *isc.UnresolvedVMError) (isOutOfGas bool, resolved *isc.VMError, err error) {

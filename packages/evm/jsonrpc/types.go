@@ -19,7 +19,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
@@ -238,7 +237,7 @@ type SendTxArgs struct {
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
 func (args *SendTxArgs) setDefaults(e *EthService) error {
 	if args.GasPrice == nil {
-		args.GasPrice = (*hexutil.Big)(evm.GasPrice)
+		args.GasPrice = (*hexutil.Big)(e.evmChain.GasPrice())
 	}
 	if args.Value == nil {
 		args.Value = new(hexutil.Big)

@@ -42,7 +42,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -390,10 +389,9 @@ func TestCallViewGasLimit(t *testing.T) {
 	require.NoError(t, err)
 	senderAddress := crypto.PubkeyToAddress(loop.defaultSender.PublicKey)
 	callMsg := loop.callMsg(ethereum.CallMsg{
-		From:     senderAddress,
-		Gas:      math.MaxUint64,
-		GasPrice: evm.GasPrice,
-		Data:     callArguments,
+		From: senderAddress,
+		Gas:  math.MaxUint64,
+		Data: callArguments,
 	})
 	_, err = loop.chain.evmChain.CallContract(callMsg, nil)
 	require.Contains(t, err.Error(), "out of gas")
@@ -1498,17 +1496,14 @@ func TestEVMWithdrawAll(t *testing.T) {
 	require.EqualValues(t, tokensToWithdraw, env.solo.L1BaseTokens(receiver))
 }
 
-func TestEVMNonZeroGasPriceRequest(t *testing.T) {
+func TestEVMGasPriceMismatch(t *testing.T) {
 	env := initEVM(t)
 	ethKey, senderAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	// deploy solidity `storage` contract
 	storage := env.deployStorageContract(ethKey)
 
-	// call FuncCallView to call EVM contract's `retrieve` view, get 42
-	require.EqualValues(t, 42, storage.retrieve())
-
-	// issue a tx with non-0 gas price
+	// issue a tx with an arbitrary gas price
 	valueToStore := uint32(888)
 	gasPrice := big.NewInt(1234) // non 0
 	callArguments, err := storage.abi.Pack("store", valueToStore)
@@ -1520,18 +1515,7 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	err = storage.chain.evmChain.SendTransaction(tx)
-	require.NoError(t, err)
-
-	rec := env.soloChain.LastReceipt()
-
-	require.EqualValues(t, valueToStore, storage.retrieve())
-
-	// assert the gas fee is the same as a normal request (with 0 gas price)
-	res, err := storage.store(999)
-	require.NoError(t, err)
-	require.EqualValues(t, 999, storage.retrieve())
-	require.Equal(t, res.iscReceipt.GasBurned, rec.GasBurned)
-	require.Equal(t, res.iscReceipt.GasFeeCharged, rec.GasFeeCharged)
+	require.ErrorContains(t, err, "invalid gas price")
 }
 
 func TestEVMTransferBaseTokens(t *testing.T) {
@@ -1542,7 +1526,7 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	sendTx := func(amount *big.Int) {
 		nonce := env.getNonce(ethAddr)
-		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, env.maxGasLimit(), util.Big0, []byte{})
+		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, env.maxGasLimit(), env.evmChain.GasPrice(), []byte{})
 		tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 		require.NoError(t, err)
 		err = env.evmChain.SendTransaction(tx)
@@ -1668,7 +1652,7 @@ func TestSendEntireBalance(t *testing.T) {
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 
-	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, env.maxGasLimit(), util.Big0, []byte{})
+	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, env.maxGasLimit(), env.evmChain.GasPrice(), []byte{})
 	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 	require.NoError(t, err)
 	err = env.evmChain.SendTransaction(tx)
@@ -1689,11 +1673,10 @@ func TestSendEntireBalance(t *testing.T) {
 	)
 
 	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
-		From:     ethAddr,
-		To:       &someEthereumAddr,
-		GasPrice: evm.GasPrice,
-		Value:    currentBalanceInEthDecimals,
-		Data:     []byte{},
+		From:  ethAddr,
+		To:    &someEthereumAddr,
+		Value: currentBalanceInEthDecimals,
+		Data:  []byte{},
 	}, nil)
 	require.NoError(t, err)
 
@@ -1706,7 +1689,7 @@ func TestSendEntireBalance(t *testing.T) {
 		currentBalance-tokensForGasBudget,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
-	unsignedTx = types.NewTransaction(1, someEthereumAddr, valueToSendInEthDecimals, gasLimit, util.Big0, []byte{})
+	unsignedTx = types.NewTransaction(1, someEthereumAddr, valueToSendInEthDecimals, gasLimit, env.evmChain.GasPrice(), []byte{})
 	tx, err = types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 	require.NoError(t, err)
 	err = env.evmChain.SendTransaction(tx)
@@ -1866,11 +1849,10 @@ func TestChangeGasPerToken(t *testing.T) {
 	require.Greater(t, fee2, fee)
 }
 
-func TestGasPriceIgnored(t *testing.T) {
+func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 	env := initEVM(t)
 
 	var gasLimit []uint64
-	var gasUsed []uint64
 
 	for _, gasPrice := range []*big.Int{
 		nil,
@@ -1888,22 +1870,12 @@ func TestGasPriceIgnored(t *testing.T) {
 			}}, "store", uint32(3))
 			require.NoError(t, err)
 
-			res, err := storage.store(uint32(3), ethCallOptions{
-				sender:   ethKey,
-				gasLimit: gas,
-				gasPrice: gasPrice,
-			})
-			require.NoError(t, err)
-
 			gasLimit = append(gasLimit, gas)
-			gasUsed = append(gasUsed, res.evmReceipt.GasUsed)
 		})
 	}
 
 	t.Log("gas limit", gasLimit)
-	t.Log("gas used", gasUsed)
 	require.Len(t, lo.Uniq(gasLimit), 1)
-	require.Len(t, lo.Uniq(gasUsed), 1)
 }
 
 // calling views via eth_call must not cost gas (still has a maximum budget, but simple view calls should pass)

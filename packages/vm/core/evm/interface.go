@@ -4,8 +4,6 @@
 package evm
 
 import (
-	"math/big"
-
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
@@ -60,6 +58,3 @@ const (
 	// TODO shouldn't this be different between chain, to prevent replay attacks? (maybe derived from ISC ChainID)
 	DefaultChainID = uint16(1074) // IOTA -- get it?
 )
-
-// Gas is charged in isc VM (L1 currencies), not ETH
-var GasPrice = big.NewInt(0)
