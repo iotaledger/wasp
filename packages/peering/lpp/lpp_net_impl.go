@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// cSpell:words libp2p peerstore multiformats multiaddr shrinkingmap cryptolib rwutil libp2ppeer libp2ptls infof
+
 // Package lpp implements a peering.NetworkProvider based on the libp2p.
 //
 // The set of known peers is managed in several places:
@@ -23,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -150,39 +153,24 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 	if err != nil {
 		return "", err
 	}
-	peerHost, peerPort, err := peering.ParsePeeringURL(trustedPeer.PeeringURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse trusted peer peeringURL=%v, error: %w", trustedPeer.PeeringURL, err)
-	}
-	//
-	// Resolve IP addresses.
-	peerIPs, err := net.LookupIP(peerHost)
-	if err != nil {
-		return "", fmt.Errorf("failed to lookup IPs for peeringURL=%v, error: %w", trustedPeer.PeeringURL, err)
-	}
-	//
-	// Create multiaddresses.
-	addrPatterns := []string{
-		"/%s/%s/udp/%v/quic",
-		"/%s/%s/tcp/%v",
-	}
-	addrs := make([]multiaddr.Multiaddr, 0)
-	for i := range addrPatterns {
-		for j := range peerIPs {
-			var ipVer string
-			var ipStr string
-			if ip4 := peerIPs[j].To4(); ip4 != nil {
-				ipVer, ipStr = "ip4", ip4.String()
-			} else {
-				ipVer, ipStr = "ip6", peerIPs[j].String()
-			}
-			addr, err2 := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
-			if err2 != nil {
-				return "", fmt.Errorf("failed to make libp2p address for peeringURL=%v, error: %w", trustedPeer.PeeringURL, err2)
-			}
-			addrs = append(addrs, addr)
+
+	// If the peer's URL starts with `/`, we consider it a multi-address and use as-is.
+	// Otherwise we assume it is `host:port` and we build multi-addresses out of that.
+	var addrs []multiaddr.Multiaddr
+	if strings.HasPrefix(trustedPeer.PeeringURL, "/") {
+		addr, err2 := multiaddr.NewMultiaddr(trustedPeer.PeeringURL)
+		if err2 != nil {
+			return "", fmt.Errorf("failed to parse multiaddr from peeringURL=%v, error: %w", trustedPeer.PeeringURL, err2)
 		}
+		addrs = []multiaddr.Multiaddr{addr}
+	} else {
+		addrs2, err2 := n.makeMultiaddr(trustedPeer.PeeringURL)
+		if err2 != nil {
+			return "", fmt.Errorf("failed to create multiaddr from peeringURL=%v, error: %w", trustedPeer.PeeringURL, err2)
+		}
+		addrs = addrs2
 	}
+
 	n.log.Infof("Registering %v as libp2p PeerID=%v with addresses: %+v", trustedPeer.PeeringURL, lppPeerID, addrs)
 	n.lppHost.Peerstore().AddAddrs(lppPeerID, addrs, peerstore.PermanentAddrTTL)
 	err = n.lppHost.Peerstore().AddPubKey(lppPeerID, lppPeerPub)
@@ -190,6 +178,37 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 		return "", fmt.Errorf("failed add PubKey for peeringURL=%v, error: %w", trustedPeer.PeeringURL, err)
 	}
 	return lppPeerID, nil
+}
+
+func (n *netImpl) makeMultiaddr(peeringURL string) (a []multiaddr.Multiaddr, err error) {
+	peerHost, peerPort, err := peering.ParsePeeringURL(peeringURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse trusted peer peeringURL=%v, error: %w", peeringURL, err)
+	}
+
+	addrPatterns := []string{
+		"/%s/%s/udp/%v/quic",
+		"/%s/%s/tcp/%v",
+	}
+	addrs := make([]multiaddr.Multiaddr, 0)
+	for i := range addrPatterns {
+		var addrType string
+		if ip := net.ParseIP(peerHost); ip == nil {
+			addrType = "dns"
+		} else {
+			if ip.To4() != nil {
+				addrType = "ip4"
+			} else {
+				addrType = "ip6"
+			}
+		}
+		addr, err2 := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], addrType, peerHost, peerPort))
+		if err2 != nil {
+			return nil, fmt.Errorf("failed to make libp2p address for peeringURL=%v, error: %w", peeringURL, err2)
+		}
+		addrs = append(addrs, addr)
+	}
+	return addrs, nil
 }
 
 func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer.ID, crypto.PubKey, error) {
