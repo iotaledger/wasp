@@ -83,7 +83,7 @@ var WaspConfig = `
     }
   },
   "peering": {
-    "peeringURL": "0.0.0.0:{{.PeeringPort}}",
+    "peeringURL": "localhost:{{.PeeringPort}}",
     "port": {{.PeeringPort}}
   },
   "chains": {
