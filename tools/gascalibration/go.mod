@@ -105,7 +105,7 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/image v0.11.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
+	golang.org/x/net v0.16.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
