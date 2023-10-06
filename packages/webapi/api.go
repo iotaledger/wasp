@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -93,6 +94,7 @@ func Init(
 	websocketService *websocket.Service,
 	indexDbPath string,
 	pub *publisher.Publisher,
+	jsonrpcParams *jsonrpc.Parameters,
 ) {
 	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
@@ -104,7 +106,7 @@ func Init(
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDbPath, chainMetricsProvider, logger.Named("EVMService"))
+	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDbPath, chainMetricsProvider, jsonrpcParams, logger.Named("EVMService"))
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)

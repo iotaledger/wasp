@@ -57,6 +57,11 @@ type NewBlockEvent struct {
 	logs  []*types.Log
 }
 
+type LogsLimits struct {
+	MaxBlocksInLogsFilterRange int
+	MaxLogsInResult            int
+}
+
 func NewEVMChain(
 	backend ChainBackend,
 	pub *publisher.Publisher,
@@ -480,7 +485,7 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 // returning all the results in one batch.
 //
 //nolint:gocyclo
-func (e *EVMChain) Logs(query *ethereum.FilterQuery, maxBlocksInFilterRange, maxLogsInResult int) ([]*types.Log, error) {
+func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*types.Log, error) {
 	e.log.Debugf("Logs(q=%v)", query)
 	logs := make([]*types.Log, 0)
 
@@ -494,7 +499,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, maxBlocksInFilterRange, max
 		}
 		db := blockchainDB(state)
 		receipts := db.GetReceiptsByBlockNumber(uint64(state.BlockIndex()))
-		err = filterAndAppendToLogs(query, receipts, &logs, maxLogsInResult)
+		err = filterAndAppendToLogs(query, receipts, &logs, params.MaxLogsInResult)
 		if err != nil {
 			return nil, err
 		}
@@ -521,7 +526,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, maxBlocksInFilterRange, max
 	{
 		from := from.Uint64()
 		to := to.Uint64()
-		if to > from && to-from > uint64(maxBlocksInFilterRange) {
+		if to > from && to-from > uint64(params.MaxBlocksInLogsFilterRange) {
 			return nil, errors.New("too many blocks in filter range")
 		}
 		for i := from; i <= to; i++ {
@@ -533,7 +538,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, maxBlocksInFilterRange, max
 				query,
 				blockchainDB(state).GetReceiptsByBlockNumber(i),
 				&logs,
-				maxLogsInResult,
+				params.MaxLogsInResult,
 			)
 			if err != nil {
 				return nil, err

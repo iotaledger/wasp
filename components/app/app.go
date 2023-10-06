@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/components/chains"
 	"github.com/iotaledger/wasp/components/database"
 	"github.com/iotaledger/wasp/components/dkg"
-	"github.com/iotaledger/wasp/components/jsonrpc"
 	"github.com/iotaledger/wasp/components/logger"
 	"github.com/iotaledger/wasp/components/nodeconn"
 	"github.com/iotaledger/wasp/components/peering"
@@ -52,7 +51,6 @@ func App() *app.App {
 			wasmtimevm.Component,
 			chains.Component,
 			publisher.Component,
-			jsonrpc.Component,
 			webapi.Component,
 			profiling.Component,
 			profilingrecorder.Component,

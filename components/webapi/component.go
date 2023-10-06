@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -291,6 +292,10 @@ func provide(c *dig.Container) error {
 			websocketService,
 			ParamsWebAPI.IndexDbPath,
 			deps.Publisher,
+			jsonrpc.NewParameters(
+				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,
+				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,
+			),
 		)
 
 		return webapiServerResult{
