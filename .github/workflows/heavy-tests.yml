@@ -23,13 +23,13 @@ jobs:
         id: go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
 
       - name: Run global scope golangci-lint
         id: global_lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.53.2
+          version: v1.54.2
           args: --timeout 10m0s
           skip-pkg-cache: true
 
@@ -37,7 +37,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           working-directory: tools/wasp-cli
-          version: v1.53.2
+          version: v1.54.2
           args: --timeout 10m0s
           skip-pkg-cache: true
 
@@ -124,7 +124,7 @@ jobs:
         id: go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
 
       - name: install tinygo
         id: tinygo
@@ -262,7 +262,7 @@ jobs:
         id: go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20"
+          go-version: "1.21"
 
       - name: Cache Hornet
         id: cache_hornet

@@ -146,7 +146,7 @@ The Schema tool will also build the smart contract for you. To be able to do tha
 requires that the proper compilers have already been installed and can be reached 
 through your execution PATH. These are the required compilers for each language:
 
-- [Go](https://go.dev/) version 1.20 or higher with [tinygo](https://tinygo.org/) version
+- [Go](https://go.dev/) version 1.21 or higher with [tinygo](https://tinygo.org/) version
   0.27 or higher.
 - [Rust](https://www.rust-lang.org/) version 1.69 or higher with
   [wasm-pack](https://github.com/rustwasm/wasm-pack) version 0.11 or higher.

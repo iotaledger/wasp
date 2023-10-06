@@ -319,15 +319,14 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	value := big.NewInt(0)
 
 	gasLimit, err := e.evmChain.EstimateGas(ethereum.CallMsg{
-		From:     creatorAddress,
-		GasPrice: evm.GasPrice,
-		Value:    value,
-		Data:     data,
+		From:  creatorAddress,
+		Value: value,
+		Data:  data,
 	}, nil)
 	require.NoError(e.t, err)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, gasLimit, e.evmChain.GasPrice(), data),
 		e.signer(),
 		creator,
 	)
@@ -425,7 +424,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 		opt.value = big.NewInt(0)
 	}
 	if opt.gasPrice == nil {
-		opt.gasPrice = evm.GasPrice
+		opt.gasPrice = e.chain.evmChain.GasPrice()
 	}
 	if opt.gasLimit == 0 {
 		var err error
@@ -509,10 +508,8 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 	require.NoError(e.chain.t, err)
 	senderAddress := crypto.PubkeyToAddress(e.defaultSender.PublicKey)
 	callMsg := e.callMsg(ethereum.CallMsg{
-		From:     senderAddress,
-		Gas:      0,
-		GasPrice: evm.GasPrice,
-		Data:     callArguments,
+		From: senderAddress,
+		Data: callArguments,
 	})
 	var bn *rpc.BlockNumberOrHash
 	if len(blockNumberOrHash) > 0 {

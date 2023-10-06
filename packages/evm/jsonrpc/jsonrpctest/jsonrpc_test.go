@@ -277,7 +277,7 @@ func TestRPCSignTransaction(t *testing.T) {
 		From:     ethAddr,
 		To:       &to,
 		Gas:      &gas,
-		GasPrice: (*hexutil.Big)(evm.GasPrice),
+		GasPrice: (*hexutil.Big)(big.NewInt(1000)),
 		Value:    (*hexutil.Big)(big.NewInt(42)),
 		Nonce:    &nonce,
 	})
@@ -304,7 +304,7 @@ func TestRPCSendTransaction(t *testing.T) {
 	txHash := env.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     ethAddr,
 		Gas:      &gas,
-		GasPrice: (*hexutil.Big)(evm.GasPrice),
+		GasPrice: (*hexutil.Big)(env.MustGetGasPrice()),
 		Nonce:    &nonce,
 		Data:     (*hexutil.Bytes)(&data),
 	})
@@ -406,7 +406,7 @@ func TestRPCLogIndex(t *testing.T) {
 	value := big.NewInt(0)
 	gas := uint64(100_000)
 	tx, err := types.SignTx(
-		types.NewTransaction(env.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
+		types.NewTransaction(env.NonceAt(creatorAddress), contractAddress, value, gas, env.MustGetGasPrice(), callArguments),
 		env.Signer(),
 		creator,
 	)
@@ -443,7 +443,7 @@ func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {
 	value := big.NewInt(0)
 	gasLimit := uint64(10_000)
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, gasLimit, env.MustGetGasPrice(), data),
 		env.Signer(),
 		creator,
 	)

@@ -161,15 +161,14 @@ func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON str
 	jsonRPCClient := e.EVMJSONRPClient(0) // send request to node #0
 	gasLimit, err := jsonRPCClient.EstimateGas(context.Background(),
 		ethereum.CallMsg{
-			From:     creatorAddress,
-			GasPrice: evm.GasPrice,
-			Value:    value,
-			Data:     data,
+			From:  creatorAddress,
+			Value: value,
+			Data:  data,
 		})
 	require.NoError(e.t, err)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, gasLimit, e.GetGasPriceEVM(), data),
 		EVMSigner(),
 		creator,
 	)
@@ -189,6 +188,12 @@ func (e *ChainEnv) GetNonceEVM(addr common.Address) uint64 {
 	nonce, err := e.EVMJSONRPClient(0).NonceAt(context.Background(), addr, nil)
 	require.NoError(e.t, err)
 	return nonce
+}
+
+func (e *ChainEnv) GetGasPriceEVM() *big.Int {
+	res, err := e.EVMJSONRPClient(0).SuggestGasPrice(context.Background())
+	require.NoError(e.t, err)
+	return res
 }
 
 func (e *ChainEnv) EVMJSONRPClient(nodeIndex int) *ethclient.Client {

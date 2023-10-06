@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -121,4 +122,8 @@ func (req *evmOffLedgerCallRequest) TargetAddress() iotago.Address {
 
 func (req *evmOffLedgerCallRequest) VerifySignature() error {
 	return fmt.Errorf("%T should never be used to send regular requests", req)
+}
+
+func (*evmOffLedgerCallRequest) EVMTransaction() *types.Transaction {
+	return nil
 }

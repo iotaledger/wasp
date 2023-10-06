@@ -202,7 +202,7 @@ func (tr *TrieUpdatable) delete(triePath []byte) {
 			nodes[i-1].removeChild(nil, idxAsChild)
 		}
 	}
-	assertf(nodes[0] != nil, "please do not delete root")
+	assertf(nodes[0] != nil, "please do not delete root") //nolint:gosec // false positive
 }
 
 func (tr *TrieUpdatable) mergeNodeIfNeeded(node *bufferedNode) *bufferedNode {
