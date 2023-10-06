@@ -1,4 +1,5 @@
 #!/bin/bash
+CURRENT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 COMMIT=$1
 MODULES="app constraints crypto ds kvstore lo logger objectstorage runtime serializer/v2 web"
@@ -14,4 +15,4 @@ do
 	go get -u github.com/iotaledger/hive.go/$i@$COMMIT
 done
 
-./go_mod_tidy.sh
+bash ${CURRENT_DIR}/go_mod_tidy.sh
