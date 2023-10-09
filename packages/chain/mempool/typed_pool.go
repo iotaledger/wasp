@@ -5,11 +5,13 @@ package mempool
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 type typedPool[V isc.Request] struct {
@@ -84,4 +86,16 @@ func (olp *typedPool[V]) Filter(predicate func(request V, ts time.Time) bool) {
 
 func (olp *typedPool[V]) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", olp.requests.Size())
+}
+
+func (olp *typedPool[V]) WriteContent(w io.Writer) {
+	olp.requests.ForEach(func(_ isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
+		data := entry.req.Bytes()
+		_, err := w.Write(codec.EncodeUint32(uint32(len(data))))
+		if err != nil {
+			return false // stop iteration
+		}
+		_, err = w.Write(data)
+		return err == nil
+	})
 }

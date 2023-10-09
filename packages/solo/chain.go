@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"time"
@@ -698,4 +699,8 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 
 func (ch *Chain) LatestBlockIndex() uint32 {
 	return ch.GetLatestBlockInfo().BlockIndex()
+}
+
+func (ch *Chain) GetMempoolContents() io.Reader {
+	panic("unimplemented")
 }

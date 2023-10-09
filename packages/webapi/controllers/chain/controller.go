@@ -178,4 +178,9 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusOK, "Access node was successfully removed", nil, nil).
 		SetSummary("Remove an access node.").
 		SetOperationId("removeAccessNode")
+
+	adminAPI.GET("chains/:chainID/mempool", c.getMempoolContents, authentication.ValidatePermissions([]string{permissions.Read})).
+		AddResponse(http.StatusOK, "", nil, nil).
+		SetSummary("Get the contents of the mempool.").
+		SetOperationId("getMempoolContents")
 }

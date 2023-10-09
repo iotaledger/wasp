@@ -45,6 +45,7 @@ package mempool
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/samber/lo"
@@ -105,6 +106,7 @@ type Mempool interface {
 	// These nodes should be used to disseminate the off-ledger requests.
 	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
+	GetContents() io.Reader
 }
 
 type RequestPool[V isc.Request] interface {
@@ -115,6 +117,7 @@ type RequestPool[V isc.Request] interface {
 	// this removes requests from the pool if predicate returns false
 	Filter(predicate func(request V, ts time.Time) bool)
 	StatusString() string
+	WriteContent(io.Writer)
 }
 
 // This implementation tracks single branch of the chain only. I.e. all the consensus
@@ -301,6 +304,18 @@ func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys [
 		committeePubKeys:  committeePubKeys,
 		accessNodePubKeys: accessNodePubKeys,
 	}
+}
+
+func (mpi *mempoolImpl) writeContentAndClose(pw *io.PipeWriter) {
+	defer pw.Close()
+	mpi.onLedgerPool.WriteContent(pw)
+	mpi.offLedgerPool.WriteContent(pw)
+}
+
+func (mpi *mempoolImpl) GetContents() io.Reader {
+	pr, pw := io.Pipe()
+	go mpi.writeContentAndClose(pw)
+	return pr
 }
 
 func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {

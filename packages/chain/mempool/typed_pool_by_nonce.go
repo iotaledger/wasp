@@ -5,12 +5,14 @@ package mempool
 
 import (
 	"fmt"
+	"io"
 	"slices"
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // keeps a map of requests ordered by nonce for each account
@@ -165,4 +167,21 @@ func (p *TypedPoolByNonce[V]) Filter(predicate func(request V, ts time.Time) boo
 
 func (p *TypedPoolByNonce[V]) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", p.refLUT.Size())
+}
+
+func (p *TypedPoolByNonce[V]) WriteContent(w io.Writer) {
+	p.reqsByAcountOrdered.ForEach(func(_ string, list []*OrderedPoolEntry[V]) bool {
+		for _, entry := range list {
+			data := entry.req.Bytes()
+			_, err := w.Write(codec.EncodeUint32(uint32(len(data))))
+			if err != nil {
+				return false // stop iteration
+			}
+			_, err = w.Write(data)
+			if err != nil {
+				return false // stop iteration
+			}
+		}
+		return true
+	})
 }
