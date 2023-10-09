@@ -87,7 +87,7 @@ import (
 )
 
 func main() {
-    loginRequest := *openapiclient.NewLoginRequest("Password_example", "Username_example") // LoginRequest | The login request
+    loginRequest := *openapiclient.NewLoginRequest("wasp", "wasp") // LoginRequest | The login request
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)

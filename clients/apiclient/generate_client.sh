@@ -17,8 +17,8 @@ GENERATE_MODE=${1:-cli}
 
 GENERATE_ARGS="\
     --global-property=models,supportingFiles,apis,modelTests=false,apiTests=false \
-    -g go \
-    --package-name=apiclient \
+    -g typescript \
+    --package-name=apiclient-ts \
     --additional-properties preferUnsignedInt=TRUE
 "
 
@@ -28,10 +28,10 @@ if [ $GENERATE_MODE = "docker" ]; then
   echo "Generating client with Docker"
 
   docker run -v "$SCRIPTPATH"/wasp_swagger_schema.json:/tmp/schema.json:ro \
-    -v "$SCRIPTPATH":/tmp/apiclient \
+    -v "$SCRIPTPATH":/tmp/apiclient-ts \
     lukasmoe/openapi-generator \
     generate -i "/tmp/schema.json" \
-    -o "/tmp/apiclient" \
+    -o "/tmp/apiclient-ts" \
     $GENERATE_ARGS
 
 else

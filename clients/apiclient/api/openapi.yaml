@@ -37,6 +37,9 @@ paths:
         "401":
           content: {}
           description: "Unauthorized (Wrong permissions, missing token)"
+        "405":
+          content: {}
+          description: "auth type: none"
       summary: Authenticate towards the node
       tags:
       - auth
@@ -1568,6 +1571,32 @@ paths:
       summary: Ethereum JSON-RPC (Websocket transport)
       tags:
       - chains
+  /v1/chains/{chainID}/mempool:
+    get:
+      operationId: getMempoolContents
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: binary data of request in the mempool
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Get the contents of the mempool.
+      tags:
+      - chains
   /v1/chains/{chainID}/receipts/{requestID}:
     get:
       operationId: getReceipt
@@ -2491,16 +2520,18 @@ components:
         name: AssetsResponse
     AuthInfoModel:
       example:
-        authURL: authURL
-        scheme: scheme
+        authURL: /auth
+        scheme: jwt
       properties:
         authURL:
           description: JWT only
+          example: /auth
           format: string
           type: string
           xml:
             name: AuthURL
         scheme:
+          example: jwt
           format: string
           type: string
           xml:
@@ -2766,18 +2797,18 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
-            a: 0
-            b: 0
-          validatorFeeShare: 1
+            a: 1
+            b: 100
+          validatorFeeShare: 0
           evmGasRatio:
             a: 1
             b: 1
@@ -3661,9 +3692,9 @@ components:
     FeePolicy:
       example:
         gasPerToken:
-          a: 0
-          b: 0
-        validatorFeeShare: 1
+          a: 1
+          b: 100
+        validatorFeeShare: 0
         evmGasRatio:
           a: 1
           b: 1
@@ -3690,15 +3721,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3764,17 +3795,17 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
@@ -4187,10 +4218,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 5
-        minGasPerRequest: 7
-        maxGasPerBlock: 5
-        maxGasPerRequest: 2
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4226,15 +4257,17 @@ components:
         name: Limits
     LoginRequest:
       example:
-        password: password
-        username: username
+        password: wasp
+        username: wasp
       properties:
         password:
+          example: wasp
           format: string
           type: string
           xml:
             name: Password
         username:
+          example: wasp
           format: string
           type: string
           xml:
@@ -4247,7 +4280,7 @@ components:
         name: LoginRequest
     LoginResponse:
       example:
-        jwt: jwt
+        jwt: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3YXNwIiwic3ViIjoid2FzcCIsImF1ZCI6WyJ3YXNwIl0sImV4cCI6MTY4OTk1MTAyNCwibmJmIjoxNjg5ODY0NjI0LCJpYXQiOjE2ODk4NjQ2MjQsImp0aSI6IjE2ODk4NjQ2MjQiLCJwZXJtaXNzaW9ucyI6eyJ3cml0ZSI6e319fQ.LNUuTaoRjEPQyD2nQ00O6NeadiG7nmOEyVIQmGNb1a0
         error: error
       properties:
         error:
@@ -4256,6 +4289,7 @@ components:
           xml:
             name: Error
         jwt:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3YXNwIiwic3ViIjoid2FzcCIsImF1ZCI6WyJ3YXNwIl0sImV4cCI6MTY4OTk1MTAyNCwibmJmIjoxNjg5ODY0NjI0LCJpYXQiOjE2ODk4NjQ2MjQsImp0aSI6IjE2ODk4NjQ2MjQiLCJwZXJtaXNzaW9ucyI6eyJ3cml0ZSI6e319fQ.LNUuTaoRjEPQyD2nQ00O6NeadiG7nmOEyVIQmGNb1a0
           format: string
           type: string
           xml:
@@ -5071,6 +5105,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 100
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 100
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0

@@ -180,7 +180,8 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("removeAccessNode")
 
 	adminAPI.GET("chains/:chainID/mempool", c.getMempoolContents, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddResponse(http.StatusOK, "", nil, nil).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddResponse(http.StatusOK, "binary data of request in the mempool", nil, nil).
 		SetSummary("Get the contents of the mempool.").
 		SetOperationId("getMempoolContents")
 }
