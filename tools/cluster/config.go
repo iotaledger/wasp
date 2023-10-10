@@ -23,13 +23,12 @@ type WaspConfig struct {
 
 func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams {
 	return templates.WaspConfigParams{
-		APIPort:                      w.FirstAPIPort + i,
-		PeeringPort:                  w.FirstPeeringPort + i,
-		ProfilingPort:                w.FirstProfilingPort + i,
-		MetricsPort:                  w.FirstMetricsPort + i,
-		OffledgerBroadcastUpToNPeers: 10,
-		PruningMinStatesToKeep:       10000,
-		AuthScheme:                   "none",
+		APIPort:                w.FirstAPIPort + i,
+		PeeringPort:            w.FirstPeeringPort + i,
+		ProfilingPort:          w.FirstProfilingPort + i,
+		MetricsPort:            w.FirstMetricsPort + i,
+		PruningMinStatesToKeep: 10000,
+		AuthScheme:             "none",
 	}
 }
 

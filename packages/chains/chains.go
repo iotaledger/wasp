@@ -41,17 +41,14 @@ type Provider func() *Chains // TODO: Use DI instead of that.
 type ChainProvider func(chainID isc.ChainID) chain.Chain
 
 type Chains struct {
-	ctx                              context.Context
-	log                              *logger.Logger
-	nodeConnection                   chain.NodeConnection
-	processorConfig                  *processors.Config
-	offledgerBroadcastUpToNPeers     int
-	offledgerBroadcastInterval       time.Duration
-	pullMissingRequestsFromCommittee bool
-	deriveAliasOutputByQuorum        bool
-	pipeliningLimit                  int
-	consensusDelay                   time.Duration
-	recoveryTimeout                  time.Duration
+	ctx                       context.Context
+	log                       *logger.Logger
+	nodeConnection            chain.NodeConnection
+	processorConfig           *processors.Config
+	deriveAliasOutputByQuorum bool
+	pipeliningLimit           int
+	consensusDelay            time.Duration
+	recoveryTimeout           time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -104,9 +101,6 @@ func New(
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
 	validatorAddrStr string,
-	offledgerBroadcastUpToNPeers int, // TODO: Unused for now.
-	offledgerBroadcastInterval time.Duration, // TODO: Unused for now.
-	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
 	consensusDelay time.Duration,
@@ -155,9 +149,6 @@ func New(
 		allChains:                           shrinkingmap.New[isc.ChainID, *activeChain](),
 		nodeConnection:                      nodeConnection,
 		processorConfig:                     processorConfig,
-		offledgerBroadcastUpToNPeers:        offledgerBroadcastUpToNPeers,
-		offledgerBroadcastInterval:          offledgerBroadcastInterval,
-		pullMissingRequestsFromCommittee:    pullMissingRequestsFromCommittee,
 		deriveAliasOutputByQuorum:           deriveAliasOutputByQuorum,
 		pipeliningLimit:                     pipeliningLimit,
 		consensusDelay:                      consensusDelay,

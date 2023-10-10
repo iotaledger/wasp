@@ -14,16 +14,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 func TestMissingRequests(t *testing.T) {
-	// disable offledger request gossip between nodes
-	modifyConfig := func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
-		configParams.OffledgerBroadcastUpToNPeers = 0
-		return configParams
-	}
-	clu := newCluster(t, waspClusterOpts{nNodes: 4, modifyConfig: modifyConfig})
+	clu := newCluster(t, waspClusterOpts{nNodes: 4})
 	cmt := []int{0, 1, 2, 3}
 	threshold := uint16(4)
 	addr, err := clu.RunDKG(cmt, threshold)
