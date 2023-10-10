@@ -122,6 +122,7 @@ func start(cmd *cobra.Command, args []string) {
 		chain.EVM(),
 		jsonrpc.NewAccountManager(accounts),
 		metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
+		jsonrpc.ParametersDefault(),
 	)
 	log.Check(err)
 
