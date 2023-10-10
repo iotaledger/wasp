@@ -89,277 +89,165 @@ func (e *EthService) resolveError(err error) error {
 	return resolvedErr.AsGoError()
 }
 
-func (e *EthService) getTransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
-	n, err := e.evmChain.TransactionCount(address, blockNumberOrHash)
-	if err != nil {
-		return 0, e.resolveError(err)
-	}
-	return hexutil.Uint64(n), nil
-}
-
 func (e *EthService) GetTransactionCount(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
-	return withMetrics(
-		e.metrics, "eth_getTransactionCount",
-		func() (hexutil.Uint64, error) {
-			return e.getTransactionCount(address, blockNumberOrHash)
-		},
-	)
-}
-
-func (e *EthService) blockNumber() *hexutil.Big {
-	n := e.evmChain.BlockNumber()
-	return (*hexutil.Big)(n)
+	return withMetrics(e.metrics, "eth_getTransactionCount", func() (hexutil.Uint64, error) {
+		n, err := e.evmChain.TransactionCount(address, blockNumberOrHash)
+		if err != nil {
+			return 0, e.resolveError(err)
+		}
+		return hexutil.Uint64(n), nil
+	})
 }
 
 func (e *EthService) BlockNumber() (*hexutil.Big, error) {
-	return withMetrics(
-		e.metrics, "eth_blockNumber",
-		func() (*hexutil.Big, error) {
-			return e.blockNumber(), nil
-		},
-	)
-}
-
-func (e *EthService) getBlockByNumber(blockNumber rpc.BlockNumber, full bool) (map[string]interface{}, error) {
-	block, err := e.evmChain.BlockByNumber(parseBlockNumber(blockNumber))
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	if block == nil {
-		return nil, nil
-	}
-	return RPCMarshalBlock(block, true, full)
+	return withMetrics(e.metrics, "eth_blockNumber", func() (*hexutil.Big, error) {
+		n := e.evmChain.BlockNumber()
+		return (*hexutil.Big)(n), nil
+	})
 }
 
 func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (map[string]interface{}, error) {
-	return withMetrics(
-		e.metrics, "eth_getBlockByNumber",
-		func() (map[string]interface{}, error) {
-			return e.getBlockByNumber(blockNumber, full)
-		},
-	)
-}
-
-func (e *EthService) getBlockByHash(hash common.Hash, full bool) (map[string]interface{}, error) {
-	block := e.evmChain.BlockByHash(hash)
-	if block == nil {
-		return nil, nil
-	}
-	return RPCMarshalBlock(block, true, full)
+	return withMetrics(e.metrics, "eth_getBlockByNumber", func() (map[string]interface{}, error) {
+		block, err := e.evmChain.BlockByNumber(parseBlockNumber(blockNumber))
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		if block == nil {
+			return nil, nil
+		}
+		return RPCMarshalBlock(block, true, full)
+	})
 }
 
 func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]interface{}, error) {
-	return withMetrics(
-		e.metrics, "eth_getBlockByHash",
-		func() (map[string]interface{}, error) {
-			return e.getBlockByHash(hash, full)
-		},
-	)
-}
-
-func (e *EthService) getTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
-	tx, blockHash, blockNumber, index, err := e.evmChain.TransactionByHash(hash)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	if tx == nil {
-		return nil, nil
-	}
-	return newRPCTransaction(tx, blockHash, blockNumber, index), err
+	return withMetrics(e.metrics, "eth_getBlockByHash", func() (map[string]interface{}, error) {
+		block := e.evmChain.BlockByHash(hash)
+		if block == nil {
+			return nil, nil
+		}
+		return RPCMarshalBlock(block, true, full)
+	})
 }
 
 func (e *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
-	return withMetrics(
-		e.metrics, "eth_getTransactionByHash",
-		func() (*RPCTransaction, error) {
-			return e.getTransactionByHash(hash)
-		},
-	)
-}
-
-func (e *EthService) getTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (*RPCTransaction, error) {
-	tx, blockNumber, err := e.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	if tx == nil {
-		return nil, nil
-	}
-	return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
+	return withMetrics(e.metrics, "eth_getTransactionByHash", func() (*RPCTransaction, error) {
+		tx, blockHash, blockNumber, index, err := e.evmChain.TransactionByHash(hash)
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		if tx == nil {
+			return nil, nil
+		}
+		return newRPCTransaction(tx, blockHash, blockNumber, index), err
+	})
 }
 
 func (e *EthService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (*RPCTransaction, error) {
-	return withMetrics(
-		e.metrics, "eth_getTransactionByBlockHashAndIndex",
-		func() (*RPCTransaction, error) {
-			return e.getTransactionByBlockHashAndIndex(blockHash, index)
-		},
-	)
-}
-
-func (e *EthService) getTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) (*RPCTransaction, error) {
-	tx, blockHash, blockNumber, err := e.evmChain.TransactionByBlockNumberAndIndex(parseBlockNumber(blockNumberOrTag), uint64(index))
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	if tx == nil {
-		return nil, nil
-	}
-	return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
+	return withMetrics(e.metrics, "eth_getTransactionByBlockHashAndIndex", func() (*RPCTransaction, error) {
+		tx, blockNumber, err := e.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		if tx == nil {
+			return nil, nil
+		}
+		return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
+	})
 }
 
 func (e *EthService) GetTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) (*RPCTransaction, error) {
-	return withMetrics(
-		e.metrics, "eth_getTransactionByBlockNumberAndIndex",
-		func() (*RPCTransaction, error) {
-			return e.getTransactionByBlockNumberAndIndex(blockNumberOrTag, index)
-		},
-	)
-}
-
-func (e *EthService) getBalance(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (*hexutil.Big, error) {
-	bal, err := e.evmChain.Balance(address, blockNumberOrHash)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	return (*hexutil.Big)(bal), nil
+	return withMetrics(e.metrics, "eth_getTransactionByBlockNumberAndIndex", func() (*RPCTransaction, error) {
+		tx, blockHash, blockNumber, err := e.evmChain.TransactionByBlockNumberAndIndex(parseBlockNumber(blockNumberOrTag), uint64(index))
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		if tx == nil {
+			return nil, nil
+		}
+		return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
+	})
 }
 
 func (e *EthService) GetBalance(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (*hexutil.Big, error) {
-	return withMetrics(
-		e.metrics, "eth_getBalance",
-		func() (*hexutil.Big, error) {
-			return e.getBalance(address, blockNumberOrHash)
-		},
-	)
-}
-
-func (e *EthService) getCode(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	code, err := e.evmChain.Code(address, blockNumberOrHash)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	return code, nil
+	return withMetrics(e.metrics, "eth_getBalance", func() (*hexutil.Big, error) {
+		bal, err := e.evmChain.Balance(address, blockNumberOrHash)
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		return (*hexutil.Big)(bal), nil
+	})
 }
 
 func (e *EthService) GetCode(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	return withMetrics(
-		e.metrics, "eth_getCode",
-		func() (hexutil.Bytes, error) {
-			return e.getCode(address, blockNumberOrHash)
-		},
-	)
-}
-
-func (e *EthService) getTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
-	r := e.evmChain.TransactionReceipt(txHash)
-	if r == nil {
-		return nil, nil
-	}
-	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	return RPCMarshalReceipt(r, tx), nil
+	return withMetrics(e.metrics, "eth_getCode", func() (hexutil.Bytes, error) {
+		code, err := e.evmChain.Code(address, blockNumberOrHash)
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		return code, nil
+	})
 }
 
 func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
-	return withMetrics(
-		e.metrics, "eth_getTransactionReceipt",
-		func() (map[string]interface{}, error) {
-			return e.getTransactionReceipt(txHash)
-		},
-	)
-}
-
-func (e *EthService) sendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
-	tx := new(types.Transaction)
-	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
-		return common.Hash{}, err
-	}
-	if err := e.evmChain.SendTransaction(tx); err != nil {
-		return common.Hash{}, e.resolveError(err)
-	}
-	return tx.Hash(), nil
+	return withMetrics(e.metrics, "eth_getTransactionReceipt", func() (map[string]interface{}, error) {
+		r := e.evmChain.TransactionReceipt(txHash)
+		if r == nil {
+			return nil, nil
+		}
+		tx, _, _, _, err := e.evmChain.TransactionByHash(txHash)
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		return RPCMarshalReceipt(r, tx), nil
+	})
 }
 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
-	return withMetrics(
-		e.metrics, "eth_sendRawTransaction",
-		func() (common.Hash, error) {
-			return e.sendRawTransaction(txBytes)
-		},
-	)
-}
-
-func (e *EthService) call(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	ret, err := e.evmChain.CallContract(args.parse(), blockNumberOrHash)
-	return ret, e.resolveError(err)
+	return withMetrics(e.metrics, "eth_sendRawTransaction", func() (common.Hash, error) {
+		tx := new(types.Transaction)
+		if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+			return common.Hash{}, err
+		}
+		if err := e.evmChain.SendTransaction(tx); err != nil {
+			return common.Hash{}, e.resolveError(err)
+		}
+		return tx.Hash(), nil
+	})
 }
 
 func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	return withMetrics(
-		e.metrics, "eth_call",
-		func() (hexutil.Bytes, error) {
-			return e.call(args, blockNumberOrHash)
-		},
-	)
-}
-
-func (e *EthService) estimateGas(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
-	gas, err := e.evmChain.EstimateGas(args.parse(), blockNumberOrHash)
-	return hexutil.Uint64(gas), e.resolveError(err)
+	return withMetrics(e.metrics, "eth_call", func() (hexutil.Bytes, error) {
+		ret, err := e.evmChain.CallContract(args.parse(), blockNumberOrHash)
+		return ret, e.resolveError(err)
+	})
 }
 
 func (e *EthService) EstimateGas(args *RPCCallArgs, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
-	return withMetrics(
-		e.metrics, "eth_estimateGas",
-		func() (hexutil.Uint64, error) {
-			return e.estimateGas(args, blockNumberOrHash)
-		},
-	)
-}
-
-func (e *EthService) getStorageAt(address common.Address, key string, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	ret, err := e.evmChain.StorageAt(address, common.HexToHash(key), blockNumberOrHash)
-	return ret[:], e.resolveError(err)
+	return withMetrics(e.metrics, "eth_estimateGas", func() (hexutil.Uint64, error) {
+		gas, err := e.evmChain.EstimateGas(args.parse(), blockNumberOrHash)
+		return hexutil.Uint64(gas), e.resolveError(err)
+	})
 }
 
 func (e *EthService) GetStorageAt(address common.Address, key string, blockNumberOrHash *rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	return withMetrics(
-		e.metrics, "eth_getStorageAt",
-		func() (hexutil.Bytes, error) {
-			return e.getStorageAt(address, key, blockNumberOrHash)
-		},
-	)
-}
-
-func (e *EthService) getBlockTransactionCountByHash(blockHash common.Hash) hexutil.Uint {
-	ret := e.evmChain.BlockTransactionCountByHash(blockHash)
-	return hexutil.Uint(ret)
+	return withMetrics(e.metrics, "eth_getStorageAt", func() (hexutil.Bytes, error) {
+		ret, err := e.evmChain.StorageAt(address, common.HexToHash(key), blockNumberOrHash)
+		return ret[:], e.resolveError(err)
+	})
 }
 
 func (e *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
-	return withMetrics(
-		e.metrics, "eth_getBlockTransactionCountByHash",
-		func() (hexutil.Uint, error) {
-			return e.getBlockTransactionCountByHash(blockHash), nil
-		},
-	)
-}
-
-func (e *EthService) getBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
-	ret, err := e.evmChain.BlockTransactionCountByNumber(parseBlockNumber(blockNumber))
-	return hexutil.Uint(ret), e.resolveError(err)
+	return withMetrics(e.metrics, "eth_getBlockTransactionCountByHash", func() (hexutil.Uint, error) {
+		ret := e.evmChain.BlockTransactionCountByHash(blockHash)
+		return hexutil.Uint(ret), nil
+	})
 }
 
 func (e *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
-	return withMetrics(
-		e.metrics, "eth_getBlockTransactionCountByNumber",
-		func() (hexutil.Uint, error) {
-			return e.getBlockTransactionCountByNumber(blockNumber)
-		},
-	)
+	return withMetrics(e.metrics, "eth_getBlockTransactionCountByNumber", func() (hexutil.Uint, error) {
+		ret, err := e.evmChain.BlockTransactionCountByNumber(parseBlockNumber(blockNumber))
+		return hexutil.Uint(ret), e.resolveError(err)
+	})
 }
 
 func (e *EthService) GetUncleCountByBlockHash(blockHash common.Hash) hexutil.Uint {
@@ -382,21 +270,14 @@ func (e *EthService) Accounts() []common.Address {
 	return e.accounts.Addresses()
 }
 
-// expressed in wei
-// 1 Ether =
-// 1_000_000_000 Gwei
-// 1_000_000_000_000_000_000 wei
-func (e *EthService) gasPrice() *hexutil.Big {
-	return (*hexutil.Big)(e.evmChain.GasPrice())
-}
-
 func (e *EthService) GasPrice() (*hexutil.Big, error) {
-	return withMetrics(
-		e.metrics, "eth_gasPrice",
-		func() (*hexutil.Big, error) {
-			return e.gasPrice(), nil
-		},
-	)
+	return withMetrics(e.metrics, "eth_gasPrice", func() (*hexutil.Big, error) {
+		// expressed in wei
+		// 1 Ether =
+		// 1_000_000_000 Gwei
+		// 1_000_000_000_000_000_000 wei
+		return (*hexutil.Big)(e.evmChain.GasPrice()), nil
+	})
 }
 
 func (e *EthService) Mining() bool {
@@ -419,72 +300,51 @@ func (e *EthService) GetCompilers() []string {
 	return []string{}
 }
 
-func (e *EthService) sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	account := e.accounts.Get(addr)
-	if account == nil {
-		return nil, errors.New("account is not unlocked")
-	}
-
-	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), string(data))
-	hasher := sha3.NewLegacyKeccak256()
-	hasher.Write([]byte(msg))
-	hash := hasher.Sum(nil)
-
-	signed, err := crypto.Sign(hash, account)
-	if err == nil {
-		signed[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
-	}
-	return signed, err
-}
-
 func (e *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	return withMetrics(
-		e.metrics, "eth_sign",
-		func() (hexutil.Bytes, error) {
-			return e.sign(addr, data)
-		},
-	)
-}
+	return withMetrics(e.metrics, "eth_sign", func() (hexutil.Bytes, error) {
+		account := e.accounts.Get(addr)
+		if account == nil {
+			return nil, errors.New("account is not unlocked")
+		}
 
-func (e *EthService) signTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
-	tx, err := e.parseTxArgs(args)
-	if err != nil {
-		return nil, err
-	}
-	data, err := tx.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+		msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), string(data))
+		hasher := sha3.NewLegacyKeccak256()
+		hasher.Write([]byte(msg))
+		hash := hasher.Sum(nil)
+
+		signed, err := crypto.Sign(hash, account)
+		if err == nil {
+			signed[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+		}
+		return signed, err
+	})
 }
 
 func (e *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
-	return withMetrics(
-		e.metrics, "eth_signTransaction",
-		func() (hexutil.Bytes, error) {
-			return e.signTransaction(args)
-		},
-	)
-}
-
-func (e *EthService) sendTransaction(args *SendTxArgs) (common.Hash, error) {
-	tx, err := e.parseTxArgs(args)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	if err := e.evmChain.SendTransaction(tx); err != nil {
-		return common.Hash{}, e.resolveError(err)
-	}
-	return tx.Hash(), nil
+	return withMetrics(e.metrics, "eth_signTransaction", func() (hexutil.Bytes, error) {
+		tx, err := e.parseTxArgs(args)
+		if err != nil {
+			return nil, err
+		}
+		data, err := tx.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	})
 }
 
 func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
-	return withMetrics(
-		e.metrics, "eth_sendTransaction",
-		func() (common.Hash, error) {
-			return e.sendTransaction(args)
-		},
-	)
+	return withMetrics(e.metrics, "eth_sendTransaction", func() (common.Hash, error) {
+		tx, err := e.parseTxArgs(args)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		if err := e.evmChain.SendTransaction(tx); err != nil {
+			return common.Hash{}, e.resolveError(err)
+		}
+		return tx.Hash(), nil
+	})
 }
 
 func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
@@ -502,40 +362,27 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	return types.SignTx(args.toTransaction(), signer, account)
 }
 
-func (e *EthService) getLogs(q *RPCFilterQuery) ([]*types.Log, error) {
-	logs, err := e.evmChain.Logs(
-		(*ethereum.FilterQuery)(q),
-		&e.params.Logs,
-	)
-	if err != nil {
-		return nil, e.resolveError(err)
-	}
-	return logs, nil
-}
-
 func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
-	return withMetrics(
-		e.metrics, "eth_getLogs",
-		func() ([]*types.Log, error) {
-			return e.getLogs(q)
-		},
-	)
+	return withMetrics(e.metrics, "eth_getLogs", func() ([]*types.Log, error) {
+		logs, err := e.evmChain.Logs(
+			(*ethereum.FilterQuery)(q),
+			&e.params.Logs,
+		)
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+		return logs, nil
+	})
 }
 
 // ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-func (e *EthService) chainID() hexutil.Uint {
-	chainID := e.evmChain.ChainID()
-	return hexutil.Uint(chainID)
-}
-
-//nolint:revive // needs to be ChainId to match the interface
+//
+//nolint:revive // needs to be ChainId to match the JSONRPC interface
 func (e *EthService) ChainId() (hexutil.Uint, error) {
-	return withMetrics(
-		e.metrics, "eth_chainId",
-		func() (hexutil.Uint, error) {
-			return e.chainID(), nil
-		},
-	)
+	return withMetrics(e.metrics, "eth_chainId", func() (hexutil.Uint, error) {
+		chainID := e.evmChain.ChainID()
+		return hexutil.Uint(chainID), nil
+	})
 }
 
 func (e *EthService) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
@@ -682,17 +529,10 @@ func NewDebugService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *D
 	}
 }
 
-func (d *DebugService) traceTransaction(txHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
-	return d.evmChain.TraceTransaction(txHash, config)
-}
-
 func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
-	return withMetrics(
-		d.metrics, "debug_traceTransaction",
-		func() (interface{}, error) {
-			return d.traceTransaction(txHash, config)
-		},
-	)
+	return withMetrics(d.metrics, "debug_traceTransaction", func() (interface{}, error) {
+		return d.evmChain.TraceTransaction(txHash, config)
+	})
 }
 
 type EVMService struct {
