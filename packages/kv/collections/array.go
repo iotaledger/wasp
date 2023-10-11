@@ -85,7 +85,6 @@ func (a *Array) addToSize(amount uint32) uint32 {
 	return oldSize
 }
 
-// TODO implement with DelPrefix
 func (a *Array) Erase() {
 	length := a.Len()
 	for i := uint32(0); i < length; i++ {

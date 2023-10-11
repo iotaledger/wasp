@@ -38,8 +38,6 @@ type KVReader interface {
 type KVWriter interface {
 	Set(key Key, value []byte)
 	Del(key Key)
-
-	// TODO add DelPrefix(prefix []byte)
 }
 
 type KVIterator interface {
