@@ -172,12 +172,15 @@ func (p *TypedPoolByNonce[V]) StatusString() string {
 func (p *TypedPoolByNonce[V]) WriteContent(w io.Writer) {
 	p.reqsByAcountOrdered.ForEach(func(_ string, list []*OrderedPoolEntry[V]) bool {
 		for _, entry := range list {
-			data := entry.req.Bytes()
-			_, err := w.Write(codec.EncodeUint32(uint32(len(data))))
+			jsonData, err := isc.RequestToJSON(entry.req)
 			if err != nil {
 				return false // stop iteration
 			}
-			_, err = w.Write(data)
+			_, err = w.Write(codec.EncodeUint32(uint32(len(jsonData))))
+			if err != nil {
+				return false // stop iteration
+			}
+			_, err = w.Write(jsonData)
 			if err != nil {
 				return false // stop iteration
 			}

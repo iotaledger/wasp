@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
@@ -48,7 +49,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 
 	assetsResponse := &models.AssetsResponse{
 		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-		NativeTokens: models.MapNativeTokens(assets.NativeTokens),
+		NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -72,7 +73,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 
 	assetsResponse := &models.AssetsResponse{
 		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-		NativeTokens: models.MapNativeTokens(assets.NativeTokens),
+		NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -164,7 +165,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 		return c.handleViewCallError(err, chainID)
 	}
 
-	nftDataResponse := models.MapNFTDataResponse(nftData)
+	nftDataResponse := isc.NFTToJSONObject(nftData)
 
 	return e.JSON(http.StatusOK, nftDataResponse)
 }
@@ -216,7 +217,7 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 		FoundryID: foundryOutputID.ToHex(),
 		Assets: models.AssetsResponse{
 			BaseTokens:   iotago.EncodeUint64(foundryOutput.Amount),
-			NativeTokens: models.MapNativeTokens(foundryOutput.NativeTokens),
+			NativeTokens: isc.NativeTokensToJSONObject(foundryOutput.NativeTokens),
 		},
 	}
 

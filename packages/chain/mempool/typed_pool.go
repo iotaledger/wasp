@@ -90,12 +90,15 @@ func (olp *typedPool[V]) StatusString() string {
 
 func (olp *typedPool[V]) WriteContent(w io.Writer) {
 	olp.requests.ForEach(func(_ isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
-		data := entry.req.Bytes()
-		_, err := w.Write(codec.EncodeUint32(uint32(len(data))))
+		jsonData, err := isc.RequestToJSON(entry.req)
 		if err != nil {
 			return false // stop iteration
 		}
-		_, err = w.Write(data)
+		_, err = w.Write(codec.EncodeUint32(uint32(len(jsonData))))
+		if err != nil {
+			return false // stop iteration
+		}
+		_, err = w.Write(jsonData)
 		return err == nil
 	})
 }

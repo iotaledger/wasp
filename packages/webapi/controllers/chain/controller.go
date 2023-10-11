@@ -181,7 +181,8 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.GET("chains/:chainID/mempool", c.getMempoolContents, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddResponse(http.StatusOK, "binary data of request in the mempool", nil, nil).
+		SetResponseContentType("application/octet-stream").
+		AddResponse(http.StatusOK, "stream of JSON representation of the requests in the mempool", []byte{}, nil).
 		SetSummary("Get the contents of the mempool.").
 		SetOperationId("getMempoolContents")
 }
