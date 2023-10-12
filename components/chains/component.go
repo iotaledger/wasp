@@ -125,6 +125,7 @@ func provide(c *dig.Container) error {
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
+				ParamsChains.MempoolTTL,
 				shutdown.NewCoordinator("chains", Component.Logger().Named("Shutdown")),
 				deps.ChainMetricsProvider,
 			),

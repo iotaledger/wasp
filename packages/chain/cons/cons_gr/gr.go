@@ -13,11 +13,13 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -35,8 +37,17 @@ const (
 ////////////////////////////////////////////////////////////////////////////////
 // Interfaces required from other components (MP, SM)
 
+type ConsensusID [iotago.Ed25519AddressBytesLength + 4]byte
+
+func NewConsensusID(cmtAddr *iotago.Ed25519Address, logIndex *cmt_log.LogIndex) ConsensusID {
+	ret := ConsensusID{}
+	copy(ret[:], isc.AddressToBytes(cmtAddr)[1:]) // remove the byte kind prefix
+	copy(ret[iotago.Ed25519AddressBytesLength:], codec.EncodeUint32(logIndex.AsUint32()))
+	return ret
+}
+
 type Mempool interface {
-	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID, consensusID ConsensusID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
@@ -117,6 +128,7 @@ type ConsGr struct {
 	netPeerPubs                 map[gpa.NodeID]*cryptolib.PublicKey
 	netDisconnect               context.CancelFunc
 	net                         peering.NetworkProvider
+	consensusID                 ConsensusID
 	ctx                         context.Context
 	pipeMetrics                 *metrics.ChainPipeMetrics
 	log                         *logger.Logger
@@ -165,6 +177,7 @@ func New(
 		netPeerPubs:       netPeerPubs,
 		netDisconnect:     nil, // Set bellow.
 		net:               net,
+		consensusID:       NewConsensusID(cmtPubKey.AsEd25519Address(), logIndex),
 		ctx:               ctx,
 		pipeMetrics:       pipeMetrics,
 		log:               log,
@@ -357,7 +370,7 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	}
 	output := outputUntyped.(*cons.Output)
 	if output.NeedMempoolProposal != nil && !cgr.mempoolProposalsAsked {
-		cgr.mempoolProposalsRespCh = cgr.mempool.ConsensusProposalAsync(cgr.ctx, output.NeedMempoolProposal)
+		cgr.mempoolProposalsRespCh = cgr.mempool.ConsensusProposalAsync(cgr.ctx, output.NeedMempoolProposal, cgr.consensusID)
 		cgr.mempoolProposalsAsked = true
 	}
 	if output.NeedMempoolRequests != nil && !cgr.mempoolRequestsAsked {
