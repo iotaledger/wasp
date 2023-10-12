@@ -21,49 +21,49 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-const comparableConsensusIDKeyLength = isc.ChainIDLength + iotago.Ed25519AddressBytesLength
+const comparableChainCommitteeIDKeyLength = isc.ChainIDLength + iotago.Ed25519AddressBytesLength
 
-type comparableConsensusIDKey [comparableConsensusIDKeyLength]byte
+type comparableChainCommitteeIDKey [comparableChainCommitteeIDKeyLength]byte
 
-type comparableConsensusID struct {
-	key     comparableConsensusIDKey
+type comparableChainCommitteeID struct {
+	key     comparableChainCommitteeIDKey
 	chainID isc.ChainID
 	address iotago.Address
 }
 
-func newComparableConsensusID(chainID isc.ChainID, address iotago.Address) *comparableConsensusID {
+func newComparableChainCommitteeID(chainID isc.ChainID, address iotago.Address) *comparableChainCommitteeID {
 	addressBytes := isc.AddressToBytes(address)
 
-	key := comparableConsensusIDKey{}
+	key := comparableChainCommitteeIDKey{}
 	copy(key[:isc.ChainIDLength], chainID[:])
 	copy(key[isc.ChainIDLength:], addressBytes)
 
-	return &comparableConsensusID{
+	return &comparableChainCommitteeID{
 		key:     key,
 		chainID: chainID,
 		address: address,
 	}
 }
 
-func (c *comparableConsensusID) Key() comparableConsensusIDKey {
+func (c *comparableChainCommitteeID) Key() comparableChainCommitteeIDKey {
 	return c.key
 }
 
-func (c *comparableConsensusID) String() string {
+func (c *comparableChainCommitteeID) String() string {
 	return fmt.Sprintf("%s-%s", c.chainID, c.address.Bech32(parameters.L1().Protocol.Bech32HRP))
 }
 
 type consensusState struct {
-	identifier *comparableConsensusID
+	identifier *comparableChainCommitteeID
 
 	LogIndex cmt_log.LogIndex
 }
 
-func (c *consensusState) ID() *comparableConsensusID {
+func (c *consensusState) ID() *comparableChainCommitteeID {
 	return c.identifier
 }
 
-func (c *consensusState) Clone() onchangemap.Item[comparableConsensusIDKey, *comparableConsensusID] {
+func (c *consensusState) Clone() onchangemap.Item[comparableChainCommitteeIDKey, *comparableChainCommitteeID] {
 	return &consensusState{
 		identifier: c.identifier,
 		LogIndex:   c.LogIndex,
@@ -116,7 +116,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 	}
 
 	*c = consensusState{
-		identifier: newComparableConsensusID(chainID, committeeAddress),
+		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 		LogIndex:   cmt_log.LogIndex(j.LogIndex),
 	}
 
@@ -124,7 +124,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 }
 
 type ConsensusStateRegistry struct {
-	onChangeMap *onchangemap.OnChangeMap[comparableConsensusIDKey, *comparableConsensusID, *consensusState]
+	onChangeMap *onchangemap.OnChangeMap[comparableChainCommitteeIDKey, *comparableChainCommitteeID, *consensusState]
 
 	folderPath    string
 	networkPrefix iotago.NetworkPrefix
@@ -145,9 +145,9 @@ func NewConsensusStateRegistry(folderPath string, networkPrefix iotago.NetworkPr
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
-		onchangemap.WithItemAddedCallback[comparableConsensusIDKey, *comparableConsensusID](registry.writeConsensusStateJSON),
-		onchangemap.WithItemModifiedCallback[comparableConsensusIDKey, *comparableConsensusID](registry.writeConsensusStateJSON),
-		onchangemap.WithItemDeletedCallback[comparableConsensusIDKey, *comparableConsensusID](registry.deleteConsensusStateJSON),
+		onchangemap.WithItemAddedCallback[comparableChainCommitteeIDKey, *comparableChainCommitteeID](registry.writeConsensusStateJSON),
+		onchangemap.WithItemModifiedCallback[comparableChainCommitteeIDKey, *comparableChainCommitteeID](registry.writeConsensusStateJSON),
+		onchangemap.WithItemDeletedCallback[comparableChainCommitteeIDKey, *comparableChainCommitteeID](registry.deleteConsensusStateJSON),
 	)
 
 	// load chain records on startup
@@ -193,7 +193,7 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 		consensusStateFilePath := path.Join(subFolderPath, subFolderFile.Name())
 
 		state := &consensusState{
-			identifier: newComparableConsensusID(chainID, committeeAddress),
+			identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 			LogIndex:   0,
 		}
 
@@ -322,7 +322,7 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 
 // Can return cmtLog.ErrCmtLogStateNotFound.
 func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress iotago.Address) (*cmt_log.State, error) {
-	state, err := p.onChangeMap.Get(newComparableConsensusID(chainID, committeeAddress))
+	state, err := p.onChangeMap.Get(newComparableChainCommitteeID(chainID, committeeAddress))
 	if err != nil {
 		return nil, cmt_log.ErrCmtLogStateNotFound
 	}
@@ -352,7 +352,7 @@ func (p *ConsensusStateRegistry) add(state *consensusState) error {
 
 func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress iotago.Address, state *cmt_log.State) error {
 	return p.add(&consensusState{
-		identifier: newComparableConsensusID(chainID, committeeAddress),
+		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 		LogIndex:   state.LogIndex,
 	})
 }
