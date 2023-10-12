@@ -11,11 +11,11 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
@@ -85,49 +85,8 @@ func logRequestsInBlock(index uint32, node, chain string) {
 
 	for i, receipt := range receipts {
 		r := receipt
-		logReceipt(r, i)
+		util.LogReceipt(r, i)
 	}
-}
-
-func logReceipt(receipt apiclient.ReceiptResponse, index ...int) {
-	req := receipt.Request
-
-	kind := "on-ledger"
-	if req.IsOffLedger {
-		kind = "off-ledger"
-	}
-
-	args, err := apiextensions.APIJsonDictToDict(req.Params)
-	log.Check(err)
-
-	var argsTree interface{} = "(empty)"
-	if len(args) > 0 {
-		argsTree = args
-	}
-
-	errMsg := "(empty)"
-	if receipt.ErrorMessage != nil {
-		errMsg = *receipt.ErrorMessage
-	}
-
-	tree := []log.TreeItem{
-		{K: "Kind", V: kind},
-		{K: "Sender", V: req.SenderAccount},
-		{K: "Contract Hname", V: req.CallTarget.ContractHName},
-		{K: "Function Hname", V: req.CallTarget.FunctionHName},
-		{K: "Arguments", V: argsTree},
-		{K: "Error", V: errMsg},
-		{K: "Gas budget", V: receipt.GasBudget},
-		{K: "Gas burned", V: receipt.GasBurned},
-		{K: "Gas fee charged", V: receipt.GasFeeCharged},
-		{K: "Storage deposit charged", V: receipt.StorageDepositCharged},
-	}
-	if len(index) > 0 {
-		log.Printf("Request #%d (%s):\n", index[0], req.RequestId)
-	} else {
-		log.Printf("Request %s:\n", req.RequestId)
-	}
-	log.PrintTree(tree, 2, 2)
 }
 
 func logEventsInBlock(index uint32, node, chain string) {
@@ -187,7 +146,7 @@ func initRequestCmd() *cobra.Command {
 			log.Check(err)
 
 			log.Printf("Request found in block %d\n\n", receipt.BlockIndex)
-			logReceipt(*receipt)
+			util.LogReceipt(*receipt)
 
 			log.Printf("\n")
 			logEventsInRequest(reqID, node, chain)
