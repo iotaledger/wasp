@@ -19,6 +19,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
 	"time"
@@ -84,6 +85,7 @@ type Chain interface {
 	GetChainMetrics() *metrics.ChainMetrics
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
+	GetMempoolContents() io.Reader
 }
 
 type CommitteeInfo struct {
@@ -1230,6 +1232,10 @@ func (cni *chainNodeImpl) GetConsensusPipeMetrics() ConsensusPipeMetrics {
 
 func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
 	return &consensusWorkflowStatusImpl{}
+}
+
+func (cni *chainNodeImpl) GetMempoolContents() io.Reader {
+	return cni.mempool.GetContents()
 }
 
 func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL sm_gpa_utils.BlockWAL) {

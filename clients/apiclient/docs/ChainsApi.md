@@ -14,6 +14,7 @@ Method | HTTP request | Description
 [**GetChains**](ChainsApi.md#GetChains) | **Get** /v1/chains | Get a list of all chains
 [**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
 [**GetContracts**](ChainsApi.md#GetContracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
+[**GetMempoolContents**](ChainsApi.md#GetMempoolContents) | **Get** /v1/chains/{chainID}/mempool | Get the contents of the mempool.
 [**GetReceipt**](ChainsApi.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
 [**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
@@ -691,6 +692,72 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**[]ContractInfoResponse**](ContractInfoResponse.md)
+
+### Authorization
+
+[Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## GetMempoolContents
+
+> GetMempoolContents(ctx, chainID).Execute()
+
+Get the contents of the mempool.
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.GetMempoolContents(context.Background(), chainID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetMempoolContents``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetMempoolContentsRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+ (empty response body)
 
 ### Authorization
 

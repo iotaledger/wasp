@@ -54,7 +54,7 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	if receipt == nil {
 		// unprocessable request just return empty receipt (TODO maybe we need a better way to communicate this, but its good enough for now)
 		return e.JSON(http.StatusOK, models.ReceiptResponse{
-			Request:       models.RequestDetail{},
+			Request:       isc.RequestJSON{},
 			RawError:      &isc.UnresolvedVMErrorJSON{},
 			ErrorMessage:  "",
 			GasBudget:     "",

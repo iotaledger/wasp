@@ -178,4 +178,11 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusOK, "Access node was successfully removed", nil, nil).
 		SetSummary("Remove an access node.").
 		SetOperationId("removeAccessNode")
+
+	adminAPI.GET("chains/:chainID/mempool", c.getMempoolContents, authentication.ValidatePermissions([]string{permissions.Read})).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		SetResponseContentType("application/octet-stream").
+		AddResponse(http.StatusOK, "stream of JSON representation of the requests in the mempool", []byte{}, nil).
+		SetSummary("Get the contents of the mempool.").
+		SetOperationId("getMempoolContents")
 }

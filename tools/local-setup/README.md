@@ -69,7 +69,7 @@ wasp-cli chain deploy --chain=testchain
 After a chain has been created, the EVM JSON-RPC can be accessed via:
 
 ```
-http://localhost:9090/chain/<CHAIN ID (tst1...)>/evm/jsonrpc
+http://localhost/wasp/api/v1/chains/<CHAIN ID (tst1...)>/evm
 ChainID: 1074
 ```
 
