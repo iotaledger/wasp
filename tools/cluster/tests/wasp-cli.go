@@ -136,7 +136,7 @@ func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
 }
 
 func (w *WaspCLITest) GetReceiptFromRunPostRequestOutput(out []string) []string {
-	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
+	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*?)\)`).
 		FindStringSubmatch(strings.Join(out, ""))
 	checkReceiptCommand := strings.Split(r[2], " ")
 	checkReceiptCommand = append(checkReceiptCommand, "--node=0")
