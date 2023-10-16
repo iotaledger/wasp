@@ -107,15 +107,15 @@ func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWith
 	vas.confirmed = confirmed
 	if vas.isAliasOutputPending(confirmed) {
 		// Clean all the outputs that are older (by StateIndex) than the new confirmed output.
-		// Also, clean all the blocks that have the higher index, but are know to be based
-		// on a block from a loosing branch.
-		loosing := []*isc.AliasOutputWithID{}
+		// Also, clean all the blocks that have the higher index, but are known to be based
+		// on a block from a losing branch.
+		losing := []*isc.AliasOutputWithID{}
 		vas.pending.ForEach(func(si uint32, es []*varAccessNodeStateEntry) bool {
 			if si == stateIndex {
 				for _, e := range es {
 					if !e.output.Equals(confirmed) {
-						vas.log.Debugf("⊳ Loosing base %v", e.output)
-						loosing = append(loosing, e.output)
+						vas.log.Debugf("⊳ Losing base %v", e.output)
+						losing = append(losing, e.output)
 					}
 				}
 			}
@@ -133,9 +133,9 @@ func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.AliasOutputWith
 				break
 			}
 			es = lo.Filter(es, func(e *varAccessNodeStateEntry, _ int) bool {
-				if lo.ContainsBy(loosing, func(o *isc.AliasOutputWithID) bool { return o.OutputID() == e.consumed }) {
-					vas.log.Debugf("⊳ Removing[loosing_fork,consumes=%v] %v", e.consumed, e.output)
-					loosing = append(loosing, e.output)
+				if lo.ContainsBy(losing, func(o *isc.AliasOutputWithID) bool { return o.OutputID() == e.consumed }) {
+					vas.log.Debugf("⊳ Removing[losing_fork,consumes=%v] %v", e.consumed, e.output)
+					losing = append(losing, e.output)
 					return false
 				}
 				return true
