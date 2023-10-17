@@ -84,6 +84,14 @@ func (olp *typedPool[V]) Filter(predicate func(request V, ts time.Time) bool) {
 	olp.sizeMetric(olp.requests.Size())
 }
 
+func (olp *typedPool[V]) Iterate(f func(e *typedPoolEntry[V])) {
+	olp.requests.ForEach(func(refKey isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
+		f(entry)
+		return true
+	})
+	olp.sizeMetric(olp.requests.Size())
+}
+
 func (olp *typedPool[V]) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", olp.requests.Size())
 }

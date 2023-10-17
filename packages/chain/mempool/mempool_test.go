@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -137,7 +138,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Log("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i, node := range te.mempools {
-		proposals[i] = node.ConsensusProposalAsync(te.ctx, currentAO)
+		proposals[i] = node.ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
 	}
 	t.Log("Wait for proposals and ask for decided requests")
 	decided := make([]<-chan []isc.Request, len(te.mempools))
@@ -159,7 +160,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	// Ask proposals for the next
 	proposals = make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i := range te.mempools {
-		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, currentAO) // Intentionally invalid order (vs TrackNewChainHead).
+		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
 	}
 	//
 	// We should not get any requests, because old requests are consumed
@@ -308,7 +309,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	// Check, if requests are proposed.
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
 		require.Len(t, reqs, 3)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -323,7 +324,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
 		require.Len(t, reqs, 3)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -336,7 +337,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
 		require.Len(t, reqs, 4)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -350,7 +351,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
 		require.Len(t, reqs, 5)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[1])
@@ -423,7 +424,7 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 	// Check, if requests are proposed.
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
 		require.Len(t, reqs, 2)
 		require.Contains(t, reqs, reqRefs[0])
 		require.Contains(t, reqs, reqRefs[3])
@@ -435,7 +436,7 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 	}
 	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
 	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO)
+		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
 		require.Len(t, reqs, 1)
 		require.Contains(t, reqs, reqRefs[0])
 	}
@@ -515,7 +516,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		t.Log("Ask for proposals")
 		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i, node := range te.mempools {
-			proposals[i] = node.ConsensusProposalAsync(te.ctx, ao)
+			proposals[i] = node.ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{})
 		}
 		t.Log("Wait for proposals and ask for decided requests")
 		decided := make([]<-chan []isc.Request, len(te.mempools))
@@ -545,7 +546,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		// Ask proposals for the next
 		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i := range te.mempools {
-			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, ao) // Intentionally invalid order (vs TrackNewChainHead).
+			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
 		}
 		//
 		// We should not get any requests, there is a gap in the nonces
@@ -656,11 +657,73 @@ func TestMempoolOverrideNonce(t *testing.T) {
 
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(overwritingReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
-	reqRefs := <-te.mempools[0].ConsensusProposalAsync(te.ctx, currentAO)
+	reqRefs := <-te.mempools[0].ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
 	proposedReqs := <-te.mempools[0].ConsensusRequestsAsync(te.ctx, reqRefs)
 	require.Len(t, proposedReqs, 1)
 	require.Equal(t, overwritingReq, proposedReqs[0])
 	require.NotEqual(t, initialReq, proposedReqs[0])
+}
+
+func TestTTL(t *testing.T) {
+	te := newEnv(t, 1, 0, true)
+	// override the TTL
+	chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
+	te.mempools[0] = mempool.New(
+		te.ctx,
+		te.chainID,
+		te.peerIdentities[0],
+		te.networkProviders[0],
+		te.log.Named(fmt.Sprintf("N#%v", 0)),
+		chainMetrics.Mempool,
+		chainMetrics.Pipe,
+		chain.NewEmptyChainListener(),
+		200*time.Millisecond, // 200ms TTL
+	)
+	defer te.close()
+	start := time.Now()
+	mp := te.mempools[0]
+	mp.TangleTimeUpdated(start)
+
+	// deposit some funds so off-ledger requests can go through
+	<-mp.TrackNewChainHead(te.stateForAO(0, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+
+	output := transaction.BasicOutputFromPostData(
+		te.governor.Address(),
+		isc.EmptyContractIdentity(),
+		isc.RequestParameters{
+			TargetAddress: te.chainID.AsAddress(),
+			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
+		},
+	)
+	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	require.NoError(t, err)
+	for _, node := range te.mempools {
+		node.ReceiveOnLedgerRequest(onLedgerReq)
+	}
+	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, start)
+
+	// send offledger request, assert it is returned, make 201ms pass, assert it is not returned anymore
+	offLedgerReq := isc.NewOffLedgerRequest(
+		isc.RandomChainID(),
+		isc.Hn("foo"),
+		isc.Hn("bar"),
+		dict.New(),
+		0,
+		gas.LimitsDefault.MaxGasPerRequest,
+	).Sign(te.governor)
+	t.Log("Sending off-ledger request")
+	require.Nil(t, mp.ReceiveOffLedgerRequest(offLedgerReq))
+
+	reqs := <-mp.ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
+	require.Len(t, reqs, 1)
+	time.Sleep(201 * time.Millisecond)
+
+	// we need to add some request because ConsensusProposalAsync will not return an empty list.
+	requests := getRequestsOnLedger(t, te.chainID.AsAddress(), 1, func(i int, p *isc.RequestParameters) {})
+	mp.ReceiveOnLedgerRequest(requests[0])
+
+	reqs2 := <-mp.ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
+	require.Len(t, reqs2, 1) // only the last request is returned
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -738,6 +801,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chainMetrics.Mempool,
 			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
+			24*time.Hour,
 		)
 	}
 	return te
