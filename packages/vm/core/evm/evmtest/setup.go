@@ -140,7 +140,7 @@ func (e *SoloChainEnv) contractFromABI(address common.Address, abiJSON string, d
 	parsedABI, err := abi.JSON(strings.NewReader(abiJSON))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
-		evmContractInstance: &evmContractInstance{
+		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       address,
@@ -169,7 +169,7 @@ func (e *SoloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *IscCont
 	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20BaseTokensABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
-		evmContractInstance: &evmContractInstance{
+		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC20BaseTokensAddress,
@@ -182,7 +182,7 @@ func (e *SoloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundr
 	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
-		evmContractInstance: &evmContractInstance{
+		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC20NativeTokensAddress(foundrySN),
@@ -195,7 +195,7 @@ func (e *SoloChainEnv) ERC20ExternalNativeTokens(defaultSender *ecdsa.PrivateKey
 	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20ExternalNativeTokensABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
-		evmContractInstance: &evmContractInstance{
+		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       addr,
@@ -208,7 +208,7 @@ func (e *SoloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *IscContractI
 	erc721ABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTsABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
-		evmContractInstance: &evmContractInstance{
+		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC721NFTsAddress,
@@ -221,7 +221,7 @@ func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, coll
 	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
-		evmContractInstance: &evmContractInstance{
+		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC721NFTCollectionAddress(collectionID),
@@ -231,27 +231,27 @@ func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, coll
 }
 
 func (e *SoloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
-	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
+	return &iscTestContractInstance{e.DeployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
 func (e *SoloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey) *storageContractInstance {
-	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))}
+	return &storageContractInstance{e.DeployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))}
 }
 
 func (e *SoloChainEnv) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
-	return &erc20ContractInstance{e.deployContract(creator, evmtest.ERC20ContractABI, evmtest.ERC20ContractBytecode, name, symbol)}
+	return &erc20ContractInstance{e.DeployContract(creator, evmtest.ERC20ContractABI, evmtest.ERC20ContractBytecode, name, symbol)}
 }
 
 func (e *SoloChainEnv) deployLoopContract(creator *ecdsa.PrivateKey) *loopContractInstance {
-	return &loopContractInstance{e.deployContract(creator, evmtest.LoopContractABI, evmtest.LoopContractBytecode)}
+	return &loopContractInstance{e.DeployContract(creator, evmtest.LoopContractABI, evmtest.LoopContractBytecode)}
 }
 
 func (e *SoloChainEnv) deployFibonacciContract(creator *ecdsa.PrivateKey) *fibonacciContractInstance {
-	return &fibonacciContractInstance{e.deployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
+	return &fibonacciContractInstance{e.DeployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
 }
 
 func (e *SoloChainEnv) deployERC20ExampleContract(creator *ecdsa.PrivateKey) *erc20ContractInstance {
-	return &erc20ContractInstance{e.deployContract(creator, evmtest.ERC20ExampleContractABI, evmtest.ERC20ExampleContractBytecode)}
+	return &erc20ContractInstance{e.DeployContract(creator, evmtest.ERC20ExampleContractABI, evmtest.ERC20ExampleContractBytecode)}
 }
 
 func (e *SoloChainEnv) signer() types.Signer {
@@ -264,7 +264,7 @@ func (e *SoloChainEnv) maxGasLimit() uint64 {
 	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio)
 }
 
-func (e *SoloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
+func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *EVMContractInstance {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := e.getNonce(creatorAddress)
@@ -297,7 +297,7 @@ func (e *SoloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	err = e.evmChain.SendTransaction(tx)
 	require.NoError(e.t, err)
 
-	return &evmContractInstance{
+	return &EVMContractInstance{
 		chain:         e,
 		defaultSender: creator,
 		address:       crypto.CreateAddress(creatorAddress, nonce),

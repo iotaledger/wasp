@@ -96,7 +96,7 @@ func TestLowLevelCallRevert(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
-	contract := env.deployContract(ethKey, evmtest.RevertTestContractABI, evmtest.RevertTestContractBytecode)
+	contract := env.DeployContract(ethKey, evmtest.RevertTestContractABI, evmtest.RevertTestContractBytecode)
 
 	getCount := func() uint32 {
 		var v uint32

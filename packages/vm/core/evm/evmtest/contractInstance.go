@@ -14,7 +14,7 @@ import (
 	"math/big"
 )
 
-type evmContractInstance struct {
+type EVMContractInstance struct {
 	chain         *SoloChainEnv
 	defaultSender *ecdsa.PrivateKey
 	address       common.Address
@@ -28,35 +28,35 @@ type callFnResult struct {
 }
 
 type IscContractInstance struct {
-	*evmContractInstance
+	*EVMContractInstance
 }
 
 type iscTestContractInstance struct {
-	*evmContractInstance
+	*EVMContractInstance
 }
 
 type storageContractInstance struct {
-	*evmContractInstance
+	*EVMContractInstance
 }
 
 type erc20ContractInstance struct {
-	*evmContractInstance
+	*EVMContractInstance
 }
 
 type loopContractInstance struct {
-	*evmContractInstance
+	*EVMContractInstance
 }
 
 type fibonacciContractInstance struct {
-	*evmContractInstance
+	*EVMContractInstance
 }
 
-func (e *evmContractInstance) callMsg(callMsg ethereum.CallMsg) ethereum.CallMsg {
+func (e *EVMContractInstance) callMsg(callMsg ethereum.CallMsg) ethereum.CallMsg {
 	callMsg.To = &e.address
 	return callMsg
 }
 
-func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callData []byte) (ethCallOptions, error) {
+func (e *EVMContractInstance) parseEthCallOptions(opts []ethCallOptions, callData []byte) (ethCallOptions, error) {
 	var opt ethCallOptions
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -87,7 +87,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 	return opt, nil
 }
 
-func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, error) {
+func (e *EVMContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, error) {
 	callData, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
 	opt, err := e.parseEthCallOptions(opts, callData)
@@ -104,7 +104,7 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 	return types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 }
 
-func (e *evmContractInstance) estimateGas(opts []ethCallOptions, fnName string, args ...interface{}) (uint64, error) {
+func (e *EVMContractInstance) estimateGas(opts []ethCallOptions, fnName string, args ...interface{}) (uint64, error) {
 	tx, err := e.buildEthTx(opts, fnName, args...)
 	if err != nil {
 		return 0, err
@@ -112,7 +112,7 @@ func (e *evmContractInstance) estimateGas(opts []ethCallOptions, fnName string, 
 	return tx.Gas(), nil
 }
 
-func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
+func (e *EVMContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
 	tx, err := e.buildEthTx(opts, fnName, args...)
@@ -128,7 +128,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	return res, sendTxErr
 }
 
-func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) callFnResult {
+func (e *EVMContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) callFnResult {
 	res, err := e.callFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
 	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
@@ -140,7 +140,7 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	return res
 }
 
-func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}, blockNumberOrHash ...rpc.BlockNumberOrHash) error {
+func (e *EVMContractInstance) callView(fnName string, args []interface{}, v interface{}, blockNumberOrHash ...rpc.BlockNumberOrHash) error {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
