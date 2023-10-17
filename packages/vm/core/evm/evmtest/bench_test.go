@@ -17,7 +17,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {
 	// setup: deploy the EVM chain
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	s := solo.New(b, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log})
-	env := initEVMWithSolo(b, s)
+	env := InitEVMWithSolo(b, s)
 	// setup: deploy the `storage` EVM contract
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
