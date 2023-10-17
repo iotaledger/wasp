@@ -10,7 +10,7 @@ import "./ISCAccounts.sol";
 
 // The ERC20 contract for ISC L2 base tokens.
 contract ERC20BaseTokens {
-    uint256 constant MAX_UINT64 = (1 << 64) - 1;
+    uint256 constant MAX_UINT64 = type(uint64).max;
 
     event Approval(
         address indexed tokenOwner,
