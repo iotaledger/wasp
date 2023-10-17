@@ -22,12 +22,12 @@ func (i *iscTestContractInstance) getChainID() isc.ChainID {
 	return v.MustUnwrap()
 }
 
-func (i *iscTestContractInstance) triggerEvent(s string) (res callFnResult, err error) {
-	return i.callFn(nil, "triggerEvent", s)
+func (i *iscTestContractInstance) triggerEvent(s string) (res CallFnResult, err error) {
+	return i.CallFn(nil, "triggerEvent", s)
 }
 
-func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res callFnResult, err error) {
-	return i.callFn(opts, "triggerEventFail", s)
+func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOptions) (res CallFnResult, err error) {
+	return i.CallFn(opts, "triggerEventFail", s)
 }
 
 func (s *storageContractInstance) retrieve() uint32 {
@@ -36,8 +36,8 @@ func (s *storageContractInstance) retrieve() uint32 {
 	return v
 }
 
-func (s *storageContractInstance) store(n uint32, opts ...ethCallOptions) (res callFnResult, err error) {
-	return s.callFn(opts, "store", n)
+func (s *storageContractInstance) store(n uint32, opts ...ethCallOptions) (res CallFnResult, err error) {
+	return s.CallFn(opts, "store", n)
 }
 
 func (e *erc20ContractInstance) balanceOf(addr common.Address) *big.Int {
@@ -52,16 +52,16 @@ func (e *erc20ContractInstance) totalSupply() *big.Int {
 	return v
 }
 
-func (e *erc20ContractInstance) transfer(recipientAddress common.Address, amount *big.Int, opts ...ethCallOptions) (res callFnResult, err error) {
-	return e.callFn(opts, "transfer", recipientAddress, amount)
+func (e *erc20ContractInstance) transfer(recipientAddress common.Address, amount *big.Int, opts ...ethCallOptions) (res CallFnResult, err error) {
+	return e.CallFn(opts, "transfer", recipientAddress, amount)
 }
 
-func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, err error) {
-	return l.callFn(opts, "loop")
+func (l *loopContractInstance) loop(opts ...ethCallOptions) (res CallFnResult, err error) {
+	return l.CallFn(opts, "loop")
 }
 
-func (f *fibonacciContractInstance) fib(n uint32, opts ...ethCallOptions) (res callFnResult, err error) {
-	return f.callFn(opts, "fib", n)
+func (f *fibonacciContractInstance) fib(n uint32, opts ...ethCallOptions) (res CallFnResult, err error) {
+	return f.CallFn(opts, "fib", n)
 }
 
 func generateEthereumKey(t testing.TB) (*ecdsa.PrivateKey, common.Address) {

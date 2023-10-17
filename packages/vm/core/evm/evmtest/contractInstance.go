@@ -21,9 +21,9 @@ type EVMContractInstance struct {
 	abi           abi.ABI
 }
 
-type callFnResult struct {
+type CallFnResult struct {
 	tx         *types.Transaction
-	evmReceipt *types.Receipt
+	EvmReceipt *types.Receipt
 	iscReceipt *isc.Receipt
 }
 
@@ -112,29 +112,29 @@ func (e *EVMContractInstance) estimateGas(opts []ethCallOptions, fnName string, 
 	return tx.Gas(), nil
 }
 
-func (e *EVMContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
+func (e *EVMContractInstance) CallFn(opts []ethCallOptions, fnName string, args ...interface{}) (CallFnResult, error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
 	tx, err := e.buildEthTx(opts, fnName, args...)
 	if err != nil {
-		return callFnResult{}, err
+		return CallFnResult{}, err
 	}
-	res := callFnResult{tx: tx}
+	res := CallFnResult{tx: tx}
 
 	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
 	res.iscReceipt = e.chain.Chain.LastReceipt()
-	res.evmReceipt = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
+	res.EvmReceipt = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 
 	return res, sendTxErr
 }
 
-func (e *EVMContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) callFnResult {
-	res, err := e.callFn(opts, fnName, args...)
+func (e *EVMContractInstance) CallFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) CallFnResult {
+	res, err := e.CallFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
-	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	require.Len(e.chain.t, res.evmReceipt.Logs, 1)
+	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
+	require.Len(e.chain.t, res.EvmReceipt.Logs, 1)
 	if v != nil {
-		err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
+		err = e.abi.UnpackIntoInterface(v, eventName, res.EvmReceipt.Logs[0].Data)
 	}
 	require.NoError(e.chain.t, err)
 	return res
