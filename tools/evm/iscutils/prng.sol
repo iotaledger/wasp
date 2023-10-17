@@ -28,15 +28,15 @@ library PRNG {
     /// @param self The PRNGState struct to use and alter the state
     /// @return The generated pseudorandom number
     function generateRandomNumber(PRNGState storage self) internal returns (uint256) {
-        return uint256(self.generateRandomHash());
+        return uint256(PRNG.generateRandomHash(self));
     }
-    
+
     /// @notice Generate a new pseudorandom number in a given range [min, max)
     /// @dev Takes the current state, hashes it and returns the new state. It constrains the returned number to the bounds of min (inclusive) and max (exclusive).
     /// @param self The PRNGState struct to use and alter the state
     /// @return The generated pseudorandom number constrained to the bounds of [min, max)
-    function generateRandomNumberInRange(PRNGState storage self, uint256 memory min, uint256 memory max) internal returns (uint256) {
-        uint256 num = self.generateRandomNumber();
+    function generateRandomNumberInRange(PRNGState storage self, uint256 min, uint256 max) internal returns (uint256) {
+        uint256 num = PRNG.generateRandomNumber(self);
         return (num / (MAX_NUM / max)) + min;
     }
 
