@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.5;
 
-import "./prng.sol"; // Assumes PRNG library is in the same directory
+import "./prng.sol";
 
 contract PRNGTest {
-    using PRNG for PRNG.PRNGState; // This allows you to call PRNG functions on PRNGState structs directly
+    using PRNG for PRNG.PRNGState;
 
     PRNG.PRNGState internal prngState;
 
