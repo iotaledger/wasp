@@ -5,8 +5,9 @@ package iscutils
 
 import (
 	_ "embed"
-	"github.com/ethereum/go-ethereum/common"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // If you change any of the .sol files, you must recompile them.  You will need

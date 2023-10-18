@@ -4,12 +4,14 @@
 package iscutils
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmtest"
-	"github.com/stretchr/testify/require"
 	"math"
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmtest"
 )
 
 func TestPRNGLibrary(t *testing.T) {

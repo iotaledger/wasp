@@ -3,15 +3,17 @@ package evmtest
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
-	"math/big"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type EVMContractInstance struct {
