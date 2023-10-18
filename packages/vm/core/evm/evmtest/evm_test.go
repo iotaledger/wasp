@@ -61,7 +61,7 @@ func TestStorageContract(t *testing.T) {
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
 	res, err := storage.store(43)
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
 	require.EqualValues(t, 3, env.getBlockNumber())
 
 	// call `retrieve` view, get 43
@@ -133,8 +133,8 @@ func TestERC20Contract(t *testing.T) {
 	res, err := erc20.transfer(recipientAddress, transferAmount)
 	require.NoError(t, err)
 
-	require.Equal(t, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
-	require.Equal(t, 1, len(res.EvmReceipt.Logs))
+	require.Equal(t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
+	require.Equal(t, 1, len(res.EVMReceipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
 	require.Zero(t, erc20.balanceOf(recipientAddress).Cmp(transferAmount))
@@ -160,12 +160,12 @@ func TestGasCharged(t *testing.T) {
 	// call `store(999)` with enough gas
 	res, err := storage.store(999)
 	require.NoError(t, err)
-	t.Log("evm gas used:", res.EvmReceipt.GasUsed)
-	t.Log("isc gas used:", res.iscReceipt.GasBurned)
-	t.Log("isc gas fee:", res.iscReceipt.GasFeeCharged)
-	require.Greater(t, res.EvmReceipt.GasUsed, uint64(0))
-	require.Greater(t, res.iscReceipt.GasBurned, uint64(0))
-	require.Greater(t, res.iscReceipt.GasFeeCharged, uint64(0))
+	t.Log("evm gas used:", res.EVMReceipt.GasUsed)
+	t.Log("isc gas used:", res.ISCReceipt.GasBurned)
+	t.Log("isc gas fee:", res.ISCReceipt.GasFeeCharged)
+	require.Greater(t, res.EVMReceipt.GasUsed, uint64(0))
+	require.Greater(t, res.ISCReceipt.GasBurned, uint64(0))
+	require.Greater(t, res.ISCReceipt.GasFeeCharged, uint64(0))
 }
 
 func TestGasRatio(t *testing.T) {
@@ -177,7 +177,7 @@ func TestGasRatio(t *testing.T) {
 
 	res, err := storage.store(43)
 	require.NoError(t, err)
-	initialGasFee := res.iscReceipt.GasFeeCharged
+	initialGasFee := res.ISCReceipt.GasFeeCharged
 
 	// only the owner can call the setEVMGasRatio endpoint
 	newGasRatio := util.Ratio32{A: gas.DefaultEVMGasRatio.A * 10, B: gas.DefaultEVMGasRatio.B}
@@ -194,7 +194,7 @@ func TestGasRatio(t *testing.T) {
 	// run an equivalent request and compare the gas fees
 	res, err = storage.store(44)
 	require.NoError(t, err)
-	require.Greater(t, res.iscReceipt.GasFeeCharged, initialGasFee)
+	require.Greater(t, res.ISCReceipt.GasFeeCharged, initialGasFee)
 }
 
 // tests that the gas limits are correctly enforced based on the base tokens sent
@@ -210,8 +210,8 @@ func TestGasLimit(t *testing.T) {
 	// estimate gas by sending a valid tx
 	result, err := storage.store(123)
 	require.NoError(t, err)
-	gasBurned := result.iscReceipt.GasBurned
-	fee := result.iscReceipt.GasFeeCharged
+	gasBurned := result.ISCReceipt.GasBurned
+	fee := result.ISCReceipt.GasFeeCharged
 	t.Logf("gas: %d, fee: %d", gasBurned, fee)
 
 	// send again with same gas limit but not enough base tokens
@@ -251,8 +251,8 @@ func TestNotEnoughISCGas(t *testing.T) {
 	require.Equal(t, nonce+1, env.getNonce(senderAddress))
 
 	// there must be an EVM receipt
-	require.NotNil(t, res.EvmReceipt)
-	require.Equal(t, res.EvmReceipt.Status, types.ReceiptStatusFailed)
+	require.NotNil(t, res.EVMReceipt)
+	require.Equal(t, res.EVMReceipt.Status, types.ReceiptStatusFailed)
 
 	// no changes should persist
 	require.EqualValues(t, 43, storage.retrieve())
@@ -305,8 +305,8 @@ func TestLoopWithGasLeft(t *testing.T) {
 			gasLimit: gasLimit,
 		}}, "loopWithGasLeft")
 		require.NoError(t, err)
-		require.NotEmpty(t, res.EvmReceipt.Logs)
-		usedGas = append(usedGas, res.EvmReceipt.GasUsed)
+		require.NotEmpty(t, res.EVMReceipt.Logs)
+		usedGas = append(usedGas, res.EVMReceipt.GasUsed)
 	}
 	require.Greater(t, usedGas[1], usedGas[0])
 }
@@ -352,7 +352,7 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 		gasLimit: estimatedGas,
 	}}, "loopWithGasLeft")
 	require.NoError(t, err)
-	require.LessOrEqual(t, res.EvmReceipt.GasUsed, estimatedGas)
+	require.LessOrEqual(t, res.EVMReceipt.GasUsed, estimatedGas)
 }
 
 func TestEstimateContractGas(t *testing.T) {
@@ -500,7 +500,7 @@ func TestISCTriggerEvent(t *testing.T) {
 	//   triggers an ISC event with the given string parameter
 	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
 	events, err := env.Chain.GetEventsForBlock(env.Chain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, events, 1)
@@ -549,8 +549,8 @@ func TestISCGetRequestID(t *testing.T) {
 	require.NoError(t, err)
 
 	// check evm log is as expected
-	require.NotEqualValues(t, res.EvmReceipt.Logs[0].TxHash, common.Hash{})
-	require.NotEqualValues(t, res.EvmReceipt.Logs[0].BlockHash, common.Hash{})
+	require.NotEqualValues(t, res.EVMReceipt.Logs[0].TxHash, common.Hash{})
+	require.NotEqualValues(t, res.EVMReceipt.Logs[0].BlockHash, common.Hash{})
 
 	require.EqualValues(t, env.Chain.LastReceipt().DeserializedRequest().ID(), reqid)
 }
@@ -572,7 +572,7 @@ func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
 	res, err := iscTest.CallFn(nil, "emitDummyEvent")
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, "gas budget exceeded")
-	require.Len(t, res.EvmReceipt.Logs, 0)
+	require.Len(t, res.EVMReceipt.Logs, 0)
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
@@ -978,7 +978,7 @@ func TestISCCall(t *testing.T) {
 
 	res, err := iscTest.CallFn(nil, "callInccounter")
 	require.NoError(env.solo.T, err)
-	require.Equal(env.solo.T, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
+	require.Equal(env.solo.T, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
 
 	r, err := env.Chain.CallView(
 		inccounter.Contract.Name,
@@ -996,9 +996,9 @@ func TestFibonacciContract(t *testing.T) {
 
 	res, err := fibo.fib(7)
 	require.NoError(t, err)
-	t.Log("evm gas used:", res.EvmReceipt.GasUsed)
-	t.Log("isc gas used:", res.iscReceipt.GasBurned)
-	t.Log("Isc gas fee:", res.iscReceipt.GasFeeCharged)
+	t.Log("evm gas used:", res.EVMReceipt.GasUsed)
+	t.Log("isc gas used:", res.ISCReceipt.GasBurned)
+	t.Log("Isc gas fee:", res.ISCReceipt.GasFeeCharged)
 }
 
 func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
@@ -1038,10 +1038,10 @@ func TestISCPanic(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "makeISCPanic")
 
-	require.NotNil(t, ret.EvmReceipt) // evm receipt is produced
+	require.NotNil(t, ret.EVMReceipt) // evm receipt is produced
 
 	require.Error(t, err)
-	require.Equal(t, types.ReceiptStatusFailed, ret.EvmReceipt.Status)
+	require.Equal(t, types.ReceiptStatusFailed, ret.EVMReceipt.Status)
 	require.Contains(t, err.Error(), "not delegated to another chain owner")
 }
 
@@ -1081,7 +1081,7 @@ func TestISCSendWithArgs(t *testing.T) {
 		iscmagic.ISCSendOptions{},
 	)
 	require.NoError(t, err)
-	require.Nil(t, ret.iscReceipt.Error)
+	require.Nil(t, ret.ISCReceipt.Error)
 
 	// wait a bit for the request going out of EVM to be processed by ISC
 	env.Chain.WaitUntil(func() bool {
@@ -1725,7 +1725,7 @@ func TestSolidityRevertMessage(t *testing.T) {
 		gasLimit: 100_000, // needed because gas estimation would fail
 	}}, "testRevertReason")
 	require.Error(t, err)
-	require.Regexp(t, `execution reverted: \w+`, res.iscReceipt.ResolvedError)
+	require.Regexp(t, `execution reverted: \w+`, res.ISCReceipt.ResolvedError)
 }
 
 func TestCallContractCannotCauseStackOverflow(t *testing.T) {
@@ -1740,7 +1740,7 @@ func TestCallContractCannotCauseStackOverflow(t *testing.T) {
 	}}, "testStackOverflow")
 
 	require.ErrorContains(t, err, "unauthorized access")
-	require.NotNil(t, ret.EvmReceipt) // evm receipt is produced
+	require.NotNil(t, ret.EVMReceipt) // evm receipt is produced
 
 	// view call
 	err = iscTest.callView("testStackOverflow", nil, nil)
@@ -1757,7 +1757,7 @@ func TestStaticCall(t *testing.T) {
 		sender: ethKey,
 	}}, "testStaticCall")
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
 	events, err := env.Chain.GetEventsForBlock(env.Chain.GetLatestBlockInfo().BlockIndex())
 	require.NoError(t, err)
 	require.Len(t, events, 1)
@@ -1800,7 +1800,7 @@ func TestChangeGasLimit(t *testing.T) {
 	var blockHashes []common.Hash
 	for i := 0; i < 10; i++ {
 		res, err := storage.store(uint32(i))
-		blockHashes = append(blockHashes, res.EvmReceipt.BlockHash)
+		blockHashes = append(blockHashes, res.EVMReceipt.BlockHash)
 		require.NoError(t, err)
 	}
 
@@ -1826,7 +1826,7 @@ func TestChangeGasPerToken(t *testing.T) {
 		storage := env.deployStorageContract(ethKey)
 		res, err := storage.store(uint32(3))
 		require.NoError(t, err)
-		fee = res.iscReceipt.GasFeeCharged
+		fee = res.ISCReceipt.GasFeeCharged
 	}
 
 	{
@@ -1842,7 +1842,7 @@ func TestChangeGasPerToken(t *testing.T) {
 		storage := env.deployStorageContract(ethKey)
 		res, err := storage.store(uint32(3))
 		require.NoError(t, err)
-		fee2 = res.iscReceipt.GasFeeCharged
+		fee2 = res.ISCReceipt.GasFeeCharged
 	}
 
 	t.Log(fee, fee2)
@@ -2039,5 +2039,5 @@ func TestEmitEventAndRevert(t *testing.T) {
 		gasLimit: 100000,
 	}}, "emitEventAndRevert")
 	require.ErrorContains(t, err, "execution reverted")
-	require.Empty(t, res.EvmReceipt.Logs)
+	require.Empty(t, res.EVMReceipt.Logs)
 }

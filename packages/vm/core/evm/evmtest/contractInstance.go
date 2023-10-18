@@ -25,8 +25,8 @@ type EVMContractInstance struct {
 
 type CallFnResult struct {
 	tx         *types.Transaction
-	EvmReceipt *types.Receipt
-	iscReceipt *isc.Receipt
+	EVMReceipt *types.Receipt
+	ISCReceipt *isc.Receipt
 }
 
 type IscContractInstance struct {
@@ -124,8 +124,8 @@ func (e *EVMContractInstance) CallFn(opts []ethCallOptions, fnName string, args 
 	res := CallFnResult{tx: tx}
 
 	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
-	res.iscReceipt = e.chain.Chain.LastReceipt()
-	res.EvmReceipt = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
+	res.ISCReceipt = e.chain.Chain.LastReceipt()
+	res.EVMReceipt = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 
 	return res, sendTxErr
 }
@@ -133,10 +133,10 @@ func (e *EVMContractInstance) CallFn(opts []ethCallOptions, fnName string, args 
 func (e *EVMContractInstance) CallFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) CallFnResult {
 	res, err := e.CallFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
-	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.EvmReceipt.Status)
-	require.Len(e.chain.t, res.EvmReceipt.Logs, 1)
+	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
+	require.Len(e.chain.t, res.EVMReceipt.Logs, 1)
 	if v != nil {
-		err = e.abi.UnpackIntoInterface(v, eventName, res.EvmReceipt.Logs[0].Data)
+		err = e.abi.UnpackIntoInterface(v, eventName, res.EVMReceipt.Logs[0].Data)
 	}
 	require.NoError(e.chain.t, err)
 	return res
