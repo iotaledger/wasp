@@ -6,7 +6,6 @@ pragma solidity >=0.8.5;
 /// @notice This library is used to generate pseudorandom numbers
 /// @dev Not recommended for generating cryptographic secure randomness
 library PRNG {
-    uint256 constant MAX_NUM = uint256(0) - uint256(1);
 
     /// @dev Represents the state of the PRNG
     struct PRNGState {
@@ -36,8 +35,11 @@ library PRNG {
     /// @param self The PRNGState struct to use and alter the state
     /// @return The generated pseudorandom number constrained to the bounds of [min, max)
     function generateRandomNumberInRange(PRNGState storage self, uint256 min, uint256 max) internal returns (uint256) {
-        uint256 num = PRNG.generateRandomNumber(self);
-        return (num / (MAX_NUM / max)) + min;
+        require(max > min, "max should be greater than min");
+        uint256 diff = max - min;
+        uint256 randomNumber = PRNG.generateRandomNumber(self);
+        randomNumber = randomNumber % diff;
+        return randomNumber + min;
     }
 
     /// @notice Seed the PRNG

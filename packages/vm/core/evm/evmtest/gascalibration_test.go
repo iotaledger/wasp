@@ -17,8 +17,8 @@ func TestGasUsageMemoryContract(t *testing.T) {
 		t.Skip()
 	}
 
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	env := InitEVM(t)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	gasTest := env.deployGasTestMemoryContract(ethKey)
 
 	results := make(map[uint32]uint64)
@@ -37,8 +37,8 @@ func TestGasUsageStorageContract(t *testing.T) {
 		t.Skip()
 	}
 
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	env := InitEVM(t)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	gasTest := env.deployGasTestStorageContract(ethKey)
 
 	results := make(map[uint32]uint64)
@@ -57,8 +57,8 @@ func TestGasUsageExecutionTimeContract(t *testing.T) {
 		t.Skip()
 	}
 
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	env := InitEVM(t)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	gasTestContract := env.deployGasTestExecutionTimeContract(ethKey)
 
 	results := make(map[uint32]uint64)
