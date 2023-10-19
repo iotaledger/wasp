@@ -146,3 +146,38 @@ func setMaintenanceStatus(chain, node string, status bool, offledger bool) {
 		true,
 	)
 }
+
+func initChangeGovControllerCmd() *cobra.Command {
+	var chain string
+
+	cmd := &cobra.Command{
+		Use:   "change-gov-controller <address> --chain=<chainID>",
+		Short: "Changes the governance controller for a given chain (WARNING: you will lose control over the chain)",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			chain := config.GetChain(defaultChainFallback(chain))
+
+			_, newGovController, err := iotago.ParseBech32(args[0])
+			log.Check(err)
+
+			client := cliclients.L1Client()
+			myWallet := wallet.Load()
+			outputSet, err := client.OutputMap(myWallet.Address())
+			log.Check(err)
+
+			tx, err := transaction.NewChangeGovControllerTx(
+				chain.AsAliasID(),
+				newGovController,
+				outputSet,
+				myWallet.KeyPair,
+			)
+			log.Check(err)
+
+			_, err = client.PostTxAndWaitUntilConfirmation(tx)
+			log.Check(err)
+		},
+	}
+
+	withChainFlag(cmd, &chain)
+	return cmd
+}
