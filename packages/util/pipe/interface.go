@@ -20,6 +20,8 @@ type Deque[E any] interface {
 	AddEnd(elem E) bool
 	PeekStart() E
 	PeekEnd() E
+	PeekNStart(n int) []E
+	PeekNEnd(n int) []E
 	Get(i int) E
 	RemoveStart() E
 	RemoveEnd() E

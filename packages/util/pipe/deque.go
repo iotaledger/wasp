@@ -130,6 +130,41 @@ func (d *dequeImpl[E]) PeekEnd() E {
 	return d.buf[d.getIndex(d.tail-1)]
 }
 
+// PeekNStart returns a slice of `n` first elements of the deque. The slice is
+// independent of the one backing the deque. If there are less than `n` elements
+// in the deque, slice of all the elements is returned.
+func (d *dequeImpl[E]) PeekNStart(n int) []E {
+	if n > d.count {
+		n = d.count
+	}
+	result := make([]E, n)
+	leftInTheEnd := len(d.buf) - d.head
+	if leftInTheEnd >= n {
+		copy(result, d.buf[d.head:d.head+n])
+	} else {
+		copy(result[:leftInTheEnd], d.buf[d.head:])
+		copy(result[leftInTheEnd:], d.buf[:n-leftInTheEnd])
+	}
+	return result
+}
+
+// PeekNEnd returns a slice of `n` last elements of the deque. The slice is
+// independent of the one backing the deque. If there are less than `n` elements
+// in the deque, slice of all the elements is returned.
+func (d *dequeImpl[E]) PeekNEnd(n int) []E {
+	if n > d.count {
+		n = d.count
+	}
+	result := make([]E, n)
+	if d.tail >= n {
+		copy(result, d.buf[d.tail-n:d.tail])
+	} else {
+		copy(result[:n-d.tail], d.buf[len(d.buf)-n+d.tail:])
+		copy(result[n-d.tail:], d.buf[:d.tail])
+	}
+	return result
+}
+
 func (d *dequeImpl[E]) getAbsoluteIndex(relativeIndex int) int {
 	// If indexing backwards, convert to positive index.
 	if relativeIndex < 0 {

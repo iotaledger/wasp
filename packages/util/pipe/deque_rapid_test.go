@@ -35,10 +35,21 @@ func (dtsmT *dequeTestSM) invariantPeek(t *rapid.T) {
 	if len(dtsmT.elems) > 0 {
 		require.Equal(t, dtsmT.elems[0], dtsmT.deque.PeekStart())
 		require.Equal(t, dtsmT.elems[len(dtsmT.elems)-1], dtsmT.deque.PeekEnd())
+		if len(dtsmT.elems) >= 3 {
+			require.Equal(t, dtsmT.elems[:3], dtsmT.deque.PeekNStart(3))
+			require.Equal(t, dtsmT.elems[len(dtsmT.elems)-3:], dtsmT.deque.PeekNEnd(3))
+		} else {
+			require.Equal(t, dtsmT.elems, dtsmT.deque.PeekNStart(3))
+			require.Equal(t, dtsmT.elems, dtsmT.deque.PeekNEnd(3))
+		}
 	} else {
 		require.Panics(t, func() { dtsmT.deque.PeekStart() })
 		require.Panics(t, func() { dtsmT.deque.PeekEnd() })
+		require.Equal(t, []int{}, dtsmT.deque.PeekNStart(3))
+		require.Equal(t, []int{}, dtsmT.deque.PeekNEnd(3))
 	}
+	require.Equal(t, dtsmT.elems, dtsmT.deque.PeekNStart(len(dtsmT.elems)))
+	require.Equal(t, dtsmT.elems, dtsmT.deque.PeekNEnd(len(dtsmT.elems)))
 }
 
 func (dtsmT *dequeTestSM) invariantAllElems(t *rapid.T) {
