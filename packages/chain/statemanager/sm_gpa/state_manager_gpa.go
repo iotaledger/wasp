@@ -586,7 +586,7 @@ func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.
 	stateIndex := block.StateIndex()
 	smT.metrics.BlockIndexCommitted(stateIndex)
 	if smT.pruningNeeded() {
-		smT.pruneStore(block.PreviousL1Commitment(), stateIndex)
+		smT.pruneStore(block.PreviousL1Commitment(), stateIndex-1)
 	}
 	smT.output.addBlockCommitted(stateIndex, block.L1Commitment())
 	return block
@@ -697,6 +697,12 @@ func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, 
 			bi, err = GetPreviousBlockInfoFun(bi)
 		}
 	}
+	if err == nil && bi != nil {
+		for lastKnownBi != nil && lastKnownBi.blockIndex > bi.blockIndex {
+			_ = smT.chainOfBlocks.RemoveEnd()
+			lastKnownBi = GetLastKnownBlockInfoFun()
+		}
+	}
 	// Try to find a place to merge newest block chain with currently known block chain: `bi.trieRoot.Equals(lastKnownBi.trieRoot)``
 	for err == nil && bi != nil && lastKnownBi != nil && !bi.trieRoot.Equals(lastKnownBi.trieRoot) && smT.store.HasTrieRoot(bi.trieRoot) {
 		// Normally, no iteration of this cycle should occur: once a common index
@@ -732,10 +738,12 @@ func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, 
 			return
 		}
 		smT.chainOfBlocks = cob
+	} else if bi == nil { // origin block has been reached
+		smT.chainOfBlocks = cob
 	} else if bi.trieRoot.Equals(lastKnownBi.trieRoot) { // Here is the the place to merge newest block chain with currently known block chain
 		// Normally newest blocks chain should contain only several (usually, 1)
 		// block indexes and currently known block chain should contain at least
-		// `PruningMinStatesToKeep` indexes and on a sudden enabling of pruning
+		// `PruningMinStatesToKeep` indexes, but on a sudden enabling of pruning
 		// might contain millions of them. Therefore it is more effective to copy
 		// newest block chain to the currently known one compared to doing it
 		// the other way round. Let's merge them this way.
@@ -760,8 +768,7 @@ func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, 
 			smT.log.Errorf("Failed to obtain previous block info: %v", err)
 			return
 		}
-	} else { // bi == nil, which means that origin block has been reached or
-		// smT.store.HasTrieRoot(bi.trieRoot), which means that this block
+	} else { // !smT.store.HasTrieRoot(bi.trieRoot), which means that this block
 		// has already been pruned from the store.
 		smT.chainOfBlocks = cob
 	}

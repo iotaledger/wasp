@@ -130,10 +130,7 @@ func TestChainOfBlocksMergeAllSomeHistory(t *testing.T) {
 	runTestChainOfBlocks(t, log, bf, store, sm, blocksToCommit, blocksToPrune, blocksInChain, blocksExpected)
 }
 
-func TestChainOfBlocksMergeMiddleFullHistory(t *testing.T) {
-	totalBlocks := 15
-	branchFrom := 9
-	branchLength := 5
+func testChainOfBlocksMergeMiddleFullHistory(t *testing.T, totalBlocks, branchFrom, branchLength int) {
 	log, bf, store, sm := initTestChainOfBlocks(t)
 	originalBlocks := bf.GetBlocks(totalBlocks, 1)
 	branchBlocks := bf.GetBlocksFrom(branchLength, 1, originalBlocks[branchFrom].L1Commitment(), 2)
@@ -141,6 +138,27 @@ func TestChainOfBlocksMergeMiddleFullHistory(t *testing.T) {
 	blocksToCommit = append(blocksToCommit, branchBlocks...)
 	blocksInChain := prependOriginBlock(bf, originalBlocks)
 	runTestChainOfBlocks(t, log, bf, store, sm, blocksToCommit, nil, blocksInChain, prependOriginBlock(bf, blocksToCommit))
+}
+
+func TestChainOfBlocksMergeMiddleFullHistory(t *testing.T) {
+	totalBlocks := 15
+	branchFrom := 9
+	branchLength := 5
+	testChainOfBlocksMergeMiddleFullHistory(t, totalBlocks, branchFrom, branchLength)
+}
+
+func TestChainOfBlocksMergeMiddleFullHistoryLonger(t *testing.T) {
+	totalBlocks := 15
+	branchFrom := 9
+	branchLength := 10
+	testChainOfBlocksMergeMiddleFullHistory(t, totalBlocks, branchFrom, branchLength)
+}
+
+func TestChainOfBlocksMergeMiddleFullHistoryShorter(t *testing.T) {
+	totalBlocks := 15
+	branchFrom := 9
+	branchLength := 3
+	testChainOfBlocksMergeMiddleFullHistory(t, totalBlocks, branchFrom, branchLength)
 }
 
 func TestChainOfBlocksMergeMiddleSomeHistory(t *testing.T) {
