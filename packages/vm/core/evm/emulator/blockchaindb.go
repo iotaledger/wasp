@@ -132,7 +132,7 @@ func (bc *BlockchainDB) GetPendingHeader(timestamp uint64) *types.Header {
 	}
 }
 
-func (bc *BlockchainDB) getPendingCumulativeGasUsed() uint64 {
+func (bc *BlockchainDB) GetPendingCumulativeGasUsed() uint64 {
 	blockNumber := bc.GetPendingBlockNumber()
 	receiptArray := bc.getReceiptArray(blockNumber)
 	n := receiptArray.Len()

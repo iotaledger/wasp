@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -70,7 +71,21 @@ func deposit(ctx isc.Sandbox) dict.Dict {
 func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 	targetAccount := ctx.Params().MustGetAgentID(ParamAgentID)
+	allowance := ctx.AllowanceAvailable().Clone()
 	ctx.TransferAllowedFunds(targetAccount)
+	if targetAccount.Kind() == isc.AgentIDKindEthereumAddress {
+		evmAcc := targetAccount.(*isc.EthereumAddressAgentID).EthAddress().Bytes()
+		// issue an "custom" etherum tx so the funds appear on the explorer
+		ctx.Call(
+			evm.Contract.Hname(),
+			evm.FuncNewL1Deposit.Hname(),
+			dict.Dict{
+				evm.FieldAddress: evmAcc,
+				evm.FieldAssets:  allowance.Bytes(),
+			},
+			nil,
+		)
+	}
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil
 }

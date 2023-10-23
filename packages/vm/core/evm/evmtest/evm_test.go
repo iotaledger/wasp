@@ -2041,3 +2041,23 @@ func TestEmitEventAndRevert(t *testing.T) {
 	require.ErrorContains(t, err, "execution reverted")
 	require.Empty(t, res.EVMReceipt.Logs)
 }
+
+func TestL1DepositEVM(t *testing.T) {
+	env := InitEVM(t)
+	// ensure that after a deposit to an EVM account, there is a tx/receipt for it to be auditable on the EVM side
+	_, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
+	bal, err := env.Chain.EVM().Balance(ethAddr, nil)
+	require.NoError(t, err)
+
+	// previous block must only have 1 tx, that corresponds to the deposit to ethAddr
+	block, err := env.Chain.EVM().BlockByNumber(big.NewInt(int64(env.getBlockNumber())))
+	require.NoError(t, err)
+	blockTxs := block.Transactions()
+	require.Len(t, blockTxs, 1)
+	tx := blockTxs[0]
+	require.True(t, ethAddr == *tx.To())
+	require.Zero(t, tx.Value().Cmp(bal))
+
+	rec := env.Chain.EVM().TransactionReceipt(tx.Hash())
+	require.NotNil(t, rec)
+}
