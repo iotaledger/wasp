@@ -50,6 +50,7 @@ func (dtsmT *dequeTestSM) invariantPeek(t *rapid.T) {
 	}
 	require.Equal(t, dtsmT.elems, dtsmT.deque.PeekNStart(len(dtsmT.elems)))
 	require.Equal(t, dtsmT.elems, dtsmT.deque.PeekNEnd(len(dtsmT.elems)))
+	require.Equal(t, dtsmT.elems, dtsmT.deque.PeekAll())
 }
 
 func (dtsmT *dequeTestSM) invariantAllElems(t *rapid.T) {

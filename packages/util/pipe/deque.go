@@ -165,6 +165,10 @@ func (d *dequeImpl[E]) PeekNEnd(n int) []E {
 	return result
 }
 
+func (d *dequeImpl[E]) PeekAll() []E {
+	return d.PeekNStart(d.Length())
+}
+
 func (d *dequeImpl[E]) getAbsoluteIndex(relativeIndex int) int {
 	// If indexing backwards, convert to positive index.
 	if relativeIndex < 0 {
