@@ -627,19 +627,21 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateInde
 	if statesToPrune > smT.parameters.PruningMaxStatesToDelete {
 		statesToPrune = smT.parameters.PruningMaxStatesToDelete
 	}
-	bis := smT.chainOfBlocks.PeekNStart(statesToPrune)
-	for _, bi := range bis {
+	i := 0
+	for ; i < statesToPrune; i++ {
+		bi := smT.chainOfBlocks.PeekStart()
 		singleStart := time.Now()
 		stats, err := smT.store.Prune(bi.trieRoot)
 		if err != nil {
 			smT.log.Errorf("Failed to prune trie root %s: %v", bi.trieRoot, err)
 			return // Returning in order not to leave gaps of pruned trie roots in between not pruned ones
 		}
+		smT.chainOfBlocks.RemoveStart()
 		smT.metrics.StatePruned(time.Since(singleStart), bi.blockIndex)
 		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", bi.trieRoot, stats.DeletedNodes, stats.DeletedValues)
 	}
-	smT.metrics.PruningCompleted(time.Since(start), len(bis))
-	smT.log.Debugf("Pruning completed, %v trie roots pruned", len(bis))
+	smT.metrics.PruningCompleted(time.Since(start), i)
+	smT.log.Debugf("Pruning completed, %v trie roots pruned", i)
 }
 
 // updateChainOfBlocks updates chain of blocks to contain trie roots/block indexes
