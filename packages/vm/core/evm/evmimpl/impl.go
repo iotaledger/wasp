@@ -445,8 +445,20 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	addr := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
 	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
 	ctx.RequireNoError(err, "unable to parse assets from params")
-	emu := createEmulator(ctx)
-	tx, receipt := emu.CreateL1Deposit(addr, assets)
+
+	// create a fake tx so that the deposit is visible by the EVM
+	value := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	nonce := uint64(0)
+	tx := types.NewTransaction(nonce, addr, value, 0, util.Big0, assets.Bytes())
+
+	// create a fake receipt
+	receipt := &types.Receipt{
+		Type:              types.LegacyTxType,
+		CumulativeGasUsed: createBlockchainDB(ctx.State(), ctx.ChainInfo()).GetPendingCumulativeGasUsed(),
+		GasUsed:           0,
+		Logs:              make([]*types.Log, 0),
+	}
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
 		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)

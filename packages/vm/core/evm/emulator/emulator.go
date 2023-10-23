@@ -22,10 +22,8 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
@@ -319,7 +317,7 @@ func (e *EVMEmulator) SendTransaction(
 	if result != nil {
 		gasUsed = result.UsedGas
 	}
-	cumulativeGasUsed := e.BlockchainDB().getPendingCumulativeGasUsed() + gasUsed
+	cumulativeGasUsed := e.BlockchainDB().GetPendingCumulativeGasUsed() + gasUsed
 
 	receipt = &types.Receipt{
 		Type:              tx.Type(),
@@ -367,26 +365,4 @@ func (c *chainContext) Engine() consensus.Engine {
 
 func (c *chainContext) GetHeader(common.Hash, uint64) *types.Header {
 	panic("not implemented")
-}
-
-// create a fake tx from isc magic to a target address so that L1 deposits can be tracked on the EVM
-func (e *EVMEmulator) CreateL1Deposit(
-	addr common.Address,
-	assets *isc.Assets,
-) (*types.Transaction, *types.Receipt) {
-	// create a fake tx from the isc magic contract
-	value := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, e.ctx.BaseTokensDecimals())
-	nonce := uint64(0)
-	tx := types.NewTransaction(nonce, addr, value, 0, util.Big0, assets.Bytes())
-
-	// create a fake receipt
-	receipt := &types.Receipt{
-		Type:              types.LegacyTxType,
-		CumulativeGasUsed: e.BlockchainDB().getPendingCumulativeGasUsed(),
-		GasUsed:           0,
-		Logs:              make([]*types.Log, 0),
-	}
-	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
-
-	return tx, receipt
 }
