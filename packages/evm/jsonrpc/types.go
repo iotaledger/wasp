@@ -164,12 +164,13 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]inter
 		r.Logs = []*types.Log{}
 		r.Bloom = types.CreateBloom(types.Receipts{r})
 	}
+
 	return map[string]interface{}{
 		"transactionHash":   r.TxHash,
 		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
 		"blockHash":         r.BlockHash,
 		"blockNumber":       (*hexutil.Big)(r.BlockNumber),
-		"from":              evmutil.MustGetSender(tx),
+		"from":              evmutil.MustGetSenderIfTxSigned(tx),
 		"to":                tx.To(),
 		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
 		"gasUsed":           hexutil.Uint64(r.GasUsed),
