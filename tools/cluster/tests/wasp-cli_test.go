@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -860,4 +861,20 @@ func TestEVMISCReceipt(t *testing.T) {
 	require.NoError(t, err)
 	out := w.MustRun("chain", "request", tx.Hash().Hex(), "--node=0")
 	require.Contains(t, out[0], "Request found in block")
+}
+
+func TestChangeGovernanceController(t *testing.T) {
+	w := newWaspCLITest(t)
+	committee, quorum := w.ArgCommitteeConfig(0)
+	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	w.ActivateChainOnAllNodes("chain1", 0)
+
+	// create the new controller
+	_, newGovControllerAddr := testkey.GenKeyAddr()
+	// change gov controller
+	w.MustRun("chain", "change-gov-controller", newGovControllerAddr.Bech32("atoi"), "--chain=chain1")
+
+	outputs, err := w.Cluster.L1Client().OutputMap(newGovControllerAddr)
+	require.NoError(t, err)
+	require.Len(t, outputs, 1)
 }

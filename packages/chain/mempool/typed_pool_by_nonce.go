@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
@@ -26,8 +27,6 @@ type TypedPoolByNonce[V isc.OffLedgerRequest] struct {
 	log                 *logger.Logger
 }
 
-var _ RequestPool[isc.OffLedgerRequest] = &TypedPoolByNonce[isc.OffLedgerRequest]{}
-
 func NewTypedPoolByNonce[V isc.OffLedgerRequest](waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) *TypedPoolByNonce[V] {
 	return &TypedPoolByNonce[V]{
 		waitReq:             waitReq,
@@ -40,9 +39,10 @@ func NewTypedPoolByNonce[V isc.OffLedgerRequest](waitReq WaitReq, sizeMetric fun
 }
 
 type OrderedPoolEntry[V isc.OffLedgerRequest] struct {
-	req V
-	old bool
-	ts  time.Time
+	req         V
+	old         bool
+	ts          time.Time
+	proposedFor []consGR.ConsensusID
 }
 
 func (p *TypedPoolByNonce[V]) Has(reqRef *isc.RequestRef) bool {

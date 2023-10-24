@@ -96,7 +96,7 @@ func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
 		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
-		&nodeclient.AliasesQuery{StateControllerBech32: bech32Addr},
+		&nodeclient.AliasesQuery{GovernorBech32: bech32Addr},
 	}
 
 	result := make(map[iotago.OutputID]iotago.Output)

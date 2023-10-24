@@ -73,6 +73,7 @@ const (
 	distShareMaxMsgsPerTick = 100
 	distShareRePublishTick  = 5 * time.Second
 	waitRequestCleanupEvery = 10
+	forceCleanMempoolTick   = 1 * time.Minute
 )
 
 // Partial interface for providing chain events to the outside.
@@ -106,6 +107,8 @@ type Mempool interface {
 	// These nodes should be used to disseminate the off-ledger requests.
 	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
+	ConsensusInstancesUpdated(activeConsensusInstances []consGR.ConsensusID)
+
 	GetContents() io.Reader
 }
 
@@ -116,6 +119,7 @@ type RequestPool[V isc.Request] interface {
 	Remove(request V)
 	// this removes requests from the pool if predicate returns false
 	Filter(predicate func(request V, ts time.Time) bool)
+	Iterate(f func(e *typedPoolEntry[V]))
 	StatusString() string
 	WriteContent(io.Writer)
 }
@@ -140,6 +144,8 @@ type mempoolImpl struct {
 	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
+	consensusInstancesUpdatedPipe  pipe.Pipe[*reqConsensusInstancesUpdated]
+	consensusInstances             []consGR.ConsensusID
 	waitReq                        WaitReq
 	waitChainHead                  []*reqConsensusProposal
 	reqConsensusProposalPipe       pipe.Pipe[*reqConsensusProposal]
@@ -152,6 +158,8 @@ type mempoolImpl struct {
 	netPeeringID                   peering.PeeringID
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
+	activeConsensusInstances       []consGR.ConsensusID
+	ttl                            time.Duration // time to live (how much time requests are allowed to sit in the pool without being processed)
 	log                            *logger.Logger
 	metrics                        *metrics.ChainMempoolMetrics
 	listener                       ChainListener
@@ -173,9 +181,14 @@ type reqAccessNodesUpdated struct {
 	accessNodePubKeys []*cryptolib.PublicKey
 }
 
+type reqConsensusInstancesUpdated struct {
+	activeConsensusInstances []consGR.ConsensusID
+}
+
 type reqConsensusProposal struct {
 	ctx         context.Context
 	aliasOutput *isc.AliasOutputWithID
+	consensusID consGR.ConsensusID
 	responseCh  chan<- []*isc.RequestRef
 }
 
@@ -208,6 +221,7 @@ func New(
 	metrics *metrics.ChainMempoolMetrics,
 	pipeMetrics *metrics.ChainPipeMetrics,
 	listener ChainListener,
+	ttl time.Duration,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
@@ -235,6 +249,9 @@ func New(
 		netPeeringID:                   netPeeringID,
 		netPeerPubs:                    map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                            net,
+		consensusInstancesUpdatedPipe:  pipe.NewInfinitePipe[*reqConsensusInstancesUpdated](),
+		activeConsensusInstances:       []consGR.ConsensusID{},
+		ttl:                            ttl,
 		log:                            log,
 		metrics:                        metrics,
 		listener:                       listener,
@@ -306,23 +323,18 @@ func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys [
 	}
 }
 
-func (mpi *mempoolImpl) writeContentAndClose(pw *io.PipeWriter) {
-	defer pw.Close()
-	mpi.onLedgerPool.WriteContent(pw)
-	mpi.offLedgerPool.WriteContent(pw)
+func (mpi *mempoolImpl) ConsensusInstancesUpdated(activeConsensusInstances []consGR.ConsensusID) {
+	mpi.consensusInstancesUpdatedPipe.In() <- &reqConsensusInstancesUpdated{
+		activeConsensusInstances: activeConsensusInstances,
+	}
 }
 
-func (mpi *mempoolImpl) GetContents() io.Reader {
-	pr, pw := io.Pipe()
-	go mpi.writeContentAndClose(pw)
-	return pr
-}
-
-func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
+func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposal{
 		ctx:         ctx,
 		aliasOutput: aliasOutput,
+		consensusID: consensusID,
 		responseCh:  res,
 	}
 	mpi.reqConsensusProposalPipe.In() <- req
@@ -340,9 +352,22 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 	return res
 }
 
+func (mpi *mempoolImpl) writeContentAndClose(pw *io.PipeWriter) {
+	defer pw.Close()
+	mpi.onLedgerPool.WriteContent(pw)
+	mpi.offLedgerPool.WriteContent(pw)
+}
+
+func (mpi *mempoolImpl) GetContents() io.Reader {
+	pr, pw := io.Pipe()
+	go mpi.writeContentAndClose(pw)
+	return pr
+}
+
 func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) { //nolint:gocyclo
 	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
+	consensusInstancesUpdatedPipeOutCh := mpi.consensusInstancesUpdatedPipe.Out()
 	reqConsensusProposalPipeOutCh := mpi.reqConsensusProposalPipe.Out()
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
 	reqReceiveOnLedgerRequestPipeOutCh := mpi.reqReceiveOnLedgerRequestPipe.Out()
@@ -353,6 +378,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 	debugTicker := time.NewTicker(distShareDebugTick)
 	timeTicker := time.NewTicker(distShareTimeTick)
 	rePublishTicker := time.NewTicker(distShareRePublishTick)
+	forceCleanMempoolTicker := time.NewTicker(forceCleanMempoolTick)
 	for {
 		select {
 		case recv, ok := <-serverNodesUpdatedPipeOutCh:
@@ -373,6 +399,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 				break
 			}
 			mpi.handleConsensusProposal(recv)
+			forceCleanMempoolTicker.Reset(forceCleanMempoolTick) // mempool will be forcebly cleanup if this ticker triggers
 		case recv, ok := <-reqConsensusRequestsPipeOutCh:
 			if !ok {
 				reqConsensusRequestsPipeOutCh = nil
@@ -403,6 +430,11 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 				break
 			}
 			mpi.handleTrackNewChainHead(recv)
+		case recv, ok := <-consensusInstancesUpdatedPipeOutCh:
+			if !ok {
+				break
+			}
+			mpi.activeConsensusInstances = recv.activeConsensusInstances
 		case recv, ok := <-netRecvPipeOutCh:
 			if !ok {
 				netRecvPipeOutCh = nil
@@ -415,6 +447,8 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 			mpi.handleDistSyncTimeTick()
 		case <-rePublishTicker.C:
 			mpi.handleRePublishTimeTick()
+		case <-forceCleanMempoolTicker.C:
+			mpi.handleForceCleanMempool()
 		case <-ctx.Done():
 			// mpi.serverNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
 			// mpi.accessNodesUpdatedPipe.Close()
@@ -544,7 +578,7 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 	mpi.handleConsensusProposalForChainHead(recv)
 }
 
-func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
+func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
@@ -567,6 +601,23 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 		}
 		accountNonce := mpi.nonce(agentID)
 		for _, e := range entries {
+			if time.Since(e.ts) > mpi.ttl { // stop proposing after TTL
+				if !lo.Some(mpi.consensusInstances, e.proposedFor) {
+					// request not used in active consensus anymore, remove it
+					mpi.log.Debugf("refsToPropose, request TTL expired, removing: %s", e.req.ID().String())
+					mpi.offLedgerPool.Remove(e.req)
+					continue
+				}
+				mpi.log.Debugf("refsToPropose, request TTL expired, skipping: %s", e.req.ID().String())
+				continue
+			}
+
+			if e.old {
+				// this request was marked as "old", do not propose it
+				mpi.log.Debugf("refsToPropose, account: %s, skipping old request: %s", account, e.req.ID().String())
+				continue
+			}
+
 			reqNonce := e.req.Nonce()
 			if reqNonce < accountNonce {
 				// nonce too old, delete
@@ -574,15 +625,12 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 				mpi.offLedgerPool.Remove(e.req)
 				continue
 			}
-			if e.old {
-				// this request was marked as "old", do not propose it
-				mpi.log.Debugf("refsToPropose, account: %s, skipping old request: %s", account, e.req.ID().String())
-				continue
-			}
+
 			if reqNonce == accountNonce {
 				// expected nonce, add it to the list to propose
 				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", account, e.req.ID().String(), e.req.Nonce())
 				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+				e.proposedFor = append(e.proposedFor, consensusID)
 				accountNonce++ // increment the account nonce to match the next valid request
 			}
 			if reqNonce > accountNonce {
@@ -596,7 +644,7 @@ func (mpi *mempoolImpl) refsToPropose() []*isc.RequestRef {
 }
 
 func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {
-	refs := mpi.refsToPropose()
+	refs := mpi.refsToPropose(recv.consensusID)
 	if len(refs) > 0 {
 		recv.Respond(refs)
 		return
@@ -730,9 +778,8 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	//
 	// Notify existing on-ledger requests if that's first time update.
 	if oldTangleTime.IsZero() {
-		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest, ts time.Time) bool {
-			mpi.waitReq.MarkAvailable(request)
-			return true
+		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) {
+			mpi.waitReq.MarkAvailable(e.req)
 		})
 	}
 }
@@ -840,12 +887,25 @@ func (mpi *mempoolImpl) handleDistSyncTimeTick() {
 // Re-send off-ledger messages that are hanging here for a long time.
 // Probably not a lot of nodes have them.
 func (mpi *mempoolImpl) handleRePublishTimeTick() {
-	retryOlder := time.Now().Add(-distShareRePublishTick)
-	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
-		if ts.Before(retryOlder) {
-			mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	mpi.log.Debugf("Skipping the re-publish step.") // TODO: Temporarily disabled.
+
+	// retryOlder := time.Now().Add(-distShareRePublishTick)
+	// mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
+	// 	if ts.Before(retryOlder) {
+	// 		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	// 	}
+	// 	return true
+	// })
+}
+
+func (mpi *mempoolImpl) handleForceCleanMempool() {
+	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry[isc.OffLedgerRequest]) {
+		for _, e := range entries {
+			if time.Since(e.ts) > mpi.ttl && !lo.Some(mpi.consensusInstances, e.proposedFor) {
+				mpi.log.Debugf("handleForceCleanMempool, request TTL expired, removing: %s", e.req.ID().String())
+				mpi.offLedgerPool.Remove(e.req)
+			}
 		}
-		return true
 	})
 }
 

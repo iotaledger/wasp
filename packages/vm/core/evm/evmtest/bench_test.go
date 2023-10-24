@@ -17,9 +17,9 @@ func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {
 	// setup: deploy the EVM chain
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	s := solo.New(b, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log})
-	env := initEVMWithSolo(b, s)
+	env := InitEVMWithSolo(b, s)
 	// setup: deploy the `storage` EVM contract
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
 	gasLimit := uint64(100000)
@@ -28,17 +28,17 @@ func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {
 	// that calls `storage.store()`
 	reqs := make([]isc.Request, b.N)
 	for i := 0; i < b.N; i++ {
-		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+		ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 		tx, err := storage.buildEthTx([]ethCallOptions{{
 			sender:   ethKey,
 			gasLimit: gasLimit,
 		}}, "store", uint32(i))
 		require.NoError(b, err)
-		reqs[i], err = isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx)
+		reqs[i], err = isc.NewEVMOffLedgerTxRequest(env.Chain.ChainID, tx)
 		require.NoError(b, err)
 	}
 
-	return env.soloChain, reqs
+	return env.Chain, reqs
 }
 
 // run benchmarks with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'

@@ -19,6 +19,7 @@ type ParametersChains struct {
 	PrintStatusPeriod                time.Duration `default:"3s" usage:"the period to print consensus instance status."`
 	ConsensusInstsInAdvance          int           `default:"3" usage:""`
 	AwaitReceiptCleanupEvery         int           `default:"100" usage:"for every this number AwaitReceipt will be cleaned up"`
+	MempoolTTL                       time.Duration `default:"24h" usage:"Time that requests are allowed to sit in the mempool without being processed"`
 }
 
 type ParametersWAL struct {
