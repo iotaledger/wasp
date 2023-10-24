@@ -882,13 +882,15 @@ func (mpi *mempoolImpl) handleDistSyncTimeTick() {
 // Re-send off-ledger messages that are hanging here for a long time.
 // Probably not a lot of nodes have them.
 func (mpi *mempoolImpl) handleRePublishTimeTick() {
-	retryOlder := time.Now().Add(-distShareRePublishTick)
-	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
-		if ts.Before(retryOlder) {
-			mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
-		}
-		return true
-	})
+	mpi.log.Debugf("Skipping the re-publish step.") // TODO: Temporarily disabled.
+
+	// retryOlder := time.Now().Add(-distShareRePublishTick)
+	// mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
+	// 	if ts.Before(retryOlder) {
+	// 		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	// 	}
+	// 	return true
+	// })
 }
 
 func (mpi *mempoolImpl) tryReAddRequest(req isc.Request) {
