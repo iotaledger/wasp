@@ -17,13 +17,10 @@ const (
 	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
 	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
-	FuncNewL1Deposit = "newL1Deposit"
-
 	FieldTransaction      = "t"
 	FieldCallMsg          = "c"
 	FieldChainID          = "chid"
 	FieldAddress          = "a"
-	FieldAssets           = "s"
 	FieldKey              = "k"
 	FieldAgentID          = "i"
 	FieldTransactionIndex = "ti"
