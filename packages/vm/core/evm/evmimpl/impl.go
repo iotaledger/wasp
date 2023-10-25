@@ -154,7 +154,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	// make sure we always store the EVM tx/receipt in the BlockchainDB, even
 	// if the ISC request is reverted
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
 	// revert the changes in the state / txbuilder in case of error
@@ -465,9 +465,9 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
-		receipt.GasUsed = gas.ISCGasBurnedToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
-		receipt.CumulativeGasUsed = createBlockchainDB(ctx.State(), chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
+		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
+		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
 		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
 	})
 
