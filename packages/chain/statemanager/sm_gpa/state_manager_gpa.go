@@ -21,6 +21,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
+type blockInfo struct {
+	trieRoot   trie.Hash
+	blockIndex uint32
+}
+
 type stateManagerGPA struct {
 	log                      *logger.Logger
 	chainID                  isc.ChainID
@@ -32,6 +37,7 @@ type stateManagerGPA struct {
 	store                    state.Store
 	output                   StateManagerOutput
 	parameters               StateManagerParameters
+	chainOfBlocks            pipe.Deque[*blockInfo]
 	lastGetBlocksTime        time.Time
 	lastCleanBlockCacheTime  time.Time
 	lastCleanRequestsTime    time.Time
@@ -73,6 +79,7 @@ func New(
 		store:                    store,
 		output:                   newOutput(),
 		parameters:               parameters,
+		chainOfBlocks:            nil,
 		lastGetBlocksTime:        time.Time{},
 		lastCleanBlockCacheTime:  time.Time{},
 		lastCleanRequestsTime:    time.Time{},
@@ -576,11 +583,12 @@ func (smT *stateManagerGPA) getWaitingCallbacksCount() int {
 
 func (smT *stateManagerGPA) commitStateDraft(stateDraft state.StateDraft) state.Block {
 	block := smT.store.Commit(stateDraft)
-	smT.metrics.BlockIndexCommitted(block.StateIndex())
+	stateIndex := block.StateIndex()
+	smT.metrics.BlockIndexCommitted(stateIndex)
 	if smT.pruningNeeded() {
-		smT.pruneStore(block.PreviousL1Commitment())
+		smT.pruneStore(block.PreviousL1Commitment(), stateIndex-1)
 	}
-	smT.output.addBlockCommitted(block.StateIndex(), block.L1Commitment())
+	smT.output.addBlockCommitted(stateIndex, block.L1Commitment())
 	return block
 }
 
@@ -588,31 +596,13 @@ func (smT *stateManagerGPA) pruningNeeded() bool {
 	return smT.parameters.PruningMinStatesToKeep > 0
 }
 
-func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
+func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateIndex uint32) {
 	if commitment == nil {
 		return // Nothing to prune
 	}
 	start := time.Now()
 
-	type blockInfo struct {
-		trieRoot   trie.Hash
-		blockIndex uint32
-	}
-
-	PreviousBlockInfoFun := func(trieRoot trie.Hash) (*blockInfo, error) {
-		block, err := smT.store.BlockByTrieRoot(trieRoot)
-		if err != nil {
-			return nil, err
-		}
-		com := block.PreviousL1Commitment()
-		if com == nil {
-			return nil, nil
-		}
-		return &blockInfo{
-			trieRoot:   com.TrieRoot(),
-			blockIndex: block.StateIndex() - 1,
-		}, nil
-	}
+	smT.updateChainOfBlocks(commitment, stateIndex)
 
 	var statesToKeepFromChain int
 	chainState, err := smT.store.LatestState()
@@ -629,47 +619,160 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment) {
 		statesToKeep = smT.parameters.PruningMinStatesToKeep
 	}
 
-	// Skip last `statesToKeep` trie roots
-	bi := &blockInfo{
-		trieRoot: commitment.TrieRoot(),
-		// NOTE: as `stateToKeep` is guaranteed to be at least 1, `stateIndex` will certainly be set by `PreviousBlockInfoFun` function
-	}
-	for i := 0; i < statesToKeep; i++ {
-		if !smT.store.HasTrieRoot(bi.trieRoot) {
-			return // Trie root history is not large enough for pruning
-		}
-		bi, err = PreviousBlockInfoFun(bi.trieRoot)
-		if err != nil {
-			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
-			return
-		}
-		if bi == nil {
-			return // Traced to the origin state (number of states in chain is less than `statesToKeep`)
-		}
+	if statesToKeep > smT.chainOfBlocks.Length() {
+		return // Number of states in chain is less than `statesToKeep`
 	}
 
-	// Collect no more than `PruningMaxStatesToDelete` oldest trie roots
-	// `bi` is not nil in this line
-	bis := pipe.NewLimitLimitedPriorityHashQueue[*blockInfo](smT.parameters.PruningMaxStatesToDelete)
-	for bi != nil && smT.store.HasTrieRoot(bi.trieRoot) {
-		bis.Add(bi)
-		bi, err = PreviousBlockInfoFun(bi.trieRoot)
-		if err != nil {
-			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
-			return
-		}
+	statesToPrune := smT.chainOfBlocks.Length() - statesToKeep
+	if statesToPrune > smT.parameters.PruningMaxStatesToDelete {
+		statesToPrune = smT.parameters.PruningMaxStatesToDelete
 	}
-	for i := -1; i >= -bis.Length(); i-- {
+	i := 0
+	for ; i < statesToPrune; i++ {
+		bi := smT.chainOfBlocks.PeekStart()
 		singleStart := time.Now()
-		bi = bis.Get(i)
 		stats, err := smT.store.Prune(bi.trieRoot)
 		if err != nil {
 			smT.log.Errorf("Failed to prune trie root %s: %v", bi.trieRoot, err)
 			return // Returning in order not to leave gaps of pruned trie roots in between not pruned ones
 		}
+		smT.chainOfBlocks.RemoveStart()
 		smT.metrics.StatePruned(time.Since(singleStart), bi.blockIndex)
 		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", bi.trieRoot, stats.DeletedNodes, stats.DeletedValues)
 	}
-	smT.metrics.PruningCompleted(time.Since(start), bis.Length())
-	smT.log.Debugf("Pruning completed, %v trie roots pruned", bis.Length())
+	smT.metrics.PruningCompleted(time.Since(start), i)
+	smT.log.Debugf("Pruning completed, %v trie roots pruned", i)
+}
+
+// updateChainOfBlocks updates chain of blocks to contain trie roots/block indexes
+// of all the blocks starting from the one with passed commitment and going back
+// to the oldest unpruned block. Usually some block chain is currently known.
+// However the passed commitment might be newer and not contained in currently
+// known chain of blocks. The function attempts to use currently known chain as
+// much as possible: while building new chain of blocks, it attempts to find a
+// place to merge it with already known chain. After the merge it checks if the
+// end of the merged chain is still what it should be.
+// This function is extensively tested in `state_manager_gpa_cob_test.go` file.
+func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, stateIndex uint32) { //nolint:funlen,gocyclo
+	GetPreviousBlockInfoFun := func(bi *blockInfo) (*blockInfo, error) {
+		block, err := smT.store.BlockByTrieRoot(bi.trieRoot)
+		if err != nil {
+			smT.log.Errorf("Failed to retrieve previous block info of %s while pruning: %v", bi.trieRoot, err)
+			return nil, err
+		}
+		com := block.PreviousL1Commitment()
+		if com == nil {
+			return nil, nil
+		}
+		return &blockInfo{
+			trieRoot:   com.TrieRoot(),
+			blockIndex: block.StateIndex() - 1,
+		}, nil
+	}
+	GetLastKnownBlockInfoFun := func() *blockInfo {
+		if smT.chainOfBlocks.Length() == 0 {
+			return nil
+		}
+		return smT.chainOfBlocks.PeekEnd()
+	}
+
+	cob := pipe.NewDeque[*blockInfo]()
+	bi := &blockInfo{
+		trieRoot:   commitment.TrieRoot(),
+		blockIndex: stateIndex,
+	}
+
+	var lastKnownBi *blockInfo
+	if smT.chainOfBlocks == nil {
+		lastKnownBi = nil
+	} else {
+		lastKnownBi = GetLastKnownBlockInfoFun()
+	}
+
+	var err error
+	// Find chain of newest blocks: the ones, that has larger indexes than currently known chain
+	if lastKnownBi != nil {
+		for err == nil && bi != nil && bi.blockIndex > lastKnownBi.blockIndex && smT.store.HasTrieRoot(bi.trieRoot) {
+			cob.AddStart(bi)
+			bi, err = GetPreviousBlockInfoFun(bi)
+		}
+	}
+	// Remove blocks from currently known chain, that have larger indexes than
+	// the newest block: they are older than the newest block, but on the different
+	// branch of the chain. TODO: Instead of removing, the blocks should probably
+	// be pruned.
+	if err == nil && bi != nil {
+		for lastKnownBi != nil && lastKnownBi.blockIndex > bi.blockIndex {
+			_ = smT.chainOfBlocks.RemoveEnd()
+			lastKnownBi = GetLastKnownBlockInfoFun()
+		}
+	}
+	// Try to find a place to merge newest blocks chain with currently known blocks chain: `bi.trieRoot.Equals(lastKnownBi.trieRoot)``
+	for err == nil && bi != nil && lastKnownBi != nil && !bi.trieRoot.Equals(lastKnownBi.trieRoot) && smT.store.HasTrieRoot(bi.trieRoot) {
+		// Normally, no iteration of this cycle should occur: once a common index
+		// is reached in previous cycles, trie roots should also match. In an unlikely
+		// event of chain split, each iteration of this cycle fetches one older block
+		// to the newest blocks chain and drops (TODO: maybe it should prune) one
+		// newest ("last known") block from currently known blocks chain. Hence,
+		// this comparison of block indexes should still hold.
+		if bi.blockIndex != lastKnownBi.blockIndex {
+			smT.log.Errorf("Oldest fetched block index %v does not match newest known block index %v",
+				bi.blockIndex, lastKnownBi.blockIndex)
+			return
+		}
+		cob.AddStart(bi)
+		bi, err = GetPreviousBlockInfoFun(bi)
+		_ = smT.chainOfBlocks.RemoveEnd()
+		lastKnownBi = GetLastKnownBlockInfoFun()
+	}
+	if err != nil {
+		smT.log.Errorf("Failed to obtain previous block info: %v", err)
+		return
+	}
+	if lastKnownBi == nil { // either there were no currently known blocks chain,
+		// or newest blocks chain had no common block infos
+		// (which is very unlikely): fill the chain from the store.
+		for err == nil && bi != nil && smT.store.HasTrieRoot(bi.trieRoot) {
+			cob.AddStart(bi)
+			bi, err = GetPreviousBlockInfoFun(bi)
+		}
+		if err != nil {
+			smT.log.Errorf("Failed to obtain previous block info: %v", err)
+			return
+		}
+		smT.chainOfBlocks = cob
+	} else if bi == nil { // origin block has been reached
+		smT.chainOfBlocks = cob
+	} else if bi.trieRoot.Equals(lastKnownBi.trieRoot) { // Here is the the place to merge newest blocks chain with currently known blocks chain
+		// Normally newest blocks chain should contain only several (usually, 1)
+		// block infos and currently known blocks chain should contain at least
+		// `PruningMinStatesToKeep` block infos, but on a sudden enabling of pruning
+		// might contain millions of them. Therefore it is more efficient to copy
+		// newest blocks chain to the currently known one compared to doing it
+		// the other way round. Let's merge them this way.
+		for cob.Length() > 0 {
+			bi = cob.RemoveStart()
+			smT.chainOfBlocks.AddEnd(bi)
+		}
+		// Although it should not happen, let's check if the start of the chain
+		// is still correct.
+		// The oldest known block should still be in the store
+		for bi = smT.chainOfBlocks.PeekStart(); !smT.store.HasTrieRoot(bi.trieRoot); bi = smT.chainOfBlocks.PeekStart() {
+			// NOTE: `PeekStart` panic on empty list is not handled here, but
+			// this should not happen as at least block, passed in function's
+			// parameters should be both in this deque and in the store
+			_ = smT.chainOfBlocks.RemoveStart()
+		}
+		// The oldest known block should be the oldest block in the store
+		for bi, err = GetPreviousBlockInfoFun(smT.chainOfBlocks.PeekStart()); err == nil && bi != nil && smT.store.HasTrieRoot(bi.trieRoot); bi, err = GetPreviousBlockInfoFun(bi) {
+			smT.chainOfBlocks.AddStart(bi)
+		}
+		if err != nil {
+			smT.log.Errorf("Failed to obtain previous block info: %v", err)
+			return
+		}
+	} else { // !smT.store.HasTrieRoot(bi.trieRoot), which means that this block
+		// has already been pruned from the store.
+		smT.chainOfBlocks = cob
+	}
 }
