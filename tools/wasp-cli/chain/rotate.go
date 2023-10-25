@@ -169,7 +169,7 @@ func initChangeGovControllerCmd() *cobra.Command {
 				chain.AsAliasID(),
 				newGovController,
 				outputSet,
-				myWallet.KeyPair,
+				myWallet,
 			)
 			log.Check(err)
 
