@@ -93,7 +93,7 @@ func WebsocketHandler(server *chainServer) http.Handler {
 		},
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(1), 50) // 10 requests per second with a burst of 5
+	limiter := rate.NewLimiter(rate.Limit(1), 2) // 1 request(s) per second with a burst of 2
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		echoResponse, ok := w.(*echo.Response)
