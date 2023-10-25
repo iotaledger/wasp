@@ -18,7 +18,7 @@ jobs:
         working-directory: ./packages/vm/core/evm/iscmagic
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/*
           registry-url: "https://registry.npmjs.org"
