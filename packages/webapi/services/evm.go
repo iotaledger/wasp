@@ -84,6 +84,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 		e.metrics.GetChainMetrics(chainID).WebAPI,
 		e.jsonrpcParams,
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +114,7 @@ func (e *EVMService) HandleWebsocket(chainID isc.ChainID, request *http.Request,
 		return err
 	}
 
-	allowedOrigins := []string{"*"}
-	evmServer.rpc.WebsocketHandler(allowedOrigins).ServeHTTP(response, request)
-
+	//allowedOrigins := []string{"*"}
+	WebsocketHandler(evmServer).ServeHTTP(response, request)
 	return nil
 }

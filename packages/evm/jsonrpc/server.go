@@ -42,6 +42,7 @@ func NewServer(
 ) (*rpc.Server, error) {
 	chainID := evmChain.ChainID()
 	rpcsrv := rpc.NewServer()
+
 	for _, srv := range []struct {
 		namespace string
 		service   interface{}
