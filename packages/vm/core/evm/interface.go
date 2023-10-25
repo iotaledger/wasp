@@ -55,6 +55,8 @@ const (
 	FieldNFTCollectionID    = evmnames.FieldNFTCollectionID   // NFTID
 	FieldFoundryTokenScheme = evmnames.FieldFoundryTokenScheme
 	FieldTargetAddress      = evmnames.FieldTargetAddress
+
+	FieldAgentIDDepositOriginator = evmnames.FieldAgentIDDepositOriginator
 )
 
 const (

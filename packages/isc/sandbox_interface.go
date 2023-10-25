@@ -148,7 +148,7 @@ type Privileged interface {
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
 }
 
-type CoreCallbackFunc func(contractPartition kv.KVStore)
+type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {
