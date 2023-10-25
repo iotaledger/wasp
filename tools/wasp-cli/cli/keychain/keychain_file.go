@@ -49,14 +49,14 @@ func (k *KeyChainFile) ReadContents() (map[string][]byte, error) {
 	_, err := os.Stat(k.FilePath())
 
 	if errors.Is(err, os.ErrNotExist) {
-		result, err := json.Marshal(struct{}{})
-		if err != nil {
-			return nil, err
+		result, neErr := json.Marshal(struct{}{})
+		if neErr != nil {
+			return nil, neErr
 		}
 
-		err = os.WriteFile(k.FilePath(), result, os.ModePerm)
-		if err != nil {
-			return nil, err
+		neErr = os.WriteFile(k.FilePath(), result, os.ModePerm)
+		if neErr != nil {
+			return nil, neErr
 		}
 
 		return map[string][]byte{}, nil
