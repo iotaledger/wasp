@@ -73,20 +73,23 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable().Clone()
 	ctx.TransferAllowedFunds(targetAccount)
 
-	if targetAccount.Kind() == isc.AgentIDKindEthereumAddress {
-		evmAcc := targetAccount.(*isc.EthereumAddressAgentID).EthAddress().Bytes()
-		// issue an "custom" etherum tx so the funds appear on the explorer
-		ctx.Call(
-			evm.Contract.Hname(),
-			evm.FuncNewL1Deposit.Hname(),
-			dict.Dict{
-				evm.FieldAddress:                  evmAcc,
-				evm.FieldAssets:                   allowance.Bytes(),
-				evm.FieldAgentIDDepositOriginator: ctx.Caller().Bytes(),
-			},
-			nil,
-		)
+	if targetAccount.Kind() != isc.AgentIDKindEthereumAddress {
+		return nil // done
 	}
+	if !ctx.Caller().Equals(ctx.Request().SenderAccount()) {
+		return nil // only issue "custom EVM tx" when this function is called directly by the request sender
+	}
+	// issue a "custom EVM tx" so the funds appear on the explorer
+	ctx.Call(
+		evm.Contract.Hname(),
+		evm.FuncNewL1Deposit.Hname(),
+		dict.Dict{
+			evm.FieldAddress:                  targetAccount.(*isc.EthereumAddressAgentID).EthAddress().Bytes(),
+			evm.FieldAssets:                   allowance.Bytes(),
+			evm.FieldAgentIDDepositOriginator: ctx.Caller().Bytes(),
+		},
+		nil,
+	)
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 	return nil
 }
