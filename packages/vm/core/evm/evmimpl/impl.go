@@ -457,16 +457,17 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	tx := types.NewTransaction(nonce, addr, value, 0, util.Big0, txData)
 
 	// create a fake receipt
+	chainInfo := ctx.ChainInfo()
 	receipt := &types.Receipt{
-		Type:              types.LegacyTxType,
-		CumulativeGasUsed: createBlockchainDB(ctx.State(), ctx.ChainInfo()).GetPendingCumulativeGasUsed(),
-		GasUsed:           0, // TODO write gas used?
-		Logs:              make([]*types.Log, 0),
-		Status:            types.ReceiptStatusSuccessful,
+		Type:   types.LegacyTxType,
+		Logs:   make([]*types.Log, 0),
+		Status: types.ReceiptStatusSuccessful,
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
+		receipt.GasUsed = gas.ISCGasBurnedToEVM(ctx.Gas().Burned(), &chainInfo.GasFeePolicy.EVMGasRatio)
+		receipt.CumulativeGasUsed = createBlockchainDB(ctx.State(), chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
 		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
 	})
 

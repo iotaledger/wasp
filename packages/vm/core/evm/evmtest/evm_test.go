@@ -2084,7 +2084,11 @@ func TestL1DepositEVM(t *testing.T) {
 		util.EthereumDecimalsToBaseTokenDecimals(bal, parameters.L1().BaseToken.Decimals),
 		assets.BaseTokens)
 
-	rec := env.Chain.EVM().TransactionReceipt(tx.Hash())
-	require.NotNil(t, rec)
-	require.Equal(t, types.ReceiptStatusSuccessful, rec.Status)
+	evmRec := env.Chain.EVM().TransactionReceipt(tx.Hash())
+	require.NotNil(t, evmRec)
+	require.Equal(t, types.ReceiptStatusSuccessful, evmRec.Status)
+	iscRec := env.Chain.LastReceipt()
+	feePolicy := env.Chain.GetGasFeePolicy()
+	expectedGas := gas.ISCGasBudgetToEVM(iscRec.GasBurned, &feePolicy.EVMGasRatio)
+	require.EqualValues(t, expectedGas, evmRec.GasUsed)
 }
