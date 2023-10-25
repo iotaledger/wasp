@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
 	"strings"
@@ -40,6 +41,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
@@ -2045,7 +2047,16 @@ func TestEmitEventAndRevert(t *testing.T) {
 func TestL1DepositEVM(t *testing.T) {
 	env := InitEVM(t)
 	// ensure that after a deposit to an EVM account, there is a tx/receipt for it to be auditable on the EVM side
-	_, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
+	wallet, l1Addr := env.solo.NewKeyPairWithFunds()
+	_, ethAddr := solo.NewEthereumAccount()
+	amount := 1 * isc.Million
+	err := env.Chain.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(amount),
+		isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr),
+		wallet,
+	)
+	require.NoError(t, err)
+
 	bal, err := env.Chain.EVM().Balance(ethAddr, nil)
 	require.NoError(t, err)
 
@@ -2058,6 +2069,22 @@ func TestL1DepositEVM(t *testing.T) {
 	require.True(t, ethAddr == *tx.To())
 	require.Zero(t, tx.Value().Cmp(bal))
 
+	// assert txData has the expected information (<agentID sender> + assets)
+	buf := (bytes.NewReader(tx.Data()))
+	rr := rwutil.NewReader(buf)
+	a := isc.AgentIDFromReader(rr)
+	require.True(t, a.Equals(isc.NewAddressAgentID(l1Addr)))
+	var assets isc.Assets
+	assets.Read(buf)
+	n, err := buf.Read([]byte{})
+	require.Zero(t, n)
+	require.ErrorIs(t, err, io.EOF)
+
+	require.EqualValues(t,
+		util.EthereumDecimalsToBaseTokenDecimals(bal, parameters.L1().BaseToken.Decimals),
+		assets.BaseTokens)
+
 	rec := env.Chain.EVM().TransactionReceipt(tx.Hash())
 	require.NotNil(t, rec)
+	require.Equal(t, types.ReceiptStatusSuccessful, rec.Status)
 }

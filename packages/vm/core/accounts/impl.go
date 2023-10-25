@@ -69,10 +69,10 @@ func deposit(ctx isc.Sandbox) dict.Dict {
 // Params:
 // - ParamAgentID. AgentID. Required
 func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
-	ctx.Log().Debugf("accounts.transferAllowanceTo.begin -- %s", ctx.AllowanceAvailable())
 	targetAccount := ctx.Params().MustGetAgentID(ParamAgentID)
 	allowance := ctx.AllowanceAvailable().Clone()
 	ctx.TransferAllowedFunds(targetAccount)
+
 	if targetAccount.Kind() == isc.AgentIDKindEthereumAddress {
 		evmAcc := targetAccount.(*isc.EthereumAddressAgentID).EthAddress().Bytes()
 		// issue an "custom" etherum tx so the funds appear on the explorer
@@ -80,8 +80,9 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 			evm.Contract.Hname(),
 			evm.FuncNewL1Deposit.Hname(),
 			dict.Dict{
-				evm.FieldAddress: evmAcc,
-				evm.FieldAssets:  allowance.Bytes(),
+				evm.FieldAddress:                  evmAcc,
+				evm.FieldAssets:                   allowance.Bytes(),
+				evm.FieldAgentIDDepositOriginator: ctx.Caller().Bytes(),
 			},
 			nil,
 		)
