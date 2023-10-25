@@ -317,7 +317,7 @@ func (e *EVMEmulator) SendTransaction(
 	if result != nil {
 		gasUsed = result.UsedGas
 	}
-	cumulativeGasUsed := e.BlockchainDB().getPendingCumulativeGasUsed() + gasUsed
+	cumulativeGasUsed := e.BlockchainDB().GetPendingCumulativeGasUsed() + gasUsed
 
 	receipt = &types.Receipt{
 		Type:              tx.Type(),

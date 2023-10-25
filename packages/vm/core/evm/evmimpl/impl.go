@@ -40,6 +40,8 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
 
+	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
+
 	// views
 	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
 	evm.FuncGetChainID.WithHandler(getChainID),
@@ -434,4 +436,33 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 	gasRatioViewRes := ctx.CallView(governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
 	return codec.MustDecodeRatio32(gasRatioViewRes.Get(governance.ParamEVMGasRatio), gas.DefaultEVMGasRatio)
+}
+
+func newL1Deposit(ctx isc.Sandbox) dict.Dict {
+	// can only be called from the accounts contract
+	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
+	params := ctx.Params()
+	addr := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
+	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
+	ctx.RequireNoError(err, "unable to parse assets from params")
+
+	// create a fake tx so that the deposit is visible by the EVM
+	value := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	nonce := uint64(0)
+	tx := types.NewTransaction(nonce, addr, value, 0, util.Big0, assets.Bytes())
+
+	// create a fake receipt
+	receipt := &types.Receipt{
+		Type:              types.LegacyTxType,
+		CumulativeGasUsed: createBlockchainDB(ctx.State(), ctx.ChainInfo()).GetPendingCumulativeGasUsed(),
+		GasUsed:           0,
+		Logs:              make([]*types.Log, 0),
+	}
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
+		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
+	})
+
+	return nil
 }
