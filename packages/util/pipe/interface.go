@@ -2,9 +2,6 @@ package pipe
 
 import "github.com/iotaledger/wasp/packages/hashing"
 
-// minQueueLen is smallest capacity that queue may have.
-const minQueueLen = 16
-
 type Hashable interface {
 	GetHash() hashing.HashValue
 }
@@ -15,6 +12,21 @@ type Queue[E any] interface {
 	Peek() E
 	Get(i int) E
 	Remove() E
+}
+
+type Deque[E any] interface {
+	Length() int
+	AddStart(elem E) bool
+	AddEnd(elem E) bool
+	PeekStart() E
+	PeekEnd() E
+	PeekNStart(n int) []E
+	PeekNEnd(n int) []E
+	PeekAll() []E
+	Get(i int) E
+	RemoveStart() E
+	RemoveEnd() E
+	RemoveAt(i int) E
 }
 
 type Pipe[E any] interface {

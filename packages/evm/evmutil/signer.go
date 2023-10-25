@@ -8,6 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func Signer(chainID *big.Int) types.Signer {
@@ -24,4 +26,13 @@ func MustGetSender(tx *types.Transaction) common.Address {
 		panic(err)
 	}
 	return sender
+}
+
+func MustGetSenderIfTxSigned(tx *types.Transaction) common.Address {
+	var sender common.Address
+	v, r, s := tx.RawSignatureValues()
+	if util.IsZeroBigInt(v) && util.IsZeroBigInt(r) && util.IsZeroBigInt(s) {
+		return sender // unsigned tx
+	}
+	return MustGetSender(tx)
 }
