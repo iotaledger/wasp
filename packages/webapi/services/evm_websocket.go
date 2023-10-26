@@ -3,9 +3,10 @@ package services
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/websocket"
@@ -13,6 +14,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 )
 
 /**
@@ -25,47 +27,79 @@ This way we can inject our rate limiting logic inside.
 The downside is that it's not possible to limit per JSON message, but it should work regardless.
 */
 
-type RateLimitedConn struct {
+type websocketContext struct {
+	rateLimiterMutex sync.Mutex
+	rateLimiter      map[string]*rate.Limiter
+	syncPool         *sync.Pool
+	jsonRPCParams    *jsonrpc.Parameters
+}
+
+func (w *websocketContext) getRateLimiter(remoteIP string) *rate.Limiter {
+	w.rateLimiterMutex.Lock()
+	defer w.rateLimiterMutex.Unlock()
+
+	if w.rateLimiter[remoteIP] != nil {
+		return w.rateLimiter[remoteIP]
+	}
+
+	w.rateLimiter[remoteIP] = rate.NewLimiter(rate.Every(time.Minute), w.jsonRPCParams.WebsocketRateLimitMessagesPerMinute)
+
+	return w.rateLimiter[remoteIP]
+}
+
+//nolint:unused
+func (w *websocketContext) deleteRateLimiter(remoteIP string) {
+	w.rateLimiterMutex.Lock()
+	defer w.rateLimiterMutex.Unlock()
+
+	if w.rateLimiter[remoteIP] != nil {
+		delete(w.rateLimiter, remoteIP)
+	}
+}
+
+type rateLimitedConn struct {
 	net.Conn
+	logger  *logger.Logger
 	limiter *rate.Limiter
 }
 
-func NewRateLimitedConn(conn net.Conn, r *rate.Limiter) *RateLimitedConn {
-	return &RateLimitedConn{
+func newRateLimitedConn(conn net.Conn, logger *logger.Logger, r *rate.Limiter) *rateLimitedConn {
+	return &rateLimitedConn{
 		Conn:    conn,
+		logger:  logger,
 		limiter: r,
 	}
 }
 
-func (rlc *RateLimitedConn) Read(b []byte) (int, error) {
+func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 	n, err := rlc.Conn.Read(b)
 	if err != nil {
 		return n, err
 	}
 
 	if !rlc.limiter.Allow() {
-		log.Print("rate limit exceeded")
+		rlc.logger.Info("[EVM WS Conn] rate limit exceeded")
 		return 0, rlc.Conn.Close()
 	}
 
 	return n, nil
 }
 
-func (rlc *RateLimitedConn) Write(b []byte) (int, error) {
+func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
 	return rlc.Conn.Write(b)
 }
 
-type RateLimitedEchoResponse struct {
+type rateLimitedEchoResponse struct {
 	*echo.Response
-
+	logger  *logger.Logger
 	limiter *rate.Limiter
 }
 
-func NewRateLimitedEchoResponse(r *echo.Response, limiter *rate.Limiter) *RateLimitedEchoResponse {
-	return &RateLimitedEchoResponse{r, limiter}
+func newRateLimitedEchoResponse(r *echo.Response, logger *logger.Logger, limiter *rate.Limiter) *rateLimitedEchoResponse {
+	return &rateLimitedEchoResponse{r, logger, limiter}
 }
 
-func (r RateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (r rateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	conn, buffer, err := r.Response.Hijack()
 	if err != nil {
 		return conn, buffer, err
@@ -74,7 +108,7 @@ func (r RateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	buffer.Reader = bufio.NewReader(conn)
 	buffer.Writer = bufio.NewWriter(conn)
 
-	return NewRateLimitedConn(conn, r.limiter), buffer, err
+	return newRateLimitedConn(conn, r.logger, r.limiter), buffer, err
 }
 
 const (
@@ -82,7 +116,7 @@ const (
 	writeBufferSize = 1024
 )
 
-func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *websocketContext) http.Handler {
+func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *websocketContext, realIP string) http.Handler {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  readBufferSize,
 		WriteBufferSize: writeBufferSize,
@@ -93,7 +127,8 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !wsContext.rateLimiter.Allow() {
+		rateLimiter := wsContext.getRateLimiter(realIP)
+		if !rateLimiter.Allow() {
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
@@ -104,7 +139,7 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 			return
 		}
 
-		rateLimitedResponseWriter := NewRateLimitedEchoResponse(echoResponse, wsContext.rateLimiter)
+		rateLimitedResponseWriter := newRateLimitedEchoResponse(echoResponse, logger, rateLimiter)
 		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
 			logger.Info(fmt.Sprintf("[EVM WS] %s", err))

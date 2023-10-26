@@ -113,11 +113,6 @@ func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, r
 	return nil
 }
 
-type websocketContext struct {
-	rateLimiter *rate.Limiter
-	syncPool    *sync.Pool
-}
-
 func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext {
 	e.websocketContextMutex.Lock()
 	defer e.websocketContextMutex.Unlock()
@@ -127,20 +122,22 @@ func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext 
 	}
 
 	e.websocketContexts[chainID] = &websocketContext{
-		syncPool:    new(sync.Pool),
-		rateLimiter: rate.NewLimiter(e.jsonrpcParams.WebsocketRateLimitMessagesPerSecond, e.jsonrpcParams.WebsocketRateLimitBurst),
+		syncPool:         new(sync.Pool),
+		jsonRPCParams:    e.jsonrpcParams,
+		rateLimiterMutex: sync.Mutex{},
+		rateLimiter:      map[string]*rate.Limiter{},
 	}
 
 	return e.websocketContexts[chainID]
 }
 
-func (e *EVMService) HandleWebsocket(chainID isc.ChainID, request *http.Request, response *echo.Response) error {
+func (e *EVMService) HandleWebsocket(chainID isc.ChainID, echoCtx echo.Context) error {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
 		return err
 	}
 
 	wsContext := e.getWebsocketContext(chainID)
-	websocketHandler(e.log, evmServer, wsContext).ServeHTTP(response, request)
+	websocketHandler(e.log, evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
 	return nil
 }
