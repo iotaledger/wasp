@@ -5,23 +5,31 @@ package jsonrpc
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
+	"golang.org/x/time/rate"
 
 	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 type Parameters struct {
-	Logs LogsLimits
+	Logs                                LogsLimits
+	WebsocketRateLimitMessagesPerSecond rate.Limit
+	WebsocketRateLimitBurst             int
 }
 
 func NewParameters(
 	maxBlocksInLogsFilterRange int,
 	maxLogsInResult int,
+	websocketRateLimitMessagesPerSecond rate.Limit,
+	websocketRateLimitBurst int,
+
 ) *Parameters {
 	return &Parameters{
 		Logs: LogsLimits{
 			MaxBlocksInLogsFilterRange: maxBlocksInLogsFilterRange,
 			MaxLogsInResult:            maxLogsInResult,
 		},
+		WebsocketRateLimitMessagesPerSecond: websocketRateLimitMessagesPerSecond,
+		WebsocketRateLimitBurst:             websocketRateLimitBurst,
 	}
 }
 
@@ -31,6 +39,8 @@ func ParametersDefault() *Parameters {
 			MaxBlocksInLogsFilterRange: 1000,
 			MaxLogsInResult:            10000,
 		},
+		WebsocketRateLimitMessagesPerSecond: 100,
+		WebsocketRateLimitBurst:             1,
 	}
 }
 

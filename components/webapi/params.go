@@ -29,6 +29,9 @@ type ParametersWebAPILimits struct {
 type ParametersJSONRPC struct {
 	MaxBlocksInLogsFilterRange int `default:"1000" usage:"maximum amount of blocks in eth_getLogs filter range"`
 	MaxLogsInResult            int `default:"10000" usage:"maximum amount of logs in eth_getLogs result"`
+
+	WebsocketRateLimitMessagesPerSecond float64 `default:"100" usage:"the websocket rate limit (messages per second)"`
+	WebsocketRateLimitBurst             int     `default:"1" usage:"the websocket rate limit burst"`
 }
 
 var ParamsWebAPI = &ParametersWebAPI{

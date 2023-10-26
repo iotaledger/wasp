@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.uber.org/dig"
+	"golang.org/x/time/rate"
 	websocketserver "nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/app"
@@ -295,6 +296,8 @@ func provide(c *dig.Container) error {
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,
 				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,
+				rate.Limit(ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitMessagesPerSecond),
+				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitBurst,
 			),
 		)
 

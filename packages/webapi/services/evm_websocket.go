@@ -2,16 +2,17 @@ package services
 
 import (
 	"bufio"
-	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/time/rate"
+
+	"github.com/iotaledger/hive.go/logger"
 )
 
 /**
@@ -42,20 +43,15 @@ func (rlc *RateLimitedConn) Read(b []byte) (int, error) {
 		return n, err
 	}
 
-	// We could either limit per message, or per bytes sent (using `n` instead of 1)
-	if err := rlc.limiter.WaitN(context.Background(), 1); err != nil {
-		return 0, err
+	if !rlc.limiter.Allow() {
+		log.Print("rate limit exceeded")
+		return 0, rlc.Conn.Close()
 	}
 
 	return n, nil
 }
 
 func (rlc *RateLimitedConn) Write(b []byte) (int, error) {
-	// We could either limit per message, or per bytes sent (using `len(b)` instead of 1)
-	if err := rlc.limiter.WaitN(context.Background(), 1); err != nil {
-		return 0, err
-	}
-
 	return rlc.Conn.Write(b)
 }
 
@@ -81,33 +77,37 @@ func (r RateLimitedResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error)
 	return NewRateLimitedConn(conn, r.limiter), buffer, err
 }
 
-var wsBufferPool = new(sync.Pool)
+const (
+	readBufferSize  = 1024
+	writeBufferSize = 1024
+)
 
-func WebsocketHandler(server *chainServer) http.Handler {
-	var upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		WriteBufferPool: wsBufferPool,
+func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *websocketContext) http.Handler {
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  readBufferSize,
+		WriteBufferSize: writeBufferSize,
+		WriteBufferPool: wsContext.syncPool,
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(1), 2) // 1 request(s) per second with a burst of 2
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		echoResponse, ok := w.(*echo.Response)
-		if !ok {
-			log.Print("Could not cast response to echo.Response")
-
+		if !wsContext.rateLimiter.Allow() {
+			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 
-		rateLimitedResponseWriter := NewRateLimitedResponseWriter(echoResponse, limiter)
-		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
+		echoResponse, ok := w.(*echo.Response)
+		if !ok {
+			logger.Info("[EVM WS] Could not cast response to echo.Response")
+			return
+		}
 
+		rateLimitedResponseWriter := NewRateLimitedResponseWriter(echoResponse, wsContext.rateLimiter)
+		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
-			log.Print(err)
+			logger.Info(fmt.Sprintf("[EVM WS] %s", err))
 			return
 		}
 

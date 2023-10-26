@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/time/rate"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
@@ -28,6 +29,9 @@ type EVMService struct {
 	evmBackendMutex sync.Mutex
 	evmChainServers map[isc.ChainID]*chainServer
 
+	websocketContextMutex sync.Mutex
+	websocketContexts     map[isc.ChainID]*websocketContext
+
 	chainsProvider  chains.Provider
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
@@ -49,16 +53,18 @@ func NewEVMService(
 	log *logger.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
-		chainsProvider:  chainsProvider,
-		chainService:    chainService,
-		evmChainServers: map[isc.ChainID]*chainServer{},
-		evmBackendMutex: sync.Mutex{},
-		networkProvider: networkProvider,
-		publisher:       pub,
-		indexDbPath:     indexDbPath,
-		metrics:         metrics,
-		jsonrpcParams:   jsonrpcParams,
-		log:             log,
+		chainsProvider:        chainsProvider,
+		chainService:          chainService,
+		evmChainServers:       map[isc.ChainID]*chainServer{},
+		evmBackendMutex:       sync.Mutex{},
+		websocketContexts:     map[isc.ChainID]*websocketContext{},
+		websocketContextMutex: sync.Mutex{},
+		networkProvider:       networkProvider,
+		publisher:             pub,
+		indexDbPath:           indexDbPath,
+		metrics:               metrics,
+		jsonrpcParams:         jsonrpcParams,
+		log:                   log,
 	}
 }
 
@@ -108,13 +114,34 @@ func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, r
 	return nil
 }
 
+type websocketContext struct {
+	rateLimiter *rate.Limiter
+	syncPool    *sync.Pool
+}
+
+func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext {
+	e.websocketContextMutex.Lock()
+	defer e.websocketContextMutex.Unlock()
+
+	if e.websocketContexts[chainID] != nil {
+		return e.websocketContexts[chainID]
+	}
+
+	e.websocketContexts[chainID] = &websocketContext{
+		syncPool:    new(sync.Pool),
+		rateLimiter: rate.NewLimiter(e.jsonrpcParams.WebsocketRateLimitMessagesPerSecond, e.jsonrpcParams.WebsocketRateLimitBurst),
+	}
+
+	return e.websocketContexts[chainID]
+}
+
 func (e *EVMService) HandleWebsocket(chainID isc.ChainID, request *http.Request, response *echo.Response) error {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
 		return err
 	}
 
-	//allowedOrigins := []string{"*"}
-	WebsocketHandler(evmServer).ServeHTTP(response, request)
+	wsContext := e.getWebsocketContext(chainID)
+	websocketHandler(e.log, evmServer, wsContext).ServeHTTP(response, request)
 	return nil
 }
