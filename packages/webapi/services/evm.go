@@ -90,7 +90,6 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 		e.metrics.GetChainMetrics(chainID).WebAPI,
 		e.jsonrpcParams,
 	)
-
 	if err != nil {
 		return nil, err
 	}

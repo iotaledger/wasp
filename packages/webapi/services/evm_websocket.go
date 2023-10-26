@@ -55,17 +55,17 @@ func (rlc *RateLimitedConn) Write(b []byte) (int, error) {
 	return rlc.Conn.Write(b)
 }
 
-type RateLimitedResponseWriter struct {
+type RateLimitedEchoResponse struct {
 	*echo.Response
 
 	limiter *rate.Limiter
 }
 
-func NewRateLimitedResponseWriter(r *echo.Response, limiter *rate.Limiter) *RateLimitedResponseWriter {
-	return &RateLimitedResponseWriter{r, limiter}
+func NewRateLimitedEchoResponse(r *echo.Response, limiter *rate.Limiter) *RateLimitedEchoResponse {
+	return &RateLimitedEchoResponse{r, limiter}
 }
 
-func (r RateLimitedResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (r RateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	conn, buffer, err := r.Response.Hijack()
 	if err != nil {
 		return conn, buffer, err
@@ -104,7 +104,7 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 			return
 		}
 
-		rateLimitedResponseWriter := NewRateLimitedResponseWriter(echoResponse, wsContext.rateLimiter)
+		rateLimitedResponseWriter := NewRateLimitedEchoResponse(echoResponse, wsContext.rateLimiter)
 		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
 			logger.Info(fmt.Sprintf("[EVM WS] %s", err))

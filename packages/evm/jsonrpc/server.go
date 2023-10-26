@@ -21,7 +21,6 @@ func NewParameters(
 	maxLogsInResult int,
 	websocketRateLimitMessagesPerSecond rate.Limit,
 	websocketRateLimitBurst int,
-
 ) *Parameters {
 	return &Parameters{
 		Logs: LogsLimits{
