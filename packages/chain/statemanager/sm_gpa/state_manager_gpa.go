@@ -638,7 +638,7 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateInde
 		}
 		smT.chainOfBlocks.RemoveStart()
 		smT.metrics.StatePruned(time.Since(singleStart), bi.blockIndex)
-		smT.log.Debugf("Trie root %s pruned: %v nodes and %v values deleted", bi.trieRoot, stats.DeletedNodes, stats.DeletedValues)
+		smT.log.Debugf("Block index %v %s pruned: %v nodes and %v values deleted", bi.blockIndex, bi.trieRoot, stats.DeletedNodes, stats.DeletedValues)
 	}
 	smT.metrics.PruningCompleted(time.Since(start), i)
 	smT.log.Debugf("Pruning completed, %v trie roots pruned", i)
