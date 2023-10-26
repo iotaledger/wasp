@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -454,10 +455,11 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	txData := []byte{}
 	txData = append(txData, agentIDBytes...)
 	txData = append(txData, assets.Bytes()...)
-	tx := types.NewTransaction(nonce, addr, value, 0, util.Big0, txData)
+	chainInfo := ctx.ChainInfo()
+	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
+	tx := types.NewTransaction(nonce, addr, value, 0, gasPrice, txData)
 
 	// create a fake receipt
-	chainInfo := ctx.ChainInfo()
 	receipt := &types.Receipt{
 		Type:   types.LegacyTxType,
 		Logs:   make([]*types.Log, 0),

@@ -2066,6 +2066,7 @@ func TestL1DepositEVM(t *testing.T) {
 	blockTxs := block.Transactions()
 	require.Len(t, blockTxs, 1)
 	tx := blockTxs[0]
+	require.True(t, tx.GasPrice().Cmp(util.Big0) == 1)
 	require.True(t, ethAddr == *tx.To())
 	require.Zero(t, tx.Value().Cmp(bal))
 
