@@ -146,7 +146,6 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 			return
 		}
 
-		// Replace the WebSocket connection in the context
 		codec := rpc.NewWebSocketCodec(conn, r.Host, r.Header)
 		server.rpc.ServeCodec(codec, 0)
 	})
