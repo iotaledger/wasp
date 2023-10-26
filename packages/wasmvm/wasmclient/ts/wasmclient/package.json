@@ -19,7 +19,7 @@
     "@iota/iota.js": "^2.0.0-rc.1",
     "@types/jest": "^29.2.1",
     "@types/keccak": "^3.0.1",
-    "@types/node": "^18.11.7",
+    "@types/node": "^20.0.0",
     "@types/ws": "^8.5.4",
     "jest": "^29.5.0",
     "keccak": "^3.0.3",

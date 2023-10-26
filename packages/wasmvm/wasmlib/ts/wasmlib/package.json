@@ -18,7 +18,7 @@
   "devDependencies": {
     "@iota/iota.js": "^2.0.0-rc.1",
     "@types/jest": "^29.2.1",
-    "@types/node": "^18.11.7",
+    "@types/node": "^20.0.0",
     "jest": "^29.5.0",
     "ts-jest": "^29.0.5",
     "ts-jest-resolver": "^2.0.0",
