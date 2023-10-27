@@ -27,14 +27,46 @@ This way we can inject our rate limiting logic inside.
 The downside is that it's not possible to limit per JSON message, but it should work regardless.
 */
 
-type websocketContext struct {
-	rateLimiterMutex sync.Mutex
-	rateLimiter      map[string]*rate.Limiter
-	syncPool         *sync.Pool
-	jsonRPCParams    *jsonrpc.Parameters
+type activityRateLimiter struct {
+	rateLimiter  *rate.Limiter
+	lastActivity time.Time
 }
 
-func (w *websocketContext) getRateLimiter(remoteIP string) *rate.Limiter {
+func newActivityRateLimiter(rateLimiter *rate.Limiter) *activityRateLimiter {
+	return &activityRateLimiter{
+		rateLimiter:  rateLimiter,
+		lastActivity: time.Now(),
+	}
+}
+
+func (a *activityRateLimiter) Allow() bool {
+	a.lastActivity = time.Now()
+	allowed := a.rateLimiter.Allow()
+	fmt.Printf("Rate token deducted. Remaining tokens:[%v]\n", a.Tokens())
+	return allowed
+}
+
+func (a *activityRateLimiter) LastActivity() time.Time {
+	return a.lastActivity
+}
+
+func (a *activityRateLimiter) UpdateLastActivity() {
+	a.lastActivity = time.Now()
+}
+
+func (a *activityRateLimiter) Tokens() float64 {
+	return a.rateLimiter.TokensAt(time.Now())
+}
+
+type websocketContext struct {
+	rateLimiterMutex sync.Mutex
+	rateLimiter      map[string]*activityRateLimiter
+
+	syncPool      *sync.Pool
+	jsonRPCParams *jsonrpc.Parameters
+}
+
+func (w *websocketContext) getRateLimiter(remoteIP string) *activityRateLimiter {
 	w.rateLimiterMutex.Lock()
 	defer w.rateLimiterMutex.Unlock()
 
@@ -42,32 +74,41 @@ func (w *websocketContext) getRateLimiter(remoteIP string) *rate.Limiter {
 		return w.rateLimiter[remoteIP]
 	}
 
-	w.rateLimiter[remoteIP] = rate.NewLimiter(rate.Every(time.Minute), w.jsonRPCParams.WebsocketRateLimitMessagesPerMinute)
+	limiter := rate.NewLimiter(rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerMinute), 1)
+	w.rateLimiter[remoteIP] = newActivityRateLimiter(limiter)
 
 	return w.rateLimiter[remoteIP]
 }
 
-//nolint:unused
-func (w *websocketContext) deleteRateLimiter(remoteIP string) {
+func (w *websocketContext) cleanupRateLimiters() {
 	w.rateLimiterMutex.Lock()
 	defer w.rateLimiterMutex.Unlock()
 
-	if w.rateLimiter[remoteIP] != nil {
-		delete(w.rateLimiter, remoteIP)
+	for ip, rateLimiter := range w.rateLimiter {
+		fmt.Printf("Found rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
+
+		if time.Since(rateLimiter.LastActivity()) > 30*time.Minute {
+			fmt.Printf("Removing rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
+			delete(w.rateLimiter, ip)
+		} else {
+			fmt.Printf("Keeping rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
+		}
 	}
 }
 
 type rateLimitedConn struct {
 	net.Conn
 	logger  *logger.Logger
-	limiter *rate.Limiter
+	limiter *activityRateLimiter
+	realIP  string
 }
 
-func newRateLimitedConn(conn net.Conn, logger *logger.Logger, r *rate.Limiter) *rateLimitedConn {
+func newRateLimitedConn(conn net.Conn, logger *logger.Logger, r *activityRateLimiter, realIP string) *rateLimitedConn {
 	return &rateLimitedConn{
 		Conn:    conn,
 		logger:  logger,
 		limiter: r,
+		realIP:  realIP,
 	}
 }
 
@@ -77,8 +118,10 @@ func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 		return n, err
 	}
 
+	fmt.Printf("READ MSG: %v\n", string(b))
+
 	if !rlc.limiter.Allow() {
-		rlc.logger.Info("[EVM WS Conn] rate limit exceeded")
+		rlc.logger.Infof("[EVM WS Conn] rate limit exceeded for ip:[%v]", rlc.realIP)
 		return 0, rlc.Conn.Close()
 	}
 
@@ -92,11 +135,12 @@ func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
 type rateLimitedEchoResponse struct {
 	*echo.Response
 	logger  *logger.Logger
-	limiter *rate.Limiter
+	limiter *activityRateLimiter
+	realIP  string
 }
 
-func newRateLimitedEchoResponse(r *echo.Response, logger *logger.Logger, limiter *rate.Limiter) *rateLimitedEchoResponse {
-	return &rateLimitedEchoResponse{r, logger, limiter}
+func newRateLimitedEchoResponse(r *echo.Response, logger *logger.Logger, limiter *activityRateLimiter, realIP string) *rateLimitedEchoResponse {
+	return &rateLimitedEchoResponse{r, logger, limiter, realIP}
 }
 
 func (r rateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -108,12 +152,12 @@ func (r rateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	buffer.Reader = bufio.NewReader(conn)
 	buffer.Writer = bufio.NewWriter(conn)
 
-	return newRateLimitedConn(conn, r.logger, r.limiter), buffer, err
+	return newRateLimitedConn(conn, r.logger, r.limiter, r.realIP), buffer, err
 }
 
 const (
-	readBufferSize  = 1024
-	writeBufferSize = 1024
+	readBufferSize  = 4096
+	writeBufferSize = 4096
 )
 
 func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *websocketContext, realIP string) http.Handler {
@@ -127,8 +171,11 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wsContext.cleanupRateLimiters()
+
 		rateLimiter := wsContext.getRateLimiter(realIP)
 		if !rateLimiter.Allow() {
+			logger.Info("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded) current tokens:[%v]\n", realIP, rateLimiter.Tokens())
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
@@ -139,7 +186,7 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 			return
 		}
 
-		rateLimitedResponseWriter := newRateLimitedEchoResponse(echoResponse, logger, rateLimiter)
+		rateLimitedResponseWriter := newRateLimitedEchoResponse(echoResponse, logger, rateLimiter, realIP)
 		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
 			logger.Info(fmt.Sprintf("[EVM WS] %s", err))
@@ -147,6 +194,12 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 		}
 
 		codec := rpc.NewWebSocketCodec(conn, r.Host, r.Header)
+		conn.SetPongHandler(func(appData string) error {
+			_ = conn.SetReadDeadline(time.Time{})
+			rateLimiter.UpdateLastActivity()
+			return nil
+		})
+
 		server.rpc.ServeCodec(codec, 0)
 	})
 }

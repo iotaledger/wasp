@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/time/rate"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
@@ -125,7 +124,7 @@ func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext 
 		syncPool:         new(sync.Pool),
 		jsonRPCParams:    e.jsonrpcParams,
 		rateLimiterMutex: sync.Mutex{},
-		rateLimiter:      map[string]*rate.Limiter{},
+		rateLimiter:      map[string]*activityRateLimiter{},
 	}
 
 	return e.websocketContexts[chainID]
