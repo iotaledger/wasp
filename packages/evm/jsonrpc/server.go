@@ -12,12 +12,14 @@ import (
 type Parameters struct {
 	Logs                                LogsLimits
 	WebsocketRateLimitMessagesPerSecond int
+	WebsocketRateLimitBurst             int
 }
 
 func NewParameters(
 	maxBlocksInLogsFilterRange int,
 	maxLogsInResult int,
 	websocketRateLimitMessagesPerSecond int,
+	websocketRateLimitBurst int,
 ) *Parameters {
 	return &Parameters{
 		Logs: LogsLimits{
@@ -25,6 +27,7 @@ func NewParameters(
 			MaxLogsInResult:            maxLogsInResult,
 		},
 		WebsocketRateLimitMessagesPerSecond: websocketRateLimitMessagesPerSecond,
+		WebsocketRateLimitBurst:             websocketRateLimitBurst,
 	}
 }
 
@@ -35,6 +38,7 @@ func ParametersDefault() *Parameters {
 			MaxLogsInResult:            10000,
 		},
 		WebsocketRateLimitMessagesPerSecond: 20,
+		WebsocketRateLimitBurst:             2,
 	}
 }
 

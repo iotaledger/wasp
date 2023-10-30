@@ -31,6 +31,7 @@ type ParametersJSONRPC struct {
 	MaxLogsInResult            int `default:"10000" usage:"maximum amount of logs in eth_getLogs result"`
 
 	WebsocketRateLimitMessagesPerSecond int `default:"20" usage:"the websocket rate limit (messages per second)"`
+	WebsocketRateLimitBurst             int `default:"2" usage:"the websocket burst limit"`
 }
 
 var ParamsWebAPI = &ParametersWebAPI{
