@@ -77,7 +77,7 @@ func (w *websocketContext) getRateLimiter(remoteIP string) *activityRateLimiter 
 		return w.rateLimiters[remoteIP]
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerMinute), 2)
+	limiter := rate.NewLimiter(rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerSecond), 2)
 	w.rateLimiters[remoteIP] = newActivityRateLimiter(limiter)
 
 	return w.rateLimiters[remoteIP]

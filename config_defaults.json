@@ -115,7 +115,7 @@
       "jsonRpc": {
         "maxBlocksInLogsFilterRange": 1000,
         "maxLogsInResult": 10000,
-        "websocketRateLimitMessagesPerMinute": 1000
+        "websocketRateLimitMessagesPerSecond": 20
       }
     },
     "debugRequestLoggerEnabled": false
