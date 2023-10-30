@@ -17,17 +17,13 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 )
 
-/**
-`go-ethereum` uses Gorilla Websockets internally and is relying on Gorillas `websockets.Conn` struct.
-As this is a struct, it is not easy to replace the underlying connection as it's very hard coupled.
-
-This approach goes a layer deeper. The WebsocketHandler was copied from `go-ethereum` and was modified a bit to take over the upgrade behavior.
-It wraps the echo.Response struct and overrides the `Hijack` function which is used by Gorillas ws upgrade.
-This way we can inject our rate limiting logic inside.
-The downside is that it's not possible to limit per JSON message, but it should work regardless.
-*/
+// Used to check how long an IP has to be inactive to be removed from the limiting map
+// It is also used to block an IP if it has reached the rate limit.
+const clientWaitTime = 5 * time.Minute
 
 type activityRateLimiter struct {
+	sync.Mutex
+	canceled     bool
 	rateLimiter  *rate.Limiter
 	lastActivity time.Time
 }
@@ -40,10 +36,15 @@ func newActivityRateLimiter(rateLimiter *rate.Limiter) *activityRateLimiter {
 }
 
 func (a *activityRateLimiter) Allow() bool {
-	a.lastActivity = time.Now()
+	a.UpdateLastActivity()
 	allowed := a.rateLimiter.Allow()
-	fmt.Printf("Rate token deducted. Remaining tokens:[%v]\n", a.Tokens())
+	a.canceled = !allowed
+
 	return allowed
+}
+
+func (a *activityRateLimiter) Canceled() bool {
+	return a.canceled
 }
 
 func (a *activityRateLimiter) LastActivity() time.Time {
@@ -51,6 +52,8 @@ func (a *activityRateLimiter) LastActivity() time.Time {
 }
 
 func (a *activityRateLimiter) UpdateLastActivity() {
+	a.Lock()
+	defer a.Unlock()
 	a.lastActivity = time.Now()
 }
 
@@ -60,38 +63,36 @@ func (a *activityRateLimiter) Tokens() float64 {
 
 type websocketContext struct {
 	rateLimiterMutex sync.Mutex
-	rateLimiter      map[string]*activityRateLimiter
-
-	syncPool      *sync.Pool
-	jsonRPCParams *jsonrpc.Parameters
+	rateLimiters     map[string]*activityRateLimiter
+	log              *logger.Logger
+	syncPool         *sync.Pool
+	jsonRPCParams    *jsonrpc.Parameters
 }
 
 func (w *websocketContext) getRateLimiter(remoteIP string) *activityRateLimiter {
 	w.rateLimiterMutex.Lock()
 	defer w.rateLimiterMutex.Unlock()
 
-	if w.rateLimiter[remoteIP] != nil {
-		return w.rateLimiter[remoteIP]
+	if w.rateLimiters[remoteIP] != nil {
+		return w.rateLimiters[remoteIP]
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerMinute), 1)
-	w.rateLimiter[remoteIP] = newActivityRateLimiter(limiter)
+	limiter := rate.NewLimiter(rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerMinute), 2)
+	w.rateLimiters[remoteIP] = newActivityRateLimiter(limiter)
 
-	return w.rateLimiter[remoteIP]
+	return w.rateLimiters[remoteIP]
 }
 
 func (w *websocketContext) cleanupRateLimiters() {
 	w.rateLimiterMutex.Lock()
 	defer w.rateLimiterMutex.Unlock()
 
-	for ip, rateLimiter := range w.rateLimiter {
-		fmt.Printf("Found rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
-
-		if time.Since(rateLimiter.LastActivity()) > 30*time.Minute {
-			fmt.Printf("Removing rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
-			delete(w.rateLimiter, ip)
+	for ip, rateLimiter := range w.rateLimiters {
+		if time.Since(rateLimiter.LastActivity()) > clientWaitTime {
+			w.log.Debugf("Removing rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
+			delete(w.rateLimiters, ip)
 		} else {
-			fmt.Printf("Keeping rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
+			w.log.Debugf("Keeping rate limiter for ip:[%v], lastActivity:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822))
 		}
 	}
 }
@@ -118,7 +119,10 @@ func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 		return n, err
 	}
 
-	fmt.Printf("READ MSG: %v\n", string(b))
+	if rlc.limiter.Canceled() {
+		rlc.logger.Infof("[EVM WS Conn] connections for ip:[%v] canceled", rlc.realIP)
+		return 0, rlc.Conn.Close()
+	}
 
 	if !rlc.limiter.Allow() {
 		rlc.logger.Infof("[EVM WS Conn] rate limit exceeded for ip:[%v]", rlc.realIP)
@@ -174,15 +178,15 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 		wsContext.cleanupRateLimiters()
 
 		rateLimiter := wsContext.getRateLimiter(realIP)
-		if !rateLimiter.Allow() {
-			logger.Info("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded) current tokens:[%v]\n", realIP, rateLimiter.Tokens())
+		if rateLimiter.Canceled() {
+			logger.Infof("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded)\n", realIP)
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 
 		echoResponse, ok := w.(*echo.Response)
 		if !ok {
-			logger.Info("[EVM WS] Could not cast response to echo.Response")
+			logger.Warn("[EVM WS] Could not cast response to echo.Response")
 			return
 		}
 

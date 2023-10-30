@@ -124,7 +124,8 @@ func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext 
 		syncPool:         new(sync.Pool),
 		jsonRPCParams:    e.jsonrpcParams,
 		rateLimiterMutex: sync.Mutex{},
-		rateLimiter:      map[string]*activityRateLimiter{},
+		rateLimiters:     map[string]*activityRateLimiter{},
+		log:              e.log,
 	}
 
 	return e.websocketContexts[chainID]
