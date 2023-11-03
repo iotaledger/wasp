@@ -4,6 +4,8 @@
 package evmimpl
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -53,6 +55,65 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 
 var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
 
+func (h *magicContractHandler) sendViaMetadata(req isc.RequestParameters) {
+	h.adjustStorageDeposit(req)
+
+	// make sure that allowance <= sent tokens, so that the target contract does not
+	// spend from the common account
+	if !req.Assets.Spend(req.Metadata.Allowance) {
+		panic(errInvalidAllowance)
+	}
+
+	h.moveAssetsToCommonAccount(req.Assets)
+
+	h.ctx.Privileged().SendOnBehalfOf(
+		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
+		req,
+	)
+}
+
+// sendViaTxValue enables the transfer of assets by sending a transaction with value attached.
+// This will ignore the base token inside `req.Assets.BaseToken` and will use the proper TxValue of the Tx.
+// By design, all transactions reaching the EVM will cause a value transfer from the sender to the recipient.
+// In our case, this address is almost always 0x1074000[...]. Which means that before *this* function is reached, the value has already
+// been moved from the sender to the 0x1074000[...] address, but the native assets and the NFT still remains inside the senders account as this is Wasp specific.
+// Therefore, this function first moves the sent base token from the 0x1074[...] address to the common account
+// Then moves the native assets and NFT from the **sender account** to the common account.
+// Then moves all three assets to the actual target address on behalf of the sender.
+func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, evmCallData *isc.EVMCallData) {
+	adjustedTxValue := new(big.Int).Div(evmCallData.Value, big.NewInt(1e12))
+	req.Assets = isc.NewAssets(adjustedTxValue.Uint64(), req.Assets.NativeTokens, req.Assets.NFTs...)
+
+	h.adjustStorageDeposit(req)
+
+	if !req.Assets.Spend(req.Metadata.Allowance) {
+		panic(errInvalidAllowance)
+	}
+
+	// This should be the 0x107400[...] address
+	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), *evmCallData.To)
+
+	// Move the already transferred base tokens from the 0x1074 address to the common account
+	h.ctx.Privileged().MustMoveBetweenAccounts(
+		evmAddr,
+		h.ctx.AccountID(),
+		isc.NewAssetsBaseTokens(req.Assets.BaseTokens),
+	)
+
+	// Move the remaining assets (Native assets, NFT) from the sender to the common account
+	h.ctx.Privileged().MustMoveBetweenAccounts(
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
+		h.ctx.AccountID(),
+		isc.NewAssets(0, req.Assets.NativeTokens, req.Assets.NFTs...),
+	)
+
+	// Move all three assets to the actual recipient
+	h.ctx.Privileged().SendOnBehalfOf(
+		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
+		req,
+	)
+}
+
 // handler for ISCSandbox::send
 func (h *magicContractHandler) Send(
 	targetAddress iscmagic.L1Address,
@@ -68,21 +129,17 @@ func (h *magicContractHandler) Send(
 		Metadata:                      metadata.Unwrap(),
 		Options:                       sendOptions.Unwrap(),
 	}
-	// 	id := nftID.Unwrap()
-	h.adjustStorageDeposit(req)
 
-	// make sure that allowance <= sent tokens, so that the target contract does not
-	// spend from the common account
-	if !req.Assets.Spend(req.Metadata.Allowance) {
-		panic(errInvalidAllowance)
+	evmCallData := h.ctx.Request().EVMCallData()
+
+	if evmCallData == nil ||
+		evmCallData.Value == nil ||
+		evmCallData.Value.BitLen() == 0 {
+		h.sendViaMetadata(req)
+		return
 	}
 
-	h.moveAssetsToCommonAccount(req.Assets)
-
-	h.ctx.Privileged().SendOnBehalfOf(
-		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
-		req,
-	)
+	h.sendViaTxValue(req, evmCallData)
 }
 
 // handler for ISCSandbox::call
