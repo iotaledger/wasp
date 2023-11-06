@@ -124,9 +124,11 @@ func migrate(ctx isc.Sandbox) dict.Dict {
 }
 
 func viewMigratableBalance(ctx isc.SandboxView) dict.Dict {
-	legacyAddr := ctx.Params().Get(ParamAddress)
+	legacyAddrTrytes := ctx.Params().MustGetString(ParamAddress)
+	legacyAddr := t5b1.EncodeTrytes(legacyAddrTrytes)
+
 	return dict.Dict{
-		ParamAddress: codec.Encode(migratableBalance(ctx.StateR(), legacyAddr)),
+		ParamBalance: codec.Encode(migratableBalance(ctx.StateR(), legacyAddr)),
 	}
 }
 

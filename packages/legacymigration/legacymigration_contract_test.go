@@ -10,6 +10,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/legacymigration"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -29,6 +30,18 @@ func TestContract(t *testing.T) {
 	err := ch.TransferAllowanceTo(isc.NewAssetsBaseTokens(50*isc.Million), contractAgentID, nil)
 	require.NoError(t, err)
 
+	viewBalance := func() uint64 {
+		ret, err := ch.CallView(
+			legacymigration.Contract.Name, legacymigration.ViewMigratableBalance.Name,
+			legacymigration.ParamAddress, "FWIURWEIEMAGWWPXVWDTMVUZVNYNYFOB9S9WIGHRNYVZBJEBBWQZIBWYIOZLKPGVNNCOLDIIUNNEQZYBD",
+		)
+		require.NoError(t, err)
+		bal, err := codec.DecodeUint64(ret.Get(legacymigration.ParamBalance))
+		require.NoError(t, err)
+		return bal
+	}
+	require.Positive(t, viewBalance())
+
 	// try a successful migration
 	bundleHex, err := os.ReadFile("valid_bundle_example.hex")
 	require.NoError(t, err)
@@ -44,6 +57,8 @@ func TestContract(t *testing.T) {
 	require.NoError(t, err)
 	rec := ch.LastReceipt()
 	require.Nil(t, rec.Error)
+
+	require.Zero(t, viewBalance())
 
 	// try replaying that same migration
 	_, err = ch.PostRequestOffLedger(req, nil)
