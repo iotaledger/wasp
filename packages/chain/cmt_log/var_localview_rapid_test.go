@@ -178,7 +178,12 @@ func (sm *varLocalViewSM) nextAO(prevAO ...*isc.AliasOutputWithID) *isc.AliasOut
 	} else {
 		stateIndex = uint32(sm.utxoIDCounter)
 	}
-	return isc.NewAliasOutputWithID(&iotago.AliasOutput{StateIndex: stateIndex}, utxoInput.ID())
+
+	return isc.NewAliasOutputWithID(
+		&iotago.AliasOutput{
+			StateIndex:    stateIndex,
+			StateMetadata: []byte{},
+		}, utxoInput.ID())
 }
 
 // Alias output can be proposed, if there is at least one AO confirmed and there is no

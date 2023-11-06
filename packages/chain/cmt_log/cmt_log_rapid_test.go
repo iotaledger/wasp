@@ -84,8 +84,9 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.Alias
 	var outputID iotago.OutputID
 	binary.BigEndian.PutUint32(outputID[:], sm.genAOSerial)
 	aliasOutput := &iotago.AliasOutput{
-		AliasID:    sm.aliasID,
-		StateIndex: stateIndex,
+		AliasID:       sm.aliasID,
+		StateIndex:    stateIndex,
+		StateMetadata: []byte{},
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: sm.stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: sm.governorAddress},
