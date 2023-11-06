@@ -7,11 +7,11 @@ import (
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 
-	"github.com/iotaledger/hive.go/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/tcrypto/bls"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
