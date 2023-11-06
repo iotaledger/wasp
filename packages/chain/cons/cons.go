@@ -60,7 +60,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/crypto/identity"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
@@ -586,8 +585,6 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 			vmResult.RotationAddress,
 			isc.NewAliasOutputWithID(vmResult.Task.AnchorOutput, vmResult.Task.AnchorOutputID),
 			vmResult.Task.TimeAssumption,
-			identity.ID{},
-			identity.ID{},
 		)
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
