@@ -469,6 +469,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			accounts.CommonAccount(),
 			sm_gpa.NewStateManagerParameters(),
 			24*time.Hour,
+			1*time.Second,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)

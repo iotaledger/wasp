@@ -90,7 +90,8 @@ type Chains struct {
 
 	validatorFeeAddr iotago.Address
 
-	mempoolTTL time.Duration
+	mempoolTTL               time.Duration
+	mempoolBroadcastInterval time.Duration
 }
 
 type activeChain struct {
@@ -132,6 +133,7 @@ func New(
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	mempoolTTL time.Duration,
+	mempoolBroadcastInterval time.Duration,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 ) *Chains {
@@ -179,6 +181,7 @@ func New(
 		nodeIdentityProvider:                nodeIdentityProvider,
 		chainListener:                       nil, // See bellow.
 		mempoolTTL:                          mempoolTTL,
+		mempoolBroadcastInterval:            mempoolBroadcastInterval,
 		consensusStateRegistry:              consensusStateRegistry,
 		shutdownCoordinator:                 shutdownCoordinator,
 		chainMetricsProvider:                chainMetricsProvider,
@@ -411,6 +414,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		validatorAgentID,
 		stateManagerParameters,
 		c.mempoolTTL,
+		c.mempoolBroadcastInterval,
 	)
 	if err != nil {
 		chainCancel()

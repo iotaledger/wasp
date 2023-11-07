@@ -8,7 +8,7 @@ import (
 
 type ParametersChains struct {
 	BroadcastUpToNPeers              int           `default:"2" usage:"number of peers an offledger request is broadcasted to"`
-	BroadcastInterval                time.Duration `default:"5s" usage:"time between re-broadcast of offledger requests"`
+	BroadcastInterval                time.Duration `default:"0s" usage:"time between re-broadcast of offledger requests; 0 value means that re-broadcasting is disabled"`
 	APICacheTTL                      time.Duration `default:"300s" usage:"time to keep processed offledger requests in api cache"`
 	PullMissingRequestsFromCommittee bool          `default:"true" usage:"whether or not to pull missing requests from other committee members"`
 	DeriveAliasOutputByQuorum        bool          `default:"true" usage:"false means we propose own AliasOutput, true - by majority vote."`

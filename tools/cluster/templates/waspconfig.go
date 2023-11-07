@@ -132,7 +132,7 @@ var WaspConfig = `
   },
   "profiling": {
     "enabled": false,
-    "bindAddress": "0.0.0.0:{{.ProfilingPort}}" 
+    "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
   },
   "profilingRecorder": {
     "enabled": false
