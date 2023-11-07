@@ -938,7 +938,7 @@ func TestMintedTokensBurn(t *testing.T) {
 			NativeTokens:   nil,
 			AliasID:        aliasIdent1.AliasID(),
 			StateIndex:     1,
-			StateMetadata:  nil,
+			StateMetadata:  []byte{},
 			FoundryCounter: 1,
 			Conditions: iotago.UnlockConditions{
 				&iotago.StateControllerAddressUnlockCondition{Address: ident1},
@@ -980,7 +980,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				NativeTokens:   nil,
 				AliasID:        aliasIdent1.AliasID(),
 				StateIndex:     2,
-				StateMetadata:  nil,
+				StateMetadata:  []byte{},
 				FoundryCounter: 1,
 				Conditions: iotago.UnlockConditions{
 					&iotago.StateControllerAddressUnlockCondition{Address: ident1},

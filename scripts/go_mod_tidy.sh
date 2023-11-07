@@ -1,20 +1,22 @@
 #!/bin/bash
-CURRENT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-PARENT_DIR="$( builtin cd ${CURRENT_DIR}/.. >/dev/null 2>&1 ; pwd -P )"
-cd ${PARENT_DIR}
+pushd ./..
 
 go mod tidy
 
-cd ${PARENT_DIR}/tools/gendoc
+pushd tools/gendoc
 go mod tidy
+popd
 
-cd ${PARENT_DIR}/tools/wasp-cli
+pushd tools/wasp-cli
 go mod tidy
+popd
 
-cd ${PARENT_DIR}/tools/gascalibration
+pushd tools/gascalibration
 go mod tidy
+popd
 
-cd ${PARENT_DIR}/tools/evm/evmemulator
+pushd tools/evm/evmemulator
 go mod tidy
+popd
 
-cd ${CURRENT_DIR}
+popd

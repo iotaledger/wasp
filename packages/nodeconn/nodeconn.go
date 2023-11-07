@@ -126,7 +126,7 @@ func New(
 	}
 	nc.setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
 
-	nc.reattachWorkerPool = workerpool.New("L1 reattachments", 1)
+	nc.reattachWorkerPool = workerpool.New("L1 reattachments", workerpool.WithWorkerCount(1))
 
 	return nc, nil
 }

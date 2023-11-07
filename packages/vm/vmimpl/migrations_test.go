@@ -57,7 +57,8 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	require.NoError(t, err)
 	task := &vm.VMTask{
 		AnchorOutput: &iotago.AliasOutput{
-			StateIndex: stateIndex,
+			StateIndex:    stateIndex,
+			StateMetadata: []byte{},
 		},
 	}
 	vmctx := &vmContext{
