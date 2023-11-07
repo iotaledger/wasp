@@ -87,7 +87,7 @@ var WaspConfig = `
   },
   "chains": {
     "broadcastUpToNPeers": 2,
-    "broadcastInterval": "5s",
+    "broadcastInterval": "1s",
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true,
     "deriveAliasOutputByQuorum": true,
@@ -132,7 +132,7 @@ var WaspConfig = `
   },
   "profiling": {
     "enabled": false,
-    "bindAddress": "0.0.0.0:{{.ProfilingPort}}" 
+    "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
   },
   "profilingRecorder": {
     "enabled": false
