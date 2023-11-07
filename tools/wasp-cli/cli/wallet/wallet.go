@@ -50,11 +50,11 @@ func SetWalletScheme(scheme WalletScheme) error {
 func getIotaSDKLibName() string {
 	switch runtime.GOOS {
 	case "windows":
-		return "iota_sdk_native.dll"
+		return "iota_sdk.dll"
 	case "linux":
-		return "libiota_sdk_native.so"
+		return "libiota_sdk.so"
 	case "darwin":
-		return "libiota_sdk_native.dylib"
+		return "libiota_sdk.dylib"
 	default:
 		panic(fmt.Sprintf("unsupported OS: %s", runtime.GOOS))
 	}
