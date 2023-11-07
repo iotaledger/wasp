@@ -13,6 +13,7 @@ TEST_ARG=
 BUILD_PKGS ?= ./ ./tools/cluster/wasp-cluster/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
+WASP_CLI_TAGS = no_wasmhost
 
 # Docker image name and tag
 DOCKER_IMAGE_NAME=wasp
@@ -28,7 +29,7 @@ compile-solidity:
 	cd packages/evm/evmtest && go generate
 
 build-cli:
-	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
+	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -tags ${WASP_CLI_TAGS} -o ../../
 
 build-full: build-cli
 	$(BUILD_CMD) ./...
