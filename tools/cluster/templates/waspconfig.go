@@ -87,7 +87,7 @@ var WaspConfig = `
   },
   "chains": {
     "broadcastUpToNPeers": 2,
-    "broadcastInterval": "1s",
+    "broadcastInterval": "5s",
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true,
     "deriveAliasOutputByQuorum": true,

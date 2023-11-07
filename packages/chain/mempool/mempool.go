@@ -890,6 +890,9 @@ func (mpi *mempoolImpl) handleDistSyncTimeTick() {
 // Re-send off-ledger messages that are hanging here for a long time.
 // Probably not a lot of nodes have them.
 func (mpi *mempoolImpl) handleRePublishTimeTick() {
+	if mpi.broadcastInterval == 0 {
+		return // re-broadcasting is disabled
+	}
 	retryOlder := time.Now().Add(-mpi.broadcastInterval)
 	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
 		if ts.Before(retryOlder) {
