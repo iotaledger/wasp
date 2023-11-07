@@ -309,7 +309,9 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 		isc.NewEthereumAddressAgentID(*e.backend.ISCChainID(), address),
 		*e.backend.ISCChainID(),
 	)
-	return util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.L1().BaseToken.Decimals), nil
+	ether, _ := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.L1().BaseToken.Decimals)
+	// discard remainder
+	return ether, nil
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {

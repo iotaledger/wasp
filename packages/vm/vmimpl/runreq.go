@@ -2,6 +2,7 @@ package vmimpl
 
 import (
 	"math"
+	"os"
 	"runtime/debug"
 	"time"
 
@@ -207,7 +208,7 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 			skipRequestErr = vmexceptions.IsSkipRequestException(r)
 			executionErr = recoverFromExecutionError(r)
 			reqctx.Debugf("recovered panic from contract call: %v", executionErr)
-			if reqctx.vm.task.WillProduceBlock() {
+			if os.Getenv("DEBUG") != "" || reqctx.vm.task.WillProduceBlock() {
 				reqctx.Debugf(string(debug.Stack()))
 			}
 		}()

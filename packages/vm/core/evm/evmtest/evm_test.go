@@ -1539,22 +1539,12 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	// issue a tx with non-0 amount (try to send ETH/basetoken)
 	// try sending 1 million base tokens (expressed in ethereum decimals)
-	value := util.BaseTokensDecimalsToEthereumDecimals(
+	value := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		1*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
 	sendTx(value)
 	env.Chain.AssertL2BaseTokens(someAgentID, 1*isc.Million)
-
-	// by default iota/shimmer base token has 6 decimal cases, so anything past the 6th decimal case should be ignored
-	valueWithExtraDecimals := big.NewInt(1_000_000_999_999_999_999) // all these 9's will be ignored and only 1 million tokens should be transferred
-	sendTx(valueWithExtraDecimals)
-	env.Chain.AssertL2BaseTokens(someAgentID, 2*isc.Million)
-
-	// issue a tx with a too low amount
-	lowValue := big.NewInt(999_999_999_999) // all these 9's will be ignored and nothing should be transferred
-	sendTx(lowValue)
-	env.Chain.AssertL2BaseTokens(someAgentID, 2*isc.Million)
 }
 
 func TestSolidityTransferBaseTokens(t *testing.T) {
@@ -1566,7 +1556,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
-	oneMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	oneMillionInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		1*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1579,7 +1569,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
 
 	// attempt to send more than the contract will have available
-	twoMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	twoMillionInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		2*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1591,26 +1581,6 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	require.Error(t, err)
 	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
 
-	{
-		// try sending a value to too high precision (anything over the 6 decimals will be ignored)
-		_, err = iscTest.CallFn([]ethCallOptions{{
-			sender: ethKey,
-			value:  oneMillionInEthDecimals,
-			// wei is expressed with 18 decimal precision, iota/smr is 6, so anything in the 12 last decimal cases will be ignored
-		}}, "sendTo", someEthereumAddr, big.NewInt(1_000_000_999_999_999_999))
-		require.Error(t, err)
-		env.Chain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
-		// this will fail if the (ignored) decimals are above the contract balance,
-		// but if we provide enough funds, the call should succeed and the extra decimals should be correctly ignored
-		_, err = iscTest.CallFn([]ethCallOptions{{
-			sender: ethKey,
-			value:  twoMillionInEthDecimals,
-			// wei is expressed with 18 decimal precision, iota/smr is 6, so anything in the 12 last decimal cases will be ignored
-		}}, "sendTo", someEthereumAddr, big.NewInt(1_000_000_999_999_999_999))
-		require.NoError(t, err)
-		env.Chain.AssertL2BaseTokens(someEthereumAgentID, 2*isc.Million)
-	}
-
 	// fund the contract via a L1 wallet ISC transfer, then call `sendTo` to use those funds
 	l1Wallet, _ := env.Chain.Env.NewKeyPairWithFunds()
 	env.Chain.TransferAllowanceTo(
@@ -1619,7 +1589,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		l1Wallet,
 	)
 
-	tenMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	tenMillionInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		10*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1628,7 +1598,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		sender: ethKey,
 	}}, "sendTo", someEthereumAddr, tenMillionInEthDecimals)
 	require.NoError(t, err)
-	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 12*isc.Million)
+	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 11*isc.Million)
 
 	// send more than the balance
 	_, err = iscTest.CallFn([]ethCallOptions{{
@@ -1637,7 +1607,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		gasLimit: 100_000, // provide a gas limit value as the estimation will fail
 	}}, "sendTo", someEthereumAddr, big.NewInt(0))
 	require.Error(t, err)
-	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 12*isc.Million)
+	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 11*isc.Million)
 }
 
 func TestSendEntireBalance(t *testing.T) {
@@ -1649,7 +1619,7 @@ func TestSendEntireBalance(t *testing.T) {
 	// send all initial
 	initial := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
 	// try sending funds to `someEthereumAddr` by sending a "value tx"
-	initialBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	initialBalanceInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		initial,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1669,7 +1639,7 @@ func TestSendEntireBalance(t *testing.T) {
 	// now try sending all balance, minus the funds needed for gas
 	currentBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
 
-	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	currentBalanceInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		currentBalance,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1687,7 +1657,7 @@ func TestSendEntireBalance(t *testing.T) {
 
 	gasLimit := feePolicy.GasBudgetFromTokens(tokensForGasBudget)
 
-	valueToSendInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	valueToSendInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
 		currentBalance-tokensForGasBudget,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -2082,7 +2052,7 @@ func TestL1DepositEVM(t *testing.T) {
 	require.ErrorIs(t, err, io.EOF)
 
 	require.EqualValues(t,
-		util.EthereumDecimalsToBaseTokenDecimals(bal, parameters.L1().BaseToken.Decimals),
+		util.MustEthereumDecimalsToBaseTokenDecimalsExact(bal, parameters.L1().BaseToken.Decimals),
 		assets.BaseTokens)
 
 	evmRec := env.Chain.EVM().TransactionReceipt(tx.Hash())
@@ -2092,4 +2062,29 @@ func TestL1DepositEVM(t *testing.T) {
 	feePolicy := env.Chain.GetGasFeePolicy()
 	expectedGas := gas.ISCGasBudgetToEVM(iscRec.GasBurned, &feePolicy.EVMGasRatio)
 	require.EqualValues(t, expectedGas, evmRec.GasUsed)
+}
+
+func TestDecimalsConversion(t *testing.T) {
+	parameters.InitL1(parameters.L1ForTesting)
+	env := InitEVM(t)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// call any function including 999999999999 wei as value (which is just 1 wei short of 1 base token)
+	lessThanOneSMR := new(big.Int).SetUint64(999999999999)
+	valueInBaseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(
+		lessThanOneSMR,
+		parameters.L1().BaseToken.Decimals,
+	)
+	t.Log(valueInBaseTokens)
+	require.Zero(t, valueInBaseTokens)
+	require.EqualValues(t, lessThanOneSMR.Uint64(), remainder.Uint64())
+
+	_, err := iscTest.CallFn(
+		[]ethCallOptions{{sender: ethKey, value: lessThanOneSMR, gasLimit: 100000}},
+		"sendTo",
+		iscTest.address,
+		big.NewInt(0),
+	)
+	require.ErrorContains(t, err, "non-zero remainder")
 }

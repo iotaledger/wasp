@@ -449,7 +449,8 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "unable to parse assets from params")
 
 	// create a fake tx so that the deposit is visible by the EVM
-	value := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	// discard remainder in decimals conversion
+	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
 	// encode the txdata as <AgentID sender>+<Assets>
 	txData := []byte{}
@@ -457,7 +458,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	txData = append(txData, assets.Bytes()...)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
-	tx := types.NewTransaction(nonce, addr, value, 0, gasPrice, txData)
+	tx := types.NewTransaction(nonce, addr, wei, 0, gasPrice, txData)
 
 	// create a fake receipt
 	receipt := &types.Receipt{
