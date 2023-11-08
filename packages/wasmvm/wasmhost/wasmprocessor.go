@@ -99,6 +99,10 @@ func (proc *WasmProcessor) GetEntryPoint(code isc.Hname) (isc.VMProcessorEntryPo
 	return NewWasmContext(proc, function), true
 }
 
+func (proc *WasmProcessor) Entrypoints() map[isc.Hname]isc.ProcessorEntryPoint {
+	panic("unimplemented")
+}
+
 func (proc *WasmProcessor) IsView(function string) bool {
 	return (proc.funcTable.funcToIndex[function] & 0x8000) != 0
 }
