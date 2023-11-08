@@ -17,15 +17,15 @@ type Wallet struct {
 
 func Load() *Wallet {
 	seedHex := viper.GetString("wallet.seed")
+	useLegacyDerivation := viper.GetBool("wallet.useLegacyDerivation")
 	if seedHex == "" {
 		log.Fatal("call `init` first")
 	}
 
-	seedBytes, err := iotago.DecodeHex(seedHex)
+	masterSeed, err := iotago.DecodeHex(seedHex)
 	log.Check(err)
 
-	seed := cryptolib.SeedFromBytes(seedBytes)
-	kp := cryptolib.KeyPairFromSeed(seed.SubSeed(uint64(AddressIndex)))
+	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(masterSeed, uint64(AddressIndex), useLegacyDerivation))
 
 	return &Wallet{KeyPair: kp, AddressIndex: AddressIndex}
 }
