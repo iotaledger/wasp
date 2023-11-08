@@ -15,12 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-type ProcessorEntryPoint interface {
-	isc.VMProcessorEntryPoint
-	Name() string
-	Hname() isc.Hname
-}
-
 type Handler func(ctx isc.Sandbox) dict.Dict
 
 type ViewHandler func(ctx isc.SandboxView) dict.Dict
@@ -52,11 +46,11 @@ func defaultInitFunc(ctx isc.Sandbox) dict.Dict {
 }
 
 // Processor creates a ContractProcessor with the provided handlers
-func (i *ContractInfo) Processor(init Handler, eps ...ProcessorEntryPoint) *ContractProcessor {
+func (i *ContractInfo) Processor(init Handler, eps ...isc.ProcessorEntryPoint) *ContractProcessor {
 	if init == nil {
 		init = defaultInitFunc
 	}
-	handlers := map[isc.Hname]ProcessorEntryPoint{
+	handlers := map[isc.Hname]isc.ProcessorEntryPoint{
 		// constructor:
 		isc.EntryPointInit: FuncDefaultInitializer.WithHandler(init),
 	}
@@ -106,7 +100,7 @@ type EntryPointHandler struct {
 	Handler Handler
 }
 
-var _ ProcessorEntryPoint = &EntryPointHandler{}
+var _ isc.ProcessorEntryPoint = &EntryPointHandler{}
 
 func (h *EntryPointHandler) Call(ctx interface{}) dict.Dict {
 	return h.Handler(ctx.(isc.Sandbox))
@@ -152,7 +146,7 @@ type ViewEntryPointHandler struct {
 	Handler ViewHandler
 }
 
-var _ ProcessorEntryPoint = &ViewEntryPointHandler{}
+var _ isc.ProcessorEntryPoint = &ViewEntryPointHandler{}
 
 func (h *ViewEntryPointHandler) Call(ctx interface{}) dict.Dict {
 	return h.Handler(ctx.(isc.SandboxView))
@@ -174,7 +168,7 @@ func (h *ViewEntryPointHandler) Hname() isc.Hname {
 
 type ContractProcessor struct {
 	Contract *ContractInfo
-	Handlers map[isc.Hname]ProcessorEntryPoint
+	Handlers map[isc.Hname]isc.ProcessorEntryPoint
 }
 
 func (p *ContractProcessor) GetEntryPoint(code isc.Hname) (isc.VMProcessorEntryPoint, bool) {
@@ -183,6 +177,10 @@ func (p *ContractProcessor) GetEntryPoint(code isc.Hname) (isc.VMProcessorEntryP
 		return nil, false
 	}
 	return f, true
+}
+
+func (p *ContractProcessor) Entrypoints() map[isc.Hname]isc.ProcessorEntryPoint {
+	return p.Handlers
 }
 
 func (p *ContractProcessor) GetStateReadOnly(chainState kv.KVStoreReader) kv.KVStoreReader {
