@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 const (
@@ -74,6 +75,8 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
+var ErrNonZeroWeiRemainder = coreerrors.Register("cannot convert %d to base tokens decimals: non-zero remainder (%d)")
+
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == 0 {
 		return
@@ -81,7 +84,11 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.ctx.SubBaseTokensBalance(addr, util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals()))
+	baseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
+	if remainder.Sign() != 0 {
+		panic(ErrNonZeroWeiRemainder.Create(amount.Uint64(), remainder.Uint64()))
+	}
+	s.ctx.SubBaseTokensBalance(addr, baseTokens)
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
@@ -91,11 +98,18 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.ctx.AddBaseTokensBalance(addr, util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals()))
+	baseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
+	if remainder.Sign() != 0 {
+		panic(ErrNonZeroWeiRemainder.Create(amount.Uint64(), remainder.Uint64()))
+	}
+	s.ctx.AddBaseTokensBalance(addr, baseTokens)
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	return util.BaseTokensDecimalsToEthereumDecimals(s.ctx.GetBaseTokensBalance(addr), s.ctx.BaseTokensDecimals())
+	baseTokens := s.ctx.GetBaseTokensBalance(addr)
+	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, s.ctx.BaseTokensDecimals())
+	// discard remainder
+	return wei
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
