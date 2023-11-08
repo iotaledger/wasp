@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/minio/blake2b-simd"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -129,6 +130,11 @@ func (req *OffLedgerRequestData) EssenceBytes() []byte {
 	return ww.Bytes()
 }
 
+func (req *OffLedgerRequestData) messageToSign() []byte {
+	ret := blake2b.Sum256(req.EssenceBytes())
+	return ret[:]
+}
+
 func (req *OffLedgerRequestData) Expiry() (time.Time, iotago.Address) {
 	return time.Time{}, nil
 }
@@ -174,7 +180,7 @@ func (req *OffLedgerRequestData) SenderAccount() AgentID {
 func (req *OffLedgerRequestData) Sign(key *cryptolib.KeyPair) OffLedgerRequest {
 	req.signature = offLedgerSignature{
 		publicKey: key.GetPublicKey(),
-		signature: key.GetPrivateKey().Sign(req.EssenceBytes()),
+		signature: key.GetPrivateKey().Sign(req.messageToSign()),
 	}
 	return req
 }
@@ -205,7 +211,7 @@ func (req *OffLedgerRequestData) Timestamp() time.Time {
 
 // VerifySignature verifies essence signature
 func (req *OffLedgerRequestData) VerifySignature() error {
-	if !req.signature.publicKey.Verify(req.EssenceBytes(), req.signature.signature) {
+	if !req.signature.publicKey.Verify(req.messageToSign(), req.signature.signature) {
 		return errors.New("invalid signature")
 	}
 	return nil
