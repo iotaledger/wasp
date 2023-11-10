@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
@@ -112,7 +113,7 @@ func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, r
 	return nil
 }
 
-func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext {
+func (e *EVMService) getWebsocketContext(ctx context.Context, chainID isc.ChainID) *websocketContext {
 	e.websocketContextMutex.Lock()
 	defer e.websocketContextMutex.Unlock()
 
@@ -120,24 +121,19 @@ func (e *EVMService) getWebsocketContext(chainID isc.ChainID) *websocketContext 
 		return e.websocketContexts[chainID]
 	}
 
-	e.websocketContexts[chainID] = &websocketContext{
-		syncPool:         new(sync.Pool),
-		jsonRPCParams:    e.jsonrpcParams,
-		rateLimiterMutex: sync.Mutex{},
-		rateLimiters:     map[string]*activityRateLimiter{},
-		log:              e.log,
-	}
+	e.websocketContexts[chainID] = newWebsocketContext(e.log, e.jsonrpcParams)
+	go e.websocketContexts[chainID].runCleanupTimer(ctx)
 
 	return e.websocketContexts[chainID]
 }
 
-func (e *EVMService) HandleWebsocket(chainID isc.ChainID, echoCtx echo.Context) error {
+func (e *EVMService) HandleWebsocket(ctx context.Context, chainID isc.ChainID, echoCtx echo.Context) error {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
 		return err
 	}
 
-	wsContext := e.getWebsocketContext(chainID)
+	wsContext := e.getWebsocketContext(ctx, chainID)
 	websocketHandler(e.log, evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
 	return nil
 }
