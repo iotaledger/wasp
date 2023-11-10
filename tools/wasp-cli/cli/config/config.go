@@ -205,6 +205,10 @@ func GetChain(name string) isc.ChainID {
 	return chainID
 }
 
+func GetUseLegacyDerivation() bool {
+	return viper.GetBool("wallet.useLegacyDerivation")
+}
+
 func GetWalletSchemeString() string {
 	return viper.GetString("wallet.scheme")
 }

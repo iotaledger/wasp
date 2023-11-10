@@ -73,9 +73,12 @@ func MigrateToStrongholdWallet(sdk *walletsdk.IOTASDK, seed cryptolib.Seed) {
 	unlockPassword := cli.ReadPasswordFromStdin()
 	log.Printf("\n")
 
-	s := seed.SubSeed(0)
+	useLegacyDerivation := config.GetUseLegacyDerivation()
+	s := cryptolib.SubSeed(seed[:], 0, useLegacyDerivation)
+
 	mnemonicStr, err := bip39.NewMnemonic(s[:])
 	log.Check(err)
+
 	mnemonic := memguard.NewEnclave([]byte(mnemonicStr))
 
 	createNewStrongholdWallet(sdk, mnemonic, unlockPassword)

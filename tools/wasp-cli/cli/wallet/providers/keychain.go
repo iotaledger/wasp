@@ -27,7 +27,8 @@ func LoadKeyChain(addressIndex uint32) wallets.Wallet {
 	seed, err := config.GetKeyChain().GetSeed()
 	log.Check(err)
 
-	keyPair := cryptolib.KeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
+	useLegacyDerivation := config.GetUseLegacyDerivation()
+	keyPair := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(seed[:], uint64(addressIndex), useLegacyDerivation))
 
 	return newInMemoryWallet(keyPair, addressIndex)
 }

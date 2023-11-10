@@ -96,19 +96,6 @@ func Load() wallets.Wallet {
 	}
 
 	return nil
-	seedHex := viper.GetString("wallet.seed")
-
-	useLegacyDerivation := viper.GetBool("wallet.useLegacyDerivation")
-	if seedHex == "" {
-		log.Fatal("call `init` first")
-	}
-
-	masterSeed, err := iotago.DecodeHex(seedHex)
-	log.Check(err)
-
-	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(masterSeed, uint32(AddressIndex), useLegacyDerivation))
-
-	return &Wallet{KeyPair: kp, AddressIndex: AddressIndex}
 }
 
 func InitWallet() {
