@@ -95,7 +95,7 @@ func Load() wallets.Wallet {
 		}
 	}
 
-	return nil
+	return loadedWallet
 }
 
 func InitWallet() {
