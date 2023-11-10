@@ -117,6 +117,8 @@ type Sandbox interface {
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 
+	RequestIndex() uint16
+
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
 	// (e.g. with the debug_traceTransaction JSONRPC method).
 	EVMTracer() *EVMTracer

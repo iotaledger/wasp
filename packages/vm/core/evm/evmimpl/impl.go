@@ -452,10 +452,12 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	// discard remainder in decimals conversion
 	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
-	// encode the txdata as <AgentID sender>+<Assets>
+	// encode the txdata as <AgentID sender>+<Assets>+[blockIndex + reqIndex] // the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData := []byte{}
 	txData = append(txData, agentIDBytes...)
 	txData = append(txData, assets.Bytes()...)
+	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
+	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
 	tx := types.NewTransaction(nonce, addr, wei, 0, gasPrice, txData)

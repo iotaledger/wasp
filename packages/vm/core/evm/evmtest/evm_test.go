@@ -2047,9 +2047,16 @@ func TestL1DepositEVM(t *testing.T) {
 	require.True(t, a.Equals(isc.NewAddressAgentID(l1Addr)))
 	var assets isc.Assets
 	assets.Read(buf)
+
+	// blockIndex
+	blockIndex := rr.ReadUint32()
+	require.Equal(t, block.Number().Uint64(), uint64(blockIndex))
+	reqIndex := rr.ReadUint16()
+	require.Zero(t, reqIndex)
 	n, err := buf.Read([]byte{})
 	require.Zero(t, n)
 	require.ErrorIs(t, err, io.EOF)
+	require.NoError(t, rr.Err)
 
 	require.EqualValues(t,
 		util.MustEthereumDecimalsToBaseTokenDecimalsExact(bal, parameters.L1().BaseToken.Decimals),
@@ -2062,6 +2069,22 @@ func TestL1DepositEVM(t *testing.T) {
 	feePolicy := env.Chain.GetGasFeePolicy()
 	expectedGas := gas.ISCGasBudgetToEVM(iscRec.GasBurned, &feePolicy.EVMGasRatio)
 	require.EqualValues(t, expectedGas, evmRec.GasUsed)
+
+	// issue the same deposit again, assert txHashes do not collide
+
+	err = env.Chain.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(amount),
+		isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr),
+		wallet,
+	)
+	require.NoError(t, err)
+
+	block2, err := env.Chain.EVM().BlockByNumber(big.NewInt(int64(env.getBlockNumber())))
+	require.NoError(t, err)
+	blockTxs2 := block2.Transactions()
+	require.Len(t, blockTxs2, 1)
+	tx2 := blockTxs2[0]
+	require.NotEqual(t, tx.Hash(), tx2.Hash())
 }
 
 func TestDecimalsConversion(t *testing.T) {
