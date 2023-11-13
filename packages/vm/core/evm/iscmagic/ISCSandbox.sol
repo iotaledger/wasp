@@ -57,7 +57,7 @@ interface ISCSandbox {
         bool adjustMinimumStorageDeposit,
         ISCSendMetadata memory metadata,
         ISCSendOptions memory sendOptions
-    ) external;
+    ) external payable;
 
     // Call the entry point of an ISC contract on the same chain.
     function call(
