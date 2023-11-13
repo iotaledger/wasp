@@ -602,11 +602,6 @@ func TestSendUnpayableValueTX(t *testing.T) {
 	// L2 balance of ISC magic contract (0x1074...) is 0
 	require.Zero(t, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscmagic.Address)))
 
-	// initial L2 balance of common account (0)
-	commonAccountInitialBalance := env.Chain.L2BaseTokens(isc.NewContractAgentID(env.Chain.ChainID, 0))
-	// "Commenting it out", as commonAccountBalance is 0 and is checked on the bottom.
-	_ = commonAccountInitialBalance
-
 	// initial L2 balance of sender
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress))
 
