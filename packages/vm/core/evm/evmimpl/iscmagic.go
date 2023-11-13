@@ -84,7 +84,7 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, va
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret = callHandler(c.ctx, caller, method, args)
+	ret = callHandler(c.ctx, caller, value, method, args)
 	return ret, gas, nil
 }
 

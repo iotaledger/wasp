@@ -12,8 +12,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -81,9 +84,13 @@ func (h *magicContractHandler) sendViaMetadata(req isc.RequestParameters) {
 // Therefore, this function first moves the sent base token from the 0x1074[...] address to the common account
 // Then moves the native assets and NFT from the **sender account** to the common account.
 // Then moves all three assets to the actual target address on behalf of the sender.
-func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, evmCallData *isc.EVMCallData) {
-	adjustedTxValue := new(big.Int).Div(evmCallData.Value, big.NewInt(1e12))
-	req.Assets = isc.NewAssets(adjustedTxValue.Uint64(), req.Assets.NativeTokens, req.Assets.NFTs...)
+func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, txValue *big.Int) {
+	adjustedTxValue, remainder := util.EthereumDecimalsToBaseTokenDecimals(txValue, parameters.L1().BaseToken.Decimals)
+	if remainder.Sign() != 0 {
+		panic(emulator.ErrNonZeroWeiRemainder.Create(txValue, remainder.Uint64()))
+	}
+
+	req.Assets = isc.NewAssets(adjustedTxValue, req.Assets.NativeTokens, req.Assets.NFTs...)
 
 	h.adjustStorageDeposit(req)
 
@@ -91,8 +98,7 @@ func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, evmCall
 		panic(errInvalidAllowance)
 	}
 
-	// This should be the 0x107400[...] address
-	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), *evmCallData.To)
+	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
 
 	// Move the already transferred base tokens from the 0x1074 address to the common account
 	h.ctx.Privileged().MustMoveBetweenAccounts(
@@ -131,16 +137,11 @@ func (h *magicContractHandler) Send(
 		Options:                       sendOptions.Unwrap(),
 	}
 
-	evmCallData := h.ctx.Request().EVMCallData()
-
-	if evmCallData == nil ||
-		evmCallData.Value == nil ||
-		evmCallData.Value.BitLen() == 0 {
+	if h.txValue.BitLen() == 0 {
 		h.sendViaMetadata(req)
-		return
+	} else {
+		h.sendViaTxValue(req, h.txValue)
 	}
-
-	h.sendViaTxValue(req, evmCallData)
 }
 
 // handler for ISCSandbox::call
