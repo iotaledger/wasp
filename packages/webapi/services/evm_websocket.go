@@ -243,6 +243,8 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 		echoResponse, ok := w.(*echo.Response)
 		if !ok {
 			logger.Warn("[EVM WS] Could not cast response to echo.Response")
+			http.Error(w, "", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -250,6 +252,7 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
 			logger.Info(fmt.Sprintf("[EVM WS] %s", err))
+			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
 
