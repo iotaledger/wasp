@@ -134,6 +134,6 @@ func (e *EVMService) HandleWebsocket(ctx context.Context, chainID isc.ChainID, e
 	}
 
 	wsContext := e.getWebsocketContext(ctx, chainID)
-	websocketHandler(e.log, evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
+	websocketHandler(evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
 	return nil
 }

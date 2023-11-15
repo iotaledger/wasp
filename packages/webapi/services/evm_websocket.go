@@ -221,7 +221,7 @@ const (
 	writeBufferSize = 4096
 )
 
-func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *websocketContext, realIP string) http.Handler {
+func websocketHandler(server *chainServer, wsContext *websocketContext, realIP string) http.Handler {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  readBufferSize,
 		WriteBufferSize: writeBufferSize,
@@ -233,25 +233,27 @@ func websocketHandler(logger *logger.Logger, server *chainServer, wsContext *web
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rateLimiter := wsContext.getRateLimiter(realIP)
-		logger.Warnf("Using rate limiter for:[%v], lastActivity:[%v], blocked:[%v]", realIP, rateLimiter.LastActivity(), rateLimiter.Canceled())
+		wsLogger := wsContext.logger
+
+		wsLogger.Warnf("Using rate limiter for:[%v], lastActivity:[%v], blocked:[%v]", realIP, rateLimiter.LastActivity(), rateLimiter.Canceled())
 		if rateLimiter.Canceled() {
-			logger.Warnf("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded)\n", realIP)
+			wsLogger.Warnf("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded)\n", realIP)
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 
 		echoResponse, ok := w.(*echo.Response)
 		if !ok {
-			logger.Warn("[EVM WS] Could not cast response to echo.Response")
+			wsLogger.Warn("[EVM WS] Could not cast response to echo.Response")
 			http.Error(w, "", http.StatusInternalServerError)
 
 			return
 		}
 
-		rateLimitedResponseWriter := newRateLimitedEchoResponse(echoResponse, logger, rateLimiter, realIP)
+		rateLimitedResponseWriter := newRateLimitedEchoResponse(echoResponse, wsLogger, rateLimiter, realIP)
 		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
-			logger.Info(fmt.Sprintf("[EVM WS] %s", err))
+			wsLogger.Info(fmt.Sprintf("[EVM WS] %s", err))
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
