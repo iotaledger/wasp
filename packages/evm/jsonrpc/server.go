@@ -4,24 +4,38 @@
 package jsonrpc
 
 import (
+	"time"
+
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 type Parameters struct {
-	Logs LogsLimits
+	Logs                                LogsLimits
+	WebsocketRateLimitMessagesPerSecond int
+	WebsocketRateLimitBurst             int
+	WebsocketConnectionCleanupDuration  time.Duration
+	WebsocketClientBlockDuration        time.Duration
 }
 
 func NewParameters(
 	maxBlocksInLogsFilterRange int,
 	maxLogsInResult int,
+	websocketRateLimitMessagesPerSecond int,
+	websocketRateLimitBurst int,
+	websocketConnectionCleanupDuration time.Duration,
+	websocketClientBlockDuration time.Duration,
 ) *Parameters {
 	return &Parameters{
 		Logs: LogsLimits{
 			MaxBlocksInLogsFilterRange: maxBlocksInLogsFilterRange,
 			MaxLogsInResult:            maxLogsInResult,
 		},
+		WebsocketRateLimitMessagesPerSecond: websocketRateLimitMessagesPerSecond,
+		WebsocketRateLimitBurst:             websocketRateLimitBurst,
+		WebsocketConnectionCleanupDuration:  websocketConnectionCleanupDuration,
+		WebsocketClientBlockDuration:        websocketClientBlockDuration,
 	}
 }
 
@@ -31,6 +45,10 @@ func ParametersDefault() *Parameters {
 			MaxBlocksInLogsFilterRange: 1000,
 			MaxLogsInResult:            10000,
 		},
+		WebsocketRateLimitMessagesPerSecond: 20,
+		WebsocketRateLimitBurst:             5,
+		WebsocketConnectionCleanupDuration:  5 * time.Minute,
+		WebsocketClientBlockDuration:        5 * time.Minute,
 	}
 }
 
@@ -42,6 +60,7 @@ func NewServer(
 ) (*rpc.Server, error) {
 	chainID := evmChain.ChainID()
 	rpcsrv := rpc.NewServer()
+
 	for _, srv := range []struct {
 		namespace string
 		service   interface{}
