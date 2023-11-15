@@ -46,7 +46,7 @@ func ParametersDefault() *Parameters {
 			MaxLogsInResult:            10000,
 		},
 		WebsocketRateLimitMessagesPerSecond: 20,
-		WebsocketRateLimitBurst:             2,
+		WebsocketRateLimitBurst:             5,
 		WebsocketConnectionCleanupDuration:  5 * time.Minute,
 		WebsocketClientBlockDuration:        5 * time.Minute,
 	}
