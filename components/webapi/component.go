@@ -297,6 +297,8 @@ func provide(c *dig.Container) error {
 				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitMessagesPerSecond,
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitBurst,
+				ParamsWebAPI.Limits.Jsonrpc.WebsocketConnectionCleanupDuration,
+				ParamsWebAPI.Limits.Jsonrpc.WebsocketClientBlockDuration,
 			),
 		)
 

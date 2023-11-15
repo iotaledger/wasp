@@ -18,12 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 )
 
-// Used to check how long an IP has to be inactive to be removed from the limiting map
-// It is also used to block an IP if it has reached the rate limit.
-const clientWaitTime = 1 * time.Minute
-
 type activityRateLimiter struct {
-	sync.Mutex
 	canceled     bool
 	rateLimiter  *rate.Limiter
 	lastActivity time.Time
@@ -58,8 +53,6 @@ func (a *activityRateLimiter) LastActivity() time.Time {
 }
 
 func (a *activityRateLimiter) UpdateLastActivity() {
-	a.Lock()
-	defer a.Unlock()
 	a.lastActivity = time.Now()
 }
 
@@ -70,37 +63,35 @@ func (a *activityRateLimiter) Tokens() float64 {
 type websocketContext struct {
 	rateLimiterMutex sync.Mutex
 	rateLimiters     map[string]*activityRateLimiter
-	log              *logger.Logger
+	logger           *logger.Logger
 	syncPool         *sync.Pool
 	jsonRPCParams    *jsonrpc.Parameters
 }
 
 func (w *websocketContext) runCleanupTimer(ctx context.Context) {
-	go func() {
-		t := time.NewTicker(clientWaitTime)
-		defer t.Stop()
+	t := time.NewTicker(w.jsonRPCParams.WebsocketConnectionCleanupDuration)
+	defer t.Stop()
 
-		w.log.Infof("[EVM WS] Cleanup process started")
+	w.logger.Infof("[EVM WS] Cleanup process started")
 
-		for {
-			select {
-			case <-t.C:
-				w.cleanupRateLimiters()
-			case <-ctx.Done():
-				w.log.Infof("[EVM WS] Cleanup process stopped")
-				return
-			}
+	for {
+		select {
+		case <-t.C:
+			w.cleanupRateLimiters()
+		case <-ctx.Done():
+			w.logger.Infof("[EVM WS] Cleanup process stopped")
+			return
 		}
-	}()
+	}
 }
 
-func newWebsocketContext(log *logger.Logger, jsonrpcParameters *jsonrpc.Parameters) *websocketContext {
+func newWebsocketContext(logger *logger.Logger, jsonrpcParameters *jsonrpc.Parameters) *websocketContext {
 	return &websocketContext{
 		syncPool:         new(sync.Pool),
 		jsonRPCParams:    jsonrpcParameters,
 		rateLimiterMutex: sync.Mutex{},
 		rateLimiters:     map[string]*activityRateLimiter{},
-		log:              log,
+		logger:           logger,
 	}
 }
 
@@ -123,11 +114,11 @@ func (w *websocketContext) cleanupRateLimiters() {
 	defer w.rateLimiterMutex.Unlock()
 
 	for ip, rateLimiter := range w.rateLimiters {
-		if time.Since(rateLimiter.LastActivity()) > clientWaitTime {
-			w.log.Debugf("[EVM WS] Removing rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
+		if time.Since(rateLimiter.LastActivity()) > w.jsonRPCParams.WebsocketClientBlockDuration {
+			w.logger.Debugf("[EVM WS] Removing rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
 			delete(w.rateLimiters, ip)
 		} else {
-			w.log.Debugf("[EVM WS] Keeping rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
+			w.logger.Debugf("[EVM WS] Keeping rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
 		}
 	}
 }
@@ -163,12 +154,14 @@ func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 		return 0, rlc.Conn.Close()
 	}
 
-	n, err := rlc.Conn.Read(b)
-	if err != nil {
-		return n, err
+	numBytes, err := rlc.Conn.Read(b)
+
+	if rlc.limiter.Canceled() {
+		rlc.logger.Warnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		return 0, rlc.Conn.Close()
 	}
 
-	return n, nil
+	return numBytes, err
 }
 
 func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
@@ -177,11 +170,18 @@ func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
 	}
 
 	if rlc.limiter.Canceled() {
-		rlc.logger.Warnf("[EVM WS Conn/Write] connections for ip:[%v] canceled", rlc.realIP)
+		rlc.logger.Warnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
 		return 0, rlc.Conn.Close()
 	}
 
-	return rlc.Conn.Write(b)
+	numBytes, err := rlc.Conn.Write(b)
+
+	if rlc.limiter.Canceled() {
+		rlc.logger.Warnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		return 0, rlc.Conn.Close()
+	}
+
+	return numBytes, err
 }
 
 type rateLimitedEchoResponse struct {
@@ -198,15 +198,11 @@ func newRateLimitedEchoResponse(r *echo.Response, logger *logger.Logger, limiter
 /*
 Hijack overrides the original echo.Response:Hijack method and returns a wrapped net.Conn that counts messages to enable the rate limit.
 
-We want to rate limit a Websocket connection (websocket.Conn). `go-ethereum`s Websocket Handler does not support custom websocket.Conn implementations.
-This makes it impossible to hook between Read/WriteJSON to count the messages going in and out.
-An alternative path is to go a level deeper and to hook into a net.Conn instead.
-The websocket Upgrader is a middleware that requires the echo.Response to be passed. This Response allows the takeover of the established http socket by calling `echoResponse.Hijack`
-Once the websocket.Upgrader is called, it will call Hijack internally eventually to get access to the underlying socket.
-
-The rateLimitedEchoResponse wraps the echo.Response with its Hijack method.
-Once it's called, it will call the original echoResponse.Hijack method, get the socket, wrap the socket and return the wrapped socket to the upgrader.
-This allows us to hook directly into the Stream and to count the Read/Write per connection.
+As `go-ethereum`s Websocket Handler does not support custom websocket.Conn implementations, we need to hook a layer deeper into the Net.Conn instead.
+(This is not optimal as we can't count whole JSON messages - only buffers.)
+We do this by passing a modified echo.Response into the websocket.Upgrader.
+This websocket.Upgrader will eventually call `echo.Response:Hijack` which allows echo middlewares to take over the established tcp/http request socket.
+Our custom echo.Response overrides the original Hijack method and will return a custom Net.Conn implementation allowing us to hook and count Read/Write calls.
 */
 func (r rateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	conn, buffer, err := r.Response.Hijack()

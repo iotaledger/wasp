@@ -116,7 +116,9 @@
         "maxBlocksInLogsFilterRange": 1000,
         "maxLogsInResult": 10000,
         "websocketRateLimitMessagesPerSecond": 20,
-        "websocketRateLimitBurst": 2
+        "websocketRateLimitBurst": 5,
+        "websocketConnectionCleanupDuration": "5m",
+        "websocketClientBlockDuration": "5m"
       }
     },
     "debugRequestLoggerEnabled": false
