@@ -22,18 +22,18 @@ import (
 // For example, if ISC.getL2NFTs() is called from solidity, this will
 // correspond to a call to [GetL2NFTs].
 type magicContractHandler struct {
-	ctx     isc.Sandbox
-	caller  vm.ContractRef
-	txValue *big.Int
+	ctx       isc.Sandbox
+	caller    vm.ContractRef
+	callValue *big.Int
 }
 
 // callHandler finds the requested ISC magic method by reflection, and executes
 // it.
-func callHandler(ctx isc.Sandbox, caller vm.ContractRef, txValue *big.Int, method *abi.Method, args []any) []byte {
+func callHandler(ctx isc.Sandbox, caller vm.ContractRef, callValue *big.Int, method *abi.Method, args []any) []byte {
 	return reflectCall(&magicContractHandler{
-		ctx:     ctx,
-		caller:  caller,
-		txValue: txValue,
+		ctx:       ctx,
+		caller:    caller,
+		callValue: callValue,
 	}, method, args)
 }
 

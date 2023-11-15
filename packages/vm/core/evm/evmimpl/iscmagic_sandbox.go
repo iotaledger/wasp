@@ -84,10 +84,10 @@ func (h *magicContractHandler) sendViaMetadata(req isc.RequestParameters) {
 // Therefore, this function first moves the sent base token from the 0x1074[...] address to the common account
 // Then moves the native assets and NFT from the **sender account** to the common account.
 // Then moves all three assets to the actual target address on behalf of the sender.
-func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, txValue *big.Int) {
-	adjustedTxValue, remainder := util.EthereumDecimalsToBaseTokenDecimals(txValue, parameters.L1().BaseToken.Decimals)
+func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, callValue *big.Int) {
+	adjustedTxValue, remainder := util.EthereumDecimalsToBaseTokenDecimals(callValue, parameters.L1().BaseToken.Decimals)
 	if remainder.Sign() != 0 {
-		panic(emulator.ErrNonZeroWeiRemainder.Create(txValue, remainder.Uint64()))
+		panic(emulator.ErrNonZeroWeiRemainder.Create(callValue, remainder.Uint64()))
 	}
 
 	req.Assets = isc.NewAssets(adjustedTxValue, req.Assets.NativeTokens, req.Assets.NFTs...)
@@ -121,6 +121,25 @@ func (h *magicContractHandler) sendViaTxValue(req isc.RequestParameters, txValue
 	)
 }
 
+func (h *magicContractHandler) handleCallValue(callValue *big.Int) uint64 {
+	adjustedTxValue, remainder := util.EthereumDecimalsToBaseTokenDecimals(callValue, parameters.L1().BaseToken.Decimals)
+	if remainder.Sign() != 0 {
+		panic(emulator.ErrNonZeroWeiRemainder.Create(callValue, remainder.Uint64()))
+	}
+
+	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
+	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address())
+
+	// Move the already transferred base tokens from the 0x1074 address back to the callers account.
+	h.ctx.Privileged().MustMoveBetweenAccounts(
+		evmAddr,
+		caller,
+		isc.NewAssetsBaseTokens(adjustedTxValue),
+	)
+
+	return adjustedTxValue
+}
+
 // handler for ISCSandbox::send
 func (h *magicContractHandler) Send(
 	targetAddress iscmagic.L1Address,
@@ -137,11 +156,12 @@ func (h *magicContractHandler) Send(
 		Options:                       sendOptions.Unwrap(),
 	}
 
-	if h.txValue.BitLen() == 0 {
-		h.sendViaMetadata(req)
-	} else {
-		h.sendViaTxValue(req, h.txValue)
+	if h.callValue.BitLen() > 0 {
+		additionalCallValue := h.handleCallValue(h.callValue)
+		req.Assets.BaseTokens += additionalCallValue
 	}
+
+	h.sendViaMetadata(req)
 }
 
 // handler for ISCSandbox::call

@@ -45,6 +45,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -591,7 +592,7 @@ func TestISCGetSenderAccount(t *testing.T) {
 	require.True(t, env.Chain.LastReceipt().DeserializedRequest().SenderAccount().Equals(sender.MustUnwrap()))
 }
 
-func TestSendUnpayableValueTX(t *testing.T) {
+func TestSendNonPayableValueTX(t *testing.T) {
 	env := InitEVM(t)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
@@ -609,18 +610,13 @@ func TestSendUnpayableValueTX(t *testing.T) {
 	value, remainder := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
 	require.Zero(t, remainder)
 
-	fmt.Printf("%v\n", env.Chain.DumpAccounts())
-
 	sandbox := env.ISCMagicSandbox(ethKey)
 
-	_, _ = sandbox.CallFn(
-		[]ethCallOptions{{sender: ethKey, value: value}},
+	res, err := sandbox.CallFn(
+		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
 		"getSenderAccount",
 	)
-
-	fmt.Printf("%v\n", env.Chain.DumpAccounts())
-	//require.Error(t, err, evmimpl.ErrPayingUnpayableMethod)
-	//require.Nil(t, res.ISCReceipt)
+	require.Error(t, err, evmimpl.ErrPayingUnpayableMethod)
 
 	// L2 balance of evm core contract is 0
 	require.Zero(t, env.Chain.L2BaseTokens(isc.NewContractAgentID(env.Chain.ChainID, evm.Contract.Hname())))
@@ -628,11 +624,8 @@ func TestSendUnpayableValueTX(t *testing.T) {
 	require.Zero(t, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscmagic.Address)))
 	// L2 balance of common account is: 0
 	require.Zero(t, env.Chain.L2BaseTokens(isc.NewContractAgentID(env.Chain.ChainID, 0)))
-	// L2 balance of sender is: initial
-
-	newVal := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress))
-	fmt.Printf("%v %v", senderInitialBalance, newVal)
-	require.EqualValues(t, senderInitialBalance, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress)))
+	// L2 balance of sender is: initial-gasFeeCharged
+	require.EqualValues(t, senderInitialBalance-res.ISCReceipt.GasFeeCharged, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress)))
 }
 
 func TestSendPayableValueTX(t *testing.T) {
@@ -648,7 +641,7 @@ func TestSendPayableValueTX(t *testing.T) {
 	require.Zero(t, remainder)
 
 	res, err := env.ISCMagicSandbox(ethKey).CallFn(
-		[]ethCallOptions{{sender: ethKey, value: value}},
+		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
 		"send", iscmagic.WrapL1Address(receiver),
 		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
 		false, // auto adjust SD

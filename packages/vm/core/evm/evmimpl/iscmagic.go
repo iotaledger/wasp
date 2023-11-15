@@ -76,13 +76,13 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, va
 		return nil, gas, errReadOnlyContext
 	}
 
+	c.ctx.Privileged().GasBurnEnable(true)
+	defer c.ctx.Privileged().GasBurnEnable(false)
+
 	// Reject value transactions calling non-payable methods.
 	if value.BitLen() > 0 && !method.IsPayable() {
 		return nil, gas, ErrPayingUnpayableMethod.Create(method.Name)
 	}
-
-	c.ctx.Privileged().GasBurnEnable(true)
-	defer c.ctx.Privileged().GasBurnEnable(false)
 
 	ret = callHandler(c.ctx, caller, value, method, args)
 	return ret, gas, nil
