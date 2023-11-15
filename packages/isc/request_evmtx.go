@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -151,4 +152,12 @@ func (req *evmOffLedgerTxRequest) VerifySignature() error {
 
 func (req *evmOffLedgerTxRequest) EVMTransaction() *types.Transaction {
 	return req.tx
+}
+
+func (req *evmOffLedgerTxRequest) EVMCallData() *EVMCallData {
+	return EVMCallDataFromTx(req.tx)
+}
+
+func (req *evmOffLedgerTxRequest) TxValue() *big.Int {
+	return req.tx.Value()
 }

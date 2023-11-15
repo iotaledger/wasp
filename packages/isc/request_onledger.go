@@ -3,6 +3,7 @@ package isc
 import (
 	"fmt"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -285,6 +286,14 @@ func (req *onLedgerRequestData) TimeLock() time.Time {
 		return time.Time{}
 	}
 	return time.Unix(int64(timelock.UnixTime), 0)
+}
+
+func (req *onLedgerRequestData) TxValue() *big.Int {
+	return new(big.Int).SetUint64(req.output.Deposit())
+}
+
+func (req *onLedgerRequestData) EVMCallData() *EVMCallData {
+	return nil
 }
 
 // region RetryOnLedgerRequest //////////////////////////////////////////////////////////////////
