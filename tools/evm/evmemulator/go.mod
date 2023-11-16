@@ -13,7 +13,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.4
 	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
 	github.com/iotaledger/wasp/tools/wasp-cli v0.0.0-20230923193348-da186f5602e0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 )
 
 require (
