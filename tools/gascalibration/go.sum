@@ -135,8 +135,8 @@ github.com/iancoleman/orderedmap v0.3.0 h1:5cbR2grmZR/DiVt+VJopEhtVs9YGInGIxAoMJ
 github.com/iancoleman/orderedmap v0.3.0/go.mod h1:XuLcCUkdL5owUCQeF2Ue9uuw1EptkJDkXXS7VoV7XGE=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/iotaledger/go-ethereum v1.12.2-wasp2 h1:TRWPFnLVL0e8V9PF2L6zpVjYjVE1h+fuTQk52zpFsFY=
-github.com/iotaledger/go-ethereum v1.12.2-wasp2/go.mod h1:1cRAEV+rp/xX0zraSCBnu9Py3HQ+geRMj3HdR+k0wfI=
+github.com/iotaledger/go-ethereum v1.12.2-wasp3 h1:RP5OJn+g/5+BEg1tvzkhZ5tN/KhsQsUAY2UUQCqKgsM=
+github.com/iotaledger/go-ethereum v1.12.2-wasp3/go.mod h1:1cRAEV+rp/xX0zraSCBnu9Py3HQ+geRMj3HdR+k0wfI=
 github.com/iotaledger/hive.go/constraints v0.0.0-20231106113411-94ac829adbb2 h1:Vz8ZLYoklkbIBNYw5sEm+S8IL+FrFBn4GebEDfYwmFs=
 github.com/iotaledger/hive.go/constraints v0.0.0-20231106113411-94ac829adbb2/go.mod h1:dOBOM2s4se3HcWefPe8sQLUalGXJ8yVXw58oK8jke3s=
 github.com/iotaledger/hive.go/crypto v0.0.0-20231106113411-94ac829adbb2 h1:iLWYVSI4WjMNrZe/iT94S/D3RbqxH8BHZaeeOSJMtAc=
