@@ -117,6 +117,8 @@ type Sandbox interface {
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 
+	RequestIndex() uint16
+
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
 	// (e.g. with the debug_traceTransaction JSONRPC method).
 	EVMTracer() *EVMTracer
@@ -148,7 +150,7 @@ type Privileged interface {
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
 }
 
-type CoreCallbackFunc func(contractPartition kv.KVStore)
+type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {

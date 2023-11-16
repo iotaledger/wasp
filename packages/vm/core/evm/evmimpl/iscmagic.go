@@ -4,6 +4,7 @@
 package evmimpl
 
 import (
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -48,9 +49,10 @@ func init() {
 }
 
 var (
-	errMethodNotFound    = coreerrors.Register("method not found").Create()
-	errInvalidMethodArgs = coreerrors.Register("invalid method arguments").Create()
-	errReadOnlyContext   = coreerrors.Register("attempt to call non-view method in read-only context").Create()
+	errMethodNotFound        = coreerrors.Register("method not found").Create()
+	errInvalidMethodArgs     = coreerrors.Register("invalid method arguments").Create()
+	errReadOnlyContext       = coreerrors.Register("attempt to call non-view method in read-only context").Create()
+	ErrPayingUnpayableMethod = coreerrors.Register("attempt to pay unpayable method %v")
 )
 
 // magicContract implements [vm.ISCMagicContract], which is an interface added
@@ -67,7 +69,7 @@ func newMagicContract(ctx isc.Sandbox) map[common.Address]vm.ISCMagicContract {
 	}
 }
 
-func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, value *big.Int, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
 	privileged := isCallerPrivileged(c.ctx, caller.Address())
 	method, args := parseCall(input, privileged)
 	if readOnly && !method.IsConstant() {
@@ -77,7 +79,12 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret = callHandler(c.ctx, caller, method, args)
+	// Reject value transactions calling non-payable methods.
+	if value.BitLen() > 0 && !method.IsPayable() {
+		return nil, gas, ErrPayingUnpayableMethod.Create(method.Name)
+	}
+
+	ret = callHandler(c.ctx, caller, value, method, args)
 	return ret, gas, nil
 }
 

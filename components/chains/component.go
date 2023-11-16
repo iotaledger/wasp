@@ -126,6 +126,7 @@ func provide(c *dig.Container) error {
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
 				ParamsChains.MempoolTTL,
+				ParamsChains.BroadcastInterval,
 				shutdown.NewCoordinator("chains", Component.Logger().Named("Shutdown")),
 				deps.ChainMetricsProvider,
 			),

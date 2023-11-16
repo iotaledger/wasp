@@ -42,4 +42,6 @@ const (
 	FieldNFTCollectionID    = "C"
 	FieldFoundryTokenScheme = "T"
 	FieldTargetAddress      = "A"
+
+	FieldAgentIDDepositOriginator = "l"
 )

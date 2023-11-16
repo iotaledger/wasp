@@ -81,8 +81,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	env := clustertests.SetupWithChain(t)
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
-	seed := cryptolib.SeedFromBytes(wasmtypes.BytesFromString(mySeed))
-	wallet := cryptolib.KeyPairFromSeed(seed.SubSeed(0))
+	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(mySeed), 0))
 
 	// request funds to the wallet that the wasmclient will use
 	err := env.Clu.RequestFunds(wallet.Address())
@@ -127,8 +126,7 @@ func setupClientDisposable(t testing.TB) *wasmclient.WasmClientContext {
 	cfgWaspAPI := cfgWasp["0"].(string)
 
 	// we'll use the seed keypair to sign requests
-	seed := cryptolib.SeedFromBytes(wasmtypes.BytesFromString(cfgSeed))
-	wallet := cryptolib.KeyPairFromSeed(seed.SubSeed(0))
+	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(cfgSeed), 0))
 
 	svc := wasmclient.NewWasmClientService(cfgWaspAPI)
 	require.True(t, svc.IsHealthy())
@@ -338,8 +336,7 @@ func setupClientLib(t *testing.T) *wasmclient.WasmClientContext {
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 
-	seed := cryptolib.SeedFromBytes(wasmtypes.BytesFromString(mySeed))
-	wallet := cryptolib.KeyPairFromSeed(seed.SubSeed(0))
+	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(mySeed), 0))
 	ctx.SignRequests(wallet)
 	require.NoError(t, ctx.Err)
 	return ctx
@@ -413,8 +410,7 @@ func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
 	// fmt.Println("Error: " + ctx.Err.Error())
 
 	fmt.Println("check sign with wrong wallet")
-	seed := cryptolib.SeedFromBytes(wasmtypes.BytesFromString(mySeed))
-	wallet := cryptolib.KeyPairFromSeed(seed.SubSeed(1))
+	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(mySeed), 1))
 	ctx.SignRequests(wallet)
 	f := testwasmlib.ScFuncs.Random(ctx)
 	f.Func.Post()

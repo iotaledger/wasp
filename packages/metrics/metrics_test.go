@@ -108,9 +108,9 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, outputID3, ncm.InStateOutput())
 
 	// IN Alias output
-	aliasOutput1 := &iotago.AliasOutput{StateIndex: 1}
-	aliasOutput2 := &iotago.AliasOutput{StateIndex: 2}
-	aliasOutput3 := &iotago.AliasOutput{StateIndex: 3}
+	aliasOutput1 := &iotago.AliasOutput{StateIndex: 1, StateMetadata: []byte{}}
+	aliasOutput2 := &iotago.AliasOutput{StateIndex: 2, StateMetadata: []byte{}}
+	aliasOutput3 := &iotago.AliasOutput{StateIndex: 3, StateMetadata: []byte{}}
 
 	ncm.InAliasOutput().IncMessages(aliasOutput1)
 	cncm1.InAliasOutput().IncMessages(aliasOutput2)

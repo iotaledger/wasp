@@ -3,7 +3,6 @@ package rotate
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +30,6 @@ func MakeRotateStateControllerTransaction(
 	nextAddr iotago.Address,
 	chainInput *isc.AliasOutputWithID,
 	ts time.Time,
-	accessPledge, consensusPledge identity.ID,
 ) (*iotago.TransactionEssence, error) {
 	output := chainInput.GetAliasOutput().Clone().(*iotago.AliasOutput)
 	for i := range output.Conditions {

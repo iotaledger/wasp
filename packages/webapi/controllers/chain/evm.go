@@ -23,5 +23,6 @@ func (c *Controller) handleWebsocket(e echo.Context) error {
 		return err
 	}
 
-	return c.evmService.HandleWebsocket(chainID, e.Request(), e.Response())
+	ctx := e.Echo().Server.BaseContext(nil)
+	return c.evmService.HandleWebsocket(ctx, chainID, e)
 }

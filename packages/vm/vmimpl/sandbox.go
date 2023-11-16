@@ -91,6 +91,10 @@ func (s *contractSandbox) StateAnchor() *isc.StateAnchor {
 	return s.reqctx.vm.stateAnchor()
 }
 
+func (s *contractSandbox) RequestIndex() uint16 {
+	return s.reqctx.requestIndex
+}
+
 func (s *contractSandbox) RegisterError(messageFormat string) *isc.VMErrorTemplate {
 	return s.reqctx.registerError(messageFormat)
 }

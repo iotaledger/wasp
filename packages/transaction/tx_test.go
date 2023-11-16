@@ -19,9 +19,10 @@ func TestConsumeRequest(t *testing.T) {
 
 	aliasOutput1ID := tpkg.RandOutputID(0)
 	aliasOutput1 := &iotago.AliasOutput{
-		Amount:     1337,
-		AliasID:    tpkg.RandAliasAddress().AliasID(),
-		StateIndex: 1,
+		Amount:        1337,
+		AliasID:       tpkg.RandAliasAddress().AliasID(),
+		StateIndex:    1,
+		StateMetadata: []byte{},
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
 			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},
@@ -39,9 +40,10 @@ func TestConsumeRequest(t *testing.T) {
 	requestUTXOInput := tpkg.RandUTXOInput()
 
 	aliasOut2 := &iotago.AliasOutput{
-		Amount:     1337 * 2,
-		AliasID:    aliasOutput1.AliasID,
-		StateIndex: 2,
+		Amount:        1337 * 2,
+		AliasID:       aliasOutput1.AliasID,
+		StateIndex:    2,
+		StateMetadata: []byte{},
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
 			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},

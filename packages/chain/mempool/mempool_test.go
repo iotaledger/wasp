@@ -678,6 +678,7 @@ func TestTTL(t *testing.T) {
 		chainMetrics.Pipe,
 		chain.NewEmptyChainListener(),
 		200*time.Millisecond, // 200ms TTL
+		1*time.Second,
 	)
 	defer te.close()
 	start := time.Now()
@@ -802,6 +803,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
 			24*time.Hour,
+			1*time.Second,
 		)
 	}
 	return te

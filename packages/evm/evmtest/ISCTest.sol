@@ -50,7 +50,7 @@ contract ISCTest {
     }
 
     function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
-        public
+        public payable
     {
         ISCAssets memory allowance;
         if (baseTokens == 0) {

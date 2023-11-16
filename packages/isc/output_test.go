@@ -15,8 +15,9 @@ import (
 
 func TestAliasOutputWithIDSerialization(t *testing.T) {
 	output := iotago.AliasOutput{
-		Amount:     mathrand.Uint64(),
-		StateIndex: mathrand.Uint32(),
+		Amount:        mathrand.Uint64(),
+		StateIndex:    mathrand.Uint32(),
+		StateMetadata: []byte{},
 	}
 	rand.Read(output.AliasID[:])
 	outputID := iotago.OutputID{}

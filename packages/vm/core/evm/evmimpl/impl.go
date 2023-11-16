@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -154,7 +155,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	// make sure we always store the EVM tx/receipt in the BlockchainDB, even
 	// if the ISC request is reverted
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
 	// revert the changes in the state / txbuilder in case of error
@@ -442,25 +443,36 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	// can only be called from the accounts contract
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
 	params := ctx.Params()
+	agentIDBytes := params.MustGetBytes(evm.FieldAgentIDDepositOriginator)
 	addr := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
 	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
 	ctx.RequireNoError(err, "unable to parse assets from params")
 
 	// create a fake tx so that the deposit is visible by the EVM
-	value := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	// discard remainder in decimals conversion
+	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
-	tx := types.NewTransaction(nonce, addr, value, 0, util.Big0, assets.Bytes())
+	// encode the txdata as <AgentID sender>+<Assets>+[blockIndex + reqIndex] // the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
+	txData := []byte{}
+	txData = append(txData, agentIDBytes...)
+	txData = append(txData, assets.Bytes()...)
+	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
+	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
+	chainInfo := ctx.ChainInfo()
+	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
+	tx := types.NewTransaction(nonce, addr, wei, 0, gasPrice, txData)
 
 	// create a fake receipt
 	receipt := &types.Receipt{
-		Type:              types.LegacyTxType,
-		CumulativeGasUsed: createBlockchainDB(ctx.State(), ctx.ChainInfo()).GetPendingCumulativeGasUsed(),
-		GasUsed:           0,
-		Logs:              make([]*types.Log, 0),
+		Type:   types.LegacyTxType,
+		Logs:   make([]*types.Log, 0),
+		Status: types.ReceiptStatusSuccessful,
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore) {
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
+		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
+		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
 		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
 	})
 

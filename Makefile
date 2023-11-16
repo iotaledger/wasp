@@ -1,6 +1,6 @@
 GIT_REF_TAG := $(shell git describe --tags)
 BUILD_TAGS = rocksdb
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG) -extldflags \"-z noexecstack\""
 DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
 #
@@ -13,6 +13,7 @@ TEST_ARG=
 BUILD_PKGS ?= ./ ./tools/cluster/wasp-cluster/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
+WASP_CLI_TAGS = no_wasmhost
 
 # Docker image name and tag
 DOCKER_IMAGE_NAME=wasp
@@ -28,7 +29,7 @@ compile-solidity:
 	cd packages/evm/evmtest && go generate
 
 build-cli:
-	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
+	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -tags ${WASP_CLI_TAGS} -o ../../
 
 build-full: build-cli
 	$(BUILD_CMD) ./...
@@ -42,13 +43,13 @@ gendoc:
 	./scripts/gendoc.sh
 
 test-full: install
-	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
+	go test -tags $(BUILD_TAGS),runheavy -ldflags $(BUILD_LD_FLAGS) ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
+	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"net/http"
 	"sync"
 
@@ -28,6 +29,9 @@ type EVMService struct {
 	evmBackendMutex sync.Mutex
 	evmChainServers map[isc.ChainID]*chainServer
 
+	websocketContextMutex sync.Mutex
+	websocketContexts     map[isc.ChainID]*websocketContext
+
 	chainsProvider  chains.Provider
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
@@ -49,16 +53,18 @@ func NewEVMService(
 	log *logger.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
-		chainsProvider:  chainsProvider,
-		chainService:    chainService,
-		evmChainServers: map[isc.ChainID]*chainServer{},
-		evmBackendMutex: sync.Mutex{},
-		networkProvider: networkProvider,
-		publisher:       pub,
-		indexDbPath:     indexDbPath,
-		metrics:         metrics,
-		jsonrpcParams:   jsonrpcParams,
-		log:             log,
+		chainsProvider:        chainsProvider,
+		chainService:          chainService,
+		evmChainServers:       map[isc.ChainID]*chainServer{},
+		evmBackendMutex:       sync.Mutex{},
+		websocketContexts:     map[isc.ChainID]*websocketContext{},
+		websocketContextMutex: sync.Mutex{},
+		networkProvider:       networkProvider,
+		publisher:             pub,
+		indexDbPath:           indexDbPath,
+		metrics:               metrics,
+		jsonrpcParams:         jsonrpcParams,
+		log:                   log,
 	}
 }
 
@@ -107,14 +113,27 @@ func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, r
 	return nil
 }
 
-func (e *EVMService) HandleWebsocket(chainID isc.ChainID, request *http.Request, response *echo.Response) error {
+func (e *EVMService) getWebsocketContext(ctx context.Context, chainID isc.ChainID) *websocketContext {
+	e.websocketContextMutex.Lock()
+	defer e.websocketContextMutex.Unlock()
+
+	if e.websocketContexts[chainID] != nil {
+		return e.websocketContexts[chainID]
+	}
+
+	e.websocketContexts[chainID] = newWebsocketContext(e.log, e.jsonrpcParams)
+	go e.websocketContexts[chainID].runCleanupTimer(ctx)
+
+	return e.websocketContexts[chainID]
+}
+
+func (e *EVMService) HandleWebsocket(ctx context.Context, chainID isc.ChainID, echoCtx echo.Context) error {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
 		return err
 	}
 
-	allowedOrigins := []string{"*"}
-	evmServer.rpc.WebsocketHandler(allowedOrigins).ServeHTTP(response, request)
-
+	wsContext := e.getWebsocketContext(ctx, chainID)
+	websocketHandler(evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
 	return nil
 }

@@ -55,7 +55,9 @@ func NewAliasOutputWithID(aliasOutput *iotago.AliasOutput, outputID iotago.Outpu
 // only for testing
 func RandomAliasOutputWithID() *AliasOutputWithID {
 	outputID := testiotago.RandOutputID()
-	aliasOutput := &iotago.AliasOutput{}
+	aliasOutput := &iotago.AliasOutput{
+		StateMetadata: []byte{},
+	}
 	return NewAliasOutputWithID(aliasOutput, outputID)
 }
 

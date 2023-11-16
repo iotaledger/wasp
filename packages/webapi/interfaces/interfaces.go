@@ -44,7 +44,7 @@ type ChainService interface {
 
 type EVMService interface {
 	HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error
-	HandleWebsocket(chainID isc.ChainID, request *http.Request, response *echo.Response) error
+	HandleWebsocket(ctx context.Context, chainID isc.ChainID, echoCtx echo.Context) error
 }
 
 type MetricsService interface {

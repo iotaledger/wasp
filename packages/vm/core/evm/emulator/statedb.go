@@ -17,13 +17,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 const (
-	keyAccountNonce    = "n"
-	keyAccountCode     = "c"
-	keyAccountState    = "s"
-	keyAccountSuicided = "S"
+	keyAccountNonce          = "n"
+	keyAccountCode           = "c"
+	keyAccountState          = "s"
+	keyAccountSelfDestructed = "S"
 )
 
 func accountKey(prefix kv.Key, addr common.Address) kv.Key {
@@ -42,8 +43,8 @@ func accountStateKey(addr common.Address, hash common.Hash) kv.Key {
 	return accountKey(keyAccountState, addr) + kv.Key(hash[:])
 }
 
-func accountSuicidedKey(addr common.Address) kv.Key {
-	return accountKey(keyAccountSuicided, addr)
+func accountSelfDestructedKey(addr common.Address) kv.Key {
+	return accountKey(keyAccountSelfDestructed, addr)
 }
 
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
@@ -74,6 +75,8 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
+var ErrNonZeroWeiRemainder = coreerrors.Register("cannot convert %d to base tokens decimals: non-zero remainder (%d)")
+
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == 0 {
 		return
@@ -81,7 +84,11 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.ctx.SubBaseTokensBalance(addr, util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals()))
+	baseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
+	if remainder.Sign() != 0 {
+		panic(ErrNonZeroWeiRemainder.Create(amount.Uint64(), remainder.Uint64()))
+	}
+	s.ctx.SubBaseTokensBalance(addr, baseTokens)
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
@@ -91,11 +98,18 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.ctx.AddBaseTokensBalance(addr, util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals()))
+	baseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
+	if remainder.Sign() != 0 {
+		panic(ErrNonZeroWeiRemainder.Create(amount.Uint64(), remainder.Uint64()))
+	}
+	s.ctx.AddBaseTokensBalance(addr, baseTokens)
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	return util.BaseTokensDecimalsToEthereumDecimals(s.ctx.GetBaseTokensBalance(addr), s.ctx.BaseTokensDecimals())
+	baseTokens := s.ctx.GetBaseTokensBalance(addr)
+	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, s.ctx.BaseTokensDecimals())
+	// discard remainder
+	return wei
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {
@@ -192,9 +206,9 @@ func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
 	SetState(s.kv, addr, key, value)
 }
 
-func (s *StateDB) Suicide(addr common.Address) bool {
+func (s *StateDB) SelfDestruct(addr common.Address) {
 	if !s.Exist(addr) {
-		return false
+		return
 	}
 
 	s.kv.Del(accountNonceKey(addr))
@@ -210,20 +224,22 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 	}
 
 	// for some reason the EVM engine calls AddBalance to the beneficiary address,
-	// but not SubBalance for the suicided address.
+	// but not SubBalance for the self-destructed address.
 	s.ctx.SubBaseTokensBalance(addr, s.ctx.GetBaseTokensBalance(addr))
 
-	s.kv.Set(accountSuicidedKey(addr), []byte{1})
-
-	return true
+	s.kv.Set(accountSelfDestructedKey(addr), []byte{1})
 }
 
-func (s *StateDB) HasSuicided(addr common.Address) bool {
-	return s.kv.Has(accountSuicidedKey(addr))
+func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
+	return s.kv.Has(accountSelfDestructedKey(addr))
+}
+
+func (s *StateDB) Selfdestruct6780(addr common.Address) {
+	panic("unimplemented")
 }
 
 // Exist reports whether the given account exists in state.
-// Notably this should also return true for suicided accounts.
+// Notably this should also return true for self-destructed accounts.
 func (s *StateDB) Exist(addr common.Address) bool {
 	return s.kv.Has(accountNonceKey(addr))
 }

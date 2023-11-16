@@ -1,18 +1,21 @@
 #!/bin/bash
-CURRENT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 COMMIT=$1
-MODULES="app constraints crypto ds kvstore lo logger objectstorage runtime serializer/v2 web"
-
 if [ -z "$COMMIT" ]
 then
     echo "ERROR: no commit hash given!"
     exit 1
 fi
 
-for i in $MODULES
+HIVE_MODULES=$(grep -E "^\sgithub.com/iotaledger/hive.go" "go.mod" | awk '{print $1}')
+for dependency in $HIVE_MODULES
 do
-	go get -u github.com/iotaledger/hive.go/$i@$COMMIT
+    echo "go get $dependency@$COMMIT..."
+    go get "$dependency@$COMMIT" >/dev/null
 done
 
-bash ${CURRENT_DIR}/go_mod_tidy.sh
+# Run go mod tidy
+echo "Running go mod tidy..."
+pushd $(dirname $0)
+./go_mod_tidy.sh
+popd

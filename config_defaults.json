@@ -111,7 +111,15 @@
       "writeTimeout": "1m",
       "maxBodyLength": "2M",
       "maxTopicSubscriptionsPerClient": 0,
-      "confirmedStateLagThreshold": 2
+      "confirmedStateLagThreshold": 2,
+      "jsonRpc": {
+        "maxBlocksInLogsFilterRange": 1000,
+        "maxLogsInResult": 10000,
+        "websocketRateLimitMessagesPerSecond": 20,
+        "websocketRateLimitBurst": 5,
+        "websocketConnectionCleanupDuration": "5m",
+        "websocketClientBlockDuration": "5m"
+      }
     },
     "debugRequestLoggerEnabled": false
   },
