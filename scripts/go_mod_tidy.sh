@@ -1,5 +1,4 @@
 #!/bin/bash
-pushd ./..
 
 go mod tidy
 
@@ -17,6 +16,4 @@ popd
 
 pushd tools/evm/evmemulator
 go mod tidy
-popd
-
 popd
