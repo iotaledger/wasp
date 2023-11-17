@@ -611,6 +611,8 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 		})
 	}
 
+	legacyMigrationSA := legacymigration.NewStateAccess(mpi.chainHeadState)
+
 	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry[isc.OffLedgerRequest]) {
 		agentID, err := isc.AgentIDFromString(account)
 		if err != nil {
@@ -632,6 +634,14 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 			if e.old {
 				// this request was marked as "old", do not propose it
 				mpi.log.Debugf("refsToPropose, account: %s, skipping old request: %s", account, e.req.ID().String())
+				continue
+			}
+
+			if legacyMigrationSA.ValidMigrationRequest(e.req) {
+				// skip nonce check for migration requests
+				mpi.log.Debugf("refsToPropose - migration request, account: %s, proposing reqID %s with nonce: %d", account, e.req.ID().String(), e.req.Nonce())
+				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+				e.proposedFor = append(e.proposedFor, consensusID)
 				continue
 			}
 

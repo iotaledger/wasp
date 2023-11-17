@@ -77,6 +77,8 @@ func TestMigrationAndBurn(t *testing.T) {
 	migBalance := migrationEnv.getBalanceOnChain(migrationContractAgentID, isc.BaseTokenID)
 	require.Positive(t, migBalance)
 
+	someWalletWithoutFunds := cryptolib.NewKeyPair()
+
 	// assert valid migrations work
 	{
 		bundleHex, err2 := os.ReadFile("../../../packages/legacymigration/valid_bundle_example.hex")
@@ -84,7 +86,7 @@ func TestMigrationAndBurn(t *testing.T) {
 		bundleBytes, err2 := iotago.DecodeHex(string(bundleHex))
 		require.NoError(t, err2)
 
-		migrationReq, err2 := migrationChain.Client(cryptolib.NewKeyPair(), 0).
+		migrationReq, err2 := migrationChain.Client(someWalletWithoutFunds, 0).
 			PostOffLedgerRequest(
 				context.Background(),
 				legacymigration.Contract.Hname(),
@@ -93,11 +95,13 @@ func TestMigrationAndBurn(t *testing.T) {
 					Args: map[kv.Key][]byte{
 						legacymigration.ParamBundle: bundleBytes,
 					},
+					Nonce: 10, // bad nonce, shoudl be ignored
 				},
 			)
 		require.NoError(t, err2)
-		_, err2 = migrationCluster.MultiClient().WaitUntilRequestProcessedSuccessfully(migrationChain.ChainID, migrationReq.ID(), true, 20*time.Second)
+		rec, err2 := migrationCluster.MultiClient().WaitUntilRequestProcessedSuccessfully(migrationChain.ChainID, migrationReq.ID(), true, 20*time.Second)
 		require.NoError(t, err2)
+		require.NotNil(t, rec)
 
 		newMigBalance := migrationEnv.getBalanceOnChain(migrationContractAgentID, isc.BaseTokenID)
 		require.Less(t, newMigBalance, migBalance)
@@ -105,6 +109,39 @@ func TestMigrationAndBurn(t *testing.T) {
 		// we know that the pre-built bundle targets this address
 		migrationTarget := iotago.MustParseEd25519AddressFromHexString("0x7ad1aee6262b8823aa74177692d917f2603c30587df6916f666eeb692f22b38d")
 		require.EqualValues(t, migrationCluster.AddressBalances(migrationTarget).BaseTokens, migBalance-newMigBalance)
+		migBalance = newMigBalance
+	}
+
+	// assert a second valid migration works
+	{
+		bundleHex, err2 := os.ReadFile("../../../packages/legacymigration/valid_bundle_example2.hex")
+		require.NoError(t, err2)
+		bundleBytes, err2 := iotago.DecodeHex(string(bundleHex))
+		require.NoError(t, err2)
+
+		migrationReq, err2 := migrationChain.Client(someWalletWithoutFunds, 0).
+			PostOffLedgerRequest(
+				context.Background(),
+				legacymigration.Contract.Hname(),
+				legacymigration.FuncMigrate.Hname(),
+				chainclient.PostRequestParams{
+					Args: map[kv.Key][]byte{
+						legacymigration.ParamBundle: bundleBytes,
+					},
+					Nonce: 10, // reuse nonce 10, it should still work
+				},
+			)
+		require.NoError(t, err2)
+		rec, err2 := migrationCluster.MultiClient().WaitUntilRequestProcessedSuccessfully(migrationChain.ChainID, migrationReq.ID(), true, 20*time.Second)
+		require.NoError(t, err2)
+		require.NotNil(t, rec)
+
+		newMigBalance := migrationEnv.getBalanceOnChain(migrationContractAgentID, isc.BaseTokenID)
+		require.Less(t, newMigBalance, migBalance)
+
+		// we know that the pre-built bundle targets this address
+		migrationTarget := iotago.MustParseEd25519AddressFromHexString("0xcb1e2db315cafdb365fdc0dd71876cf633c61942c78f3690af9bc12c95ddbf30")
+		require.EqualValues(t, migBalance-newMigBalance, migrationCluster.AddressBalances(migrationTarget).BaseTokens)
 	}
 
 	// assert invalid migrations are not processed by the migration chain
