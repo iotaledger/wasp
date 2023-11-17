@@ -4,6 +4,7 @@ package legacymigration_test
 
 import (
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -31,13 +32,13 @@ func TestContract(t *testing.T) {
 	require.NoError(t, err)
 
 	viewBalance := func() uint64 {
-		ret, err := ch.CallView(
+		ret, err2 := ch.CallView(
 			legacymigration.Contract.Name, legacymigration.ViewMigratableBalance.Name,
 			legacymigration.ParamAddress, "FWIURWEIEMAGWWPXVWDTMVUZVNYNYFOB9S9WIGHRNYVZBJEBBWQZIBWYIOZLKPGVNNCOLDIIUNNEQZYBD",
 		)
-		require.NoError(t, err)
-		bal, err := codec.DecodeUint64(ret.Get(legacymigration.ParamBalance))
-		require.NoError(t, err)
+		require.NoError(t, err2)
+		bal, err2 := codec.DecodeUint64(ret.Get(legacymigration.ParamBalance))
+		require.NoError(t, err2)
 		return bal
 	}
 	require.Positive(t, viewBalance())
@@ -99,6 +100,8 @@ func TestWalletRsGeneratedBin(t *testing.T) {
 	req, err := isc.RequestFromBytes(reqBytes)
 	require.NoError(t, err)
 	require.Error(t, req.(isc.OffLedgerRequest).VerifySignature()) // signature is not valid (but bundle IS)
+
+	require.Zero(t, slices.Compare(req.Bytes(), reqBytes)) // bytes match
 
 	// no balance on the "target address"
 	addr, err := iotago.ParseEd25519AddressFromHexString("0x7ad1aee6262b8823aa74177692d917f2603c30587df6916f666eeb692f22b38d")
