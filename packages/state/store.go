@@ -116,6 +116,10 @@ func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations, trie.Com
 
 	var baseTrieRoot trie.Hash
 	{
+		if d == nil {
+			panic("state.StateDraft is nil")
+		}
+
 		baseL1Commitment := d.BaseL1Commitment()
 		if baseL1Commitment != nil {
 			if !s.db.hasBlock(baseL1Commitment.TrieRoot()) {

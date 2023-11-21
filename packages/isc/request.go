@@ -121,6 +121,9 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 	if err != nil {
 		return nil, err
 	}
+	if tx.Essence == nil {
+		return nil, fmt.Errorf("malformed transaction")
+	}
 
 	ret := make(map[ChainID][]Request)
 	for i, output := range tx.Essence.Outputs {

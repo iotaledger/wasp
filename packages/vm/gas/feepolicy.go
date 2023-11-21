@@ -74,6 +74,9 @@ func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
 // if GasPerToken is '0:0' then set the GasBudget to MaxGasPerRequest
 func (p *FeePolicy) GasBudgetFromTokens(availableTokens uint64, limits ...*Limits) uint64 {
 	if p.GasPerToken.IsZero() {
+		if len(limits) == 0 {
+			panic("GasBudgetFromTokens without giving limits when GasPerToken")
+		}
 		return limits[0].MaxGasPerRequest
 	}
 	return p.GasPerToken.XFloor64(availableTokens)
