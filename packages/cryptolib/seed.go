@@ -25,7 +25,8 @@ const IotaCoinType = uint32(4218)
 const ShimmerCoinType = uint32(4219)
 
 // SubSeed returns a Seed (ed25519 Seed) from a master seed (that has arbitrary length)
-func SubSeed(walletSeed []byte, accountIndex uint64, useLegacyDerivation ...bool) Seed {
+// note that the accountIndex is actually an uint31
+func SubSeed(walletSeed []byte, accountIndex uint32, useLegacyDerivation ...bool) Seed {
 	if len(useLegacyDerivation) > 0 && useLegacyDerivation[0] {
 		seed := SeedFromBytes(walletSeed)
 		return legacyDerivation(&seed, accountIndex)
@@ -69,10 +70,10 @@ func SeedFromBytes(data []byte) (ret Seed) {
 	return ret
 }
 
-func legacyDerivation(seed *Seed, index uint64) Seed {
+func legacyDerivation(seed *Seed, index uint32) Seed {
 	subSeed := make([]byte, SeedSize)
-	indexBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(indexBytes, index)
+	indexBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(indexBytes, index)
 	hashOfIndexBytes := blake2b.Sum256(indexBytes)
 
 	byteutils.XORBytes(subSeed, seed[:], hashOfIndexBytes[:])
