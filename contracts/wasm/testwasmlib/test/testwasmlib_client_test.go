@@ -18,8 +18,8 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient/iscclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
@@ -64,6 +64,10 @@ func (proc *EventProcessor) waitClientEventsParam(t *testing.T, ctx *wasmclient.
 	proc.name = ""
 }
 
+func subSeed(seed string, index uint32) *iscclient.Keypair {
+	return iscclient.KeyPairFromSubSeed(wasmtypes.BytesFromString(seed), index)
+}
+
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useCluster {
 		return setupClientCluster(t)
@@ -81,10 +85,13 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	env := clustertests.SetupWithChain(t)
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
-	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(mySeed), 0))
+	keyPair := subSeed(mySeed, 0)
+	pk, _ := cryptolib.PrivateKeyFromBytes(keyPair.GetPrivateKey())
+	wallet := cryptolib.KeyPairFromPrivateKey(pk)
 
 	// request funds to the wallet that the wasmclient will use
-	err := env.Clu.RequestFunds(wallet.Address())
+	address := wallet.Address()
+	err := env.Clu.RequestFunds(address)
 	require.NoError(t, err)
 
 	// deposit funds to the on-chain account
@@ -104,7 +111,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	svc := wasmclient.NewWasmClientService("http://localhost:19090")
 	err = svc.SetCurrentChainID(env.Chain.ChainID.String())
 	require.NoError(t, err)
-	return newClient(t, svc, wallet)
+	return newClient(t, svc, keyPair)
 }
 
 func setupClientDisposable(t testing.TB) *wasmclient.WasmClientContext {
@@ -115,9 +122,8 @@ func setupClientDisposable(t testing.TB) *wasmclient.WasmClientContext {
 	err = json.Unmarshal(configBytes, &config)
 	require.NoError(t, err)
 
-	cfgChain := config["chain"].(string)
 	cfgChains := config["chains"].(map[string]interface{})
-	chainID := cfgChains[cfgChain].(string)
+	chainID := cfgChains["mychain"].(string)
 
 	cfgWallet := config["wallet"].(map[string]interface{})
 	cfgSeed := cfgWallet["seed"].(string)
@@ -126,28 +132,28 @@ func setupClientDisposable(t testing.TB) *wasmclient.WasmClientContext {
 	cfgWaspAPI := cfgWasp["0"].(string)
 
 	// we'll use the seed keypair to sign requests
-	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(cfgSeed), 0))
+	keyPair := subSeed(cfgSeed, 0)
 
 	svc := wasmclient.NewWasmClientService(cfgWaspAPI)
 	require.True(t, svc.IsHealthy())
 	err = svc.SetCurrentChainID(chainID)
 	require.NoError(t, err)
-	return newClient(t, svc, wallet)
+	return newClient(t, svc, keyPair)
 }
 
 func setupClientSolo(t testing.TB) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 	chainID := ctx.Chain.ChainID.String()
-	wallet := ctx.Chain.OriginatorPrivateKey
+	keyPair := iscclient.KeyPairFromSeed(ctx.Chain.OriginatorPrivateKey.GetPrivateKey().AsBytes()[:32])
 
 	// use Solo as fake Wasp cluster
-	return newClient(t, wasmsolo.NewSoloClientService(ctx, chainID), wallet)
+	return newClient(t, wasmsolo.NewSoloClientService(ctx, chainID), keyPair)
 }
 
-func newClient(t testing.TB, svcClient wasmclient.IClientService, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
+func newClient(t testing.TB, svcClient wasmclient.IClientService, keyPair *iscclient.Keypair) *wasmclient.WasmClientContext {
 	ctx := wasmclient.NewWasmClientContext(svcClient, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
-	ctx.SignRequests(wallet)
+	ctx.SignRequests(keyPair)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -203,14 +209,13 @@ func getActive(t *testing.T, ctx *wasmclient.WasmClientContext) bool {
 
 func TestClientAccountBalance(t *testing.T) {
 	ctx := setupClient(t)
-	wallet := ctx.CurrentKeyPair()
+	keyPair := ctx.CurrentKeyPair()
 
 	// note: this calls core accounts contract instead of testwasmlib
 	ctx = wasmclient.NewWasmClientContext(ctx.CurrentSvcClient(), coreaccounts.ScName)
-	ctx.SignRequests(wallet)
+	ctx.SignRequests(keyPair)
 
-	addr := isc.NewAgentID(wallet.Address())
-	agent := wasmtypes.AgentIDFromBytes(addr.Bytes())
+	agent := wasmtypes.ScAgentIDFromAddress(keyPair.Address())
 
 	bal := coreaccounts.ScFuncs.BalanceBaseToken(ctx)
 	bal.Params.AgentID().SetValue(agent)
@@ -336,8 +341,8 @@ func setupClientLib(t *testing.T) *wasmclient.WasmClientContext {
 	ctx := wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
 
-	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(mySeed), 0))
-	ctx.SignRequests(wallet)
+	keyPair := subSeed(mySeed, 0)
+	ctx.SignRequests(keyPair)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -409,9 +414,9 @@ func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
 	// require.Error(t, ctx.Err)
 	// fmt.Println("Error: " + ctx.Err.Error())
 
-	fmt.Println("check sign with wrong wallet")
-	wallet := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(wasmtypes.BytesFromString(mySeed), 1))
-	ctx.SignRequests(wallet)
+	fmt.Println("check sign with wrong key pair")
+	keyPair := subSeed(mySeed, 1)
+	ctx.SignRequests(keyPair)
 	f := testwasmlib.ScFuncs.Random(ctx)
 	f.Func.Post()
 	require.Error(t, ctx.Err)
@@ -427,7 +432,7 @@ func testAPIErrorHandling(t *testing.T, ctx *wasmclient.WasmClientContext) {
 	require.NoError(t, ctx.Err)
 	ctx = wasmclient.NewWasmClientContext(svc, testwasmlib.ScName)
 	require.NoError(t, ctx.Err)
-	ctx.SignRequests(wallet)
+	ctx.SignRequests(keyPair)
 	require.NoError(t, ctx.Err)
 	ctx.WaitRequest(wasmtypes.RequestIDFromBytes(nil))
 	require.Error(t, ctx.Err)

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient/iscclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -77,7 +78,7 @@ func (svc *SoloClientService) Event(topic string, timestamp uint64, payload []by
 	}
 }
 
-func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
+func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *iscclient.Keypair) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := cvt.IscChainID(&chainID)
 	iscContract := cvt.IscHname(hContract)
 	iscFunction := cvt.IscHname(hFunction)
@@ -90,7 +91,7 @@ func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 	}
 	req := solo.CallParamsFromDictByHname(iscContract, iscFunction, params)
 
-	key := string(keyPair.GetPublicKey().AsBytes())
+	key := string(keyPair.GetPublicKey())
 	nonce := svc.nonces[key]
 	nonce++
 	svc.nonces[key] = nonce
@@ -99,7 +100,11 @@ func (svc *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 	iscAllowance := cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	req.WithMaxAffordableGasBudget()
-	_, err = svc.ctx.Chain.PostRequestOffLedger(req, keyPair)
+	privKey, err := cryptolib.PrivateKeyFromBytes(keyPair.GetPrivateKey())
+	if err != nil {
+		return reqID, err
+	}
+	_, err = svc.ctx.Chain.PostRequestOffLedger(req, cryptolib.KeyPairFromPrivateKey(privKey))
 	return reqID, err
 }
 

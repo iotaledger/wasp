@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as coreaccounts from 'wasmlib/coreaccounts';
-import * as isc from './isc';
+import * as iscclient from './iscclient';
 import * as wasmlib from 'wasmlib';
 import {WebSocket} from 'ws';
 import {WasmClientContext} from './wasmclientcontext';
@@ -26,18 +26,18 @@ export class WasmClientService {
         this.chainID = wasmlib.chainIDFromBytes(null);
     }
 
-    public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
+    public callViewByHname(hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, iscclient.Error] {
         const url = this.waspAPI + '/v1/chains/' + this.chainID.toString() + '/callview';
-        const callViewRequest: isc.APICallViewRequest = {
+        const callViewRequest: iscclient.APICallViewRequest = {
             contractHName: hContract.toString(),
             functionHName: hFunction.toString(),
-            arguments: isc.Codec.jsonEncode(args),
+            arguments: iscclient.Codec.jsonEncode(args),
         };
         try {
-            const client = new isc.SyncRequestClient();
+            const client = new iscclient.SyncRequestClient();
             client.addHeader('Content-Type', 'application/json');
-            const resp = client.post<isc.APICallViewRequest, isc.JsonResp>(url, callViewRequest);
-            const result = isc.Codec.jsonDecode(resp);
+            const resp = client.post<iscclient.APICallViewRequest, iscclient.JsonResp>(url, callViewRequest);
+            const result = iscclient.Codec.jsonDecode(resp);
             return [result, null];
         } catch (error) {
             let message;
@@ -54,30 +54,30 @@ export class WasmClientService {
     public isHealthy(): bool {
         const url = this.waspAPI + '/health';
         try {
-            new isc.SyncRequestClient().get(url);
+            new iscclient.SyncRequestClient().get(url);
             return true;
         } catch (error) {
             return false;
         }
     }
 
-    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair): [wasmlib.ScRequestID, isc.Error] {
+    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: iscclient.KeyPair): [wasmlib.ScRequestID, iscclient.Error] {
         const [nonce, err] = this.cachedNonce(keyPair);
         if (err != null) {
             return [new wasmlib.ScRequestID(), err];
         }
-        const req = new isc.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
+        const req = new iscclient.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
         req.withAllowance(allowance);
         const signed = req.sign(keyPair);
         const reqID = signed.ID();
 
         const url = this.waspAPI + '/v1/requests/offledger';
-        const offLedgerRequest: isc.APIOffLedgerRequest = {
+        const offLedgerRequest: iscclient.APIOffLedgerRequest = {
             chainId: chainID.toString(),
             request: wasmlib.hexEncode(signed.bytes()),
         };
         try {
-            const client = new isc.SyncRequestClient();
+            const client = new iscclient.SyncRequestClient();
             client.addHeader('Content-Type', 'application/json');
             client.post(url, offLedgerRequest);
             return [reqID, null];
@@ -89,8 +89,8 @@ export class WasmClientService {
         }
     }
 
-    public setCurrentChainID(chainID: string): isc.Error {
-        const err = isc.setSandboxWrappers(chainID);
+    public setCurrentChainID(chainID: string): iscclient.Error {
+        const err = iscclient.setSandboxWrappers(chainID);
         if (err != null) {
             return err;
         }
@@ -98,10 +98,10 @@ export class WasmClientService {
         return null;
     }
 
-    public setDefaultChainID(): isc.Error {
+    public setDefaultChainID(): iscclient.Error {
         const url = this.waspAPI + '/v1/chains';
         try {
-            const client = new isc.SyncRequestClient();
+            const client = new iscclient.SyncRequestClient();
             client.addHeader('Content-Type', 'application/json');
             const chains = client.get<ChainInfoResponse[]>(url);
             if (chains.length != 1) {
@@ -116,7 +116,7 @@ export class WasmClientService {
         }
     }
 
-    public subscribeEvents(eventHandler: WasmClientEvents): isc.Error {
+    public subscribeEvents(eventHandler: WasmClientEvents): iscclient.Error {
         this.eventHandlers.push(eventHandler);
         if (this.eventHandlers.length != 1) {
             return null;
@@ -141,11 +141,11 @@ export class WasmClientService {
         }
     }
 
-    public waitUntilRequestProcessed(reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
+    public waitUntilRequestProcessed(reqID: wasmlib.ScRequestID, timeout: u32): iscclient.Error {
         //TODO Timeout of the wait can be set with `/wait?timeoutSeconds=`. Max seconds are 60secs.
         const url = this.waspAPI + '/v1/chains/' + this.chainID.toString() + '/requests/' + reqID.toString() + '/wait';
         try {
-            const client = new isc.SyncRequestClient();
+            const client = new iscclient.SyncRequestClient();
             client.get(url);
             return null;
         } catch (error) {
@@ -156,7 +156,7 @@ export class WasmClientService {
         }
     }
 
-    private cachedNonce(keyPair: isc.KeyPair): [u64, isc.Error] {
+    private cachedNonce(keyPair: iscclient.KeyPair): [u64, iscclient.Error] {
         const key = keyPair.publicKey;
         let nonce = this.nonces.get(key);
         if (nonce !== undefined) {

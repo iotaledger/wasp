@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as isc from './isc';
+import * as iscclient from './iscclient';
 import * as wasmlib from 'wasmlib';
 import {WasmClientSandbox} from './wasmclientsandbox';
 import {WasmClientService} from './wasmclientservice';
@@ -18,7 +18,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.scHname;
     }
 
-    public currentKeyPair(): isc.KeyPair | null {
+    public currentKeyPair(): iscclient.KeyPair | null {
         return this.keyPair;
     }
 
@@ -26,7 +26,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.svcClient;
     }
 
-    public register(handler: wasmlib.IEventHandlers): isc.Error {
+    public register(handler: wasmlib.IEventHandlers): iscclient.Error {
         return this.svcClient.subscribeEvents(new WasmClientEvents(
             this.svcClient.currentChainID(),
             this.scHname,
@@ -34,7 +34,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         ));
     }
 
-    public signRequests(keyPair: isc.KeyPair) {
+    public signRequests(keyPair: iscclient.KeyPair) {
         this.keyPair = keyPair;
     }
 

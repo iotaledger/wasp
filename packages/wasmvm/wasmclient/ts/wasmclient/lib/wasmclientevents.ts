@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {Converter} from '@iota/util.js';
-import * as isc from './isc';
+import * as iscclient from './iscclient';
 import * as wasmlib from 'wasmlib';
 import {RawData, WebSocket} from 'ws';
 
@@ -34,7 +34,7 @@ export class WasmClientEvents {
         this.handler = handler;
     }
 
-    public static startEventLoop(ws: WebSocket, eventHandlers: WasmClientEvents[]): isc.Error {
+    public static startEventLoop(ws: WebSocket, eventHandlers: WasmClientEvents[]): iscclient.Error {
         ws.on('open', () => {
             this.subscribe(ws, 'chains');
             this.subscribe(ws, 'block_events');

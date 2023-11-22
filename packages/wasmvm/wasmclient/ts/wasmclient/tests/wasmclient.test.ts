@@ -9,7 +9,7 @@ import {
     chainIDToString, hexDecode,
     requestIDFromBytes
 } from 'wasmlib';
-import {KeyPair} from '../lib/isc';
+import {KeyPair} from '../lib/iscclient';
 
 const MYSEED = '0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3';
 const WASPAPI = 'http://localhost:19090';
@@ -76,7 +76,7 @@ function setupClient() {
     const err = svc.setDefaultChainID();
     expect(err == null).toBeTruthy();
     const ctx = new WasmClientContext(svc, 'testwasmlib');
-    ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
+    ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0));
     checkError(ctx);
     return ctx;
 }
@@ -84,15 +84,15 @@ function setupClient() {
 describe('keypair tests', function () {
     const mySeed = bytesFromString(MYSEED);
     it('construct proper sub-seed 0', () => {
-        const subSeed = KeyPair.subSeed(mySeed, 0n);
+        const subSeed = KeyPair.subSeed(mySeed, 0);
         console.log('Seed: ' + bytesToString(subSeed));
-        expect(bytesToString(subSeed) == '0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af').toBeTruthy();
+        expect(bytesToString(subSeed) == '0x65c0583f4d507edf6373e4bad8a649f2793bdf619a7a8e69efbebc8f6986fcbf').toBeTruthy();
     });
 
     it('construct proper sub-seed 1', () => {
-        const subSeed = KeyPair.subSeed(mySeed, 1n);
+        const subSeed = KeyPair.subSeed(mySeed, 1);
         console.log('Seed: ' + bytesToString(subSeed));
-        expect(bytesToString(subSeed) == '0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8').toBeTruthy();
+        expect(bytesToString(subSeed) == '0x8e80478dda48a3141e349ceac409ab9a4c742452c4e7e708d36fcb12b72b59d5').toBeTruthy();
     });
 
     it('should construct a proper pair', () => {
@@ -104,19 +104,19 @@ describe('keypair tests', function () {
     });
 
     it('should construct sub-seed pair 0', () => {
-        const pair = KeyPair.fromSubSeed(mySeed, 0n);
+        const pair = KeyPair.fromSubSeed(mySeed, 0);
         console.log('Publ: ' + bytesToString(pair.publicKey));
         console.log('Priv: ' + bytesToString(pair.privateKey));
-        expect(bytesToString(pair.publicKey) == '0x40a757d26f6ef94dccee5b4f947faa78532286fe18117f2150a80acf2a95a8e2').toBeTruthy();
-        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af').toBeTruthy();
+        expect(bytesToString(pair.publicKey) == '0x80c6204f1aa7eb3a3c15f657d22aeec7f53f936a45d21f0a3bb2fb5de7fe002f').toBeTruthy();
+        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0x65c0583f4d507edf6373e4bad8a649f2793bdf619a7a8e69efbebc8f6986fcbf').toBeTruthy();
     });
 
     it('should construct sub-seed pair 1', () => {
-        const pair = KeyPair.fromSubSeed(mySeed, 1n);
+        const pair = KeyPair.fromSubSeed(mySeed, 1);
         console.log('Publ: ' + bytesToString(pair.publicKey));
         console.log('Priv: ' + bytesToString(pair.privateKey));
-        expect(bytesToString(pair.publicKey) == '0x120d2b26fc1b1d53bb916b8a277bcc2efa09e92c95be1a8fd5c6b3adbc795679').toBeTruthy();
-        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8').toBeTruthy();
+        expect(bytesToString(pair.publicKey) == '0xfa482d65acb90e55dba4724886c79e1df663d3f95813a6674033504b89ffe7cd').toBeTruthy();
+        expect(bytesToString(pair.privateKey.slice(0, 32)) == '0x8e80478dda48a3141e349ceac409ab9a4c742452c4e7e708d36fcb12b72b59d5').toBeTruthy();
     });
 
     it('should sign and verify', () => {
@@ -170,7 +170,7 @@ describe('wasmclient', function () {
             // console.log('Error: ' + ctx.Err);
 
             // sign with wrong wallet
-            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 1n));
+            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 1));
             const f = testwasmlib.ScFuncs.random(ctx);
             f.func.post();
             expect(ctx.Err != null).toBeTruthy();
@@ -185,7 +185,7 @@ describe('wasmclient', function () {
             ctx.Err = svc.setCurrentChainID(badChainID);
             checkError(ctx);
             ctx = new WasmClientContext(svc, 'testwasmlib');
-            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
+            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0));
             ctx.waitRequestID(requestIDFromBytes(null));
             expect(ctx.Err != null).toBeTruthy();
             console.log('Error: ' + ctx.Err);

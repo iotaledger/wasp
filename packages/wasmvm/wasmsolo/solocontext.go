@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient/iscclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
@@ -207,7 +207,7 @@ func soloContext(t testing.TB, chain *solo.Chain, scName string, creator *SoloAg
 	if chain == nil {
 		chain = StartChain(t, "chain1")
 	}
-	err := wasmclient.SetSandboxWrappers(chain.ChainID.String())
+	err := iscclient.SetSandboxWrappers(chain.ChainID.String())
 	if err != nil {
 		panic(err)
 	}

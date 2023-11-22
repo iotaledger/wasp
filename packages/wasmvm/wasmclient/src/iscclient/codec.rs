@@ -93,6 +93,12 @@ impl Codec {
         return uint32_to_bytes(1);
     }
 
+    pub fn hrp_for_client() -> String {
+        unsafe {
+            HRP_FOR_CLIENT.clone()
+        }
+    }
+
     pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
         let items_num = dict.items.len();

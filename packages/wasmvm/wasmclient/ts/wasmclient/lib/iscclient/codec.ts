@@ -5,7 +5,7 @@ import {Bech32, Blake2b} from '@iota/crypto.js';
 import create from 'keccak';
 import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
-import * as isc from './';
+import * as iscclient from './';
 
 export type Error = string | null;
 
@@ -37,7 +37,7 @@ export class JsonResp {
 
 // Thank you, @iota/crypto.js, for making my life easy
 export class Codec {
-    public static bech32Decode(bech32: string): [string, wasmlib.ScAddress, isc.Error] {
+    public static bech32Decode(bech32: string): [string, wasmlib.ScAddress, iscclient.Error] {
         const dec = Bech32.decode(bech32);
         if (dec == undefined) {
             return ['', new wasmlib.ScAddress(), 'invalid bech32 string: ' + bech32];
@@ -69,6 +69,10 @@ export class Codec {
         }
         // astronomically unlikely to end up here
         return wasmlib.uint32ToBytes(1);
+    }
+
+    public static hrpForClient(): string {
+        return hrpForClient;
     }
 
     public static jsonDecode(dict: JsonResp): Uint8Array {
@@ -108,7 +112,7 @@ export class Codec {
 let hrpForClient = '';
 
 export function clientBech32Decode(bech32: string): wasmlib.ScAddress {
-    const [hrp, addr, err] = isc.Codec.bech32Decode(bech32);
+    const [hrp, addr, err] = iscclient.Codec.bech32Decode(bech32);
     if (err != null) {
         panic(err);
     }
@@ -119,16 +123,16 @@ export function clientBech32Decode(bech32: string): wasmlib.ScAddress {
 }
 
 export function clientBech32Encode(addr: wasmlib.ScAddress): string {
-    return isc.Codec.bech32Encode(hrpForClient, addr);
+    return iscclient.Codec.bech32Encode(hrpForClient, addr);
 }
 
 export function clientHashKeccak(buf: Uint8Array): wasmlib.ScHash {
-    return wasmlib.hashFromBytes(isc.Codec.hashKeccak(buf));
+    return wasmlib.hashFromBytes(iscclient.Codec.hashKeccak(buf));
 }
 
 export function clientHashName(name: string): wasmlib.ScHname {
     const hName = new wasmlib.ScHname(0);
-    hName.id = isc.Codec.hashName(name);
+    hName.id = iscclient.Codec.hashName(name);
     return hName;
 }
 
@@ -136,7 +140,7 @@ export function setSandboxWrappers(chainID: string): Error {
     wasmlib.sandboxWrappers(clientBech32Decode, clientBech32Encode, clientHashKeccak, clientHashName);
 
     // set the network prefix for the current network
-    const [hrp, _addr, err] = isc.Codec.bech32Decode(chainID);
+    const [hrp, _addr, err] = iscclient.Codec.bech32Decode(chainID);
     if (err != null) {
         return err;
     }
