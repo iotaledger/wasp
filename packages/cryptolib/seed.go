@@ -72,10 +72,9 @@ func SeedFromBytes(data []byte) (ret Seed) {
 
 func legacyDerivation(seed *Seed, index uint32) Seed {
 	subSeed := make([]byte, SeedSize)
-	indexBytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(indexBytes, index)
+	indexBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint32(indexBytes[:4], index)
 	hashOfIndexBytes := blake2b.Sum256(indexBytes)
-
 	byteutils.XORBytes(subSeed, seed[:], hashOfIndexBytes[:])
 	return SeedFromBytes(subSeed)
 }
