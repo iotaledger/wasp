@@ -25,7 +25,7 @@ func Load() *Wallet {
 	masterSeed, err := iotago.DecodeHex(seedHex)
 	log.Check(err)
 
-	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(masterSeed, uint64(AddressIndex), useLegacyDerivation))
+	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(masterSeed, uint32(AddressIndex), useLegacyDerivation))
 
 	return &Wallet{KeyPair: kp, AddressIndex: AddressIndex}
 }
