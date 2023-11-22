@@ -6,15 +6,14 @@ package wasmclient
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient/iscclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 type WasmClientContext struct {
 	Err       error
-	keyPair   *cryptolib.KeyPair
+	keyPair   *iscclient.Keypair
 	ReqID     wasmtypes.ScRequestID
 	scName    string
 	scHname   wasmtypes.ScHname
@@ -46,7 +45,7 @@ func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
 	return s.svcClient.CurrentChainID()
 }
 
-func (s *WasmClientContext) CurrentKeyPair() *cryptolib.KeyPair {
+func (s *WasmClientContext) CurrentKeyPair() *iscclient.Keypair {
 	return s.keyPair
 }
 
@@ -64,10 +63,10 @@ func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) {
 }
 
 func (s *WasmClientContext) ServiceContractName(contractName string) {
-	s.scHname = wasmtypes.HnameFromBytes(isc.Hn(contractName).Bytes())
+	s.scHname = wasmtypes.NewScHname(contractName)
 }
 
-func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
+func (s *WasmClientContext) SignRequests(keyPair *iscclient.Keypair) {
 	s.keyPair = keyPair
 }
 

@@ -6,7 +6,13 @@ use crypto::{
     signatures::ed25519,
     signatures::ed25519::Signature,
 };
+use hmac::{Hmac, Mac};
+use sha2::Sha512;
 use wasmlib::*;
+
+use crate::codec::Codec;
+
+type HmacSha512 = Hmac<Sha512>;
 
 pub struct KeyPair {
     private_key: ed25519::SecretKey,
@@ -46,17 +52,38 @@ impl KeyPair {
             .verify(&Signature::from_bytes(sig_data), data)
     }
 
-    pub fn sub_seed(seed: &[u8], n: u64) -> Vec<u8> {
-        let index_bytes = uint64_to_bytes(n);
-        let mut hash_of_index_bytes = Blake2b256::digest(index_bytes.to_owned());
-        for i in 0..seed.len() {
-            hash_of_index_bytes[i] ^= seed[i];
+    pub fn sub_seed(seed: &[u8], index: u32) -> Vec<u8> {
+        let mut h = HmacSha512::new_from_slice(b"ed25519 seed")
+            .expect("hmac key");
+        h.update(&seed);
+        let mut hash = h.finalize().into_bytes();
+        let mut key = hash[..32].to_vec();
+        let mut chain_code = hash[32..].to_vec();
+
+        let mut coin_type: u32 = 1;
+        if Codec::hrp_for_client() == "iota" {
+            coin_type = 4218;
         }
-        hash_of_index_bytes.to_vec()
+        if Codec::hrp_for_client() == "smr" {
+            coin_type = 4219;
+        }
+
+        let path: [u32; 5] = [44, coin_type, index, 0, 0];
+        for element in path {
+            let buf = (element | 0x80000000).to_be_bytes();
+            h = HmacSha512::new_from_slice(&chain_code).expect("hmac chain code");
+            h.update(&[0]);
+            h.update(&key);
+            h.update(&buf);
+            hash = h.finalize().into_bytes();
+            key = hash[..32].to_vec();
+            chain_code = hash[32..].to_vec();
+        }
+        key.to_vec()
     }
 
-    pub fn from_sub_seed(seed: &[u8], n: u64) -> KeyPair {
-        let sub_seed = KeyPair::sub_seed(seed, n);
+    pub fn from_sub_seed(seed: &[u8], index: u32) -> KeyPair {
+        let sub_seed = KeyPair::sub_seed(seed, index);
         return KeyPair::new(&sub_seed);
     }
 }
@@ -91,17 +118,17 @@ mod tests {
         let pair1 = KeyPair::new(&my_seed);
         let pair2 = pair1.clone();
 
-        println!("Publ1: {}", bytes_to_string(&pair1.public_key.to_bytes()));
-        println!("Publ2: {}", bytes_to_string(&pair2.public_key.to_bytes()));
-        println!("Priv1: {}", bytes_to_string(&pair1.private_key.to_bytes()));
-        println!("Priv2: {}", bytes_to_string(&pair2.private_key.to_bytes()));
+        println!("Publ1: {}", bytes_to_string(&pair1.public_key.as_slice()));
+        println!("Publ2: {}", bytes_to_string(&pair2.public_key.as_slice()));
+        println!("Priv1: {}", bytes_to_string(&pair1.private_key.as_slice()));
+        println!("Priv2: {}", bytes_to_string(&pair2.private_key.as_slice()));
         assert_eq!(
-            bytes_to_string(&pair1.public_key.to_bytes()),
-            bytes_to_string(&pair2.public_key.to_bytes())
+            bytes_to_string(&pair1.public_key.as_slice()),
+            bytes_to_string(&pair2.public_key.as_slice())
         );
         assert_eq!(
-            bytes_to_string(&pair2.private_key.to_bytes()),
-            bytes_to_string(&pair2.private_key.to_bytes())
+            bytes_to_string(&pair2.private_key.as_slice()),
+            bytes_to_string(&pair2.private_key.as_slice())
         );
     }
 
@@ -109,14 +136,14 @@ mod tests {
     fn keypair_construct() {
         let my_seed = bytes_from_string(&MYSEED);
         let pair = KeyPair::new(&my_seed);
-        println!("Publ: {}", bytes_to_string(&pair.public_key.to_bytes()));
-        println!("Priv: {}", bytes_to_string(&pair.private_key.to_bytes()));
+        println!("Publ: {}", bytes_to_string(&pair.public_key.as_slice()));
+        println!("Priv: {}", bytes_to_string(&pair.private_key.as_slice()));
         assert_eq!(
-            bytes_to_string(&pair.public_key.to_bytes()),
+            bytes_to_string(&pair.public_key.as_slice()),
             "0x30adc0bd555d56ed51895528e47dcb403e36e0026fe49b6ae59e9adcea5f9a87"
         );
         assert_eq!(
-            bytes_to_string(&pair.private_key.to_bytes()),
+            bytes_to_string(&pair.private_key.as_slice()),
             "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
         );
     }
@@ -125,15 +152,15 @@ mod tests {
     fn keypair_from_sub_seed_0() {
         let my_seed = bytes_from_string(&MYSEED);
         let pair = KeyPair::from_sub_seed(&my_seed, 0);
-        println!("Publ: {}", bytes_to_string(&pair.public_key.to_bytes()));
-        println!("Priv: {}", bytes_to_string(&pair.private_key.to_bytes()));
+        println!("Publ: {}", bytes_to_string(&pair.public_key.as_slice()));
+        println!("Priv: {}", bytes_to_string(&pair.private_key.as_slice()));
         assert_eq!(
-            bytes_to_string(&pair.public_key.to_bytes()),
-            "0x40a757d26f6ef94dccee5b4f947faa78532286fe18117f2150a80acf2a95a8e2"
+            bytes_to_string(&pair.public_key.as_slice()),
+            "0x80c6204f1aa7eb3a3c15f657d22aeec7f53f936a45d21f0a3bb2fb5de7fe002f"
         );
         assert_eq!(
-            bytes_to_string(&pair.private_key.to_bytes()),
-            "0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af"
+            bytes_to_string(&pair.private_key.as_slice()),
+            "0x65c0583f4d507edf6373e4bad8a649f2793bdf619a7a8e69efbebc8f6986fcbf"
         );
     }
 
@@ -141,15 +168,15 @@ mod tests {
     fn keypair_from_sub_seed_1() {
         let my_seed = bytes_from_string(&MYSEED);
         let pair = KeyPair::from_sub_seed(&my_seed, 1);
-        println!("Publ: {}", bytes_to_string(&pair.public_key.to_bytes()));
-        println!("Priv: {}", bytes_to_string(&pair.private_key.to_bytes()));
+        println!("Publ: {}", bytes_to_string(&pair.public_key.as_slice()));
+        println!("Priv: {}", bytes_to_string(&pair.private_key.as_slice()));
         assert_eq!(
-            bytes_to_string(&pair.public_key.to_bytes()),
-            "0x120d2b26fc1b1d53bb916b8a277bcc2efa09e92c95be1a8fd5c6b3adbc795679"
+            bytes_to_string(&pair.public_key.as_slice()),
+            "0xfa482d65acb90e55dba4724886c79e1df663d3f95813a6674033504b89ffe7cd"
         );
         assert_eq!(
-            bytes_to_string(&pair.private_key.to_bytes()),
-            "0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8"
+            bytes_to_string(&pair.private_key.as_slice()),
+            "0x8e80478dda48a3141e349ceac409ab9a4c742452c4e7e708d36fcb12b72b59d5"
         );
     }
 
@@ -160,7 +187,8 @@ mod tests {
         let signed_seed = pair.sign(&my_seed);
         println!("Seed: {}", bytes_to_string(&my_seed));
         println!("Sign: {}", bytes_to_string(&signed_seed));
-        assert_eq!(bytes_to_string(&signed_seed), "0xa9571cc0c8612a63feaa325372a33c2f4ff6c414def18eb85ce4afe9b7cf01b84dba089278ca992e76fad8a50a76e3bf157216c445a404dc9e0424c250640906");
+        assert_eq!(bytes_to_string(&signed_seed),
+                   "0xa9571cc0c8612a63feaa325372a33c2f4ff6c414def18eb85ce4afe9b7cf01b84dba089278ca992e76fad8a50a76e3bf157216c445a404dc9e0424c250640906");
         assert!(pair.verify(&my_seed, &signed_seed));
     }
 
@@ -171,7 +199,7 @@ mod tests {
         println!("Seed: {}", bytes_to_string(&sub_seed));
         assert_eq!(
             bytes_to_string(&sub_seed),
-            "0x24642f47bd363fbd4e05f13ed6c60b04c8a4cf1d295f76fc16917532bc4cd0af"
+            "0x65c0583f4d507edf6373e4bad8a649f2793bdf619a7a8e69efbebc8f6986fcbf"
         );
     }
 
@@ -182,7 +210,7 @@ mod tests {
         println!("Seed: {}", bytes_to_string(&sub_seed));
         assert_eq!(
             bytes_to_string(&sub_seed),
-            "0xb83d28550d9ee5651796eeb36027e737f0d79495b56d3d8931c716f2141017c8"
+            "0x8e80478dda48a3141e349ceac409ab9a4c742452c4e7e708d36fcb12b72b59d5"
         );
     }
 }

@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 	"sync"
 	"time"
@@ -15,9 +14,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient/iscclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -26,7 +24,7 @@ import (
 type IClientService interface {
 	CallViewByHname(hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
 	CurrentChainID() wasmtypes.ScChainID
-	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (wasmtypes.ScRequestID, error)
+	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *iscclient.Keypair) (wasmtypes.ScRequestID, error)
 	SubscribeEvents(eventHandler *WasmClientEvents) error
 	UnsubscribeEvents(eventsID uint32)
 	WaitUntilRequestProcessed(reqID wasmtypes.ScRequestID, timeout time.Duration) error
@@ -90,35 +88,28 @@ func (svc *WasmClientService) IsHealthy() bool {
 	return err == nil
 }
 
-func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
-	iscChainID := cvt.IscChainID(&chainID)
-	iscContract := cvt.IscHname(hContract)
-	iscFunction := cvt.IscHname(hFunction)
-	params, err := dict.FromBytes(args)
-	if err != nil {
-		return reqID, err
-	}
-
+func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *iscclient.Keypair) (reqID wasmtypes.ScRequestID, err error) {
 	nonce, err := svc.cachedNonce(keyPair)
 	if err != nil {
 		return reqID, err
 	}
 
-	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce, math.MaxUint64)
-	iscAllowance := cvt.IscAllowance(allowance)
-	req.WithAllowance(iscAllowance)
-	signed := req.Sign(keyPair)
-	reqID = cvt.ScRequestID(signed.ID())
+	req, err := iscclient.NewOffLedgerRequest(chainID, hContract, hFunction, args, allowance, nonce)
+	if err != nil {
+		return reqID, err
+	}
+
+	req.Sign(keyPair)
 
 	_, err = svc.waspClient.RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
-		ChainId: iscChainID.String(),
-		Request: iotago.EncodeHex(signed.Bytes()),
+		ChainId: chainID.String(),
+		Request: iotago.EncodeHex(req.Bytes()),
 	}).Execute()
-	return reqID, apiError(err)
+	return req.ID(), apiError(err)
 }
 
 func (svc *WasmClientService) SetCurrentChainID(chainID string) error {
-	err := SetSandboxWrappers(chainID)
+	err := iscclient.SetSandboxWrappers(chainID)
 	if err != nil {
 		return err
 	}
@@ -179,19 +170,18 @@ func apiError(err error) error {
 	return err
 }
 
-func (svc *WasmClientService) cachedNonce(keyPair *cryptolib.KeyPair) (uint64, error) {
+func (svc *WasmClientService) cachedNonce(keyPair *iscclient.Keypair) (uint64, error) {
 	svc.nonceLock.Lock()
 	defer svc.nonceLock.Unlock()
 
-	key := string(keyPair.GetPublicKey().AsBytes())
+	key := string(keyPair.GetPublicKey())
 	nonce, ok := svc.nonces[key]
 	if ok {
 		svc.nonces[key] = nonce + 1
 		return nonce, nil
 	}
 
-	iscAgent := isc.NewAgentID(keyPair.Address())
-	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
+	agent := wasmtypes.ScAgentIDFromAddress(keyPair.Address())
 	ctx := NewWasmClientContext(svc, coreaccounts.ScName)
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
 	n.Params.AgentID().SetValue(agent)

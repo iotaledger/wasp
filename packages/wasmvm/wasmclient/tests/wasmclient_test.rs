@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use wasmlib::{address_from_bytes, chain_id_from_bytes, chain_id_to_bytes, chain_id_to_string, hex_decode, IEventHandlers, request_id_from_bytes};
 
-use wasmclient::{self, isc::keypair, wasmclientcontext::*, wasmclientservice::*};
+use wasmclient::{self, iscclient::keypair, wasmclientcontext::*, wasmclientservice::*};
 
 const MYSEED: &str = "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3";
 const WASP_API: &str = "http://localhost:19090";
@@ -65,12 +65,27 @@ fn setup_client() -> WasmClientContext {
     assert!(svc.is_healthy());
     svc.set_default_chain_id().unwrap();
     let mut ctx = WasmClientContext::new(Arc::new(svc), "testwasmlib");
-    ctx.sign_requests(&keypair::KeyPair::from_sub_seed(
+    let wallet = keypair::KeyPair::from_sub_seed(
         &wasmlib::bytes_from_string(MYSEED),
         0,
-    ));
+    );
+    ctx.sign_requests(&wallet);
     check_error(&ctx);
     return ctx;
+}
+
+#[test]
+fn sub_seeds() {
+    let mut svc = WasmClientService::new(WASP_API);
+    assert!(svc.is_healthy());
+    svc.set_default_chain_id().unwrap();
+    let my_seed = wasmlib::bytes_from_string(MYSEED);
+    let mut sub_seed = keypair::KeyPair::sub_seed(&my_seed,0);
+    let mut address = wasmlib::bytes_to_string(&sub_seed);
+    assert_eq!(address, "0x65c0583f4d507edf6373e4bad8a649f2793bdf619a7a8e69efbebc8f6986fcbf");
+    sub_seed = keypair::KeyPair::sub_seed(&my_seed,1);
+    address = wasmlib::bytes_to_string(&sub_seed);
+    assert_eq!(address, "0x8e80478dda48a3141e349ceac409ab9a4c742452c4e7e708d36fcb12b72b59d5");
 }
 
 #[test]

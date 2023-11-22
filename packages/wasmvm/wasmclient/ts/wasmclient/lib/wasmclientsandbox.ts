@@ -1,13 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as isc from './isc';
+import * as iscclient from './iscclient';
 import * as wasmlib from 'wasmlib';
 import {WasmClientService} from './';
 
 export class WasmClientSandbox {
-    Err: isc.Error = null;
-    keyPair: isc.KeyPair | null = null;
+    Err: iscclient.Error = null;
+    keyPair: iscclient.KeyPair | null = null;
     nonce: u64 = 0n;
     ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
     scName: string;

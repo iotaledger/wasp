@@ -93,7 +93,7 @@ impl OffLedgerRequest {
             self.nonce,
         );
         req.signature = OffLedgerSignature::new(&key_pair.public_key);
-        req.signature.signature = key_pair.sign(&req.essence());
+        req.signature.signature = key_pair.sign(&Blake2b256::digest(&req.essence()));
         return req;
     }
 

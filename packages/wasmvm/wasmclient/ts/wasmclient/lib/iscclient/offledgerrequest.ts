@@ -70,7 +70,7 @@ export class OffLedgerRequest {
     public sign(keyPair: KeyPair): OffLedgerRequest {
         const req = new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
         req.signature = new OffLedgerSignature(keyPair.publicKey);
-        req.signature.signature = keyPair.sign(req.essence());
+        req.signature.signature = keyPair.sign(Blake2b.sum256(req.essence()));
         return req;
     }
 
