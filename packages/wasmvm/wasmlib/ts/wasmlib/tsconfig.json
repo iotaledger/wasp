@@ -8,9 +8,8 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "strict": true,
-    "types": ["node", "Promise", "jest"],
+    "types": ["./@types", "node", "Promise", "jest"],
     "lib": ["ES2021"],
-    "target": "ES2021",
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "target": "ES2021"
   }
 }
