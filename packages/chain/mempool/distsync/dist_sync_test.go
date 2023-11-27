@@ -38,8 +38,10 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 			}
 			return nil
 		}
-		requestReceivedCB := func(req isc.Request) {
+		requestReceivedCB := func(req isc.Request) bool {
+			_, have := recv[thisNodeID]
 			recv[thisNodeID] = req
+			return !have
 		}
 		nodes[nid] = distsync.New(thisNodeID, requestNeededCB, requestReceivedCB, 100, func(count int) {}, log)
 	}
