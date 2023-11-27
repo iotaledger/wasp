@@ -12,8 +12,8 @@ import (
 )
 
 type Keypair struct {
-	privateKey []byte
-	publicKey  []byte
+	privateKey ed25519.PrivateKey
+	publicKey  ed25519.PublicKey
 }
 
 func MakeSubSeed(seed []byte, index uint32) []byte {
@@ -53,7 +53,7 @@ func KeyPairFromSeed(seed []byte) *Keypair {
 	pair := ed25519.NewKeyFromSeed(seed)
 	return &Keypair{
 		privateKey: pair,
-		publicKey:  pair[32:],
+		publicKey:  ed25519.PublicKey(pair[32:]),
 	}
 }
 
@@ -68,10 +68,10 @@ func (kp *Keypair) Address() wasmtypes.ScAddress {
 	return wasmtypes.AddressFromBytes(buf)
 }
 
-func (kp *Keypair) GetPrivateKey() []byte {
+func (kp *Keypair) GetPrivateKey() ed25519.PrivateKey {
 	return kp.privateKey
 }
 
-func (kp *Keypair) GetPublicKey() []byte {
+func (kp *Keypair) GetPublicKey() ed25519.PublicKey {
 	return kp.publicKey
 }
