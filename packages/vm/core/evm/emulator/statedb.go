@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 const (
@@ -75,8 +74,6 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
-var ErrNonZeroWeiRemainder = coreerrors.Register("cannot convert %d to base tokens decimals: non-zero remainder (%d)")
-
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == 0 {
 		return
@@ -84,10 +81,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	baseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
-	if remainder.Sign() != 0 {
-		panic(ErrNonZeroWeiRemainder.Create(amount.Uint64(), remainder.Uint64()))
-	}
+	baseTokens, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
 	s.ctx.SubBaseTokensBalance(addr, baseTokens)
 }
 
@@ -98,10 +92,7 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	baseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
-	if remainder.Sign() != 0 {
-		panic(ErrNonZeroWeiRemainder.Create(amount.Uint64(), remainder.Uint64()))
-	}
+	baseTokens, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
 	s.ctx.AddBaseTokensBalance(addr, baseTokens)
 }
 
