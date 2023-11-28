@@ -113,7 +113,12 @@ func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftOutput *iotago
 		panic("empty NFTID")
 	}
 
-	creditNFTToAccount(state, agentID, nftOutput.NFTID, nftOutput.ImmutableFeatureSet().IssuerFeature().Address)
+	issuerFeature := nftOutput.ImmutableFeatureSet().IssuerFeature()
+	var issuer iotago.Address
+	if issuerFeature != nil {
+		issuer = issuerFeature.Address
+	}
+	creditNFTToAccount(state, agentID, nftOutput.NFTID, issuer)
 	touchAccount(state, agentID, chainID)
 
 	// save the NFTOutput with a temporary outputIndex so the NFTData is readily available (it will be updated upon block closing)
