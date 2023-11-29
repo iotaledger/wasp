@@ -25,7 +25,7 @@ Make sure to provide instructions for the maintainer as well as any relevant con
 
 Tick the boxes that are relevant to your changes, and delete any items that are not.
 
-- [ ] I have followed the [contribution guidelines](https://wiki.iota.org/smart-contracts/contribute) for this project
+- [ ] I have followed the [contribution guidelines](/CONTRIBUTING.md) for this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have selected the `develop` branch as the target branch
 - [ ] I have commented my code, particularly in hard-to-understand areas
