@@ -71,7 +71,8 @@ impl OffLedgerRequest {
         hname_encode(&mut enc, self.entry_point);
         enc.fixed_bytes(&self.params, self.params.len());
         enc.vlu_encode(self.nonce);
-        enc.vlu_encode(Wrapping(self.gas_budget).add(Wrapping(1)).0);
+        let gas_budget = Wrapping(self.gas_budget).add(Wrapping(1)).0;
+        enc.vlu_encode(gas_budget);
         let allowance = self.allowance.to_bytes();
         enc.fixed_bytes(&allowance, allowance.len());
     }
@@ -84,17 +85,10 @@ impl OffLedgerRequest {
         return request_id_from_bytes(&hash);
     }
 
-    pub fn sign(&self, key_pair: &KeyPair) -> Self {
-        let mut req = OffLedgerRequest::new(
-            &self.chain_id,
-            &self.contract,
-            &self.entry_point,
-            &self.params,
-            self.nonce,
-        );
-        req.signature = OffLedgerSignature::new(&key_pair.public_key);
-        req.signature.signature = key_pair.sign(&Blake2b256::digest(&req.essence()));
-        return req;
+    pub fn sign(&mut self, key_pair: &KeyPair) {
+        self.signature = OffLedgerSignature::new(&key_pair.public_key);
+        let hash = Blake2b256::digest(&self.essence());
+        self.signature.signature = key_pair.sign(&hash);
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

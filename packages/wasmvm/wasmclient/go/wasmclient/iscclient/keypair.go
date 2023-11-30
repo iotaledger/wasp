@@ -1,12 +1,12 @@
 package iscclient
 
 import (
+	"crypto/ed25519"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/binary"
 
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/crypto/ed25519"
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -74,4 +74,8 @@ func (kp *Keypair) GetPrivateKey() ed25519.PrivateKey {
 
 func (kp *Keypair) GetPublicKey() ed25519.PublicKey {
 	return kp.publicKey
+}
+
+func (kp *Keypair) Sign(data []byte) []byte {
+	return ed25519.Sign(kp.privateKey, data)
 }

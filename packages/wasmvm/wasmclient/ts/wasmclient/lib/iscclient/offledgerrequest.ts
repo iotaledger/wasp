@@ -24,12 +24,12 @@ export class OffLedgerRequest {
     signature: OffLedgerSignature = new OffLedgerSignature(new KeyPair(new Uint8Array(0)).publicKey);
     nonce: u64;
     allowance: wasmlib.ScAssets = new wasmlib.ScAssets(new Uint8Array(0));
-    gasBudget: u64 = 2n ** 64n - 1n;
+    gasBudget: u64 = 0xffffffffffffffffn;
 
-    public constructor(chainID: wasmlib.ScChainID, contract: wasmlib.ScHname, entryPoint: wasmlib.ScHname, params: Uint8Array, nonce: u64) {
+    public constructor(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, params: Uint8Array, nonce: u64) {
         this.chainID = chainID;
-        this.contract = contract;
-        this.entryPoint = entryPoint;
+        this.contract = hContract;
+        this.entryPoint = hFunction;
         this.params = params;
         this.nonce = nonce;
     }
@@ -51,8 +51,8 @@ export class OffLedgerRequest {
         chainIDEncode(enc, this.chainID);
         hnameEncode(enc, this.contract);
         hnameEncode(enc, this.entryPoint);
-        enc.fixedBytes(this.params, this.params.length);
-        enc.vliEncode64(this.nonce);
+        enc.fixedBytes(this.params, this.params.length as u32);
+        enc.vluEncode64(this.nonce);
         enc.vluEncode64((this.gasBudget < 0xffffffffffffffffn) ? this.gasBudget + 1n : 0n);
         const allowance = this.allowance.toBytes();
         enc.fixedBytes(allowance, allowance.length);
@@ -60,18 +60,17 @@ export class OffLedgerRequest {
     }
 
     public ID(): wasmlib.ScRequestID {
-        // req id is hash of req bytes with output index zero
         const hash = Blake2b.sum256(this.bytes());
+        // req id is hash of req bytes with concatenated output index zero
         const reqId = new wasmlib.ScRequestID();
         reqId.id.set(hash, 0);
         return reqId;
     }
 
-    public sign(keyPair: KeyPair): OffLedgerRequest {
-        const req = new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
-        req.signature = new OffLedgerSignature(keyPair.publicKey);
-        req.signature.signature = keyPair.sign(Blake2b.sum256(req.essence()));
-        return req;
+    public sign(keyPair: KeyPair): void {
+        this.signature = new OffLedgerSignature(keyPair.publicKey);
+        const hash = Blake2b.sum256(this.essence());
+        this.signature.signature = keyPair.sign(hash);
     }
 
     public withAllowance(allowance: wasmlib.ScAssets): void {

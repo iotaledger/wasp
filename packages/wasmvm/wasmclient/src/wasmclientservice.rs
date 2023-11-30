@@ -117,18 +117,18 @@ impl WasmClientService {
                 nonce,
             );
         req.with_allowance(&allowance);
-        let signed = req.sign(key_pair);
+        req.sign(key_pair);
 
         let url = self.wasp_api.clone() + "/v1/requests/offledger";
         let body = APIOffLedgerRequest {
             chain_id: chain_id.to_string(),
-            request: hex_encode(&signed.to_bytes()),
+            request: hex_encode(&req.to_bytes()),
         };
         let client = blocking::Client::new();
         match client.post(url).json(&body).send() {
             Ok(v) => match v.status() {
-                StatusCode::OK => Ok(signed.id()),
-                StatusCode::ACCEPTED => Ok(signed.id()),
+                StatusCode::OK => Ok(req.id()),
+                StatusCode::ACCEPTED => Ok(req.id()),
                 status => {
                     match v.json::<JsonError>() {
                         Ok(err_msg) => Err(Self::api_error(status, err_msg)),

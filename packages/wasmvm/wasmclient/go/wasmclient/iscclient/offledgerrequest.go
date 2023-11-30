@@ -29,7 +29,7 @@ type OffLedgerSignature struct {
 func NewOffLedgerRequest(
 	chainID wasmtypes.ScChainID,
 	hContract, hFunction wasmtypes.ScHname,
-	args []byte,
+	params []byte,
 	allowance *wasmlib.ScAssets,
 	nonce uint64,
 ) (*OffLedgerRequest, error) {
@@ -37,7 +37,7 @@ func NewOffLedgerRequest(
 		ChainID:    chainID,
 		Contract:   hContract,
 		EntryPoint: hFunction,
-		Params:     args,
+		Params:     params,
 		Nonce:      nonce,
 		Allowance:  allowance,
 		GasBudget:  math.MaxUint64,
@@ -45,13 +45,17 @@ func NewOffLedgerRequest(
 }
 
 func (req *OffLedgerRequest) Bytes() []byte {
-	enc := wasmtypes.NewWasmEncoder()
+	enc := req.essenceEncode()
 	enc.FixedBytes(req.Signature.PublicKey, 32)
 	enc.Bytes(req.Signature.Signature)
 	return enc.Buf()
 }
 
 func (req *OffLedgerRequest) Essence() []byte {
+	return req.essenceEncode().Buf()
+}
+
+func (req *OffLedgerRequest) essenceEncode() *wasmtypes.WasmEncoder {
 	enc := wasmtypes.NewWasmEncoder()
 	enc.Byte(1) // requestKindOffLedgerISC
 	wasmtypes.ChainIDEncode(enc, req.ChainID)
@@ -59,29 +63,26 @@ func (req *OffLedgerRequest) Essence() []byte {
 	wasmtypes.HnameEncode(enc, req.EntryPoint)
 	enc.FixedBytes(req.Params, uint32(len(req.Params)))
 	enc.VluEncode(req.Nonce)
-	if req.GasBudget < math.MaxUint64 {
-		req.GasBudget++
+	gasBudget := req.GasBudget
+	if gasBudget < math.MaxUint64 {
+		gasBudget++
 	} else {
-		req.GasBudget = 0
+		gasBudget = 0
 	}
-	enc.VluEncode(req.GasBudget)
-	enc.FixedBytes(req.Allowance.Bytes(), uint32(len(req.Allowance.Bytes())))
-	return enc.Buf()
+	enc.VluEncode(gasBudget)
+	allowance := req.Allowance.Bytes()
+	enc.FixedBytes(allowance, uint32(len(allowance)))
+	return enc
+}
+
+func (req *OffLedgerRequest) ID() wasmtypes.ScRequestID {
+	hash := blake2b.Sum256(req.Bytes())
+	// req id is hash of req bytes with concatenated output index zero
+	return wasmtypes.RequestIDFromBytes(append(hash[:], 0, 0))
 }
 
 func (req *OffLedgerRequest) Sign(keyPair *Keypair) {
 	req.Signature.PublicKey = keyPair.GetPublicKey()
-	req.Signature.Signature = ed25519.Sign(keyPair.GetPrivateKey(), req.Essence())
-}
-
-func (req *OffLedgerRequest) ID() wasmtypes.ScRequestID {
-	// req id is hash of req bytes with output index zero
-	h, err := blake2b.New256(nil)
-	if err != nil {
-		panic(err)
-	}
-	h.Write(req.Bytes())
-	h.Write([]byte{0, 0})
-	hash := h.Sum(nil)
-	return wasmtypes.RequestIDFromBytes(hash)
+	hash := blake2b.Sum256(req.Essence())
+	req.Signature.Signature = keyPair.Sign(hash[:])
 }

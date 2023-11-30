@@ -66,9 +66,10 @@ export class KeyPair {
     }
 
     public address(): wasmlib.ScAddress {
+        const address = Blake2b.sum256(this.publicKey);
         const addr = new Uint8Array(wasmlib.ScLengthEd25519);
         addr[0] = wasmlib.ScAddressEd25519;
-        addr.set(Blake2b.sum256(this.publicKey), 1);
+        addr.set(address, 1);
         return wasmlib.addressFromBytes(addr);
     }
 
