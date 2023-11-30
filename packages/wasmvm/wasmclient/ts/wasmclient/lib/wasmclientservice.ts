@@ -68,13 +68,13 @@ export class WasmClientService {
         }
         const req = new iscclient.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
         req.withAllowance(allowance);
-        const signed = req.sign(keyPair);
-        const reqID = signed.ID();
+        req.sign(keyPair);
+        const reqID = req.ID();
 
         const url = this.waspAPI + '/v1/requests/offledger';
         const offLedgerRequest: iscclient.APIOffLedgerRequest = {
             chainId: chainID.toString(),
-            request: wasmlib.hexEncode(signed.bytes()),
+            request: wasmlib.hexEncode(req.bytes()),
         };
         try {
             const client = new iscclient.SyncRequestClient();
