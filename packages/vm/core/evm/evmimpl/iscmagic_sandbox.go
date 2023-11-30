@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -59,10 +58,7 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
 
 func (h *magicContractHandler) handleCallValue(callValue *big.Int) uint64 {
-	adjustedTxValue, remainder := util.EthereumDecimalsToBaseTokenDecimals(callValue, parameters.L1().BaseToken.Decimals)
-	if remainder.Sign() != 0 {
-		panic(emulator.ErrNonZeroWeiRemainder.Create(callValue, remainder.Uint64()))
-	}
+	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue, parameters.L1().BaseToken.Decimals)
 
 	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
 	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address())

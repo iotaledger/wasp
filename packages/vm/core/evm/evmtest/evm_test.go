@@ -2179,20 +2179,20 @@ func TestDecimalsConversion(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// call any function including 999999999999 wei as value (which is just 1 wei short of 1 base token)
-	lessThanOneSMR := new(big.Int).SetUint64(999999999999)
+	lessThanOneGlow := new(big.Int).SetUint64(999999999999)
 	valueInBaseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(
-		lessThanOneSMR,
+		lessThanOneGlow,
 		parameters.L1().BaseToken.Decimals,
 	)
 	t.Log(valueInBaseTokens)
 	require.Zero(t, valueInBaseTokens)
-	require.EqualValues(t, lessThanOneSMR.Uint64(), remainder.Uint64())
+	require.EqualValues(t, lessThanOneGlow.Uint64(), remainder.Uint64())
 
 	_, err := iscTest.CallFn(
-		[]ethCallOptions{{sender: ethKey, value: lessThanOneSMR, gasLimit: 100000}},
+		[]ethCallOptions{{sender: ethKey, value: lessThanOneGlow, gasLimit: 100000}},
 		"sendTo",
 		iscTest.address,
 		big.NewInt(0),
 	)
-	require.ErrorContains(t, err, "non-zero remainder")
+	require.ErrorContains(t, err, "execution reverted")
 }

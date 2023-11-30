@@ -493,15 +493,17 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 }
 
 // A callback for distSync.
-func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
+func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 	offLedgerReq, ok := request.(isc.OffLedgerRequest)
 	if !ok {
 		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
-		return
+		return false
 	}
 	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
 		mpi.addOffledger(offLedgerReq)
+		return true
 	}
+	return false
 }
 
 func (mpi *mempoolImpl) nonce(account isc.AgentID) uint64 {
