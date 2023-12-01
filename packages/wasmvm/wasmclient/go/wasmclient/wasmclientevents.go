@@ -9,8 +9,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
+
+type SubscriptionCommand struct {
+	Command string `json:"command"`
+	Topic   string `json:"topic"`
+}
 
 type Event struct {
 	ChainID    wasmtypes.ScChainID
@@ -120,11 +124,9 @@ func RemoveHandler(eventHandlers []*WasmClientEvents, eventsID uint32) []*WasmCl
 }
 
 func subscribe(ctx context.Context, ws *websocket.Conn, topic string) error {
-	msg := commands.SubscriptionCommand{
-		BaseCommand: commands.BaseCommand{
-			Command: commands.CommandSubscribe,
-		},
-		Topic: topic,
+	msg := SubscriptionCommand{
+		Command: "subscribe",
+		Topic:   topic,
 	}
 	err := wsjson.Write(ctx, ws, msg)
 	if err != nil {

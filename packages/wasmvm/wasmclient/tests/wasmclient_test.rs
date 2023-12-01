@@ -178,6 +178,7 @@ fn event_handling() {
     {
         let name = proc.name.clone();
         events.on_test_wasm_lib_test(move |e| {
+            println!("{}", e.name.to_string());
             let mut name = name.lock().unwrap();
             *name = e.name.clone();
         });
