@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -103,7 +102,7 @@ func (svc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract
 
 	_, err = svc.waspClient.RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),
-		Request: iotago.EncodeHex(req.Bytes()),
+		Request: wasmtypes.HexEncode(req.Bytes()),
 	}).Execute()
 	return req.ID(), apiError(err)
 }
