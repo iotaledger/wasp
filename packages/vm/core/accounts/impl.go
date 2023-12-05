@@ -309,6 +309,10 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	}
 
 	out, _ := GetFoundryOutput(state, sn, ctx.ChainID())
+	if out == nil {
+		panic(errFoundryNotFound)
+	}
+
 	nativeTokenID, err := out.NativeTokenID()
 	ctx.RequireNoError(err, "internal")
 
