@@ -47,11 +47,12 @@ func (h *magicContractHandler) Allow(target common.Address, allowance iscmagic.I
 
 // handler for ISCSandbox::takeAllowedFunds
 func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance iscmagic.ISCAssets) {
-	taken := subtractFromAllowance(h.ctx, addr, h.caller.Address(), allowance.Unwrap())
+	assets := allowance.Unwrap()
+	subtractFromAllowance(h.ctx, addr, h.caller.Address(), assets)
 	h.ctx.Privileged().MustMoveBetweenAccounts(
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), addr),
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
-		taken,
+		assets,
 	)
 }
 
