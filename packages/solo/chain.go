@@ -5,18 +5,27 @@ package solo
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"math/big"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -273,6 +282,42 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 		return err
 	}
 	return ch.DeployContract(keyPair, name, hprog, params...)
+}
+
+// DeployEVMContract deploys an evm contract on the chain
+func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) (common.Address, abi.ABI) {
+	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
+
+	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(ch.ChainID, creatorAddress))
+
+	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
+	require.NoError(ch.Env.T, err)
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(ch.Env.T, err)
+
+	data := []byte{}
+	data = append(data, bytecode...)
+	data = append(data, constructorArguments...)
+
+	value := big.NewInt(0)
+
+	gasLimit, err := ch.EVM().EstimateGas(ethereum.CallMsg{
+		From:  creatorAddress,
+		Value: value,
+		Data:  data,
+	}, nil)
+	require.NoError(ch.Env.T, err)
+
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, value, gasLimit, ch.EVM().GasPrice(), data),
+		evmutil.Signer(big.NewInt(int64(ch.EVM().ChainID()))),
+		creator,
+	)
+	require.NoError(ch.Env.T, err)
+
+	err = ch.EVM().SendTransaction(tx)
+	require.NoError(ch.Env.T, err)
+	return crypto.CreateAddress(creatorAddress, nonce), contractABI
 }
 
 // GetInfo return main parameters of the chain:

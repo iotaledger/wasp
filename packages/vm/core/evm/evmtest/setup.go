@@ -6,11 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -258,14 +256,6 @@ func (e *SoloChainEnv) deployERC20ExampleContract(creator *ecdsa.PrivateKey) *er
 	return &erc20ContractInstance{e.DeployContract(creator, evmtest.ERC20ExampleContractABI, evmtest.ERC20ExampleContractBytecode)}
 }
 
-func (e *SoloChainEnv) setSigner(s types.Signer) {
-	e.signer = s
-}
-
-func (e *SoloChainEnv) getSigner() types.Signer {
-	return e.signer
-}
-
 func (e *SoloChainEnv) maxGasLimit() uint64 {
 	fp := e.Chain.GetGasFeePolicy()
 	gl := e.Chain.GetGasLimits()
@@ -273,42 +263,12 @@ func (e *SoloChainEnv) maxGasLimit() uint64 {
 }
 
 func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *EVMContractInstance {
-	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
-
-	nonce := e.getNonce(creatorAddress)
-
-	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
-	require.NoError(e.t, err)
-	constructorArguments, err := contractABI.Pack("", args...)
-	require.NoError(e.t, err)
-
-	data := []byte{}
-	data = append(data, bytecode...)
-	data = append(data, constructorArguments...)
-
-	value := big.NewInt(0)
-
-	gasLimit, err := e.evmChain.EstimateGas(ethereum.CallMsg{
-		From:  creatorAddress,
-		Value: value,
-		Data:  data,
-	}, nil)
-	require.NoError(e.t, err)
-
-	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, value, gasLimit, e.evmChain.GasPrice(), data),
-		e.getSigner(),
-		creator,
-	)
-	require.NoError(e.t, err)
-
-	err = e.evmChain.SendTransaction(tx)
-	require.NoError(e.t, err)
+	contractAddr, contractABI := e.Chain.DeployEVMContract(creator, abiJSON, bytecode, args...)
 
 	return &EVMContractInstance{
 		chain:         e,
 		defaultSender: creator,
-		address:       crypto.CreateAddress(creatorAddress, nonce),
+		address:       contractAddr,
 		abi:           contractABI,
 	}
 }
