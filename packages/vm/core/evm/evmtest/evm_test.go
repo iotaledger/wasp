@@ -1598,7 +1598,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 	nonce := storage.chain.getNonce(senderAddress)
 	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, env.maxGasLimit(), gasPrice, callArguments)
 
-	tx, err := types.SignTx(unsignedTx, storage.chain.signer(), ethKey)
+	tx, err := types.SignTx(unsignedTx, storage.chain.getSigner(), ethKey)
 	require.NoError(t, err)
 
 	err = storage.chain.evmChain.SendTransaction(tx)
@@ -2195,4 +2195,15 @@ func TestDecimalsConversion(t *testing.T) {
 		big.NewInt(0),
 	)
 	require.ErrorContains(t, err, "execution reverted")
+}
+
+func TestPreEIP155Transaction(t *testing.T) {
+	env := InitEVM(t)
+	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
+
+	// set a signer without replay protection
+	env.setSigner(types.HomesteadSigner{})
+
+	// deploy solidity `storage` contract, it should suceeed
+	env.deployStorageContract(ethKey)
 }

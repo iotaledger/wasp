@@ -36,6 +36,7 @@ type SoloChainEnv struct {
 	Chain      *solo.Chain
 	evmChainID uint16
 	evmChain   *jsonrpc.EVMChain
+	signer     types.Signer
 }
 
 type iscCallOptions struct {
@@ -70,6 +71,7 @@ func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
 		Chain:      soloChain,
 		evmChainID: evm.DefaultChainID,
 		evmChain:   soloChain.EVM(),
+		signer:     evmutil.Signer(big.NewInt(int64(evm.DefaultChainID))),
 	}
 }
 
@@ -256,8 +258,12 @@ func (e *SoloChainEnv) deployERC20ExampleContract(creator *ecdsa.PrivateKey) *er
 	return &erc20ContractInstance{e.DeployContract(creator, evmtest.ERC20ExampleContractABI, evmtest.ERC20ExampleContractBytecode)}
 }
 
-func (e *SoloChainEnv) signer() types.Signer {
-	return evmutil.Signer(big.NewInt(int64(e.evmChainID)))
+func (e *SoloChainEnv) setSigner(s types.Signer) {
+	e.signer = s
+}
+
+func (e *SoloChainEnv) getSigner() types.Signer {
+	return e.signer
 }
 
 func (e *SoloChainEnv) maxGasLimit() uint64 {
@@ -291,7 +297,7 @@ func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string,
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, value, gasLimit, e.evmChain.GasPrice(), data),
-		e.signer(),
+		e.getSigner(),
 		creator,
 	)
 	require.NoError(e.t, err)

@@ -110,7 +110,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	emu := createEmulator(ctx)
 
-	if tx.ChainId().Uint64() != uint64(emu.BlockchainDB().GetChainID()) {
+	if tx.Protected() && tx.ChainId().Uint64() != uint64(emu.BlockchainDB().GetChainID()) {
 		panic(errChainIDMismatch)
 	}
 
