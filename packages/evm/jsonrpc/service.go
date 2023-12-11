@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
@@ -194,11 +195,17 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 		if r == nil {
 			return nil, nil
 		}
-		tx, _, _, _, err := e.evmChain.TransactionByHash(txHash)
+		tx, _, blockNumber, _, err := e.evmChain.TransactionByHash(txHash)
 		if err != nil {
 			return nil, e.resolveError(err)
 		}
-		return RPCMarshalReceipt(r, tx), nil
+		// get fee policy at the same block and calculate effectiveGasPrice
+		feePolicy, err := e.evmChain.backend.FeePolicy(uint32(blockNumber))
+		if err != nil {
+			return nil, err
+		}
+		effectiveGasPrice := feePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
+		return RPCMarshalReceipt(r, tx, effectiveGasPrice), nil
 	})
 }
 
