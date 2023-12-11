@@ -16,13 +16,6 @@ state: {}
 funcs: {}
 views:
 
-  # Returns the current state controller and governing addresses and at what block index they were set.
-  controlAddresses:
-    results:
-      stateControllerAddress=s: Address # state controller address
-      governingAddress=g: Address # governing address
-      blockIndex=n: Uint32 # index of block where the addresses were set
-
   # Returns information about the given block.
   getBlockInfo:
     params:
