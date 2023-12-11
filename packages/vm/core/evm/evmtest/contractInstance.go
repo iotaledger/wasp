@@ -103,7 +103,7 @@ func (e *EVMContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 
 	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, opt.gasPrice, callData)
 
-	return types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
+	return types.SignTx(unsignedTx, e.chain.getSigner(), opt.sender)
 }
 
 func (e *EVMContractInstance) estimateGas(opts []ethCallOptions, fnName string, args ...interface{}) (uint64, error) {

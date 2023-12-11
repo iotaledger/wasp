@@ -170,7 +170,7 @@ func (e *EVMChain) gasLimits() *gas.Limits {
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	e.log.Debugf("SendTransaction(tx=%v)", tx)
 	chainID := e.ChainID()
-	if tx.ChainId().Uint64() != uint64(chainID) {
+	if tx.Protected() && tx.ChainId().Uint64() != uint64(chainID) {
 		return errors.New("chain ID mismatch")
 	}
 	signer, err := e.Signer()
