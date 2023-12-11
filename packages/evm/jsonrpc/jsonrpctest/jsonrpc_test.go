@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -337,6 +338,9 @@ func TestRPCGetTxReceipt(t *testing.T) {
 	require.EqualValues(t, big.NewInt(2), receipt.BlockNumber)
 	require.EqualValues(t, env.BlockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
 	require.EqualValues(t, 0, receipt.TransactionIndex)
+
+	expectedGasPrice := env.soloChain.GetGasFeePolicy().GasPriceWei(parameters.L1().BaseToken.Decimals)
+	require.EqualValues(t, expectedGasPrice, receipt.EffectiveGasPrice)
 }
 
 func TestRPCGetTxReceiptMissing(t *testing.T) {

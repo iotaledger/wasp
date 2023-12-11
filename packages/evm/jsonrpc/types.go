@@ -158,7 +158,7 @@ func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
 	return big.NewInt(n)
 }
 
-func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]interface{} {
+func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPrice *big.Int) map[string]interface{} {
 	// fix for an already fixed bug where some old failed receipts contain non-empty logs
 	if r.Status != types.ReceiptStatusSuccessful {
 		r.Logs = []*types.Log{}
@@ -174,10 +174,12 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]inter
 		"to":                tx.To(),
 		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
 		"gasUsed":           hexutil.Uint64(r.GasUsed),
+		"effectiveGasPrice": hexutil.EncodeBig(effectiveGasPrice),
 		"contractAddress":   r.ContractAddress,
 		"logs":              rpcMarshalLogs(r),
 		"logsBloom":         r.Bloom,
 		"status":            hexutil.Uint64(r.Status),
+		"type":              hexutil.Uint64(types.LegacyTxType),
 	}
 }
 
