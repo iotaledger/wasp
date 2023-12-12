@@ -11,7 +11,20 @@
   "ignoreDeps": [
     "github.com/iotaledger/wasp",
     "github.com/iotaledger/wasp/tools/wasp-cli",
-    "github.com/iotaledger/hive.go"
+    "github.com/iotaledger/hive.go",
+    "github.com/iotaledger/hive.go/app",
+    "github.com/iotaledger/hive.go/constraints",
+    "github.com/iotaledger/hive.go/crypto ",
+    "github.com/iotaledger/hive.go/ds ",
+    "github.com/iotaledger/hive.go/ierrors",
+    "github.com/iotaledger/hive.go/kvstore",
+    "github.com/iotaledger/hive.go/lo ",
+    "github.com/iotaledger/hive.go/logger ",
+    "github.com/iotaledger/hive.go/objectstorage",
+    "github.com/iotaledger/hive.go/runtime ",
+    "github.com/iotaledger/hive.go/serializer/v2",
+    "github.com/iotaledger/hive.go/serializer/v3",
+    "github.com/iotaledger/hive.go/web"
   ],
   "goGetDirs": [
     "."
