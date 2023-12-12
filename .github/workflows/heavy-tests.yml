@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
       - name: install go
         id: go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.21"
 
@@ -122,7 +122,7 @@ jobs:
         uses: actions/checkout@v4
       - name: install golang
         id: go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.21"
 
@@ -260,7 +260,7 @@ jobs:
 
       - name: Set up Go 1.x
         id: go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.21"
 
