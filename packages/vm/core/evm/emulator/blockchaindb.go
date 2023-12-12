@@ -323,8 +323,10 @@ func (bc *BlockchainDB) getReceiptByBlockNumberAndIndex(
 	cumulativeGasUsed uint64,
 	logIndex uint,
 ) *types.Receipt {
-	// FIXME what if r is nil?
 	r := bc.getRawReceiptByBlockNumberAndIndex(blockNumber, txIndex)
+	if r == nil {
+		return nil
+	}
 	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
 
 	r.TxHash = tx.Hash()
