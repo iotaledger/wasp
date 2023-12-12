@@ -324,6 +324,9 @@ func (bc *BlockchainDB) getReceiptByBlockNumberAndIndex(
 	logIndex uint,
 ) *types.Receipt {
 	r := bc.getRawReceiptByBlockNumberAndIndex(blockNumber, txIndex)
+	if r == nil {
+		return nil
+	}
 	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, txIndex)
 
 	r.TxHash = tx.Hash()

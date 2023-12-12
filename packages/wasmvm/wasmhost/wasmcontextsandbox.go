@@ -226,6 +226,7 @@ func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 func (s *WasmContextSandbox) fnBalances(_ []byte) []byte {
 	allowance := &isc.Assets{}
 	allowance.BaseTokens = s.common.BalanceBaseTokens()
+	// FIXME calling function with a empty address may cause error?
 	allowance.NativeTokens = s.common.BalanceNativeTokens()
 	allowance.NFTs = s.common.OwnedNFTs()
 	return cvt.ScBalances(allowance).Bytes()
