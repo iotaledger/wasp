@@ -285,7 +285,7 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 }
 
 // DeployEVMContract deploys an evm contract on the chain
-func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) (common.Address, abi.ABI) {
+func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, value *big.Int, args ...interface{}) (common.Address, abi.ABI) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(ch.ChainID, creatorAddress))
@@ -298,8 +298,6 @@ func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, by
 	data := []byte{}
 	data = append(data, bytecode...)
 	data = append(data, constructorArguments...)
-
-	value := big.NewInt(0)
 
 	gasLimit, err := ch.EVM().EstimateGas(ethereum.CallMsg{
 		From:  creatorAddress,

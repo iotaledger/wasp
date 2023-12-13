@@ -8,13 +8,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -34,7 +32,6 @@ type SoloChainEnv struct {
 	Chain      *solo.Chain
 	evmChainID uint16
 	evmChain   *jsonrpc.EVMChain
-	signer     types.Signer
 }
 
 type iscCallOptions struct {
@@ -69,7 +66,6 @@ func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
 		Chain:      soloChain,
 		evmChainID: evm.DefaultChainID,
 		evmChain:   soloChain.EVM(),
-		signer:     evmutil.Signer(big.NewInt(int64(evm.DefaultChainID))),
 	}
 }
 
@@ -263,7 +259,7 @@ func (e *SoloChainEnv) maxGasLimit() uint64 {
 }
 
 func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *EVMContractInstance {
-	contractAddr, contractABI := e.Chain.DeployEVMContract(creator, abiJSON, bytecode, args...)
+	contractAddr, contractABI := e.Chain.DeployEVMContract(creator, abiJSON, bytecode, big.NewInt(0), args...)
 
 	return &EVMContractInstance{
 		chain:         e,
