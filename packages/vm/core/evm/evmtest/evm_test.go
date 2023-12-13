@@ -1605,6 +1605,18 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 	require.ErrorContains(t, err, "invalid gas price")
 }
 
+func TestEVMIntrinsicGas(t *testing.T) {
+	env := InitEVM(t)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	sandbox := env.ISCMagicSandbox(ethKey)
+	res, err := sandbox.CallFn([]ethCallOptions{{
+		sender:   ethKey,
+		gasLimit: 1,
+	}}, "getEntropy")
+	require.ErrorContains(t, err, "intrinsic gas")
+	require.NotZero(t, res.ISCReceipt.GasFeeCharged)
+}
+
 func TestEVMTransferBaseTokens(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()

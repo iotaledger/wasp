@@ -123,6 +123,9 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.Privileged().GasBurnEnable(true)
 	burnGasErr := panicutil.CatchPanic(
 		func() {
+			if result == nil {
+				return
+			}
 			ctx.Gas().Burn(
 				gas.BurnCodeEVM1P,
 				gas.EVMGasToISC(result.UsedGas, &chainInfo.GasFeePolicy.EVMGasRatio),
@@ -392,6 +395,9 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 
 // include the revert reason in the error
 func tryGetRevertError(res *core.ExecutionResult) error {
+	if res == nil {
+		return nil
+	}
 	if res.Err == nil {
 		return nil
 	}
@@ -424,7 +430,9 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 		ctx.Privileged().GasBurnEnable(true)
 		gasErr := panicutil.CatchPanic(
 			func() {
-				ctx.Gas().Burn(gas.BurnCodeEVM1P, gas.EVMGasToISC(res.UsedGas, &gasRatio))
+				if res != nil {
+					ctx.Gas().Burn(gas.BurnCodeEVM1P, gas.EVMGasToISC(res.UsedGas, &gasRatio))
+				}
 			},
 		)
 		ctx.Privileged().GasBurnEnable(false)
