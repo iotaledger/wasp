@@ -39,11 +39,11 @@ func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitmen
 }
 
 const (
-	ParamEVMChainID           = "a"
-	ParamBlockKeepAmount      = "b"
-	ParamChainOwner           = "c"
-	ParamWaspVersion          = "d"
-	ParamLegacyMigrationAdmin = "e"
+	ParamEVMChainID        = "a"
+	ParamBlockKeepAmount   = "b"
+	ParamChainOwner        = "c"
+	ParamMigrationsEnabled = "x"
+	ParamWaspVersion       = "d"
 )
 
 func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
@@ -61,6 +61,7 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	evmChainID := codec.MustDecodeUint16(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
 	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamBlockKeepAmount), governance.DefaultBlockKeepAmount)
 	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
+	migrationsEnabled := codec.MustDecodeBool(initParams.Get(ParamMigrationsEnabled), true)
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(contractState(root.Contract))
@@ -70,11 +71,9 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	errors.SetInitialState(contractState(errors.Contract))
 	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(contractState(evm.Contract), evmChainID)
-
-	// only init the migration contract if the migration admin is set
-	if initParams.Has(ParamLegacyMigrationAdmin) {
-		migrationAdmin := codec.MustDecodeAgentID(initParams.Get(ParamLegacyMigrationAdmin))
-		legacymigration.SetInitialState(contractState(legacymigration.Contract), migrationAdmin)
+	if migrationsEnabled {
+		// chainOwner is the initial migration admin
+		legacymigration.SetInitialState(contractState(legacymigration.Contract), chainOwner)
 	}
 
 	block := store.Commit(d)

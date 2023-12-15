@@ -51,7 +51,11 @@ func (sa *StateAccess) Admin() isc.AgentID {
 	return adminAgentID(sa.state)
 }
 
+func (sa *StateAccess) NextAdmin() isc.AgentID {
+	return nextAdminAgentID(sa.state)
+}
+
 func (sa *StateAccess) IsMigrationChain() bool {
-	// only considered a migration chain if the admin parameter was provided in chain origin
+	// only considered a migration chain if the state was initialized
 	return sa.state.Has(keyAdminAgentID)
 }

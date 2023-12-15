@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -19,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/legacymigration"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -41,7 +43,7 @@ func TestMigrationAndBurn(t *testing.T) {
 	}, 0)
 
 	// create an EVM AgentID with funds to deploy/interact with the "governance" contract
-	ethPvtKey, _ := EVMEnv.newEthereumAccountWithL2Funds()
+	ethPvtKey, ethUserAddr := EVMEnv.newEthereumAccountWithL2Funds()
 
 	// deploy the "governance" contract
 	govContractABI, err := abi.JSON(strings.NewReader(evmtest.LegacyMigrationGovernanceABI))
@@ -50,7 +52,7 @@ func TestMigrationAndBurn(t *testing.T) {
 	govContractAgentID := isc.NewEthereumAddressAgentID(EVMChain.ChainID, govContractAddr)
 
 	// deposit funds to the gov contract
-	depositToAgentID(t, EVMEnv.Chain, 1*isc.Million, govContractAgentID, EVMChain.Cluster.OriginatorKeyPair)
+	depositToAgentID(t, EVMEnv.Chain, 10*isc.Million, govContractAgentID, EVMChain.Cluster.OriginatorKeyPair)
 
 	// deploy the migration chain
 	migrationCluster := newCluster(t, waspClusterOpts{
@@ -65,7 +67,7 @@ func TestMigrationAndBurn(t *testing.T) {
 			return configParams
 		},
 	})
-	migrationChain, err := migrationCluster.DeployChainWithDKG(migrationCluster.AllNodes(), migrationCluster.AllNodes(), 3, govContractAgentID)
+	migrationChain, err := migrationCluster.DeployChainWithDKG(migrationCluster.AllNodes(), migrationCluster.AllNodes(), 3, true)
 	require.NoError(t, err)
 	migrationEnv := newChainEnv(t, migrationCluster, migrationChain)
 
@@ -95,7 +97,7 @@ func TestMigrationAndBurn(t *testing.T) {
 					Args: map[kv.Key][]byte{
 						legacymigration.ParamBundle: bundleBytes,
 					},
-					Nonce: 10, // bad nonce, shoudl be ignored
+					Nonce: 10, // bad nonce, should be ignored
 				},
 			)
 		require.NoError(t, err2)
@@ -174,9 +176,9 @@ func TestMigrationAndBurn(t *testing.T) {
 		require.Error(t, err2)
 	}
 
-	// assert radom off-ledger requests are not processed by the migration chain
+	// assert random off-ledger requests are not processed by the migration chain
 	{
-		_, err2 := migrationChain.Client(cryptolib.NewKeyPair(), 0).
+		_, err2 := migrationChain.Client(cryptolib.NewKeyPair()).
 			PostOffLedgerRequest(
 				context.Background(),
 				isc.Hn("dummycontract"),
@@ -185,32 +187,89 @@ func TestMigrationAndBurn(t *testing.T) {
 		require.Error(t, err2)
 	}
 
-	migBlockIndex, err := migrationChain.BlockIndex()
+	issueGovTx := func(functionName string, args ...interface{}) {
+		txArgs := []interface{}{
+			iscmagic.WrapL1Address(migrationChain.ChainID.AsAddress()),
+		}
+		txArgs = append(txArgs, args...)
+		burnTxData, err2 := govContractABI.Pack(functionName, txArgs...)
+		require.NoError(t, err2)
+		burnTx, err2 := types.SignTx(
+			types.NewTransaction(EVMEnv.NonceAt(ethUserAddr), govContractAddr, big.NewInt(0), math.MaxUint64, big.NewInt(10000000000000000), burnTxData),
+			EVMEnv.Signer(),
+			ethPvtKey,
+		)
+		require.NoError(t, err2)
+		rec, err2 := EVMEnv.SendTransactionAndWait(burnTx)
+		require.NoError(t, err2)
+		require.EqualValues(t, 1, rec.Status)
+	}
+
+	currentMigBlock, err := migrationChain.BlockIndex()
 	require.NoError(t, err)
 
-	// issue the BURN
-	burnTxData, err := govContractABI.Pack("burn", iscmagic.WrapL1Address(migrationChain.ChainID.AsAddress()))
-	require.NoError(t, err)
-	burnTx, err := types.SignTx(
-		types.NewTransaction(1, govContractAddr, big.NewInt(0), math.MaxUint64, big.NewInt(10000000000000000), burnTxData),
-		EVMEnv.Signer(),
-		ethPvtKey,
-	)
-	require.NoError(t, err)
-	rec, err := EVMEnv.SendTransactionAndWait(burnTx)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, rec.Status)
-
-	// wait for migration chain to process the cross-chain gov-burn request
-	for {
-		time.Sleep(100 * time.Millisecond)
-		nextMigBlockIndex, err := migrationChain.BlockIndex()
-		require.NoError(t, err)
-		if nextMigBlockIndex == migBlockIndex+1 {
-			break
+	waitForMigrationBlock := func(block uint32) {
+		for {
+			time.Sleep(100 * time.Millisecond)
+			nextMigBlockIndex, err2 := migrationChain.BlockIndex()
+			require.NoError(t, err2)
+			if nextMigBlockIndex == block {
+				break
+			}
+			if nextMigBlockIndex > block {
+				t.Fatalf("error, expected block %d, got %d", block, nextMigBlockIndex)
+			}
 		}
 	}
 
+	// issue the BURN
+	issueGovTx("burn")
+	// nothing should happen (admin is not the gov contract yet), chain will ignore the request
+	time.Sleep(5 * time.Second)
+	require.EqualValues(t, currentMigBlock, lo.Must(migrationChain.BlockIndex()))
+
+	// set the EVM chain gov contract as the migration admin
+	setNextAdminReq, err := migrationChain.Client(migrationChain.OriginatorKeyPair).PostOffLedgerRequest(
+		context.Background(),
+		legacymigration.Contract.Hname(),
+		legacymigration.FuncSetNextAdmin.Hname(),
+		chainclient.PostRequestParams{
+			Args: map[kv.Key][]byte{
+				legacymigration.ParamNextAdminAgentID: codec.Encode(govContractAgentID),
+			},
+		},
+	)
+	require.NoError(t, err)
+	_, err = migrationCluster.MultiClient().WaitUntilRequestProcessedSuccessfully(migrationChain.ChainID, setNextAdminReq.ID(), true, 20*time.Second)
+	require.NoError(t, err)
+	currentMigBlock++
+
+	// issue the BURN again
+	issueGovTx("burn")
+	// now the request should fail with an error (chain accepts requests from the next admin, but it has to claim ownership to do important things)
+	waitForMigrationBlock(currentMigBlock + 1)
+	currentMigBlock++
+	latestReceipts, err := migrationChain.GetRequestReceiptsForBlock(nil)
+	require.NoError(t, err)
+	require.Len(t, latestReceipts, 1)
+	require.EqualValues(t, latestReceipts[0].Request.SenderAccount, govContractAgentID.String())
+	require.NotNil(t, latestReceipts[0].ErrorMessage)
+
+	// call claim ownership, and wait for the migration chain to process it
+	issueGovTx("claimOwnership")
+	waitForMigrationBlock(currentMigBlock + 1)
+	currentMigBlock++
+	latestReceipts, err = migrationChain.GetRequestReceiptsForBlock(nil)
+	require.NoError(t, err)
+	require.Len(t, latestReceipts, 1)
+	require.EqualValues(t, latestReceipts[0].Request.SenderAccount, govContractAgentID.String())
+	require.Nil(t, latestReceipts[0].ErrorMessage)
+
+	// re-issue the BURN, and wait for the migration chain to process it
+	issueGovTx("burn")
+	waitForMigrationBlock(currentMigBlock + 1)
+
+	// assert balance was burned
 	migBalance = migrationEnv.getBalanceOnChain(migrationContractAgentID, isc.BaseTokenID)
 	require.Zero(t, migBalance)
 }

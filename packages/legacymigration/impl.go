@@ -30,6 +30,8 @@ var Processor = Contract.Processor(nil,
 	// funcs
 	FuncMigrate.WithHandler(migrate),
 	FuncBurn.WithHandler(burn),
+	FuncSetNextAdmin.WithHandler(setNextAdmin),
+	FuncClaimAdmin.WithHandler(claimAdmin),
 )
 
 //go:embed migratable.csv
@@ -137,8 +139,27 @@ func migratableBalance(state kv.KVStoreReader, legacyAddr []byte) uint64 {
 	return codec.MustDecodeUint64(migrationMap.GetAt(legacyAddr), 0)
 }
 
-func burn(ctx isc.Sandbox) dict.Dict {
+func mustAdmin(ctx isc.Sandbox) {
 	ctx.Requiref(ctx.Request().SenderAccount().Equals(adminAgentID(ctx.State())), "only the admin can call the burn function")
+}
+
+func setNextAdmin(ctx isc.Sandbox) dict.Dict {
+	mustAdmin(ctx)
+	setNextAdminAgentID(ctx.State(), ctx.Params().MustGetAgentID(ParamNextAdminAgentID))
+	return nil
+}
+
+func claimAdmin(ctx isc.Sandbox) dict.Dict {
+	nextAdmin := nextAdminAgentID(ctx.State())
+	if ctx.Request().SenderAccount().Equals(nextAdmin) {
+		setAdminAgentID(ctx.State(), nextAdmin)
+	}
+	return nil
+}
+
+// TODO make this a "withdraw func" instead
+func burn(ctx isc.Sandbox) dict.Dict {
+	mustAdmin(ctx)
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: &iotago.Ed25519Address{0}, // send to the Zero address (0x00000...)
 		Assets: &isc.Assets{
@@ -158,9 +179,10 @@ func viewTotalBalance(ctx isc.SandboxView) dict.Dict {
 // --- contract state
 
 const (
-	keyLegacyAccounts = "a"
-	keyTotalAmount    = "t"
-	keyAdminAgentID   = "d"
+	keyLegacyAccounts   = "a"
+	keyTotalAmount      = "t"
+	keyAdminAgentID     = "d"
+	keyNextAdminAgentID = "x"
 )
 
 func adminAgentID(state kv.KVReader) isc.AgentID {
@@ -173,6 +195,22 @@ func adminAgentID(state kv.KVReader) isc.AgentID {
 
 func setAdminAgentID(state kv.KVStore, a isc.AgentID) {
 	state.Set(keyAdminAgentID, a.Bytes())
+}
+
+func nextAdminAgentID(state kv.KVReader) isc.AgentID {
+	nextAdminBytes := state.Get(keyNextAdminAgentID)
+	if nextAdminBytes == nil {
+		return nil
+	}
+	a, err := isc.AgentIDFromBytes(nextAdminBytes)
+	if err != nil {
+		panic("invalid agentID")
+	}
+	return a
+}
+
+func setNextAdminAgentID(state kv.KVStore, a isc.AgentID) {
+	state.Set(keyNextAdminAgentID, a.Bytes())
 }
 
 func setTotalAmount(state kv.KVStore, amount uint64) {

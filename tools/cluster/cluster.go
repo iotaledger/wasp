@@ -186,7 +186,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDKG(committee, committee, uint16(quorum), nil)
+	return clu.DeployChainWithDKG(committee, committee, uint16(quorum), false)
 }
 
 func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
@@ -221,15 +221,15 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, legacyMigrationAdmin isc.AgentID, blockKeepAmount ...int32) (*Chain, error) {
+func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, migrationsEnabled bool, blockKeepAmount ...int32) (*Chain, error) {
 	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}
-	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, legacyMigrationAdmin, blockKeepAmount...)
+	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, migrationsEnabled, blockKeepAmount...)
 }
 
-func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address, legacyMigrationAdmin isc.AgentID, blockKeepAmount ...int32) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address, migrationsEnabled bool, blockKeepAmount ...int32) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
@@ -261,12 +261,11 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 
 	initParams := dict.Dict{
-		origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
-		origin.ParamWaspVersion: codec.EncodeString(app.Version),
+		origin.ParamChainOwner:        isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
+		origin.ParamWaspVersion:       codec.EncodeString(app.Version),
+		origin.ParamMigrationsEnabled: codec.EncodeBool(migrationsEnabled),
 	}
-	if legacyMigrationAdmin != nil {
-		initParams[origin.ParamLegacyMigrationAdmin] = codec.EncodeAgentID(legacyMigrationAdmin)
-	}
+
 	if len(blockKeepAmount) > 0 {
 		initParams[origin.ParamBlockKeepAmount] = codec.EncodeInt32(blockKeepAmount[0])
 	}

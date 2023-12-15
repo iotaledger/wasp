@@ -18,11 +18,14 @@ var (
 
 // Funcs
 var (
-	FuncMigrate = coreutil.Func("migrate")
-	FuncBurn    = coreutil.Func("burn")
+	FuncMigrate      = coreutil.Func("migrate")
+	FuncBurn         = coreutil.Func("burn")
+	FuncSetNextAdmin = coreutil.Func("setNextAdmin")
+	FuncClaimAdmin   = coreutil.Func("claimAdmin")
 )
 
 const (
+	ParamNextAdminAgentID     = "x"
 	ParamAddress              = "a"
 	ParamBundle               = "b"
 	ParamTotalMigrationAmount = "total"

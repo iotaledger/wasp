@@ -742,7 +742,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 		case legacymigration.Contract.Hname():
 			legacyMigrationSA := legacymigration.NewStateAccess(mpi.chainHeadState)
 			sender := request.SenderAccount()
-			if !sender.Equals(legacyMigrationSA.Admin()) {
+			if !(sender.Equals(legacyMigrationSA.Admin()) || sender.Equals(legacyMigrationSA.NextAdmin())) {
 				// only accept requests from the migration admin (migration bundles are expected to be sent via off-ledger)
 				return
 			}

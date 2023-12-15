@@ -81,7 +81,7 @@ func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *
 	return func(t *testing.T, f func(*testing.T, *ChainEnv)) {
 		// create a fresh new chain for the test
 		allNodes := clu.Config.AllNodes()
-		chain, err := clu.DeployChain(allNodes, allNodes, dkgQuorum, dkgAddr, nil)
+		chain, err := clu.DeployChain(allNodes, allNodes, dkgQuorum, dkgAddr, false)
 		require.NoError(t, err)
 		env := newChainEnv(t, clu, chain)
 
