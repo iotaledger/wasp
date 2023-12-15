@@ -41,7 +41,7 @@ jobs:
         run: mkdir /dist && cd /dist/
 
       - name: Download temporary artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wasp
 
@@ -61,7 +61,7 @@ jobs:
       version: ${{ steps.tagger.outputs.tag }}
     steps:
       - name: Download temporary artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wasp
 
