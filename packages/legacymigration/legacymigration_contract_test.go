@@ -32,7 +32,7 @@ func TestContract(t *testing.T) {
 	viewBalance := func() uint64 {
 		ret, err2 := ch.CallView(
 			legacymigration.Contract.Name, legacymigration.ViewMigratableBalance.Name,
-			legacymigration.ParamAddress, "FWIURWEIEMAGWWPXVWDTMVUZVNYNYFOB9S9WIGHRNYVZBJEBBWQZIBWYIOZLKPGVNNCOLDIIUNNEQZYBD",
+			legacymigration.ParamLegacyAddress, "FWIURWEIEMAGWWPXVWDTMVUZVNYNYFOB9S9WIGHRNYVZBJEBBWQZIBWYIOZLKPGVNNCOLDIIUNNEQZYBD",
 		)
 		require.NoError(t, err2)
 		bal, err2 := codec.DecodeUint64(ret.Get(legacymigration.ParamBalance))

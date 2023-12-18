@@ -26,7 +26,8 @@ var (
 
 const (
 	ParamNextAdminAgentID     = "x"
-	ParamAddress              = "a"
+	ParamLegacyAddress        = "a"
+	ParamWithdrawAddress      = "targetAddress"
 	ParamBundle               = "b"
 	ParamTotalMigrationAmount = "total"
 	ParamBalance              = "balance"

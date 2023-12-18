@@ -13,7 +13,6 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/iota.go/encoding/t5b1"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -126,7 +125,7 @@ func migrate(ctx isc.Sandbox) dict.Dict {
 }
 
 func viewMigratableBalance(ctx isc.SandboxView) dict.Dict {
-	legacyAddrTrytes := ctx.Params().MustGetString(ParamAddress)
+	legacyAddrTrytes := ctx.Params().MustGetString(ParamLegacyAddress)
 	legacyAddr := t5b1.EncodeTrytes(legacyAddrTrytes)
 
 	return dict.Dict{
@@ -157,11 +156,11 @@ func claimAdmin(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-// TODO make this a "withdraw func" instead
 func burn(ctx isc.Sandbox) dict.Dict {
 	mustAdmin(ctx)
+	targetAddr := ctx.Params().MustGetAddress(ParamWithdrawAddress)
 	ctx.Send(isc.RequestParameters{
-		TargetAddress: &iotago.Ed25519Address{0}, // send to the Zero address (0x00000...)
+		TargetAddress: targetAddr,
 		Assets: &isc.Assets{
 			BaseTokens: ctx.BalanceBaseTokens(), // burn the entire balance of this contract
 		},

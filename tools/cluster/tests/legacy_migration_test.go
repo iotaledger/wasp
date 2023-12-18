@@ -223,7 +223,9 @@ func TestMigrationAndBurn(t *testing.T) {
 	}
 
 	// issue the BURN
-	issueGovTx("burn")
+	burnAddr := &iotago.Ed25519Address{0}
+	burnAddrWrapped := iscmagic.WrapL1Address(burnAddr)
+	issueGovTx("withdraw", burnAddrWrapped)
 	// nothing should happen (admin is not the gov contract yet), chain will ignore the request
 	time.Sleep(5 * time.Second)
 	require.EqualValues(t, currentMigBlock, lo.Must(migrationChain.BlockIndex()))
@@ -245,7 +247,7 @@ func TestMigrationAndBurn(t *testing.T) {
 	currentMigBlock++
 
 	// issue the BURN again
-	issueGovTx("burn")
+	issueGovTx("withdraw", burnAddrWrapped)
 	// now the request should fail with an error (chain accepts requests from the next admin, but it has to claim ownership to do important things)
 	waitForMigrationBlock(currentMigBlock + 1)
 	currentMigBlock++
@@ -266,10 +268,13 @@ func TestMigrationAndBurn(t *testing.T) {
 	require.Nil(t, latestReceipts[0].ErrorMessage)
 
 	// re-issue the BURN, and wait for the migration chain to process it
-	issueGovTx("burn")
+	issueGovTx("withdraw", burnAddrWrapped)
 	waitForMigrationBlock(currentMigBlock + 1)
 
 	// assert balance was burned
 	migBalance = migrationEnv.getBalanceOnChain(migrationContractAgentID, isc.BaseTokenID)
 	require.Zero(t, migBalance)
+	outs, err := migrationCluster.L1Client().OutputMap(burnAddr)
+	require.NoError(t, err)
+	require.Len(t, outs, 1)
 }

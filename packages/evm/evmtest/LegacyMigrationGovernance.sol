@@ -12,22 +12,33 @@ contract LegacyMigrationGovernance {
         ISCHname.wrap(3115287444);
 
     function claimOwnership(L1Address memory chain) public {
-        _send(claimOwnershipEntrypoint, chain);
+        ISCDict memory params = ISCDict(new ISCDictItem[](0));
+        _send(claimOwnershipEntrypoint, chain, params);
     }
 
-    function burn(L1Address memory chain) public {
-        _send(burnEntrypoint, chain);
+    function withdraw(
+        L1Address memory chain,
+        L1Address memory targetAddr
+    ) public {
+        ISCDict memory params = ISCDict(new ISCDictItem[](1));
+        params.items[0] = ISCDictItem("targetAddress", targetAddr.data);
+        _send(burnEntrypoint, chain, params);
     }
 
-    // _send calls (without parameters) a given entrypoint of the migration contract on a given chain
-    function _send(ISCHname entrypoint, L1Address memory chain) private {
+    // _send calls a given entrypoint of the migration contract on a given chain
+    function _send(
+        ISCHname entrypoint,
+        L1Address memory chain,
+        ISCDict memory params
+    ) private {
         ISCAssets memory assets;
-        assets.baseTokens = 1000000; // 1Mi - this assumes the SC is funded externally
+        assets.baseTokens = 1000000; // 1Mi - this assumes the current contract is funded externally
 
         ISCSendMetadata memory metadata;
 
         metadata.targetContract = migrationContract;
         metadata.entrypoint = entrypoint;
+        metadata.params = params;
 
         ISCSendOptions memory options;
         ISC.sandbox.send(chain, assets, true, metadata, options);
