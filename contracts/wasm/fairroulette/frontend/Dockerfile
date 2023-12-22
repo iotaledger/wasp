@@ -12,7 +12,7 @@ RUN mv docker/config.dev.docker.js config.dev.js
 RUN npm run build_worker
 RUN npm run build
 
-FROM nginx:alpine
+FROM nginx:1.25.3-alpine3.18
 
 ARG WASP_URL=https://127.0.0.1
 ARG WASP_WS_URL=wss://127.0.0.1
