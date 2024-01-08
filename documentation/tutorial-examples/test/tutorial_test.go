@@ -99,7 +99,10 @@ func TestTutorialInvokeSCError(t *testing.T) {
 }
 
 func TestTutorialAccounts(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		GasBurnLogEnabled:        true,
+	})
 	chain := env.NewChain()
 
 	// create a wallet with some base tokens on L1:
@@ -116,41 +119,53 @@ func TestTutorialAccounts(t *testing.T) {
 		AddBaseTokens(1 * isc.Million)
 
 	// estimate the gas fee and storage deposit
-	gas1, gasFee1, err := chain.EstimateGasOnLedger(req, userWallet, true)
+	_, receipt1, err := chain.EstimateGasOnLedger(req, userWallet, false)
 	require.NoError(t, err)
 	storageDeposit1 := chain.EstimateNeededStorageDeposit(req, userWallet)
 	require.Zero(t, storageDeposit1) // since 1 Mi is enough
 
 	// send the deposit request
-	req.WithGasBudget(gas1).
-		AddBaseTokens(gasFee1) // including base tokens for gas fee
+	req.WithGasBudget(receipt1.GasBurned).
+		AddBaseTokens(receipt1.GasFeeCharged) // including base tokens for gas fee
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// our L1 balance is 1 Mi + gas fee short
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*isc.Million-gasFee1)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*isc.Million-receipt1.GasFeeCharged)
 	// our L2 balance is 1 Mi
+	onChainBalance := 1 * isc.Million
 	chain.AssertL2BaseTokens(userAgentID, 1*isc.Million)
 	// (the gas fee went to the chain's private account)
 
+	// TODO the withdrawal part is pretty confusing for a "tutorial", this needs to be improved.
+
 	// withdraw all base tokens back to L1
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million))
+		WithAllowance(isc.NewAssetsBaseTokens(onChainBalance - 1000)). // leave some tokens out of allowance, to pay for gas
+		WithMaxAffordableGasBudget()                                   // NEED TO SET A GAS VALUE, OTHERWISE MAXBALANCE WILL BE SIMULATED...
 
-	// estimate the gas fee and storage deposit
-	gas2, gasFee2, err := chain.EstimateGasOnLedger(req, userWallet, true)
+	// estimate the gas fee
+	_, receipt2, err := chain.EstimateGasOffLedger(req, userWallet, false)
 	require.NoError(t, err)
-	storageDeposit2 := chain.EstimateNeededStorageDeposit(req, userWallet)
+
+	// re-estimate with fixed budget and fee (the final fee might be smaller, because less gas will be charged when setting 0 in the user account, rather than a positive number)
+	req.WithGasBudget(receipt2.GasBurned).
+		WithAllowance(isc.NewAssetsBaseTokens(onChainBalance - (receipt2.GasFeeCharged)))
+	_, receipt3, err := chain.EstimateGasOffLedger(req, userWallet, false)
+	require.NoError(t, err)
 
 	// send the withdraw request
-	req.WithGasBudget(gas2).
-		AddBaseTokens(gasFee2 + storageDeposit2). // including base tokens for gas fee and storage
-		AddAllowanceBaseTokens(storageDeposit2)   // and withdrawing the storage as well
-	_, err = chain.PostRequestSync(req, userWallet)
+	req.WithGasBudget(receipt3.GasBurned).
+		WithAllowance(isc.NewAssetsBaseTokens(onChainBalance - (receipt3.GasFeeCharged)))
+	_, err = chain.PostRequestOffLedger(req, userWallet)
 	require.NoError(t, err)
+
+	rec := chain.LastReceipt()
+	require.EqualValues(t, rec.GasFeeCharged, receipt3.GasFeeCharged)
+	require.EqualValues(t, rec.GasBurned, receipt3.GasBurned)
 
 	// we are back to the initial situation, having been charged some gas fees
 	// in the process:
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-gasFee1-gasFee2)
 	chain.AssertL2BaseTokens(userAgentID, 0)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-receipt1.GasFeeCharged-receipt3.GasFeeCharged)
 }

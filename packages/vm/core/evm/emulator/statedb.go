@@ -16,7 +16,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -81,8 +80,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	baseTokens, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
-	s.ctx.SubBaseTokensBalance(addr, baseTokens)
+	s.ctx.SubBaseTokensBalance(addr, amount)
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
@@ -92,15 +90,11 @@ func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	baseTokens, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
-	s.ctx.AddBaseTokensBalance(addr, baseTokens)
+	s.ctx.AddBaseTokensBalance(addr, amount)
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	baseTokens := s.ctx.GetBaseTokensBalance(addr)
-	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, s.ctx.BaseTokensDecimals())
-	// discard remainder
-	return wei
+	return s.ctx.GetBaseTokensBalance(addr)
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {

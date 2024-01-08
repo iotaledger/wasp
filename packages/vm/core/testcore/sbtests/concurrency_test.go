@@ -89,7 +89,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(baseTokensSentPerRequest).WithGasBudget(math.MaxUint64)
 
-	_, predictedGasFee, err := chain.EstimateGasOnLedger(req, nil, true)
+	_, estimate, err := chain.EstimateGasOnLedger(req, nil, true)
 	require.NoError(t, err)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
@@ -121,7 +121,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	require.EqualValues(t, sum, res)
 
 	for i := range users {
-		expectedBalance := uint64(repeats[i]) * (baseTokensSentPerRequest - predictedGasFee)
+		expectedBalance := uint64(repeats[i]) * (baseTokensSentPerRequest - estimate.GasFeeCharged)
 		chain.AssertL2BaseTokens(isc.NewAgentID(userAddr[i]), expectedBalance)
 		chain.Env.AssertL1BaseTokens(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*baseTokensSentPerRequest)
 	}

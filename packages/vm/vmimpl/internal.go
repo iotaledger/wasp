@@ -18,11 +18,17 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
-// creditToAccount deposits transfer from request to chain account of of the called contract
-// It adds new tokens to the chain ledger. It is used when new tokens arrive with a request
+// creditToAccount credits assets to the chain ledger
 func creditToAccount(chainState kv.KVStore, agentID isc.AgentID, ftokens *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
 		accounts.CreditToAccount(s, agentID, ftokens, chainID)
+	})
+}
+
+// creditToAccountFullDecimals credits assets to the chain ledger
+func creditToAccountFullDecimals(chainState kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
+		accounts.CreditToAccountFullDecimals(s, agentID, amount, chainID)
 	})
 }
 
@@ -41,16 +47,21 @@ func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, req isc.OnLe
 	})
 }
 
-// debitFromAccount subtracts tokens from account if it is enough of it.
-// should be called only when posting request
+// debitFromAccount subtracts tokens from account if there are enough.
 func debitFromAccount(chainState kv.KVStore, agentID isc.AgentID, transfer *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitFromAccount(s, agentID, transfer, chainID)
 	})
 }
 
-// debitNFTFromAccount removes a NFT from account.
-// should be called only when posting request
+// debitFromAccountFullDecimals subtracts basetokens tokens from account if there are enough.
+func debitFromAccountFullDecimals(chainState kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
+		accounts.DebitFromAccountFullDecimals(s, agentID, amount, chainID)
+	})
+}
+
+// debitNFTFromAccount removes a NFT from an account.
 func debitNFTFromAccount(chainState kv.KVStore, agentID isc.AgentID, nftID iotago.NFTID, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
 		accounts.DebitNFTFromAccount(s, agentID, nftID, chainID)

@@ -39,6 +39,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	env := solo.New(t, &solo.InitOptions{
 		Debug:                    debug,
 		AutoAdjustStorageDeposit: true,
+		GasBurnLogEnabled:        true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")

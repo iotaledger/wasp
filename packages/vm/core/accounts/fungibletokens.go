@@ -47,6 +47,23 @@ func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
 	}
 }
 
+// CreditToAccount brings new funds to the on chain ledger
+// NOTE: this function does not take NFTs into account
+func CreditToAccountFullDecimals(state kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+	if !util.IsPositiveBigInt(amount) {
+		return
+	}
+	creditToAccountFullDecimals(state, accountKey(agentID, chainID), amount)
+	creditToAccountFullDecimals(state, l2TotalsAccount, amount)
+	touchAccount(state, agentID, chainID)
+}
+
+// creditToAccountFullDecimals adds assets to the internal account map
+// NOTE: this function does not take NFTs into account
+func creditToAccountFullDecimals(state kv.KVStore, accountKey kv.Key, amount *big.Int) {
+	setBaseTokensFullDecimals(state, accountKey, new(big.Int).Add(getBaseTokensFullDecimals(state, accountKey), amount))
+}
+
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
 // NOTE: this function does not take NFTs into account
 func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
@@ -102,6 +119,31 @@ func debitFromAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) b
 	for _, nt := range mutations.NativeTokens {
 		setNativeTokenAmount(state, accountKey, nt.ID, nt.Amount)
 	}
+	return true
+}
+
+// DebitFromAccountFullDecimals removes the amount from the chain ledger. If not enough it panics
+func DebitFromAccountFullDecimals(state kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+	if !util.IsPositiveBigInt(amount) {
+		return
+	}
+	if !debitFromAccountFullDecimals(state, accountKey(agentID, chainID), amount) {
+		panic(fmt.Errorf("cannot debit (%s) from %s: %w", amount.String(), agentID, ErrNotEnoughFunds))
+	}
+
+	if !debitFromAccountFullDecimals(state, l2TotalsAccount, amount) {
+		panic("debitFromAccount: inconsistent ledger state")
+	}
+	touchAccount(state, agentID, chainID)
+}
+
+// debitFromAccountFullDecimals debits the amount from the internal accounts map
+func debitFromAccountFullDecimals(state kv.KVStore, accountKey kv.Key, amount *big.Int) bool {
+	balance := getBaseTokensFullDecimals(state, accountKey)
+	if balance.Cmp(amount) < 0 {
+		return false
+	}
+	setBaseTokensFullDecimals(state, accountKey, new(big.Int).Sub(balance, amount))
 	return true
 }
 

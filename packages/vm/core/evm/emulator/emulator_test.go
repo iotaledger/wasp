@@ -144,14 +144,14 @@ func sendTransaction(
 
 type context struct {
 	state     dict.Dict
-	bal       map[common.Address]uint64
+	bal       map[common.Address]*big.Int
 	snapshots []*context
 	timestamp uint64
 }
 
 var _ Context = &context{}
 
-func newContext(supply map[common.Address]uint64) *context {
+func newContext(supply map[common.Address]*big.Int) *context {
 	return &context{
 		state: dict.Dict{},
 		bal:   supply,
@@ -190,16 +190,20 @@ func (ctx *context) Timestamp() uint64 {
 	return ctx.timestamp
 }
 
-func (ctx *context) GetBaseTokensBalance(addr common.Address) uint64 {
-	return ctx.bal[addr]
+func (ctx *context) GetBaseTokensBalance(addr common.Address) *big.Int {
+	bal := ctx.bal[addr]
+	if bal == nil {
+		return big.NewInt(0)
+	}
+	return bal
 }
 
-func (ctx *context) AddBaseTokensBalance(addr common.Address, amount uint64) {
-	ctx.bal[addr] += ctx.bal[addr]
+func (ctx *context) AddBaseTokensBalance(addr common.Address, amount *big.Int) {
+	ctx.bal[addr] = new(big.Int).Add(ctx.bal[addr], ctx.bal[addr])
 }
 
-func (ctx *context) SubBaseTokensBalance(addr common.Address, amount uint64) {
-	ctx.bal[addr] -= amount
+func (ctx *context) SubBaseTokensBalance(addr common.Address, amount *big.Int) {
+	ctx.bal[addr] = new(big.Int).Sub(ctx.bal[addr], amount)
 }
 
 func (*context) BaseTokensDecimals() uint32 {
@@ -224,10 +228,10 @@ func TestBlockchain(t *testing.T) {
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
-	faucetSupply := uint64(math.MaxUint64)
+	faucetSupply := new(big.Int).SetUint64(math.MaxUint64)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	ctx := newContext(map[common.Address]uint64{
+	ctx := newContext(map[common.Address]*big.Int{
 		faucetAddress: faucetSupply,
 	})
 
@@ -264,12 +268,12 @@ func TestBlockchain(t *testing.T) {
 		{
 			state := emu.StateDB()
 			// check the balance of the faucet address
-			require.EqualValues(t, faucetSupply, state.GetBalance(faucetAddress).Uint64())
+			require.EqualValues(t, faucetSupply, state.GetBalance(faucetAddress))
 		}
 	}
 
 	// check the balances
-	require.EqualValues(t, faucetSupply, emu.StateDB().GetBalance(faucetAddress).Uint64())
+	require.EqualValues(t, faucetSupply, emu.StateDB().GetBalance(faucetAddress))
 
 	// deploy a contract
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
@@ -303,7 +307,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	ctx := newContext(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
 	ctx.timestamp++
@@ -432,7 +436,7 @@ func TestStorageContract(t *testing.T) {
 	require.NoError(t, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	ctx := newContext(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
 	ctx.timestamp++
@@ -501,7 +505,7 @@ func TestStorageContract(t *testing.T) {
 
 func TestERC20Contract(t *testing.T) {
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	ctx := newContext(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
 	ctx.timestamp++
@@ -628,7 +632,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, *context) 
 	require.NoError(b, err)
 
 	genesisAlloc := map[common.Address]core.GenesisAccount{}
-	ctx := newContext(map[common.Address]uint64{})
+	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
 	ctx.timestamp++

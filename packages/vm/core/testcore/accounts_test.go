@@ -86,16 +86,25 @@ func TestWithdrawEverything(t *testing.T) {
 	depositGasFee := ch.LastReceipt().GasFeeCharged
 	l2balance := ch.L2BaseTokens(senderAgentID)
 
-	// construct request with low allowance (just sufficient for storage deposit balance), so its possible to estimate the gas fees
+	// construct the request to estimate an withdrawal (leave a few tokens to pay for gas)
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithFungibleTokens(isc.NewAssetsBaseTokens(l2balance)).AddAllowance(isc.NewAssetsBaseTokens(5200))
+		AddAllowance(isc.NewAssetsBaseTokens(l2balance - 1000)).
+		WithMaxAffordableGasBudget() // SET A GAS BUDGET, otherwise user max balance will be simulated
 
-	gasEstimate, fee, err := ch.EstimateGasOffLedger(req, sender, true)
+	_, estimate, err := ch.EstimateGasOffLedger(req, sender, false)
 	require.NoError(t, err)
 
 	// set the allowance to the maximum possible value
-	req = req.WithAllowance(isc.NewAssetsBaseTokens(l2balance - fee)).
-		WithGasBudget(gasEstimate)
+	req = req.WithAllowance(isc.NewAssetsBaseTokens(l2balance - estimate.GasFeeCharged)).
+		WithGasBudget(estimate.GasBurned)
+
+	// retry the estimation (fee will be lower when writing "0" to the user account, instead of some positive number)
+	_, estimate2, err := ch.EstimateGasOffLedger(req, sender, false)
+	require.NoError(t, err)
+
+	// set the allowance to the maximum possible value
+	req = req.WithAllowance(isc.NewAssetsBaseTokens(l2balance - estimate2.GasFeeCharged)).
+		WithGasBudget(estimate2.GasBurned)
 
 	_, err = ch.PostRequestOffLedger(req, sender)
 	require.NoError(t, err)
@@ -105,7 +114,7 @@ func TestWithdrawEverything(t *testing.T) {
 	finalL2Balance := ch.L2BaseTokens(senderAgentID)
 
 	// ensure everything was withdrawn
-	require.Equal(t, initialL1balance, finalL1Balance+depositGasFee+withdrawalGasFee)
+	require.EqualValues(t, initialL1balance, finalL1Balance+depositGasFee+withdrawalGasFee)
 	require.Zero(t, finalL2Balance)
 }
 
@@ -590,10 +599,10 @@ func TestDepositBaseTokens(t *testing.T) {
 		t.Run("add base tokens "+strconv.Itoa(int(addBaseTokens)), func(t *testing.T) {
 			v := initDepositTest(t, nil)
 			v.req.WithGasBudget(100_000)
-			estimatedGas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
+			_, estimateRec, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
 
-			v.req.WithGasBudget(estimatedGas)
+			v.req.WithGasBudget(estimateRec.GasBurned)
 
 			v.req = v.req.AddBaseTokens(addBaseTokens)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.user)

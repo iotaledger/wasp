@@ -162,14 +162,23 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddBaseTokens(expectedBack + 10_000). // add extra base tokens besides allowance in order to estimate the gas fees
-		AddAllowanceBaseTokens(expectedBack)
+		AddBaseTokens(expectedBack + 500). // add extra base tokens besides allowance in order to estimate the gas fees
+		AddAllowanceBaseTokens(expectedBack).
+		WithGasBudget(100_000)
 
-	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
+	_, estimate, err := ch.EstimateGasOnLedger(req, user, false)
+	require.NoError(t, err)
+
+	req.
+		WithFungibleTokens(isc.NewAssetsBaseTokens(expectedBack + estimate.GasFeeCharged)).
+		WithGasBudget(estimate.GasBurned)
+
+	// re-estimate (it's possible the result is slightly different because we send less tokens (req is changed from  `exptected+500` above to `expected+estimate.GasFeeCharged`))
+	_, estimate2, err := ch.EstimateGasOnLedger(req, user, false)
 	require.NoError(t, err)
 	req.
-		WithFungibleTokens(isc.NewAssetsBaseTokens(expectedBack + gasFee)).
-		WithGasBudget(gas + 1)
+		WithFungibleTokens(isc.NewAssetsBaseTokens(expectedBack + estimate2.GasFeeCharged)).
+		WithGasBudget(estimate2.GasBurned)
 
 	_, err = ch.PostRequestSync(req, user)
 	require.NoError(t, err)
