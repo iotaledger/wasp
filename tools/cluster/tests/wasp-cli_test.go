@@ -82,6 +82,12 @@ func TestZeroGasFee(t *testing.T) {
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 	w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
 	checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
+
+	t.Run("deposit directly to EVM", func(t *testing.T) {
+		_, eth := newEthereumAccount()
+		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
+		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000)
+	})
 }
 
 func TestWaspCLI1Chain(t *testing.T) {

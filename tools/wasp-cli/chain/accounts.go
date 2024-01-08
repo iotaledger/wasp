@@ -144,6 +144,9 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 	gasLimits, err := gas.LimitsFromBytes(gasLimitsBytes)
 	log.Check(err)
 
+	if feePolicy.GasPerToken.IsZero() {
+		return 0
+	}
 	// assumes deposit fee == minGasPerRequest fee
 	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest)
 }
