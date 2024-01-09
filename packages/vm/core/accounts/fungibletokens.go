@@ -17,7 +17,7 @@ func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets, 
 		return
 	}
 	creditToAccount(state, accountKey(agentID, chainID), assets)
-	creditToAccount(state, l2TotalsAccount, assets)
+	creditToAccount(state, L2TotalsAccount, assets)
 	touchAccount(state, agentID, chainID)
 }
 
@@ -54,7 +54,7 @@ func CreditToAccountFullDecimals(state kv.KVStore, agentID isc.AgentID, amount *
 		return
 	}
 	creditToAccountFullDecimals(state, accountKey(agentID, chainID), amount)
-	creditToAccountFullDecimals(state, l2TotalsAccount, amount)
+	creditToAccountFullDecimals(state, L2TotalsAccount, amount)
 	touchAccount(state, agentID, chainID)
 }
 
@@ -73,7 +73,7 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Assets,
 	if !debitFromAccount(state, accountKey(agentID, chainID), assets) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", assets, agentID, ErrNotEnoughFunds))
 	}
-	if !debitFromAccount(state, l2TotalsAccount, assets) {
+	if !debitFromAccount(state, L2TotalsAccount, assets) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
 	touchAccount(state, agentID, chainID)
@@ -131,7 +131,7 @@ func DebitFromAccountFullDecimals(state kv.KVStore, agentID isc.AgentID, amount 
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", amount.String(), agentID, ErrNotEnoughFunds))
 	}
 
-	if !debitFromAccountFullDecimals(state, l2TotalsAccount, amount) {
+	if !debitFromAccountFullDecimals(state, L2TotalsAccount, amount) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
 	touchAccount(state, agentID, chainID)
@@ -175,7 +175,7 @@ func GetAccountFungibleTokens(state kv.KVStoreReader, agentID isc.AgentID, chain
 }
 
 func GetTotalL2FungibleTokens(state kv.KVStoreReader) *isc.Assets {
-	return getFungibleTokens(state, l2TotalsAccount)
+	return getFungibleTokens(state, L2TotalsAccount)
 }
 
 func getAccountBalanceDict(state kv.KVStoreReader, accountKey kv.Key) dict.Dict {

@@ -68,7 +68,6 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		// state baseline is always valid in Solo
 		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
 		EstimateGasMode:      estimateGas,
-		MigrationsOverride:   ch.migrationScheme,
 	}
 
 	res, err := vmimpl.Run(task)

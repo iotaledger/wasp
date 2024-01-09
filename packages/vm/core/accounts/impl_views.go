@@ -69,7 +69,7 @@ func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 // viewTotalAssets returns total balances controlled by the chain
 func viewTotalAssets(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(ctx.StateR(), l2TotalsAccount)
+	return getAccountBalanceDict(ctx.StateR(), L2TotalsAccount)
 }
 
 // viewAccounts returns list of all accounts

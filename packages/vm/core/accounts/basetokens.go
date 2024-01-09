@@ -10,16 +10,16 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func baseTokensKey(accountKey kv.Key) kv.Key {
+func BaseTokensKey(accountKey kv.Key) kv.Key {
 	return prefixBaseTokens + accountKey
 }
 
 func getBaseTokensFullDecimals(state kv.KVStoreReader, accountKey kv.Key) *big.Int {
-	return codec.MustDecodeBigIntAbs(state.Get(baseTokensKey(accountKey)), big.NewInt(0))
+	return codec.MustDecodeBigIntAbs(state.Get(BaseTokensKey(accountKey)), big.NewInt(0))
 }
 
 func setBaseTokensFullDecimals(state kv.KVStore, accountKey kv.Key, n *big.Int) {
-	state.Set(baseTokensKey(accountKey), codec.EncodeBigIntAbs(n))
+	state.Set(BaseTokensKey(accountKey), codec.EncodeBigIntAbs(n))
 }
 
 func getBaseTokens(state kv.KVStoreReader, accountKey kv.Key) uint64 {
@@ -32,7 +32,7 @@ func getBaseTokens(state kv.KVStoreReader, accountKey kv.Key) uint64 {
 func setBaseTokens(state kv.KVStore, accountKey kv.Key, n uint64) {
 	// convert to 18 decimals
 	amount := util.MustBaseTokensDecimalsToEthereumDecimalsExact(n, parameters.L1().BaseToken.Decimals)
-	state.Set(baseTokensKey(accountKey), codec.EncodeBigIntAbs(amount))
+	state.Set(BaseTokensKey(accountKey), codec.EncodeBigIntAbs(amount))
 }
 
 func AdjustAccountBaseTokens(state kv.KVStore, account isc.AgentID, adjustment int64, chainID isc.ChainID) {
