@@ -42,9 +42,9 @@ The nodes will then be reachable under these ports:
   - DASHBOARD: <http://localhost/wasp/dashboard>
 
 - Hornet:
-  - API: <http://localhost:14265>
-  - Faucet: <http://localhost:8091>
-  - Dashboard: <http://localhost:8081> (username: admin, password: admin)
+  - API: <http://localhost/api/routes>
+  - Faucet: <http://localhost/faucet>
+  - Dashboard: <http://localhost/dashboard> (username: admin, password: admin)
 
 ## Wasp-cli setup
 
