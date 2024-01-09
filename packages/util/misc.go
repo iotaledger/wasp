@@ -35,7 +35,7 @@ func IsZeroBigInt(bi *big.Int) bool {
 }
 
 func IsPositiveBigInt(n *big.Int) bool {
-	return n.Cmp(Big0) == 1
+	return n.Sign() > 0
 }
 
 func GetHashValue(obj interface{ Bytes() []byte }) hashing.HashValue {

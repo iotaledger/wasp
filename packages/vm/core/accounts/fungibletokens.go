@@ -47,8 +47,6 @@ func creditToAccount(state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
 	}
 }
 
-// CreditToAccount brings new funds to the on chain ledger
-// NOTE: this function does not take NFTs into account
 func CreditToAccountFullDecimals(state kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
 	if !util.IsPositiveBigInt(amount) {
 		return
@@ -164,6 +162,16 @@ func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.Assets {
 	ret := isc.NewEmptyAssets()
 	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
 		ret.Add(getFungibleTokens(state, kv.Key(key)))
+		return true
+	})
+	return ret
+}
+
+func calcL2TotalBaseTokensFullDecimals(state kv.KVStoreReader) *big.Int {
+	ret := big.NewInt(0)
+	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
+		amount := getBaseTokensFullDecimals(state, kv.Key(key))
+		ret = new(big.Int).Add(ret, amount)
 		return true
 	})
 	return ret
