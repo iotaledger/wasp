@@ -96,13 +96,26 @@ jobs:
             type=match,pattern=v(\d+.\d+),suffix=-beta,group=1,enable=${{ contains(github.ref, '-beta') }}
             type=match,pattern=v(\d+.\d+),suffix=-rc,group=1,enable=${{ contains(github.ref, '-rc') }}
 
+      - name: Extract CLI metadata (tags, labels) for Docker
+        id: meta-cli
+        uses: docker/metadata-action@v5
+        with:
+          images: iotaledger/wasp-cli
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=match,pattern=v(\d+.\d+),suffix=-alpha,group=1,enable=${{ contains(github.ref, '-alpha') }}
+            type=match,pattern=v(\d+.\d+),suffix=-beta,group=1,enable=${{ contains(github.ref, '-beta') }}
+            type=match,pattern=v(\d+.\d+),suffix=-rc,group=1,enable=${{ contains(github.ref, '-rc') }}
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
           password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
 
-      - name: Build and push to Dockerhub
+      - name: Build and push WASP to Dockerhub
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -111,6 +124,18 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }},iotaledger/wasp:latest
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
+
+      - name: Build and push WASP CLI to Dockerhub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./tools/wasp-cli/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-cli.outputs.tags }},iotaledger/wasp-cli:latest
+          labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
 
