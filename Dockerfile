@@ -36,6 +36,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
   --mount=type=cache,target=/root/go/pkg/mod \
   go build -o /app/wasp -a -tags=${BUILD_TAGS} -ldflags=${BUILD_LD_FLAGS} .
 
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/root/go/pkg/mod \
+  cd ./tools/wasp-cli && go build -o /app/wasp-cli -a -ldflags=${BUILD_LD_FLAGS} .
+
 ############################
 # Image
 ############################
