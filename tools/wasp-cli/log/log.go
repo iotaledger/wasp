@@ -27,8 +27,8 @@ var (
 )
 
 func Init(rootCmd *cobra.Command) {
-	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose")
-	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "debug")
+	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "output debug information")
 	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "json output")
 }
 
