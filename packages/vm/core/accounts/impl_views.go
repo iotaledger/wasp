@@ -36,6 +36,20 @@ func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
 	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
 }
 
+// viewBalanceBaseTokenEVM returns the base tokens balance of the account belonging to the AgentID (in the EVM format with 18 decimals)
+// Params:
+// - ParamAgentID (optional -- default: caller)
+func viewBalanceBaseTokenEVM(ctx isc.SandboxView) dict.Dict {
+	nTokens := getBaseTokensFullDecimals(
+		ctx.StateR(),
+		accountKey(
+			ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller()),
+			ctx.ChainID(),
+		),
+	)
+	return dict.Dict{ParamBalance: codec.EncodeBigIntAbs(nTokens)}
+}
+
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
 // Params:
 // - ParamAgentID (optional -- default: caller)
@@ -55,7 +69,7 @@ func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 // viewTotalAssets returns total balances controlled by the chain
 func viewTotalAssets(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(ctx.StateR(), l2TotalsAccount)
+	return getAccountBalanceDict(ctx.StateR(), L2TotalsAccount)
 }
 
 // viewAccounts returns list of all accounts

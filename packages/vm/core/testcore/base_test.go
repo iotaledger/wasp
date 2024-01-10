@@ -310,9 +310,11 @@ func TestEstimateGas(t *testing.T) {
 		keyPair, _ := env.NewKeyPairWithFunds()
 
 		// we can call EstimateGas even with 0 base tokens in L2 account
-		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair, true)
-		require.NoError(t, err)
-		require.NotZero(t, estimatedGas)
+		_, estimate, err2 := ch.EstimateGasOffLedger(callParams(), keyPair, true)
+		estimatedGas = estimate.GasBurned
+		estimatedGasFee = estimate.GasFeeCharged
+		require.NoError(t, err2)
+		require.NotZero(t, estimatedGasFee)
 		require.NotZero(t, estimatedGasFee)
 		t.Logf("estimatedGas: %d, estimatedGasFee: %d", estimatedGas, estimatedGasFee)
 

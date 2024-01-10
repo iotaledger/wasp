@@ -42,7 +42,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -93,6 +92,8 @@ type chainData struct {
 
 	db         kvstore.KVStore
 	writeMutex *sync.Mutex
+
+	migrationScheme *migrations.MigrationScheme
 }
 
 // Chain represents state of individual chain.
@@ -384,7 +385,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		log:                    env.logger.Named(chData.Name),
 		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
 		mempool:                newMempool(env.utxoDB.GlobalTime, chData.ChainID),
-		migrationScheme:        allmigrations.DefaultScheme,
+		migrationScheme:        chData.migrationScheme,
 	}
 	env.chains[chData.ChainID] = ch
 	return ch

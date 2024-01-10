@@ -44,7 +44,7 @@ func GetNativeTokenBalance(state kv.KVStoreReader, agentID isc.AgentID, nativeTo
 }
 
 func GetNativeTokenBalanceTotal(state kv.KVStoreReader, nativeTokenID iotago.NativeTokenID) *big.Int {
-	return getNativeTokenAmount(state, l2TotalsAccount, nativeTokenID)
+	return getNativeTokenAmount(state, L2TotalsAccount, nativeTokenID)
 }
 
 func GetNativeTokens(state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) iotago.NativeTokens {

@@ -26,18 +26,18 @@ var (
 )
 
 const (
-	// keyAllAccounts stores a map of <agentID> => true
+	// KeyAllAccounts stores a map of <agentID> => true
 	// where sum = baseTokens + native tokens + nfts
-	keyAllAccounts = "a"
+	KeyAllAccounts = "a"
 
 	// prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
 	prefixBaseTokens = "b"
 	// prefixBaseTokens | <accountID> stores a map of <nativeTokenID> => big.Int
 	PrefixNativeTokens = "t"
 
-	// l2TotalsAccount is the special <accountID> storing the total fungible tokens
+	// L2TotalsAccount is the special <accountID> storing the total fungible tokens
 	// controlled by the chain
-	l2TotalsAccount = "*"
+	L2TotalsAccount = "*"
 
 	// PrefixNFTs | <agentID> stores a map of <NFTID> => true
 	PrefixNFTs = "n"
@@ -82,11 +82,11 @@ func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
 }
 
 func allAccountsMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, keyAllAccounts)
+	return collections.NewMap(state, KeyAllAccounts)
 }
 
 func allAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, keyAllAccounts)
+	return collections.NewMapReadOnly(state, KeyAllAccounts)
 }
 
 func accountExists(state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) bool {

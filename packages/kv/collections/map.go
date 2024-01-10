@@ -108,6 +108,15 @@ func (m *Map) Keys() [][]byte {
 	return keys
 }
 
+func (m *ImmutableMap) Keys() [][]byte {
+	var keys [][]byte
+	m.IterateKeys(func(elemKey []byte) bool {
+		keys = append(keys, elemKey)
+		return true
+	})
+	return keys
+}
+
 // Erase the map.
 func (m *Map) Erase() {
 	for _, k := range m.Keys() {

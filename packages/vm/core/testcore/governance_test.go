@@ -659,17 +659,17 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	estimateGas, estimateGasFee, err := ch.EstimateGasOnLedger(solo.NewCallParams(
+	_, estimate, err := ch.EstimateGasOnLedger(solo.NewCallParams(
 		accounts.Contract.Name,
 		accounts.FuncDeposit.Name,
 	), user1, true)
 	require.NoError(t, err)
-	require.Zero(t, estimateGasFee)
+	require.Zero(t, estimate.GasFeeCharged)
 
 	userL2Bal1 := ch.L2BaseTokens(userAgentID1)
 	userL1Bal1 := ch.Env.L1BaseTokens(userAddr1)
 
-	gasGreaterThanEstimatedGas := estimateGas + 100
+	gasGreaterThanEstimatedGas := estimate.GasBurned + 100
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.Contract.Name,
@@ -692,7 +692,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	require.Greater(t, ch.LastReceipt().GasBurned, uint64(0))
 	require.Zero(t, ch.LastReceipt().GasFeeCharged)
 
-	gasLessThanEstimatedGas := estimateGas - 100
+	gasLessThanEstimatedGas := estimate.GasBurned - 100
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.Contract.Name,

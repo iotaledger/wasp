@@ -45,9 +45,9 @@ type Context interface {
 	RevertToSnapshot(int)
 
 	BaseTokensDecimals() uint32
-	GetBaseTokensBalance(addr common.Address) uint64
-	AddBaseTokensBalance(addr common.Address, amount uint64)
-	SubBaseTokensBalance(addr common.Address, amount uint64)
+	GetBaseTokensBalance(addr common.Address) *big.Int
+	AddBaseTokensBalance(addr common.Address, amount *big.Int)
+	SubBaseTokensBalance(addr common.Address, amount *big.Int)
 
 	WithoutGasBurn(f func())
 }
