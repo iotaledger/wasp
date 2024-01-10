@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -145,6 +146,7 @@ func debitFromAccountFullDecimals(state kv.KVStore, accountKey kv.Key, amount *b
 	return true
 }
 
+// getFungibleTokens returns the fungible tokens owned by an account (base tokens extra decimals will be discarded)
 func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.Assets {
 	ret := isc.NewEmptyAssets()
 	ret.AddBaseTokens(getBaseTokens(state, accountKey))
@@ -160,20 +162,25 @@ func getFungibleTokens(state kv.KVStoreReader, accountKey kv.Key) *isc.Assets {
 
 func calcL2TotalFungibleTokens(state kv.KVStoreReader) *isc.Assets {
 	ret := isc.NewEmptyAssets()
-	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
-		ret.Add(getFungibleTokens(state, kv.Key(key)))
-		return true
-	})
-	return ret
-}
+	totalBaseTokens := big.NewInt(0)
 
-func calcL2TotalBaseTokensFullDecimals(state kv.KVStoreReader) *big.Int {
-	ret := big.NewInt(0)
-	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
-		amount := getBaseTokensFullDecimals(state, kv.Key(key))
-		ret = new(big.Int).Add(ret, amount)
+	allAccountsMapR(state).IterateKeys(func(accountKey []byte) bool {
+		// add all native tokens owned by each account
+		nativeTokensMapR(state, kv.Key(accountKey)).Iterate(func(idBytes []byte, val []byte) bool {
+			ret.AddNativeTokens(
+				isc.MustNativeTokenIDFromBytes(idBytes),
+				new(big.Int).SetBytes(val),
+			)
+			return true
+		})
+		// use the full decimals for each account, so no dust balance is lost in the calculation
+		baseTokensFullDecimals := getBaseTokensFullDecimals(state, kv.Key(accountKey))
+		totalBaseTokens = new(big.Int).Add(totalBaseTokens, baseTokensFullDecimals)
 		return true
 	})
+
+	// convert from 18 decimals, remainder must be 0
+	ret.BaseTokens = util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalBaseTokens, parameters.L1().BaseToken.Decimals)
 	return ret
 }
 
