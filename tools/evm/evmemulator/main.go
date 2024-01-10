@@ -30,6 +30,12 @@ type soloContext struct {
 	cleanup []func()
 }
 
+func (s *soloContext) cleanupAll() {
+	for i := len(s.cleanup) - 1; i >= 0; i-- {
+		s.cleanup[i]()
+	}
+}
+
 func (s *soloContext) Cleanup(f func()) {
 	s.cleanup = append(s.cleanup, f)
 }
@@ -62,6 +68,8 @@ func init() {
 	parameters.InitL1(parameters.L1ForTesting)
 }
 
+var listenAddress string = ":8545"
+
 func main() {
 	cmd := &cobra.Command{
 		Args:  cobra.NoArgs,
@@ -74,7 +82,7 @@ evmemulator does the following:
 
 - Starts an ISC chain in a Solo environment
 - Initializes 10 ethereum accounts with funds (private keys and addresses printed after init)
-- Starts a JSONRPC server
+- Starts a JSONRPC server at http://localhost:8545 (websocket: ws://localhost:8545/ws)
 
 You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use it for testing Ethereum contracts.
 
@@ -84,18 +92,14 @@ Note: chain data is stored in-memory and will be lost upon termination.
 	}
 
 	log.Init(cmd)
+	cmd.PersistentFlags().StringVarP(&listenAddress, "listen", "l", ":8545", "listen address")
 
 	err := cmd.Execute()
 	log.Check(err)
 }
 
-func start(cmd *cobra.Command, args []string) {
+func initSolo() (*soloContext, *solo.Chain) {
 	ctx := &soloContext{}
-	defer func() {
-		for i := len(ctx.cleanup) - 1; i >= 0; i-- {
-			ctx.cleanup[i]()
-		}
-	}()
 
 	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
@@ -106,8 +110,10 @@ func start(cmd *cobra.Command, args []string) {
 		origin.ParamBlockKeepAmount: codec.EncodeInt32(emulator.BlockKeepAll),
 		origin.ParamWaspVersion:     codec.EncodeString(app.Version),
 	})
+	return ctx, chain
+}
 
-	var accounts []*ecdsa.PrivateKey
+func createAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
 	log.Printf("creating accounts with funds...\n")
 	header := []string{"private key", "address"}
 	var rows [][]string
@@ -117,8 +123,16 @@ func start(cmd *cobra.Command, args []string) {
 		rows = append(rows, []string{hex.EncodeToString(crypto.FromECDSA(pk)), addr.String()})
 	}
 	log.PrintTable(header, rows)
+	return accounts
+}
 
-	srv, err := jsonrpc.NewServer(
+func start(cmd *cobra.Command, args []string) {
+	ctx, chain := initSolo()
+	defer ctx.cleanupAll()
+
+	accounts := createAccounts(chain)
+
+	jsonRPCServer, err := jsonrpc.NewServer(
 		chain.EVM(),
 		jsonrpc.NewAccountManager(accounts),
 		metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
@@ -126,12 +140,17 @@ func start(cmd *cobra.Command, args []string) {
 	)
 	log.Check(err)
 
-	const addr = ":8545"
+	mux := http.NewServeMux()
+	mux.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		jsonRPCServer.WebsocketHandler([]string{"*"}).ServeHTTP(w, req)
+	}))
+	mux.Handle("/", jsonRPCServer)
+
 	s := &http.Server{
-		Addr:    addr,
-		Handler: srv,
+		Addr:    listenAddress,
+		Handler: mux,
 	}
-	log.Printf("starting JSONRPC server on %s...\n", addr)
+	log.Printf("starting JSONRPC server on %s...\n", listenAddress)
 	err = s.ListenAndServe()
 	log.Check(err)
 }
