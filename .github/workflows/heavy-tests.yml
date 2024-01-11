@@ -266,7 +266,7 @@ jobs:
 
       - name: Cache Hornet
         id: cache_hornet
-        uses: actions/cache@v3.3.2
+        uses: actions/cache@v3.3.3
         with:
           key: hornet-${{ hashFiles('**/go.mod', '**/go.sum') }}
           path: |
