@@ -116,10 +116,11 @@ func TestTutorialAccounts(t *testing.T) {
 
 	// send 1 Mi from the L1 wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddBaseTokens(1 * isc.Million)
+		AddBaseTokens(1 * isc.Million).
+		WithMaxAffordableGasBudget()
 
 	// estimate the gas fee and storage deposit
-	_, receipt1, err := chain.EstimateGasOnLedger(req, userWallet, false)
+	_, receipt1, err := chain.EstimateGasOnLedger(req, userWallet)
 	require.NoError(t, err)
 	storageDeposit1 := chain.EstimateNeededStorageDeposit(req, userWallet)
 	require.Zero(t, storageDeposit1) // since 1 Mi is enough
@@ -142,16 +143,16 @@ func TestTutorialAccounts(t *testing.T) {
 	// withdraw all base tokens back to L1
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		WithAllowance(isc.NewAssetsBaseTokens(onChainBalance - 1000)). // leave some tokens out of allowance, to pay for gas
-		WithMaxAffordableGasBudget()                                   // NEED TO SET A GAS VALUE, OTHERWISE MAXBALANCE WILL BE SIMULATED...
+		WithMaxAffordableGasBudget()
 
 	// estimate the gas fee
-	_, receipt2, err := chain.EstimateGasOffLedger(req, userWallet, false)
+	_, receipt2, err := chain.EstimateGasOffLedger(req, userWallet)
 	require.NoError(t, err)
 
 	// re-estimate with fixed budget and fee (the final fee might be smaller, because less gas will be charged when setting 0 in the user account, rather than a positive number)
 	req.WithGasBudget(receipt2.GasBurned).
 		WithAllowance(isc.NewAssetsBaseTokens(onChainBalance - (receipt2.GasFeeCharged)))
-	_, receipt3, err := chain.EstimateGasOffLedger(req, userWallet, false)
+	_, receipt3, err := chain.EstimateGasOffLedger(req, userWallet)
 	require.NoError(t, err)
 
 	// send the withdraw request

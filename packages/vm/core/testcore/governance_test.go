@@ -662,7 +662,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	_, estimate, err := ch.EstimateGasOnLedger(solo.NewCallParams(
 		accounts.Contract.Name,
 		accounts.FuncDeposit.Name,
-	), user1, true)
+	), user1)
 	require.NoError(t, err)
 	require.Zero(t, estimate.GasFeeCharged)
 

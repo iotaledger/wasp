@@ -365,6 +365,7 @@ func TestRPCCall(t *testing.T) {
 		From: creatorAddress,
 		To:   &contractAddress,
 		Data: callArguments,
+		Gas:  100_000,
 	}, nil)
 	require.NoError(t, err)
 
@@ -388,6 +389,7 @@ func TestRPCCallNonView(t *testing.T) {
 		From: creatorAddress,
 		To:   &contractAddress,
 		Data: callArguments,
+		Gas:  100_000,
 	}, nil)
 	require.NoError(t, err)
 }

@@ -173,7 +173,8 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		return expectedHash, nil
 	}
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
-	_, estimate, err := ch.EstimateGasOffLedger(req, nil, true)
+	req.WithMaxAffordableGasBudget()
+	_, estimate, err := ch.EstimateGasOffLedger(req, user)
 	if err != nil {
 		return [32]byte{}, err
 	}
