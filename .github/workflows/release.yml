@@ -151,7 +151,7 @@ jobs:
         with:
           destination_container_repo: iotaledger/sandbox-wasp-cli
           provider: dockerhub
-          short_description: '`wasp-cli` is a command line tool for interacting with IOTA Wasp and its smart contracts.'
+          short_description: 'wasp-cli is a command line tool for interacting with IOTA Wasp and its smart contracts.'
           readme_file: 'tools/wasp-cli/README.md'
 
   release-iscmagic:
