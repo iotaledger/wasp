@@ -26,7 +26,7 @@ type VMTask struct {
 	TimeAssumption     time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget isc.AgentID
-	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
+	// If EstimateGasMode is enabled, signature and nonce checks will be skipped
 	EstimateGasMode bool
 	// If EVMTracer is set, all requests will be executed normally up until the EVM
 	// tx with the given index, which will then be executed with the given tracer.

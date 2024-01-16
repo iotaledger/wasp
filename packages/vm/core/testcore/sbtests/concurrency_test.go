@@ -89,7 +89,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(baseTokensSentPerRequest).WithGasBudget(math.MaxUint64)
 
-	_, estimate, err := chain.EstimateGasOnLedger(req, nil, true)
+	_, estimate, err := chain.EstimateGasOnLedger(req, nil)
 	require.NoError(t, err)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}

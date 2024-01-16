@@ -166,7 +166,7 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 		AddAllowanceBaseTokens(expectedBack).
 		WithGasBudget(100_000)
 
-	_, estimate, err := ch.EstimateGasOnLedger(req, user, false)
+	_, estimate, err := ch.EstimateGasOnLedger(req, user)
 	require.NoError(t, err)
 
 	req.
@@ -174,7 +174,7 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 		WithGasBudget(estimate.GasBurned)
 
 	// re-estimate (it's possible the result is slightly different because we send less tokens (req is changed from  `exptected+500` above to `expected+estimate.GasFeeCharged`))
-	_, estimate2, err := ch.EstimateGasOnLedger(req, user, false)
+	_, estimate2, err := ch.EstimateGasOnLedger(req, user)
 	require.NoError(t, err)
 	req.
 		WithFungibleTokens(isc.NewAssetsBaseTokens(expectedBack + estimate2.GasFeeCharged)).
