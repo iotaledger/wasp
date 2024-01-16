@@ -5,8 +5,8 @@ ARG GOLANG_IMAGE_TAG=1.21-bullseye
 FROM golang:${GOLANG_IMAGE_TAG} AS build
 ARG BUILD_LD_FLAGS="--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing"
 
-LABEL org.label-schema.description="Wasp CLI"
-LABEL org.label-schema.name="iotaledger/wasp-cli"
+LABEL org.label-schema.description="Sandbox Wasp CLI"
+LABEL org.label-schema.name="iotaledger/sandbox-wasp-cli"
 LABEL org.label-schema.schema-version="1.0"
 LABEL org.label-schema.vcs-url="https://github.com/iotaledger/wasp"
 

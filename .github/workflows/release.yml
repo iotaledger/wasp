@@ -100,7 +100,7 @@ jobs:
         id: meta-cli
         uses: docker/metadata-action@v5
         with:
-          images: iotaledger/wasp-cli
+          images: iotaledger/sandbox-wasp-cli
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -134,7 +134,7 @@ jobs:
           file: ./tools/wasp-cli/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta-cli.outputs.tags }},iotaledger/wasp-cli:latest
+          tags: ${{ steps.meta-cli.outputs.tags }},iotaledger/sandbox-wasp-cli:latest
           labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
