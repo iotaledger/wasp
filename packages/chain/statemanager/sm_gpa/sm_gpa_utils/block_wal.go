@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
@@ -202,7 +202,7 @@ func (bwT *blockWAL) ReadAllByStateIndex(cb func(stateIndex uint32, block state.
 
 	bwT.LogDebugf("Reading entire WAL: %v blocks found, sorting them by index...", blocksTotal)
 	allStateIndexes := lo.Keys(blocksByStateIndex)
-	sort.Slice(allStateIndexes, func(i, j int) bool { return allStateIndexes[i] < allStateIndexes[j] })
+	slices.Sort(allStateIndexes)
 	bwT.LogDebugf("Reading entire WAL: blocks sorted, notifying caller...")
 	for _, stateIndex := range allStateIndexes {
 		stateIndexPaths := blocksByStateIndex[stateIndex]
