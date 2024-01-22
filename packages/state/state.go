@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 // state is the implementation of the State interface
@@ -69,6 +71,10 @@ func loadPrevL1CommitmentFromState(chainState kv.KVStoreReader) *L1Commitment {
 	l1c, err := L1CommitmentFromBytes(data)
 	mustNoErr(err)
 	return l1c
+}
+
+func (s *state) SchemaVersion() isc.SchemaVersion {
+	return root.NewStateAccess(s).SchemaVersion()
 }
 
 func (s *state) String() string {

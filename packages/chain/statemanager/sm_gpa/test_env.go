@@ -124,7 +124,7 @@ func (teT *testEnv) addVariedNodes(
 		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
-		origin.InitChain(store, teT.bf.GetChainInitParameters(), 0)
+		origin.InitChain(0, store, teT.bf.GetChainInitParameters(), 0)
 	}
 	teT.nodeIDs = nodeIDs
 	teT.sms = sms

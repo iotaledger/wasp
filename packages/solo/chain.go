@@ -285,20 +285,26 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 	return ch.DeployContract(keyPair, name, hprog, params...)
 }
 
+func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...interface{}) (abi.ABI, []byte) {
+	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
+	require.NoError(t, err)
+
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(t, err)
+
+	data := []byte{}
+	data = append(data, bytecode...)
+	data = append(data, constructorArguments...)
+	return contractABI, data
+}
+
 // DeployEVMContract deploys an evm contract on the chain
 func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, value *big.Int, args ...interface{}) (common.Address, abi.ABI) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(ch.ChainID, creatorAddress))
 
-	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
-	require.NoError(ch.Env.T, err)
-	constructorArguments, err := contractABI.Pack("", args...)
-	require.NoError(ch.Env.T, err)
-
-	data := []byte{}
-	data = append(data, bytecode...)
-	data = append(data, constructorArguments...)
+	contractABI, data := EVMCallDataFromArtifacts(ch.Env.T, abiJSON, bytecode, args...)
 
 	gasLimit, err := ch.EVM().EstimateGas(ethereum.CallMsg{
 		From:  creatorAddress,

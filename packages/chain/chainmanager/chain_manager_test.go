@@ -128,7 +128,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(fake2ST, nil, 0)
+		origin.InitChain(0, fake2ST, nil, 0)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
 		// TODO: Commit a block to the store, if needed.

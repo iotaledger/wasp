@@ -19,16 +19,16 @@ import (
 )
 
 // creditToAccount credits assets to the chain ledger
-func creditToAccount(chainState kv.KVStore, agentID isc.AgentID, ftokens *isc.Assets, chainID isc.ChainID) {
+func creditToAccount(v isc.SchemaVersion, chainState kv.KVStore, agentID isc.AgentID, ftokens *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditToAccount(s, agentID, ftokens, chainID)
+		accounts.CreditToAccount(v, s, agentID, ftokens, chainID)
 	})
 }
 
 // creditToAccountFullDecimals credits assets to the chain ledger
-func creditToAccountFullDecimals(chainState kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+func creditToAccountFullDecimals(v isc.SchemaVersion, chainState kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.CreditToAccountFullDecimals(s, agentID, amount, chainID)
+		accounts.CreditToAccountFullDecimals(v, s, agentID, amount, chainID)
 	})
 }
 
@@ -48,16 +48,16 @@ func creditNFTToAccount(chainState kv.KVStore, agentID isc.AgentID, req isc.OnLe
 }
 
 // debitFromAccount subtracts tokens from account if there are enough.
-func debitFromAccount(chainState kv.KVStore, agentID isc.AgentID, transfer *isc.Assets, chainID isc.ChainID) {
+func debitFromAccount(v isc.SchemaVersion, chainState kv.KVStore, agentID isc.AgentID, transfer *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.DebitFromAccount(s, agentID, transfer, chainID)
+		accounts.DebitFromAccount(v, s, agentID, transfer, chainID)
 	})
 }
 
 // debitFromAccountFullDecimals subtracts basetokens tokens from account if there are enough.
-func debitFromAccountFullDecimals(chainState kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+func debitFromAccountFullDecimals(v isc.SchemaVersion, chainState kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.DebitFromAccountFullDecimals(s, agentID, amount, chainID)
+		accounts.DebitFromAccountFullDecimals(v, s, agentID, amount, chainID)
 	})
 }
 
@@ -68,9 +68,9 @@ func debitNFTFromAccount(chainState kv.KVStore, agentID isc.AgentID, nftID iotag
 	})
 }
 
-func mustMoveBetweenAccounts(chainState kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
+func mustMoveBetweenAccounts(v isc.SchemaVersion, chainState kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
 	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		accounts.MustMoveBetweenAccounts(s, fromAgentID, toAgentID, assets, chainID)
+		accounts.MustMoveBetweenAccounts(v, s, fromAgentID, toAgentID, assets, chainID)
 	})
 }
 
@@ -84,7 +84,7 @@ func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *r
 func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 	var ret uint64
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetBaseTokensBalance(s, agentID, reqctx.ChainID())
+		ret = accounts.GetBaseTokensBalance(reqctx.SchemaVersion(), s, agentID, reqctx.ChainID())
 	})
 	return ret
 }
@@ -92,7 +92,7 @@ func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
 	var ret bool
 	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.HasEnoughForAllowance(s, agentID, allowance, reqctx.ChainID())
+		ret = accounts.HasEnoughForAllowance(reqctx.SchemaVersion(), s, agentID, allowance, reqctx.ChainID())
 	})
 	return ret
 }
@@ -249,7 +249,7 @@ func (reqctx *requestContext) adjustL2BaseTokensIfNeeded(adjustment int64, accou
 	}
 	err := panicutil.CatchPanicReturnError(func() {
 		reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-			accounts.AdjustAccountBaseTokens(s, account, adjustment, reqctx.ChainID())
+			accounts.AdjustAccountBaseTokens(reqctx.SchemaVersion(), s, account, adjustment, reqctx.ChainID())
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {

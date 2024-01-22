@@ -324,7 +324,7 @@ func (env *Solo) deployChain(
 	require.NoError(env.T, err)
 	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	origin.InitChain(store, initParams, originAO.Amount-originAOMinSD)
+	origin.InitChain(0, store, initParams, originAO.Amount-originAOMinSD)
 
 	{
 		block, err2 := store.LatestBlock()

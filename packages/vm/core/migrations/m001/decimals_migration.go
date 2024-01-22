@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
@@ -22,7 +21,7 @@ var AccountDecimals = migrations.Migration{
 		}
 
 		// iterate though all accounts,
-		allAccountsMap := collections.NewMapReadOnly(state, accounts.KeyAllAccounts)
+		allAccountsMap := accounts.AllAccountsMapR(state)
 		allAccountsMap.IterateKeys(func(accountKey []byte) bool {
 			// migrate each account
 			migrateBaseTokens(accountKey)

@@ -48,7 +48,11 @@ type SandboxBase interface {
 	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
 	StateR() kv.KVStoreReader
+	// SchemaVersion returns the schema version of the current state
+	SchemaVersion() SchemaVersion
 }
+
+type SchemaVersion uint32
 
 type Params struct {
 	Dict dict.Dict

@@ -24,9 +24,9 @@ import (
 )
 
 func TestOrigin(t *testing.T) {
-	l1commitment := origin.L1Commitment(nil, 0)
+	l1commitment := origin.L1Commitment(0, nil, 0)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	initBlock := origin.InitChain(store, nil, 0)
+	initBlock := origin.InitChain(0, store, nil, 0)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
@@ -99,6 +99,7 @@ func TestCreateOrigin(t *testing.T) {
 
 		originStateMetadata := transaction.NewStateMetadata(
 			origin.L1Commitment(
+				allmigrations.DefaultScheme.LatestSchemaVersion(),
 				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
 				governance.DefaultMinBaseTokensOnCommonAccount,
 			),
@@ -152,12 +153,12 @@ func TestMetadataBad(t *testing.T) {
 	for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
 		db := mapdb.NewMapDB()
 		st := state.NewStoreWithUniqueWriteMutex(db)
-		block1A := origin.InitChain(st, initParams, deposit)
-		block1B := origin.InitChain(st, initParams, 10*isc.Million-deposit)
-		block1C := origin.InitChain(st, initParams, 10*isc.Million+deposit)
-		block2A := origin.InitChain(st, nil, deposit)
-		block2B := origin.InitChain(st, nil, 10*isc.Million-deposit)
-		block2C := origin.InitChain(st, nil, 10*isc.Million+deposit)
+		block1A := origin.InitChain(0, st, initParams, deposit)
+		block1B := origin.InitChain(0, st, initParams, 10*isc.Million-deposit)
+		block1C := origin.InitChain(0, st, initParams, 10*isc.Million+deposit)
+		block2A := origin.InitChain(0, st, nil, deposit)
+		block2B := origin.InitChain(0, st, nil, 10*isc.Million-deposit)
+		block2C := origin.InitChain(0, st, nil, 10*isc.Million+deposit)
 		t.Logf("Block0, deposit=%v => %v %v %v / %v %v %v", deposit,
 			block1A.L1Commitment(), block1B.L1Commitment(), block1C.L1Commitment(),
 			block2A.L1Commitment(), block2B.L1Commitment(), block2C.L1Commitment(),
