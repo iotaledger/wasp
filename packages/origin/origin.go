@@ -32,8 +32,8 @@ import (
 
 // L1Commitment calculates the L1 commitment for the origin state
 // originDeposit must exclude the minSD for the AliasOutput
-func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
-	block := InitChain(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()), initParams, originDeposit)
+func L1Commitment(v isc.SchemaVersion, initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
+	block := InitChain(v, state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()), initParams, originDeposit)
 	return block.L1Commitment()
 }
 
@@ -44,7 +44,7 @@ const (
 	ParamWaspVersion     = "d"
 )
 
-func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
+func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
 	if initParams == nil {
 		initParams = dict.New()
 	}
@@ -61,9 +61,9 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
 
 	// init the state of each core contract
-	rootimpl.SetInitialState(contractState(root.Contract))
+	rootimpl.SetInitialState(v, contractState(root.Contract))
 	blob.SetInitialState(contractState(blob.Contract))
-	accounts.SetInitialState(contractState(accounts.Contract), originDeposit)
+	accounts.SetInitialState(v, contractState(accounts.Contract), originDeposit)
 	blocklog.SetInitialState(contractState(blocklog.Contract))
 	errors.SetInitialState(contractState(errors.Contract))
 	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
@@ -88,9 +88,9 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 	l1params := parameters.L1()
 	aoMinSD := l1params.Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
 	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - aoMinSD
-	originBlock := InitChain(chainStore, initParams, commonAccountAmount)
-
 	originAOStateMetadata, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
+	originBlock := InitChain(originAOStateMetadata.SchemaVersion, chainStore, initParams, commonAccountAmount)
+
 	if err != nil {
 		return nil, fmt.Errorf("invalid state metadata on origin AO: %w", err)
 	}
@@ -113,9 +113,9 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 	return originBlock, nil
 }
 
-func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaVersion uint32) []byte {
+func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaVersion isc.SchemaVersion) []byte {
 	s := transaction.NewStateMetadata(
-		L1Commitment(initParams, commonAccountAmount),
+		L1Commitment(schemaVersion, initParams, commonAccountAmount),
 		gas.DefaultFeePolicy(),
 		schemaVersion,
 		"",
@@ -133,7 +133,7 @@ func NewChainOriginTransaction(
 	initParams dict.Dict,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	schemaVersion uint32,
+	schemaVersion isc.SchemaVersion,
 ) (*iotago.Transaction, *iotago.AliasOutput, isc.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")

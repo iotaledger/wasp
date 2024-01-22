@@ -5,6 +5,7 @@ import (
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -22,14 +23,14 @@ type StateMetadata struct {
 	Version       byte
 	L1Commitment  *state.L1Commitment
 	GasFeePolicy  *gas.FeePolicy
-	SchemaVersion uint32
+	SchemaVersion isc.SchemaVersion
 	PublicURL     string
 }
 
 func NewStateMetadata(
 	l1Commitment *state.L1Commitment,
 	gasFeePolicy *gas.FeePolicy,
-	schemaVersion uint32,
+	schemaVersion isc.SchemaVersion,
 	publicURL string,
 ) *StateMetadata {
 	return &StateMetadata{
@@ -55,7 +56,7 @@ func (s *StateMetadata) Read(r io.Reader) error {
 	if s.Version > StateMetadataSupportedVersion && rr.Err == nil {
 		return fmt.Errorf("unsupported state metadata version: %d", s.Version)
 	}
-	s.SchemaVersion = rr.ReadUint32()
+	s.SchemaVersion = isc.SchemaVersion(rr.ReadUint32())
 	s.L1Commitment = new(state.L1Commitment)
 	rr.Read(s.L1Commitment)
 	s.GasFeePolicy = new(gas.FeePolicy)
@@ -67,7 +68,7 @@ func (s *StateMetadata) Read(r io.Reader) error {
 func (s *StateMetadata) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(StateMetadataSupportedVersion)
-	ww.WriteUint32(s.SchemaVersion)
+	ww.WriteUint32(uint32(s.SchemaVersion))
 	ww.Write(s.L1Commitment)
 	ww.Write(s.GasFeePolicy)
 	ww.WriteString(s.PublicURL)

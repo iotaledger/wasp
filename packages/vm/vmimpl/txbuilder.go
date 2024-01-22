@@ -18,9 +18,7 @@ func (vmctx *vmContext) stateMetadata(stateCommitment *state.L1Commitment) []byt
 		L1Commitment: stateCommitment,
 	}
 
-	withContractState(vmctx.stateDraft, root.Contract, func(s kv.KVStore) {
-		stateMetadata.SchemaVersion = root.GetSchemaVersion(s)
-	})
+	stateMetadata.SchemaVersion = root.NewStateAccess(vmctx.stateDraft).SchemaVersion()
 
 	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
 		// On error, the publicURL is len(0)
@@ -72,7 +70,7 @@ func (vmctx *vmContext) loadNFT(nftID iotago.NFTID) (out *iotago.NFTOutput, id i
 func (vmctx *vmContext) loadTotalFungibleTokens() *isc.Assets {
 	var totalAssets *isc.Assets
 	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		totalAssets = accounts.GetTotalL2FungibleTokens(s)
+		totalAssets = accounts.GetTotalL2FungibleTokens(vmctx.schemaVersion, s)
 	})
 	return totalAssets
 }

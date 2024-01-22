@@ -43,6 +43,7 @@ type ViewContext struct {
 	gasBurnEnabled        bool
 	gasBurnLoggingEnabled bool
 	callStack             []*callContext
+	schemaVersion         isc.SchemaVersion
 }
 
 var _ execution.WaspCallContext = &ViewContext{}
@@ -55,6 +56,7 @@ func New(ch chain.ChainCore, stateReader state.State, gasBurnLoggingEnabled bool
 		chainID:               chainID,
 		log:                   ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
+		schemaVersion:         stateReader.SchemaVersion(),
 	}, nil
 }
 
@@ -128,7 +130,7 @@ func (ctx *ViewContext) Timestamp() time.Time {
 }
 
 func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
-	return accounts.GetBaseTokensBalance(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID, ctx.chainID)
+	return accounts.GetBaseTokensBalance(ctx.schemaVersion, ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID, ctx.chainID)
 }
 
 func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
@@ -165,6 +167,10 @@ func (ctx *ViewContext) Params() *isc.Params {
 
 func (ctx *ViewContext) ContractStateReaderWithGasBurn() kv.KVStoreReader {
 	return ctx.contractStateReaderWithGasBurn(ctx.CurrentContractHname())
+}
+
+func (ctx *ViewContext) SchemaVersion() isc.SchemaVersion {
+	return ctx.schemaVersion
 }
 
 func (ctx *ViewContext) GasBudgetLeft() uint64 {

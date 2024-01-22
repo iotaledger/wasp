@@ -42,7 +42,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
 	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
-	originCommitment := origin.L1Commitment(chainInitParams, 0)
+	originCommitment := origin.L1Commitment(0, chainInitParams, 0)
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
 		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
@@ -61,7 +61,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	aliasOutputs[originCommitment.BlockHash()] = originOutput
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	origin.InitChain(chainStore, chainInitParams, 0)
+	origin.InitChain(0, chainStore, chainInitParams, 0)
 	return &BlockFactory{
 		t:                   t,
 		store:               chainStore,
@@ -81,11 +81,11 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 }
 
 func (bfT *BlockFactory) GetOriginOutput() *isc.AliasOutputWithID {
-	return bfT.GetAliasOutput(origin.L1Commitment(bfT.chainInitParams, 0))
+	return bfT.GetAliasOutput(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
 func (bfT *BlockFactory) GetOriginBlock() state.Block {
-	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(bfT.chainInitParams, 0).TrieRoot())
+	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(0, bfT.chainInitParams, 0).TrieRoot())
 	require.NoError(bfT.t, err)
 	return block
 }

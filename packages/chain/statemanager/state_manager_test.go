@@ -83,7 +83,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 		logNode := log.Named(peeringURLs[i])
 		stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
-		origin.InitChain(stores[i], nil, 0)
+		origin.InitChain(0, stores[i], nil, 0)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
 			context.Background(),

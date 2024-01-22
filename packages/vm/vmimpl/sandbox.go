@@ -162,12 +162,12 @@ func (s *contractSandbox) GasBurnEnabled() bool {
 }
 
 func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) {
-	mustMoveBetweenAccounts(s.reqctx.chainStateWithGasBurn(), fromAgentID, toAgentID, assets, s.ChainID())
+	mustMoveBetweenAccounts(s.SchemaVersion(), s.reqctx.chainStateWithGasBurn(), fromAgentID, toAgentID, assets, s.ChainID())
 	s.checkRemainingTokens(fromAgentID)
 }
 
 func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, amount *big.Int) {
-	debitFromAccountFullDecimals(s.reqctx.chainStateWithGasBurn(), agentID, amount, s.ChainID())
+	debitFromAccountFullDecimals(s.SchemaVersion(), s.reqctx.chainStateWithGasBurn(), agentID, amount, s.ChainID())
 	s.checkRemainingTokens(agentID)
 }
 
@@ -182,7 +182,7 @@ func (s *contractSandbox) checkRemainingTokens(debitedAccount isc.AgentID) {
 }
 
 func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, amount *big.Int) {
-	creditToAccountFullDecimals(s.reqctx.chainStateWithGasBurn(), agentID, amount, s.ChainID())
+	creditToAccountFullDecimals(s.SchemaVersion(), s.reqctx.chainStateWithGasBurn(), agentID, amount, s.ChainID())
 }
 
 func (s *contractSandbox) RetryUnprocessable(req isc.Request, outputID iotago.OutputID) {

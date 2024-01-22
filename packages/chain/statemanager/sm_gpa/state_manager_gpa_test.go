@@ -118,7 +118,7 @@ func TestFull(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
-	lastCommitment := origin.L1Commitment(nil, 0)
+	lastCommitment := origin.L1Commitment(0, nil, 0)
 
 	testIterationFun := func(i int, baseCommitment *state.L1Commitment, incrementFactor ...uint64) []state.Block {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
@@ -234,7 +234,7 @@ func TestMempoolRequestFirstStep(t *testing.T) {
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[0])
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks))
 
-	oldCommitment := origin.L1Commitment(nil, 0)
+	oldCommitment := origin.L1Commitment(0, nil, 0)
 	newCommitment := blocks[0].L1Commitment()
 	oldBlocks := make([]state.Block, 0)
 	require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, blocks, nodeID, 1, 0*time.Second))
@@ -283,7 +283,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	env.sendBlocksToNode(nodeID, 0*time.Second, oldBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, oldBlocks))
 
-	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, origin.L1Commitment(nil, 0), 2)
+	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, origin.L1Commitment(0, nil, 0), 2)
 	env.sendBlocksToNode(nodeID, 0*time.Second, newBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, newBlocks))
 

@@ -112,7 +112,7 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 
 func initializedStore(db kvstore.KVStore) state.Store {
 	st := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(st, nil, 0)
+	origin.InitChain(0, st, nil, 0)
 	return st
 }
 
@@ -145,14 +145,14 @@ func TestOriginBlockDeterminism(t *testing.T) {
 		db := mapdb.NewMapDB()
 		st := state.NewStoreWithUniqueWriteMutex(db)
 		require.True(t, st.IsEmpty())
-		blockA := origin.InitChain(st, nil, deposit)
-		blockB := origin.InitChain(st, nil, deposit)
+		blockA := origin.InitChain(0, st, nil, deposit)
+		blockB := origin.InitChain(0, st, nil, deposit)
 		require.False(t, st.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
 		st2 := state.NewStoreWithUniqueWriteMutex(db2)
 		require.True(t, st2.IsEmpty())
-		blockC := origin.InitChain(st2, nil, deposit)
+		blockC := origin.InitChain(0, st2, nil, deposit)
 		require.False(t, st2.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
 	})

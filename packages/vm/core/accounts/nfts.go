@@ -11,6 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// observation: this uses the entire agentID as key, unlike acccounts.accountKey, which skips the chainID if it is the current chain. This means some bytes are wasted when saving NFTs
+
 func nftsMapKey(agentID isc.AgentID) string {
 	return PrefixNFTs + string(agentID.Bytes())
 }
@@ -192,17 +194,4 @@ func GetAccountNFTs(state kv.KVStoreReader, agentID isc.AgentID) []iotago.NFTID 
 
 func GetTotalL2NFTs(state kv.KVStoreReader) []iotago.NFTID {
 	return getL2TotalNFTs(state)
-}
-
-func calcL2TotalNFTs(state kv.KVStoreReader) []iotago.NFTID {
-	var ret []iotago.NFTID
-	allAccountsMapR(state).IterateKeys(func(key []byte) bool {
-		agentID, err := isc.AgentIDFromBytes(key)
-		if err != nil {
-			panic(fmt.Errorf("calcL2TotalNFTs: %w", err))
-		}
-		ret = append(ret, getAccountNFTs(state, agentID)...)
-		return true
-	})
-	return ret
 }

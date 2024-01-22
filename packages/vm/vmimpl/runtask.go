@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
@@ -108,6 +109,7 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		migrationScheme := vmctx.getMigrations()
 		vmctx.runMigrations(chainState, migrationScheme)
+		vmctx.schemaVersion = root.NewStateAccess(chainState).SchemaVersion()
 	})
 
 	// save the anchor tx ID of the current state
