@@ -92,3 +92,7 @@ func AdjustAccountBaseTokens(v isc.SchemaVersion, state kv.KVStore, account isc.
 func GetBaseTokensBalance(v isc.SchemaVersion, state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) uint64 {
 	return getBaseTokens(v)(state, accountKey(agentID, chainID))
 }
+
+func GetBaseTokensBalanceFullDecimals(v isc.SchemaVersion, state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) *big.Int {
+	return GetBaseTokensFullDecimals(v)(state, accountKey(agentID, chainID))
+}

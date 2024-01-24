@@ -304,15 +304,13 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 		return nil, err
 	}
 	accountsPartition := subrealm.NewReadOnly(chainState, kv.Key(accounts.Contract.Hname().Bytes()))
-	baseTokens := accounts.GetBaseTokensBalance(
+	baseTokens := accounts.GetBaseTokensBalanceFullDecimals(
 		chainState.SchemaVersion(),
 		accountsPartition,
 		isc.NewEthereumAddressAgentID(*e.backend.ISCChainID(), address),
 		*e.backend.ISCChainID(),
 	)
-	ether, _ := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.L1().BaseToken.Decimals)
-	// discard remainder
-	return ether, nil
+	return baseTokens, nil
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
