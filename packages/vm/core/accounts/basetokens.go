@@ -12,7 +12,6 @@ import (
 
 type (
 	getBaseTokensFn             func(state kv.KVStoreReader, accountKey kv.Key) uint64
-	setBaseTokensFn             func(state kv.KVStore, accountKey kv.Key, amount uint64)
 	GetBaseTokensFullDecimalsFn func(state kv.KVStoreReader, accountKey kv.Key) *big.Int
 	setBaseTokensFullDecimalsFn func(state kv.KVStore, accountKey kv.Key, amount *big.Int)
 )
@@ -23,15 +22,6 @@ func getBaseTokens(v isc.SchemaVersion) getBaseTokensFn {
 		return getBaseTokensDEPRECATED
 	default:
 		return getBaseTokensNEW
-	}
-}
-
-func setBaseTokens(v isc.SchemaVersion) setBaseTokensFn {
-	switch v {
-	case 0:
-		return setBaseTokensDEPRECATED
-	default:
-		return setBaseTokensNEW
 	}
 }
 

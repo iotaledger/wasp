@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -29,7 +30,8 @@ func creditToAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, a
 	}
 
 	if assets.BaseTokens > 0 {
-		setBaseTokens(v)(state, accountKey, getBaseTokens(v)(state, accountKey)+assets.BaseTokens)
+		incomingTokensFullDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
+		creditToAccountFullDecimals(v, state, accountKey, incomingTokensFullDecimals)
 	}
 	for _, nt := range assets.NativeTokens {
 		if nt.Amount.Sign() == 0 {
@@ -85,16 +87,19 @@ func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, 
 
 	// first check, then mutate
 	mutateBaseTokens := false
-	mutations := isc.NewEmptyAssets()
 
+	baseTokensToDebit := util.MustBaseTokensDecimalsToEthereumDecimalsExact(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
+	var baseTokensToSet *big.Int
 	if assets.BaseTokens > 0 {
-		balance := getBaseTokens(v)(state, accountKey)
-		if assets.BaseTokens > balance {
+		balance := GetBaseTokensFullDecimals(v)(state, accountKey)
+		if baseTokensToDebit.Cmp(balance) > 0 {
 			return false
 		}
 		mutateBaseTokens = true
-		mutations.BaseTokens = balance - assets.BaseTokens
+		baseTokensToSet = new(big.Int).Sub(balance, baseTokensToDebit)
 	}
+
+	nativeTokensMutations := isc.NewEmptyAssets()
 	for _, nt := range assets.NativeTokens {
 		if nt.Amount.Sign() == 0 {
 			continue
@@ -107,13 +112,13 @@ func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, 
 		if balance.Sign() < 0 {
 			return false
 		}
-		mutations.AddNativeTokens(nt.ID, balance)
+		nativeTokensMutations.AddNativeTokens(nt.ID, balance)
 	}
 
 	if mutateBaseTokens {
-		setBaseTokens(v)(state, accountKey, mutations.BaseTokens)
+		setBaseTokensFullDecimals(v)(state, accountKey, baseTokensToSet)
 	}
-	for _, nt := range mutations.NativeTokens {
+	for _, nt := range nativeTokensMutations.NativeTokens {
 		setNativeTokenAmount(state, accountKey, nt.ID, nt.Amount)
 	}
 	return true
