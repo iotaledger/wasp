@@ -12,7 +12,6 @@ import (
 
 type (
 	getBaseTokensFn             func(state kv.KVStoreReader, accountKey kv.Key) uint64
-	setBaseTokensFn             func(state kv.KVStore, accountKey kv.Key, amount uint64)
 	GetBaseTokensFullDecimalsFn func(state kv.KVStoreReader, accountKey kv.Key) *big.Int
 	setBaseTokensFullDecimalsFn func(state kv.KVStore, accountKey kv.Key, amount *big.Int)
 )
@@ -23,15 +22,6 @@ func getBaseTokens(v isc.SchemaVersion) getBaseTokensFn {
 		return getBaseTokensDEPRECATED
 	default:
 		return getBaseTokensNEW
-	}
-}
-
-func setBaseTokens(v isc.SchemaVersion) setBaseTokensFn {
-	switch v {
-	case 0:
-		return setBaseTokensDEPRECATED
-	default:
-		return setBaseTokensNEW
 	}
 }
 
@@ -72,12 +62,6 @@ func getBaseTokensNEW(state kv.KVStoreReader, accountKey kv.Key) uint64 {
 	// convert from 18 decimals, discard the remainder
 	convertedAmount, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, parameters.L1().BaseToken.Decimals)
 	return convertedAmount
-}
-
-func setBaseTokensNEW(state kv.KVStore, accountKey kv.Key, amount uint64) {
-	// convert to 18 decimals
-	amountConverted := util.MustBaseTokensDecimalsToEthereumDecimalsExact(amount, parameters.L1().BaseToken.Decimals)
-	state.Set(BaseTokensKey(accountKey), codec.EncodeBigIntAbs(amountConverted))
 }
 
 func AdjustAccountBaseTokens(v isc.SchemaVersion, state kv.KVStore, account isc.AgentID, adjustment int64, chainID isc.ChainID) {
