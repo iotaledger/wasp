@@ -33,11 +33,11 @@ func accountToNFTsMap(state kv.KVStore, agentID isc.AgentID) *collections.Map {
 	return collections.NewMap(state, nftsMapKey(agentID))
 }
 
-func NFTToOwnerMap(state kv.KVStore) *collections.Map {
+func nftToOwnerMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyNFTOwner)
 }
 
-func NFTToOwnerMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+func nftToOwnerMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, keyNFTOwner)
 }
 
@@ -67,7 +67,7 @@ func hasNFT(state kv.KVStoreReader, agentID isc.AgentID, nftID iotago.NFTID) boo
 
 func removeNFTOwner(state kv.KVStore, nftID iotago.NFTID, agentID isc.AgentID) bool {
 	// remove the mapping of NFTID => owner
-	nftMap := NFTToOwnerMap(state)
+	nftMap := nftToOwnerMap(state)
 	if !nftMap.HasAt(nftID[:]) {
 		return false
 	}
@@ -84,7 +84,7 @@ func removeNFTOwner(state kv.KVStore, nftID iotago.NFTID, agentID isc.AgentID) b
 
 func setNFTOwner(state kv.KVStore, nftID iotago.NFTID, agentID isc.AgentID) {
 	// add to the mapping of NFTID => owner
-	nftMap := NFTToOwnerMap(state)
+	nftMap := nftToOwnerMap(state)
 	nftMap.SetAt(nftID[:], agentID.Bytes())
 
 	// add to the mapping of agentID => []NFTIDs
@@ -97,7 +97,7 @@ func GetNFTData(state kv.KVStoreReader, nftID iotago.NFTID) *isc.NFT {
 	if o == nil {
 		return nil
 	}
-	owner, err := isc.AgentIDFromBytes(NFTToOwnerMapR(state).GetAt(nftID[:]))
+	owner, err := isc.AgentIDFromBytes(nftToOwnerMapR(state).GetAt(nftID[:]))
 	if err != nil {
 		panic("error parsing AgentID in NFTToOwnerMap")
 	}
@@ -184,7 +184,7 @@ func getAccountNFTsInCollection(state kv.KVStoreReader, agentID isc.AgentID, col
 }
 
 func getL2TotalNFTs(state kv.KVStoreReader) []iotago.NFTID {
-	return collectNFTIDs(NFTToOwnerMapR(state))
+	return collectNFTIDs(nftToOwnerMapR(state))
 }
 
 // GetAccountNFTs returns all NFTs belonging to the agentID on the state

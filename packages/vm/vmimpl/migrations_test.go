@@ -91,21 +91,6 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	return env
 }
 
-func TestMigrationsStateIndex0(t *testing.T) {
-	env := newMigrationsTest(t, 0)
-
-	require.EqualValues(t, 0, env.getSchemaVersion())
-
-	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
-			BaseSchemaVersion: 0,
-			Migrations:        []migrations.Migration{env.panic, env.panic, env.panic},
-		})
-	})
-
-	require.EqualValues(t, 3, env.getSchemaVersion())
-}
-
 func TestMigrationsStateIndex1(t *testing.T) {
 	env := newMigrationsTest(t, 1)
 
