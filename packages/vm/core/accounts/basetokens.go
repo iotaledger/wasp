@@ -64,12 +64,6 @@ func getBaseTokensNEW(state kv.KVStoreReader, accountKey kv.Key) uint64 {
 	return convertedAmount
 }
 
-func setBaseTokensNEW(state kv.KVStore, accountKey kv.Key, amount uint64) {
-	// convert to 18 decimals
-	amountConverted := util.MustBaseTokensDecimalsToEthereumDecimalsExact(amount, parameters.L1().BaseToken.Decimals)
-	state.Set(BaseTokensKey(accountKey), codec.EncodeBigIntAbs(amountConverted))
-}
-
 func AdjustAccountBaseTokens(v isc.SchemaVersion, state kv.KVStore, account isc.AgentID, adjustment int64, chainID isc.ChainID) {
 	switch {
 	case adjustment > 0:
