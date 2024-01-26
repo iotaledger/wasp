@@ -147,7 +147,10 @@ func (e *EVMContractInstance) callView(fnName string, args []interface{}, v inte
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
-	senderAddress := crypto.PubkeyToAddress(e.defaultSender.PublicKey)
+	var senderAddress common.Address
+	if e.defaultSender != nil {
+		senderAddress = crypto.PubkeyToAddress(e.defaultSender.PublicKey)
+	}
 	callMsg := e.callMsg(ethereum.CallMsg{
 		From: senderAddress,
 		Data: callArguments,

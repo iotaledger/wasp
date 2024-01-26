@@ -99,7 +99,7 @@ func (h *magicContractHandler) Send(
 
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
-	if !req.Assets.Spend(req.Metadata.Allowance) {
+	if !req.Assets.Clone().Spend(req.Metadata.Allowance) {
 		panic(errInvalidAllowance)
 	}
 
