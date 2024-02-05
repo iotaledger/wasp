@@ -57,7 +57,7 @@ require (
 	go.uber.org/dig v1.17.1
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.18.0
-	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
+	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3
 	golang.org/x/net v0.20.0
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
