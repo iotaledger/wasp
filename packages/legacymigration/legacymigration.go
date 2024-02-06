@@ -4,6 +4,7 @@ package legacymigration
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/iotaledger/iota.go/address"
 	"github.com/iotaledger/iota.go/bundle"
@@ -21,7 +22,10 @@ func addressesFromBundle(bndl bundle.Bundle) (migratedAddresses [][]byte, target
 	for _, tx := range bndl {
 		// collect a list of ALL the legacy addresses "spending" in the bundle
 		if tx.Value < 0 { // check only txs that spend (tx.Value is negative)
-			legacyAddrBytes := legacyAddressBytesFromTrytes(tx.Address)
+			legacyAddrBytes, err := legacyAddressBytesFromTrytes(tx.Address)
+			if err != nil {
+				return nil, nil, err
+			}
 			migratedAddresses = append(migratedAddresses, legacyAddrBytes)
 		}
 
@@ -96,9 +100,9 @@ func validBundleFromBytes(data []byte) (bundle.Bundle, error) {
 
 // legacyAddressBytesFromTrytes returns the binary representation of the given address trytes.
 // It panics when trytes hash invalid length.
-func legacyAddressBytesFromTrytes(trytes trinary.Trytes) []byte {
+func legacyAddressBytesFromTrytes(trytes trinary.Trytes) ([]byte, error) {
 	if len(trytes) != consts.HashTrytesSize && len(trytes) != consts.AddressWithChecksumTrytesSize {
-		panic("invalid address length")
+		return nil, fmt.Errorf("invalid address length")
 	}
-	return t5b1.EncodeTrytes(trytes[:consts.HashTrytesSize])
+	return t5b1.EncodeTrytes(trytes[:consts.HashTrytesSize]), nil
 }
