@@ -4,10 +4,12 @@
 package solo
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/big"
 	"math/rand"
+	"slices"
 	"sync"
 	"time"
 
@@ -23,9 +25,9 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -221,8 +223,44 @@ func (env *Solo) batchLoop() {
 	}
 }
 
-func (env *Solo) GetDBHash() hashing.HashValue {
-	return env.chainStateDatabaseManager.DBHash()
+func (env *Solo) IterateChainTrieDBs(
+	f func(chainID *isc.ChainID, k []byte, v []byte),
+) {
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
+
+	chainIDs := lo.Keys(env.chains)
+	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
+	for _, chID := range chainIDs {
+		chID := chID // prevent loop variable aliasing
+		ch := env.chains[chID]
+		lo.Must0(ch.db.Iterate(nil, func(k []byte, v []byte) bool {
+			f(&chID, k, v)
+			return true
+		}))
+	}
+}
+
+func (env *Solo) IterateChainLatestStates(
+	prefix kv.Key,
+	f func(chainID *isc.ChainID, k []byte, v []byte),
+) {
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
+
+	chainIDs := lo.Keys(env.chains)
+	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
+	for _, chID := range chainIDs {
+		chID := chID // prevent loop variable aliasing
+		ch := env.chains[chID]
+		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(ch.db))
+		state, err := store.LatestState()
+		require.NoError(env.T, err)
+		state.IterateSorted(prefix, func(k kv.Key, v []byte) bool {
+			f(&chID, []byte(k), v)
+			return true
+		})
+	}
 }
 
 func (env *Solo) SyncLog() {

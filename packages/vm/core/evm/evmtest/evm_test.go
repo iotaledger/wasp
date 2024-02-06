@@ -94,7 +94,7 @@ func TestStorageContract(t *testing.T) {
 		require.EqualValues(t, 46, v)
 	}
 
-	testdbhash.VerifyDBHash(env.solo, t.Name())
+	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
 }
 
 func TestLowLevelCallRevert(t *testing.T) {
