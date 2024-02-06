@@ -93,16 +93,12 @@ func validBundleFromBytes(data []byte) (bundle.Bundle, error) {
 }
 
 // ------- taken from legacy hornet
-const (
-	hashTrytesSize = consts.HashTrytesSize
-	tagTrytesSize  = consts.TagTrinarySize / consts.TritsPerTryte
-)
 
 // legacyAddressBytesFromTrytes returns the binary representation of the given address trytes.
 // It panics when trytes hash invalid length.
 func legacyAddressBytesFromTrytes(trytes trinary.Trytes) []byte {
-	if len(trytes) != hashTrytesSize && len(trytes) != consts.AddressWithChecksumTrytesSize {
+	if len(trytes) != consts.HashTrytesSize && len(trytes) != consts.AddressWithChecksumTrytesSize {
 		panic("invalid address length")
 	}
-	return t5b1.EncodeTrytes(trytes[:hashTrytesSize])
+	return t5b1.EncodeTrytes(trytes[:consts.HashTrytesSize])
 }
