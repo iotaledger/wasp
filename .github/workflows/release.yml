@@ -40,6 +40,16 @@ jobs:
       - name: Create dist folder
         run: mkdir /dist && cd /dist/
 
+      - name: Pull IOTA SDK bindings
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: 'iotaledger/iota-sdk-native-bindings'
+          version: 'tags/v0.1.0'
+          regex: true
+          file: ".*"
+          target: 'sdk/'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download temporary artifacts
         uses: actions/download-artifact@v4
         with:
