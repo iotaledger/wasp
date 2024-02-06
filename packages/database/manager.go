@@ -5,13 +5,10 @@ import (
 	"path"
 	"sync"
 
-	"golang.org/x/crypto/blake2b"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/runtime/options"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 )
@@ -70,35 +67,6 @@ func NewChainStateDatabaseManager(chainRecordRegistryProvider registry.ChainReco
 	}
 
 	return m, nil
-}
-
-// DBHash computes a hash from the whole DB content, for use only in testing environment.
-func (m *ChainStateDatabaseManager) DBHash() (ret hashing.HashValue) {
-	h, err := blake2b.New256(nil)
-	if err != nil {
-		panic(err)
-	}
-	if h.Size() != hashing.HashSize {
-		panic("blake2b: hash size != 32")
-	}
-	for _, db := range m.databases {
-		err := db.database.store.Iterate([]byte{}, func(k []byte, v []byte) bool {
-			_, err := h.Write(k)
-			if err != nil {
-				panic(err)
-			}
-			_, err = h.Write(v)
-			if err != nil {
-				panic(err)
-			}
-			return true
-		})
-		if err != nil {
-			panic(err)
-		}
-	}
-	copy(ret[:], h.Sum(nil))
-	return
 }
 
 func (m *ChainStateDatabaseManager) chainStateKVStore(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex) {
