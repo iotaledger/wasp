@@ -257,6 +257,7 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 	).
+		AddBaseTokens(allowanceForModifySupply).
 		WithAllowance(isc.NewAssetsBaseTokens(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
 		WithMaxAffordableGasBudget()
 
