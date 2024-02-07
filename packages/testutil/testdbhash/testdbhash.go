@@ -1,11 +1,13 @@
 package testdbhash
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"github.com/samber/lo"
 	"golang.org/x/crypto/blake2b"
@@ -14,7 +16,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 const (
@@ -35,6 +39,7 @@ func VerifyDBHash(env *solo.Solo, testName string) {
 		env.IterateChainTrieDBs,
 		testName,
 		"DB hash has changed!",
+		false,
 	)
 }
 
@@ -48,6 +53,7 @@ func VerifyStateHash(env *solo.Solo, testName string) {
 		},
 		testName+"-state",
 		"State hash has changed!",
+		true,
 	)
 }
 
@@ -61,6 +67,7 @@ func VerifyContractStateHash(env *solo.Solo, contract *coreutil.ContractInfo, pr
 		},
 		testName+"-"+contract.Name,
 		fmt.Sprintf("State hash for core contract %q has changed!", contract.Name),
+		true,
 	)
 }
 
@@ -69,6 +76,7 @@ func verifyHash(
 	iterateDBs func(func(chainID *isc.ChainID, k []byte, v []byte)),
 	baseName string,
 	msg string,
+	isState bool,
 ) {
 	h := lo.Must(blake2b.New256(nil))
 	if h.Size() != hashing.HashSize {
@@ -86,7 +94,7 @@ func verifyHash(
 		lo.Must(h.Write(k))
 		lo.Must(h.Write(v))
 		if dbDump != nil {
-			lo.Must(dbDump.WriteString(fmt.Sprintf("%x: %x\n", k, v)))
+			lo.Must(dbDump.WriteString(fmt.Sprintf("%s: %x\n", stringifyKey(k, isState), v)))
 		}
 	})
 
@@ -111,6 +119,29 @@ func verifyHash(
 	}
 }
 
+func stringifyKey(k []byte, isState bool) string {
+	if isState && len(k) >= 4 {
+		hname := codec.MustDecodeHname(k[:4])
+		c, isCore := corecontracts.All[hname]
+		var b strings.Builder
+		if isCore {
+			b.WriteString(fmt.Sprintf("[%s|", c.Name))
+		} else {
+			b.WriteString(fmt.Sprintf("[%x|", k[:4]))
+		}
+		for i := 4; i < len(k); i++ {
+			if !unicode.IsPrint(rune(k[i])) {
+				b.WriteString(fmt.Sprintf("|%x", k[i:]))
+				break
+			}
+			b.WriteByte(k[i])
+		}
+		b.WriteString("]")
+		return b.String()
+	}
+	return hex.EncodeToString(k)
+}
+
 func loadHash(filename string) hashing.HashValue {
 	b := lo.Must(os.ReadFile(fullPath(filename)))
 	return hashing.MustHashValueFromHex(strings.TrimSpace(string(b)))
@@ -126,5 +157,5 @@ func fullPath(filename string) string {
 }
 
 func normalize(s string) string {
-	return strings.ReplaceAll(s, "/", "-")
+	return strings.ReplaceAll(strings.ReplaceAll(s, " ", "-"), "/", "-")
 }

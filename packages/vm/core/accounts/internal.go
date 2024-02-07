@@ -27,49 +27,67 @@ var (
 
 const (
 	// keyAllAccounts stores a map of <agentID> => true
-	// where sum = baseTokens + native tokens + nfts
+	// Covered in: TestFoundries
 	keyAllAccounts = "a"
 
 	// prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
+	// Covered in: TestFoundries
 	prefixBaseTokens = "b"
 	// prefixBaseTokens | <accountID> stores a map of <nativeTokenID> => big.Int
+	// Covered in: TestFoundries
 	PrefixNativeTokens = "t"
 
 	// L2TotalsAccount is the special <accountID> storing the total fungible tokens
 	// controlled by the chain
+	// Covered in: TestFoundries
 	L2TotalsAccount = "*"
 
 	// PrefixNFTs | <agentID> stores a map of <NFTID> => true
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	PrefixNFTs = "n"
 	// PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
+	// Covered in: TestNFTMint
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	PrefixNFTsByCollection = "c"
 	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
+	// Covered in: TestNFTMint
 	prefixNewlyMintedNFTs = "N"
 	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
+	// Covered in: TestNFTMint
 	prefixMintIDMap = "M"
 	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
+	// Covered in: TestFoundries
 	PrefixFoundries = "f"
 
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
+	// Covered in: TestNFTMint
 	noCollection = "-"
 
 	// keyNonce stores a map of <agentID> => nonce (uint64)
+	// Covered in: TestNFTMint
 	keyNonce = "m"
 
 	// keyNativeTokenOutputMap stores a map of <nativeTokenID> => nativeTokenOutputRec
+	// Covered in: TestFoundries
 	keyNativeTokenOutputMap = "TO"
 	// keyFoundryOutputRecords stores a map of <foundrySN> => foundryOutputRec
+	// Covered in: TestFoundries
 	keyFoundryOutputRecords = "FO"
 	// keyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNFTOutputRecords = "NO"
 	// keyNFTOwner stores a map of <NFTID> => isc.AgentID
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNFTOwner = "NW"
 
 	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
+	// Covered in: TestFoundries
 	keyNewNativeTokens = "TN"
 	// keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the OutputID
+	// Covered in: TestFoundries
 	keyNewFoundries = "FN"
 	// keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the OutputID
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNewNFTs = "NN"
 )
 
