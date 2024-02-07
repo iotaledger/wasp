@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
@@ -55,7 +56,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (
 		committeeAddress,
 		tcl.governor.Address(),
 		100*isc.Million,
-		nil,
+		dict.Dict{origin.ParamMigrationsEnabled: codec.Encode(false)},
 		outs,
 		outIDs,
 		allmigrations.DefaultScheme.LatestSchemaVersion(),
