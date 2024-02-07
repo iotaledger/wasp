@@ -122,5 +122,9 @@ func saveHash(filename string, hash hashing.HashValue) {
 
 func fullPath(filename string) string {
 	_, goFilename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(goFilename), filename)
+	return filepath.Join(filepath.Dir(goFilename), normalize(filename))
+}
+
+func normalize(s string) string {
+	return strings.ReplaceAll(s, "/", "-")
 }
