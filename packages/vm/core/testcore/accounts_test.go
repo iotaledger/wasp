@@ -1176,16 +1176,16 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 }
 
 func TestUnprocessableWithNoPruning(t *testing.T) {
-	testUnprocessable(t, nil)
+	testUnprocessable(t, nil, false)
 }
 
 func TestUnprocessableWithPruning(t *testing.T) {
 	testUnprocessable(t, dict.Dict{
 		origin.ParamBlockKeepAmount: codec.EncodeInt32(1),
-	})
+	}, true)
 }
 
-func testUnprocessable(t *testing.T, originParams dict.Dict) {
+func testUnprocessable(t *testing.T, originParams dict.Dict, verifyHash bool) {
 	v := initDepositTest(t, originParams)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each
@@ -1210,9 +1210,10 @@ func testUnprocessable(t *testing.T, originParams dict.Dict) {
 	// ---
 
 	// move the native tokens to a new user that doesn't have on-chain balance
-	newUser, newUserAddress := v.env.NewKeyPairWithFunds()
+	newUser, newUserAddress := v.env.NewKeyPairWithFunds(v.env.NewSeedFromIndex(20))
 	newUserAgentID := isc.NewAgentID(newUserAddress)
 	v.env.SendL1(newUserAddress, assets, v.user)
+
 	// also create an NFT
 	iscNFT, _, err := v.ch.Env.MintNFTL1(v.user, newUserAddress, []byte("foobar"))
 	require.NoError(t, err)
@@ -1237,6 +1238,10 @@ func testUnprocessable(t *testing.T, originParams dict.Dict) {
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, "request has been skipped")
 	require.Nil(t, receipt) // nil receipt means the request was not processed
+
+	if verifyHash {
+		testdbhash.VerifyContractStateHash(v.env, blocklog.Contract, "", t.Name())
+	}
 
 	txReqs, err := v.ch.Env.RequestsForChain(tx, v.ch.ChainID)
 	require.NoError(t, err)
