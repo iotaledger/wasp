@@ -476,6 +476,8 @@ func TestDeployNativeContract(t *testing.T) {
 
 	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
+
+	testdbhash.VerifyContractStateHash(env, root.Contract, "", t.Name())
 }
 
 func TestFeeBasic(t *testing.T) {
