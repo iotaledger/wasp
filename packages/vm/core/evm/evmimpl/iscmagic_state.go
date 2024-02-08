@@ -27,11 +27,11 @@ const (
 	prefixPrivileged = "p"
 	// prefixAllowance stores the allowance between accounts (e.g. by calling
 	// ISC.allow() from solidity).
-	// Covered in: Test???
+	// Covered in: TestSendBaseTokens
 	prefixAllowance = "a"
 	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
 	// registered by calling ISC.registerERC20NativeToken() from solidity.
-	// Covered in: Test???
+	// Covered in: TestERC20NativeTokensWithExternalFoundry
 	prefixERC20ExternalNativeTokens = "e"
 )
 

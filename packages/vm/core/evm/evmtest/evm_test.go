@@ -679,8 +679,8 @@ func TestSendPayableValueTX(t *testing.T) {
 func TestSendBaseTokens(t *testing.T) {
 	env := InitEVM(t)
 
-	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
-	_, receiver := env.solo.NewKeyPair()
+	ethKey, ethAddress := env.Chain.EthereumAccountByIndexWithL2Funds(0)
+	_, receiver := env.solo.NewKeyPair(env.solo.NewSeedFromIndex(1))
 
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -714,6 +714,8 @@ func TestSendBaseTokens(t *testing.T) {
 
 	// stored allowance should be == transfer
 	require.Equal(t, transfer, getAllowanceTo(iscTest.address).BaseTokens)
+
+	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
 
 	// attempt again
 	const allAllowed = uint64(0)
@@ -1367,14 +1369,14 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		tokenDecimals     = 8
 	)
 
-	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromIndex(1))
 	err := env.Chain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
 	require.NoError(t, err)
 
 	// need an alias to create a foundry; the easiest way is to create a "disposable" ISC chain
 	foundryChain, _ := env.solo.NewChainExt(foundryOwner, 0, "foundryChain")
 	// use an ethereum address to create the foundry
-	ethKey, ethAddr := foundryChain.NewEthereumAccountWithL2Funds()
+	ethKey, ethAddr := foundryChain.EthereumAccountByIndexWithL2Funds(1)
 
 	// create a fake "env" to create a sandbox contractInstance for the foundry chain (I think we should change these creations to be more "functional" and less "OOP")
 	// TODO could be improved, but we cannot just do env.ISCMagicSandbox to create a sandbox of the foundry chain. Will keep it this way to minimize conflicts with the 2.0 branch
@@ -1467,6 +1469,9 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	}) {
 		require.FailNow(t, "could not get ERC20 address on target chain")
 	}
+
+	// m = keyISCMagic, e = prefixERC20ExternalNativeTokens
+	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "me", t.Name())
 
 	// send base tokens and the minted native tokens from the foundry chain EVM address to the test chain (same EVM address)
 
