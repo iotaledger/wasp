@@ -24,7 +24,7 @@ import (
 const (
 	envVarUpdateDBHash = "UPDATE_DBHASHES"
 
-	// If set, a hex dump of the test will be stored in <basename>-<$DB_DUMP>.dump.hex,
+	// If set, a hex dump of the test will be stored in <basename>-<$DB_DUMP>.dump,
 	// that can be used to compute a diff.
 	envVarDBDump = "DB_DUMP"
 )
@@ -85,7 +85,7 @@ func verifyHash(
 
 	var dbDump *os.File
 	if os.Getenv(envVarDBDump) != "" {
-		dumpFilename := baseName + "-" + os.Getenv(envVarDBDump) + ".dump.hex"
+		dumpFilename := baseName + "-" + os.Getenv(envVarDBDump) + ".dump"
 		dbDump = lo.Must(os.Create(fullPath(dumpFilename)))
 		defer dbDump.Close()
 	}
