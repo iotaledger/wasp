@@ -19,10 +19,10 @@ import (
 )
 
 const (
-	keyAccountNonce          = "n"
-	keyAccountCode           = "c"
-	keyAccountState          = "s"
-	keyAccountSelfDestructed = "S"
+	keyAccountNonce          = "n" // covered in: TestStorageContract
+	keyAccountCode           = "c" // covered in: TestStorageContract
+	keyAccountState          = "s" // covered in: TestStorageContract
+	keyAccountSelfDestructed = "S" // covered in: TestSelfDestruct
 )
 
 func accountKey(prefix kv.Key, addr common.Address) kv.Key {

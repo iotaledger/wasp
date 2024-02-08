@@ -1975,7 +1975,7 @@ func TestStaticCall(t *testing.T) {
 
 func TestSelfDestruct(t *testing.T) {
 	env := InitEVM(t)
-	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
 	iscTest := env.deployISCTestContract(ethKey)
 	iscTestAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscTest.address)
@@ -1983,13 +1983,13 @@ func TestSelfDestruct(t *testing.T) {
 	// send some tokens to the ISCTest contract
 	{
 		const baseTokensDepositFee = 500
-		k, _ := env.solo.NewKeyPairWithFunds()
+		k, _ := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromIndex(1))
 		err := env.Chain.SendFromL1ToL2AccountBaseTokens(baseTokensDepositFee, 1*isc.Million, iscTestAgentID, k)
 		require.NoError(t, err)
 		require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(iscTestAgentID))
 	}
 
-	_, beneficiary := solo.NewEthereumAccount()
+	_, beneficiary := solo.EthereumAccountByIndex(1)
 
 	require.NotEmpty(t, env.getCode(iscTest.address))
 
@@ -1999,6 +1999,8 @@ func TestSelfDestruct(t *testing.T) {
 	require.Empty(t, env.getCode(iscTest.address))
 	require.Zero(t, env.Chain.L2BaseTokens(iscTestAgentID))
 	require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, beneficiary)))
+
+	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
 }
 
 func TestChangeGasLimit(t *testing.T) {
