@@ -20,31 +20,31 @@ import (
 
 var AddressIndex uint32
 
-type WalletScheme string
+type WalletProvider string
 
 const (
-	SchemeKeyChain   WalletScheme = "keychain"
-	SchemeLedger     WalletScheme = "sdk_ledger"
-	SchemeStronghold WalletScheme = "sdk_stronghold"
+	ProviderKeyChain   WalletProvider = "keychain"
+	ProviderLedger     WalletProvider = "sdk_ledger"
+	ProviderStronghold WalletProvider = "sdk_stronghold"
 )
 
-func GetWalletScheme() WalletScheme {
-	scheme := WalletScheme(config.GetWalletSchemeString())
+func GetWalletProvider() WalletProvider {
+	provider := WalletProvider(config.GetWalletProviderString())
 
-	switch scheme {
-	case SchemeLedger, SchemeKeyChain, SchemeStronghold:
-		return scheme
+	switch provider {
+	case ProviderLedger, ProviderKeyChain, ProviderStronghold:
+		return provider
 	}
-	return SchemeKeyChain
+	return ProviderKeyChain
 }
 
-func SetWalletScheme(scheme WalletScheme) error {
-	switch scheme {
-	case SchemeLedger, SchemeKeyChain, SchemeStronghold:
-		config.SetWalletSchemeString(string(scheme))
+func SetWalletProvider(provider WalletProvider) error {
+	switch provider {
+	case ProviderLedger, ProviderKeyChain, ProviderStronghold:
+		config.SetWalletProviderString(string(provider))
 		return nil
 	}
-	return errors.New("invalid wallet scheme provided")
+	return errors.New("invalid wallet provider provided")
 }
 
 func getIotaSDKLibName() string {
@@ -60,14 +60,7 @@ func getIotaSDKLibName() string {
 	}
 }
 
-func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
-	// LoadLibrary (windows) and dlLoad (linux) have different search path behaviors
-	// For now, use a relative path - as it will eventually be shipped with a release.
-	ex, err := os.Executable()
-	wd := filepath.Dir(ex)
-	log.Check(err)
-
-	libPath := path.Join(wd, getIotaSDKLibName())
+func initIotaSDK(libPath string) *wasp_wallet_sdk.IOTASDK {
 	sdk, err := wasp_wallet_sdk.NewIotaSDK(libPath)
 	log.Check(err)
 
@@ -79,18 +72,48 @@ func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 	return sdk
 }
 
+func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
+	// LoadLibrary (windows) and dlLoad (linux) have different search path behaviors
+	// For now, use a relative path - as it will eventually be shipped with a release.
+	// TODO: Revisit once proper release structure is set up.
+
+	ex, err := os.Executable()
+	log.Check(err)
+	executableDir := filepath.Dir(ex)
+
+	wd, err := os.Getwd()
+	log.Check(err)
+
+	searchPaths := []string{
+		path.Join(executableDir, getIotaSDKLibName()),
+		path.Join(wd, getIotaSDKLibName()),
+	}
+
+	for _, searchPath := range searchPaths {
+		if _, err := os.Stat(searchPath); err == nil {
+
+			return initIotaSDK(searchPath)
+			// file exists
+		}
+	}
+
+	log.Fatalf("Could not find %v", getIotaSDKLibName())
+
+	return nil
+}
+
 var loadedWallet wallets.Wallet
 
 func Load() wallets.Wallet {
-	walletScheme := GetWalletScheme()
+	walletProvider := GetWalletProvider()
 
 	if loadedWallet == nil {
-		switch walletScheme {
-		case SchemeKeyChain:
+		switch walletProvider {
+		case ProviderKeyChain:
 			loadedWallet = providers.LoadKeyChain(AddressIndex)
-		case SchemeLedger:
+		case ProviderLedger:
 			loadedWallet = providers.LoadLedgerWallet(getIotaSDK(), AddressIndex)
-		case SchemeStronghold:
+		case ProviderStronghold:
 			loadedWallet = providers.LoadStrongholdWallet(getIotaSDK(), AddressIndex)
 		}
 	}
@@ -99,19 +122,19 @@ func Load() wallets.Wallet {
 }
 
 func InitWallet() {
-	walletScheme := GetWalletScheme()
+	walletProvider := GetWalletProvider()
 
-	switch walletScheme {
-	case SchemeKeyChain:
+	switch walletProvider {
+	case ProviderKeyChain:
 		providers.CreateKeyChain()
-	case SchemeLedger:
-		log.Printf("Ledger wallet scheme selected, no initialization required")
-	case SchemeStronghold:
+	case ProviderLedger:
+		log.Printf("Ledger wallet provider selected, no initialization required")
+	case ProviderStronghold:
 		providers.CreateNewStrongholdWallet(getIotaSDK())
 	}
 }
 
-func Migrate(scheme WalletScheme) {
+func Migrate(provider WalletProvider) {
 	seedHex := config.GetSeedForMigration()
 	if seedHex == "" {
 		fmt.Println("No seed to migrate found.")
@@ -122,12 +145,12 @@ func Migrate(scheme WalletScheme) {
 	log.Check(err)
 	seed := cryptolib.SeedFromBytes(seedBytes)
 
-	switch scheme {
-	case SchemeKeyChain:
+	switch provider {
+	case ProviderKeyChain:
 		providers.MigrateKeyChain(seed)
-	case SchemeLedger:
-		log.Printf("Ledger wallet scheme selected, no migration available")
-	case SchemeStronghold:
+	case ProviderLedger:
+		log.Printf("Ledger wallet provider selected, no migration available")
+	case ProviderStronghold:
 		providers.MigrateToStrongholdWallet(getIotaSDK(), seed)
 	}
 }

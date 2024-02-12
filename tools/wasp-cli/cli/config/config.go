@@ -129,13 +129,9 @@ var keyChain keychain.KeyChain
 
 func GetKeyChain() keychain.KeyChain {
 	if keyChain == nil {
-		fmt.Printf("\nKeyChain available: %v\n", keychain.IsKeyChainAvailable())
-
 		if keychain.IsKeyChainAvailable() {
-			fmt.Println("Using OS keychain")
 			keyChain = keychain.NewKeyChainZalando()
 		} else {
-			fmt.Println("Using encrypted file")
 			keyChain = keychain.NewKeyChainFile(BaseDir, cli.ReadPasswordFromStdin)
 		}
 	}
@@ -209,12 +205,12 @@ func GetUseLegacyDerivation() bool {
 	return viper.GetBool("wallet.useLegacyDerivation")
 }
 
-func GetWalletSchemeString() string {
-	return viper.GetString("wallet.scheme")
+func GetWalletProviderString() string {
+	return viper.GetString("wallet.provider")
 }
 
-func SetWalletSchemeString(scheme string) {
-	Set("wallet.scheme", scheme)
+func SetWalletProviderString(provider string) {
+	Set("wallet.provider", provider)
 }
 
 // GetSeedForMigration is used to migrate the seed of the config file to a certain wallet provider.
@@ -225,7 +221,7 @@ func GetSeedForMigration() string {
 func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
 	logLevel := viper.GetString("wallet.loglevel")
 	if logLevel == "" {
-		return types.LevelFilterTrace
+		return types.LevelFilterOff
 	}
 
 	return types.ILoggerConfigLevelFilter(logLevel)

@@ -38,7 +38,7 @@ func CreateKeyChain() {
 	err := config.GetKeyChain().SetSeed(seed)
 	log.Check(err)
 
-	log.Printf("Seed stored in the keychain.\n")
+	log.Printf("New seed stored in the keychain.\n")
 }
 
 func MigrateKeyChain(seed cryptolib.Seed) {
