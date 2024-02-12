@@ -57,8 +57,6 @@ func (k *KeyPair) SignBytes(data []byte) []byte {
 }
 
 func (k *KeyPair) Sign(addr iotago.Address, payload []byte) (iotago.Signature, error) {
-	// TODO: Validate this
-
 	signature := iotago.Ed25519Signature{}
 	copy(signature.Signature[:], k.privateKey.Sign(payload))
 	copy(signature.PublicKey[:], k.publicKey.AsBytes())
