@@ -3,8 +3,6 @@ name: Bug report
 about: Found an issue with the node software? Let us know!
 title: ''
 labels: bug
-assignees: fijter
-
 ---
 
 **Describe the bug**
