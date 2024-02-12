@@ -3,8 +3,7 @@ name: Feature request
 about: Suggest a new feature
 title: ''
 labels: feature
-assignees: fijter
-
+assignees: jorgemmsilva
 ---
 
 **Is your feature request related to a problem? Please describe.**
