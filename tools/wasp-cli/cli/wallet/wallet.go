@@ -91,7 +91,6 @@ func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 
 	for _, searchPath := range searchPaths {
 		if _, err := os.Stat(searchPath); err == nil {
-
 			return initIotaSDK(searchPath)
 		}
 	}
