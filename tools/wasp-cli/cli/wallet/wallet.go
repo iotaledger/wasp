@@ -93,7 +93,6 @@ func getIotaSDK() *wasp_wallet_sdk.IOTASDK {
 		if _, err := os.Stat(searchPath); err == nil {
 
 			return initIotaSDK(searchPath)
-			// file exists
 		}
 	}
 
