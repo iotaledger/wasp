@@ -1,10 +1,12 @@
 package utxodb
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 	"sync"
 	"time"
 
@@ -334,6 +336,9 @@ func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotag
 		i++
 	}
 
+	slices.SortFunc(ids, func(a, b iotago.OutputID) int {
+		return bytes.Compare(a[:], b[:])
+	})
 	return outs, ids
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -115,6 +116,8 @@ func TestSuccessfulRegisterError(t *testing.T) {
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
+
+	testdbhash.VerifyContractStateHash(chain.Env, errors.Contract, "", t.Name())
 }
 
 func TestRetrievalOfErrorMessage(t *testing.T) {

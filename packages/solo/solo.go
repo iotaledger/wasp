@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -432,6 +433,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 // AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
 // invalid or double spend
 func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
+	env.logger.Debugf("posting tx to L1: %s", lo.Must(json.Marshal(tx)))
 	return env.utxoDB.AddToLedger(tx)
 }
 

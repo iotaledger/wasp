@@ -1,11 +1,13 @@
 package testdbhash
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"github.com/samber/lo"
 	"golang.org/x/crypto/blake2b"
@@ -14,13 +16,15 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 const (
 	envVarUpdateDBHash = "UPDATE_DBHASHES"
 
-	// If set, a hex dump of the test will be stored in <basename>-<$DB_DUMP>.dump.hex,
+	// If set, a hex dump of the test will be stored in <basename>-<$DB_DUMP>.dump,
 	// that can be used to compute a diff.
 	envVarDBDump = "DB_DUMP"
 )
@@ -35,6 +39,7 @@ func VerifyDBHash(env *solo.Solo, testName string) {
 		env.IterateChainTrieDBs,
 		testName,
 		"DB hash has changed!",
+		false,
 	)
 }
 
@@ -48,6 +53,7 @@ func VerifyStateHash(env *solo.Solo, testName string) {
 		},
 		testName+"-state",
 		"State hash has changed!",
+		true,
 	)
 }
 
@@ -61,6 +67,7 @@ func VerifyContractStateHash(env *solo.Solo, contract *coreutil.ContractInfo, pr
 		},
 		testName+"-"+contract.Name,
 		fmt.Sprintf("State hash for core contract %q has changed!", contract.Name),
+		true,
 	)
 }
 
@@ -69,6 +76,7 @@ func verifyHash(
 	iterateDBs func(func(chainID *isc.ChainID, k []byte, v []byte)),
 	baseName string,
 	msg string,
+	isState bool,
 ) {
 	h := lo.Must(blake2b.New256(nil))
 	if h.Size() != hashing.HashSize {
@@ -77,7 +85,7 @@ func verifyHash(
 
 	var dbDump *os.File
 	if os.Getenv(envVarDBDump) != "" {
-		dumpFilename := baseName + "-" + os.Getenv(envVarDBDump) + ".dump.hex"
+		dumpFilename := baseName + "-" + os.Getenv(envVarDBDump) + ".dump"
 		dbDump = lo.Must(os.Create(fullPath(dumpFilename)))
 		defer dbDump.Close()
 	}
@@ -86,7 +94,7 @@ func verifyHash(
 		lo.Must(h.Write(k))
 		lo.Must(h.Write(v))
 		if dbDump != nil {
-			lo.Must(dbDump.WriteString(fmt.Sprintf("%x: %x\n", k, v)))
+			lo.Must(dbDump.WriteString(fmt.Sprintf("%s: %x\n", stringifyKey(k, isState), v)))
 		}
 	})
 
@@ -101,7 +109,7 @@ func verifyHash(
 		if expected != hash {
 			t.Fatalf(
 				msg+
-					" This may be a BREAKING CHANGE; make sure that you add a migration "+
+					" This may be due to a BREAKING CHANGE; make sure that you add a migration "+
 					"(if necessary), and then run all tests again with: %s=1 (e.g. `%s=1 make test`). "+
 					"Note: you can set %s=1 in one branch and %s=2 on another, and then compute a diff "+
 					"of the generated hex dumps.",
@@ -109,6 +117,35 @@ func verifyHash(
 			)
 		}
 	}
+}
+
+// stringifyKey formats the key in a human readable way, e.g. "[accounts|a|0568baff]"
+func stringifyKey(k []byte, isState bool) string {
+	if isState && len(k) >= 4 {
+		hname := codec.MustDecodeHname(k[:4])
+		c, isCore := corecontracts.All[hname]
+		var b strings.Builder
+		if isCore {
+			b.WriteString(fmt.Sprintf("[%s|", c.Name))
+		} else {
+			b.WriteString(fmt.Sprintf("[%x|", k[:4]))
+		}
+		// 99% of keys in the state are formed as 1+ ASCII characters followed
+		// by 0+ binary values
+		for i := 4; i < len(k); i++ {
+			if k[i] < unicode.MaxASCII && unicode.IsPrint(rune(k[i])) {
+				// format characters as ASCII until the first non-ASCII
+				b.WriteByte(k[i])
+			} else {
+				// format the rest as hex
+				b.WriteString(fmt.Sprintf("|%x", k[i:]))
+				break
+			}
+		}
+		b.WriteString("]")
+		return b.String()
+	}
+	return hex.EncodeToString(k)
 }
 
 func loadHash(filename string) hashing.HashValue {
@@ -122,5 +159,9 @@ func saveHash(filename string, hash hashing.HashValue) {
 
 func fullPath(filename string) string {
 	_, goFilename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(goFilename), filename)
+	return filepath.Join(filepath.Dir(goFilename), normalize(filename))
+}
+
+func normalize(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, " ", "-"), "/", "-")
 }

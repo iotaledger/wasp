@@ -161,9 +161,14 @@ func init() {
 	}
 }
 
-func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func EthereumAccountByIndex(i int) (*ecdsa.PrivateKey, common.Address) {
 	key := EthereumAccounts[i]
 	addr := crypto.PubkeyToAddress(key.PublicKey)
+	return key, addr
+}
+
+func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+	key, addr := EthereumAccountByIndex(i)
 	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr
 }

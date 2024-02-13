@@ -42,25 +42,31 @@ const (
 
 const (
 	// Array of blockIndex => BlockInfo (pruned)
+	// Covered in: TestGetEvents
 	PrefixBlockRegistry = "a"
 
 	// Map of request.ID().LookupDigest() => []RequestLookupKey (pruned)
 	//   LookupDigest = reqID[:6] | outputIndex
 	//   RequestLookupKey = blockIndex | requestIndex
+	// Covered in: TestGetEvents
 	prefixRequestLookupIndex = "b"
 
 	// Map of RequestLookupKey => RequestReceipt (pruned)
 	//   RequestLookupKey = blockIndex | requestIndex
+	// Covered in: TestGetEvents
 	prefixRequestReceipts = "c"
 
 	// Map of EventLookupKey => event (pruned)
 	//   EventLookupKey = blockIndex | requestIndex | eventIndex
+	// Covered in: TestGetEvents
 	prefixRequestEvents = "d"
 
 	// Map of requestID => unprocessableRequestRecord
+	// Covered in: TestUnprocessableWithPruning
 	prefixUnprocessableRequests = "u"
 
 	// Array of requestID.
 	// Temporary list of unprocessable requests that need updating the outputID field
+	// Covered in: TestUnprocessableWithPruning
 	prefixNewUnprocessableRequests = "U"
 )

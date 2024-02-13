@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
@@ -203,6 +204,8 @@ func TestGetEvents(t *testing.T) {
 	reqID1 := incrementSCCounter(t, ch) // #block 3
 	reqID2 := incrementSCCounter(t, ch) // #block 4
 	reqID3 := incrementSCCounter(t, ch) // #block 5
+
+	testdbhash.VerifyContractStateHash(env, blocklog.Contract, "", t.Name())
 
 	events := getEventsForRequest(t, ch, reqID1)
 	require.Len(t, events, 1)

@@ -23,12 +23,15 @@ import (
 const (
 	// prefixPrivileged stores the directory of EVM contracts that have access to
 	// the "privileged" ISC magic methods.
+	// Covered in: TestStorageContract
 	prefixPrivileged = "p"
 	// prefixAllowance stores the allowance between accounts (e.g. by calling
 	// ISC.allow() from solidity).
+	// Covered in: TestSendBaseTokens
 	prefixAllowance = "a"
 	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
 	// registered by calling ISC.registerERC20NativeToken() from solidity.
+	// Covered in: TestERC20NativeTokensWithExternalFoundry
 	prefixERC20ExternalNativeTokens = "e"
 )
 

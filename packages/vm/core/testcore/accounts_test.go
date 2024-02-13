@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/util"
@@ -226,6 +227,8 @@ func TestFoundries(t *testing.T) {
 
 		ch.AssertL2NativeTokens(senderAgentID, nativeTokenID, big.NewInt(5))
 		ch.AssertL2TotalNativeTokens(nativeTokenID, big.NewInt(5))
+
+		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name())
 	})
 	t.Run("max supply 1, mintTokens 1", func(t *testing.T) {
 		initTest()
@@ -1158,7 +1161,7 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
-	issuerWallet, issuerAddress := env.NewKeyPairWithFunds()
+	issuerWallet, issuerAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 
 	nft, _, err := env.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
 	require.NoError(t, err)
@@ -1168,19 +1171,21 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	req.AddBaseTokens(ch.EstimateNeededStorageDeposit(req, issuerWallet))
 	_, err = ch.PostRequestSync(req, issuerWallet)
 	require.NoError(t, err)
+
+	testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name())
 }
 
 func TestUnprocessableWithNoPruning(t *testing.T) {
-	testUnprocessable(t, nil)
+	testUnprocessable(t, nil, false)
 }
 
 func TestUnprocessableWithPruning(t *testing.T) {
 	testUnprocessable(t, dict.Dict{
 		origin.ParamBlockKeepAmount: codec.EncodeInt32(1),
-	})
+	}, true)
 }
 
-func testUnprocessable(t *testing.T, originParams dict.Dict) {
+func testUnprocessable(t *testing.T, originParams dict.Dict, verifyHash bool) {
 	v := initDepositTest(t, originParams)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create many foundries and mint 1 token on each
@@ -1205,9 +1210,10 @@ func testUnprocessable(t *testing.T, originParams dict.Dict) {
 	// ---
 
 	// move the native tokens to a new user that doesn't have on-chain balance
-	newUser, newUserAddress := v.env.NewKeyPairWithFunds()
+	newUser, newUserAddress := v.env.NewKeyPairWithFunds(v.env.NewSeedFromIndex(20))
 	newUserAgentID := isc.NewAgentID(newUserAddress)
 	v.env.SendL1(newUserAddress, assets, v.user)
+
 	// also create an NFT
 	iscNFT, _, err := v.ch.Env.MintNFTL1(v.user, newUserAddress, []byte("foobar"))
 	require.NoError(t, err)
@@ -1232,6 +1238,10 @@ func testUnprocessable(t *testing.T, originParams dict.Dict) {
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, "request has been skipped")
 	require.Nil(t, receipt) // nil receipt means the request was not processed
+
+	if verifyHash {
+		testdbhash.VerifyContractStateHash(v.env, blocklog.Contract, "", t.Name())
+	}
 
 	txReqs, err := v.ch.Env.RequestsForChain(tx, v.ch.ChainID)
 	require.NoError(t, err)
@@ -1445,8 +1455,9 @@ func TestNFTMint(t *testing.T) {
 	ch := env.NewChain()
 
 	t.Run("mint for another user", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds()
-		anotherUserAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and keep it on chain
 		req := solo.NewCallParams(
@@ -1468,9 +1479,9 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds()
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
 
-		anotherUserAddr := tpkg.RandEd25519Address()
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(4))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and withdraw it
@@ -1505,7 +1516,7 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds()
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 		agentID := isc.NewAgentID(address)
 
 		// mint NFT to self and keep it on chain
@@ -1545,8 +1556,12 @@ func TestNFTMint(t *testing.T) {
 		require.NoError(t, err)
 		mintID := ret.Get(accounts.ParamMintID)
 
+		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name()+"1")
+
 		// post a dummy request to make the chain progress to the next block
 		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+
+		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name()+"2")
 
 		ret, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTIDbyMintID.Name,
 			accounts.ParamMintID, mintID)
