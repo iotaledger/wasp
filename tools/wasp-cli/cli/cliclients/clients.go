@@ -68,7 +68,7 @@ func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chaincli
 		L1Client(),
 		waspClient,
 		chainID,
-		wallet.Load().KeyPair,
+		wallet.Load(),
 	)
 }
 

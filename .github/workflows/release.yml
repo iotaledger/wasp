@@ -12,6 +12,17 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
 
+      - name: Pull IOTA SDK bindings
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: 'iotaledger/iota-sdk-native-bindings'
+          # For now use 'latest'
+          #version: 'tags/v0.1.0'
+          regex: true
+          file: ".*"
+          target: 'sdk/'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Tar temporary artifacts
         run: tar --exclude='temp.tar' -cf temp.tar ./
 
