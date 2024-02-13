@@ -26,7 +26,7 @@ type CreateChainParams struct {
 	CommitteeAPIHosts    []string
 	N                    uint16
 	T                    uint16
-	OriginatorKeyPair    *cryptolib.KeyPair
+	OriginatorKeyPair    cryptolib.VariantKeyPair
 	Textout              io.Writer
 	Prefix               string
 	InitParams           dict.Dict
@@ -40,7 +40,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := par.OriginatorKeyPair.GetPublicKey().AsEd25519Address()
+	originatorAddr := par.OriginatorKeyPair.Address()
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Creating new chain\n* Owner address:    %s\n* State controller: %s\n* committee size = %d\n* quorum = %d\n",
@@ -79,12 +79,12 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(
 	layer1Client l1connection.Client,
-	originator *cryptolib.KeyPair,
+	originator cryptolib.VariantKeyPair,
 	stateController iotago.Address,
 	governanceController iotago.Address,
 	initParams dict.Dict,
 ) (isc.ChainID, error) {
-	originatorAddr := originator.GetPublicKey().AsEd25519Address()
+	originatorAddr := originator.Address()
 	// ----------- request owner address' outputs from the ledger
 	utxoMap, err := layer1Client.OutputMap(originatorAddr)
 	if err != nil {

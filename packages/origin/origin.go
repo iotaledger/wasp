@@ -126,7 +126,7 @@ func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaV
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	keyPair *cryptolib.KeyPair,
+	keyPair cryptolib.VariantKeyPair,
 	stateControllerAddress iotago.Address,
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
@@ -139,7 +139,7 @@ func NewChainOriginTransaction(
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := keyPair.GetPublicKey().AsEd25519Address()
+	walletAddr := keyPair.Address()
 
 	if initParams == nil {
 		initParams = dict.New()
@@ -189,13 +189,12 @@ func NewChainOriginTransaction(
 		Inputs:    txInputs.UTXOInputs(),
 		Outputs:   outputs,
 	}
-	sigs, err := essence.Sign(
-		txInputs.OrderedSet(unspentOutputs).MustCommitment(),
-		keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr),
-	)
+
+	sigs, err := transaction.SignEssence(essence, txInputs.OrderedSet(unspentOutputs).MustCommitment(), keyPair)
 	if err != nil {
 		return nil, aliasOutput, isc.ChainID{}, err
 	}
+
 	tx := &iotago.Transaction{
 		Essence: essence,
 		Unlocks: transaction.MakeSignatureAndReferenceUnlocks(len(txInputs), sigs[0]),
