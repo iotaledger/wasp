@@ -41,7 +41,7 @@ func CreateKeyChain(overwrite bool) {
 	oldSeed, _ := config.GetKeyChain().GetSeed()
 
 	if len(oldSeed) == cryptolib.SeedSize && !overwrite {
-		log.Printf("You already have an existing seed inside your keychain.\nCalling `init` will *replace* it with a new one.\n")
+		log.Printf("You already have an existing seed inside your Keychain.\nCalling `init` will *replace* it with a new one.\n")
 		log.Printf("Run `wasp-cli init --overwrite` to continue with the initialization.\n")
 		log.Fatalf("The cli will now exit.")
 	}
@@ -50,13 +50,13 @@ func CreateKeyChain(overwrite bool) {
 	err := config.GetKeyChain().SetSeed(seed)
 	log.Check(err)
 
-	log.Printf("New seed stored inside the keychain.\n")
+	log.Printf("New seed stored inside the Keychain.\n")
 }
 
 func MigrateKeyChain(seed cryptolib.Seed) {
 	err := config.GetKeyChain().SetSeed(seed)
 	log.Check(err)
-	log.Printf("Seed migrated to keychain.\nProceeding seed validation.\n")
+	log.Printf("Seed migrated to Keychain.\nProceeding seed validation.\n")
 
 	kcSeed, err := config.GetKeyChain().GetSeed()
 	log.Check(err)
