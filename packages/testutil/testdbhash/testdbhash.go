@@ -94,7 +94,7 @@ func verifyHash(
 		lo.Must(h.Write(k))
 		lo.Must(h.Write(v))
 		if dbDump != nil {
-			lo.Must(dbDump.WriteString(fmt.Sprintf("%s: %x\n", stringifyKey(k, isState), v)))
+			lo.Must(dbDump.WriteString(fmt.Sprintf("%s: [%d] %x\n", stringifyKey(k, isState), len(v), v)))
 		}
 	})
 
@@ -119,33 +119,23 @@ func verifyHash(
 	}
 }
 
-// stringifyKey formats the key in a human readable way, e.g. "[accounts|a|0568baff]"
+// stringifyKey formats the key in a human readable way, e.g. "[accounts|a]"
 func stringifyKey(k []byte, isState bool) string {
-	if isState && len(k) >= 4 {
-		hname := codec.MustDecodeHname(k[:4])
-		c, isCore := corecontracts.All[hname]
-		var b strings.Builder
-		if isCore {
-			b.WriteString(fmt.Sprintf("[%s|", c.Name))
-		} else {
-			b.WriteString(fmt.Sprintf("[%x|", k[:4]))
-		}
-		// 99% of keys in the state are formed as 1+ ASCII characters followed
-		// by 0+ binary values
-		for i := 4; i < len(k); i++ {
-			if k[i] < unicode.MaxASCII && unicode.IsPrint(rune(k[i])) {
-				// format characters as ASCII until the first non-ASCII
-				b.WriteByte(k[i])
-			} else {
-				// format the rest as hex
-				b.WriteString(fmt.Sprintf("|%x", k[i:]))
-				break
-			}
-		}
-		b.WriteString("]")
-		return b.String()
+	if !isState || len(k) < 4 {
+		return hex.EncodeToString(k)
 	}
-	return hex.EncodeToString(k)
+	hname := codec.MustDecodeHname(k[:4])
+	c, isCore := corecontracts.All[hname]
+	if !isCore {
+		return hex.EncodeToString(k)
+	}
+	// 99% of keys in the state have 1+ ASCII prefix
+	rest := k[4:]
+	asciiPrefix := rest[:0]
+	for i := 0; i < len(rest) && rest[i] < unicode.MaxASCII && unicode.IsPrint(rune(rest[i])); i++ {
+		asciiPrefix = rest[:i+1]
+	}
+	return fmt.Sprintf("[%s|%s] [%d] %x", c.Name, asciiPrefix, len(k), k)
 }
 
 func loadHash(filename string) hashing.HashValue {
