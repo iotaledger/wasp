@@ -217,6 +217,7 @@ func SetWalletProviderString(provider string) {
 func GetSeedForMigration() string {
 	return viper.GetString("wallet.seed")
 }
+func RemoveSeedForMigration() { viper.Set("wallet.seed", "") }
 
 func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
 	logLevel := viper.GetString("wallet.loglevel")

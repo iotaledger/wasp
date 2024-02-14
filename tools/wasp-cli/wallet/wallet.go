@@ -14,18 +14,22 @@ type WalletConfig struct {
 	KeyPair cryptolib.VariantKeyPair
 }
 
+var initOverwrite bool
+
 func initInitCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a new wallet",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			wallet.InitWallet()
+			wallet.InitWallet(initOverwrite)
 
 			config.SetWalletProviderString(string(wallet.GetWalletProvider()))
 			log.Check(viper.WriteConfig())
 		},
 	}
+	cmd.Flags().BoolVar(&initOverwrite, "overwrite", false, "allow overwriting existing seed")
+	return cmd
 }
 
 type InitModel struct {
