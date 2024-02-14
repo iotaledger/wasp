@@ -38,7 +38,7 @@ func LoadKeyChain(addressIndex uint32) wallets.Wallet {
 }
 
 func CreateKeyChain(overwrite bool) {
-	oldSeed, _ := config.GetKeyChain().GetSeed()
+	oldSeed, _ := config.GetKeyChain().GetSeed() //nolint: staticcheck, wastedassign
 
 	if len(oldSeed) == cryptolib.SeedSize && !overwrite {
 		log.Printf("You already have an existing seed inside your Keychain.\nCalling `init` will *replace* it with a new one.\n")
@@ -69,6 +69,5 @@ func MigrateKeyChain(seed cryptolib.Seed) {
 		log.Printf("Seed was removed from the wasp-cli.json\n")
 	} else {
 		log.Fatalf("Seed mismatch between Keychain and the wasp-cli.json.\nMigration failed.\n")
-
 	}
 }
