@@ -63,7 +63,6 @@ func locateBaseDir() string {
 
 	baseDir := path.Join(homeDir, ".wasp-cli")
 	_, err = os.Stat(baseDir)
-
 	if err != nil {
 		err = os.Mkdir(baseDir, os.ModePerm)
 		log.Check(err)

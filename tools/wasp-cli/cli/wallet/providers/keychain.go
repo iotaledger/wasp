@@ -56,7 +56,7 @@ func CreateKeyChain(overwrite bool) {
 func MigrateKeyChain(seed cryptolib.Seed) {
 	err := config.GetKeyChain().SetSeed(seed)
 	log.Check(err)
-	log.Printf("Seed migrated to Keychain.\nProceeding seed validation.\n")
+	log.Printf("Seed migrated to Keychain.\nProceeding with seed validation.\n")
 
 	kcSeed, err := config.GetKeyChain().GetSeed()
 	log.Check(err)
@@ -66,8 +66,8 @@ func MigrateKeyChain(seed cryptolib.Seed) {
 		config.RemoveSeedForMigration()
 		err = viper.WriteConfig()
 		log.Check(err)
-		log.Printf("Seed was removed from the wasp-cli.json\n")
+		log.Printf("Seed was removed from the config file\n")
 	} else {
-		log.Fatalf("Seed mismatch between Keychain and the wasp-cli.json.\nMigration failed.\n")
+		log.Fatalf("Seed mismatch between Keychain and the config file.\nMigration failed.\n")
 	}
 }
