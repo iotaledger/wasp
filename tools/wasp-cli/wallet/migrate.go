@@ -9,7 +9,7 @@ import (
 func initMigrateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "wallet-migrate (keychain)",
-		Short: "Migrates a seed inside `wasp-cli.json` to the keychain provider",
+		Short: "Migrates a seed inside the config file to the keychain provider",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			wallet.Migrate(wallet.WalletProvider(args[0]))

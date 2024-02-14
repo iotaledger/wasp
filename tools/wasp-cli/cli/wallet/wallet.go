@@ -119,12 +119,12 @@ func Load() wallets.Wallet {
 	return loadedWallet
 }
 
-func InitWallet() {
+func InitWallet(overwrite bool) {
 	walletProvider := GetWalletProvider()
 
 	switch walletProvider {
 	case ProviderKeyChain:
-		providers.CreateKeyChain()
+		providers.CreateKeyChain(overwrite)
 	case ProviderLedger:
 		log.Printf("Ledger wallet provider selected, no initialization required")
 	case ProviderStronghold:
