@@ -5,7 +5,6 @@ package emulator
 
 import (
 	"fmt"
-	"math/big"
 	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -73,28 +73,28 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
-func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
+func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int) {
 	if amount.Sign() == 0 {
 		return
 	}
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.ctx.SubBaseTokensBalance(addr, amount)
+	s.ctx.SubBaseTokensBalance(addr, amount.ToBig())
 }
 
-func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
+func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int) {
 	if amount.Sign() == 0 {
 		return
 	}
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	s.ctx.AddBaseTokensBalance(addr, amount)
+	s.ctx.AddBaseTokensBalance(addr, amount.ToBig())
 }
 
-func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	return s.ctx.GetBaseTokensBalance(addr)
+func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
+	return uint256.MustFromBig(s.ctx.GetBaseTokensBalance(addr))
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {

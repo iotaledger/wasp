@@ -1,26 +1,48 @@
 package evmlogger
 
 import (
-	"strings"
+	"context"
 
 	"github.com/ethereum/go-ethereum/log"
+	"golang.org/x/exp/slog"
 
-	"github.com/iotaledger/hive.go/logger"
+	hiveLog "github.com/iotaledger/hive.go/logger"
 )
 
-var format = log.TerminalFormat(false)
+func Init(hiveLogger *hiveLog.Logger) {
+	log.SetDefault(log.NewLogger(&hiveLogHandler{hiveLogger}))
+}
 
-func Init(waspLogger *logger.Logger) {
-	log.Root().SetHandler(log.FuncHandler(func(r *log.Record) error {
-		s := strings.TrimRight(string(format.Format(r)), "\n")
-		switch r.Lvl {
-		case log.LvlCrit, log.LvlError:
-			waspLogger.Error(s)
-		case log.LvlTrace, log.LvlDebug:
-			waspLogger.Debug(s)
-		default:
-			waspLogger.Info(s)
-		}
-		return nil
-	}))
+type hiveLogHandler struct{ *hiveLog.Logger }
+
+// Enabled implements slog.Handler.
+func (*hiveLogHandler) Enabled(context.Context, slog.Level) bool {
+	return true
+}
+
+// Handle implements slog.Handler.
+func (h *hiveLogHandler) Handle(ctx context.Context, r slog.Record) error {
+	switch {
+	case r.Level >= slog.LevelError:
+		h.Logger.Error(r.Message)
+	case r.Level <= slog.LevelDebug:
+		h.Logger.Debug(r.Message)
+	case r.Level == slog.LevelWarn:
+		h.Logger.Warn(r.Message)
+	default:
+		h.Logger.Info(r.Message)
+	}
+	return nil
+}
+
+// WithAttrs implements slog.Handler.
+func (h *hiveLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	// TODO: unimplemented in hive logger?
+	return h
+}
+
+// WithGroup implements slog.Handler.
+func (h *hiveLogHandler) WithGroup(name string) slog.Handler {
+	// TODO: unimplemented in hive logger?
+	return h
 }
