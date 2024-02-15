@@ -268,12 +268,12 @@ func TestBlockchain(t *testing.T) {
 		{
 			state := emu.StateDB()
 			// check the balance of the faucet address
-			require.EqualValues(t, faucetSupply, state.GetBalance(faucetAddress))
+			require.EqualValues(t, faucetSupply, state.GetBalance(faucetAddress).ToBig())
 		}
 	}
 
 	// check the balances
-	require.EqualValues(t, faucetSupply, emu.StateDB().GetBalance(faucetAddress))
+	require.EqualValues(t, faucetSupply, emu.StateDB().GetBalance(faucetAddress).ToBig())
 
 	// deploy a contract
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))

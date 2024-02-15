@@ -206,7 +206,10 @@ type RPCCallArgs struct {
 	Gas      *hexutil.Uint64 `json:"gas"`
 	GasPrice *hexutil.Big    `json:"gasPrice"`
 	Value    *hexutil.Big    `json:"value"`
-	Data     *hexutil.Bytes  `json:"data"`
+	// We accept "data" and "input" for backwards-compatibility reasons. "input" is the
+	// newer name and should be preferred by clients.
+	Data  *hexutil.Bytes `json:"data"`
+	Input *hexutil.Bytes `json:"input"`
 }
 
 func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
@@ -219,6 +222,9 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	ret.Value = (*big.Int)(c.Value)
 	if c.Data != nil {
 		ret.Data = *c.Data
+	}
+	if c.Input != nil {
+		ret.Data = *c.Input
 	}
 	return
 }
