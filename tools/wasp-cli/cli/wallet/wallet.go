@@ -117,7 +117,6 @@ func Load() wallets.Wallet {
 		case ProviderUnsafeInMemoryTestingSeed:
 			loadedWallet = providers.LoadUnsafeInMemoryTestingSeed(AddressIndex)
 		}
-
 	}
 
 	return loadedWallet
