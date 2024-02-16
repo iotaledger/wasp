@@ -218,6 +218,9 @@ func GetSeedForMigration() string {
 }
 func RemoveSeedForMigration() { viper.Set("wallet.seed", "") }
 
+func GetTestingSeed() string     { return viper.GetString("wallet.testing_seed") }
+func SetTestingSeed(seed string) { viper.Set("wallet.testing_seed", seed) }
+
 func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
 	logLevel := viper.GetString("wallet.loglevel")
 	if logLevel == "" {

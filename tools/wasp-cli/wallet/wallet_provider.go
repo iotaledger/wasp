@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -19,6 +20,7 @@ func initWalletProviderCmd() *cobra.Command {
 			}
 
 			log.Check(wallet.SetWalletProvider(wallet.WalletProvider(args[0])))
+			log.Check(viper.WriteConfig())
 		},
 	}
 }

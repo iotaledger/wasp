@@ -47,6 +47,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
+	w.MustRun("wallet-provider", "unsafe_inmemory_testing_seed")
 	w.MustRun("init")
 
 	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)

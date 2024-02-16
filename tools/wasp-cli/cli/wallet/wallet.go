@@ -23,16 +23,17 @@ var AddressIndex uint32
 type WalletProvider string
 
 const (
-	ProviderKeyChain   WalletProvider = "keychain"
-	ProviderLedger     WalletProvider = "sdk_ledger"
-	ProviderStronghold WalletProvider = "sdk_stronghold"
+	ProviderUnsafeInMemoryTestingSeed WalletProvider = "unsafe_inmemory_testing_seed"
+	ProviderKeyChain                  WalletProvider = "keychain"
+	ProviderLedger                    WalletProvider = "sdk_ledger"
+	ProviderStronghold                WalletProvider = "sdk_stronghold"
 )
 
 func GetWalletProvider() WalletProvider {
 	provider := WalletProvider(config.GetWalletProviderString())
 
 	switch provider {
-	case ProviderLedger, ProviderKeyChain, ProviderStronghold:
+	case ProviderLedger, ProviderKeyChain, ProviderStronghold, ProviderUnsafeInMemoryTestingSeed:
 		return provider
 	}
 	return ProviderKeyChain
@@ -40,7 +41,7 @@ func GetWalletProvider() WalletProvider {
 
 func SetWalletProvider(provider WalletProvider) error {
 	switch provider {
-	case ProviderLedger, ProviderKeyChain, ProviderStronghold:
+	case ProviderLedger, ProviderKeyChain, ProviderStronghold, ProviderUnsafeInMemoryTestingSeed:
 		config.SetWalletProviderString(string(provider))
 		return nil
 	}
@@ -113,7 +114,10 @@ func Load() wallets.Wallet {
 			loadedWallet = providers.LoadLedgerWallet(getIotaSDK(), AddressIndex)
 		case ProviderStronghold:
 			loadedWallet = providers.LoadStrongholdWallet(getIotaSDK(), AddressIndex)
+		case ProviderUnsafeInMemoryTestingSeed:
+			loadedWallet = providers.LoadUnsafeInMemoryTestingSeed(AddressIndex)
 		}
+
 	}
 
 	return loadedWallet
@@ -129,6 +133,8 @@ func InitWallet(overwrite bool) {
 		log.Printf("Ledger wallet provider selected, no initialization required")
 	case ProviderStronghold:
 		providers.CreateNewStrongholdWallet(getIotaSDK())
+	case ProviderUnsafeInMemoryTestingSeed:
+		providers.CreateUnsafeInMemoryTestingSeed()
 	}
 }
 
@@ -150,5 +156,7 @@ func Migrate(provider WalletProvider) {
 		log.Printf("Ledger wallet provider selected, no migration available")
 	case ProviderStronghold:
 		providers.MigrateToStrongholdWallet(getIotaSDK(), seed)
+	default:
+		log.Printf("Migration unsupported for provider %v", provider)
 	}
 }
