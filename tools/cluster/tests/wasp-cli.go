@@ -47,6 +47,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
+	w.MustRun("wallet-provider", "unsafe_inmemory_testing_seed")
 	w.MustRun("init")
 
 	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)
@@ -80,7 +81,7 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error)
 	w.T.Helper()
 	// -w: wait for requests
 	// -d: debug output
-	cmd := exec.Command("wasp-cli", append([]string{"-w", "-d"}, args...)...) //nolint:gosec
+	cmd := exec.Command("wasp-cli", append([]string{"-c", w.dir + "/wasp-cli.json", "-w", "-d"}, args...)...) //nolint:gosec
 	cmd.Dir = w.dir
 
 	stdout := new(bytes.Buffer)
