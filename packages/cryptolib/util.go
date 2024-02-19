@@ -15,3 +15,11 @@ func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, err error) {
 	copy(result[:], bytes)
 	return
 }
+
+func IsVariantKeyPairValid(variantKeyPair VariantKeyPair) bool {
+	if variantKeyPair == nil {
+		return false
+	}
+
+	return !variantKeyPair.IsNil()
+}

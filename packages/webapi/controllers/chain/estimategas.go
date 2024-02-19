@@ -56,7 +56,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	controllerutils.SetOperation(e, "estimate_gas_offledger")
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
 		return err
 	}
@@ -71,15 +71,16 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("Request", err)
 	}
 
-	req, err := c.offLedgerService.ParseRequest(requestBytes)
+	req, err := c.offLedgerService.ParseRequestUnsigned(requestBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)
 	}
-	if !req.TargetAddress().Equal(chainID.AsAddress()) {
-		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
-	}
 
-	rec, err := common.EstimateGas(ch, req)
+	/*if !req.TargetAddress().Equal(chainID.AsAddress()) {
+		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
+	}*/
+
+	rec, err := common.EstimateGas(ch, req.(isc.Request))
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
 	}

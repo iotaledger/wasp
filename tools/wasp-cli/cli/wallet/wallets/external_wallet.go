@@ -25,6 +25,10 @@ func NewExternalWallet(secretManager *walletsdk.SecretManager, addressIndex uint
 	}
 }
 
+func (l *ExternalWallet) IsNil() bool {
+	return l == nil
+}
+
 func (l *ExternalWallet) AddressIndex() uint32 {
 	return l.addressIndex
 }
