@@ -446,10 +446,12 @@ func (smT *stateManagerGPA) traceBlockChainWithCallback(index uint32, lastCommit
 // formulated as "give me blocks from some commitment till some index". If the
 // requested node has the required block committed into the store, it certainly
 // has all the blocks before it.
-func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) gpa.OutMessages {
-	stateIndex := fetcher.getStateIndex()
-	commitment := fetcher.getCommitment()
-	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
+func (smT *stateManagerGPA) traceBlockChain(initFetcher blockFetcher) gpa.OutMessages {
+	var fetcher blockFetcher
+	var previousCommitment *state.L1Commitment
+	for fetcher = initFetcher; !smT.store.HasTrieRoot(fetcher.getCommitment().TrieRoot()); fetcher = newBlockFetcherWithRelatedFetcher(previousCommitment, fetcher) {
+		stateIndex := fetcher.getStateIndex()
+		commitment := fetcher.getCommitment()
 		block := smT.blockCache.GetBlock(commitment)
 		if block == nil {
 			var stateIndexBoundaryValid bool
@@ -475,7 +477,7 @@ func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) gpa.OutMessage
 		}
 		blockIndex := block.StateIndex()
 		previousBlockIndex := blockIndex - 1
-		previousCommitment := block.PreviousL1Commitment()
+		previousCommitment = block.PreviousL1Commitment()
 		smT.log.Debugf("Tracing block index %v %s -> previous block %v %s", blockIndex, commitment, previousBlockIndex, previousCommitment)
 		if previousCommitment == nil {
 			result := smT.markFetched(fetcher, true)
@@ -491,10 +493,9 @@ func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) gpa.OutMessage
 			smT.log.Debugf("Block %v %s is already fetched, but cannot yet be committed", previousBlockIndex, previousCommitment)
 			return nil // No messages to send
 		}
-		return smT.traceBlockChain(newBlockFetcherWithRelatedFetcher(previousCommitment, fetcher))
 	}
 	result := smT.markFetched(fetcher, false)
-	smT.log.Debugf("Block %s is already committed", commitment)
+	smT.log.Debugf("Block %s is already committed", fetcher.getCommitment())
 	return result
 }
 
