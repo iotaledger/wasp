@@ -1,6 +1,8 @@
 package providers
 
 import (
+	"os"
+
 	walletsdk "github.com/iotaledger/wasp-wallet-sdk"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
@@ -8,7 +10,13 @@ import (
 )
 
 func LoadLedgerWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.Wallet {
-	secretManager, err := walletsdk.NewLedgerSecretManager(sdk, false)
+
+	useEmulator := false
+	if isEmulator, ok := os.LookupEnv("IOTA_SDK_USE_SIMULATOR"); isEmulator == "true" && ok {
+		useEmulator = true
+	}
+
+	secretManager, err := walletsdk.NewLedgerSecretManager(sdk, useEmulator)
 	log.Check(err)
 
 	status, err := secretManager.GetLedgerStatus()
