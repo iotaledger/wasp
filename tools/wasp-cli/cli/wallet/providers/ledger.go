@@ -10,7 +10,6 @@ import (
 )
 
 func LoadLedgerWallet(sdk *walletsdk.IOTASDK, addressIndex uint32) wallets.Wallet {
-
 	useEmulator := false
 	if isEmulator, ok := os.LookupEnv("IOTA_SDK_USE_SIMULATOR"); isEmulator == "true" && ok {
 		useEmulator = true
