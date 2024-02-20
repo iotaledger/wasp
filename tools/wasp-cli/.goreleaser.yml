@@ -37,8 +37,8 @@ builds:
     goarch:
       - arm64
   
-  # macOS
-  - id: wasp-cli-darwin-all
+  # macOS ARM64
+  - id: wasp-cli-darwin-arm64
     binary: wasp-cli
     ldflags:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
@@ -50,6 +50,19 @@ builds:
       - darwin
     goarch:
       - arm64
+
+    # macOS AMD64
+  - id: wasp-cli-darwin-amd64
+    binary: wasp-cli
+    ldflags:
+      - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
+    main: main.go
+    dir: ./tools/wasp-cli
+    tags:
+      - no_wasmhost
+    goos:
+      - darwin
+    goarch:
       - amd64
 
   # Windows AMD64
@@ -110,24 +123,33 @@ archives:
       - src: sdk/libiota_sdk.so
         dst: libiota_sdk.so
 
-  - # MacOS
-    id: wasp-cli-macos
+  - # MacOS ARM64
+    id: wasp-cli-macos-arm64
     builds: 
-      - wasp-cli-darwin-all
+      - wasp-cli-darwin-arm64
     format: tar.gz
     wrap_in_directory: true
     name_template: >- 
-      {{ .ProjectName }}_{{ .Version }}_MacOS_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "arm64" }}ARM64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
+      {{ .ProjectName }}_{{ .Version }}_MacOS_ARM64
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk.dylib
+      - src: sdk/libiota_sdk_arm64.dylib
         dst: libiota_sdk.dylib
 
+  - # MacOS AMD64
+    id: wasp-cli-macos-amd64
+    builds: 
+      - wasp-cli-darwin-amd64
+    format: tar.gz
+    wrap_in_directory: true
+    name_template: >- 
+      {{ .ProjectName }}_{{ .Version }}_MacOS_x86_64
+    files:
+      - README.md
+      - LICENSE
+      - src: sdk/libiota_sdk_amd64.dylib
+        dst: libiota_sdk.dylib
 
 
 # Checksum
