@@ -532,7 +532,6 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, doCommit bool) gpa
 		}
 		smT.log.Debugf("Block index %v %s has been committed to the store on state %s",
 			blockIndex, commitment, previousCommitment)
-		_ = smT.blocksFetched.takeFetcher(commitment)
 	}
 	relatedFetchers := fetcher.notifyFetched()
 	smT.metrics.SubRequestsWaiting(fetcher.getCallbacksCount())
