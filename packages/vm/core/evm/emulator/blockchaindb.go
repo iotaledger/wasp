@@ -24,20 +24,20 @@ const (
 	// config values:
 
 	// EVM chain ID
-	keyChainID = "c"
+	keyChainID = "c" // covered in: TestStorageContract
 
 	// blocks:
 
-	keyNumber                    = "n"
-	keyTransactionsByBlockNumber = "n:t"
-	keyReceiptsByBlockNumber     = "n:r"
-	keyBlockHeaderByBlockNumber  = "n:bh"
+	keyNumber                    = "n"    // covered in: TestStorageContract
+	keyTransactionsByBlockNumber = "n:t"  // covered in: TestStorageContract
+	keyReceiptsByBlockNumber     = "n:r"  // covered in: TestStorageContract
+	keyBlockHeaderByBlockNumber  = "n:bh" // covered in: TestStorageContract
 
 	// indexes:
 
-	keyBlockNumberByBlockHash = "bh:n"
-	keyBlockNumberByTxHash    = "th:n"
-	keyBlockIndexByTxHash     = "th:i"
+	keyBlockNumberByBlockHash = "bh:n" // covered in: TestStorageContract
+	keyBlockNumberByTxHash    = "th:n" // covered in: TestStorageContract
+	keyBlockIndexByTxHash     = "th:i" // covered in: TestStorageContract
 
 	BlockKeepAll = -1
 )

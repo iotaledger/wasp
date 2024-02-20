@@ -48,7 +48,11 @@ type SandboxBase interface {
 	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
 	StateR() kv.KVStoreReader
+	// SchemaVersion returns the schema version of the current state
+	SchemaVersion() SchemaVersion
 }
+
+type SchemaVersion uint32
 
 type Params struct {
 	Dict dict.Dict
@@ -141,13 +145,15 @@ type Privileged interface {
 	MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
-	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, assets *Assets)
-	DebitFromAccount(AgentID, *Assets)
-	CreditToAccount(AgentID, *Assets)
 	RetryUnprocessable(req Request, outputID iotago.OutputID)
 	OnWriteReceipt(CoreCallbackFunc)
 	CallOnBehalfOf(caller AgentID, target, entryPoint Hname, params dict.Dict, allowance *Assets) dict.Dict
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
+
+	// only called from EVM
+	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, assets *Assets)
+	DebitFromAccount(AgentID, *big.Int)
+	CreditToAccount(AgentID, *big.Int)
 }
 
 type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)

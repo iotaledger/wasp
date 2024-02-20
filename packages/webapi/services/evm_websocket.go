@@ -217,8 +217,9 @@ func (r rateLimitedEchoResponse) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 const (
-	readBufferSize  = 4096
-	writeBufferSize = 4096
+	readBufferSize     = 4096
+	writeBufferSize    = 4096
+	wsDefaultReadLimit = 32 * 1024 * 1024
 )
 
 func websocketHandler(server *chainServer, wsContext *websocketContext, realIP string) http.Handler {
@@ -258,7 +259,7 @@ func websocketHandler(server *chainServer, wsContext *websocketContext, realIP s
 			return
 		}
 
-		codec := rpc.NewWebSocketCodec(conn, r.Host, r.Header)
+		codec := rpc.NewWebSocketCodec(conn, r.Host, r.Header, wsDefaultReadLimit)
 		conn.SetPongHandler(func(appData string) error {
 			_ = conn.SetReadDeadline(time.Time{})
 			rateLimiter.UpdateLastActivity()

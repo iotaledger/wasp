@@ -13,7 +13,7 @@ func NewChangeGovControllerTx(
 	chainID iotago.AliasID,
 	newGovController iotago.Address,
 	utxos iotago.OutputSet,
-	wallet *cryptolib.KeyPair,
+	wallet cryptolib.VariantKeyPair,
 ) (*iotago.Transaction, error) {
 	// find the correct chain UTXO
 	var chainOutput *iotago.AliasOutput

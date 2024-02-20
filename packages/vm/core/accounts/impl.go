@@ -42,6 +42,7 @@ var Processor = Contract.Processor(nil,
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
 	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
+	ViewBalanceBaseTokenEVM.WithHandler(viewBalanceBaseTokenEVM),
 	ViewBalanceNativeToken.WithHandler(viewBalanceNativeToken),
 	ViewFoundryOutput.WithHandler(viewFoundryOutput),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
@@ -51,9 +52,9 @@ var Processor = Contract.Processor(nil,
 )
 
 // this expects the origin amount minus SD
-func SetInitialState(state kv.KVStore, baseTokensOnAnchor uint64) {
+func SetInitialState(v isc.SchemaVersion, state kv.KVStore, baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	CreditToAccount(state, CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
+	CreditToAccount(v, state, CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -280,9 +281,13 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	deleteFoundryFromAccount(state, caller, sn)
 	DeleteFoundryOutput(state, sn)
 	// the storage deposit goes to the caller's account
-	CreditToAccount(state, caller, &isc.Assets{
-		BaseTokens: storageDepositReleased,
-	}, ctx.ChainID())
+	CreditToAccount(
+		ctx.SchemaVersion(),
+		state,
+		caller,
+		&isc.Assets{BaseTokens: storageDepositReleased},
+		ctx.ChainID(),
+	)
 	eventFoundryDestroyed(ctx, sn)
 	return nil
 }
@@ -330,10 +335,10 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 				},
 			}),
 		)
-		DebitFromAccount(state, accountID, deltaAssets, ctx.ChainID())
+		DebitFromAccount(ctx.SchemaVersion(), state, accountID, deltaAssets, ctx.ChainID())
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
-		CreditToAccount(state, caller, deltaAssets, ctx.ChainID())
+		CreditToAccount(ctx.SchemaVersion(), state, caller, deltaAssets, ctx.ChainID())
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
@@ -344,7 +349,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment), ctx.ChainID())
 	case storageDepositAdjustment > 0:
 		// storage deposit is returned to the caller account
-		CreditToAccount(state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
+		CreditToAccount(ctx.SchemaVersion(), state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
 	}
 	eventFoundryModified(ctx, sn)
 	return nil

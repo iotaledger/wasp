@@ -27,49 +27,67 @@ var (
 
 const (
 	// keyAllAccounts stores a map of <agentID> => true
-	// where sum = baseTokens + native tokens + nfts
+	// Covered in: TestFoundries
 	keyAllAccounts = "a"
 
 	// prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
+	// Covered in: TestFoundries
 	prefixBaseTokens = "b"
 	// prefixBaseTokens | <accountID> stores a map of <nativeTokenID> => big.Int
+	// Covered in: TestFoundries
 	PrefixNativeTokens = "t"
 
-	// l2TotalsAccount is the special <accountID> storing the total fungible tokens
+	// L2TotalsAccount is the special <accountID> storing the total fungible tokens
 	// controlled by the chain
-	l2TotalsAccount = "*"
+	// Covered in: TestFoundries
+	L2TotalsAccount = "*"
 
 	// PrefixNFTs | <agentID> stores a map of <NFTID> => true
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	PrefixNFTs = "n"
 	// PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
+	// Covered in: TestNFTMint
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	PrefixNFTsByCollection = "c"
 	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
+	// Covered in: TestNFTMint
 	prefixNewlyMintedNFTs = "N"
 	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
+	// Covered in: TestNFTMint
 	prefixMintIDMap = "M"
 	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
+	// Covered in: TestFoundries
 	PrefixFoundries = "f"
 
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
+	// Covered in: TestNFTMint
 	noCollection = "-"
 
 	// keyNonce stores a map of <agentID> => nonce (uint64)
+	// Covered in: TestNFTMint
 	keyNonce = "m"
 
 	// keyNativeTokenOutputMap stores a map of <nativeTokenID> => nativeTokenOutputRec
+	// Covered in: TestFoundries
 	keyNativeTokenOutputMap = "TO"
 	// keyFoundryOutputRecords stores a map of <foundrySN> => foundryOutputRec
+	// Covered in: TestFoundries
 	keyFoundryOutputRecords = "FO"
 	// keyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNFTOutputRecords = "NO"
 	// keyNFTOwner stores a map of <NFTID> => isc.AgentID
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNFTOwner = "NW"
 
 	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
+	// Covered in: TestFoundries
 	keyNewNativeTokens = "TN"
 	// keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the OutputID
+	// Covered in: TestFoundries
 	keyNewFoundries = "FN"
 	// keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the OutputID
+	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNewNFTs = "NN"
 )
 
@@ -85,18 +103,18 @@ func allAccountsMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, keyAllAccounts)
 }
 
-func allAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
+func AllAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, keyAllAccounts)
 }
 
 func accountExists(state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) bool {
-	return allAccountsMapR(state).HasAt([]byte(accountKey(agentID, chainID)))
+	return AllAccountsMapR(state).HasAt([]byte(accountKey(agentID, chainID)))
 }
 
-func allAccountsAsDict(state kv.KVStoreReader) dict.Dict {
+func AllAccountsAsDict(state kv.KVStoreReader) dict.Dict {
 	ret := dict.New()
-	allAccountsMapR(state).IterateKeys(func(agentID []byte) bool {
-		ret.Set(kv.Key(agentID), []byte{0x01})
+	AllAccountsMapR(state).IterateKeys(func(accKey []byte) bool {
+		ret.Set(kv.Key(accKey), []byte{0x01})
 		return true
 	})
 	return ret
@@ -108,13 +126,13 @@ func touchAccount(state kv.KVStore, agentID isc.AgentID, chainID isc.ChainID) {
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance
-func HasEnoughForAllowance(state kv.KVStoreReader, agentID isc.AgentID, allowance *isc.Assets, chainID isc.ChainID) bool {
+func HasEnoughForAllowance(v isc.SchemaVersion, state kv.KVStoreReader, agentID isc.AgentID, allowance *isc.Assets, chainID isc.ChainID) bool {
 	if allowance == nil || allowance.IsEmpty() {
 		return true
 	}
 	accountKey := accountKey(agentID, chainID)
 	if allowance != nil {
-		if getBaseTokens(state, accountKey) < allowance.BaseTokens {
+		if getBaseTokens(v)(state, accountKey) < allowance.BaseTokens {
 			return false
 		}
 		for _, nativeToken := range allowance.NativeTokens {
@@ -132,16 +150,16 @@ func HasEnoughForAllowance(state kv.KVStoreReader, agentID isc.AgentID, allowanc
 }
 
 // MoveBetweenAccounts moves assets between on-chain accounts
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) error {
+func MoveBetweenAccounts(v isc.SchemaVersion, state kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) error {
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return nil
 	}
 
-	if !debitFromAccount(state, accountKey(fromAgentID, chainID), assets) {
+	if !debitFromAccount(v, state, accountKey(fromAgentID, chainID), assets) {
 		return errors.New("MoveBetweenAccounts: not enough funds")
 	}
-	creditToAccount(state, accountKey(toAgentID, chainID), assets)
+	creditToAccount(v, state, accountKey(toAgentID, chainID), assets)
 
 	for _, nftID := range assets.NFTs {
 		nft := GetNFTData(state, nftID)
@@ -159,8 +177,8 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, a
 	return nil
 }
 
-func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
-	err := MoveBetweenAccounts(state, fromAgentID, toAgentID, assets, chainID)
+func MustMoveBetweenAccounts(v isc.SchemaVersion, state kv.KVStore, fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
+	err := MoveBetweenAccounts(v, state, fromAgentID, toAgentID, assets, chainID)
 	if err != nil {
 		panic(err)
 	}
@@ -174,7 +192,7 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	}
 	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
-	DebitFromAccount(ctx.State(), CommonAccount(), storageDepositAssets, chainID)
+	DebitFromAccount(ctx.SchemaVersion(), ctx.State(), CommonAccount(), storageDepositAssets, chainID)
 }
 
 func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {

@@ -458,7 +458,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 
 	// create a fake tx so that the deposit is visible by the EVM
 	// discard remainder in decimals conversion
-	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	wei := util.MustBaseTokensDecimalsToEthereumDecimalsExact(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
 	// encode the txdata as <AgentID sender>+<Assets>+[blockIndex + reqIndex] // the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData := []byte{}

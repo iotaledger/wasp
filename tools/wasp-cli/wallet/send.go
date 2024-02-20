@@ -52,7 +52,7 @@ func initSendFundsCmd() *cobra.Command {
 				FungibleTokens:                  tokens,
 				SendOptions:                     isc.SendOptions{},
 				SenderAddress:                   senderAddress,
-				SenderKeyPair:                   myWallet.KeyPair,
+				SenderKeyPair:                   myWallet,
 				TargetAddress:                   targetAddress,
 				UnspentOutputs:                  outputSet,
 				UnspentOutputIDs:                isc.OutputSetToOutputIDs(outputSet),

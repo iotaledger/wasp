@@ -85,12 +85,29 @@ func TestRPCGetBalance(t *testing.T) {
 	env := newSoloTestEnv(t)
 	_, emptyAddress := solo.NewEthereumAccount()
 	require.Zero(t, env.Balance(emptyAddress).Uint64())
-	_, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	wallet, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	require.Equal(
 		t,
 		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress))*1e12,
 		env.Balance(nonEmptyAddress).Uint64(),
 	)
+
+	// 18 decimals
+	initialBalance := env.Balance(nonEmptyAddress)
+	toSend := new(big.Int).SetUint64(1_111_111_111_111_111_111) // use all 18 decimals
+	tx, err := types.SignTx(
+		types.NewTransaction(0, emptyAddress, toSend, uint64(100_000), env.MustGetGasPrice(), []byte{}),
+		env.Signer(),
+		wallet,
+	)
+	require.NoError(t, err)
+	receipt := env.mustSendTransactionAndWait(tx)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	fee := new(big.Int).Mul(receipt.EffectiveGasPrice, new(big.Int).SetUint64(receipt.GasUsed))
+	exptectedBalance := new(big.Int).Sub(initialBalance, toSend)
+	exptectedBalance = new(big.Int).Sub(exptectedBalance, fee)
+	require.Equal(t, exptectedBalance, env.Balance(nonEmptyAddress))
+	require.Equal(t, toSend, env.Balance(emptyAddress))
 }
 
 func TestRPCGetCode(t *testing.T) {
@@ -365,6 +382,7 @@ func TestRPCCall(t *testing.T) {
 		From: creatorAddress,
 		To:   &contractAddress,
 		Data: callArguments,
+		Gas:  100_000,
 	}, nil)
 	require.NoError(t, err)
 
@@ -388,6 +406,7 @@ func TestRPCCallNonView(t *testing.T) {
 		From: creatorAddress,
 		To:   &contractAddress,
 		Data: callArguments,
+		Gas:  100_000,
 	}, nil)
 	require.NoError(t, err)
 }

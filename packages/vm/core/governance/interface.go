@@ -59,35 +59,35 @@ var (
 // state variables
 const (
 	// state controller
-	VarAllowedStateControllerAddresses = "a"
-	VarRotateToAddress                 = "r"
+	VarAllowedStateControllerAddresses = "a" // covered in: TestGovernance1
+	VarRotateToAddress                 = "r" // should never persist in the state
 
-	VarPayoutAgentID                = "pa"
-	VarMinBaseTokensOnCommonAccount = "vs"
+	VarPayoutAgentID                = "pa" // covered in: TestMetadata
+	VarMinBaseTokensOnCommonAccount = "vs" // covered in: TestMetadata
 
 	// chain owner
-	VarChainOwnerID          = "o"
-	VarChainOwnerIDDelegated = "n"
+	VarChainOwnerID          = "o" // covered in: TestMetadata
+	VarChainOwnerIDDelegated = "n" // covered in: TestMaintenanceMode
 
 	// gas
-	VarGasFeePolicyBytes = "g"
-	VarGasLimitsBytes    = "l"
+	VarGasFeePolicyBytes = "g" // covered in: TestMetadata
+	VarGasLimitsBytes    = "l" // covered in: TestMetadata
 
 	// access nodes
-	VarAccessNodes          = "an"
-	VarAccessNodeCandidates = "ac"
+	VarAccessNodes          = "an" // covered in: TestAccessNodes
+	VarAccessNodeCandidates = "ac" // covered in: TestAccessNodes
 
 	// maintenance
-	VarMaintenanceStatus = "m"
+	VarMaintenanceStatus = "m" // covered in: TestMetadata
 
 	// L2 metadata (provided by the webapi, located by the public url)
-	VarMetadata = "md"
+	VarMetadata = "md" // covered in: TestMetadata
 
 	// L1 metadata (stored and provided in the tangle)
-	VarPublicURL = "x"
+	VarPublicURL = "x" // covered in: TestL1Metadata
 
 	// state pruning
-	VarBlockKeepAmount = "b"
+	VarBlockKeepAmount = "b" // covered in: TestMetadata
 )
 
 // request parameters

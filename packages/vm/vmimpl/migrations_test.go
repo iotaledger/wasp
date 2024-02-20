@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -30,16 +31,14 @@ type migrationsTestEnv struct {
 	panic      migrations.Migration
 }
 
-func (e *migrationsTestEnv) getSchemaVersion() (ret uint32) {
+func (e *migrationsTestEnv) getSchemaVersion() (ret isc.SchemaVersion) {
 	e.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		withContractState(chainState, root.Contract, func(s kv.KVStore) {
-			ret = root.GetSchemaVersion(s)
-		})
+		ret = root.NewStateAccess(chainState).SchemaVersion()
 	})
 	return
 }
 
-func (e *migrationsTestEnv) setSchemaVersion(v uint32) {
+func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 	e.vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		withContractState(chainState, root.Contract, func(s kv.KVStore) {
 			root.SetSchemaVersion(s, v)
@@ -50,7 +49,7 @@ func (e *migrationsTestEnv) setSchemaVersion(v uint32) {
 func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
 	cs := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(cs, nil, 0)
+	origin.InitChain(0, cs, nil, 0)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
@@ -90,21 +89,6 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	}
 
 	return env
-}
-
-func TestMigrationsStateIndex0(t *testing.T) {
-	env := newMigrationsTest(t, 0)
-
-	require.EqualValues(t, 0, env.getSchemaVersion())
-
-	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
-			BaseSchemaVersion: 0,
-			Migrations:        []migrations.Migration{env.panic, env.panic, env.panic},
-		})
-	})
-
-	require.EqualValues(t, 3, env.getSchemaVersion())
 }
 
 func TestMigrationsStateIndex1(t *testing.T) {

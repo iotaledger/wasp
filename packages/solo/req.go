@@ -380,38 +380,32 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-// if useFakeBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
+// TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
-	if len(useFakeBudget) > 0 && useFakeBudget[0] {
-		reqCopy.WithGasBudget(0)
-	}
 	r, err := ch.requestFromParams(&reqCopy, keyPair)
 	if err != nil {
-		return 0, 0, err
+		return nil, nil, err
 	}
 
 	res := ch.estimateGas(r)
 
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ch.ResolveVMError(res.Receipt.Error).AsGoError()
+	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-// if useMaxBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
+// TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (dict.Dict, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
-	if len(useMaxBalance) > 0 && useMaxBalance[0] {
-		reqCopy.WithGasBudget(0)
-	}
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
 	r := reqCopy.NewRequestOffLedger(ch, keyPair)
 	res := ch.estimateGas(r)
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ch.ResolveVMError(res.Receipt.Error).AsGoError()
+	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 // EstimateNeededStorageDeposit estimates the amount of base tokens that will be

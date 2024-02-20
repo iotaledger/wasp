@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -41,11 +42,13 @@ func TestGovernance1(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		chain := env.NewChain()
 
-		_, addr1 := env.NewKeyPair()
+		_, addr1 := env.NewKeyPair(env.NewSeedFromIndex(1))
 		err := chain.AddAllowedStateController(addr1, nil)
 		require.NoError(t, err)
 		res := chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 1, len(res))
+
+		testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
 		_, addr2 := env.NewKeyPair()
 		err = chain.AddAllowedStateController(addr2, nil)
@@ -122,9 +125,9 @@ func TestRotate(t *testing.T) {
 
 func TestAccessNodes(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	node1KP, _ := env.NewKeyPairWithFunds()
-	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds()
-	chainKP, _ := env.NewKeyPairWithFunds()
+	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
+	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
 	chain, _ := env.NewChainExt(chainKP, 0, "chain1")
 	var res dict.Dict
 	var err error
@@ -157,6 +160,8 @@ func TestAccessNodes(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name()+"1")
+
 	res, err = chain.CallView(
 		governance.Contract.Name,
 		governance.ViewGetChainNodes.Name,
@@ -179,6 +184,8 @@ func TestAccessNodes(t *testing.T) {
 		chainKP,
 	)
 	require.NoError(t, err)
+
+	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name()+"2")
 
 	res, err = chain.CallView(
 		governance.Contract.Name,
@@ -221,11 +228,11 @@ func TestMaintenanceMode(t *testing.T) {
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 
-	ownerWallet, ownerAddr := env.NewKeyPairWithFunds()
+	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	ownerAgentID := isc.NewAgentID(ownerAddr)
 	ch.DepositBaseTokensToL2(10*isc.Million, ownerWallet)
 
-	userWallet, _ := env.NewKeyPairWithFunds()
+	userWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
 	ch.DepositBaseTokensToL2(10*isc.Million, userWallet)
 
 	// set owner of the chain
@@ -237,6 +244,8 @@ func TestMaintenanceMode(t *testing.T) {
 			nil,
 		)
 		require.NoError(t, err2)
+
+		testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
 		_, err2 = ch.PostRequestSync(
 			solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).WithMaxAffordableGasBudget(),
@@ -481,6 +490,8 @@ func TestMetadata(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
+
 	res, err := ch.CallView(
 		governance.Contract.Name,
 		governance.ViewGetMetadata.Name,
@@ -572,6 +583,8 @@ func TestL1Metadata(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
+
 	// assert metadata is correct on view call
 	res, err := ch.CallView(
 		governance.Contract.Name,
@@ -659,17 +672,17 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	estimateGas, estimateGasFee, err := ch.EstimateGasOnLedger(solo.NewCallParams(
+	_, estimate, err := ch.EstimateGasOnLedger(solo.NewCallParams(
 		accounts.Contract.Name,
 		accounts.FuncDeposit.Name,
-	), user1, true)
+	), user1)
 	require.NoError(t, err)
-	require.Zero(t, estimateGasFee)
+	require.Zero(t, estimate.GasFeeCharged)
 
 	userL2Bal1 := ch.L2BaseTokens(userAgentID1)
 	userL1Bal1 := ch.Env.L1BaseTokens(userAddr1)
 
-	gasGreaterThanEstimatedGas := estimateGas + 100
+	gasGreaterThanEstimatedGas := estimate.GasBurned + 100
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.Contract.Name,
@@ -692,7 +705,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	require.Greater(t, ch.LastReceipt().GasBurned, uint64(0))
 	require.Zero(t, ch.LastReceipt().GasFeeCharged)
 
-	gasLessThanEstimatedGas := estimateGas - 100
+	gasLessThanEstimatedGas := estimate.GasBurned - 100
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.Contract.Name,

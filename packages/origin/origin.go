@@ -33,8 +33,8 @@ import (
 
 // L1Commitment calculates the L1 commitment for the origin state
 // originDeposit must exclude the minSD for the AliasOutput
-func L1Commitment(initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
-	block := InitChain(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()), initParams, originDeposit)
+func L1Commitment(v isc.SchemaVersion, initParams dict.Dict, originDeposit uint64) *state.L1Commitment {
+	block := InitChain(v, state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()), initParams, originDeposit)
 	return block.L1Commitment()
 }
 
@@ -46,7 +46,7 @@ const (
 	ParamWaspVersion       = "d"
 )
 
-func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
+func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
 	if initParams == nil {
 		initParams = dict.New()
 	}
@@ -64,9 +64,9 @@ func InitChain(store state.Store, initParams dict.Dict, originDeposit uint64) st
 	migrationsEnabled := codec.MustDecodeBool(initParams.Get(ParamMigrationsEnabled), true)
 
 	// init the state of each core contract
-	rootimpl.SetInitialState(contractState(root.Contract))
+	rootimpl.SetInitialState(v, contractState(root.Contract))
 	blob.SetInitialState(contractState(blob.Contract))
-	accounts.SetInitialState(contractState(accounts.Contract), originDeposit)
+	accounts.SetInitialState(v, contractState(accounts.Contract), originDeposit)
 	blocklog.SetInitialState(contractState(blocklog.Contract))
 	errors.SetInitialState(contractState(errors.Contract))
 	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
@@ -95,9 +95,9 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 	l1params := parameters.L1()
 	aoMinSD := l1params.Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
 	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - aoMinSD
-	originBlock := InitChain(chainStore, initParams, commonAccountAmount)
-
 	originAOStateMetadata, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
+	originBlock := InitChain(originAOStateMetadata.SchemaVersion, chainStore, initParams, commonAccountAmount)
+
 	if err != nil {
 		return nil, fmt.Errorf("invalid state metadata on origin AO: %w", err)
 	}
@@ -120,9 +120,9 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 	return originBlock, nil
 }
 
-func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaVersion uint32) []byte {
+func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaVersion isc.SchemaVersion) []byte {
 	s := transaction.NewStateMetadata(
-		L1Commitment(initParams, commonAccountAmount),
+		L1Commitment(schemaVersion, initParams, commonAccountAmount),
 		gas.DefaultFeePolicy(),
 		schemaVersion,
 		"",
@@ -133,20 +133,20 @@ func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaV
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	keyPair *cryptolib.KeyPair,
+	keyPair cryptolib.VariantKeyPair,
 	stateControllerAddress iotago.Address,
 	governanceControllerAddress iotago.Address,
 	deposit uint64,
 	initParams dict.Dict,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-	schemaVersion uint32,
+	schemaVersion isc.SchemaVersion,
 ) (*iotago.Transaction, *iotago.AliasOutput, isc.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
 	}
 
-	walletAddr := keyPair.GetPublicKey().AsEd25519Address()
+	walletAddr := keyPair.Address()
 
 	if initParams == nil {
 		initParams = dict.New()
@@ -196,13 +196,12 @@ func NewChainOriginTransaction(
 		Inputs:    txInputs.UTXOInputs(),
 		Outputs:   outputs,
 	}
-	sigs, err := essence.Sign(
-		txInputs.OrderedSet(unspentOutputs).MustCommitment(),
-		keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr),
-	)
+
+	sigs, err := transaction.SignEssence(essence, txInputs.OrderedSet(unspentOutputs).MustCommitment(), keyPair)
 	if err != nil {
 		return nil, aliasOutput, isc.ChainID{}, err
 	}
+
 	tx := &iotago.Transaction{
 		Essence: essence,
 		Unlocks: transaction.MakeSignatureAndReferenceUnlocks(len(txInputs), sigs[0]),

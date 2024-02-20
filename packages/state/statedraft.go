@@ -6,11 +6,13 @@ package state
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 // stateDraft is the implementation of the StateDraft interface
@@ -64,4 +66,8 @@ func (s *stateDraft) BaseL1Commitment() *L1Commitment {
 
 func (s *stateDraft) PreviousL1Commitment() *L1Commitment {
 	return loadPrevL1CommitmentFromState(s)
+}
+
+func (s *stateDraft) SchemaVersion() isc.SchemaVersion {
+	return root.NewStateAccess(s).SchemaVersion()
 }

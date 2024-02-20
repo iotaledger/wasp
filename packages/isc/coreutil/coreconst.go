@@ -39,9 +39,9 @@ var (
 
 // the global names used in 'blocklog' contract and in 'state' package
 const (
-	StateVarTimestamp           = "T"
-	StateVarBlockIndex          = "I"
-	StateVarPrevL1Commitment    = "H"
+	StateVarTimestamp           = "T" // covered in TestGetEvents
+	StateVarBlockIndex          = "I" // covered in TestGetEvents
+	StateVarPrevL1Commitment    = "H" // covered in TestGetEvents
 	ParamStateControllerAddress = "S"
 )
 

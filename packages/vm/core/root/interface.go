@@ -20,10 +20,10 @@ var (
 
 // state variables
 const (
-	VarSchemaVersion            = "v"
-	VarContractRegistry         = "r"
-	VarDeployPermissionsEnabled = "a"
-	VarDeployPermissions        = "p"
+	VarSchemaVersion            = "v" // covered in: TestDeployNativeContract
+	VarContractRegistry         = "r" // covered in: TestDeployNativeContract
+	VarDeployPermissionsEnabled = "a" // covered in: TestDeployNativeContract
+	VarDeployPermissions        = "p" // covered in: TestDeployNativeContract
 )
 
 // request parameters

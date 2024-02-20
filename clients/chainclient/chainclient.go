@@ -21,7 +21,7 @@ type Client struct {
 	Layer1Client l1connection.Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
-	KeyPair      *cryptolib.KeyPair
+	KeyPair      cryptolib.VariantKeyPair
 }
 
 // New creates a new chainclient.Client
@@ -29,7 +29,7 @@ func New(
 	layer1Client l1connection.Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
-	keyPair *cryptolib.KeyPair,
+	keyPair cryptolib.VariantKeyPair,
 ) *Client {
 	return &Client{
 		Layer1Client: layer1Client,

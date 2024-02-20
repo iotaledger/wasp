@@ -36,7 +36,7 @@ var _ rapid.StateMachine = &blockCacheNoWALTestSM{}
 func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, bcms int, wal BlockWAL, addBlockCallback func(state.Block)) {
 	var err error
 	bcnwtsmT.factory = NewBlockFactory(t)
-	bcnwtsmT.lastBlockCommitment = origin.L1Commitment(nil, 0)
+	bcnwtsmT.lastBlockCommitment = origin.L1Commitment(0, nil, 0)
 	bcnwtsmT.log = testlogger.NewLogger(t)
 	bcnwtsmT.blockCacheMaxSize = bcms
 	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, mockStateManagerMetrics(), bcnwtsmT.log)

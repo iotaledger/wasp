@@ -4,52 +4,41 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 type WalletConfig struct {
-	Seed []byte
+	KeyPair cryptolib.VariantKeyPair
 }
 
+var initOverwrite bool
+
 func initInitCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a new wallet",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			seed := cryptolib.NewSeed()
-			seedString := iotago.EncodeHex(seed[:])
-			viper.Set("wallet.seed", seedString)
-			log.Check(viper.WriteConfig())
+			wallet.InitWallet(initOverwrite)
 
-			model := &InitModel{
-				ConfigPath: config.ConfigPath,
-			}
-			if log.VerboseFlag {
-				model.Seed = seedString
-			}
-			log.PrintCLIOutput(model)
+			config.SetWalletProviderString(string(wallet.GetWalletProvider()))
+			log.Check(viper.WriteConfig())
 		},
 	}
+	cmd.Flags().BoolVar(&initOverwrite, "overwrite", false, "allow overwriting existing seed")
+	return cmd
 }
 
 type InitModel struct {
-	ConfigPath string
-	Seed       string
+	Scheme string
 }
 
 var _ log.CLIOutput = &InitModel{}
 
 func (i *InitModel) AsText() (string, error) {
-	template := `Initialized wallet seed in {{ .ConfigPath }}
-
-IMPORTANT: wasp-cli is alpha phase. The seed is currently being stored in a plain text file which is NOT secure. Do not use this seed to store funds in the mainnet.
-{{ if .Seed }}
-  Seed: {{ .Seed -}}
-{{ end }}
-`
+	template := `Initialized wallet seed in {{ .Scheme }}`
 	return log.ParseCLIOutputTemplate(i, template)
 }

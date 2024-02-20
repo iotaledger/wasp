@@ -109,9 +109,9 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
 		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req, reqctx.ChainID())
-		creditToAccount(reqctx.uncommittedState, payoutAgentID, req.Assets(), reqctx.ChainID())
+		creditToAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, payoutAgentID, req.Assets(), reqctx.ChainID())
 		if storageDepositNeeded > 0 {
-			debitFromAccount(reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
+			debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
 		}
 		return
 	}
@@ -124,11 +124,11 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
-	creditToAccount(reqctx.uncommittedState, sender, req.Assets(), reqctx.ChainID())
+	creditToAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, req.Assets(), reqctx.ChainID())
 	creditNFTToAccount(reqctx.uncommittedState, sender, req, reqctx.ChainID())
 	if storageDepositNeeded > 0 {
 		reqctx.sdCharged = storageDepositNeeded
-		debitFromAccount(reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
+		debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
 	}
 }
 
@@ -335,6 +335,11 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 		gasBudget = reqctx.vm.chainInfo.GasLimits.MinGasPerRequest
 	}
 
+	// make sure the gasBudget is less than the allowed maximum
+	if gasBudget > reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest {
+		gasBudget = reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest
+	}
+
 	if reqctx.vm.task.EstimateGasMode {
 		return gasBudget, math.MaxUint64
 	}
@@ -349,7 +354,7 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 	// adjust gas budget to what is affordable
 	affordableGas = min(gasBudget, affordableGas)
 	// cap gas to the maximum allowed per tx
-	return min(affordableGas, reqctx.vm.chainInfo.GasLimits.MaxGasPerRequest), maxTokensToSpendForGasFee
+	return affordableGas, maxTokensToSpendForGasFee
 }
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
@@ -408,6 +413,7 @@ func (reqctx *requestContext) chargeGasFee() {
 		transferToValidator := &isc.Assets{}
 		transferToValidator.BaseTokens = sendToValidator
 		mustMoveBetweenAccounts(
+			reqctx.SchemaVersion(),
 			reqctx.uncommittedState,
 			sender,
 			reqctx.vm.task.ValidatorFeeTarget,
@@ -432,7 +438,9 @@ func (reqctx *requestContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		mustMoveBetweenAccounts(reqctx.uncommittedState,
+		mustMoveBetweenAccounts(
+			reqctx.SchemaVersion(),
+			reqctx.uncommittedState,
 			sender,
 			accounts.CommonAccount(),
 			isc.NewAssetsBaseTokens(transferToCommonAcc),
@@ -442,6 +450,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	if sendToPayout > 0 {
 		payoutAgentID := reqctx.vm.payoutAgentID()
 		mustMoveBetweenAccounts(
+			reqctx.SchemaVersion(),
 			reqctx.uncommittedState,
 			sender,
 			payoutAgentID,

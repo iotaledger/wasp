@@ -309,10 +309,12 @@ func TestEstimateGas(t *testing.T) {
 	{
 		keyPair, _ := env.NewKeyPairWithFunds()
 
-		// we can call EstimateGas even with 0 base tokens in L2 account
-		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair, true)
-		require.NoError(t, err)
-		require.NotZero(t, estimatedGas)
+		req := callParams().WithFungibleTokens(isc.NewAssetsBaseTokens(1 * isc.Million)).WithMaxAffordableGasBudget()
+		_, estimate, err2 := ch.EstimateGasOnLedger(req, keyPair)
+		estimatedGas = estimate.GasBurned
+		estimatedGasFee = estimate.GasFeeCharged
+		require.NoError(t, err2)
+		require.NotZero(t, estimatedGasFee)
 		require.NotZero(t, estimatedGasFee)
 		t.Logf("estimatedGas: %d, estimatedGasFee: %d", estimatedGas, estimatedGasFee)
 
@@ -474,6 +476,8 @@ func TestDeployNativeContract(t *testing.T) {
 
 	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
+
+	testdbhash.VerifyContractStateHash(env, root.Contract, "", t.Name())
 }
 
 func TestFeeBasic(t *testing.T) {

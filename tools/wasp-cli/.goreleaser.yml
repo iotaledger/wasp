@@ -71,18 +71,16 @@ builds:
       - amd64
 
 # Archives
+
 archives:
-  - format: tar.gz
+  - # Windows
+    id: wasp-cli-windows
+    builds: 
+      - wasp-cli-windows-amd64
+    format: zip
     wrap_in_directory: true
-    format_overrides:
-      - goos: windows
-        format: zip
     name_template: >- 
-      {{ .ProjectName }}_{{ .Version }}_
-      {{- if eq .Os "darwin" }}macOS_
-      {{- else if eq .Os "linux" }}Linux_
-      {{- else if eq .Os "windows" }}Windows_
-      {{- else }}{{ .Os }}_{{ end }}
+      {{ .ProjectName }}_{{ .Version }}_Windows_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "arm64" }}ARM64
       {{- else if eq .Arch "386" }}i386
@@ -90,6 +88,47 @@ archives:
     files:
       - README.md
       - LICENSE
+      - src: sdk/iota_sdk.dll
+        dst: iota_sdk.dll
+
+  - # Linux
+    id: wasp-cli-linux
+    builds: 
+      - wasp-cli-linux-amd64
+      - wasp-cli-linux-arm64
+    format: tar.gz
+    wrap_in_directory: true
+    name_template: >- 
+      {{ .ProjectName }}_{{ .Version }}_Linux_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "arm64" }}ARM64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - src: sdk/libiota_sdk.so
+        dst: libiota_sdk.so
+
+  - # MacOS
+    id: wasp-cli-macos
+    builds: 
+      - wasp-cli-darwin-all
+    format: tar.gz
+    wrap_in_directory: true
+    name_template: >- 
+      {{ .ProjectName }}_{{ .Version }}_MacOS_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "arm64" }}ARM64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - src: sdk/libiota_sdk.dylib
+        dst: libiota_sdk.dylib
+
+
 
 # Checksum
 checksum:

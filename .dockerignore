@@ -27,6 +27,6 @@ snapshot
 tools
 wal
 wasp
-wasp-cli
+!tools/wasp-cli
 wasp-cluster
 waspdb

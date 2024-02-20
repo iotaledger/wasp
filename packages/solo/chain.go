@@ -173,11 +173,12 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		return expectedHash, nil
 	}
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
-	g, _, err := ch.EstimateGasOffLedger(req, nil, true)
+	req.WithMaxAffordableGasBudget()
+	_, estimate, err := ch.EstimateGasOffLedger(req, user)
 	if err != nil {
 		return [32]byte{}, err
 	}
-	req.WithGasBudget(g)
+	req.WithGasBudget(estimate.GasBurned)
 	res, err := ch.PostRequestOffLedger(req, user)
 	if err != nil {
 		return ret, err
@@ -284,20 +285,26 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 	return ch.DeployContract(keyPair, name, hprog, params...)
 }
 
+func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...interface{}) (abi.ABI, []byte) {
+	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
+	require.NoError(t, err)
+
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(t, err)
+
+	data := []byte{}
+	data = append(data, bytecode...)
+	data = append(data, constructorArguments...)
+	return contractABI, data
+}
+
 // DeployEVMContract deploys an evm contract on the chain
 func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, value *big.Int, args ...interface{}) (common.Address, abi.ABI) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(ch.ChainID, creatorAddress))
 
-	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
-	require.NoError(ch.Env.T, err)
-	constructorArguments, err := contractABI.Pack("", args...)
-	require.NoError(ch.Env.T, err)
-
-	data := []byte{}
-	data = append(data, bytecode...)
-	data = append(data, constructorArguments...)
+	contractABI, data := EVMCallDataFromArtifacts(ch.Env.T, abiJSON, bytecode, args...)
 
 	gasLimit, err := ch.EVM().EstimateGas(ethereum.CallMsg{
 		From:  creatorAddress,

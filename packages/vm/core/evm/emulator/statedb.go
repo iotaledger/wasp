@@ -5,7 +5,6 @@ package emulator
 
 import (
 	"fmt"
-	"math/big"
 	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,17 +12,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
-	keyAccountNonce          = "n"
-	keyAccountCode           = "c"
-	keyAccountState          = "s"
-	keyAccountSelfDestructed = "S"
+	keyAccountNonce          = "n" // covered in: TestStorageContract
+	keyAccountCode           = "c" // covered in: TestStorageContract
+	keyAccountState          = "s" // covered in: TestStorageContract
+	keyAccountSelfDestructed = "S" // covered in: TestSelfDestruct
 )
 
 func accountKey(prefix kv.Key, addr common.Address) kv.Key {
@@ -74,33 +73,28 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
-func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
+func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int) {
 	if amount.Sign() == 0 {
 		return
 	}
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	baseTokens, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
-	s.ctx.SubBaseTokensBalance(addr, baseTokens)
+	s.ctx.SubBaseTokensBalance(addr, amount.ToBig())
 }
 
-func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
+func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int) {
 	if amount.Sign() == 0 {
 		return
 	}
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
-	baseTokens, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, s.ctx.BaseTokensDecimals())
-	s.ctx.AddBaseTokensBalance(addr, baseTokens)
+	s.ctx.AddBaseTokensBalance(addr, amount.ToBig())
 }
 
-func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	baseTokens := s.ctx.GetBaseTokensBalance(addr)
-	wei, _ := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, s.ctx.BaseTokensDecimals())
-	// discard remainder
-	return wei
+func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
+	return uint256.MustFromBig(s.ctx.GetBaseTokensBalance(addr))
 }
 
 func GetNonce(s kv.KVStoreReader, addr common.Address) uint64 {

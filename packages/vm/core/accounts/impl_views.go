@@ -19,14 +19,14 @@ import (
 func viewBalance(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewBalance")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	return getAccountBalanceDict(ctx.StateR(), accountKey(aid, ctx.ChainID()))
+	return getAccountBalanceDict(ctx.SchemaVersion(), ctx.StateR(), accountKey(aid, ctx.ChainID()))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
 // Params:
 // - ParamAgentID (optional -- default: caller)
 func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
-	nTokens := getBaseTokens(
+	nTokens := getBaseTokens(ctx.SchemaVersion())(
 		ctx.StateR(),
 		accountKey(
 			ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller()),
@@ -34,6 +34,20 @@ func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
 		),
 	)
 	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
+}
+
+// viewBalanceBaseTokenEVM returns the base tokens balance of the account belonging to the AgentID (in the EVM format with 18 decimals)
+// Params:
+// - ParamAgentID (optional -- default: caller)
+func viewBalanceBaseTokenEVM(ctx isc.SandboxView) dict.Dict {
+	nTokens := GetBaseTokensFullDecimals(ctx.SchemaVersion())(
+		ctx.StateR(),
+		accountKey(
+			ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller()),
+			ctx.ChainID(),
+		),
+	)
+	return dict.Dict{ParamBalance: codec.EncodeBigIntAbs(nTokens)}
 }
 
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
@@ -55,12 +69,12 @@ func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 // viewTotalAssets returns total balances controlled by the chain
 func viewTotalAssets(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(ctx.StateR(), l2TotalsAccount)
+	return getAccountBalanceDict(ctx.SchemaVersion(), ctx.StateR(), L2TotalsAccount)
 }
 
 // viewAccounts returns list of all accounts
 func viewAccounts(ctx isc.SandboxView) dict.Dict {
-	return allAccountsAsDict(ctx.StateR())
+	return AllAccountsAsDict(ctx.StateR())
 }
 
 // nonces are only sent with off-ledger requests

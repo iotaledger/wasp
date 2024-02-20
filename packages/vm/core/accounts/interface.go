@@ -29,6 +29,7 @@ var (
 	ViewAccounts                     = coreutil.ViewFunc("accounts")
 	ViewBalance                      = coreutil.ViewFunc("balance")
 	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
+	ViewBalanceBaseTokenEVM          = coreutil.ViewFunc("balanceBaseTokenEVM")
 	ViewBalanceNativeToken           = coreutil.ViewFunc("balanceNativeToken")
 	ViewFoundryOutput                = coreutil.ViewFunc("foundryOutput")
 	ViewGetAccountNonce              = coreutil.ViewFunc("getAccountNonce")

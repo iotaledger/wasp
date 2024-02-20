@@ -35,7 +35,9 @@ var Processor = root.Contract.Processor(nil,
 	root.ViewGetContractRecords.WithHandler(getContractRecords),
 )
 
-func SetInitialState(state kv.KVStore) {
+func SetInitialState(v isc.SchemaVersion, state kv.KVStore) {
+	root.SetSchemaVersion(state, v)
+
 	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
 	if contractRegistry.Len() != 0 {
 		panic("contract registry must be empty on chain start")

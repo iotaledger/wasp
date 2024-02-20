@@ -8,7 +8,7 @@ import (
 )
 
 type MintNFTsTransactionParams struct {
-	IssuerKeyPair      *cryptolib.KeyPair
+	IssuerKeyPair      cryptolib.VariantKeyPair
 	CollectionOutputID *iotago.OutputID
 	Target             iotago.Address
 	ImmutableMetadata  [][]byte

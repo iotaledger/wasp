@@ -1,12 +1,12 @@
 package solo
 
 import (
+	"math"
+
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 )
@@ -17,7 +17,11 @@ func (env *Solo) NewKeyPairFromIndex(index int) *cryptolib.KeyPair {
 }
 
 func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
-	seed := cryptolib.SeedFromBytes(hashing.HashData(env.seed[:], codec.EncodeUint32(uint32(index))).Bytes())
+	if index < 0 {
+		// SubSeed takes a "uint31"
+		index += math.MaxUint32 / 2
+	}
+	seed := cryptolib.SubSeed(env.seed[:], uint32(index))
 	return &seed
 }
 

@@ -35,6 +35,24 @@ func initRootCmd(waspVersion string) *cobra.Command {
 	NOTE: this is alpha software, only suitable for testing purposes.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			config.Read()
+
+			whitelistedCommands := map[string]struct{}{
+				"init":            {},
+				"wallet-migrate":  {},
+				"wallet-provider": {},
+			}
+
+			_, ok := whitelistedCommands[cmd.Name()]
+
+			if config.GetSeedForMigration() != "" && !ok {
+				log.Printf("\n\nWarning\n\n")
+				log.Printf("Wasp-cli is now utilizing the IOTA SDK and your OS Keychain to handle your seed more securely.\n")
+				log.Printf("Therefore, seeds can not be stored inside the config file anymore.\n")
+				log.Printf("Please run `wasp-cli wallet-migrate keychain` to move your seed into the Keychain of your operating system,\n")
+				log.Printf("or switch to alternative wallet providers such as the Ledger with: `wasp-cli wallet-provider sdk_ledger`.\n")
+
+				log.Fatalf("The cli will now exit.")
+			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help() //nolint:errcheck

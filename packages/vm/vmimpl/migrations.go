@@ -11,18 +11,8 @@ import (
 func (vmctx *vmContext) runMigrations(chainState kv.KVStore, migrationScheme *migrations.MigrationScheme) {
 	latestSchemaVersion := migrationScheme.LatestSchemaVersion()
 
-	if vmctx.task.AnchorOutput.StateIndex == 0 {
-		// initializing new chain -- set the schema to latest version
-		withContractState(chainState, root.Contract, func(s kv.KVStore) {
-			root.SetSchemaVersion(s, latestSchemaVersion)
-		})
-		return
-	}
+	currentVersion := root.NewStateAccess(chainState).SchemaVersion()
 
-	var currentVersion uint32
-	withContractState(chainState, root.Contract, func(s kv.KVStore) {
-		currentVersion = root.GetSchemaVersion(s)
-	})
 	if currentVersion < migrationScheme.BaseSchemaVersion {
 		panic(fmt.Sprintf("inconsistency: node with schema version %d is behind pruned migrations (should be >= %d)", currentVersion, migrationScheme.BaseSchemaVersion))
 	}

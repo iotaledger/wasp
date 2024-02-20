@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -108,6 +109,7 @@ type StateCommonValues interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousL1Commitment() *L1Commitment
+	SchemaVersion() isc.SchemaVersion
 }
 
 // State is an immutable view of a specific version of the chain state.

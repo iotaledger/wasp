@@ -4,12 +4,12 @@
 package evmimpl
 
 import (
-	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	iscvm "github.com/iotaledger/wasp/packages/vm"
@@ -69,7 +69,7 @@ func newMagicContract(ctx isc.Sandbox) map[common.Address]vm.ISCMagicContract {
 	}
 }
 
-func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, value *big.Int, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, value *uint256.Int, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
 	privileged := isCallerPrivileged(c.ctx, caller.Address())
 	method, args := parseCall(input, privileged)
 	if readOnly && !method.IsConstant() {
