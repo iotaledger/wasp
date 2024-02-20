@@ -138,6 +138,9 @@ func (teT *testEnv) addVariedNodes(
 		for _, snapshotInfo := range output.TakeBlocksCommitted() {
 			snapshotManager.BlockCommittedAsync(snapshotInfo)
 		}
+		for _, nextInput := range output.TakeNextInputs() {
+			teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: nextInput}).RunAll()
+		}
 	})
 }
 

@@ -59,21 +59,13 @@ func (bfiT *blockFetcherImpl) addRelatedFetcher(fetcher blockFetcher) {
 	bfiT.related = append(bfiT.related, fetcher)
 }
 
-func (bfiT *blockFetcherImpl) commitAndNotifyFetched(commitFun func(blockFetcher) bool) {
-	if commitFun(bfiT) {
-		bfiT.notifyFetched(commitFun)
-	}
-}
-
-func (bfiT *blockFetcherImpl) notifyFetched(commitFun func(blockFetcher) bool) {
+func (bfiT *blockFetcherImpl) notifyFetched() []blockFetcher {
 	for _, callback := range bfiT.callbacks {
 		if callback.isValid() {
 			callback.requestCompleted()
 		}
 	}
-	for _, fetcher := range bfiT.related {
-		fetcher.commitAndNotifyFetched(commitFun)
-	}
+	return bfiT.related
 }
 
 func (bfiT *blockFetcherImpl) cleanCallbacks() {

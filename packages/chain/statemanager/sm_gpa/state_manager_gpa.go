@@ -104,6 +104,8 @@ func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 		return smT.handleConsensusBlockProduced(inputCasted)
 	case *sm_inputs.ChainFetchStateDiff: // From mempool
 		return smT.handleChainFetchStateDiff(inputCasted)
+	case *sm_inputs.StateManagerBlocksToCommit: // From state manager gpa
+		return smT.handleStateManagerBlocksToCommit(inputCasted.GetCommitments())
 	case *sm_inputs.StateManagerTimerTick: // From state manager go routine
 		return smT.handleStateManagerTimerTick(inputCasted.GetTime())
 	default:
@@ -372,6 +374,22 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.Ch
 	smT.metrics.ChainFetchStateDiffHandled(time.Since(start))
 }
 
+func (smT *stateManagerGPA) handleStateManagerBlocksToCommit(commitments []*state.L1Commitment) gpa.OutMessages {
+	smT.log.Debugf("Input state manager blocks to commit %s is received", commitments)
+	result := gpa.NoMessages()
+	for _, commitment := range commitments {
+		fetcher := smT.blocksFetched.takeFetcher(commitment)
+		if fetcher == nil {
+			smT.log.Warnf("Input state manager blocks to commit %s: blocks waiting to be committed does not contain block %s; probably it is has already been committed",
+				commitments, commitment)
+		} else {
+			result.AddAll(smT.markFetched(fetcher, true))
+		}
+	}
+	smT.log.Debugf("Input state manager blocks to commit %s handled", commitments)
+	return result
+}
+
 func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
 	block := smT.blockCache.GetBlock(commitment)
 	if block != nil {
@@ -480,18 +498,16 @@ func (smT *stateManagerGPA) traceBlockChain(fetcher blockFetcher) gpa.OutMessage
 	return result
 }
 
-func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, commitInitial bool) gpa.OutMessages {
-	result := gpa.NoMessages()
-	commitFun := func(bf blockFetcher) bool {
-		commitment := bf.getCommitment()
+func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, doCommit bool) gpa.OutMessages {
+	if doCommit {
+		commitment := fetcher.getCommitment()
 		block := smT.blockCache.GetBlock(commitment)
 		if block == nil {
 			// Block was previously received but it is no longer in cache and
 			// for some unexpected reasons it is not in WAL: rerequest it
 			smT.log.Warnf("Block %s was previously obtained, but it can neither be found in cache nor in WAL. Rerequesting it.", commitment)
-			smT.blocksToFetch.addFetcher(bf)
-			result.AddAll(smT.makeGetBlockRequestMessages(commitment))
-			return false
+			smT.blocksToFetch.addFetcher(fetcher)
+			return gpa.NoMessages().AddAll(smT.makeGetBlockRequestMessages(commitment))
 		}
 		blockIndex := block.StateIndex()
 		// Commit block
@@ -517,15 +533,15 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, commitInitial bool
 		smT.log.Debugf("Block index %v %s has been committed to the store on state %s",
 			blockIndex, commitment, previousCommitment)
 		_ = smT.blocksFetched.takeFetcher(commitment)
-		smT.metrics.SubRequestsWaiting(bf.getCallbacksCount())
-		return true
 	}
-	if commitInitial {
-		fetcher.commitAndNotifyFetched(commitFun)
-	} else {
-		fetcher.notifyFetched(commitFun)
-	}
-	return result
+	relatedFetchers := fetcher.notifyFetched()
+	smT.metrics.SubRequestsWaiting(fetcher.getCallbacksCount())
+	relatedCommitments := lo.Map(relatedFetchers, func(f blockFetcher, i int) *state.L1Commitment {
+		return f.getCommitment()
+	})
+	smT.log.Debugf("Blocks %s will be committed in the next iteration", relatedCommitments)
+	smT.output.addBlocksToCommit(relatedCommitments)
+	return nil // No messages to send
 }
 
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
