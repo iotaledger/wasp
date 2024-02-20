@@ -44,12 +44,6 @@ type InitModel struct {
 var _ log.CLIOutput = &InitModel{}
 
 func (i *InitModel) AsText() (string, error) {
-	template := `Initialized wallet seed in {{ .ConfigPath }}
-
-IMPORTANT: wasp-cli is alpha phase. The seed is currently being stored in a plain text file which is NOT secure. Do not use this seed to store funds in the mainnet.
-{{ if .Seed }}
-  Seed: {{ .Seed -}}
-{{ end }}
-`
+	template := `Initialized wallet seed in {{ .ConfigPath }}`
 	return log.ParseCLIOutputTemplate(i, template)
 }
