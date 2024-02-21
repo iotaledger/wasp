@@ -22,7 +22,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/legacymigration"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -71,11 +73,44 @@ func TestMigrationAndBurn(t *testing.T) {
 	require.NoError(t, err)
 	migrationEnv := newChainEnv(t, migrationCluster, migrationChain)
 
+	// set gas fee to 0x000000
+	migrationOriginatorClient := migrationChain.Client(migrationEnv.Clu.OriginatorKeyPair)
+	req, err := migrationOriginatorClient.PostOffLedgerRequest(
+		context.Background(),
+		governance.Contract.Hname(),
+		governance.FuncSetFeePolicy.Hname(),
+		chainclient.PostRequestParams{
+			Args: map[kv.Key][]byte{
+				governance.ParamFeePolicyBytes: lo.Must(iotago.DecodeHex("0x0000000000000000000000000000000000")),
+			},
+		},
+	)
+	require.NoError(t, err)
+	_, err = migrationChain.AllNodesMultiClient().WaitUntilRequestProcessedSuccessfully(migrationChain.ChainID, req.ID(), false, 30*time.Second)
+	require.NoError(t, err)
+
 	// fill the migration contract with funds
 	someWallet, _, err := migrationCluster.NewKeyPairWithFunds()
 	require.NoError(t, err)
+	// deposit with transfer == allowance
+	someWalletMigratorChainClient := migrationChain.Client(someWallet)
+	transfer := isc.NewAssetsBaseTokens(100 * isc.Million)
 	migrationContractAgentID := isc.NewContractAgentID(migrationChain.ChainID, legacymigration.Contract.Hname())
-	depositToAgentID(t, migrationChain, 100*isc.Million, migrationContractAgentID, someWallet)
+	tx, err := someWalletMigratorChainClient.Post1Request(
+		accounts.Contract.Hname(),
+		accounts.FuncTransferAllowanceTo.Hname(),
+		chainclient.PostRequestParams{
+			Transfer: transfer,
+			Args: map[kv.Key][]byte{
+				accounts.ParamAgentID: codec.EncodeAgentID(migrationContractAgentID),
+			},
+			Allowance: transfer,
+		},
+	)
+	require.NoError(t, err)
+	_, err = migrationChain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(migrationChain.ChainID, tx, false, 30*time.Second)
+	require.NoError(t, err)
+
 	migBalance := migrationEnv.getBalanceOnChain(migrationContractAgentID, isc.BaseTokenID)
 	require.Positive(t, migBalance)
 
