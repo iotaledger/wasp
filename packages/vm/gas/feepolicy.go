@@ -73,7 +73,7 @@ func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
 
 // if GasPerToken is '0:0' then set the GasBudget to MaxGasPerRequest
 func (p *FeePolicy) GasBudgetFromTokens(availableTokens uint64, limits ...*Limits) uint64 {
-	if p.GasPerToken.IsZero() {
+	if p.GasPerToken.IsEmpty() {
 		if len(limits) == 0 {
 			panic("GasBudgetFromTokens without giving limits when GasPerToken")
 		}
@@ -137,7 +137,7 @@ func (p *FeePolicy) Write(w io.Writer) error {
 // GasPriceWei returns the gas price converted to wei
 func (p *FeePolicy) GasPriceWei(l1BaseTokenDecimals uint32) *big.Int {
 	// special case '0:0' for free request
-	if p.GasPerToken.IsZero() {
+	if p.GasPerToken.IsEmpty() {
 		return big.NewInt(0)
 	}
 
