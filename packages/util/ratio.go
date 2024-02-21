@@ -104,10 +104,10 @@ func (ratio Ratio32) HasZeroComponent() bool {
 }
 
 func (ratio Ratio32) IsValid() bool {
-	return ratio.IsZero() || !ratio.HasZeroComponent()
+	return ratio.IsEmpty() || !ratio.HasZeroComponent()
 }
 
-func (ratio Ratio32) IsZero() bool {
+func (ratio Ratio32) IsEmpty() bool {
 	ZeroGasFee := Ratio32{}
 	return ratio == ZeroGasFee
 }

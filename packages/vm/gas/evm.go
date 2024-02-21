@@ -7,7 +7,7 @@ var DefaultEVMGasRatio = util.Ratio32{A: 1, B: 1}
 
 func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio *util.Ratio32) uint64 {
 	// EVM gas budget = floor(ISC gas budget * B / A)
-	if gasRatio.A == 0 {
+	if gasRatio.IsEmpty() {
 		return 0
 	}
 	return gasRatio.YFloor64(iscGasBudget)
@@ -15,7 +15,7 @@ func ISCGasBudgetToEVM(iscGasBudget uint64, gasRatio *util.Ratio32) uint64 {
 
 func ISCGasBurnedToEVM(iscGasBurned uint64, gasRatio *util.Ratio32) uint64 {
 	// estimated EVM gas = ceil(ISC gas burned * B / A)
-	if gasRatio.A == 0 {
+	if gasRatio.IsEmpty() {
 		return 0
 	}
 	return gasRatio.YCeil64(iscGasBurned)
@@ -23,7 +23,7 @@ func ISCGasBurnedToEVM(iscGasBurned uint64, gasRatio *util.Ratio32) uint64 {
 
 func EVMGasToISC(evmGas uint64, gasRatio *util.Ratio32) uint64 {
 	// ISC gas burned = ceil(EVM gas * A / B)
-	if gasRatio.A == 0 {
+	if gasRatio.IsEmpty() {
 		return 0
 	}
 	return gasRatio.XCeil64(evmGas)
