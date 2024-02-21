@@ -109,18 +109,6 @@ func migrate(ctx isc.Sandbox) dict.Dict {
 		TargetAddress: targetAddress,
 		Assets:        isc.NewAssetsBaseTokens(tokensToMigrate),
 	})
-
-	// in theory the code below is not needed, but let's keep for now as a sanity check
-	{
-		totalAmount := getTotalAmount(ctx.State())
-		totalAmount -= tokensToMigrate
-		setTotalAmount(ctx.State(), totalAmount)
-		calculatedAmount := calcTotalAmount(ctx.State())
-		// assert the total migration funds is still correct
-		ctx.Requiref(calculatedAmount == totalAmount, "inconsistency in migrated funds totals")
-		ctx.Requiref(ctx.BalanceBaseTokens() >= totalAmount, "inconsistency in migrated funds balance")
-	}
-
 	return nil
 }
 
