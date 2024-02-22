@@ -13,9 +13,7 @@ func initImportCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "import",
 		Short: "Imports all JWT tokens from the config into the OS Keychain",
-		// Args:  cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-
 			tokens := config.GetAuthTokenForImport()
 
 			fmt.Println("Importing JWT tokens from the config into the OS Keychain.")
@@ -30,7 +28,6 @@ func initImportCmd() *cobra.Command {
 
 					fmt.Printf("Imported JWT token for node '%v'\n", k)
 				}
-
 			}
 		},
 	}
