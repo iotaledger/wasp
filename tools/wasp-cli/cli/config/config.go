@@ -1,7 +1,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"time"
@@ -97,7 +99,20 @@ func Read() {
 	locateConfigFile()
 
 	viper.SetConfigFile(ConfigPath)
-	_ = viper.ReadInConfig()
+
+	// Ignore the "config not found" error but panic on any other (validation errors, missing comma, etc)
+	// Otherwise the cli will think that the config is empty - which it isn't. Rather inform the user of a broken config instead.
+	if err := viper.ReadInConfig(); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return
+		}
+
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			return
+		}
+
+		log.Check(err)
+	}
 }
 
 func L1APIAddress() string {
@@ -217,6 +232,23 @@ func GetSeedForMigration() string {
 	return viper.GetString("wallet.seed")
 }
 func RemoveSeedForMigration() { viper.Set("wallet.seed", "") }
+
+func GetAuthTokenForImport() map[string]string {
+	stringMap := viper.GetStringMap("authentication.wasp")
+	authTokenMap := map[string]string{}
+
+	for k, v := range stringMap {
+		authTokenMap[k] = ""
+
+		if authConfig, ok := v.(map[string]interface{}); ok {
+			if token, ok := authConfig["token"].(string); ok {
+				authTokenMap[k] = token
+			}
+		}
+	}
+
+	return authTokenMap
+}
 
 func GetTestingSeed() string     { return viper.GetString("wallet.testing_seed") }
 func SetTestingSeed(seed string) { viper.Set("wallet.testing_seed", seed) }
