@@ -21,12 +21,12 @@ func initImportCmd() *cobra.Command {
 			kc := config.GetKeyChain()
 			for k, v := range tokens {
 				if v == "" {
-					fmt.Printf("Could not import JWT token for node '%v'\n", k)
+					fmt.Printf("Could not import JWT token for node %q\n", k)
 				} else {
 					err := kc.SetJWTAuthToken(k, v)
 					log.Check(err)
 
-					fmt.Printf("Imported JWT token for node '%v'\n", k)
+					fmt.Printf("Imported JWT token for node %q\n", k)
 				}
 			}
 		},
