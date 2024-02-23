@@ -39,7 +39,7 @@ type KeyChain interface {
 }
 
 func jwtTokenKey(node string) string {
-	return fmt.Sprintf("%s.%s", jwtTokenKeyPrefix, node)
+	return fmt.Sprintf("%s.%v", jwtTokenKeyPrefix, node)
 }
 
 func printWithTime(str string) {
