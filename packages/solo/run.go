@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/rotate"
@@ -131,7 +132,10 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateDraft s
 	if err != nil {
 		panic(err)
 	}
-	ch.Env.Publisher().BlockApplied(ch.ChainID, block)
+
+	latestState, _ := ch.LatestState(chain.ActiveOrCommittedState)
+
+	ch.Env.Publisher().BlockApplied(ch.ChainID, block, latestState)
 
 	blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
 	if err != nil {

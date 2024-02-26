@@ -7,9 +7,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
+var testError *isc.VMErrorTemplate
+
 func initialize(ctx isc.Sandbox) dict.Dict {
 	p := ctx.Params().Get(ParamFail)
 	ctx.Requiref(p == nil, "failing on purpose")
+	testError = ctx.RegisterError("ERROR_TEST")
 	return nil
 }
 
@@ -49,6 +52,11 @@ func testEventLogDeploy(ctx isc.Sandbox) dict.Dict {
 
 func testPanicFullEP(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Panicf(MsgFullPanic)
+	return nil
+}
+
+func testCustomError(_ isc.Sandbox) dict.Dict {
+	panic(testError.Create("CUSTOM_ERROR"))
 	return nil
 }
 

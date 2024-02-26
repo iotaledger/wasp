@@ -97,8 +97,10 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	if err != nil {
 		log.Errorf("unable to get receipts from a block: %v", err)
 	} else {
+		errorStatePartition := subrealm.NewReadOnly(blockApplied.latestState, kv.Key(errors.Contract.Hname().Bytes()))
+
 		for index, receipt := range receipts {
-			vmError, resolveError := errors.ResolveFromState(blocklogStatePartition, receipt.Error)
+			vmError, resolveError := errors.ResolveFromState(errorStatePartition, receipt.Error)
 			if resolveError != nil {
 				log.Errorf("Could not parse vmerror of receipt [%v]: %v", receipt.Request.ID(), resolveError)
 			}
