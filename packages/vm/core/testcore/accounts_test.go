@@ -1589,7 +1589,7 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then withdraw it", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		agentID := isc.NewAgentID(address)
 
 		// mint NFT to self and keep it on chain
