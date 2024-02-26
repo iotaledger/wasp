@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"io"
+	"slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -92,7 +93,7 @@ func mintParams(ctx isc.Sandbox) mintParameters {
 
 	chainAddress := ctx.ChainID().AsAddress()
 	ret := mintParameters{
-		immutableMetadata: immutableMetadata,
+		immutableMetadata: slices.Clone(immutableMetadata),
 		targetAddress:     chainAddress,
 		issuerAddress:     chainAddress,
 		ownerAgentID:      targetAgentID,
