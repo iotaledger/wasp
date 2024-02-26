@@ -57,7 +57,6 @@ func testPanicFullEP(ctx isc.Sandbox) dict.Dict {
 
 func testCustomError(_ isc.Sandbox) dict.Dict {
 	panic(testError.Create("CUSTOM_ERROR"))
-	return nil
 }
 
 func testPanicViewEP(ctx isc.SandboxView) dict.Dict {
