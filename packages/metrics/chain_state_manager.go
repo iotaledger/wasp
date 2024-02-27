@@ -26,6 +26,7 @@ type ChainStateManagerMetricsProvider struct {
 	cdsHandlingDuration        *prometheus.HistogramVec
 	cbpHandlingDuration        *prometheus.HistogramVec
 	fsdHandlingDuration        *prometheus.HistogramVec
+	btcHandlingDuration        *prometheus.HistogramVec
 	ttHandlingDuration         *prometheus.HistogramVec
 	blockFetchDuration         *prometheus.HistogramVec
 	pruningRunDuration         *prometheus.HistogramVec
@@ -131,6 +132,13 @@ func newChainStateManagerMetricsProvider() *ChainStateManagerMetricsProvider {
 			Subsystem: "state_manager",
 			Name:      "chain_fetch_state_diff_duration",
 			Help:      "The duration (s) from starting handling ChainFetchStateDiff request till responding to the chain",
+			Buckets:   execTimeBuckets,
+		}, []string{labelNameChain}),
+		btcHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "iota_wasp",
+			Subsystem: "state_manager",
+			Name:      "self_blocks_to_commit_duration",
+			Help:      "The duration (s) from starting handling StateManagerBlocksToCommit request till block is committed and other block(s) are marked to be committed (if needed)",
 			Buckets:   execTimeBuckets,
 		}, []string{labelNameChain}),
 		ttHandlingDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -322,6 +330,10 @@ func (m *ChainStateManagerMetrics) ConsensusBlockProducedHandled(duration time.D
 
 func (m *ChainStateManagerMetrics) ChainFetchStateDiffHandled(duration time.Duration) {
 	m.collectors.fsdHandlingDuration.With(m.labels).Observe(duration.Seconds())
+}
+
+func (m *ChainStateManagerMetrics) StateManagerBlocksToCommitHandled(duration time.Duration) {
+	m.collectors.btcHandlingDuration.With(m.labels).Observe(duration.Seconds())
 }
 
 func (m *ChainStateManagerMetrics) StateManagerTimerTickHandled(duration time.Duration) {
