@@ -44,3 +44,6 @@ go.work.sum
 TMP*
 tmp.*
 sdk/
+libiota_sdk.so
+libiota_sdk.dylib
+iota_sdk.dll

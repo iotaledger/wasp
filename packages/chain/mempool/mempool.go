@@ -56,6 +56,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -83,7 +84,7 @@ type ChainListener interface {
 	// This function is called by the chain when new block is applied to the
 	// state. This block might be not confirmed yet, but the chain is going
 	// to build the next block on top of this one.
-	BlockApplied(chainID isc.ChainID, block state.Block)
+	BlockApplied(chainID isc.ChainID, block state.Block, latestState kv.KVStoreReader)
 }
 
 type Mempool interface {
@@ -822,7 +823,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		mpi.metrics.IncBlocksPerChain()
-		mpi.listener.BlockApplied(mpi.chainID, block)
+		mpi.listener.BlockApplied(mpi.chainID, block, mpi.chainHeadState)
 		for _, receipt := range blockReceipts {
 			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)
