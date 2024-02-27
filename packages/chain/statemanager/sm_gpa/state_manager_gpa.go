@@ -375,6 +375,7 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.Ch
 }
 
 func (smT *stateManagerGPA) handleStateManagerBlocksToCommit(commitments []*state.L1Commitment) gpa.OutMessages {
+	start := time.Now()
 	smT.log.Debugf("Input state manager blocks to commit %s is received", commitments)
 	result := gpa.NoMessages()
 	for _, commitment := range commitments {
@@ -387,6 +388,7 @@ func (smT *stateManagerGPA) handleStateManagerBlocksToCommit(commitments []*stat
 		}
 	}
 	smT.log.Debugf("Input state manager blocks to commit %s handled", commitments)
+	smT.metrics.StateManagerBlocksToCommitHandled(time.Since(start))
 	return result
 }
 
