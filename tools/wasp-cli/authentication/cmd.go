@@ -21,12 +21,14 @@ func Init(rootCmd *cobra.Command) {
 	authCmd := initAuthCmd()
 	loginCmd := initLoginCmd()
 	infoCmd := initInfoCmd()
+	importCmd := initImportCmd()
 
 	rootCmd.AddCommand(authCmd)
 	rootCmd.AddCommand(loginCmd)
 
 	authCmd.AddCommand(loginCmd)
 	authCmd.AddCommand(infoCmd)
+	authCmd.AddCommand(importCmd)
 
 	loginCmd.PersistentFlags().StringVarP(&username, "username", "u", "", "username")
 	loginCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "password")

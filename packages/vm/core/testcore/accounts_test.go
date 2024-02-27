@@ -1587,4 +1587,43 @@ func TestNFTMint(t *testing.T) {
 		require.Len(t, env.L1NFTs(address), 2)
 		require.Len(t, ch.L2NFTs(agentID), 0)
 	})
+
+	t.Run("mint to self, then withdraw it", func(t *testing.T) {
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+		agentID := isc.NewAgentID(address)
+
+		// mint NFT to self and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamAgentID, agentID.Bytes(),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		require.Len(t, ch.L2NFTs(agentID), 0)
+		_, err := ch.PostRequestSync(req, wallet)
+		require.NoError(t, err)
+
+		// post a dummy request to make the chain progress to the next block
+		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
+		require.Len(t, env.L1NFTs(address), 0)
+		userL2NFTs := ch.L2NFTs(agentID)
+		require.Len(t, userL2NFTs, 1)
+		nftID := userL2NFTs[0]
+
+		// withdraw the NFT
+		_, err = ch.PostRequestSync(
+			solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+				AddAllowance(isc.NewAssets(2*isc.Million, nil, nftID)).
+				AddBaseTokens(5*isc.Million).
+				WithMaxAffordableGasBudget(),
+			wallet,
+		)
+		require.NoError(t, err)
+
+		require.Len(t, ch.L2NFTs(agentID), 0)
+		require.Len(t, env.L1NFTs(address), 1)
+	})
 }

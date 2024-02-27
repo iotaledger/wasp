@@ -210,4 +210,26 @@ contract ISCTest {
         emit SomeEvent();
         revert();
     }
+
+   event nftMint(bytes id);
+
+   function mintNFT() public payable {
+        ISCAssets memory allowance;
+        allowance.baseTokens = 100000;
+
+        ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
+
+        ISCDict memory params = ISCDict(new ISCDictItem[](2));
+        params.items[0] = ISCDictItem("I", "test");
+        params.items[1] = ISCDictItem("a", agentID.data);
+
+        ISCDict memory ret = ISC.sandbox.call(
+            ISC.util.hn("accounts"),
+            ISC.util.hn("mintNFT"),
+            params,
+            allowance
+        );
+       emit nftMint(ret.items[0].value); 
+    }
+
 }

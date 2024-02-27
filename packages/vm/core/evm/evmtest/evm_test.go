@@ -495,6 +495,44 @@ func TestISCNFTData(t *testing.T) {
 	require.EqualValues(t, metadata, ret.MustUnwrap().Metadata)
 }
 
+func TestISCNFTMint(t *testing.T) {
+	env := InitEVM(t)
+	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	_, err := iscTest.CallFn([]ethCallOptions{{
+		value: big.NewInt(int64(5000000000000 * isc.Million)),
+	}}, "mintNFT")
+
+	require.NoError(t, err)
+
+	/// produce a block (so the minted nft gets accounted for)
+	_, err = iscTest.triggerEvent("Hi from EVM!")
+	require.NoError(t, err)
+	///
+
+	evmAccNFTs := env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
+	require.Len(t, evmAccNFTs, 1)
+	nftID := evmAccNFTs[0]
+
+	ret := new(iscmagic.ISCNFT)
+	env.ISCMagicSandbox(ethKey).callView(
+		"getNFTData",
+		[]interface{}{iscmagic.WrapNFTID(nftID)},
+		&ret,
+	)
+
+	nftData := ret.MustUnwrap()
+	var l1NFTData []byte
+	chainNFTOuts := env.solo.L1NFTs(env.Chain.ID().AsAddress())
+	require.Len(t, chainNFTOuts, 1)
+	for _, o := range chainNFTOuts {
+		l1NFTData = o.ImmutableFeatureSet().MetadataFeature().Data
+	}
+	// assert the correct metadata is persisted in L1 and the chain
+	require.Equal(t, l1NFTData, nftData.Metadata)
+}
+
 func TestISCTriggerEvent(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
