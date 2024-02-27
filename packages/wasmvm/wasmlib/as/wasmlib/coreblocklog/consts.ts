@@ -15,18 +15,15 @@ export const ParamFromBlock     = 'f';
 export const ParamRequestID     = 'u';
 export const ParamToBlock       = 't';
 
-export const ResultBlockIndex             = 'n';
-export const ResultBlockInfo              = 'i';
-export const ResultEvent                  = 'e';
-export const ResultGoverningAddress       = 'g';
-export const ResultRequestID              = 'u';
-export const ResultRequestIndex           = 'r';
-export const ResultRequestProcessed       = 'p';
-export const ResultRequestReceipt         = 'd';
-export const ResultRequestReceipts        = 'd';
-export const ResultStateControllerAddress = 's';
+export const ResultBlockIndex       = 'n';
+export const ResultBlockInfo        = 'i';
+export const ResultEvent            = 'e';
+export const ResultRequestID        = 'u';
+export const ResultRequestIndex     = 'r';
+export const ResultRequestProcessed = 'p';
+export const ResultRequestReceipt   = 'd';
+export const ResultRequestReceipts  = 'd';
 
-export const ViewControlAddresses           = 'controlAddresses';
 export const ViewGetBlockInfo               = 'getBlockInfo';
 export const ViewGetEventsForBlock          = 'getEventsForBlock';
 export const ViewGetEventsForContract       = 'getEventsForContract';
@@ -36,7 +33,6 @@ export const ViewGetRequestReceipt          = 'getRequestReceipt';
 export const ViewGetRequestReceiptsForBlock = 'getRequestReceiptsForBlock';
 export const ViewIsRequestProcessed         = 'isRequestProcessed';
 
-export const HViewControlAddresses           = new wasmtypes.ScHname(0x796bd223);
 export const HViewGetBlockInfo               = new wasmtypes.ScHname(0xbe89f9b3);
 export const HViewGetEventsForBlock          = new wasmtypes.ScHname(0x36232798);
 export const HViewGetEventsForContract       = new wasmtypes.ScHname(0x682a1922);

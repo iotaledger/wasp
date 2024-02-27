@@ -10,48 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type ImmutableControlAddressesResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-// index of block where the addresses were set
-func (s ImmutableControlAddressesResults) BlockIndex() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultBlockIndex))
-}
-
-// governing address
-func (s ImmutableControlAddressesResults) GoverningAddress() wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ResultGoverningAddress))
-}
-
-// state controller address
-func (s ImmutableControlAddressesResults) StateControllerAddress() wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(s.Proxy.Root(ResultStateControllerAddress))
-}
-
-type MutableControlAddressesResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewMutableControlAddressesResults() MutableControlAddressesResults {
-	return MutableControlAddressesResults{Proxy: wasmlib.NewResultsProxy()}
-}
-
-// index of block where the addresses were set
-func (s MutableControlAddressesResults) BlockIndex() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultBlockIndex))
-}
-
-// governing address
-func (s MutableControlAddressesResults) GoverningAddress() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ResultGoverningAddress))
-}
-
-// state controller address
-func (s MutableControlAddressesResults) StateControllerAddress() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(s.Proxy.Root(ResultStateControllerAddress))
-}
-
 type ImmutableGetBlockInfoResults struct {
 	Proxy wasmtypes.Proxy
 }

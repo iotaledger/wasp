@@ -10,56 +10,6 @@ use crate::*;
 use crate::coreblocklog::*;
 
 #[derive(Clone)]
-pub struct ImmutableControlAddressesResults {
-    pub proxy: Proxy,
-}
-
-impl ImmutableControlAddressesResults {
-    // index of block where the addresses were set
-    pub fn block_index(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
-    }
-
-    // governing address
-    pub fn governing_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.proxy.root(RESULT_GOVERNING_ADDRESS))
-    }
-
-    // state controller address
-    pub fn state_controller_address(&self) -> ScImmutableAddress {
-        ScImmutableAddress::new(self.proxy.root(RESULT_STATE_CONTROLLER_ADDRESS))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableControlAddressesResults {
-    pub proxy: Proxy,
-}
-
-impl MutableControlAddressesResults {
-    pub fn new() -> MutableControlAddressesResults {
-        MutableControlAddressesResults {
-            proxy: results_proxy(),
-        }
-    }
-
-    // index of block where the addresses were set
-    pub fn block_index(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
-    }
-
-    // governing address
-    pub fn governing_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.proxy.root(RESULT_GOVERNING_ADDRESS))
-    }
-
-    // state controller address
-    pub fn state_controller_address(&self) -> ScMutableAddress {
-        ScMutableAddress::new(self.proxy.root(RESULT_STATE_CONTROLLER_ADDRESS))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetBlockInfoResults {
     pub proxy: Proxy,
 }

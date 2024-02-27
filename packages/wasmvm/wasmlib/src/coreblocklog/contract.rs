@@ -8,11 +8,6 @@
 use crate::*;
 use crate::coreblocklog::*;
 
-pub struct ControlAddressesCall<'a> {
-    pub func:    ScView<'a>,
-    pub results: ImmutableControlAddressesResults,
-}
-
 pub struct GetBlockInfoCall<'a> {
     pub func:    ScView<'a>,
     pub params:  MutableGetBlockInfoParams,
@@ -65,16 +60,6 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    // Returns the current state controller and governing addresses and at what block index they were set.
-    pub fn control_addresses(ctx: &impl ScViewClientContext) -> ControlAddressesCall {
-        let mut f = ControlAddressesCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_CONTROL_ADDRESSES),
-            results: ImmutableControlAddressesResults { proxy: Proxy::nil() },
-        };
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
     // Returns information about the given block.
     pub fn get_block_info(ctx: &impl ScViewClientContext) -> GetBlockInfoCall {
         let mut f = GetBlockInfoCall {

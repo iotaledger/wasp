@@ -22,20 +22,17 @@ const (
 )
 
 const (
-	ResultBlockIndex             = "n"
-	ResultBlockInfo              = "i"
-	ResultEvent                  = "e"
-	ResultGoverningAddress       = "g"
-	ResultRequestID              = "u"
-	ResultRequestIndex           = "r"
-	ResultRequestProcessed       = "p"
-	ResultRequestReceipt         = "d"
-	ResultRequestReceipts        = "d"
-	ResultStateControllerAddress = "s"
+	ResultBlockIndex       = "n"
+	ResultBlockInfo        = "i"
+	ResultEvent            = "e"
+	ResultRequestID        = "u"
+	ResultRequestIndex     = "r"
+	ResultRequestProcessed = "p"
+	ResultRequestReceipt   = "d"
+	ResultRequestReceipts  = "d"
 )
 
 const (
-	ViewControlAddresses           = "controlAddresses"
 	ViewGetBlockInfo               = "getBlockInfo"
 	ViewGetEventsForBlock          = "getEventsForBlock"
 	ViewGetEventsForContract       = "getEventsForContract"
@@ -47,7 +44,6 @@ const (
 )
 
 const (
-	HViewControlAddresses           = wasmtypes.ScHname(0x796bd223)
 	HViewGetBlockInfo               = wasmtypes.ScHname(0xbe89f9b3)
 	HViewGetEventsForBlock          = wasmtypes.ScHname(0x36232798)
 	HViewGetEventsForContract       = wasmtypes.ScHname(0x682a1922)

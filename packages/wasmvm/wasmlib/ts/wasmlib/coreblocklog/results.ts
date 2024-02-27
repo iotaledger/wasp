@@ -6,40 +6,6 @@
 import * as wasmtypes from '../wasmtypes';
 import * as sc from './index';
 
-export class ImmutableControlAddressesResults extends wasmtypes.ScProxy {
-    // index of block where the addresses were set
-    blockIndex(): wasmtypes.ScImmutableUint32 {
-        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
-    }
-
-    // governing address
-    governingAddress(): wasmtypes.ScImmutableAddress {
-        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultGoverningAddress));
-    }
-
-    // state controller address
-    stateControllerAddress(): wasmtypes.ScImmutableAddress {
-        return new wasmtypes.ScImmutableAddress(this.proxy.root(sc.ResultStateControllerAddress));
-    }
-}
-
-export class MutableControlAddressesResults extends wasmtypes.ScProxy {
-    // index of block where the addresses were set
-    blockIndex(): wasmtypes.ScMutableUint32 {
-        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
-    }
-
-    // governing address
-    governingAddress(): wasmtypes.ScMutableAddress {
-        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultGoverningAddress));
-    }
-
-    // state controller address
-    stateControllerAddress(): wasmtypes.ScMutableAddress {
-        return new wasmtypes.ScMutableAddress(this.proxy.root(sc.ResultStateControllerAddress));
-    }
-}
-
 export class ImmutableGetBlockInfoResults extends wasmtypes.ScProxy {
     // index of returned block
     blockIndex(): wasmtypes.ScImmutableUint32 {

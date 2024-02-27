@@ -7,11 +7,6 @@ package coreblocklog
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-type ControlAddressesCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableControlAddressesResults
-}
-
 type GetBlockInfoCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetBlockInfoParams
@@ -63,13 +58,6 @@ type IsRequestProcessedCall struct {
 type Funcs struct{}
 
 var ScFuncs Funcs
-
-// Returns the current state controller and governing addresses and at what block index they were set.
-func (sc Funcs) ControlAddresses(ctx wasmlib.ScViewClientContext) *ControlAddressesCall {
-	f := &ControlAddressesCall{Func: wasmlib.NewScView(ctx, HScName, HViewControlAddresses)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
 
 // Returns information about the given block.
 func (sc Funcs) GetBlockInfo(ctx wasmlib.ScViewClientContext) *GetBlockInfoCall {
@@ -138,7 +126,6 @@ func (sc Funcs) IsRequestProcessed(ctx wasmlib.ScViewClientContext) *IsRequestPr
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		ViewControlAddresses,
 		ViewGetBlockInfo,
 		ViewGetEventsForBlock,
 		ViewGetEventsForContract,
@@ -151,7 +138,6 @@ var exportMap = wasmlib.ScExportMap{
 	Funcs: []wasmlib.ScFuncContextFunction{
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
