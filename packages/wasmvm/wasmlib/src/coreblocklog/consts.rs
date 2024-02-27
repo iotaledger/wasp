@@ -17,18 +17,15 @@ pub(crate) const PARAM_FROM_BLOCK     : &str = "f";
 pub(crate) const PARAM_REQUEST_ID     : &str = "u";
 pub(crate) const PARAM_TO_BLOCK       : &str = "t";
 
-pub(crate) const RESULT_BLOCK_INDEX              : &str = "n";
-pub(crate) const RESULT_BLOCK_INFO               : &str = "i";
-pub(crate) const RESULT_EVENT                    : &str = "e";
-pub(crate) const RESULT_GOVERNING_ADDRESS        : &str = "g";
-pub(crate) const RESULT_REQUEST_ID               : &str = "u";
-pub(crate) const RESULT_REQUEST_INDEX            : &str = "r";
-pub(crate) const RESULT_REQUEST_PROCESSED        : &str = "p";
-pub(crate) const RESULT_REQUEST_RECEIPT          : &str = "d";
-pub(crate) const RESULT_REQUEST_RECEIPTS         : &str = "d";
-pub(crate) const RESULT_STATE_CONTROLLER_ADDRESS : &str = "s";
+pub(crate) const RESULT_BLOCK_INDEX       : &str = "n";
+pub(crate) const RESULT_BLOCK_INFO        : &str = "i";
+pub(crate) const RESULT_EVENT             : &str = "e";
+pub(crate) const RESULT_REQUEST_ID        : &str = "u";
+pub(crate) const RESULT_REQUEST_INDEX     : &str = "r";
+pub(crate) const RESULT_REQUEST_PROCESSED : &str = "p";
+pub(crate) const RESULT_REQUEST_RECEIPT   : &str = "d";
+pub(crate) const RESULT_REQUEST_RECEIPTS  : &str = "d";
 
-pub(crate) const VIEW_CONTROL_ADDRESSES              : &str = "controlAddresses";
 pub(crate) const VIEW_GET_BLOCK_INFO                 : &str = "getBlockInfo";
 pub(crate) const VIEW_GET_EVENTS_FOR_BLOCK           : &str = "getEventsForBlock";
 pub(crate) const VIEW_GET_EVENTS_FOR_CONTRACT        : &str = "getEventsForContract";
@@ -38,7 +35,6 @@ pub(crate) const VIEW_GET_REQUEST_RECEIPT            : &str = "getRequestReceipt
 pub(crate) const VIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK : &str = "getRequestReceiptsForBlock";
 pub(crate) const VIEW_IS_REQUEST_PROCESSED           : &str = "isRequestProcessed";
 
-pub(crate) const HVIEW_CONTROL_ADDRESSES              : ScHname = ScHname(0x796bd223);
 pub(crate) const HVIEW_GET_BLOCK_INFO                 : ScHname = ScHname(0xbe89f9b3);
 pub(crate) const HVIEW_GET_EVENTS_FOR_BLOCK           : ScHname = ScHname(0x36232798);
 pub(crate) const HVIEW_GET_EVENTS_FOR_CONTRACT        : ScHname = ScHname(0x682a1922);

@@ -6,15 +6,6 @@
 import * as wasmlib from '../index';
 import * as sc from './index';
 
-export class ControlAddressesCall {
-    func:    wasmlib.ScView;
-    results: sc.ImmutableControlAddressesResults = new sc.ImmutableControlAddressesResults(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScViewClientContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewControlAddresses);
-    }
-}
-
 export class GetBlockInfoCall {
     func:    wasmlib.ScView;
     params:  sc.MutableGetBlockInfoParams = new sc.MutableGetBlockInfoParams(wasmlib.ScView.nilProxy);
@@ -96,13 +87,6 @@ export class IsRequestProcessedCall {
 }
 
 export class ScFuncs {
-    // Returns the current state controller and governing addresses and at what block index they were set.
-    static controlAddresses(ctx: wasmlib.ScViewClientContext): ControlAddressesCall {
-        const f = new ControlAddressesCall(ctx);
-        f.results = new sc.ImmutableControlAddressesResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
-
     // Returns information about the given block.
     static getBlockInfo(ctx: wasmlib.ScViewClientContext): GetBlockInfoCall {
         const f = new GetBlockInfoCall(ctx);
