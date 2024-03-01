@@ -78,6 +78,7 @@ type UnsignedOffLedgerRequest interface {
 	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
 	WithAllowance(allowance *Assets) UnsignedOffLedgerRequest
 	WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest
+	WithSenderAddress(senderAddress *iotago.Ed25519Address) UnsignedOffLedgerRequest
 	Sign(key cryptolib.VariantKeyPair) OffLedgerRequest
 }
 

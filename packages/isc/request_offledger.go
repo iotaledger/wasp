@@ -18,6 +18,7 @@ import (
 )
 
 type offLedgerSignature struct {
+	address   *iotago.Ed25519Address
 	publicKey *cryptolib.PublicKey
 	signature []byte
 }
@@ -182,14 +183,17 @@ func (req *OffLedgerRequestData) ReturnAmount() (uint64, bool) {
 }
 
 func (req *OffLedgerRequestData) SenderAccount() AgentID {
-	return NewAgentID(req.signature.publicKey.AsEd25519Address())
+	agentID := NewAgentID(req.signature.address)
+	return agentID
 }
 
 // Sign signs the essence
 func (req *OffLedgerRequestData) Sign(key cryptolib.VariantKeyPair) OffLedgerRequest {
+	publicKey := key.GetPublicKey()
 	req.signature = offLedgerSignature{
-		publicKey: key.GetPublicKey(),
+		publicKey: publicKey,
 		signature: key.SignBytes(req.messageToSign()),
+		address:   publicKey.AsEd25519Address(),
 	}
 	return req
 }
@@ -246,6 +250,16 @@ func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) Unsigne
 	req.signature = offLedgerSignature{
 		publicKey: sender,
 		signature: []byte{},
+		address:   sender.AsEd25519Address(),
+	}
+	return req
+}
+
+func (req *OffLedgerRequestData) WithSenderAddress(senderAddress *iotago.Ed25519Address) UnsignedOffLedgerRequest {
+	req.signature = offLedgerSignature{
+		signature: []byte{},
+		publicKey: cryptolib.NewEmptyPublicKey(),
+		address:   senderAddress,
 	}
 	return req
 }
