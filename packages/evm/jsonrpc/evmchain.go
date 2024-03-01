@@ -528,7 +528,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*typ
 		from := from.Uint64()
 		to := to.Uint64()
 		if to > from && to-from > uint64(params.MaxBlocksInLogsFilterRange) {
-			return nil, errors.New("too many blocks in filter range")
+			return nil, errors.New("ServerError(-32000) too many blocks in filter range") // ServerError(-32000) part is necessary because subgraph expects that string in the error msg: https://github.com/graphprotocol/graph-node/blob/591ad93b5144ff5e6037b73862c607effad90e7f/chain/ethereum/src/ethereum_adapter.rs#L335
 		}
 		for i := from; i <= to; i++ {
 			state, err := e.iscStateFromEVMBlockNumber(new(big.Int).SetUint64(i))
