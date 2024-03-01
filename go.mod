@@ -50,7 +50,7 @@ require (
 	github.com/samber/lo v1.38.1
 	github.com/second-state/WasmEdge-go v0.13.4
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/wasmerio/wasmer-go v1.0.4
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98
 	go.dedis.ch/kyber/v3 v3.1.0
