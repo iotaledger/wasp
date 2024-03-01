@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/gommon/log"
+	"github.com/samber/lo"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
@@ -84,17 +85,28 @@ func NewEVMChain(
 			return
 		}
 		blocksFromPublisher.In() <- ev.Payload
-		if isArchiveNode {
-			e.index.IndexBlock(ev.Payload.TrieRoot)
-		}
 	})
 
 	// publish blocks on a separate goroutine so that we don't block the publisher
 	go func() {
 		for ev := range blocksFromPublisher.Out() {
 			e.publishNewBlock(ev.BlockInfo.BlockIndex(), ev.TrieRoot)
+			if isArchiveNode {
+				e.index.IndexBlock(ev.TrieRoot)
+			}
 		}
 	}()
+
+	if isArchiveNode {
+		latestState, err := backend.ISCLatestState()
+		if err != nil {
+			log.Warnf("could not fetch latest state; skipping first indexing: %s", err.Error())
+		} else {
+			log.Infof("indexing from block index #%d; this may take some time...", latestState.BlockIndex())
+			e.index.IndexBlock(latestState.TrieRoot())
+			log.Info("indexing done")
+		}
+	}
 
 	return e
 }
@@ -129,7 +141,7 @@ func (e *EVMChain) Signer() (types.Signer, error) {
 
 func (e *EVMChain) ChainID() uint16 {
 	if e.chainID == 0 {
-		db := blockchainDB(e.backend.ISCLatestState())
+		db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
 		e.chainID = db.GetChainID()
 	}
 	return e.chainID
@@ -144,25 +156,25 @@ func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
 
 func (e *EVMChain) BlockNumber() *big.Int {
 	e.log.Debugf("BlockNumber()")
-	db := blockchainDB(e.backend.ISCLatestState())
+	db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
 	return big.NewInt(0).SetUint64(db.GetNumber())
 }
 
 func (e *EVMChain) GasRatio() util.Ratio32 {
 	e.log.Debugf("GasRatio()")
-	govPartition := subrealm.NewReadOnly(e.backend.ISCLatestState(), kv.Key(governance.Contract.Hname().Bytes()))
+	govPartition := subrealm.NewReadOnly(lo.Must(e.backend.ISCLatestState()), kv.Key(governance.Contract.Hname().Bytes()))
 	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
 	return gasFeePolicy.EVMGasRatio
 }
 
 func (e *EVMChain) GasFeePolicy() *gas.FeePolicy {
-	govPartition := subrealm.NewReadOnly(e.backend.ISCLatestState(), kv.Key(governance.Contract.Hname().Bytes()))
+	govPartition := subrealm.NewReadOnly(lo.Must(e.backend.ISCLatestState()), kv.Key(governance.Contract.Hname().Bytes()))
 	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
 	return gasFeePolicy
 }
 
 func (e *EVMChain) gasLimits() *gas.Limits {
-	govPartition := subrealm.NewReadOnly(e.backend.ISCLatestState(), kv.Key(governance.Contract.Hname().Bytes()))
+	govPartition := subrealm.NewReadOnly(lo.Must(e.backend.ISCLatestState()), kv.Key(governance.Contract.Hname().Bytes()))
 	gasLimits := governance.MustGetGasLimits(govPartition)
 	return gasLimits
 }
@@ -229,7 +241,7 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas 
 
 func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State, error) {
 	if blockNumber == nil {
-		return e.backend.ISCLatestState(), nil
+		return e.backend.ISCLatestState()
 	}
 	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
 	if err != nil {
@@ -244,7 +256,7 @@ func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State
 
 func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (state.State, error) {
 	if blockNumberOrHash == nil {
-		return e.backend.ISCLatestState(), nil
+		return e.backend.ISCLatestState()
 	}
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		return e.iscStateFromEVMBlockNumber(parseBlockNumber(blockNumber))
@@ -255,14 +267,18 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 }
 
 func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.AliasOutputWithID, error) {
-	if blockNumber == nil || blockNumber.Cmp(big.NewInt(int64(e.backend.ISCLatestState().BlockIndex()))) == 0 {
+	latestState, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, err
+	}
+	if blockNumber == nil || blockNumber.Cmp(big.NewInt(int64(latestState.BlockIndex()))) == 0 {
 		return e.backend.ISCLatestAliasOutput()
 	}
 	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
 	if err != nil {
 		return nil, err
 	}
-	latestBlockIndex := e.backend.ISCLatestState().BlockIndex()
+	latestBlockIndex := latestState.BlockIndex()
 	if iscBlockIndex > latestBlockIndex {
 		return nil, fmt.Errorf("no EVM block with number %s", blockNumber)
 	}
@@ -330,7 +346,12 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 		return cachedBlock, nil
 	}
 
-	block, err := e.blockByNumber(e.backend.ISCLatestState(), blockNumber)
+	latestState, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, err
+	}
+
+	block, err := e.blockByNumber(latestState, blockNumber)
 	if err == nil && block == nil {
 		return nil, fmt.Errorf("not found")
 	}
@@ -362,7 +383,11 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	if cachedTx != nil {
 		return cachedTx, blockHash, blockNumber, txIndex, nil
 	}
-	db := blockchainDB(e.backend.ISCLatestState())
+	latestState, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, common.Hash{}, 0, 0, err
+	}
+	db := blockchainDB(latestState)
 	return db.GetTransactionByHash(hash)
 }
 
@@ -372,7 +397,11 @@ func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64
 	if cachedTx != nil {
 		return cachedTx, bn, nil
 	}
-	db := blockchainDB(e.backend.ISCLatestState())
+	latestState, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, 0, err
+	}
+	db := blockchainDB(latestState)
 	block := db.GetBlockByHash(hash)
 	if block == nil {
 		return nil, 0, err
@@ -387,7 +416,11 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 	if cachedTx != nil {
 		return cachedTx, blockHash, blockNumber.Uint64(), nil
 	}
-	db := blockchainDB(e.backend.ISCLatestState())
+	latestState, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, common.Hash{}, 0, err
+	}
+	db := blockchainDB(latestState)
 	bn, err := blockNumberU64(db, blockNumber)
 	if err != nil {
 		return nil, common.Hash{}, 0, err
@@ -408,7 +441,7 @@ func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 		return cachedBlock
 	}
 
-	db := blockchainDB(e.backend.ISCLatestState())
+	db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
 	block := db.GetBlockByHash(hash)
 	return block
 }
@@ -419,7 +452,7 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) *types.Receipt {
 	if rec != nil {
 		return rec
 	}
-	db := blockchainDB(e.backend.ISCLatestState())
+	db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
 	return db.GetReceiptByTxHash(txHash)
 }
 
@@ -511,7 +544,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*typ
 
 	// Initialize unset filter boundaries to run from genesis to chain head
 	first := big.NewInt(1) // skip genesis since it has no logs
-	last := new(big.Int).SetUint64(uint64(e.backend.ISCLatestState().BlockIndex()))
+	last := new(big.Int).SetUint64(uint64(lo.Must(e.backend.ISCLatestState()).BlockIndex()))
 	from := first
 	if query.FromBlock != nil && query.FromBlock.Cmp(first) >= 0 && query.FromBlock.Cmp(last) <= 0 {
 		from = query.FromBlock

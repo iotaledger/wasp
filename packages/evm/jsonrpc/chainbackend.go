@@ -28,7 +28,7 @@ type ChainBackend interface {
 	ISCChainID() *isc.ChainID
 	ISCCallView(chainState state.State, scName string, funName string, args dict.Dict) (dict.Dict, error)
 	ISCLatestAliasOutput() (*isc.AliasOutputWithID, error)
-	ISCLatestState() state.State
+	ISCLatestState() (state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
 	BaseToken() *parameters.BaseToken

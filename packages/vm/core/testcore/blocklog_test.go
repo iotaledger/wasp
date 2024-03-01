@@ -229,8 +229,9 @@ func TestBlocklogPruning(t *testing.T) {
 	for i := uint32(0); i <= 10; i++ {
 		_, err := ch.GetBlockInfo(i)
 		require.ErrorContains(t, err, "not found")
+		// evm has the jsonrpcindex
 		_, err = ch.EVM().BlockByNumber(big.NewInt(int64(i)))
-		require.ErrorContains(t, err, "not found")
+		require.NoError(t, err)
 	}
 	for i := uint32(11); i <= 20; i++ {
 		bi, err := ch.GetBlockInfo(i)

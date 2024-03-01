@@ -117,12 +117,12 @@ func (b *WaspEVMBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) 
 	return latestAliasOutput, nil
 }
 
-func (b *WaspEVMBackend) ISCLatestState() state.State {
+func (b *WaspEVMBackend) ISCLatestState() (state.State, error) {
 	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
-		panic(fmt.Sprintf("couldn't get latest block index: %s ", err.Error()))
+		return nil, fmt.Errorf("couldn't get latest block index: %w", err)
 	}
-	return latestState
+	return latestState, nil
 }
 
 func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {

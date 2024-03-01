@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/samber/lo"
 	"golang.org/x/crypto/sha3"
 
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
@@ -74,7 +75,7 @@ func (e *EthService) resolveError(err error) error {
 			return err
 		}
 		var resolveErr error
-		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestState()))
+		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(lo.Must(e.evmChain.backend.ISCLatestState())))
 		if resolveErr != nil {
 			return fmt.Errorf("could not resolve VMError: %w: %v", err, resolveErr)
 		}
