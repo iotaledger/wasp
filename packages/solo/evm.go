@@ -91,12 +91,8 @@ func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, err
 	return latestAliasOutput, nil
 }
 
-func (b *jsonRPCSoloBackend) ISCLatestState() state.State {
-	latestState, err := b.Chain.LatestState(chain.ActiveOrCommittedState)
-	if err != nil {
-		panic(err)
-	}
-	return latestState
+func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
+	return b.Chain.LatestState(chain.ActiveOrCommittedState)
 }
 
 func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
