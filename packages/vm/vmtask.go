@@ -33,7 +33,7 @@ type VMTask struct {
 	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
 
-	MigrationsOverride *migrations.MigrationScheme // for testing and Solo only
+	Migrations *migrations.MigrationScheme // for testing and Solo only
 
 	Log *logger.Logger
 }

@@ -78,6 +78,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -565,6 +566,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
 		Log:                  c.log.Named("VM"),
+		Migrations:           allmigrations.DefaultScheme,
 	}
 	return nil
 }

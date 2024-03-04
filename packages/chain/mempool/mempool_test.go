@@ -39,6 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
@@ -213,6 +214,7 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
 		Log:                  te.log.Named("VM"),
+		Migrations:           allmigrations.DefaultScheme,
 	}
 	vmResult, err := vmimpl.Run(vmTask)
 	require.NoError(te.t, err)

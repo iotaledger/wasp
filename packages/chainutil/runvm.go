@@ -6,11 +6,18 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -22,11 +29,16 @@ func runISCTask(
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
+	store := ch.Store()
+	migs, err := getMigrationsForBlock(store, aliasOutput)
+	if err != nil {
+		return nil, err
+	}
 	task := &vm.VMTask{
 		Processors:           ch.Processors(),
 		AnchorOutput:         aliasOutput.GetAliasOutput(),
 		AnchorOutputID:       aliasOutput.OutputID(),
-		Store:                ch.Store(),
+		Store:                store,
 		Requests:             reqs,
 		TimeAssumption:       blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
@@ -35,12 +47,33 @@ func runISCTask(
 		EstimateGasMode:      estimateGasMode,
 		EVMTracer:            evmTracer,
 		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		Migrations:           migs,
 	}
 	res, err := vmimpl.Run(task)
 	if err != nil {
 		return nil, err
 	}
 	return res.RequestResults, nil
+}
+
+func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.AliasOutputWithID) (*migrations.MigrationScheme, error) {
+	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	if err != nil {
+		panic(err)
+	}
+	prevState, err := store.StateByTrieRoot(prevL1Commitment.TrieRoot())
+	if err != nil {
+		if errors.Is(err, state.ErrTrieRootNotFound) {
+			return allmigrations.DefaultScheme, nil
+		}
+		panic(err)
+	}
+	if lo.Must(store.LatestBlockIndex()) == prevState.BlockIndex() {
+		return allmigrations.DefaultScheme, nil
+	}
+	newState := lo.Must(store.StateByIndex(prevState.BlockIndex() + 1))
+	targetSchemaVersion := newState.SchemaVersion()
+	return allmigrations.DefaultScheme.WithTargetSchemaVersion(targetSchemaVersion)
 }
 
 func runISCRequest(

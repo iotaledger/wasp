@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -68,6 +69,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		// state baseline is always valid in Solo
 		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
 		EstimateGasMode:      estimateGas,
+		Migrations:           allmigrations.DefaultScheme,
 	}
 
 	res, err := vmimpl.Run(task)
