@@ -66,26 +66,30 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
+	if estimateGasRequest.FromAddress == "" {
+		return apierrors.InvalidPropertyError("fromAddress", err)
+	}
+
 	requestFrom, err := iotago.ParseEd25519AddressFromHexString(estimateGasRequest.FromAddress)
 	if err != nil {
-		return apierrors.InvalidPropertyError("From", err)
+		return apierrors.InvalidPropertyError("fromAddress", err)
 	}
 
 	requestBytes, err := iotago.DecodeHex(estimateGasRequest.Request)
 	if err != nil {
-		return apierrors.InvalidPropertyError("Request", err)
+		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
 
 	req, err := c.offLedgerService.ParseRequest(requestBytes)
 	if err != nil {
-		return apierrors.InvalidPropertyError("Request", err)
+		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
 
 	impRequest := isc.NewImpersonatedOffLedgerRequest(req).
 		WithSenderAddress(requestFrom)
 
 	if !impRequest.TargetAddress().Equal(chainID.AsAddress()) {
-		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
+		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
 	}
 
 	rec, err := common.EstimateGas(ch, impRequest)

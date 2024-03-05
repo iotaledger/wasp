@@ -19,6 +19,8 @@ var _ MappedNullable = &EstimateGasRequestOffledger{}
 
 // EstimateGasRequestOffledger struct for EstimateGasRequestOffledger
 type EstimateGasRequestOffledger struct {
+	// The address to estimate gas for(Hex)
+	FromAddress string `json:"fromAddress"`
 	// Offledger Request (Hex)
 	RequestBytes string `json:"requestBytes"`
 }
@@ -27,8 +29,9 @@ type EstimateGasRequestOffledger struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEstimateGasRequestOffledger(requestBytes string) *EstimateGasRequestOffledger {
+func NewEstimateGasRequestOffledger(fromAddress string, requestBytes string) *EstimateGasRequestOffledger {
 	this := EstimateGasRequestOffledger{}
+	this.FromAddress = fromAddress
 	this.RequestBytes = requestBytes
 	return &this
 }
@@ -39,6 +42,30 @@ func NewEstimateGasRequestOffledger(requestBytes string) *EstimateGasRequestOffl
 func NewEstimateGasRequestOffledgerWithDefaults() *EstimateGasRequestOffledger {
 	this := EstimateGasRequestOffledger{}
 	return &this
+}
+
+// GetFromAddress returns the FromAddress field value
+func (o *EstimateGasRequestOffledger) GetFromAddress() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.FromAddress
+}
+
+// GetFromAddressOk returns a tuple with the FromAddress field value
+// and a boolean to check if the value has been set.
+func (o *EstimateGasRequestOffledger) GetFromAddressOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.FromAddress, true
+}
+
+// SetFromAddress sets field value
+func (o *EstimateGasRequestOffledger) SetFromAddress(v string) {
+	o.FromAddress = v
 }
 
 // GetRequestBytes returns the RequestBytes field value
@@ -75,6 +102,7 @@ func (o EstimateGasRequestOffledger) MarshalJSON() ([]byte, error) {
 
 func (o EstimateGasRequestOffledger) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["fromAddress"] = o.FromAddress
 	toSerialize["requestBytes"] = o.RequestBytes
 	return toSerialize, nil
 }

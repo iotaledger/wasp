@@ -15,10 +15,17 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 
 GENERATE_MODE=${1:-cli}
 
-GENERATE_ARGS="\
+GENERATE_ARGS_TS="\
     --global-property=models,supportingFiles,apis,modelTests=false,apiTests=false \
     -g typescript \
     --package-name=apiclient-ts \
+    --additional-properties preferUnsignedInt=TRUE
+"
+
+GENERATE_ARGS_GO="\
+    --global-property=models,supportingFiles,apis,modelTests=false,apiTests=false \
+    -g go \
+    --package-name=apiclient \
     --additional-properties preferUnsignedInt=TRUE
 "
 
@@ -32,13 +39,23 @@ if [ $GENERATE_MODE = "docker" ]; then
     lukasmoe/openapi-generator \
     generate -i "/tmp/schema.json" \
     -o "/tmp/apiclient-ts" \
-    $GENERATE_ARGS
+    $GENERATE_ARGS_TS
+
+  docker run -v "$SCRIPTPATH"/wasp_swagger_schema.json:/tmp/schema.json:ro \
+      -v "$SCRIPTPATH":/tmp/apiclient-go \
+      lukasmoe/openapi-generator \
+      generate -i "/tmp/schema.json" \
+      -o "/tmp/apiclient-go" \
+      $GENERATE_ARGS_GO
 
 else
   echo "Generating client with local CLI"
 
   openapi-generator-cli generate -i "$SCRIPTPATH/wasp_swagger_schema.json" -o "$SCRIPTPATH" \
-    $GENERATE_ARGS
+    $GENERATE_ARGS_TS
+
+  openapi-generator-cli generate -i "$SCRIPTPATH/wasp_swagger_schema.json" -o "$SCRIPTPATH" \
+    $GENERATE_ARGS_GO
 fi
 
 ## This is a temporary fix for the blob info response.

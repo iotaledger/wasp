@@ -318,7 +318,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Bech32)
-    request := *openapiclient.NewEstimateGasRequestOffledger("RequestBytes_example") // EstimateGasRequestOffledger | Request
+    request := *openapiclient.NewEstimateGasRequestOffledger("FromAddress_example", "RequestBytes_example") // EstimateGasRequestOffledger | Request
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -709,7 +709,7 @@ Name | Type | Description  | Notes
 
 ## GetMempoolContents
 
-> GetMempoolContents(ctx, chainID).Execute()
+> []int32 GetMempoolContents(ctx, chainID).Execute()
 
 Get the contents of the mempool.
 
@@ -735,6 +735,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetMempoolContents``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `GetMempoolContents`: []int32
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetMempoolContents`: %v\n", resp)
 }
 ```
 
@@ -757,7 +759,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+**[]int32**
 
 ### Authorization
 
@@ -766,7 +768,7 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: application/json
+- **Accept**: application/octet-stream
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

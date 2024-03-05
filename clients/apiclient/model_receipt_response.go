@@ -29,7 +29,7 @@ type ReceiptResponse struct {
 	// The charged gas fee (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
 	RawError *UnresolvedVMErrorJSON `json:"rawError,omitempty"`
-	Request RequestDetail `json:"request"`
+	Request RequestJSON `json:"request"`
 	RequestIndex uint32 `json:"requestIndex"`
 	// Storage deposit charged (uint64 as string)
 	StorageDepositCharged string `json:"storageDepositCharged"`
@@ -39,7 +39,7 @@ type ReceiptResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestDetail, requestIndex uint32, storageDepositCharged string) *ReceiptResponse {
+func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex uint32, storageDepositCharged string) *ReceiptResponse {
 	this := ReceiptResponse{}
 	this.BlockIndex = blockIndex
 	this.GasBudget = gasBudget
@@ -245,9 +245,9 @@ func (o *ReceiptResponse) SetRawError(v UnresolvedVMErrorJSON) {
 }
 
 // GetRequest returns the Request field value
-func (o *ReceiptResponse) GetRequest() RequestDetail {
+func (o *ReceiptResponse) GetRequest() RequestJSON {
 	if o == nil {
-		var ret RequestDetail
+		var ret RequestJSON
 		return ret
 	}
 
@@ -256,7 +256,7 @@ func (o *ReceiptResponse) GetRequest() RequestDetail {
 
 // GetRequestOk returns a tuple with the Request field value
 // and a boolean to check if the value has been set.
-func (o *ReceiptResponse) GetRequestOk() (*RequestDetail, bool) {
+func (o *ReceiptResponse) GetRequestOk() (*RequestJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -264,7 +264,7 @@ func (o *ReceiptResponse) GetRequestOk() (*RequestDetail, bool) {
 }
 
 // SetRequest sets field value
-func (o *ReceiptResponse) SetRequest(v RequestDetail) {
+func (o *ReceiptResponse) SetRequest(v RequestJSON) {
 	o.Request = v
 }
 

@@ -14,37 +14,39 @@ import (
 	"encoding/json"
 )
 
-// checks if the AssetsResponse type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &AssetsResponse{}
+// checks if the AssetsJSON type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &AssetsJSON{}
 
-// AssetsResponse struct for AssetsResponse
-type AssetsResponse struct {
+// AssetsJSON struct for AssetsJSON
+type AssetsJSON struct {
 	// The base tokens (uint64 as string)
 	BaseTokens string `json:"baseTokens"`
 	NativeTokens []NativeTokenJSON `json:"nativeTokens"`
+	Nfts []string `json:"nfts"`
 }
 
-// NewAssetsResponse instantiates a new AssetsResponse object
+// NewAssetsJSON instantiates a new AssetsJSON object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAssetsResponse(baseTokens string, nativeTokens []NativeTokenJSON) *AssetsResponse {
-	this := AssetsResponse{}
+func NewAssetsJSON(baseTokens string, nativeTokens []NativeTokenJSON, nfts []string) *AssetsJSON {
+	this := AssetsJSON{}
 	this.BaseTokens = baseTokens
 	this.NativeTokens = nativeTokens
+	this.Nfts = nfts
 	return &this
 }
 
-// NewAssetsResponseWithDefaults instantiates a new AssetsResponse object
+// NewAssetsJSONWithDefaults instantiates a new AssetsJSON object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewAssetsResponseWithDefaults() *AssetsResponse {
-	this := AssetsResponse{}
+func NewAssetsJSONWithDefaults() *AssetsJSON {
+	this := AssetsJSON{}
 	return &this
 }
 
 // GetBaseTokens returns the BaseTokens field value
-func (o *AssetsResponse) GetBaseTokens() string {
+func (o *AssetsJSON) GetBaseTokens() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -55,7 +57,7 @@ func (o *AssetsResponse) GetBaseTokens() string {
 
 // GetBaseTokensOk returns a tuple with the BaseTokens field value
 // and a boolean to check if the value has been set.
-func (o *AssetsResponse) GetBaseTokensOk() (*string, bool) {
+func (o *AssetsJSON) GetBaseTokensOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -63,12 +65,12 @@ func (o *AssetsResponse) GetBaseTokensOk() (*string, bool) {
 }
 
 // SetBaseTokens sets field value
-func (o *AssetsResponse) SetBaseTokens(v string) {
+func (o *AssetsJSON) SetBaseTokens(v string) {
 	o.BaseTokens = v
 }
 
 // GetNativeTokens returns the NativeTokens field value
-func (o *AssetsResponse) GetNativeTokens() []NativeTokenJSON {
+func (o *AssetsJSON) GetNativeTokens() []NativeTokenJSON {
 	if o == nil {
 		var ret []NativeTokenJSON
 		return ret
@@ -79,7 +81,7 @@ func (o *AssetsResponse) GetNativeTokens() []NativeTokenJSON {
 
 // GetNativeTokensOk returns a tuple with the NativeTokens field value
 // and a boolean to check if the value has been set.
-func (o *AssetsResponse) GetNativeTokensOk() ([]NativeTokenJSON, bool) {
+func (o *AssetsJSON) GetNativeTokensOk() ([]NativeTokenJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -87,11 +89,35 @@ func (o *AssetsResponse) GetNativeTokensOk() ([]NativeTokenJSON, bool) {
 }
 
 // SetNativeTokens sets field value
-func (o *AssetsResponse) SetNativeTokens(v []NativeTokenJSON) {
+func (o *AssetsJSON) SetNativeTokens(v []NativeTokenJSON) {
 	o.NativeTokens = v
 }
 
-func (o AssetsResponse) MarshalJSON() ([]byte, error) {
+// GetNfts returns the Nfts field value
+func (o *AssetsJSON) GetNfts() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.Nfts
+}
+
+// GetNftsOk returns a tuple with the Nfts field value
+// and a boolean to check if the value has been set.
+func (o *AssetsJSON) GetNftsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Nfts, true
+}
+
+// SetNfts sets field value
+func (o *AssetsJSON) SetNfts(v []string) {
+	o.Nfts = v
+}
+
+func (o AssetsJSON) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -99,45 +125,46 @@ func (o AssetsResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o AssetsResponse) ToMap() (map[string]interface{}, error) {
+func (o AssetsJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["baseTokens"] = o.BaseTokens
 	toSerialize["nativeTokens"] = o.NativeTokens
+	toSerialize["nfts"] = o.Nfts
 	return toSerialize, nil
 }
 
-type NullableAssetsResponse struct {
-	value *AssetsResponse
+type NullableAssetsJSON struct {
+	value *AssetsJSON
 	isSet bool
 }
 
-func (v NullableAssetsResponse) Get() *AssetsResponse {
+func (v NullableAssetsJSON) Get() *AssetsJSON {
 	return v.value
 }
 
-func (v *NullableAssetsResponse) Set(val *AssetsResponse) {
+func (v *NullableAssetsJSON) Set(val *AssetsJSON) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableAssetsResponse) IsSet() bool {
+func (v NullableAssetsJSON) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableAssetsResponse) Unset() {
+func (v *NullableAssetsJSON) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableAssetsResponse(val *AssetsResponse) *NullableAssetsResponse {
-	return &NullableAssetsResponse{value: val, isSet: true}
+func NewNullableAssetsJSON(val *AssetsJSON) *NullableAssetsJSON {
+	return &NullableAssetsJSON{value: val, isSet: true}
 }
 
-func (v NullableAssetsResponse) MarshalJSON() ([]byte, error) {
+func (v NullableAssetsJSON) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableAssetsResponse) UnmarshalJSON(src []byte) error {
+func (v *NullableAssetsJSON) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
