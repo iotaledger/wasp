@@ -47,11 +47,6 @@ type stateManagerGPA struct {
 
 var _ gpa.GPA = &stateManagerGPA{}
 
-const (
-	numberOfNodesToRequestBlockFromConst = 5
-	statusLogPeriodConst                 = 10 * time.Second
-)
-
 func New(
 	chainID isc.ChainID,
 	loadedSnapshotStateIndex uint32,
@@ -548,7 +543,7 @@ func (smT *stateManagerGPA) markFetched(fetcher blockFetcher, doCommit bool) gpa
 
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
 func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Commitment) gpa.OutMessages {
-	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(numberOfNodesToRequestBlockFromConst)
+	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(smT.parameters.StateManagerGetBlockNodeCount)
 	response := gpa.NoMessages()
 	for _, nodeID := range nodeIDs {
 		response.Add(sm_messages.NewGetBlockMessage(commitment, nodeID))
@@ -559,7 +554,7 @@ func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Comm
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
 	start := time.Now()
 	result := gpa.NoMessages()
-	nextStatusLogTime := smT.lastStatusLogTime.Add(statusLogPeriodConst)
+	nextStatusLogTime := smT.lastStatusLogTime.Add(smT.parameters.StateManagerStatusLogPeriod)
 	if now.After(nextStatusLogTime) {
 		smT.log.Debugf("State manager gpa status: %s", smT.StatusString())
 		smT.lastStatusLogTime = now

@@ -61,8 +61,10 @@ type Chains struct {
 	smBlockCacheMaxSize                 int
 	smBlockCacheBlocksInCacheDuration   time.Duration
 	smBlockCacheBlockCleaningPeriod     time.Duration
+	smStateManagerGetBlockNodeCount     int
 	smStateManagerGetBlockRetry         time.Duration
 	smStateManagerRequestCleaningPeriod time.Duration
+	smStateManagerStatusLogPeriod       time.Duration
 	smStateManagerTimerTickPeriod       time.Duration
 	smPruningMinStatesToKeep            int
 	smPruningMaxStatesToDelete          int
@@ -117,8 +119,10 @@ func New(
 	smBlockCacheMaxSize int,
 	smBlockCacheBlocksInCacheDuration time.Duration,
 	smBlockCacheBlockCleaningPeriod time.Duration,
+	smStateManagerGetBlockNodeCount int,
 	smStateManagerGetBlockRetry time.Duration,
 	smStateManagerRequestCleaningPeriod time.Duration,
+	smStateManagerStatusLogPeriod time.Duration,
 	smStateManagerTimerTickPeriod time.Duration,
 	smPruningMinStatesToKeep int,
 	smPruningMaxStatesToDelete int,
@@ -167,8 +171,10 @@ func New(
 		smBlockCacheMaxSize:                 smBlockCacheMaxSize,
 		smBlockCacheBlocksInCacheDuration:   smBlockCacheBlocksInCacheDuration,
 		smBlockCacheBlockCleaningPeriod:     smBlockCacheBlockCleaningPeriod,
+		smStateManagerGetBlockNodeCount:     smStateManagerGetBlockNodeCount,
 		smStateManagerGetBlockRetry:         smStateManagerGetBlockRetry,
 		smStateManagerRequestCleaningPeriod: smStateManagerRequestCleaningPeriod,
+		smStateManagerStatusLogPeriod:       smStateManagerStatusLogPeriod,
 		smStateManagerTimerTickPeriod:       smStateManagerTimerTickPeriod,
 		smPruningMinStatesToKeep:            smPruningMinStatesToKeep,
 		smPruningMaxStatesToDelete:          smPruningMaxStatesToDelete,
@@ -349,8 +355,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
 	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
 	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
+	stateManagerParameters.StateManagerGetBlockNodeCount = c.smStateManagerGetBlockNodeCount
 	stateManagerParameters.StateManagerGetBlockRetry = c.smStateManagerGetBlockRetry
 	stateManagerParameters.StateManagerRequestCleaningPeriod = c.smStateManagerRequestCleaningPeriod
+	stateManagerParameters.StateManagerStatusLogPeriod = c.smStateManagerStatusLogPeriod
 	stateManagerParameters.StateManagerTimerTickPeriod = c.smStateManagerTimerTickPeriod
 	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete

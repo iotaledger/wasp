@@ -36,8 +36,10 @@ type ParametersStateManager struct {
 	BlockCacheMaxSize                 int           `default:"1000" usage:"how many blocks may be stored in cache before old ones start being deleted"`
 	BlockCacheBlocksInCacheDuration   time.Duration `default:"1h" usage:"how long should the block stay in block cache before being deleted"`
 	BlockCacheBlockCleaningPeriod     time.Duration `default:"1m" usage:"how often should the block cache be cleaned"`
+	StateManagerGetBlockNodeCount     int           `default:"5" usage:"how many nodes should get block request be sent to"`
 	StateManagerGetBlockRetry         time.Duration `default:"3s" usage:"how often get block requests should be repeated"`
 	StateManagerRequestCleaningPeriod time.Duration `default:"5m" usage:"how often requests waiting for response should be checked for expired context"`
+	StateManagerStatusLogPeriod       time.Duration `default:"1m" usage:"how often state manager status information should be written to log"`
 	StateManagerTimerTickPeriod       time.Duration `default:"1s" usage:"how often timer tick fires in state manager"`
 	PruningMinStatesToKeep            int           `default:"10000" usage:"this number of states will always be available in the store; if 0 - store pruning is disabled"`
 	PruningMaxStatesToDelete          int           `default:"10" usage:"on single store pruning attempt at most this number of states will be deleted; NOTE: pruning takes considerable amount of time; setting this parameter large may seriously damage Wasp responsiveness if many blocks require pruning"`
