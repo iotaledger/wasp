@@ -38,10 +38,11 @@ func L1Commitment(v isc.SchemaVersion, initParams dict.Dict, originDeposit uint6
 }
 
 const (
-	ParamEVMChainID      = "a"
-	ParamBlockKeepAmount = "b"
-	ParamChainOwner      = "c"
-	ParamWaspVersion     = "d"
+	ParamEVMChainID               = "a"
+	ParamBlockKeepAmount          = "b"
+	ParamChainOwner               = "c"
+	ParamWaspVersion              = "d"
+	ParamDeployBaseTokenMagicWrap = "m"
 )
 
 func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, originDeposit uint64) state.Block {
@@ -59,6 +60,7 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 	evmChainID := codec.MustDecodeUint16(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
 	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamBlockKeepAmount), governance.DefaultBlockKeepAmount)
 	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
+	deployMagicWrap := codec.MustDecodeBool(initParams.Get(ParamDeployBaseTokenMagicWrap), false)
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(v, contractState(root.Contract))
@@ -67,7 +69,7 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 	blocklog.SetInitialState(contractState(blocklog.Contract))
 	errors.SetInitialState(contractState(errors.Contract))
 	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
-	evmimpl.SetInitialState(contractState(evm.Contract), evmChainID)
+	evmimpl.SetInitialState(contractState(evm.Contract), evmChainID, deployMagicWrap)
 
 	block := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {

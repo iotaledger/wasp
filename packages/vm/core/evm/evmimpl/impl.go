@@ -50,7 +50,7 @@ var Processor = evm.Contract.Processor(nil,
 
 // SetInitialState initializes the evm core contract and the Ethereum genesis
 // block on a newly created ISC chain.
-func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseTokenMagicWrap bool) {
 	// Ethereum genesis block configuration
 	genesisAlloc := core.GenesisAlloc{}
 
@@ -64,13 +64,15 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 		Balance: nil,
 	}
 
-	// add the ERC20BaseTokens contract at address 0x10740100...00
-	genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
-		Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
-		Storage: map[common.Hash]common.Hash{},
-		Balance: nil,
+	if createBaseTokenMagicWrap {
+		// add the ERC20BaseTokens contract at address 0x10740100...00
+		genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
+			Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
+			Storage: map[common.Hash]common.Hash{},
+			Balance: nil,
+		}
+		addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 	}
-	addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 
 	// add the ERC721NFTs contract at address 0x10740300...00
 	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{

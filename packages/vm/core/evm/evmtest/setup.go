@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -45,7 +46,7 @@ type ethCallOptions struct {
 	gasPrice *big.Int
 }
 
-func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
+func InitEVM(t testing.TB, deployMagicWrap bool, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustStorageDeposit: true,
 		Debug:                    true,
@@ -55,11 +56,11 @@ func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *Solo
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
-	return InitEVMWithSolo(t, env)
+	return InitEVMWithSolo(t, env, deployMagicWrap)
 }
 
-func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
-	soloChain, _ := env.NewChainExt(nil, 0, "evmchain")
+func InitEVMWithSolo(t testing.TB, env *solo.Solo, deployMagicWrap bool) *SoloChainEnv {
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", dict.Dict{origin.ParamDeployBaseTokenMagicWrap: codec.Encode(deployMagicWrap)})
 	return &SoloChainEnv{
 		t:          t,
 		solo:       env,

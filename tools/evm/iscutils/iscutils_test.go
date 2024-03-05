@@ -15,7 +15,7 @@ import (
 )
 
 func TestPRNGLibrary(t *testing.T) {
-	env := evmtest.InitEVM(t)
+	env := evmtest.InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	prngTest := env.DeployContract(ethKey, PRNGTestContractABI, PRNGTestContractBytecode)
