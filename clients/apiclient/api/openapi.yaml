@@ -609,7 +609,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NFTDataResponse'
+                $ref: '#/components/schemas/NFTJSON'
           description: The NFT data
         "401":
           content:
@@ -1584,11 +1584,17 @@ paths:
           type: string
       responses:
         "200":
-          content: {}
-          description: binary data of request in the mempool
+          content:
+            application/octet-stream:
+              schema:
+                items:
+                  format: int32
+                  type: integer
+                type: array
+          description: stream of JSON representation of the requests in the mempool
         "401":
           content:
-            application/json:
+            application/octet-stream:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
@@ -2450,7 +2456,7 @@ components:
       type: object
       xml:
         name: AliasOutputMetricItem
-    Assets:
+    AssetsJSON:
       example:
         nfts:
         - nfts
@@ -2470,7 +2476,7 @@ components:
             name: BaseTokens
         nativeTokens:
           items:
-            $ref: '#/components/schemas/NativeToken'
+            $ref: '#/components/schemas/NativeTokenJSON'
           type: array
           xml:
             name: NativeTokens
@@ -2489,7 +2495,7 @@ components:
       - nfts
       type: object
       xml:
-        name: Assets
+        name: AssetsJSON
     AssetsResponse:
       example:
         baseTokens: baseTokens
@@ -2507,7 +2513,7 @@ components:
             name: BaseTokens
         nativeTokens:
           items:
-            $ref: '#/components/schemas/NativeToken'
+            $ref: '#/components/schemas/NativeTokenJSON'
           type: array
           xml:
             name: NativeTokens
@@ -2764,7 +2770,7 @@ components:
       type: object
       xml:
         name: BurnRecord
-    CallTarget:
+    CallTargetJSON:
       example:
         contractHName: contractHName
         functionHName: functionHName
@@ -2786,7 +2792,7 @@ components:
       - functionHName
       type: object
       xml:
-        name: CallTarget
+        name: CallTargetJSON
     ChainInfoResponse:
       example:
         chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
@@ -2797,18 +2803,18 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
-            a: 1
-            b: 100
-          validatorFeeShare: 0
+            a: 0
+            b: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 1
             b: 1
@@ -3598,7 +3604,14 @@ components:
     EstimateGasRequestOffledger:
       example:
         requestBytes: requestBytes
+        fromAddress: fromAddress
       properties:
+        fromAddress:
+          description: The address to estimate gas for(Hex)
+          format: string
+          type: string
+          xml:
+            name: FromAddress
         requestBytes:
           description: Offledger Request (Hex)
           format: string
@@ -3606,6 +3619,7 @@ components:
           xml:
             name: Request
       required:
+      - fromAddress
       - requestBytes
       type: object
       xml:
@@ -3692,9 +3706,9 @@ components:
     FeePolicy:
       example:
         gasPerToken:
-          a: 1
-          b: 100
-        validatorFeeShare: 0
+          a: 0
+          b: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 1
           b: 1
@@ -3721,15 +3735,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 1
+        validatorFeeShare: 0
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32_'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3795,17 +3809,17 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 7
+          maxGasPerBlock: 5
+          maxGasPerRequest: 2
         chainID: chainID
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 0
           evmGasRatio:
             a: 0
             b: 0
@@ -4218,10 +4232,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 6
-        minGasPerRequest: 5
-        maxGasPerBlock: 1
-        maxGasPerRequest: 5
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 7
+        maxGasPerBlock: 5
+        maxGasPerRequest: 2
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4355,7 +4369,7 @@ components:
       type: object
       xml:
         name: MilestoneMetricItem
-    NFTDataResponse:
+    NFTJSON:
       example:
         owner: owner
         metadata: metadata
@@ -4389,28 +4403,7 @@ components:
       - owner
       type: object
       xml:
-        name: NFTDataResponse
-    NativeToken:
-      example:
-        amount: amount
-        id: id
-      properties:
-        amount:
-          format: string
-          type: string
-          xml:
-            name: Amount
-        id:
-          format: string
-          type: string
-          xml:
-            name: ID
-      required:
-      - amount
-      - id
-      type: object
-      xml:
-        name: NativeToken
+        name: NFTJSON
     NativeTokenIDRegistryResponse:
       example:
         nativeTokenRegistryIds:
@@ -4430,6 +4423,27 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
+    NativeTokenJSON:
+      example:
+        amount: amount
+        id: id
+      properties:
+        amount:
+          format: string
+          type: string
+          xml:
+            name: Amount
+        id:
+          format: string
+          type: string
+          xml:
+            name: ID
+      required:
+      - amount
+      - id
+      type: object
+      xml:
+        name: NativeTokenJSON
     NodeMessageMetrics:
       example:
         outPublishGovernanceTransaction:
@@ -5106,31 +5120,6 @@ components:
         name: Ratio32
     Ratio32_:
       example:
-        a: 1
-        b: 100
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 100
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
-      example:
         a: 0
         b: 0
       properties:
@@ -5252,7 +5241,7 @@ components:
         rawError:
           $ref: '#/components/schemas/UnresolvedVMErrorJSON'
         request:
-          $ref: '#/components/schemas/RequestDetail'
+          $ref: '#/components/schemas/RequestJSON'
         requestIndex:
           format: int32
           minimum: 1
@@ -5312,7 +5301,26 @@ components:
       type: object
       xml:
         name: RentStructure
-    RequestDetail:
+    RequestIDsResponse:
+      example:
+        requestIds:
+        - requestIds
+        - requestIds
+      properties:
+        requestIds:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: RequestIDs
+            wrapped: true
+      required:
+      - requestIds
+      type: object
+      xml:
+        name: RequestIDsResponse
+    RequestJSON:
       example:
         fungibleTokens:
           nfts:
@@ -5356,11 +5364,11 @@ components:
         isEVM: true
       properties:
         allowance:
-          $ref: '#/components/schemas/Assets'
+          $ref: '#/components/schemas/AssetsJSON'
         callTarget:
-          $ref: '#/components/schemas/CallTarget'
+          $ref: '#/components/schemas/CallTargetJSON'
         fungibleTokens:
-          $ref: '#/components/schemas/Assets'
+          $ref: '#/components/schemas/AssetsJSON'
         gasBudget:
           description: The gas budget (uint64 as string)
           format: string
@@ -5378,7 +5386,7 @@ components:
           xml:
             name: IsOffLedger
         nft:
-          $ref: '#/components/schemas/NFTDataResponse'
+          $ref: '#/components/schemas/NFTJSON'
         params:
           $ref: '#/components/schemas/JSONDict'
         requestId:
@@ -5410,26 +5418,7 @@ components:
       - targetAddress
       type: object
       xml:
-        name: RequestDetail
-    RequestIDsResponse:
-      example:
-        requestIds:
-        - requestIds
-        - requestIds
-      properties:
-        requestIds:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RequestIDs
-            wrapped: true
-      required:
-      - requestIds
-      type: object
-      xml:
-        name: RequestIDsResponse
+        name: RequestJSON
     RequestProcessedResponse:
       example:
         chainId: chainId

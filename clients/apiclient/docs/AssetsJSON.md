@@ -1,4 +1,4 @@
-# AssetsResponse
+# AssetsJSON
 
 ## Properties
 
@@ -6,64 +6,85 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BaseTokens** | **string** | The base tokens (uint64 as string) | 
 **NativeTokens** | [**[]NativeTokenJSON**](NativeTokenJSON.md) |  | 
+**Nfts** | **[]string** |  | 
 
 ## Methods
 
-### NewAssetsResponse
+### NewAssetsJSON
 
-`func NewAssetsResponse(baseTokens string, nativeTokens []NativeTokenJSON, ) *AssetsResponse`
+`func NewAssetsJSON(baseTokens string, nativeTokens []NativeTokenJSON, nfts []string, ) *AssetsJSON`
 
-NewAssetsResponse instantiates a new AssetsResponse object
+NewAssetsJSON instantiates a new AssetsJSON object
 This constructor will assign default values to properties that have it defined,
 and makes sure properties required by API are set, but the set of arguments
 will change when the set of required properties is changed
 
-### NewAssetsResponseWithDefaults
+### NewAssetsJSONWithDefaults
 
-`func NewAssetsResponseWithDefaults() *AssetsResponse`
+`func NewAssetsJSONWithDefaults() *AssetsJSON`
 
-NewAssetsResponseWithDefaults instantiates a new AssetsResponse object
+NewAssetsJSONWithDefaults instantiates a new AssetsJSON object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
 ### GetBaseTokens
 
-`func (o *AssetsResponse) GetBaseTokens() string`
+`func (o *AssetsJSON) GetBaseTokens() string`
 
 GetBaseTokens returns the BaseTokens field if non-nil, zero value otherwise.
 
 ### GetBaseTokensOk
 
-`func (o *AssetsResponse) GetBaseTokensOk() (*string, bool)`
+`func (o *AssetsJSON) GetBaseTokensOk() (*string, bool)`
 
 GetBaseTokensOk returns a tuple with the BaseTokens field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetBaseTokens
 
-`func (o *AssetsResponse) SetBaseTokens(v string)`
+`func (o *AssetsJSON) SetBaseTokens(v string)`
 
 SetBaseTokens sets BaseTokens field to given value.
 
 
 ### GetNativeTokens
 
-`func (o *AssetsResponse) GetNativeTokens() []NativeTokenJSON`
+`func (o *AssetsJSON) GetNativeTokens() []NativeTokenJSON`
 
 GetNativeTokens returns the NativeTokens field if non-nil, zero value otherwise.
 
 ### GetNativeTokensOk
 
-`func (o *AssetsResponse) GetNativeTokensOk() (*[]NativeTokenJSON, bool)`
+`func (o *AssetsJSON) GetNativeTokensOk() (*[]NativeTokenJSON, bool)`
 
 GetNativeTokensOk returns a tuple with the NativeTokens field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNativeTokens
 
-`func (o *AssetsResponse) SetNativeTokens(v []NativeTokenJSON)`
+`func (o *AssetsJSON) SetNativeTokens(v []NativeTokenJSON)`
 
 SetNativeTokens sets NativeTokens field to given value.
+
+
+### GetNfts
+
+`func (o *AssetsJSON) GetNfts() []string`
+
+GetNfts returns the Nfts field if non-nil, zero value otherwise.
+
+### GetNftsOk
+
+`func (o *AssetsJSON) GetNftsOk() (*[]string, bool)`
+
+GetNftsOk returns a tuple with the Nfts field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetNfts
+
+`func (o *AssetsJSON) SetNfts(v []string)`
+
+SetNfts sets Nfts field to given value.
 
 
 

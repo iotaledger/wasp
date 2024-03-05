@@ -31,6 +31,10 @@ func KeyPairFromPrivateKey(privateKey *PrivateKey) *KeyPair {
 	}
 }
 
+func (k *KeyPair) IsNil() bool {
+	return k == nil
+}
+
 func (k *KeyPair) IsValid() bool {
 	return k.privateKey.isValid()
 }

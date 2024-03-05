@@ -81,6 +81,10 @@ type UnsignedOffLedgerRequest interface {
 	Sign(key cryptolib.VariantKeyPair) OffLedgerRequest
 }
 
+type ImpersonatedOffLedgerRequest interface {
+	WithSenderAddress(senderAddress *iotago.Ed25519Address) OffLedgerRequest
+}
+
 type OffLedgerRequest interface {
 	Request
 	ChainID() ChainID

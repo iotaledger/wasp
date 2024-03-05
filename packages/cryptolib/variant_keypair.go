@@ -6,6 +6,9 @@ import (
 
 // VariantKeyPair originates from cryptolib.KeyPair
 type VariantKeyPair interface {
+	// IsNil is a mandatory nil check. This includes the referenced keypair implementation pointer. `kp == nil` is not enough.
+	IsNil() bool
+
 	GetPublicKey() *PublicKey
 	Address() *iotago.Ed25519Address
 	AsAddressSigner() iotago.AddressSigner

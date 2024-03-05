@@ -244,7 +244,7 @@ func toFoundrySN(foundry interface{}) uint32 {
 	panic(fmt.Sprintf("toFoundrySN: type %T not supported", foundry))
 }
 
-func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
+func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.VariantKeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryDestroy.Name,
 		accounts.ParamFoundrySN, sn).
 		WithGasBudget(DestroyFoundryGasBudgetBaseTokens)
@@ -252,7 +252,7 @@ func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
 	return err
 }
 
-func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) MintTokens(foundry, amount interface{}, user cryptolib.VariantKeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
@@ -275,7 +275,7 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 }
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
-func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount interface{}, user cryptolib.VariantKeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
@@ -297,7 +297,7 @@ func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount in
 }
 
 // DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
-func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount interface{}, user cryptolib.VariantKeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
@@ -313,7 +313,7 @@ func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount in
 }
 
 // DepositAssetsToL2 deposits ftokens on user's on-chain account, if user is nil, then chain owner is assigned
-func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user *cryptolib.KeyPair) error {
+func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user cryptolib.VariantKeyPair) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 			WithFungibleTokens(assets).
@@ -327,7 +327,7 @@ func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user *cryptolib.KeyPair) 
 func (ch *Chain) TransferAllowanceTo(
 	allowance *isc.Assets,
 	targetAccount isc.AgentID,
-	wallet *cryptolib.KeyPair,
+	wallet cryptolib.VariantKeyPair,
 	nft ...*isc.NFT,
 ) error {
 	callParams := NewCallParams(
@@ -347,16 +347,16 @@ func (ch *Chain) TransferAllowanceTo(
 }
 
 // DepositBaseTokensToL2 deposits ftokens on user's on-chain account
-func (ch *Chain) DepositBaseTokensToL2(amount uint64, user *cryptolib.KeyPair) error {
+func (ch *Chain) DepositBaseTokensToL2(amount uint64, user cryptolib.VariantKeyPair) error {
 	return ch.DepositAssetsToL2(isc.NewAssets(amount, nil), user)
 }
 
-func (ch *Chain) MustDepositBaseTokensToL2(amount uint64, user *cryptolib.KeyPair) {
+func (ch *Chain) MustDepositBaseTokensToL2(amount uint64, user cryptolib.VariantKeyPair) {
 	err := ch.DepositBaseTokensToL2(amount, user)
 	require.NoError(ch.Env.T, err)
 }
 
-func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPair) error {
+func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.VariantKeyPair) error {
 	return ch.TransferAllowanceTo(
 		isc.NewEmptyAssets().AddNFTs(nft.ID),
 		to,
@@ -365,13 +365,13 @@ func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPa
 	)
 }
 
-func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPair) {
+func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.VariantKeyPair) {
 	err := ch.DepositNFT(nft, to, owner)
 	require.NoError(ch.Env.T, err)
 }
 
 // Withdraw sends assets from the L2 account to L1
-func (ch *Chain) Withdraw(assets *isc.Assets, user *cryptolib.KeyPair) error {
+func (ch *Chain) Withdraw(assets *isc.Assets, user cryptolib.VariantKeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		AddAllowance(assets).
 		WithGasBudget(math.MaxUint64)
@@ -384,7 +384,7 @@ func (ch *Chain) Withdraw(assets *isc.Assets, user *cryptolib.KeyPair) error {
 
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
-func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Assets, target isc.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Assets, target isc.AgentID, user cryptolib.VariantKeyPair) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddBaseTokens(totalBaseTokens)
 	_, err := ch.PostRequestSync(
@@ -399,12 +399,12 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Asset
 	return err
 }
 
-func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend uint64, target isc.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend uint64, target isc.AgentID, user cryptolib.VariantKeyPair) error {
 	return ch.SendFromL1ToL2Account(totalBaseTokens, isc.NewAssetsBaseTokens(baseTokensSend), target, user)
 }
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
-func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID, user cryptolib.VariantKeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, target,
 	)
@@ -416,11 +416,11 @@ func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID,
 	return err
 }
 
-func (ch *Chain) SendFromL2ToL2AccountBaseTokens(baseTokens uint64, target isc.AgentID, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL2ToL2AccountBaseTokens(baseTokens uint64, target isc.AgentID, user cryptolib.VariantKeyPair) error {
 	return ch.SendFromL2ToL2Account(isc.NewAssetsBaseTokens(baseTokens), target, user)
 }
 
-func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount interface{}, user cryptolib.VariantKeyPair) error {
 	transfer := isc.NewEmptyAssets()
 	transfer.AddNativeTokens(id, amount)
 	return ch.SendFromL2ToL2Account(transfer, target, user)

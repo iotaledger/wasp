@@ -244,7 +244,6 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 			reqctx.updateOffLedgerRequestNonce()
 		}
 	})
-
 	if err != nil {
 		rollback()
 		callErrStr := ""

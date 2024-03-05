@@ -8,7 +8,7 @@ import (
 
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
 func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID isc.AgentID) error {
-	if keyPair == nil {
+	if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
 	}
 
@@ -19,7 +19,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgent
 
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
 func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID isc.AgentID) error {
-	if keyPair == nil {
+	if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
 	}
 

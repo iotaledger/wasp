@@ -281,6 +281,7 @@ let body:.ChainsApiEstimateGasOffledgerRequest = {
   chainID: "chainID_example",
   // EstimateGasRequestOffledger | Request
   request: {
+    fromAddress: "fromAddress_example",
     requestBytes: "requestBytes_example",
   },
 };

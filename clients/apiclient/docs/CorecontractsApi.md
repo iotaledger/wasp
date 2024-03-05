@@ -473,7 +473,7 @@ No authorization required
 
 ## AccountsGetNFTData
 
-> NFTDataResponse AccountsGetNFTData(ctx, chainID, nftID).Block(block).Execute()
+> NFTJSON AccountsGetNFTData(ctx, chainID, nftID).Block(block).Execute()
 
 Get the NFT data by an ID
 
@@ -501,7 +501,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetNFTData``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `AccountsGetNFTData`: NFTDataResponse
+    // response from `AccountsGetNFTData`: NFTJSON
     fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetNFTData`: %v\n", resp)
 }
 ```
@@ -528,7 +528,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**NFTDataResponse**](NFTDataResponse.md)
+[**NFTJSON**](NFTJSON.md)
 
 ### Authorization
 

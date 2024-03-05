@@ -175,10 +175,23 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 	).WithAllowance(isc.NewAssetsBaseTokens(5000)).
 		WithSender(keyPair.GetPublicKey())
 
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
+	// Test that the API will fail if the FromAddress is missing
+	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOffledger{
 		RequestBytes: iotago.EncodeHex(estimationReq.Bytes()),
+	}).Execute()
+	require.Error(t, err)
+	require.Nil(t, estimatedReceiptFail)
+	///
+
+	requestHex := iotago.EncodeHex(estimationReq.Bytes())
+
+	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
+		env.Chain.ChainID.String(),
+	).Request(apiclient.EstimateGasRequestOffledger{
+		FromAddress:  keyPair.Address().String(),
+		RequestBytes: requestHex,
 	}).Execute()
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)

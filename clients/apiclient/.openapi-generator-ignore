@@ -26,3 +26,4 @@ README.md
 generate_client.sh
 go.mod
 test
+tests

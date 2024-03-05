@@ -786,7 +786,7 @@ func (r ApiAccountsGetNFTDataRequest) Block(block string) ApiAccountsGetNFTDataR
 	return r
 }
 
-func (r ApiAccountsGetNFTDataRequest) Execute() (*NFTDataResponse, *http.Response, error) {
+func (r ApiAccountsGetNFTDataRequest) Execute() (*NFTJSON, *http.Response, error) {
 	return r.ApiService.AccountsGetNFTDataExecute(r)
 }
 
@@ -808,13 +808,13 @@ func (a *CorecontractsApiService) AccountsGetNFTData(ctx context.Context, chainI
 }
 
 // Execute executes the request
-//  @return NFTDataResponse
-func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTDataRequest) (*NFTDataResponse, *http.Response, error) {
+//  @return NFTJSON
+func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTDataRequest) (*NFTJSON, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *NFTDataResponse
+		localVarReturnValue  *NFTJSON
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetNFTData")
