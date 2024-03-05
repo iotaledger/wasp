@@ -239,7 +239,6 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode isc.Hname, param
 	err = panicutil.CatchAllButDBError(func() {
 		ret = ctx.initAndCallView(targetContract, epCode, params)
 	}, ctx.log, "CallViewExternal: ")
-
 	if err != nil {
 		ret = nil
 	}
@@ -251,7 +250,6 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie.MerkleProof, err e
 	err = panicutil.CatchAllButDBError(func() {
 		ret = ctx.stateReader.GetMerkleProof(key)
 	}, ctx.log, "GetMerkleProof: ")
-
 	if err != nil {
 		ret = nil
 	}
