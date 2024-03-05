@@ -201,6 +201,16 @@ func (r *CallParams) NewRequestOffLedgerUnsigned(ch *Chain, keyPair cryptolib.Va
 	return ret.(isc.OffLedgerRequest)
 }
 
+func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *iotago.Ed25519Address) isc.OffLedgerRequest {
+	if r.nonce == 0 {
+		r.nonce = ch.Nonce(isc.NewAgentID(address))
+	}
+	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
+		WithAllowance(r.allowance)
+
+	return isc.NewImpersonatedOffLedgerRequest(ret.(isc.OffLedgerRequest)).WithSenderAddress(address)
+}
+
 func parseParams(params []interface{}) dict.Dict {
 	if len(params) == 1 {
 		return params[0].(dict.Dict)
@@ -407,13 +417,12 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.VariantK
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-// TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.VariantKeyPair) (dict.Dict, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
 	if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	r := reqCopy.NewRequestOffLedgerUnsigned(ch, keyPair)
+	r := reqCopy.NewRequestImpersonatedOffLedger(ch, keyPair.Address())
 	res := ch.estimateGas(r)
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
