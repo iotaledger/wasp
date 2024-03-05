@@ -23,18 +23,13 @@ func TestOffLedger(t *testing.T) {
 	// create a wallet with some base tokens on L1:
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(0))
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
-
-	// the wallet can we identified on L2 by an AgentID:
-	userAgentID := isc.NewAgentID(userAddress)
-	// for now our on-chain account is empty:
-	chain.AssertL2BaseTokens(userAgentID, 0)
+	chain.DepositBaseTokensToL2(env.L1BaseTokens(userAddress), userWallet)
 
 	req := isc.NewOffLedgerRequest(chain.ID(), accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil, 0, math.MaxUint64)
-	req.WithSenderAddress(userWallet.Address())
+	altReq := isc.NewImpersonatedOffLedgerRequest(req.(isc.OffLedgerRequest)).
+		WithSenderAddress(userWallet.Address())
 
-	r := req.(isc.OffLedgerRequest)
-
-	rec, err := common.EstimateGas(chain, r)
+	rec, err := common.EstimateGas(chain, altReq)
 
 	require.NoError(t, err)
 	require.NotNil(t, rec)

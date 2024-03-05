@@ -43,24 +43,6 @@ func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequ
 	return req, nil
 }
 
-func (c *OffLedgerService) ParseRequestUnsigned(binaryRequest []byte) (isc.UnsignedOffLedgerRequest, error) {
-	// check offledger kind (avoid deserialization otherwise)
-	if !isc.IsOffledgerKind(binaryRequest[0]) {
-		return nil, errors.New("error parsing request: off-ledger request expected")
-	}
-	request, err := isc.RequestFromBytes(binaryRequest)
-	if err != nil {
-		return nil, errors.New("error parsing request from payload")
-	}
-
-	req, ok := request.(isc.UnsignedOffLedgerRequest)
-	if !ok {
-		return nil, errors.New("error parsing request: off-ledger request expected")
-	}
-
-	return req, nil
-}
-
 func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRequest []byte) error {
 	request, err := c.ParseRequest(binaryRequest)
 	if err != nil {

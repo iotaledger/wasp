@@ -14,6 +14,10 @@ import { HttpFile } from '../http/http';
 
 export class EstimateGasRequestOffledger {
     /**
+    * The address to estimate gas for(Hex)
+    */
+    'fromAddress': string;
+    /**
     * Offledger Request (Hex)
     */
     'requestBytes': string;
@@ -21,6 +25,12 @@ export class EstimateGasRequestOffledger {
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "fromAddress",
+            "baseName": "fromAddress",
+            "type": "string",
+            "format": "string"
+        },
         {
             "name": "requestBytes",
             "baseName": "requestBytes",

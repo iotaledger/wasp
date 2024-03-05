@@ -85,7 +85,6 @@ type PeeringService interface {
 type OffLedgerService interface {
 	EnqueueOffLedgerRequest(chainID isc.ChainID, request []byte) error
 	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
-	ParseRequestUnsigned(payload []byte) (isc.UnsignedOffLedgerRequest, error)
 }
 
 type UserService interface {

@@ -23,5 +23,6 @@ type EstimateGasRequestOnledger struct {
 }
 
 type EstimateGasRequestOffledger struct {
-	Request string `json:"requestBytes" swagger:"desc(Offledger Request (Hex)),required"`
+	Request     string `json:"requestBytes" swagger:"desc(Offledger Request (Hex)),required"`
+	FromAddress string `json:"fromAddress" swagger:"desc(The address to estimate gas for(Hex)),required"`
 }
