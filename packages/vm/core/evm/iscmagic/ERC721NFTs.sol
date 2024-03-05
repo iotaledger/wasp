@@ -19,16 +19,39 @@ contract ERC721NFTs {
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
+    /**
+     * @dev Emitted when a token is transferred from one address to another.
+     * 
+     * @param from The address transferring the token.
+     * @param to The address receiving the token.
+     * @param tokenId The ID of the token being transferred.
+     */
     event Transfer(
         address indexed from,
         address indexed to,
         uint256 indexed tokenId
     );
+
+    /**
+     * @dev Emitted when the approval of a token is changed or reaffirmed.
+     * 
+     * @param owner The owner of the token.
+     * @param approved The new approved address.
+     * @param tokenId The ID of the token.
+     */
     event Approval(
         address indexed owner,
         address indexed approved,
         uint256 indexed tokenId
     );
+
+    /**
+     * @dev Emitted when an operator is enabled or disabled for an owner.
+     * 
+     * @param owner The owner of the tokens.
+     * @param operator The operator to enable or disable as an operator.
+     * @param approved True if the operator is enabled, false if the operator is disabled.
+     */
     event ApprovalForAll(
         address indexed owner,
         address indexed operator,
@@ -49,11 +72,21 @@ contract ERC721NFTs {
         return true;
     }
 
+    /**
+     * @dev Returns the number of tokens owned by a specific address.
+     * @param owner The address to query the balance of.
+     * @return The balance of the specified address.
+     */
     function balanceOf(address owner) public view returns (uint256) {
         ISCChainID chainID = __iscSandbox.getChainID();
         return _balanceOf(ISCTypes.newEthereumAgentID(owner, chainID));
     }
 
+    /**
+     * @dev Returns the owner of the specified token ID.
+     * @param tokenId The ID of the token to query the owner for.
+     * @return The address of the owner of the token.
+     */
     function ownerOf(uint256 tokenId) public view returns (address) {
         ISCNFT memory nft = __iscSandbox.getNFTData(tokenId.asNFTID());
         require(nft.owner.isEthereum());
@@ -61,6 +94,23 @@ contract ERC721NFTs {
         return nft.owner.ethAddress();
     }
 
+    /**
+     * @dev Safely transfers an ERC721 token from one address to another.
+     * 
+     * Emits a `Transfer` event.
+     * 
+     * Requirements:
+     * - The caller must have the `TRANSFER_ROLE` permission.
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - The token must exist and be owned by `from`.
+     * - If `to` is a smart contract, it must implement the `onERC721Received` function and return the magic value.
+     * 
+     * @param from The address to transfer the token from.
+     * @param to The address to transfer the token to.
+     * @param tokenId The ID of the token to be transferred.
+     * @param data Additional data with no specified format, to be passed to the `onERC721Received` function if `to` is a smart contract.
+     */
     function safeTransferFrom(
         address from,
         address to,
