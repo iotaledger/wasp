@@ -191,16 +191,6 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair cryptolib.VariantKey
 	return ret.Sign(keyPair)
 }
 
-func (r *CallParams) NewRequestOffLedgerUnsigned(ch *Chain, keyPair cryptolib.VariantKeyPair) isc.OffLedgerRequest {
-	if r.nonce == 0 {
-		r.nonce = ch.Nonce(isc.NewAgentID(keyPair.Address()))
-	}
-	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
-		WithAllowance(r.allowance)
-
-	return ret.(isc.OffLedgerRequest)
-}
-
 func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *iotago.Ed25519Address) isc.OffLedgerRequest {
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAgentID(address))
