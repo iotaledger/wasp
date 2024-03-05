@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -25,7 +26,7 @@ func TestOffLedger(t *testing.T) {
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 	chain.DepositBaseTokensToL2(env.L1BaseTokens(userAddress), userWallet)
 
-	req := isc.NewOffLedgerRequest(chain.ID(), accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil, 0, math.MaxUint64)
+	req := isc.NewOffLedgerRequest(chain.ID(), accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), dict.New(), 0, math.MaxUint64)
 	altReq := isc.NewImpersonatedOffLedgerRequest(req.(isc.OffLedgerRequest)).
 		WithSenderAddress(userWallet.Address())
 
