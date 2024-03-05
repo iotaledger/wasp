@@ -1,3 +1,5 @@
 **
 !*.sol
+!*.abi
 *_test.sol
+*_test.abi
