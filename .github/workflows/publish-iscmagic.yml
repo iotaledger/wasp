@@ -1,6 +1,7 @@
 name: Publish @iota/iscmagic
 
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       version:

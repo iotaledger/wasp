@@ -1,6 +1,7 @@
 name: Publish @iota/iscutils
 
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       version:
