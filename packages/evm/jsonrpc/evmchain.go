@@ -97,17 +97,6 @@ func NewEVMChain(
 		}
 	}()
 
-	if isArchiveNode {
-		latestState, err := backend.ISCLatestState()
-		if err != nil {
-			log.Warnf("could not fetch latest state; skipping first indexing: %s", err.Error())
-		} else {
-			log.Infof("indexing from block index #%d; this may take some time...", latestState.BlockIndex())
-			e.index.IndexBlock(latestState.TrieRoot())
-			log.Info("indexing done")
-		}
-	}
-
 	return e
 }
 
