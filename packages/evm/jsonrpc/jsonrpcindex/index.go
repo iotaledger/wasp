@@ -67,9 +67,6 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	if lastBlockIndexed != nil {
 		cacheUntil = *lastBlockIndexed
 	}
-	if blockIndexToCache <= cacheUntil {
-		return
-	}
 
 	// we need to look at the next block to get the trie commitment of the block we want to cache
 	nextBlockInfo, found := blocklog.NewStateAccess(state).BlockInfo(blockIndexToCache + 1)
