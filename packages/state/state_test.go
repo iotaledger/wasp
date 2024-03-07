@@ -294,20 +294,23 @@ func TestDoubleCommit(t *testing.T) {
 }
 
 type randomState struct {
-	t   *testing.T
+	t   testing.TB
 	rnd *rand.Rand
 	db  kvstore.KVStore
 	cs  mustChainStore
 }
 
-func newRandomState(t *testing.T) *randomState {
-	db := mapdb.NewMapDB()
+func newRandomStateWithDB(t testing.TB, db kvstore.KVStore) *randomState {
 	return &randomState{
 		t:   t,
 		rnd: rand.New(rand.NewSource(0)),
 		db:  db,
 		cs:  mustChainStore{initializedStore(db)},
 	}
+}
+
+func newRandomState(t *testing.T) *randomState {
+	return newRandomStateWithDB(t, mapdb.NewMapDB())
 }
 
 const rsKeyAlphabet = "ab"
