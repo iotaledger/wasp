@@ -1,6 +1,8 @@
 package trie
 
-import "github.com/iotaledger/wasp/packages/cache"
+import (
+	"github.com/iotaledger/wasp/packages/cache"
+)
 
 type cachedKVReader struct {
 	r     KVReader
@@ -25,10 +27,5 @@ func (c *cachedKVReader) Get(key []byte) []byte {
 }
 
 func (c *cachedKVReader) Has(key []byte) bool {
-	if v, ok := c.cache.Get(key); ok {
-		return v != nil
-	}
-	v := c.r.Get(key)
-	c.cache.Add(key, v)
-	return v != nil
+	return c.Get(key) != nil
 }
