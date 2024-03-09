@@ -10,7 +10,7 @@ import "./ISCAccounts.sol";
 
 /**
  * @title ERC20BaseTokens
- * @dev The ERC20 contract for ISC L2 base tokens.
+ * @dev The ERC20 contract directly mapped to the L1 base token.
  */
 contract ERC20BaseTokens {
     uint256 constant MAX_UINT64 = type(uint64).max;
@@ -91,7 +91,7 @@ contract ERC20BaseTokens {
      * @dev Transfers tokens from the caller's account to the specified receiver.
      * @param receiver The address of the receiver.
      * @param numTokens The number of tokens to transfer.
-     * @return A boolean value indicating whether the transfer was successful or not.
+     * @return true.
      */
     function transfer(
         address receiver,
@@ -109,7 +109,7 @@ contract ERC20BaseTokens {
      * @dev Sets the allowance of `delegate` over the caller's tokens.
      * @param delegate The address of the delegate.
      * @param numTokens The number of tokens to allow.
-     * @return A boolean value indicating whether the approval was successful or not.
+     * @return true.
      */
     function approve(
         address delegate,
@@ -139,7 +139,7 @@ contract ERC20BaseTokens {
      * @param owner The address of the owner.
      * @param buyer The address of the buyer.
      * @param numTokens The number of tokens to transfer.
-     * @return A boolean value indicating whether the transfer was successful or not.
+     * @return true.
      */
     function transferFrom(
         address owner,

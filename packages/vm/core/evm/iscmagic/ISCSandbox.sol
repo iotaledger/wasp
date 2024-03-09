@@ -5,7 +5,10 @@ pragma solidity >=0.8.11;
 
 import "./ISCTypes.sol";
 
-// The main interface of the ISC Magic Contract
+/**
+ * @title ISCSandbox
+ * @dev This is the main interface of the ISC Magic Contract.
+ */
 interface ISCSandbox {
     // Get the ISC request ID
     function getRequestID() external returns (ISCRequestID memory);

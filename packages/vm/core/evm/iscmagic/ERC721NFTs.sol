@@ -8,7 +8,10 @@ import "./ISCSandbox.sol";
 import "./ISCAccounts.sol";
 import "./ISCPrivileged.sol";
 
-// The ERC721 contract for the "global" collection of ISC L2 NFTs.
+/**
+ * @title ERC721NFTs
+ * @dev This contract represents the ERC721 contract for the "global" collection of native NFTs on the chains L1 account.
+ */
 contract ERC721NFTs {
     // is IERC721Metadata, IERC721, IERC165
     using ISCTypes for ISCAgentID;
@@ -46,11 +49,11 @@ contract ERC721NFTs {
     );
 
     /**
-     * @dev Emitted when an operator is enabled or disabled for an owner.
+     * @dev Emitted when operator gets the allowance from owner.
      * 
-     * @param owner The owner of the tokens.
-     * @param operator The operator to enable or disable as an operator.
-     * @param approved True if the operator is enabled, false if the operator is disabled.
+     * @param owner The owner of the token.
+     * @param operator The operator to get the approval.
+     * @param approved True if the operator got approval, false if not.
      */
     event ApprovalForAll(
         address indexed owner,
@@ -100,7 +103,6 @@ contract ERC721NFTs {
      * Emits a `Transfer` event.
      * 
      * Requirements:
-     * - The caller must have the `TRANSFER_ROLE` permission.
      * - `from` cannot be the zero address.
      * - `to` cannot be the zero address.
      * - The token must exist and be owned by `from`.
@@ -121,6 +123,20 @@ contract ERC721NFTs {
         require(_checkOnERC721Received(from, to, tokenId, data));
     }
 
+    /**
+     * @dev Safely transfers an ERC721 token from one address to another.
+     * 
+     * Emits a `Transfer` event.
+     * 
+     * Requirements:
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - The caller must own the token or be approved for it.
+     * 
+     * @param from The address to transfer the token from.
+     * @param to The address to transfer the token to.
+     * @param tokenId The ID of the token to be transferred.
+     */
     function safeTransferFrom(
         address from,
         address to,
@@ -129,6 +145,17 @@ contract ERC721NFTs {
         safeTransferFrom(from, to, tokenId, "");
     }
 
+    /**
+     * @dev Transfers an ERC721 token from one address to another.
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     * - The caller must be approved or the owner of the token.
+     *
+     * @param from The address to transfer the token from.
+     * @param to The address to transfer the token to.
+     * @param tokenId The ID of the token to be transferred.
+     */
     function transferFrom(
         address from,
         address to,
@@ -138,6 +165,12 @@ contract ERC721NFTs {
         _transferFrom(from, to, tokenId);
     }
 
+    /**
+     * @dev Approves another address to transfer the ownership of a specific token.
+     * @param approved The address to be approved for token transfer.
+     * @param tokenId The ID of the token to be approved for transfer.
+     * @notice Only the owner of the token or an approved operator can call this function.
+     */
     function approve(address approved, uint256 tokenId) public payable {
         address owner = ownerOf(tokenId);
         require(approved != owner);
@@ -147,16 +180,32 @@ contract ERC721NFTs {
         emit Approval(owner, approved, tokenId);
     }
 
+    /**
+     * @dev Sets or revokes approval for the given operator to manage all of the caller's tokens.
+     * @param operator The address of the operator to set approval for.
+     * @param approved A boolean indicating whether to approve or revoke the operator's approval.
+     */
     function setApprovalForAll(address operator, bool approved) public {
         require(operator != msg.sender);
         _operatorApprovals[msg.sender][operator] = approved;
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
+    /**
+     * @dev Returns the address that has been approved to transfer the ownership of the specified token.
+     * @param tokenId The ID of the token.
+     * @return The address approved to transfer the ownership of the token.
+     */
     function getApproved(uint256 tokenId) public view returns (address) {
         return _tokenApprovals[tokenId];
     }
 
+    /**
+     * @dev Checks if an operator is approved to manage all of the owner's tokens.
+     * @param owner The address of the token owner.
+     * @param operator The address of the operator.
+     * @return A boolean value indicating whether the operator is approved for all tokens of the owner.
+     */
     function isApprovedForAll(
         address owner,
         address operator
@@ -200,6 +249,11 @@ contract ERC721NFTs {
     bytes4 private constant _INTERFACE_ID_ERC721 = 0x80ac58cd;
     bytes4 private constant _INTERFACE_ID_ERC165 = 0x01ffc9a7;
 
+    /**
+     * @dev Checks if a contract supports a given interface.
+     * @param interfaceID The interface identifier.
+     * @return A boolean value indicating whether the contract supports the interface.
+     */
     function supportsInterface(bytes4 interfaceID) public pure returns (bool) {
         return
             interfaceID == _INTERFACE_ID_ERC165 ||

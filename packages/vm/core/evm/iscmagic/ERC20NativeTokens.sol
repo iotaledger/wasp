@@ -9,7 +9,7 @@ import "./ISCPrivileged.sol";
 
 /**
  * @title ERC20NativeTokens
- * @dev The ERC20 contract for ISC L2 native tokens (on-chain foundry).
+ * @dev The ERC20 contract native tokens (on-chain foundry).
  */
 contract ERC20NativeTokens {
     string _name;
@@ -37,7 +37,7 @@ contract ERC20NativeTokens {
     event Transfer(address indexed from, address indexed to, uint256 tokens);
 
     /**
-     * @dev Returns the foundry serial number of the ERC20 native token contract.
+     * @dev Returns the foundry serial number of the native token.
      * @return The foundry serial number.
      */
     function foundrySerialNumber() internal view returns (uint32) {
@@ -45,7 +45,7 @@ contract ERC20NativeTokens {
     }
 
     /**
-     * @dev Returns the native token ID of the ERC20 native token contract.
+     * @dev Returns the native token ID of the native token.
      * @return The native token ID.
      */
     function nativeTokenID()
@@ -58,7 +58,7 @@ contract ERC20NativeTokens {
     }
 
     /**
-     * @dev Returns the name of the ERC20 native token.
+     * @dev Returns the name of the native token.
      * @return The name of the token.
      */
     function name() public view returns (string memory) {
@@ -66,7 +66,7 @@ contract ERC20NativeTokens {
     }
 
     /**
-     * @dev Returns the ticker symbol of the ERC20 native token.
+     * @dev Returns the ticker symbol of the native token.
      * @return The ticker symbol of the token.
      */
     function symbol() public view returns (string memory) {
@@ -74,7 +74,7 @@ contract ERC20NativeTokens {
     }
 
     /**
-     * @dev Returns the number of decimals used for the ERC20 native token.
+     * @dev Returns the number of decimals used for the native token.
      * @return The number of decimals.
      */
     function decimals() public view returns (uint8) {
@@ -82,7 +82,7 @@ contract ERC20NativeTokens {
     }
 
     /**
-     * @dev Returns the total supply of the ERC20 native token.
+     * @dev Returns the total supply of the native token.
      * @return The total supply of the token.
      */
     function totalSupply() public view virtual returns (uint256) {
@@ -114,7 +114,7 @@ contract ERC20NativeTokens {
      * @dev Transfers tokens from the sender's address to the receiver's address.
      * @param receiver The address to transfer tokens to.
      * @param numTokens The amount of tokens to transfer.
-     * @return A boolean indicating whether the transfer was successful or not.
+     * @return true.
      */
     function transfer(
         address receiver,
@@ -133,7 +133,7 @@ contract ERC20NativeTokens {
      * @dev Sets the allowance of a spender to spend tokens on behalf of the owner.
      * @param delegate The address allowed to spend the tokens.
      * @param numTokens The amount of tokens allowed to be spent.
-     * @return A boolean indicating whether the approval was successful or not.
+     * @return true.
      */
     function approve(
         address delegate,

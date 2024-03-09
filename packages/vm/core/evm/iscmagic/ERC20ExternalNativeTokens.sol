@@ -7,7 +7,7 @@ import "./ERC20NativeTokens.sol";
 
 /**
  * @title ERC20ExternalNativeTokens
- * @dev The ERC20 contract for ISC L2 native tokens (off-chain foundry).
+ * @dev The ERC20 contract for externally registered native tokens (off-chain foundry).
  */
 contract ERC20ExternalNativeTokens is ERC20NativeTokens {
     NativeTokenID _nativeTokenID;

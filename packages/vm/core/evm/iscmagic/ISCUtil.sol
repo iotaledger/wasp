@@ -5,7 +5,10 @@ pragma solidity >=0.8.11;
 
 import "./ISCTypes.sol";
 
-// Functions of the ISC Magic Contract not directly related to the ISC sandbox
+/**
+ * @title ISCUtil
+ * @dev Functions of the ISC Magic Contract not directly related to the ISC sandbox
+ */
 interface ISCUtil {
     // Get an ISC contract's hname given its instance name
     function hn(string memory s) external pure returns (ISCHname);
