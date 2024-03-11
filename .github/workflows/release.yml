@@ -6,6 +6,7 @@ on:
 
 jobs:
   setup:
+    environment: release
     name: Setup repository
     runs-on: ubuntu-latest
     steps:
