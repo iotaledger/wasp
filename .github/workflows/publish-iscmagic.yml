@@ -24,6 +24,7 @@ jobs:
           node-version: lts/*
           registry-url: "https://registry.npmjs.org"
           scope: iota
+      - run: find . -type f -name "*.abi" -exec bash -c 'mv "$0" "${0%.abi}.json"' {} \
       - run: npm version ${{ inputs.version }}
       - run: npm publish --access public
         env:
