@@ -37,11 +37,13 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		},
 		Features: nil,
 	}
+
 	if len(metadata) > 0 {
 		f.Features = iotago.Features{&iotago.MetadataFeature{
 			Data: metadata,
 		}}
 	}
+
 	f.Amount = parameters.L1().Protocol.RentStructure.MinRent(f)
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber:     f.SerialNumber,

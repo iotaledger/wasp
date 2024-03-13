@@ -1,6 +1,8 @@
 package evmimpl
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -24,3 +26,28 @@ func restricted(handler coreutil.Handler) coreutil.Handler {
 		return handler(ctx)
 	}
 }
+
+func onlyForContract(contractHname isc.Hname, handler coreutil.Handler) coreutil.Handler {
+	return func(ctx isc.Sandbox) dict.Dict {
+		ctx.Privileged().GasBurnEnable(false)
+		defer ctx.Privileged().GasBurnEnable(true)
+
+		caller := ctx.Caller()
+
+		if caller != nil && caller.Kind() != isc.AgentIDKindContract {
+			panic(vm.ErrIllegalCall)
+		}
+
+		contractCall := caller.(*isc.ContractAgentID)
+		if contractCall.Hname() != contractHname {
+			panic(vm.ErrIllegalCall)
+		}
+
+		fmt.Printf("%v %v\n", caller, contractHname)
+		return handler(ctx)
+	}
+}
+
+/*
+TODO: Only allow from `accounts` middleware
+*/

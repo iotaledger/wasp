@@ -163,6 +163,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
+
 	// revert the changes in the state / txbuilder in case of error
 	ctx.RequireNoError(revertErr)
 

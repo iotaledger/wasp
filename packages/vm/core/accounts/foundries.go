@@ -37,6 +37,11 @@ func SaveFoundryOutput(state kv.KVStore, f *iotago.FoundryOutput, outputIndex ui
 		TokenScheme: f.TokenScheme,
 		Metadata:    []byte{},
 	}
+
+	if f.FeatureSet().MetadataFeature() != nil {
+		foundryRec.Metadata = f.FeatureSet().MetadataFeature().Data
+	}
+
 	AllFoundriesMap(state).SetAt(codec.EncodeUint32(f.SerialNumber), foundryRec.Bytes())
 	newFoundriesArray(state).Push(codec.EncodeUint32(f.SerialNumber))
 }
@@ -77,6 +82,13 @@ func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*
 		},
 		Features: nil,
 	}
+
+	if len(rec.Metadata) > 0 {
+		ret.Features = []iotago.Feature{
+			&iotago.MetadataFeature{Data: rec.Metadata},
+		}
+	}
+
 	return ret, rec.OutputID
 }
 
@@ -85,7 +97,7 @@ func hasFoundry(state kv.KVStoreReader, agentID isc.AgentID, sn uint32) bool {
 	return accountFoundriesMapR(state, agentID).HasAt(codec.EncodeUint32(sn))
 }
 
-// addFoundryToAccount ads new foundry to the foundries controlled by the account
+// addFoundryToAccount adds new foundry to the foundries controlled by the account
 func addFoundryToAccount(state kv.KVStore, agentID isc.AgentID, sn uint32) {
 	key := codec.EncodeUint32(sn)
 	foundries := accountFoundriesMap(state, agentID)

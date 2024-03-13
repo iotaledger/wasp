@@ -31,6 +31,7 @@ var Processor = Contract.Processor(nil,
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
+	FuncNativeTokenCreate.WithHandler(nativeTokenCreate),
 
 	// views
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
@@ -231,10 +232,29 @@ func transferAccountToChain(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-// Params:
-// - token scheme
-// - must be enough allowance for the storage deposit
-func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
+func nativeTokenCreate(ctx isc.Sandbox) dict.Dict {
+	tokenName := ctx.Params().MustGetString(ParamTokenName)
+	tokenTickerSymbol := ctx.Params().MustGetString(ParamTokenTickerSymbol)
+	tokenDecimals := ctx.Params().MustGetUint8(ParamTokenDecimals)
+	metadata := isc.NewIRC30NativeTokenMetadata(tokenName, tokenTickerSymbol, tokenDecimals)
+
+	sn := foundryCreateNewWithMetadata(ctx, metadata.Bytes())
+
+	// Register native token as an evm ERC20 token
+	ctx.Privileged().
+		CallOnBehalfOf(ctx.Caller(), evm.Contract.Hname(), evm.FuncRegisterERC20NativeToken.Hname(), dict.Dict{
+			evm.FieldFoundrySN:         codec.EncodeUint32(sn),
+			evm.FieldTokenName:         codec.EncodeString(metadata.Name),
+			evm.FieldTokenTickerSymbol: codec.EncodeString(metadata.Symbol),
+			evm.FieldTokenDecimals:     codec.EncodeUint8(metadata.Decimals),
+		}, ctx.AllowanceAvailable())
+
+	return dict.Dict{
+		ParamFoundrySN: codec.EncodeUint32(sn),
+	}
+}
+
+func foundryCreateNewWithMetadata(ctx isc.Sandbox, metadata []byte) uint32 {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 
 	tokenScheme := ctx.Params().MustGetTokenScheme(ParamTokenScheme, &iotago.SimpleTokenScheme{})
@@ -243,7 +263,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	ts.MintedTokens = util.Big0
 
 	// create UTXO
-	sn, storageDepositConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
+	sn, storageDepositConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, metadata)
 	ctx.Requiref(storageDepositConsumed > 0, "storage deposit Consumed > 0: assert failed")
 	// storage deposit for the foundry is taken from the allowance and removed from L2 ledger
 	debitBaseTokensFromAllowance(ctx, storageDepositConsumed, ctx.ChainID())
@@ -251,10 +271,20 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	// add to the ownership list of the account
 	addFoundryToAccount(ctx.State(), ctx.Caller(), sn)
 
-	ret := dict.New()
-	ret.Set(ParamFoundrySN, codec.EncodeUint32(sn))
 	eventFoundryCreated(ctx, sn)
-	return ret
+
+	return sn
+}
+
+// Params:
+// - token scheme
+// - must be enough allowance for the storage deposit
+func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
+	sn := foundryCreateNewWithMetadata(ctx, nil)
+
+	return dict.Dict{
+		ParamFoundrySN: codec.EncodeUint32(sn),
+	}
 }
 
 var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zero circulating supply").Create()
