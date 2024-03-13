@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
-	github.com/Yiling-J/theine-go v0.3.1
+	github.com/Yiling-J/theine-go v0.3.2
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0
 	github.com/dgraph-io/ristretto v0.1.1
