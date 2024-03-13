@@ -12,6 +12,7 @@ var (
 	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
 	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
 	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
+	FuncNativeTokenCreate      = coreutil.Func("nativeTokenCreate")
 	FuncMintNFT                = coreutil.Func("mintNFT")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
@@ -48,6 +49,9 @@ const (
 	ParamForceMinimumBaseTokens = "f"
 	ParamFoundryOutputBin       = "b"
 	ParamFoundrySN              = "s"
+	ParamTokenName              = "tn"
+	ParamTokenTickerSymbol      = "ts"
+	ParamTokenDecimals          = "td"
 	ParamGasReserve             = "g"
 	ParamNFTAmount              = "A"
 	ParamNFTData                = "e"
