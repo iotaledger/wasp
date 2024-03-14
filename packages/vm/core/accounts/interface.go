@@ -9,8 +9,8 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 var (
 	// Funcs
 	FuncDeposit = coreutil.Func("deposit")
-	
-	// Kept for compatability reasons
+
+	// Kept for compatibility reasons
 	FuncFoundryCreateNew = coreutil.Func("foundryCreateNew")
 	//
 	FuncNativeTokenCreate       = coreutil.Func("nativeTokenCreate")
