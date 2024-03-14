@@ -141,7 +141,7 @@ func (ch *Chain) GetOnChainTokenIDs() []iotago.NativeTokenID {
 }
 
 func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewFoundryOutput.Name,
+	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewNativeToken.Name,
 		accounts.ParamFoundrySN, sn,
 	)
 	if err != nil {
@@ -162,10 +162,13 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 	return o.MustNativeTokenID(), nil
 }
 
-type foundryParams struct {
-	ch   *Chain
-	user *cryptolib.KeyPair
-	sch  iotago.TokenScheme
+type newNativeTokenParams struct {
+	ch            *Chain
+	user          *cryptolib.KeyPair
+	sch           iotago.TokenScheme
+	tokenName     string
+	tokenSymbol   string
+	tokenDecimals uint8
 }
 
 // CreateFoundryGasBudgetBaseTokens always takes 100000 base tokens as gas budget and ftokens for the call
@@ -176,25 +179,43 @@ const (
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
-func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams { //nolint:revive
-	ret := &foundryParams{
+func (ch *Chain) NewNativeTokenParams(maxSupply interface{}) *newNativeTokenParams { //nolint:revive
+	ret := &newNativeTokenParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{
 			MaximumSupply: util.ToBigInt(maxSupply),
 			MeltedTokens:  big.NewInt(0),
 			MintedTokens:  big.NewInt(0),
 		},
+		tokenSymbol:   "TST",
+		tokenName:     "TEST",
+		tokenDecimals: uint8(8),
 	}
 	return ret
 }
 
-func (fp *foundryParams) WithUser(user *cryptolib.KeyPair) *foundryParams {
+func (fp *newNativeTokenParams) WithUser(user *cryptolib.KeyPair) *newNativeTokenParams {
 	fp.user = user
 	return fp
 }
 
-func (fp *foundryParams) WithTokenScheme(sch iotago.TokenScheme) *foundryParams {
+func (fp *newNativeTokenParams) WithTokenScheme(sch iotago.TokenScheme) *newNativeTokenParams {
 	fp.sch = sch
+	return fp
+}
+
+func (fp *newNativeTokenParams) WithTokenName(tokenName string) *newNativeTokenParams {
+	fp.tokenName = tokenName
+	return fp
+}
+
+func (fp *newNativeTokenParams) WithTokenSymbol(tokenSymbol string) *newNativeTokenParams {
+	fp.tokenSymbol = tokenSymbol
+	return fp
+}
+
+func (fp *newNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *newNativeTokenParams {
+	fp.tokenDecimals = tokenDecimals
 	return fp
 }
 
@@ -203,16 +224,20 @@ const (
 	allowanceForModifySupply          = 1 * isc.Million
 )
 
-func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
+func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
 	if fp.sch != nil {
 		par.Set(accounts.ParamTokenScheme, codec.EncodeTokenScheme(fp.sch))
+		par.Set(accounts.ParamTokenName, codec.EncodeString(fp.tokenName))
+		par.Set(accounts.ParamTokenTickerSymbol, codec.EncodeString(fp.tokenSymbol))
+		par.Set(accounts.ParamTokenDecimals, codec.EncodeUint8(fp.tokenDecimals))
 	}
+
 	user := fp.ch.OriginatorPrivateKey
 	if fp.user != nil {
 		user = fp.user
 	}
-	req := CallParamsFromDict(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
+	req := CallParamsFromDict(accounts.Contract.Name, accounts.FuncNativeTokenCreate.Name, par).
 		WithAllowance(isc.NewAssetsBaseTokens(allowanceForFoundryStorageDeposit)).
 		AddBaseTokens(allowanceForFoundryStorageDeposit).
 		WithMaxAffordableGasBudget()
@@ -245,7 +270,7 @@ func toFoundrySN(foundry interface{}) uint32 {
 }
 
 func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryDestroy.Name,
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenDestroy.Name,
 		accounts.ParamFoundrySN, sn).
 		WithGasBudget(DestroyFoundryGasBudgetBaseTokens)
 	_, err := ch.PostRequestSync(req, user)
@@ -253,7 +278,7 @@ func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.VariantKeyPair) error 
 }
 
 func (ch *Chain) MintTokens(foundry, amount interface{}, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 	).
@@ -276,7 +301,7 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user cryptolib.VariantK
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
 func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount interface{}, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
@@ -298,7 +323,7 @@ func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount in
 
 // DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
 func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount interface{}, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
+	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenModifySupply.Name,
 		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,

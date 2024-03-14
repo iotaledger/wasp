@@ -8,11 +8,15 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 var (
 	// Funcs
-	FuncDeposit                = coreutil.Func("deposit")
-	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
-	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
-	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
-	FuncNativeTokenCreate      = coreutil.Func("nativeTokenCreate")
+	FuncDeposit = coreutil.Func("deposit")
+	
+	// Kept for compatability reasons
+	FuncFoundryCreateNew = coreutil.Func("foundryCreateNew")
+	//
+	FuncNativeTokenCreate       = coreutil.Func("nativeTokenCreate")
+	FuncNativeTokenModifySupply = coreutil.Func("nativeTokenModifySupply")
+	FuncNativeTokenDestroy      = coreutil.Func("nativeTokenDestroy")
+
 	FuncMintNFT                = coreutil.Func("mintNFT")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
@@ -32,11 +36,12 @@ var (
 	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
 	ViewBalanceBaseTokenEVM          = coreutil.ViewFunc("balanceBaseTokenEVM")
 	ViewBalanceNativeToken           = coreutil.ViewFunc("balanceNativeToken")
-	ViewFoundryOutput                = coreutil.ViewFunc("foundryOutput")
-	ViewGetAccountNonce              = coreutil.ViewFunc("getAccountNonce")
-	ViewGetNativeTokenIDRegistry     = coreutil.ViewFunc("getNativeTokenIDRegistry")
-	ViewNFTData                      = coreutil.ViewFunc("nftData")
-	ViewTotalAssets                  = coreutil.ViewFunc("totalAssets")
+	ViewNativeToken                  = coreutil.ViewFunc("nativeToken")
+
+	ViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
+	ViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
+	ViewNFTData                  = coreutil.ViewFunc("nftData")
+	ViewTotalAssets              = coreutil.ViewFunc("totalAssets")
 )
 
 // request parameters

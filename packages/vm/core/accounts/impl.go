@@ -24,14 +24,17 @@ func CommonAccount() isc.AgentID {
 var Processor = Contract.Processor(nil,
 	// funcs
 	FuncDeposit.WithHandler(deposit),
-	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
-	FuncFoundryDestroy.WithHandler(foundryDestroy),
-	FuncFoundryModifySupply.WithHandler(foundryModifySupply),
 	FuncMintNFT.WithHandler(mintNFT),
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
+
+	// Kept for compatibility
+	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
+	//
 	FuncNativeTokenCreate.WithHandler(nativeTokenCreate),
+	FuncNativeTokenModifySupply.WithHandler(nativeTokenModifySupply),
+	FuncNativeTokenDestroy.WithHandler(nativeTokenDestroy),
 
 	// views
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
@@ -45,7 +48,7 @@ var Processor = Contract.Processor(nil,
 	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
 	ViewBalanceBaseTokenEVM.WithHandler(viewBalanceBaseTokenEVM),
 	ViewBalanceNativeToken.WithHandler(viewBalanceNativeToken),
-	ViewFoundryOutput.WithHandler(viewFoundryOutput),
+	ViewNativeToken.WithHandler(viewFoundryOutput),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
 	ViewGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
 	ViewNFTData.WithHandler(viewNFTData),
@@ -289,9 +292,9 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 
 var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zero circulating supply").Create()
 
-// foundryDestroy destroys foundry if that is possible
-func foundryDestroy(ctx isc.Sandbox) dict.Dict {
-	ctx.Log().Debugf("accounts.foundryDestroy")
+// nativeTokenDestroy destroys foundry if that is possible
+func nativeTokenDestroy(ctx isc.Sandbox) dict.Dict {
+	ctx.Log().Debugf("accounts.nativeTokenDestroy")
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	// check if foundry is controlled by the caller
 	state := ctx.State()
@@ -322,13 +325,13 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-// foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
+// nativeTokenModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
 // Params:
 // - ParamFoundrySN serial number of the foundry
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
 // NOTE: ParamDestroyTokens is needed since `big.Int` `Bytes()` function does not serialize the sign, only the absolute value
-func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
+func nativeTokenModifySupply(ctx isc.Sandbox) dict.Dict {
 	params := ctx.Params()
 	sn := params.MustGetUint32(ParamFoundrySN)
 	delta := new(big.Int).Abs(params.MustGetBigInt(ParamSupplyDeltaAbs))

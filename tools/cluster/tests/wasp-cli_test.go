@@ -211,10 +211,13 @@ func TestWaspCLIDeposit(t *testing.T) {
 			MaximumSupply: big.NewInt(1000),
 		})
 		out := w.PostRequestGetReceipt(
-			"accounts", accounts.FuncFoundryCreateNew.Name,
+			"accounts", accounts.FuncNativeTokenCreate.Name,
 			"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme),
 			"-l", "base:1000000",
 			"-t", "base:100000000",
+			"--token-name", "TEST",
+			"--token-symbol", "TS",
+			"--token-decimals", "8",
 			"--node=0",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
@@ -222,7 +225,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 		// mint 2 native tokens
 		foundrySN := "1"
 		out = w.PostRequestGetReceipt(
-			"accounts", accounts.FuncFoundryModifySupply.Name,
+			"accounts", accounts.FuncNativeTokenModifySupply.Name,
 			"string", accounts.ParamFoundrySN, "uint32", foundrySN,
 			"string", accounts.ParamSupplyDeltaAbs, "bigint", "2",
 			"string", accounts.ParamDestroyTokens, "bool", "false",
@@ -292,17 +295,20 @@ func TestWaspCLIUnprocessableRequest(t *testing.T) {
 		for i := 1; i <= nFoundries; i++ {
 			// create foundry
 			out := w.PostRequestGetReceipt(
-				"accounts", accounts.FuncFoundryCreateNew.Name,
+				"accounts", accounts.FuncNativeTokenCreate.Name,
 				"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme),
 				"-l", "base:1000000",
 				"-t", "base:100000000",
+				"--token-name", "TEST",
+				"--token-symbol", "TS",
+				"--token-decimals", "8",
 				"--node=0",
 			)
 			require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 			// mint 1 native token
 			out = w.PostRequestGetReceipt(
-				"accounts", accounts.FuncFoundryModifySupply.Name,
+				"accounts", accounts.FuncNativeTokenModifySupply.Name,
 				"string", accounts.ParamFoundrySN, "uint32", fmt.Sprintf("%d", i),
 				"string", accounts.ParamSupplyDeltaAbs, "bigint", "1",
 				"string", accounts.ParamDestroyTokens, "bool", "false",
@@ -629,13 +635,15 @@ func TestWaspCLILongParam(t *testing.T) {
 	w.ActivateChainOnAllNodes("chain1", 0)
 	w.MustRun("chain", "deposit", "base:1000000", "--node=0")
 
-	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
+	veryLongTokenName := strings.Repeat("A", 100_000)
+
+	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),
-	})
+	}, veryLongTokenName, "TST", 8)
 
-	veryLongTokenName := strings.Repeat("A", 100_000)
+	// TODO: REMOVE THIS
 	out := w.MustRun(
 		"chain", "post-request", "-o", "evm", "registerERC20NativeToken",
 		"string", "fs", "uint32", "1",
@@ -785,11 +793,11 @@ func TestWaspCLIRegisterERC20NativeToken(t *testing.T) {
 	w.ActivateChainOnAllNodes("chain1", 0)
 	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
 
-	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
+	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),
-	})
+	}, "TEST", "TST", 8)
 
 	out := w.MustRun(
 		"chain", "register-erc20-native-token",
@@ -816,11 +824,11 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 	w.ActivateChainOnAllNodes("chain1", 0)
 	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
 
-	w.CreateL2Foundry(&iotago.SimpleTokenScheme{
+	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),
-	})
+	}, "test", "test_symbol", 1)
 
 	w.MustRun("chain", "deploy", "--chain=chain2", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain2", 0)

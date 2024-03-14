@@ -149,7 +149,7 @@ func GetFoundryOutput(ch chain.Chain, serialNumber uint32, blockIndexOrTrieRoot 
 	res, err := common.CallView(
 		ch,
 		accounts.Contract.Hname(),
-		accounts.ViewFoundryOutput.Hname(), codec.MakeDict(map[string]interface{}{accounts.ParamFoundrySN: serialNumber}),
+		accounts.ViewNativeToken.Hname(), codec.MakeDict(map[string]interface{}{accounts.ParamFoundrySN: serialNumber}),
 		blockIndexOrTrieRoot,
 	)
 	if err != nil {

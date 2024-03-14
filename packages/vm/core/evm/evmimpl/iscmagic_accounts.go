@@ -103,7 +103,7 @@ func (h *magicContractHandler) FoundryCreateNew(tokenScheme iotago.SimpleTokenSc
 	return codec.MustDecodeUint32(ret.Get(accounts.ParamFoundrySN))
 }
 
-func (h *magicContractHandler) CreateNativeToken(tokenName string, tickerSymbol string, decimals uint8, tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
+func (h *magicContractHandler) CreateNativeTokenFoundry(tokenName string, tickerSymbol string, decimals uint8, tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
 	ret := h.ctx.Privileged().CallOnBehalfOf(
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		accounts.Contract.Hname(),
@@ -123,7 +123,7 @@ func (h *magicContractHandler) CreateNativeToken(tokenName string, tickerSymbol 
 func (h *magicContractHandler) MintNativeTokens(foundrySN uint32, amount *big.Int, allowance iscmagic.ISCAssets) {
 	h.call(
 		accounts.Contract.Hname(),
-		accounts.FuncFoundryModifySupply.Hname(),
+		accounts.FuncNativeTokenModifySupply.Hname(),
 		dict.Dict{
 			accounts.ParamFoundrySN:      codec.EncodeUint32(foundrySN),
 			accounts.ParamSupplyDeltaAbs: codec.EncodeBigIntAbs(amount),

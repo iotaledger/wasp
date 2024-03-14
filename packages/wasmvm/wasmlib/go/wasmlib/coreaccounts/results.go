@@ -322,28 +322,6 @@ func (s MutableBalanceNativeTokenResults) Tokens() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.Proxy.Root(ResultTokens))
 }
 
-type ImmutableFoundryOutputResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-// serialized foundry output
-func (s ImmutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFoundryOutputBin))
-}
-
-type MutableFoundryOutputResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewMutableFoundryOutputResults() MutableFoundryOutputResults {
-	return MutableFoundryOutputResults{Proxy: wasmlib.NewResultsProxy()}
-}
-
-// serialized foundry output
-func (s MutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFoundryOutputBin))
-}
-
 type ImmutableGetAccountNonceResults struct {
 	Proxy wasmtypes.Proxy
 }
@@ -406,6 +384,28 @@ func NewMutableGetNativeTokenIDRegistryResults() MutableGetNativeTokenIDRegistry
 // token IDs
 func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
 	return MapTokenIDToMutableBool(s)
+}
+
+type ImmutableNativeTokenResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serialized foundry output
+func (s ImmutableNativeTokenResults) FoundryOutputBin() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFoundryOutputBin))
+}
+
+type MutableNativeTokenResults struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewMutableNativeTokenResults() MutableNativeTokenResults {
+	return MutableNativeTokenResults{Proxy: wasmlib.NewResultsProxy()}
+}
+
+// serialized foundry output
+func (s MutableNativeTokenResults) FoundryOutputBin() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFoundryOutputBin))
 }
 
 type ImmutableNftDataResults struct {

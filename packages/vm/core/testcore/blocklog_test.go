@@ -252,7 +252,7 @@ func TestBlocklogFoundriesWithPruning(t *testing.T) {
 	})
 	ch.DepositBaseTokensToL2(1*isc.Million, nil)
 
-	sn, _, err := ch.NewFoundryParams(10).CreateFoundry()
+	sn, _, err := ch.NewNativeTokenParams(10).CreateFoundry()
 	require.NoError(t, err)
 
 	// provoke the block where the foundry was stored to be pruned

@@ -11,18 +11,23 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func initCreateFoundryCmd() *cobra.Command {
+func initCreateNativeTokenCmd() *cobra.Command {
 	var maxSupply, mintedTokens, meltedTokens int64
+	var tokenName, tokenSymbol string
+	var tokenDecimals uint8
 
 	return buildPostRequestCmd(
-		"create-foundry",
-		"Call accounts core contract foundryCreateNew to create a new foundry",
+		"create-native-token",
+		"Calls accounts core contract nativeTokenCreate to create a new native token",
 		accounts.Contract.Name,
-		accounts.FuncFoundryCreateNew.Name,
+		accounts.FuncNativeTokenCreate.Name,
 		func(cmd *cobra.Command) {
 			cmd.Flags().Int64Var(&maxSupply, "max-supply", 1000000, "Maximum token supply")
 			cmd.Flags().Int64Var(&mintedTokens, "minted-tokens", 0, "Minted tokens")
 			cmd.Flags().Int64Var(&meltedTokens, "melted-tokens", 0, "Melted tokens")
+			cmd.Flags().StringVar(&tokenName, "token-name", "", "Token name")
+			cmd.Flags().StringVar(&tokenSymbol, "token-symbol", "", "Token symbol")
+			cmd.Flags().Uint8Var(&tokenDecimals, "token-decimals", uint8(8), "Token decimals")
 		},
 		func(cmd *cobra.Command) []string {
 			tokenScheme := &iotago.SimpleTokenScheme{
@@ -33,7 +38,12 @@ func initCreateFoundryCmd() *cobra.Command {
 
 			tokenSchemeBytes := codec.EncodeTokenScheme(tokenScheme)
 
-			return []string{"string", "t", "bytes", "0x" + hex.EncodeToString(tokenSchemeBytes)}
+			return []string{
+				"string", accounts.ParamTokenScheme, "bytes", "0x" + hex.EncodeToString(tokenSchemeBytes),
+				"string", accounts.ParamTokenName, "bytes", "0x" + hex.EncodeToString(codec.EncodeString(tokenName)),
+				"string", accounts.ParamTokenTickerSymbol, "bytes", "0x" + hex.EncodeToString(codec.EncodeString(tokenSymbol)),
+				"string", accounts.ParamTokenDecimals, "bytes", "0x" + hex.EncodeToString(codec.EncodeUint8(tokenDecimals)),
+			}
 		},
 	)
 }

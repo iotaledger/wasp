@@ -256,8 +256,8 @@ func identicalFoundries(f1, f2 *iotago.FoundryOutput) bool {
 		panic("identicalFoundries: inconsistency, addresses must always be equal")
 	case !equalTokenScheme(simpleTokenSchemeF1, simpleTokenSchemeF2):
 		panic("identicalFoundries: inconsistency, if serial numbers are equal, token schemes must be equal")
-	case len(f1.Features) != 0 || len(f2.Features) != 0:
-		panic("identicalFoundries: inconsistency, feat blocks are not expected in the foundry")
+	case !f1.Features.Equal(f2.Features):
+		panic("identicalFoundries: inconsistency, feat blocks are not equal")
 	}
 	return true
 }
