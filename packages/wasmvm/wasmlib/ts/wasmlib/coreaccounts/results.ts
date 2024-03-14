@@ -230,20 +230,6 @@ export class MutableBalanceNativeTokenResults extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableFoundryOutputResults extends wasmtypes.ScProxy {
-    // serialized foundry output
-    foundryOutputBin(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFoundryOutputBin));
-    }
-}
-
-export class MutableFoundryOutputResults extends wasmtypes.ScProxy {
-    // serialized foundry output
-    foundryOutputBin(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFoundryOutputBin));
-    }
-}
-
 export class ImmutableGetAccountNonceResults extends wasmtypes.ScProxy {
     // account nonce
     accountNonce(): wasmtypes.ScImmutableUint64 {
@@ -287,6 +273,20 @@ export class MutableGetNativeTokenIDRegistryResults extends wasmtypes.ScProxy {
     // token IDs
     mapping(): sc.MapTokenIDToMutableBool {
         return new sc.MapTokenIDToMutableBool(this.proxy);
+    }
+}
+
+export class ImmutableNativeTokenResults extends wasmtypes.ScProxy {
+    // serialized foundry output
+    foundryOutputBin(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFoundryOutputBin));
+    }
+}
+
+export class MutableNativeTokenResults extends wasmtypes.ScProxy {
+    // serialized foundry output
+    foundryOutputBin(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultFoundryOutputBin));
     }
 }
 

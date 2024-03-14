@@ -40,13 +40,67 @@ impl MutableFoundryCreateNewParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableFoundryDestroyParams {
+pub struct ImmutableNativeTokenCreateParams {
     pub(crate) proxy: Proxy,
 }
 
-impl ImmutableFoundryDestroyParams {
-    pub fn new() -> ImmutableFoundryDestroyParams {
-        ImmutableFoundryDestroyParams {
+impl ImmutableNativeTokenCreateParams {
+    pub fn new() -> ImmutableNativeTokenCreateParams {
+        ImmutableNativeTokenCreateParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    pub fn token_decimals(&self) -> ScImmutableUint8 {
+        ScImmutableUint8::new(self.proxy.root(PARAM_TOKEN_DECIMALS))
+    }
+
+    pub fn token_name(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(PARAM_TOKEN_NAME))
+    }
+
+    // token scheme for the new foundry
+    pub fn token_scheme(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
+    }
+
+    pub fn token_symbol(&self) -> ScImmutableString {
+        ScImmutableString::new(self.proxy.root(PARAM_TOKEN_SYMBOL))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableNativeTokenCreateParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableNativeTokenCreateParams {
+    pub fn token_decimals(&self) -> ScMutableUint8 {
+        ScMutableUint8::new(self.proxy.root(PARAM_TOKEN_DECIMALS))
+    }
+
+    pub fn token_name(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(PARAM_TOKEN_NAME))
+    }
+
+    // token scheme for the new foundry
+    pub fn token_scheme(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
+    }
+
+    pub fn token_symbol(&self) -> ScMutableString {
+        ScMutableString::new(self.proxy.root(PARAM_TOKEN_SYMBOL))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableNativeTokenDestroyParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableNativeTokenDestroyParams {
+    pub fn new() -> ImmutableNativeTokenDestroyParams {
+        ImmutableNativeTokenDestroyParams {
             proxy: params_proxy(),
         }
     }
@@ -58,11 +112,11 @@ impl ImmutableFoundryDestroyParams {
 }
 
 #[derive(Clone)]
-pub struct MutableFoundryDestroyParams {
+pub struct MutableNativeTokenDestroyParams {
     pub(crate) proxy: Proxy,
 }
 
-impl MutableFoundryDestroyParams {
+impl MutableNativeTokenDestroyParams {
     // serial number of the foundry
     pub fn foundry_sn(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
@@ -70,13 +124,13 @@ impl MutableFoundryDestroyParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableFoundryModifySupplyParams {
+pub struct ImmutableNativeTokenModifySupplyParams {
     pub(crate) proxy: Proxy,
 }
 
-impl ImmutableFoundryModifySupplyParams {
-    pub fn new() -> ImmutableFoundryModifySupplyParams {
-        ImmutableFoundryModifySupplyParams {
+impl ImmutableNativeTokenModifySupplyParams {
+    pub fn new() -> ImmutableNativeTokenModifySupplyParams {
+        ImmutableNativeTokenModifySupplyParams {
             proxy: params_proxy(),
         }
     }
@@ -98,11 +152,11 @@ impl ImmutableFoundryModifySupplyParams {
 }
 
 #[derive(Clone)]
-pub struct MutableFoundryModifySupplyParams {
+pub struct MutableNativeTokenModifySupplyParams {
     pub(crate) proxy: Proxy,
 }
 
-impl MutableFoundryModifySupplyParams {
+impl MutableNativeTokenModifySupplyParams {
     // mint (default) or destroy tokens
     pub fn destroy_tokens(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(PARAM_DESTROY_TOKENS))
@@ -452,36 +506,6 @@ impl MutableBalanceNativeTokenParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableFoundryOutputParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl ImmutableFoundryOutputParams {
-    pub fn new() -> ImmutableFoundryOutputParams {
-        ImmutableFoundryOutputParams {
-            proxy: params_proxy(),
-        }
-    }
-
-    // serial number of the foundry
-    pub fn foundry_sn(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableFoundryOutputParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl MutableFoundryOutputParams {
-    // serial number of the foundry
-    pub fn foundry_sn(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetAccountNonceParams {
     pub(crate) proxy: Proxy,
 }
@@ -508,6 +532,36 @@ impl MutableGetAccountNonceParams {
     // account agent ID
     pub fn agent_id(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableNativeTokenParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableNativeTokenParams {
+    pub fn new() -> ImmutableNativeTokenParams {
+        ImmutableNativeTokenParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    // serial number of the foundry
+    pub fn foundry_sn(&self) -> ScImmutableUint32 {
+        ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableNativeTokenParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableNativeTokenParams {
+    // serial number of the foundry
+    pub fn foundry_sn(&self) -> ScMutableUint32 {
+        ScMutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
 }
 

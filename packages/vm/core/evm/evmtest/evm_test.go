@@ -1337,12 +1337,15 @@ func TestERC20NativeTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	foundrySN, nativeTokenID, err := env.Chain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
+	foundrySN, nativeTokenID, err := env.Chain.NewNativeTokenParams(supply).
+		WithUser(foundryOwner).
+		WithTokenName(tokenName).
+		WithTokenSymbol(tokenTickerSymbol).
+		WithTokenDecimals(tokenDecimals).
+		CreateFoundry()
+
 	require.NoError(t, err)
 	err = env.Chain.MintTokens(foundrySN, supply, foundryOwner)
-	require.NoError(t, err)
-
-	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
 	require.NoError(t, err)
 
 	// should not allow to register again
@@ -1436,13 +1439,16 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	supply := big.NewInt(int64(10 * isc.Million))
 	sandboxCall(t, ethKey, sandbox,
 		accounts.Contract.Hname(),
-		accounts.FuncFoundryCreateNew.Hname(),
+		accounts.FuncNativeTokenCreate.Hname(),
 		dict.Dict{
 			accounts.ParamTokenScheme: codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
 				MaximumSupply: supply,
 				MeltedTokens:  big.NewInt(0),
 				MintedTokens:  big.NewInt(0),
 			}),
+			accounts.ParamTokenName:         codec.EncodeString(tokenName),
+			accounts.ParamTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
+			accounts.ParamTokenDecimals:     codec.EncodeUint8(tokenDecimals),
 		},
 		1*isc.Million, // allowance necessary to cover the foundry creation SD
 	)
@@ -1454,25 +1460,12 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	// use the foundry owner ethereum account to mint tokens
 	sandboxCall(t, ethKey, sandbox,
 		accounts.Contract.Hname(),
-		accounts.FuncFoundryModifySupply.Hname(),
+		accounts.FuncNativeTokenModifySupply.Hname(),
 		dict.Dict{
 			accounts.ParamFoundrySN:      codec.Encode(foundrySN),
 			accounts.ParamSupplyDeltaAbs: codec.Encode(supply), // mint the entire supply
 		},
 		1*isc.Million, // allowance necessary to cover the accounting UTXO created for a first time a new kind of NT is minted
-	)
-
-	// register the foundry on the test chain (I really want to do this automatically upon foundry creation in the future)
-	sandboxCall(t, ethKey, sandbox,
-		evm.Contract.Hname(),
-		evm.FuncRegisterERC20NativeToken.Hname(),
-		dict.Dict{
-			evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
-			evm.FieldTokenName:         codec.EncodeString(tokenName),
-			evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
-			evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
-		},
-		0, // no allowance necessary
 	)
 
 	// foundryChain itself will create a request targeting the test chain
@@ -1702,11 +1695,14 @@ func TestERC20NativeTokensLongName(t *testing.T) {
 
 	supply := big.NewInt(int64(10 * isc.Million))
 
-	foundrySN, _, err := env.Chain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
-	require.NoError(t, err)
-
-	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	foundrySN, _, err := env.Chain.NewNativeTokenParams(supply).
+		WithUser(foundryOwner).
+		WithTokenName(tokenName).
+		WithTokenSymbol(tokenTickerSymbol).
+		WithTokenDecimals(tokenDecimals).
+		CreateFoundry()
 	require.ErrorContains(t, err, "too long")
+	require.Zero(t, foundrySN)
 }
 
 // test withdrawing ALL EVM balance to a L1 address via the magic contract
@@ -2347,6 +2343,31 @@ func TestMagicContractExamples(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = contract.CallFn(nil, "registerToken", "TESTCOIN", "TEST", uint8(18), uint64(10_000))
+	require.NoError(t, err)
+
+	_, err = contract.CallFn(nil, "mint", big.NewInt(1000), uint64(10_000))
+	require.NoError(t, err)
+
+	ethKey2, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	isTestContract := env.deployISCTestContract(ethKey2)
+	iscTestAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, isTestContract.address)
+	env.Chain.GetL2FundsFromFaucet(iscTestAgentID)
+
+	_, err = isTestContract.CallFn(nil, "mint", uint32(1), big.NewInt(1000), uint64(10_000))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unauthorized")
+}
+
+func TestMagicContractExamplesWithNativeToken(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+
+	contract := env.deployERC20ExampleContract(ethKey)
+
+	contractAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, contract.address)
+	env.Chain.GetL2FundsFromFaucet(contractAgentID)
+
+	_, err := contract.CallFn(nil, "createNativeTokenFoundry", "TESTCOIN", "TEST", uint8(18), big.NewInt(1000000), uint64(10_000))
 	require.NoError(t, err)
 
 	_, err = contract.CallFn(nil, "mint", big.NewInt(1000), uint64(10_000))

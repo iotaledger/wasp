@@ -459,7 +459,7 @@ func TestWasmTypes(t *testing.T) {
 
 func getTokenID(ctx *wasmsolo.SoloContext) (nativeTokenID iotago.NativeTokenID, err error) {
 	maxSupply := 100
-	fp := ctx.Chain.NewFoundryParams(ctx.Cvt.ToBigInt(maxSupply))
+	fp := ctx.Chain.NewNativeTokenParams(ctx.Cvt.ToBigInt(maxSupply))
 	_, nativeTokenID, err = fp.CreateFoundry()
 	if err != nil {
 		return iotago.NativeTokenID{}, err

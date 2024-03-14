@@ -156,7 +156,7 @@ func TestFoundryCreateNew(t *testing.T) {
 	require.Equal(t, uint32(2), f.Results.FoundrySN().Value())
 }
 
-func TestFoundryDestroy(t *testing.T) {
+func TestNativeTokenDestroy(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent("user")
 
@@ -172,7 +172,7 @@ func TestFoundryDestroy(t *testing.T) {
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	require.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
 
-	fdes := coreaccounts.ScFuncs.FoundryDestroy(ctx)
+	fdes := coreaccounts.ScFuncs.NativeTokenDestroy(ctx)
 	fdes.Params.FoundrySN().SetValue(1)
 	fdes.Func.Post()
 	require.NoError(t, ctx.Err)
@@ -195,7 +195,7 @@ func TestFoundryNew(t *testing.T) {
 	require.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
 }
 
-func TestFoundryModifySupply(t *testing.T) {
+func NativeTokenndryModifySupply(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent("user0")
 
@@ -203,13 +203,13 @@ func TestFoundryModifySupply(t *testing.T) {
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 
-	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
+	fmod1 := coreaccounts.ScFuncs.NativeTokenModifySupply(ctx.Sign(user0))
 	fmod1.Params.FoundrySN().SetValue(1)
 	fmod1.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
 	fmod1.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 
-	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
+	fmod2 := coreaccounts.ScFuncs.NativeTokenModifySupply(ctx.Sign(user0))
 	fmod2.Params.FoundrySN().SetValue(foundry.SN())
 	fmod2.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
 	fmod2.Params.DestroyTokens().SetValue(true)
@@ -668,7 +668,7 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	require.False(t, f.Results.Mapping().GetBool(notExistTokenID).Value())
 }
 
-func TestFoundryOutput(t *testing.T) {
+func TestNativeTokenOutput(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent("user")
 
@@ -685,7 +685,7 @@ func TestFoundryOutput(t *testing.T) {
 	serialNum := uint32(1)
 	require.Equal(t, serialNum, fnew.Results.FoundrySN().Value())
 
-	f := coreaccounts.ScFuncs.FoundryOutput(ctx)
+	f := coreaccounts.ScFuncs.NativeToken(ctx)
 	f.Params.FoundrySN().SetValue(1)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)

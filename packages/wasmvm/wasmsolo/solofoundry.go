@@ -17,7 +17,7 @@ type SoloFoundry struct {
 
 func NewSoloFoundry(ctx *SoloContext, maxSupply interface{}, agent ...*SoloAgent) (sf *SoloFoundry, err error) {
 	sf = &SoloFoundry{ctx: ctx}
-	fp := ctx.Chain.NewFoundryParams(cvt.ToBigInt(maxSupply))
+	fp := ctx.Chain.NewNativeTokenParams(cvt.ToBigInt(maxSupply))
 	if len(agent) == 1 {
 		sf.agent = agent[0]
 		fp.WithUser(sf.agent.Pair)
