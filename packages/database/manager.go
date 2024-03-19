@@ -15,6 +15,7 @@ import (
 
 const (
 	StoreVersionChainState byte = 1
+	CacheSizeDefault            = 1024 * 1024 * 32
 )
 
 type ChainStateKVStoreProvider func(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex, error)
@@ -25,6 +26,7 @@ type ChainStateDatabaseManager struct {
 	// options
 	engine       hivedb.Engine
 	databasePath string
+	cacheSize    uint64
 
 	// databases
 	databases map[isc.ChainID]*databaseWithHealthTracker
@@ -39,6 +41,12 @@ func WithEngine(engine hivedb.Engine) options.Option[ChainStateDatabaseManager] 
 func WithPath(databasePath string) options.Option[ChainStateDatabaseManager] {
 	return func(d *ChainStateDatabaseManager) {
 		d.databasePath = databasePath
+	}
+}
+
+func WithCacheSize(cacheSize uint64) options.Option[ChainStateDatabaseManager] {
+	return func(d *ChainStateDatabaseManager) {
+		d.cacheSize = cacheSize
 	}
 }
 
@@ -89,7 +97,14 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 		return databaseChainState, nil
 	}
 
-	databaseChainState, err := newDatabaseWithHealthTracker(path.Join(m.databasePath, chainID.String()), m.engine, false, StoreVersionChainState, nil)
+	databaseChainState, err := newDatabaseWithHealthTracker(
+		path.Join(m.databasePath, chainID.String()),
+		m.engine,
+		false,
+		m.cacheSize,
+		StoreVersionChainState,
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("chain state database initialization failed: %w", err)
 	}

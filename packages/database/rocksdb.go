@@ -10,9 +10,10 @@ import (
 )
 
 // NewRocksDB creates a new RocksDB instance.
-func NewRocksDB(path string) (*rocksdb.RocksDB, error) {
+func NewRocksDB(path string, cacheSize uint64) (*rocksdb.RocksDB, error) {
 	opts := []rocksdb.Option{
 		rocksdb.IncreaseParallelism(runtime.NumCPU() - 1),
+		rocksdb.BlockCacheSize(cacheSize),
 		rocksdb.Custom([]string{
 			"stats_dump_period_sec=10",
 			"periodic_compaction_seconds=43200",
@@ -25,8 +26,8 @@ func NewRocksDB(path string) (*rocksdb.RocksDB, error) {
 	return rocksdb.CreateDB(path, opts...)
 }
 
-func newDatabaseRocksDB(path string, autoFlush bool) (*Database, error) {
-	rocksDatabase, err := NewRocksDB(path)
+func newDatabaseRocksDB(path string, autoFlush bool, cacheSize uint64) (*Database, error) {
+	rocksDatabase, err := NewRocksDB(path, cacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("rocksdb database initialization failed: %w", err)
 	}
