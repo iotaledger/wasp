@@ -1,6 +1,7 @@
 package state
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -79,4 +80,43 @@ func (s *state) SchemaVersion() isc.SchemaVersion {
 
 func (s *state) String() string {
 	return fmt.Sprintf("State[si#%v]%v", s.BlockIndex(), s.TrieRoot())
+}
+
+func (s *state) Equals(other State) bool {
+	if !s.TrieRoot().Equals(other.TrieRoot()) ||
+		s.BlockIndex() != other.BlockIndex() ||
+		s.Timestamp() != other.Timestamp() ||
+		!s.PreviousL1Commitment().Equals(other.PreviousL1Commitment()) {
+		return false
+	}
+	commonState := getCommonState(s, other)
+	for _, entry := range commonState {
+		if !bytes.Equal(entry.value1, entry.value2) {
+			return false
+		}
+	}
+	return true
+}
+
+type commonEntry struct {
+	value1 []byte
+	value2 []byte
+}
+
+func getCommonState(state1, state2 State) map[kv.Key]*commonEntry {
+	result := make(map[kv.Key]*commonEntry)
+	iterateFun := func(iterState State, setValueFun func(*commonEntry, []byte)) {
+		iterState.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+			entry, ok := result[key]
+			if !ok {
+				entry = &commonEntry{}
+				result[key] = entry
+			}
+			setValueFun(entry, value)
+			return true
+		})
+	}
+	iterateFun(state1, func(entry *commonEntry, value []byte) { entry.value1 = value })
+	iterateFun(state2, func(entry *commonEntry, value []byte) { entry.value2 = value })
+	return result
 }

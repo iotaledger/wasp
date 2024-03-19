@@ -62,7 +62,7 @@ func runTestChainOfBlocks(
 	for _, block := range blocksToCommit {
 		sd := bf.GetStateDraft(block)
 		block2 := store.Commit(sd)
-		sm_gpa_utils.CheckBlocksEqual(t, block, block2)
+		require.True(t, block.Equals(block2))
 		log.Debugf("Committed block: %v %s", block.StateIndex(), block.L1Commitment())
 	}
 	for _, block := range blocksToPrune {

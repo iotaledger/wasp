@@ -284,7 +284,7 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *sm_input
 				require.Equal(teT.t, len(expected), len(received))
 				for i := range expected {
 					teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expected[i].L1Commitment(), received[i].L1Commitment())
-					sm_gpa_utils.CheckBlocksEqual(teT.t, expected[i], received[i])
+					require.True(teT.t, expected[i].Equals(received[i]))
 				}
 			}
 			teT.t.Log("Checking added blocks...")

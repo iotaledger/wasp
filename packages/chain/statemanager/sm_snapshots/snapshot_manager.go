@@ -88,7 +88,7 @@ func NewSnapshotManager(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-// NOTE: implementation is inherited from snapshotManagerRunner
+// NOTE: implementations are inherited from snapshotManagerRunner
 
 // -------------------------------------
 // Implementations of snapshotManagerCore interface

@@ -39,7 +39,7 @@ func TestBlockWALBasic(t *testing.T) {
 	for i := range blocksInWAL {
 		block, err2 := walGood.Read(blocks[i].Hash())
 		require.NoError(t, err2)
-		CheckBlocksEqual(t, blocks[i], block)
+		require.True(t, blocks[i].Equals(block))
 		_, err2 = walBad.Read(blocks[i].Hash())
 		require.Error(t, err2)
 	}
@@ -63,7 +63,7 @@ func TestBlockWALLegacy(t *testing.T) {
 	for i := range blocks {
 		block, err := wal.Read(blocks[i].Hash())
 		require.NoError(t, err)
-		CheckBlocksEqual(t, blocks[i], block)
+		require.True(t, blocks[i].Equals(block))
 	}
 }
 
@@ -91,7 +91,7 @@ func TestBlockWALNoSubfolder(t *testing.T) {
 		require.True(t, wal.Contains(block.Hash()))
 		blockRead, err := wal.Read(block.Hash())
 		require.NoError(t, err)
-		CheckBlocksEqual(t, block, blockRead)
+		require.True(t, block.Equals(blockRead))
 	}
 }
 
@@ -130,7 +130,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	require.True(t, wal.Contains(blocks[0].Hash()))
 	block, err = wal.Read(blocks[0].Hash())
 	require.NoError(t, err)
-	CheckBlocksEqual(t, blocks[0], block)
+	require.True(t, blocks[0].Equals(block))
 }
 
 // Check if after restart wal is functioning correctly
@@ -155,7 +155,7 @@ func TestBlockWALRestart(t *testing.T) {
 		require.True(t, wal.Contains(blocks[i].Hash()))
 		block, err := wal.Read(blocks[i].Hash())
 		require.NoError(t, err)
-		CheckBlocksEqual(t, blocks[i], block)
+		require.True(t, blocks[i].Equals(block))
 	}
 }
 
@@ -185,7 +185,7 @@ func testReadAllByStateIndex(t *testing.T, addToWALFun func(isc.ChainID, BlockWA
 
 	for i := 0; i <= branchBlockIndex; i++ {
 		require.Equal(t, uint32(i+1), blocksRead[i].StateIndex())
-		CheckBlocksEqual(t, blocksMain[i], blocksRead[i])
+		require.True(t, blocksMain[i].Equals(blocksRead[i]))
 	}
 	for i := branchBlockIndex + 1; i < mainBlocks; i++ {
 		blocksReadIndex := i*2 - branchBlockIndex - 1
@@ -196,8 +196,8 @@ func testReadAllByStateIndex(t *testing.T, addToWALFun func(isc.ChainID, BlockWA
 		if !blocksMain[i].L1Commitment().Equals(block1.L1Commitment()) {
 			block1, block2 = block2, block1
 		}
-		CheckBlocksEqual(t, blocksMain[i], block1)
-		CheckBlocksEqual(t, blocksBranch[i-branchBlockIndex-1], block2)
+		require.True(t, blocksMain[i].Equals(block1))
+		require.True(t, blocksBranch[i-branchBlockIndex-1].Equals(block2))
 	}
 }
 
