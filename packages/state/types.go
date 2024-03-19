@@ -118,6 +118,7 @@ type State interface {
 	kv.KVStoreReader
 	TrieRoot() trie.Hash
 	GetMerkleProof(key []byte) *trie.MerkleProof
+	Equals(State) bool
 	StateCommonValues
 }
 
