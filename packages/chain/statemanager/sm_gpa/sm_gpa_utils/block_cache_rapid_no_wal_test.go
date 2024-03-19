@@ -179,7 +179,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 	require.True(t, ok)
 	block := bcnwtsmT.bc.GetBlock(blockExpected.L1Commitment())
 	require.NotNil(t, block)
-	CheckBlocksEqual(t, blockExpected, block)
+	require.True(t, blockExpected.Equals(block))
 }
 
 func TestBlockCachePropBasedNoWAL(t *testing.T) {
