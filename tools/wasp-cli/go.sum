@@ -147,6 +147,8 @@ github.com/dvsekhvalnov/jose2go v1.6.0 h1:Y9gnSnP4qEI0+/uQkHvFXeD2PLPJeXEL+ySMEA
 github.com/dvsekhvalnov/jose2go v1.6.0/go.mod h1:QsHjhyTlD/lAVqn/NSbVZmSCGeDehTB/mPZadG+mhXU=
 github.com/ebitengine/purego v0.6.0-alpha.5 h1:EYID3JOAdmQ4SNZYJHu9V6IqOeRQDBYxqKAg9PyoHFY=
 github.com/ebitengine/purego v0.6.0-alpha.5/go.mod h1:ah1In8AOtksoNK6yk5z1HTJeUkC1Ez4Wk2idgGslMwQ=
+github.com/ebitengine/purego v0.6.1 h1:sjN8rfzbhXQ59/pE+wInswbU9aMDHiwlup4p/a07Mkg=
+github.com/ebitengine/purego v0.6.1/go.mod h1:ah1In8AOtksoNK6yk5z1HTJeUkC1Ez4Wk2idgGslMwQ=
 github.com/eclipse/paho.mqtt.golang v1.4.3 h1:2kwcUGn8seMUfWndX0hGbvH8r7crgcJguQNCyp70xik=
 github.com/eclipse/paho.mqtt.golang v1.4.3/go.mod h1:CSYvoAlsMkhYOXh/oKyxa8EcBci6dVkLCbo5tTC1RIE=
 github.com/elastic/gosigar v0.12.0/go.mod h1:iXRIGg2tLnu7LBdpqzyQfGDEidKCfWcCMS0WKyPWoMs=
@@ -387,6 +389,8 @@ github.com/iotaledger/iota.go/v3 v3.0.0-rc.3 h1:/2gH+AlsWX2T7f4uHvD7oAHmPRsW+Skj
 github.com/iotaledger/iota.go/v3 v3.0.0-rc.3/go.mod h1:R3m6d5AFI0I++HOaYQR7QU8hY//vUSwbOyqQ7Bco2O4=
 github.com/iotaledger/wasp-wallet-sdk v0.0.0-20240206105424-87cee27ddfbf h1:OpWBa6XYL0CvRYNqjfa/glctDgVFTVAxJSd5hum7PS4=
 github.com/iotaledger/wasp-wallet-sdk v0.0.0-20240206105424-87cee27ddfbf/go.mod h1:QJt/KZdzzcqSql+CMWIc9KBjkUN3hK4iQrXCS9/2tzs=
+github.com/iotaledger/wasp-wallet-sdk v0.0.0-20240320120018-8416b148aa8b h1:jlwujQtgJVIO6j39feJJnrkuLidiSHq6vltAFyJcu+Y=
+github.com/iotaledger/wasp-wallet-sdk v0.0.0-20240320120018-8416b148aa8b/go.mod h1:kZwHqnxnydLbgBMDzQfiMLSTtq9S4n3/tkpN8KjXZOY=
 github.com/ipfs/go-cid v0.4.1 h1:A/T3qGvxi4kpKWWcPC/PgbvDA2bjVLO7n4UeVwnbs/s=
 github.com/ipfs/go-cid v0.4.1/go.mod h1:uQHwDeX4c6CtyrFwdqyhpNcxVewur1M7l7fNU7LKwZk=
 github.com/ipfs/go-detect-race v0.0.1 h1:qX/xay2W3E4Q1U7d9lNs1sU9nvguX0a7319XbyQ6cOk=
