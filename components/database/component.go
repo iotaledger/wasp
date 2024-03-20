@@ -42,7 +42,7 @@ func initConfigParams(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func() cfgResult {
-		dbEngine, err := hivedb.EngineFromStringAllowed(ParamsDatabase.Engine, database.AllowedEnginesDefault)
+		dbEngine, err := hivedb.EngineFromStringAllowed(ParamsDatabase.Engine, database.AllowedEngines)
 		if err != nil {
 			Component.LogPanic(err)
 		}
@@ -81,6 +81,7 @@ func provide(c *dig.Container) error {
 			deps.ChainRecordRegistryProvider,
 			database.WithEngine(deps.DatabaseEngine),
 			database.WithPath(ParamsDatabase.ChainState.Path),
+			database.WithCacheSize(ParamsDatabase.ChainState.CacheSize),
 		)
 		if err != nil {
 			Component.LogPanic(err)

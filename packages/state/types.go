@@ -100,6 +100,7 @@ type Block interface {
 	L1Commitment() *L1Commitment
 	// Hash is computed from Mutations + PreviousL1Commitment
 	Hash() BlockHash
+	Equals(Block) bool
 	Bytes() []byte
 	Read(io.Reader) error
 	Write(io.Writer) error
@@ -117,6 +118,7 @@ type State interface {
 	kv.KVStoreReader
 	TrieRoot() trie.Hash
 	GetMerkleProof(key []byte) *trie.MerkleProof
+	Equals(State) bool
 	StateCommonValues
 }
 

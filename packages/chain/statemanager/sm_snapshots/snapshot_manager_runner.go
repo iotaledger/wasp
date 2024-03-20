@@ -96,6 +96,7 @@ func (smrT *snapshotManagerRunner) snapshotCreated(snapshotInfo SnapshotInfo) {
 // -------------------------------------
 
 func (smrT *snapshotManagerRunner) run() {
+	defer smrT.blockCommittedPipe.Close()
 	blockCommittedPipeCh := smrT.blockCommittedPipe.Out()
 	for {
 		if smrT.ctx.Err() != nil {

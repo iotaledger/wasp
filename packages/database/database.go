@@ -11,19 +11,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chaindb"
 )
 
-var (
-	AllowedEnginesDefault = []hivedb.Engine{
-		hivedb.EngineAuto,
-		hivedb.EngineMapDB,
-		hivedb.EngineRocksDB,
-	}
-
-	AllowedEnginesStorage = []hivedb.Engine{
-		hivedb.EngineRocksDB,
-	}
-
-	AllowedEnginesStorageAuto = append(AllowedEnginesStorage, hivedb.EngineAuto)
-)
+var AllowedEngines = []hivedb.Engine{
+	hivedb.EngineMapDB,
+	hivedb.EngineRocksDB,
+}
 
 type StoreVersionUpdateFunc func(store kvstore.KVStore, oldVersion byte, newVersion byte) error
 
@@ -83,43 +74,39 @@ func (db *Database) Size() (int64, error) {
 }
 
 // CheckEngine is a wrapper around hivedb.CheckEngine to throw a custom error message in case of engine mismatch.
-func CheckEngine(dbPath string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine, allowedEngines ...hivedb.Engine) (hivedb.Engine, error) {
-	tmpAllowedEngines := AllowedEnginesDefault
-	if len(allowedEngines) > 0 {
-		tmpAllowedEngines = allowedEngines
-	}
-
-	targetEngine, err := hivedb.CheckEngine(dbPath, createDatabaseIfNotExists, dbEngine, tmpAllowedEngines)
+func CheckEngine(dbPath string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine) (hivedb.Engine, error) {
+	targetEngine, err := hivedb.CheckEngine(dbPath, createDatabaseIfNotExists, dbEngine, AllowedEngines)
 	if err != nil {
 		if errors.Is(err, hivedb.ErrEngineMismatch) {
 			//nolint:stylecheck // this error message is shown to the user
 			return hivedb.EngineUnknown, fmt.Errorf("database (%s) engine does not match the configuration: '%v' != '%v'", dbPath, targetEngine, dbEngine[0])
 		}
-
 		return hivedb.EngineUnknown, err
 	}
-
 	return targetEngine, nil
 }
 
-// DatabaseWithDefaultSettings returns a database with default settings.
-// It also checks if the database engine is correct.
-//
-//nolint:revive
-func DatabaseWithDefaultSettings(path string, createDatabaseIfNotExists bool, dbEngine hivedb.Engine, autoFlush bool, allowedEngines ...hivedb.Engine) (*Database, error) {
-	tmpAllowedEngines := AllowedEnginesDefault
-	if len(allowedEngines) > 0 {
-		tmpAllowedEngines = allowedEngines
-	}
+func NewDatabaseInMemory() (*Database, error) {
+	return NewDatabase(hivedb.EngineMapDB, "", false, false, 0)
+}
 
-	targetEngine, err := CheckEngine(path, createDatabaseIfNotExists, dbEngine, tmpAllowedEngines...)
+// NewDatabase opens a database.
+// It also checks if the database engine is correct.
+func NewDatabase(
+	dbEngine hivedb.Engine,
+	path string,
+	createDatabaseIfNotExists bool,
+	autoFlush bool,
+	cacheSize uint64,
+) (*Database, error) {
+	targetEngine, err := CheckEngine(path, createDatabaseIfNotExists, dbEngine)
 	if err != nil {
 		return nil, err
 	}
 
 	switch targetEngine {
 	case hivedb.EngineRocksDB:
-		return newDatabaseRocksDB(path, autoFlush)
+		return newDatabaseRocksDB(path, autoFlush, cacheSize)
 
 	case hivedb.EngineMapDB:
 		return newDatabaseMapDB(), nil
@@ -134,8 +121,15 @@ type databaseWithHealthTracker struct {
 	storeHealthTracker *kvstore.StoreHealthTracker
 }
 
-func newDatabaseWithHealthTracker(path string, dbEngine hivedb.Engine, autoFlush bool, storeVersion byte, storeVersionUpdateFunc StoreVersionUpdateFunc) (*databaseWithHealthTracker, error) {
-	db, err := DatabaseWithDefaultSettings(path, true, dbEngine, autoFlush, AllowedEnginesDefault...)
+func newDatabaseWithHealthTracker(
+	path string,
+	dbEngine hivedb.Engine,
+	autoFlush bool,
+	cacheSize uint64,
+	storeVersion byte,
+	storeVersionUpdateFunc StoreVersionUpdateFunc,
+) (*databaseWithHealthTracker, error) {
+	db, err := NewDatabase(dbEngine, path, true, autoFlush, cacheSize)
 	if err != nil {
 		return nil, err
 	}
