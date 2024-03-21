@@ -253,6 +253,144 @@ func TestReplay(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestEqualStates(t *testing.T) {
+	db1 := mapdb.NewMapDB()
+	cs1 := mustChainStore{initializedStore(db1)}
+	time1 := time.Now()
+	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("variable a"))
+	draft1.Set("b", []byte("variable b"))
+	block1 := cs1.Commit(draft1)
+	time2 := time.Now()
+	draft2 := cs1.NewStateDraft(time2, block1.L1Commitment())
+	draft2.Set("b", []byte("another value of b"))
+	draft2.Set("c", []byte("new variable c"))
+	block2 := cs1.Commit(draft2)
+	time3 := time.Now()
+	draft3 := cs1.NewStateDraft(time3, block2.L1Commitment())
+	draft3.Del("a")
+	draft3.Set("d", []byte("newest variable d"))
+	block3 := cs1.Commit(draft3)
+	state1 := cs1.StateByTrieRoot(block3.TrieRoot())
+
+	db2 := mapdb.NewMapDB()
+	cs2 := mustChainStore{initializedStore(db2)}
+	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1.Set("b", []byte("variable b"))
+	draft1.Set("a", []byte("variable a"))
+	block1 = cs2.Commit(draft1)
+	draft2 = cs2.NewStateDraft(time2, block1.L1Commitment())
+	draft2.Set("c", []byte("new variable c"))
+	draft2.Set("b", []byte("another value of b"))
+	block2 = cs2.Commit(draft2)
+	draft3 = cs2.NewStateDraft(time3, block2.L1Commitment())
+	draft3.Set("d", []byte("newest variable d"))
+	draft3.Del("a")
+	block3 = cs2.Commit(draft3)
+	state2 := cs2.StateByTrieRoot(block3.TrieRoot())
+
+	require.True(t, state1.Equals(state2))
+	require.True(t, state2.Equals(state1))
+	require.True(t, state1.TrieRoot().Equals(state2.TrieRoot()))
+	require.Equal(t, state1.BlockIndex(), state2.BlockIndex())
+	require.Equal(t, state1.Timestamp(), state2.Timestamp())
+	require.True(t, state1.PreviousL1Commitment().Equals(state2.PreviousL1Commitment()))
+	commonState := getCommonState(state1, state2)
+	for _, entry := range commonState {
+		require.True(t, bytes.Equal(entry.value1, entry.value2))
+	}
+}
+
+type commonEntry struct {
+	value1 []byte
+	value2 []byte
+}
+
+func getCommonState(state1, state2 state.State) map[kv.Key]*commonEntry {
+	result := make(map[kv.Key]*commonEntry)
+	iterateFun := func(iterState state.State, setValueFun func(*commonEntry, []byte)) {
+		iterState.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+			entry, ok := result[key]
+			if !ok {
+				entry = &commonEntry{}
+				result[key] = entry
+			}
+			setValueFun(entry, value)
+			return true
+		})
+	}
+	iterateFun(state1, func(entry *commonEntry, value []byte) { entry.value1 = value })
+	iterateFun(state2, func(entry *commonEntry, value []byte) { entry.value2 = value })
+	return result
+}
+
+func TestDiffStatesValues(t *testing.T) {
+	db1 := mapdb.NewMapDB()
+	cs1 := mustChainStore{initializedStore(db1)}
+	time1 := time.Now()
+	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("variable a"))
+	block1 := cs1.Commit(draft1)
+	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
+
+	db2 := mapdb.NewMapDB()
+	cs2 := mustChainStore{initializedStore(db2)}
+	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("other value of a"))
+	block1 = cs2.Commit(draft1)
+	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
+
+	require.False(t, state1.Equals(state2))
+	require.False(t, state2.Equals(state1))
+}
+
+func TestDiffStatesBlockIndex(t *testing.T) {
+	db1 := mapdb.NewMapDB()
+	cs1 := mustChainStore{initializedStore(db1)}
+	time1 := time.Now()
+	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("variable a"))
+	block1 := cs1.Commit(draft1)
+	time2 := time.Now()
+	draft2 := cs1.NewStateDraft(time2, block1.L1Commitment())
+	draft1.Set("b", []byte("variable b"))
+	block2 := cs1.Commit(draft2)
+	state1 := cs1.StateByTrieRoot(block2.TrieRoot())
+
+	db2 := mapdb.NewMapDB()
+	cs2 := mustChainStore{initializedStore(db2)}
+	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("variable a"))
+	draft1.Set("b", []byte("variable b"))
+	block1 = cs2.Commit(draft1)
+	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
+
+	require.Equal(t, uint32(2), state1.BlockIndex())
+	require.Equal(t, uint32(1), state2.BlockIndex())
+	require.False(t, state1.Equals(state2))
+	require.False(t, state2.Equals(state1))
+}
+
+func TestDiffStatesTimestamp(t *testing.T) {
+	db1 := mapdb.NewMapDB()
+	cs1 := mustChainStore{initializedStore(db1)}
+	draft1 := cs1.NewStateDraft(time.Now(), origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("variable a"))
+	block1 := cs1.Commit(draft1)
+	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
+
+	db2 := mapdb.NewMapDB()
+	cs2 := mustChainStore{initializedStore(db2)}
+	draft1 = cs2.NewStateDraft(time.Now(), origin.L1Commitment(0, nil, 0))
+	draft1.Set("a", []byte("variable a"))
+	block1 = cs2.Commit(draft1)
+	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
+
+	require.NotEqual(t, state1.Timestamp(), state2.Timestamp())
+	require.False(t, state1.Equals(state2))
+	require.False(t, state2.Equals(state1))
+}
+
 func TestProof(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := mustChainStore{initializedStore(db)}
