@@ -155,6 +155,11 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
+	/*
+		ctx.Privileged().CallOnBehalfOf(ctx.Caller(), evm.Contract.Hname(), evm.FuncRegisterERC721NFTCollection.Hname(), dict.Dict{
+			evm.FieldNFTCollectionID: codec.EncodeNFTID(nftOutput.NFTID),
+		}, ctx.AllowanceAvailable())*/
+
 	return dict.Dict{
 		ParamMintID: mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
 	}

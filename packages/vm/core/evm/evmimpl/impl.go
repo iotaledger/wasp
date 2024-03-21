@@ -163,6 +163,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
+
 	// revert the changes in the state / txbuilder in case of error
 	ctx.RequireNoError(revertErr)
 
@@ -233,7 +234,7 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
 	}
 
 	tokenScheme := func() iotago.TokenScheme {
-		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
+		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewNativeToken.Hname(), dict.Dict{
 			accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 		})
 		o := codec.MustDecodeOutput(res[accounts.ParamFoundryOutputBin])

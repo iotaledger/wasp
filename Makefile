@@ -32,6 +32,7 @@ all: build-lint
 
 wasm:
 	bash contracts/wasm/scripts/schema_all.sh
+	bash contracts/wasm/scripts/core_build.sh
 
 compile-solidity:
 	cd packages/vm/core/evm/iscmagic && go generate

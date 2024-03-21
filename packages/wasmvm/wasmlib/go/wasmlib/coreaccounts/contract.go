@@ -17,14 +17,19 @@ type FoundryCreateNewCall struct {
 	Results ImmutableFoundryCreateNewResults
 }
 
-type FoundryDestroyCall struct {
+type NativeTokenCreateCall struct {
 	Func   *wasmlib.ScFunc
-	Params MutableFoundryDestroyParams
+	Params MutableNativeTokenCreateParams
 }
 
-type FoundryModifySupplyCall struct {
+type NativeTokenDestroyCall struct {
 	Func   *wasmlib.ScFunc
-	Params MutableFoundryModifySupplyParams
+	Params MutableNativeTokenDestroyParams
+}
+
+type NativeTokenModifySupplyCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableNativeTokenModifySupplyParams
 }
 
 type TransferAccountToChainCall struct {
@@ -94,12 +99,6 @@ type BalanceNativeTokenCall struct {
 	Results ImmutableBalanceNativeTokenResults
 }
 
-type FoundryOutputCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableFoundryOutputParams
-	Results ImmutableFoundryOutputResults
-}
-
 type GetAccountNonceCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetAccountNonceParams
@@ -109,6 +108,12 @@ type GetAccountNonceCall struct {
 type GetNativeTokenIDRegistryCall struct {
 	Func    *wasmlib.ScView
 	Results ImmutableGetNativeTokenIDRegistryResults
+}
+
+type NativeTokenCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableNativeTokenParams
+	Results ImmutableNativeTokenResults
 }
 
 type NftDataCall struct {
@@ -139,17 +144,24 @@ func (sc Funcs) FoundryCreateNew(ctx wasmlib.ScFuncClientContext) *FoundryCreate
 	return f
 }
 
+// Creates a new foundry and registers it as a ERC20 and IRC30 token
+func (sc Funcs) NativeTokenCreate(ctx wasmlib.ScFuncClientContext) *NativeTokenCreateCall {
+	f := &NativeTokenCreateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncNativeTokenCreate)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 // Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
 // The foundry must be owned by the caller.
-func (sc Funcs) FoundryDestroy(ctx wasmlib.ScFuncClientContext) *FoundryDestroyCall {
-	f := &FoundryDestroyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryDestroy)}
+func (sc Funcs) NativeTokenDestroy(ctx wasmlib.ScFuncClientContext) *NativeTokenDestroyCall {
+	f := &NativeTokenDestroyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncNativeTokenDestroy)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 // Mints or destroys tokens for the given foundry, which must be owned by the caller.
-func (sc Funcs) FoundryModifySupply(ctx wasmlib.ScFuncClientContext) *FoundryModifySupplyCall {
-	f := &FoundryModifySupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFoundryModifySupply)}
+func (sc Funcs) NativeTokenModifySupply(ctx wasmlib.ScFuncClientContext) *NativeTokenModifySupplyCall {
+	f := &NativeTokenModifySupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncNativeTokenModifySupply)}
 	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
@@ -247,14 +259,6 @@ func (sc Funcs) BalanceNativeToken(ctx wasmlib.ScViewClientContext) *BalanceNati
 	return f
 }
 
-// Returns specified foundry output in serialized form.
-func (sc Funcs) FoundryOutput(ctx wasmlib.ScViewClientContext) *FoundryOutputCall {
-	f := &FoundryOutputCall{Func: wasmlib.NewScView(ctx, HScName, HViewFoundryOutput)}
-	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 // Returns the current account nonce for an Agent.
 // The account nonce is used to issue unique off-ledger requests.
 func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewClientContext) *GetAccountNonceCall {
@@ -267,6 +271,14 @@ func (sc Funcs) GetAccountNonce(ctx wasmlib.ScViewClientContext) *GetAccountNonc
 // Returns a set of all native tokenIDs that are owned by the chain.
 func (sc Funcs) GetNativeTokenIDRegistry(ctx wasmlib.ScViewClientContext) *GetNativeTokenIDRegistryCall {
 	f := &GetNativeTokenIDRegistryCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetNativeTokenIDRegistry)}
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
+	return f
+}
+
+// Returns specified foundry output in serialized form.
+func (sc Funcs) NativeToken(ctx wasmlib.ScViewClientContext) *NativeTokenCall {
+	f := &NativeTokenCall{Func: wasmlib.NewScView(ctx, HScName, HViewNativeToken)}
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
@@ -290,8 +302,9 @@ var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncDeposit,
 		FuncFoundryCreateNew,
-		FuncFoundryDestroy,
-		FuncFoundryModifySupply,
+		FuncNativeTokenCreate,
+		FuncNativeTokenDestroy,
+		FuncNativeTokenModifySupply,
 		FuncTransferAccountToChain,
 		FuncTransferAllowanceTo,
 		FuncWithdraw,
@@ -304,13 +317,14 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBalance,
 		ViewBalanceBaseToken,
 		ViewBalanceNativeToken,
-		ViewFoundryOutput,
 		ViewGetAccountNonce,
 		ViewGetNativeTokenIDRegistry,
+		ViewNativeToken,
 		ViewNftData,
 		ViewTotalAssets,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,

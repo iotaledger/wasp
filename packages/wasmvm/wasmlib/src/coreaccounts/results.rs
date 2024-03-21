@@ -426,36 +426,6 @@ impl MutableBalanceNativeTokenResults {
 }
 
 #[derive(Clone)]
-pub struct ImmutableFoundryOutputResults {
-    pub proxy: Proxy,
-}
-
-impl ImmutableFoundryOutputResults {
-    // serialized foundry output
-    pub fn foundry_output_bin(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableFoundryOutputResults {
-    pub proxy: Proxy,
-}
-
-impl MutableFoundryOutputResults {
-    pub fn new() -> MutableFoundryOutputResults {
-        MutableFoundryOutputResults {
-            proxy: results_proxy(),
-        }
-    }
-
-    // serialized foundry output
-    pub fn foundry_output_bin(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetAccountNonceResults {
     pub proxy: Proxy,
 }
@@ -538,6 +508,36 @@ impl MutableGetNativeTokenIDRegistryResults {
     // token IDs
     pub fn mapping(&self) -> MapTokenIDToMutableBool {
         MapTokenIDToMutableBool { proxy: self.proxy.clone() }
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableNativeTokenResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableNativeTokenResults {
+    // serialized foundry output
+    pub fn foundry_output_bin(&self) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableNativeTokenResults {
+    pub proxy: Proxy,
+}
+
+impl MutableNativeTokenResults {
+    pub fn new() -> MutableNativeTokenResults {
+        MutableNativeTokenResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    // serialized foundry output
+    pub fn foundry_output_bin(&self) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
     }
 }
 
