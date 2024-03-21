@@ -10,9 +10,9 @@ import "./ISCPrivileged.sol";
 
 // The ERC20 contract for ISC L2 native tokens (on-chain foundry).
 contract ERC20NativeTokens {
-    string _name;
-    string _tickerSymbol;
-    uint8 _decimals;
+    string private _name;
+    string private _tickerSymbol;
+    uint8 private _decimals;
 
     event Approval(
         address indexed tokenOwner,

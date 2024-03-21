@@ -102,7 +102,16 @@ func (e *EVMContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 
 	nonce := e.chain.getNonce(senderAddress)
 
-	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, opt.gasPrice, callData)
+	unsignedTx := types.NewTx(
+		&types.LegacyTx{
+			Nonce:    nonce,
+			To:       &e.address,
+			Value:    opt.value,
+			Gas:      opt.gasLimit,
+			GasPrice: opt.gasPrice,
+			Data:     callData,
+		},
+	)
 
 	return types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(e.chain.evmChain.ChainID()))), opt.sender)
 }

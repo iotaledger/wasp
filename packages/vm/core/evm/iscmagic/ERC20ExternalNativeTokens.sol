@@ -7,16 +7,21 @@ import "./ERC20NativeTokens.sol";
 
 // The ERC20 contract for ISC L2 native tokens (off-chain foundry).
 contract ERC20ExternalNativeTokens is ERC20NativeTokens {
-    NativeTokenID _nativeTokenID;
+    NativeTokenID private _nativeTokenID;
 
     // TODO: this value is set at contract creation, and may get outdated
-    uint256 _maximumSupply;
+    uint256 private _maximumSupply;
 
-    function nativeTokenID() public override view returns (NativeTokenID memory) {
+    function nativeTokenID()
+        public
+        view
+        override
+        returns (NativeTokenID memory)
+    {
         return _nativeTokenID;
     }
 
-    function totalSupply() public override view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _maximumSupply;
     }
 }

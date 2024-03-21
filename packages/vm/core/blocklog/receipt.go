@@ -161,15 +161,15 @@ func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKe
 	return ret
 }
 
-func (k RequestLookupKey) BlockIndex() uint32 {
+func (k *RequestLookupKey) BlockIndex() uint32 {
 	return codec.MustDecodeUint32(k[:4])
 }
 
-func (k RequestLookupKey) RequestIndex() uint16 {
+func (k *RequestLookupKey) RequestIndex() uint16 {
 	return codec.MustDecodeUint16(k[4:6])
 }
 
-func (k RequestLookupKey) Bytes() []byte {
+func (k *RequestLookupKey) Bytes() []byte {
 	return k[:]
 }
 

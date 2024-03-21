@@ -147,7 +147,7 @@ func (reqctx *requestContext) requestLookupKey() blocklog.RequestLookupKey {
 	return blocklog.NewRequestLookupKey(reqctx.vm.stateDraft.BlockIndex(), reqctx.requestIndex)
 }
 
-func (reqctx *requestContext) eventLookupKey() blocklog.EventLookupKey {
+func (reqctx *requestContext) eventLookupKey() *blocklog.EventLookupKey {
 	return blocklog.NewEventLookupKey(reqctx.vm.stateDraft.BlockIndex(), reqctx.requestIndex, reqctx.requestEventIndex)
 }
 
