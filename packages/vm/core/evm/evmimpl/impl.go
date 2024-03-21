@@ -470,7 +470,16 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
-	tx := types.NewTransaction(nonce, addr, wei, 0, gasPrice, txData)
+	tx := types.NewTx(
+		&types.LegacyTx{
+			Nonce:    nonce,
+			To:       &addr,
+			Value:    wei,
+			Gas:      0,
+			GasPrice: gasPrice,
+			Data:     txData,
+		},
+	)
 
 	// create a fake receipt
 	receipt := &types.Receipt{

@@ -14,20 +14,28 @@ import "./ERC721NFTs.sol";
 contract ERC721NFTCollection is ERC721NFTs {
     using ISCTypes for ISCNFT;
 
-    NFTID _collectionId;
-    string _collectionName; // extracted from the IRC27 metadata
+    NFTID private _collectionId;
+    string private _collectionName; // extracted from the IRC27 metadata
 
-    function _balanceOf(ISCAgentID memory owner) internal virtual override view returns (uint256) {
+    function _balanceOf(
+        ISCAgentID memory owner
+    ) internal view virtual override returns (uint256) {
         return __iscAccounts.getL2NFTAmountInCollection(owner, _collectionId);
     }
 
-    function _isManagedByThisContract(ISCNFT memory nft) internal virtual override view returns (bool) {
+    function _isManagedByThisContract(
+        ISCNFT memory nft
+    ) internal view virtual override returns (bool) {
         return nft.isInCollection(_collectionId);
+    }
+
+    function collectionId() external view virtual returns (NFTID) {
+        return _collectionId;
     }
 
     // IERC721Metadata
 
-    function name() external virtual override view returns (string memory) {
+    function name() external view virtual override returns (string memory) {
         return _collectionName;
     }
 }
