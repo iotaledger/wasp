@@ -5,7 +5,10 @@ pragma solidity >=0.8.11;
 
 import "./ISCTypes.sol";
 
-// Functions of the ISC Magic Contract to access the core accounts functionality
+/**
+ * @title ISCAccounts
+ * @dev Functions of the ISC Magic Contract to access the core accounts functionality
+ */
 interface ISCAccounts {
     // Get the L2 base tokens balance of an account
     function getL2BalanceBaseTokens(ISCAgentID memory agentID) external view returns (uint64);

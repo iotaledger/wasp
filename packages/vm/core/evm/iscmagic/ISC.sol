@@ -12,6 +12,11 @@ import "./ERC20NativeTokens.sol";
 import "./ERC721NFTs.sol";
 import "./ERC721NFTCollection.sol";
 
+/**
+ * @title ISC Library
+ * @dev This library contains various interfaces and functions related to the IOTA Smart Contracts (ISC) system.
+ * It provides access to the ISCSandbox, ISCAccounts, ISCUtil, ERC20BaseTokens, ERC20NativeTokens, ERC721NFTs, and ERC721NFTCollection contracts.
+ */
 library ISC {
     ISCSandbox constant sandbox = __iscSandbox;
 

@@ -5,8 +5,11 @@ pragma solidity >=0.8.11;
 
 import "./ISCTypes.sol";
 
-// The ISC magic contract has some extra methods not included in the standard ISC interface:
-// (only callable from privileged contracts)
+/**
+ * @title ISCPrivileged
+ * @dev The ISCPrivileged interface represents a contract that has some extra methods not included in the standard ISC interface.
+ * These methods can only be called from privileged contracts.
+ */
 interface ISCPrivileged {
     function moveBetweenAccounts(
         address sender,

@@ -1,0 +1,18 @@
+{
+    "name": "solidity-docs",
+    "version": "0.0.0",
+    "description": "Solidity documentation generator",
+    "author": "Iota Smart Contracts",
+    "license": "Apache-2.0",
+    "scripts": {
+        "gen-docs:iscmagic": "yarn hardhat --config hardhat.config.iscmagic.ts docgen",
+        "gen-docs:iscutils": "yarn hardhat --config hardhat.config.iscutils.ts docgen",
+        "gen-docs:all": "yarn gen-docs:iscmagic && yarn gen-docs:iscutils"
+    },
+    "devDependencies": {
+        "hardhat": "^2.21.0",
+        "solidity-docgen": "^0.6.0-beta.36",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    }
+}

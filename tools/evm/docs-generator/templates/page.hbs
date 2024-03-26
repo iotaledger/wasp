@@ -1,0 +1,13 @@
+---
+title: {{without-ext id}}
+{{#with items.[0].documentation }}
+description: '{{get-first-natspec text 'dev'}}'
+{{/with}}
+---
+
+{{#each items}}
+{{#hsection 0}}
+{{>item}}
+{{/hsection}}
+
+{{/each}}

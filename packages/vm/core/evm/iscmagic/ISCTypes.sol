@@ -3,6 +3,10 @@
 
 pragma solidity >=0.8.11;
 
+/**
+ * @dev Collection of types and constants used in the ISC system
+ */
+
 // Every ISC chain is initialized with an instance of the Magic contract at this address
 address constant ISC_MAGIC_ADDRESS = 0x1074000000000000000000000000000000000000;
 
