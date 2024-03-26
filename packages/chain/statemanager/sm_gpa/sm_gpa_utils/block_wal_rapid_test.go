@@ -143,7 +143,7 @@ func (bwtsmT *blockWALTestSM) ReadGoodBlock(t *rapid.T) {
 	require.NoError(t, err)
 	blockExpected, ok := bwtsmT.blocks[blockHash]
 	require.True(t, ok)
-	CheckBlocksEqual(t, blockExpected, block)
+	require.True(t, blockExpected.Equals(block))
 	t.Logf("Block %s read", blockHash)
 }
 
@@ -156,7 +156,7 @@ func (bwtsmT *blockWALTestSM) ReadMovedBlock(t *rapid.T) {
 	require.NoError(t, err)
 	blockExpected, ok := bwtsmT.blocks[blockHash]
 	require.True(t, ok)
-	CheckBlocksDifferent(t, blockExpected, block)
+	require.False(t, blockExpected.Equals(block))
 	t.Logf("Moved block %s read", blockHash)
 }
 

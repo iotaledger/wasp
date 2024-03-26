@@ -50,7 +50,7 @@ var Processor = evm.Contract.Processor(nil,
 
 // SetInitialState initializes the evm core contract and the Ethereum genesis
 // block on a newly created ISC chain.
-func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseTokenMagicWrap bool) {
 	// Ethereum genesis block configuration
 	genesisAlloc := core.GenesisAlloc{}
 
@@ -64,13 +64,15 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 		Balance: nil,
 	}
 
-	// add the ERC20BaseTokens contract at address 0x10740100...00
-	genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
-		Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
-		Storage: map[common.Hash]common.Hash{},
-		Balance: nil,
+	if createBaseTokenMagicWrap {
+		// add the ERC20BaseTokens contract at address 0x10740100...00
+		genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
+			Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
+			Storage: map[common.Hash]common.Hash{},
+			Balance: nil,
+		}
+		addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 	}
-	addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 
 	// add the ERC721NFTs contract at address 0x10740300...00
 	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
@@ -468,7 +470,16 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
-	tx := types.NewTransaction(nonce, addr, wei, 0, gasPrice, txData)
+	tx := types.NewTx(
+		&types.LegacyTx{
+			Nonce:    nonce,
+			To:       &addr,
+			Value:    wei,
+			Gas:      0,
+			GasPrice: gasPrice,
+			Data:     txData,
+		},
+	)
 
 	// create a fake receipt
 	receipt := &types.Receipt{

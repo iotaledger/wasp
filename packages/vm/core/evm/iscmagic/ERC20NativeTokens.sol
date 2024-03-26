@@ -12,9 +12,9 @@ import "./ISCPrivileged.sol";
  * @dev The ERC20 contract native tokens (on-chain foundry).
  */
 contract ERC20NativeTokens {
-    string _name;
-    string _tickerSymbol;
-    uint8 _decimals;
+    string private _name;
+    string private _tickerSymbol;
+    uint8 private _decimals;
 
     /**
      * @dev Emitted when the allowance of a spender for an owner is set.

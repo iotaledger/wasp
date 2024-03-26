@@ -19,11 +19,12 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 	var deletedValues [][]byte
 
 	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
-		if refcounts.GetNode(n.Commitment) == 0 {
+		refcount := refcounts.GetNode(n.Commitment)
+		if refcount == 0 {
 			// node already deleted
 			return IterateSkipSubtree
 		}
-		deleteNode, deleteValue := refcounts.Dec(n)
+		deleteNode, deleteValue := refcounts.Dec(n, refcount)
 		if deleteValue {
 			deletedValues = append(deletedValues, n.Terminal.Bytes())
 		}

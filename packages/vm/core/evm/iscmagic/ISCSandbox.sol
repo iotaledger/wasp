@@ -11,16 +11,16 @@ import "./ISCTypes.sol";
  */
 interface ISCSandbox {
     // Get the ISC request ID
-    function getRequestID() external returns (ISCRequestID memory);
+    function getRequestID() external view returns (ISCRequestID memory);
 
     // Get the AgentID of the sender of the ISC request
-    function getSenderAccount() external returns (ISCAgentID memory);
+    function getSenderAccount() external view returns (ISCAgentID memory);
 
     // Trigger an ISC event
     function triggerEvent(string memory s) external;
 
     // Get a random 32-bit value based on the hash of the current ISC state transaction
-    function getEntropy() external returns (bytes32);
+    function getEntropy() external view returns (bytes32);
 
     // Allow the `target` EVM contract to take some funds from the caller's L2 account
     function allow(address target, ISCAssets memory allowance) external;

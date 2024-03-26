@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore"
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/wasp/packages/database"
 )
 
@@ -24,7 +23,7 @@ func count(t *testing.T, store kvstore.KVStore) int {
 }
 
 func TestDbClean(t *testing.T) {
-	tmpdb, err := database.DatabaseWithDefaultSettings("", false, hivedb.EngineMapDB, false)
+	tmpdb, err := database.NewDatabaseInMemory()
 	require.NoError(t, err)
 
 	storeTmp := tmpdb.KVStore()

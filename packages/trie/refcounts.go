@@ -48,11 +48,12 @@ func (r *Refcounts) incNode(commitment Hash) uint32 {
 	return incRefcount(r.nodes, commitment[:])
 }
 
-func (r *Refcounts) Dec(node *NodeData) (deleteNode, deleteValue bool) {
-	n := decRefcount(r.nodes, node.Commitment[:])
+func (r *Refcounts) Dec(node *NodeData, currentNodeRefcount uint32) (deleteNode, deleteValue bool) {
+	n := decRefcount(r.nodes, node.Commitment[:], currentNodeRefcount)
 	deleteNode = n == 0
 	if n == 0 && node.Terminal != nil && !node.Terminal.IsValue {
-		nv := decRefcount(r.values, node.Terminal.Data)
+		nv := getRefcount(r.values, node.Terminal.Data)
+		nv = decRefcount(r.values, node.Terminal.Data, nv)
 		deleteValue = nv == 0
 	}
 	return
@@ -80,14 +81,14 @@ func incRefcount(s KVStore, key []byte) uint32 {
 	return n
 }
 
-func decRefcount(s KVStore, key []byte) uint32 {
-	n := getRefcount(s, key)
-	if n == 0 {
+func decRefcount(s KVStore, key []byte, currentRefcount uint32) uint32 {
+	if currentRefcount == 0 {
 		panic("inconsistency: negative refcount")
 	}
-	n--
-	setRefcount(s, key, n)
-	return n
+
+	newRefcount := currentRefcount - 1
+	setRefcount(s, key, newRefcount)
+	return newRefcount
 }
 
 func getRefcount(s KVStore, key []byte) uint32 {

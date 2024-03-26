@@ -16,22 +16,22 @@ require (
 	github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ethereum/go-ethereum v1.13.13
-	github.com/golang-jwt/jwt/v5 v5.2.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.2.4
-	github.com/iotaledger/hive.go/app v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/constraints v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/crypto v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/ds v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/ierrors v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/kvstore v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/lo v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/logger v0.0.0-20231106113411-94ac829adbb2
+	github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/ds v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/ierrors v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/lo v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/logger v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/objectstorage v0.0.0-20231010133617-cdbd5387e2af
-	github.com/iotaledger/hive.go/runtime v0.0.0-20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20231106113411-94ac829adbb2
-	github.com/iotaledger/hive.go/web v0.0.0-20231106113411-94ac829adbb2
+	github.com/iotaledger/hive.go/runtime v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/web v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a
 	github.com/iotaledger/inx/go v1.0.0-rc.2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
@@ -46,20 +46,20 @@ require (
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
 	github.com/pingcap/go-ycsb v1.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.18.0
+	github.com/prometheus/client_golang v1.19.0
 	github.com/samber/lo v1.38.1
 	github.com/second-state/WasmEdge-go v0.13.4
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/wasmerio/wasmer-go v1.0.4
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98
 	go.dedis.ch/kyber/v3 v3.1.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/dig v1.17.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.19.0
-	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
-	golang.org/x/net v0.21.0
+	golang.org/x/crypto v0.21.0
+	golang.org/x/exp v0.0.0-20240314144324-c7f7c6466f7f
+	golang.org/x/net v0.22.0
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.10
@@ -151,7 +151,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/miekg/dns v1.1.55 // indirect
 	github.com/mikioh/tcpinfo v0.0.0-20190314235526-30a79bb1804b // indirect
 	github.com/mikioh/tcpopt v0.0.0-20190314235656-172688c1accc // indirect
@@ -181,7 +180,7 @@ require (
 	github.com/pingcap/errors v0.11.5-0.20211224045212-9687c2b0f87c // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.45.0 // indirect
+	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.3.3 // indirect
@@ -211,12 +210,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/grpc v1.57.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect

@@ -80,3 +80,7 @@ func (s *state) SchemaVersion() isc.SchemaVersion {
 func (s *state) String() string {
 	return fmt.Sprintf("State[si#%v]%v", s.BlockIndex(), s.TrieRoot())
 }
+
+func (s *state) Equals(other State) bool {
+	return s.TrieRoot().Equals(other.TrieRoot())
+}

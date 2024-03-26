@@ -74,7 +74,7 @@ func NewMockedSnapshotManager(
 // Implementations of SnapshotManager interface
 // -------------------------------------
 
-// NOTE: implementation are inherited from snapshotManagerRunner
+// NOTE: implementations are inherited from snapshotManagerRunner
 
 // -------------------------------------
 // Additional API functions of MockedSnapshotManager

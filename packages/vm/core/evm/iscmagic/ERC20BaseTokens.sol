@@ -13,7 +13,7 @@ import "./ISCAccounts.sol";
  * @dev The ERC20 contract directly mapped to the L1 base token.
  */
 contract ERC20BaseTokens {
-    uint256 constant MAX_UINT64 = type(uint64).max;
+    uint256 private constant MAX_UINT64 = type(uint64).max;
 
     /**
      * @dev Emitted when the approval of tokens is granted by a token owner to a spender.

@@ -166,8 +166,10 @@ func New(
 	})
 
 	result.cleanupFun = func() {
-		// result.inputPipe.Close() // TODO: Uncomment it.
-		// result.messagePipe.Close() // TODO: Uncomment it.
+		result.inputPipe.Close()
+		result.messagePipe.Close()
+		result.nodePubKeysPipe.Close()
+		result.preliminaryBlockPipe.Close()
 		util.ExecuteIfNotNil(unhook)
 	}
 

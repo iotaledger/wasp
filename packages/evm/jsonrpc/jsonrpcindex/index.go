@@ -34,7 +34,7 @@ func New(
 	indexDbEngine hivedb.Engine,
 	indexDbPath string,
 ) *Index {
-	db, err := database.DatabaseWithDefaultSettings(indexDbPath, true, indexDbEngine, false)
+	db, err := database.NewDatabase(indexDbEngine, indexDbPath, true, false, database.CacheSizeDefault)
 	if err != nil {
 		panic(err)
 	}
@@ -66,9 +66,6 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	lastBlockIndexed := c.lastBlockIndexed()
 	if lastBlockIndexed != nil {
 		cacheUntil = *lastBlockIndexed
-	}
-	if blockIndexToCache <= cacheUntil {
-		return
 	}
 
 	// we need to look at the next block to get the trie commitment of the block we want to cache

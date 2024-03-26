@@ -10,16 +10,21 @@ import "./ERC20NativeTokens.sol";
  * @dev The ERC20 contract for externally registered native tokens (off-chain foundry).
  */
 contract ERC20ExternalNativeTokens is ERC20NativeTokens {
-    NativeTokenID _nativeTokenID;
+    NativeTokenID private _nativeTokenID;
 
     // TODO: this value is set at contract creation, and may get outdated
-    uint256 _maximumSupply;
+    uint256 private _maximumSupply;
 
     /**
      * @dev Returns the native token ID.
      * @return The native token ID.
      */
-    function nativeTokenID() public override view returns (NativeTokenID memory) {
+    function nativeTokenID()
+        public
+        view
+        override
+        returns (NativeTokenID memory)
+    {
         return _nativeTokenID;
     }
 
@@ -27,7 +32,7 @@ contract ERC20ExternalNativeTokens is ERC20NativeTokens {
      * @dev Returns the total supply of the native tokens.
      * @return The total supply of the native tokens.
      */
-    function totalSupply() public override view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _maximumSupply;
     }
 }

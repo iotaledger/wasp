@@ -52,7 +52,7 @@ import (
 )
 
 func TestStorageContract(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
 
@@ -98,7 +98,7 @@ func TestStorageContract(t *testing.T) {
 }
 
 func TestLowLevelCallRevert(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	contract := env.DeployContract(ethKey, evmtest.RevertTestContractABI, evmtest.RevertTestContractBytecode)
@@ -117,7 +117,7 @@ func TestLowLevelCallRevert(t *testing.T) {
 }
 
 func TestERC20Contract(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	// deploy solidity `erc20` contract
@@ -146,7 +146,7 @@ func TestERC20Contract(t *testing.T) {
 }
 
 func TestGetCode(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	erc20 := env.deployERC20Contract(ethKey, "TestCoin", "TEST")
 
@@ -158,7 +158,7 @@ func TestGetCode(t *testing.T) {
 }
 
 func TestGasCharged(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -174,7 +174,7 @@ func TestGasCharged(t *testing.T) {
 }
 
 func TestGasRatio(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -204,7 +204,7 @@ func TestGasRatio(t *testing.T) {
 
 // tests that the gas limits are correctly enforced based on the base tokens sent
 func TestGasLimit(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -228,7 +228,7 @@ func TestGasLimit(t *testing.T) {
 }
 
 func TestNotEnoughISCGas(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -270,7 +270,7 @@ func TestNotEnoughISCGas(t *testing.T) {
 
 // ensure the amount of base tokens sent impacts the amount of gas used
 func TestLoop(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	loop := env.deployLoopContract(ethKey)
 
@@ -296,7 +296,7 @@ func TestLoop(t *testing.T) {
 }
 
 func TestLoopWithGasLeft(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -317,7 +317,7 @@ func TestLoopWithGasLeft(t *testing.T) {
 }
 
 func TestEstimateGasWithoutFunds(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -334,7 +334,7 @@ func TestEstimateGasWithoutFunds(t *testing.T) {
 }
 
 func TestLoopWithGasLeftEstimateGas(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -361,7 +361,7 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 }
 
 func TestEstimateContractGas(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, true)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	contract := env.deployERC20Contract(ethKey, "TEST", "tst")
 
@@ -386,7 +386,7 @@ func TestEstimateContractGas(t *testing.T) {
 }
 
 func TestCallViewGasLimit(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	loop := env.deployLoopContract(ethKey)
 
@@ -405,7 +405,7 @@ func TestCallViewGasLimit(t *testing.T) {
 func TestMagicContract(t *testing.T) {
 	// deploy the evm contract, which starts an EVM chain and automatically
 	// deploys the isc.sol EVM contract at address 0x10740000...
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	// deploy the isc-test.sol EVM contract
@@ -420,7 +420,7 @@ func TestMagicContract(t *testing.T) {
 }
 
 func TestISCChainOwnerID(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	var ret struct {
@@ -433,7 +433,7 @@ func TestISCChainOwnerID(t *testing.T) {
 }
 
 func TestISCTimestamp(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	var ret int64
@@ -447,7 +447,7 @@ func TestISCTimestamp(t *testing.T) {
 }
 
 func TestISCCallView(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	ret := new(iscmagic.ISCDict)
@@ -464,7 +464,7 @@ func TestISCCallView(t *testing.T) {
 }
 
 func TestISCNFTData(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	// mint an NFT and send it to the chain
@@ -496,7 +496,7 @@ func TestISCNFTData(t *testing.T) {
 }
 
 func TestISCNFTMint(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -534,7 +534,7 @@ func TestISCNFTMint(t *testing.T) {
 }
 
 func TestISCTriggerEvent(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -551,7 +551,7 @@ func TestISCTriggerEvent(t *testing.T) {
 }
 
 func TestISCTriggerEventThenFail(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -566,7 +566,7 @@ func TestISCTriggerEventThenFail(t *testing.T) {
 }
 
 func TestISCEntropy(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -581,7 +581,7 @@ func TestISCEntropy(t *testing.T) {
 }
 
 func TestISCGetRequestID(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -599,7 +599,7 @@ func TestISCGetRequestID(t *testing.T) {
 }
 
 func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -619,7 +619,7 @@ func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -632,7 +632,7 @@ func TestISCGetSenderAccount(t *testing.T) {
 }
 
 func TestSendNonPayableValueTX(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -668,7 +668,7 @@ func TestSendNonPayableValueTX(t *testing.T) {
 }
 
 func TestSendPayableValueTX(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	ethKey, senderEthAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
@@ -715,7 +715,7 @@ func TestSendPayableValueTX(t *testing.T) {
 }
 
 func TestSendBaseTokens(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, true)
 
 	ethKey, ethAddress := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 	_, receiver := env.solo.NewKeyPair(env.solo.NewSeedFromIndex(1))
@@ -767,7 +767,7 @@ func TestSendBaseTokens(t *testing.T) {
 }
 
 func TestSendBaseTokensAnotherChain(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
@@ -809,7 +809,7 @@ func TestSendBaseTokensAnotherChain(t *testing.T) {
 }
 
 func TestCannotDepleteAccount(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
@@ -848,7 +848,7 @@ func TestCannotDepleteAccount(t *testing.T) {
 }
 
 func TestSendNFT(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
 
@@ -892,7 +892,7 @@ func TestSendNFT(t *testing.T) {
 }
 
 func TestERC721NFTs(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
 
@@ -959,7 +959,7 @@ func TestERC721NFTs(t *testing.T) {
 }
 
 func TestERC721NFTCollection(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	collectionOwner, collectionOwnerAddr := env.solo.NewKeyPairWithFunds()
 	err := env.Chain.DepositBaseTokensToL2(env.solo.L1BaseTokens(collectionOwnerAddr)/2, collectionOwner)
@@ -1098,7 +1098,7 @@ func TestERC721NFTCollection(t *testing.T) {
 }
 
 func TestISCCall(t *testing.T) {
-	env := InitEVM(t, inccounter.Processor)
+	env := InitEVM(t, false, inccounter.Processor)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	err := env.Chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
@@ -1117,7 +1117,7 @@ func TestISCCall(t *testing.T) {
 }
 
 func TestFibonacciContract(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	fibo := env.deployFibonacciContract(ethKey)
 	require.EqualValues(t, 2, env.getBlockNumber())
@@ -1130,7 +1130,7 @@ func TestFibonacciContract(t *testing.T) {
 }
 
 func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -1157,7 +1157,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 }
 
 func TestISCPanic(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	iscTest := env.deployISCTestContract(ethKey)
@@ -1174,7 +1174,7 @@ func TestISCPanic(t *testing.T) {
 }
 
 func TestISCSendWithArgs(t *testing.T) {
-	env := InitEVM(t, inccounter.Processor)
+	env := InitEVM(t, false, inccounter.Processor)
 	err := env.Chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
 
@@ -1228,7 +1228,7 @@ func TestISCSendWithArgs(t *testing.T) {
 }
 
 func TestERC20BaseTokens(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, true)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 
 	erc20 := env.ERC20BaseTokens(ethKey)
@@ -1326,7 +1326,7 @@ func TestERC20BaseTokens(t *testing.T) {
 }
 
 func TestERC20NativeTokens(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	const (
 		tokenName         = "ERC20 Native Token Test"
@@ -1399,7 +1399,7 @@ func sandboxCall(t *testing.T, wallet *ecdsa.PrivateKey, sandboxContract *IscCon
 }
 
 func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, true)
 
 	const (
 		tokenName         = "ERC20 Native Token Test"
@@ -1690,7 +1690,7 @@ func testERC20NativeTokens(
 }
 
 func TestERC20NativeTokensLongName(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	var (
 		tokenName         = strings.Repeat("A", 10_000)
@@ -1713,7 +1713,7 @@ func TestERC20NativeTokensLongName(t *testing.T) {
 
 // test withdrawing ALL EVM balance to a L1 address via the magic contract
 func TestEVMWithdrawAll(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
 
@@ -1767,7 +1767,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 }
 
 func TestEVMGasPriceMismatch(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, senderAddress := env.Chain.NewEthereumAccountWithL2Funds()
 
 	// deploy solidity `storage` contract
@@ -1789,7 +1789,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 }
 
 func TestEVMIntrinsicGas(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	sandbox := env.ISCMagicSandbox(ethKey)
 	res, err := sandbox.CallFn([]ethCallOptions{{
@@ -1801,7 +1801,7 @@ func TestEVMIntrinsicGas(t *testing.T) {
 }
 
 func TestEVMTransferBaseTokens(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
 	someAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, someEthereumAddr)
@@ -1828,7 +1828,7 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 }
 
 func TestSolidityTransferBaseTokens(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
 	someEthereumAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, someEthereumAddr)
@@ -1891,7 +1891,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 }
 
 func TestSendEntireBalance(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
 	someEthereumAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, someEthereumAddr)
@@ -1951,7 +1951,7 @@ func TestSendEntireBalance(t *testing.T) {
 }
 
 func TestSolidityRevertMessage(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -1981,7 +1981,7 @@ func TestSolidityRevertMessage(t *testing.T) {
 }
 
 func TestCallContractCannotCauseStackOverflow(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	iscTest := env.deployISCTestContract(ethKey)
@@ -2001,7 +2001,7 @@ func TestCallContractCannotCauseStackOverflow(t *testing.T) {
 }
 
 func TestStaticCall(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -2017,7 +2017,7 @@ func TestStaticCall(t *testing.T) {
 }
 
 func TestSelfDestruct(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
 	iscTest := env.deployISCTestContract(ethKey)
@@ -2047,7 +2047,7 @@ func TestSelfDestruct(t *testing.T) {
 }
 
 func TestChangeGasLimit(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -2072,7 +2072,7 @@ func TestChangeGasLimit(t *testing.T) {
 }
 
 func TestChangeGasPerToken(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	var fee uint64
 	{
@@ -2104,7 +2104,7 @@ func TestChangeGasPerToken(t *testing.T) {
 }
 
 func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	var gasLimit []uint64
 
@@ -2134,7 +2134,7 @@ func TestGasPriceIgnoredInEstimateGas(t *testing.T) {
 
 // calling views via eth_call must not cost gas (still has a maximum budget, but simple view calls should pass)
 func TestEVMCallViewGas(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	// issue a view call from an account with no funds
 	ethKey, _ := solo.NewEthereumAccount()
@@ -2147,7 +2147,7 @@ func TestEVMCallViewGas(t *testing.T) {
 }
 
 func TestGasPrice(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 
 	price1 := env.evmChain.GasPrice().Uint64()
 	require.NotZero(t, price1)
@@ -2185,7 +2185,7 @@ func TestGasPrice(t *testing.T) {
 }
 
 func TestTraceTransaction(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 
 	traceLatestTx := func() *jsonrpc.CallFrame {
@@ -2220,7 +2220,7 @@ func TestTraceTransaction(t *testing.T) {
 }
 
 func TestMagicContractExamples(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	contract := env.deployERC20ExampleContract(ethKey)
@@ -2248,7 +2248,7 @@ func TestMagicContractExamples(t *testing.T) {
 }
 
 func TestCaller(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 	err := env.Chain.TransferAllowanceTo(
@@ -2267,7 +2267,7 @@ func TestCaller(t *testing.T) {
 }
 
 func TestCustomError(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 	_, err := iscTest.CallFn([]ethCallOptions{{
@@ -2286,7 +2286,7 @@ func TestCustomError(t *testing.T) {
 }
 
 func TestEmitEventAndRevert(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 	res, err := iscTest.CallFn([]ethCallOptions{{
@@ -2297,7 +2297,7 @@ func TestEmitEventAndRevert(t *testing.T) {
 }
 
 func TestL1DepositEVM(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	// ensure that after a deposit to an EVM account, there is a tx/receipt for it to be auditable on the EVM side
 	wallet, l1Addr := env.solo.NewKeyPairWithFunds()
 	_, ethAddr := solo.NewEthereumAccount()
@@ -2371,7 +2371,7 @@ func TestL1DepositEVM(t *testing.T) {
 
 func TestDecimalsConversion(t *testing.T) {
 	parameters.InitL1(parameters.L1ForTesting)
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -2395,7 +2395,7 @@ func TestDecimalsConversion(t *testing.T) {
 }
 
 func TestPreEIP155Transaction(t *testing.T) {
-	env := InitEVM(t)
+	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
 	// use a signer without replay protection
@@ -2410,4 +2410,12 @@ func TestPreEIP155Transaction(t *testing.T) {
 
 	err = env.evmChain.SendTransaction(tx)
 	require.NoError(t, err)
+}
+
+func TestDisableMagicWrap(t *testing.T) {
+	envWithoutMagicWrap := InitEVM(t, false)
+	require.Nil(t, envWithoutMagicWrap.getCode(envWithoutMagicWrap.ERC20BaseTokens(nil).address))
+
+	envWithMagicWrap := InitEVM(t, true)
+	require.NotNil(t, envWithMagicWrap.getCode(envWithMagicWrap.ERC20BaseTokens(nil).address))
 }
