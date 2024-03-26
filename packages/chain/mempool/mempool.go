@@ -136,7 +136,7 @@ type mempoolImpl struct {
 	tangleTime                     time.Time
 	timePool                       TimePool
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest]
-	offLedgerPool                  *TypedPoolByNonce[isc.OffLedgerRequest]
+	offLedgerPool                  *offLedgerPool
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
 	chainHeadState                 state.State
@@ -233,7 +233,7 @@ func New(
 		tangleTime:                     time.Time{},
 		timePool:                       NewTimePool(metrics.SetTimePoolSize, log.Named("TIM")),
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
-		offLedgerPool:                  NewTypedPoolByNonce[isc.OffLedgerRequest](waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
+		offLedgerPool:                  NewOffledgerPool(waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
 		chainHeadAO:                    nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
@@ -545,6 +545,9 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 			return fmt.Errorf("no funds on chain")
 		}
 	}
+
+	// TODO check gas price - must be equal or higher than the feePolicy
+
 	return nil
 }
 
@@ -600,7 +603,7 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 		})
 	}
 
-	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry[isc.OffLedgerRequest]) {
+	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
 		agentID, err := isc.AgentIDFromString(account)
 		if err != nil {
 			panic(fmt.Errorf("invalid agentID string: %s", err.Error()))
@@ -906,7 +909,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 }
 
 func (mpi *mempoolImpl) handleForceCleanMempool() {
-	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry[isc.OffLedgerRequest]) {
+	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
 		for _, e := range entries {
 			if time.Since(e.ts) > mpi.ttl && !lo.Some(mpi.consensusInstances, e.proposedFor) {
 				mpi.log.Debugf("handleForceCleanMempool, request TTL expired, removing: %s", e.req.ID().String())

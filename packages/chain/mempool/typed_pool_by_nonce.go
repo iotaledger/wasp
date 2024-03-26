@@ -17,49 +17,55 @@ import (
 )
 
 // keeps a map of requests ordered by nonce for each account
-type TypedPoolByNonce[V isc.OffLedgerRequest] struct {
+type offLedgerPool struct {
 	waitReq WaitReq
-	refLUT  *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *OrderedPoolEntry[V]]
+	refLUT  *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *OrderedPoolEntry]
 	// reqsByAcountOrdered keeps an ordered map of reqsByAcountOrdered for each account by nonce
-	reqsByAcountOrdered *shrinkingmap.ShrinkingMap[string, []*OrderedPoolEntry[V]] // string is isc.AgentID.String()
+	reqsByAcountOrdered *shrinkingmap.ShrinkingMap[string, []*OrderedPoolEntry] // string is isc.AgentID.String()
 	sizeMetric          func(int)
 	timeMetric          func(time.Duration)
 	log                 *logger.Logger
 }
 
-func NewTypedPoolByNonce[V isc.OffLedgerRequest](waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) *TypedPoolByNonce[V] {
-	return &TypedPoolByNonce[V]{
+func NewOffledgerPool(waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) *offLedgerPool {
+	return &offLedgerPool{
 		waitReq:             waitReq,
-		reqsByAcountOrdered: shrinkingmap.New[string, []*OrderedPoolEntry[V]](),
-		refLUT:              shrinkingmap.New[isc.RequestRefKey, *OrderedPoolEntry[V]](),
+		reqsByAcountOrdered: shrinkingmap.New[string, []*OrderedPoolEntry](),
+		refLUT:              shrinkingmap.New[isc.RequestRefKey, *OrderedPoolEntry](),
 		sizeMetric:          sizeMetric,
 		timeMetric:          timeMetric,
 		log:                 log,
 	}
 }
 
-type OrderedPoolEntry[V isc.OffLedgerRequest] struct {
-	req         V
+type OrderedPoolEntry struct {
+	req         isc.OffLedgerRequest
 	old         bool
 	ts          time.Time
 	proposedFor []consGR.ConsensusID
 }
 
-func (p *TypedPoolByNonce[V]) Has(reqRef *isc.RequestRef) bool {
+func (p *offLedgerPool) Has(reqRef *isc.RequestRef) bool {
 	return p.refLUT.Has(reqRef.AsKey())
 }
 
-func (p *TypedPoolByNonce[V]) Get(reqRef *isc.RequestRef) V {
+func (p *offLedgerPool) Get(reqRef *isc.RequestRef) isc.OffLedgerRequest {
 	entry, exists := p.refLUT.Get(reqRef.AsKey())
 	if !exists {
-		return *new(V)
+		return isc.OffLedgerRequest(nil)
 	}
 	return entry.req
 }
 
-func (p *TypedPoolByNonce[V]) Add(request V) {
+func (p *offLedgerPool) Add(request isc.OffLedgerRequest) {
+	// TODO keep an ordered list by gas price
+
+	// TODO drop the tx with the lowest price if the total number of requests is too big
+
+	// TODO apply a similar limit to on-ledger requests
+
 	ref := isc.RequestRefFromRequest(request)
-	entry := &OrderedPoolEntry[V]{req: request, ts: time.Now()}
+	entry := &OrderedPoolEntry{req: request, ts: time.Now()}
 	account := request.SenderAccount().String()
 
 	if !p.refLUT.Set(ref.AsKey(), entry) {
@@ -76,7 +82,7 @@ func (p *TypedPoolByNonce[V]) Add(request V) {
 	reqsForAcount, exists := p.reqsByAcountOrdered.Get(account)
 	if !exists {
 		// no other requests for this account
-		p.reqsByAcountOrdered.Set(account, []*OrderedPoolEntry[V]{entry})
+		p.reqsByAcountOrdered.Set(account, []*OrderedPoolEntry{entry})
 		return
 	}
 
@@ -84,7 +90,7 @@ func (p *TypedPoolByNonce[V]) Add(request V) {
 
 	// find the index where the new entry should be added
 	index, exists := slices.BinarySearchFunc(reqsForAcount, entry,
-		func(a, b *OrderedPoolEntry[V]) int {
+		func(a, b *OrderedPoolEntry) int {
 			aNonce := a.req.Nonce()
 			bNonce := b.req.Nonce()
 			if aNonce == bNonce {
@@ -112,7 +118,7 @@ func (p *TypedPoolByNonce[V]) Add(request V) {
 	p.reqsByAcountOrdered.Set(account, reqsForAcount)
 }
 
-func (p *TypedPoolByNonce[V]) Remove(request V) {
+func (p *offLedgerPool) Remove(request isc.OffLedgerRequest) {
 	refKey := isc.RequestRefFromRequest(request).AsKey()
 	entry, exists := p.refLUT.Get(refKey)
 	if !exists {
@@ -132,7 +138,7 @@ func (p *TypedPoolByNonce[V]) Remove(request V) {
 		return
 	}
 	// find the request in the accounts map
-	indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry[V]) bool {
+	indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry) bool {
 		return refKey == isc.RequestRefFromRequest(e.req).AsKey()
 	})
 	if indexToDel == -1 {
@@ -148,15 +154,15 @@ func (p *TypedPoolByNonce[V]) Remove(request V) {
 	p.reqsByAcountOrdered.Set(account, reqsByAccount)
 }
 
-func (p *TypedPoolByNonce[V]) Iterate(f func(account string, requests []*OrderedPoolEntry[V])) {
-	p.reqsByAcountOrdered.ForEach(func(acc string, entries []*OrderedPoolEntry[V]) bool {
+func (p *offLedgerPool) Iterate(f func(account string, requests []*OrderedPoolEntry)) {
+	p.reqsByAcountOrdered.ForEach(func(acc string, entries []*OrderedPoolEntry) bool {
 		f(acc, slices.Clone(entries))
 		return true
 	})
 }
 
-func (p *TypedPoolByNonce[V]) Filter(predicate func(request V, ts time.Time) bool) {
-	p.refLUT.ForEach(func(refKey isc.RequestRefKey, entry *OrderedPoolEntry[V]) bool {
+func (p *offLedgerPool) Filter(predicate func(request isc.OffLedgerRequest, ts time.Time) bool) {
+	p.refLUT.ForEach(func(refKey isc.RequestRefKey, entry *OrderedPoolEntry) bool {
 		if !predicate(entry.req, entry.ts) {
 			p.Remove(entry.req)
 		}
@@ -165,12 +171,12 @@ func (p *TypedPoolByNonce[V]) Filter(predicate func(request V, ts time.Time) boo
 	p.sizeMetric(p.refLUT.Size())
 }
 
-func (p *TypedPoolByNonce[V]) StatusString() string {
+func (p *offLedgerPool) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", p.refLUT.Size())
 }
 
-func (p *TypedPoolByNonce[V]) WriteContent(w io.Writer) {
-	p.reqsByAcountOrdered.ForEach(func(_ string, list []*OrderedPoolEntry[V]) bool {
+func (p *offLedgerPool) WriteContent(w io.Writer) {
+	p.reqsByAcountOrdered.ForEach(func(_ string, list []*OrderedPoolEntry) bool {
 		for _, entry := range list {
 			jsonData, err := isc.RequestToJSON(entry.req)
 			if err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -152,4 +153,8 @@ func (req *evmOffLedgerTxRequest) VerifySignature() error {
 
 func (req *evmOffLedgerTxRequest) EVMCallMsg() *ethereum.CallMsg {
 	return EVMCallDataFromTx(req.tx)
+}
+
+func (req *evmOffLedgerTxRequest) GasPrice() (price *big.Int, specified bool) {
+	return req.tx.GasPrice(), true
 }

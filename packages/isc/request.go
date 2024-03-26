@@ -3,6 +3,7 @@ package isc
 import (
 	"fmt"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -80,6 +81,7 @@ type OffLedgerRequest interface {
 	ChainID() ChainID
 	Nonce() uint64
 	VerifySignature() error
+	GasPrice() (price *big.Int, specified bool)
 }
 
 type OnLedgerRequest interface {

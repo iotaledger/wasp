@@ -14,7 +14,7 @@ import (
 
 func TestSomething(t *testing.T) {
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
-	pool := NewTypedPoolByNonce[isc.OffLedgerRequest](waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
+	pool := NewOffledgerPool(waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
 
 	// generate a bunch of requests for the same account
 	kp, addr := testkey.GenKeyAddr()
@@ -41,7 +41,7 @@ func TestSomething(t *testing.T) {
 	require.Len(t, reqsInPoolForAccount, 4)
 
 	// try to remove everything during iteration
-	pool.Iterate(func(account string, entries []*OrderedPoolEntry[isc.OffLedgerRequest]) {
+	pool.Iterate(func(account string, entries []*OrderedPoolEntry) {
 		for _, e := range entries {
 			pool.Remove(e.req)
 		}

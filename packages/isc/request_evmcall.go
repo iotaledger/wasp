@@ -126,3 +126,8 @@ func (req *evmOffLedgerCallRequest) VerifySignature() error {
 func (req *evmOffLedgerCallRequest) EVMCallMsg() *ethereum.CallMsg {
 	return &req.callMsg
 }
+
+// GasPrice implements OffLedgerRequest.
+func (req *evmOffLedgerCallRequest) GasPrice() (price *big.Int, specified bool) {
+	return req.callMsg.GasPrice, true
+}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -270,4 +271,8 @@ func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) Unsigne
 		signature: []byte{},
 	}
 	return req
+}
+
+func (req *OffLedgerRequestData) GasPrice() (price *big.Int, specified bool) {
+	return big.NewInt(0), false
 }
