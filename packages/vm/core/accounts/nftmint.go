@@ -155,11 +155,6 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
-	/*
-		ctx.Privileged().CallOnBehalfOf(ctx.Caller(), evm.Contract.Hname(), evm.FuncRegisterERC721NFTCollection.Hname(), dict.Dict{
-			evm.FieldNFTCollectionID: codec.EncodeNFTID(nftOutput.NFTID),
-		}, ctx.AllowanceAvailable())*/
-
 	return dict.Dict{
 		ParamMintID: mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
 	}
@@ -187,9 +182,11 @@ func SaveMintedNFTOutput(state kv.KVStore, positionInMintedList, outputIndex uin
 	mintMap.SetAt(key, rec.Bytes())
 }
 
-func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {
+func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
 	mintMap := newlyMintedNFTsMap(state)
 	nftMap := NFTOutputMap(state)
+	newNFTIDs := make([]iotago.NFTID, 0)
+
 	mintMap.Iterate(func(_, recBytes []byte) bool {
 		mintedRec := mintedNFTRecordFromBytes(recBytes)
 		// calculate the NFTID from the anchor txID	+ outputIndex
@@ -208,7 +205,11 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 		}
 		// save the mapping of [mintID => NFTID]
 		mintIDMap(state).SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])
+		newNFTIDs = append(newNFTIDs, nftID)
+
 		return true
 	})
 	mintMap.Erase()
+
+	return newNFTIDs
 }

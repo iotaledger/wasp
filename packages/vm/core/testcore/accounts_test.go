@@ -1459,6 +1459,7 @@ func TestNonces(t *testing.T) {
 func TestNFTMint(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
+	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar").Bytes()
 
 	t.Run("mint for another user", func(t *testing.T) {
 		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
@@ -1468,7 +1469,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to another user and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
 		).
 			AddBaseTokens(2 * isc.Million).
@@ -1482,6 +1483,7 @@ func TestNFTMint(t *testing.T) {
 		// post a dummy request to make the chain progress to the next block
 		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
+
 	})
 
 	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
@@ -1493,7 +1495,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to another user and withdraw it
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
 			accounts.ParamNFTWithdrawOnMint, codec.Encode(true),
 		).
@@ -1528,7 +1530,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, agentID.Bytes(),
 		).
 			AddBaseTokens(2 * isc.Million).
@@ -1546,13 +1548,13 @@ func TestNFTMint(t *testing.T) {
 		require.Len(t, userL2NFTs, 1)
 
 		// try minting another NFT using the first one as the collection
-		fistNFTID := userL2NFTs[0]
+		firstNFTID := userL2NFTs[0]
 
 		req = solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar_collection"),
+			accounts.ParamNFTImmutableData, isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection"),
 			accounts.ParamAgentID, agentID.Bytes(),
-			accounts.ParamCollectionID, codec.Encode(fistNFTID),
+			accounts.ParamCollectionID, codec.Encode(firstNFTID),
 		).
 			AddBaseTokens(2 * isc.Million).
 			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
@@ -1580,11 +1582,11 @@ func TestNFTMint(t *testing.T) {
 
 		nftData, err := isc.NFTFromBytes(ret.Get(accounts.ParamNFTData))
 		require.NoError(t, err)
-		require.True(t, nftData.Issuer.Equal(fistNFTID.ToAddress()))
+		require.True(t, nftData.Issuer.Equal(firstNFTID.ToAddress()))
 		require.True(t, nftData.Owner.Equals(agentID))
 
 		// withdraw both NFTs
-		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(fistNFTID), wallet)
+		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(firstNFTID), wallet)
 		require.NoError(t, err)
 
 		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(iotago.NFTID(NFTIDInCollection)), wallet)
@@ -1601,7 +1603,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, agentID.Bytes(),
 		).
 			AddBaseTokens(2 * isc.Million).

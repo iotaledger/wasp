@@ -193,9 +193,11 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	DebitFromAccount(ctx.SchemaVersion(), ctx.State(), CommonAccount(), storageDepositAssets, chainID)
 }
 
-func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {
+func UpdateLatestOutputID(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
 	updateNativeTokenOutputIDs(state, anchorTxID)
 	updateFoundryOutputIDs(state, anchorTxID)
 	updateNFTOutputIDs(state, anchorTxID)
-	updateNewlyMintedNFTOutputIDs(state, anchorTxID, blockIndex)
+
+	newNFTIDs := updateNewlyMintedNFTOutputIDs(state, anchorTxID, blockIndex)
+	return newNFTIDs
 }
