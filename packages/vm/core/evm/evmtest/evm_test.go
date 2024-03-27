@@ -531,6 +531,18 @@ func TestISCNFTMint(t *testing.T) {
 	}
 	// assert the correct metadata is persisted in L1 and the chain
 	require.Equal(t, l1NFTData, nftData.Metadata)
+
+	retIRC27 := new(iscmagic.IRC27NFT)
+
+	env.ISCMagicSandbox(ethKey).callView(
+		"getIRC27NFTData",
+		[]interface{}{iscmagic.WrapNFTID(nftID)},
+		&retIRC27)
+
+	irc27MetaData, err := isc.IRC27NFTMetadataFromBytes(ret.Metadata)
+	require.NoError(t, err)
+
+	require.Equal(t, irc27MetaData.Name, retIRC27.Metadata.Name)
 }
 
 func TestISCTriggerEvent(t *testing.T) {

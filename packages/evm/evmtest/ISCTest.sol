@@ -220,7 +220,7 @@ contract ISCTest {
         ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
 
         ISCDict memory params = ISCDict(new ISCDictItem[](2));
-        params.items[0] = ISCDictItem("I", "test");
+        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}");
         params.items[1] = ISCDictItem("a", agentID.data);
 
         ISCDict memory ret = ISC.sandbox.call(
