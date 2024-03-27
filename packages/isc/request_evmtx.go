@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -150,14 +150,6 @@ func (req *evmOffLedgerTxRequest) VerifySignature() error {
 	return nil
 }
 
-func (req *evmOffLedgerTxRequest) EVMTransaction() *types.Transaction {
-	return req.tx
-}
-
-func (req *evmOffLedgerTxRequest) EVMCallData() *EVMCallData {
+func (req *evmOffLedgerTxRequest) EVMCallMsg() *ethereum.CallMsg {
 	return EVMCallDataFromTx(req.tx)
-}
-
-func (req *evmOffLedgerTxRequest) TxValue() *big.Int {
-	return req.tx.Value()
 }

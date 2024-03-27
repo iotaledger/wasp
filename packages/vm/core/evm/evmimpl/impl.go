@@ -460,7 +460,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 
 	// create a fake tx so that the deposit is visible by the EVM
 	// discard remainder in decimals conversion
-	wei := util.MustBaseTokensDecimalsToEthereumDecimalsExact(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	wei := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
 	// encode the txdata as <AgentID sender>+<Assets>+[blockIndex + reqIndex] // the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData := []byte{}
@@ -469,7 +469,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 	chainInfo := ctx.ChainInfo()
-	gasPrice := chainInfo.GasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 	tx := types.NewTx(
 		&types.LegacyTx{
 			Nonce:    nonce,

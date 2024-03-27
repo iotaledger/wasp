@@ -3,8 +3,9 @@ package isc
 import (
 	"fmt"
 	"io"
-	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -288,11 +289,7 @@ func (req *onLedgerRequestData) TimeLock() time.Time {
 	return time.Unix(int64(timelock.UnixTime), 0)
 }
 
-func (req *onLedgerRequestData) TxValue() *big.Int {
-	return new(big.Int).SetUint64(req.output.Deposit())
-}
-
-func (req *onLedgerRequestData) EVMCallData() *EVMCallData {
+func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
 }
 

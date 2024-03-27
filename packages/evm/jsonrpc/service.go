@@ -205,7 +205,7 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 		if err != nil {
 			return nil, err
 		}
-		effectiveGasPrice := feePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
+		effectiveGasPrice := feePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 		return RPCMarshalReceipt(r, tx, effectiveGasPrice), nil
 	})
 }

@@ -356,7 +356,7 @@ func TestRPCGetTxReceipt(t *testing.T) {
 	require.EqualValues(t, env.BlockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
 	require.EqualValues(t, 0, receipt.TransactionIndex)
 
-	expectedGasPrice := env.soloChain.GetGasFeePolicy().GasPriceWei(parameters.L1().BaseToken.Decimals)
+	expectedGasPrice := env.soloChain.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 	require.EqualValues(t, expectedGasPrice, receipt.EffectiveGasPrice)
 }
 

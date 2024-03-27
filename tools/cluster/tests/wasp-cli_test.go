@@ -187,19 +187,20 @@ func TestWaspCLIDeposit(t *testing.T) {
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 	w.MustRun("send-funds", "-s", alternativeAddress, "base:10000000")
 
+	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.L1().BaseToken.Decimals)
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
-		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000-int(gas.DefaultFeePolicy().MinFee()))
+		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000-int(minFee))
 	})
 
 	t.Run("deposit to own account, then to EVM", func(t *testing.T) {
 		w.MustRun("chain", "deposit", "base:1000000", "--node=0", "--address-index=1")
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-int(gas.DefaultFeePolicy().MinFee()))
+		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-int(minFee))
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
 		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0", "--address-index=1"), 1000000) // fee will be taken from the sender on-chain balance
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-2*int(gas.DefaultFeePolicy().MinFee()))
+		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-2*int(minFee))
 	})
 
 	t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
@@ -855,7 +856,7 @@ func TestEVMISCReceipt(t *testing.T) {
 	w.MustRun("chain", "deposit", ethAddr.String(), "base:100000000", "--node=0")
 
 	// send some arbitrary EVM tx
-	gasPrice := gas.DefaultFeePolicy().GasPriceWei(parameters.L1().BaseToken.Decimals)
+	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
 	tx, err := types.SignTx(
 		types.NewTransaction(0, ethAddr, big.NewInt(123), 100000, gasPrice, []byte{}),

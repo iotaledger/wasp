@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum"
 	"github.com/minio/blake2b-simd"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -107,12 +106,8 @@ func (r *ImpersonatedOffLedgerRequestData) TargetAddress() iotago.Address {
 	return r.req.TargetAddress()
 }
 
-func (r *ImpersonatedOffLedgerRequestData) TxValue() *big.Int {
-	return r.req.TxValue()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) EVMCallData() *EVMCallData {
-	return r.req.EVMCallData()
+func (r *ImpersonatedOffLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
+	return r.req.EVMCallMsg()
 }
 
 func (r *ImpersonatedOffLedgerRequestData) Bytes() []byte {
@@ -147,10 +142,6 @@ func (r *ImpersonatedOffLedgerRequestData) VerifySignature() error {
 	return r.req.VerifySignature()
 }
 
-func (r *ImpersonatedOffLedgerRequestData) EVMTransaction() *types.Transaction {
-	return r.req.EVMTransaction()
-}
-
 func NewOffLedgerRequest(
 	chainID ChainID,
 	contract, entryPoint Hname,
@@ -178,11 +169,7 @@ func (req *OffLedgerRequestData) Read(r io.Reader) error {
 	return rr.Err
 }
 
-func (req *OffLedgerRequestData) TxValue() *big.Int {
-	return big.NewInt(0)
-}
-
-func (req *OffLedgerRequestData) EVMCallData() *EVMCallData {
+func (req *OffLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
 }
 
@@ -358,8 +345,4 @@ func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) Unsigne
 		signature: []byte{},
 	}
 	return req
-}
-
-func (*OffLedgerRequestData) EVMTransaction() *types.Transaction {
-	return nil
 }
