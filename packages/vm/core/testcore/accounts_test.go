@@ -1551,7 +1551,7 @@ func TestNFTMint(t *testing.T) {
 
 		req = solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection"),
+			accounts.ParamNFTImmutableData, isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection").Bytes(),
 			accounts.ParamAgentID, agentID.Bytes(),
 			accounts.ParamCollectionID, codec.Encode(firstNFTID),
 		).
