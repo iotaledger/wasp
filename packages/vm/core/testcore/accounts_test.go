@@ -1483,7 +1483,6 @@ func TestNFTMint(t *testing.T) {
 		// post a dummy request to make the chain progress to the next block
 		ch.PostRequestOffLedger(solo.NewCallParams("foo", "bar"), wallet)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
-
 	})
 
 	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
