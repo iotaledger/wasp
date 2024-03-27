@@ -198,7 +198,7 @@ func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *iotago.
 	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 
-	return isc.NewImpersonatedOffLedgerRequest(ret.(isc.OffLedgerRequest)).WithSenderAddress(address)
+	return isc.NewImpersonatedOffLedgerRequest(ret.(*isc.OffLedgerRequestData)).WithSenderAddress(address)
 }
 
 func parseParams(params []interface{}) dict.Dict {
