@@ -646,8 +646,7 @@ func TestSendNonPayableValueTX(t *testing.T) {
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress))
 
 	// call any function including some value
-	value, remainder := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
-	require.Zero(t, remainder)
+	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
 
 	sandbox := env.ISCMagicSandbox(ethKey)
 
@@ -676,8 +675,7 @@ func TestSendPayableValueTX(t *testing.T) {
 	require.Zero(t, env.solo.L1BaseTokens(receiver))
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress))
 
-	value, remainder := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
-	require.Zero(t, remainder)
+	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
 
 	res, err := env.ISCMagicSandbox(ethKey).CallFn(
 		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
@@ -1767,25 +1765,141 @@ func TestEVMWithdrawAll(t *testing.T) {
 }
 
 func TestEVMGasPriceMismatch(t *testing.T) {
-	env := InitEVM(t, false)
-	ethKey, senderAddress := env.Chain.NewEthereumAccountWithL2Funds()
+	for _, v := range []struct {
+		name          string
+		gasPerToken   util.Ratio32
+		evmGasRatio   util.Ratio32
+		txGasPrice    *big.Int
+		expectedError string
+		gasBurned     uint64
+		feeCharged    uint64
+	}{
+		{
+			name:        "fees disabled, gas price nil",
+			gasPerToken: util.Ratio32{A: 0, B: 0},
+			evmGasRatio: util.Ratio32{A: 1, B: 1},
+			txGasPrice:  nil,
+			gasBurned:   gas.BurnCodeMinimumGasPerRequest1P.Cost(),
+			feeCharged:  0,
+		},
+		{
+			name:        "fees disabled, gas price 1",
+			gasPerToken: util.Ratio32{A: 0, B: 0},
+			evmGasRatio: util.Ratio32{A: 1, B: 1},
+			txGasPrice:  big.NewInt(1),
+			gasBurned:   gas.BurnCodeMinimumGasPerRequest1P.Cost(),
+			feeCharged:  0,
+		},
+		{
+			name:          "default policy, gas price nil",
+			gasPerToken:   util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
+			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
+			txGasPrice:    nil,
+			expectedError: "insufficient gas price: got 0, minimum is 10000000000",
+			gasBurned:     168154,
+			feeCharged:    1682,
+		},
+		{
+			name:          "default policy, gas price too low",
+			gasPerToken:   util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
+			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
+			txGasPrice:    big.NewInt(9999999999),
+			expectedError: "insufficient gas price: got 9999999999, minimum is 10000000000",
+			gasBurned:     168154,
+			feeCharged:    1682,
+		},
+		{
+			name:        "default policy, gas price just enough",
+			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
+			evmGasRatio: util.Ratio32{A: 1, B: 1},   // default
+			txGasPrice:  big.NewInt(10000000000),
+			gasBurned:   25883,
+			feeCharged:  259,
+		},
+		{
+			name:        "default policy, gas price 2x",
+			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
+			evmGasRatio: util.Ratio32{A: 1, B: 1},   // default
+			txGasPrice:  big.NewInt(2 * 10000000000),
+			gasBurned:   25883,
+			feeCharged:  2 * 259,
+		},
+		{
+			name:        "default policy, gas price 2x, evmGasRatio cheaper",
+			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
+			evmGasRatio: util.Ratio32{A: 1, B: 2},
+			txGasPrice:  big.NewInt(2 * 10000000000),
+			gasBurned:   (25883 + 1) / 2,
+			feeCharged:  2 * 259 / 2,
+		},
+		{
+			name:          "gas more expensive, gas price too low",
+			gasPerToken:   util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
+			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
+			txGasPrice:    big.NewInt(19999999999),
+			expectedError: "insufficient gas price: got 19999999999, minimum is 20000000000",
+			gasBurned:     168154,
+			feeCharged:    2 * 1682,
+		},
+		{
+			name:        "gas more expensive, gas price just enough",
+			gasPerToken: util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
+			evmGasRatio: util.Ratio32{A: 1, B: 1},  // default
+			txGasPrice:  big.NewInt(2 * 10000000000),
+			gasBurned:   25883,
+			feeCharged:  2 * 259,
+		},
+		{
+			name:        "gas more expensive, gas price 2x",
+			gasPerToken: util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
+			evmGasRatio: util.Ratio32{A: 1, B: 1},  // default
+			txGasPrice:  big.NewInt(2 * 2 * 10000000000),
+			gasBurned:   25883,
+			feeCharged:  2 * 2 * 259,
+		},
+	} {
+		t.Run(v.name, func(t *testing.T) {
+			env := InitEVM(t, false)
+			feePolicy := env.Chain.GetGasFeePolicy()
+			feePolicy.GasPerToken = v.gasPerToken
+			feePolicy.EVMGasRatio = v.evmGasRatio
+			err := env.setFeePolicy(*feePolicy)
+			require.NoError(t, err)
 
-	// deploy solidity `storage` contract
-	storage := env.deployStorageContract(ethKey)
+			ethKey, senderAddress := env.Chain.NewEthereumAccountWithL2Funds()
 
-	// issue a tx with an arbitrary gas price
-	valueToStore := uint32(888)
-	gasPrice := big.NewInt(1234) // non 0
-	callArguments, err := storage.abi.Pack("store", valueToStore)
-	require.NoError(t, err)
-	nonce := storage.chain.getNonce(senderAddress)
-	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, env.maxGasLimit(), gasPrice, callArguments)
+			// deploy solidity `storage` contract
+			storage := env.deployStorageContract(ethKey)
 
-	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(storage.chain.evmChain.ChainID()))), ethKey)
-	require.NoError(t, err)
+			// issue a tx with an arbitrary gas price
+			valueToStore := uint32(888)
+			callArguments, err := storage.abi.Pack("store", valueToStore)
+			require.NoError(t, err)
+			nonce := storage.chain.getNonce(senderAddress)
+			unsignedTx := types.NewTransaction(
+				nonce,
+				storage.address,
+				util.Big0,
+				env.maxGasLimit(),
+				v.txGasPrice,
+				callArguments,
+			)
 
-	err = storage.chain.evmChain.SendTransaction(tx)
-	require.ErrorContains(t, err, "invalid gas price")
+			tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(storage.chain.evmChain.ChainID()))), ethKey)
+			require.NoError(t, err)
+
+			err = storage.chain.evmChain.SendTransaction(tx)
+			if v.expectedError != "" {
+				require.Equal(t, err.Error(), v.expectedError)
+			} else {
+				require.NoError(t, err)
+			}
+
+			iscReceipt := env.Chain.LastReceipt()
+			require.EqualValues(t, v.gasBurned, iscReceipt.GasBurned)
+			require.EqualValues(t, v.feeCharged, iscReceipt.GasFeeCharged)
+		})
+	}
 }
 
 func TestEVMIntrinsicGas(t *testing.T) {
@@ -1819,7 +1933,7 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	// issue a tx with non-0 amount (try to send ETH/basetoken)
 	// try sending 1 million base tokens (expressed in ethereum decimals)
-	value := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	value := util.BaseTokensDecimalsToEthereumDecimals(
 		1*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1836,7 +1950,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
-	oneMillionInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	oneMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		1*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1849,7 +1963,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	env.Chain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
 
 	// attempt to send more than the contract will have available
-	twoMillionInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	twoMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		2*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1869,7 +1983,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		l1Wallet,
 	)
 
-	tenMillionInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	tenMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		10*isc.Million,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1899,7 +2013,7 @@ func TestSendEntireBalance(t *testing.T) {
 	// send all initial
 	initial := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
 	// try sending funds to `someEthereumAddr` by sending a "value tx"
-	initialBalanceInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	initialBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		initial,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1919,7 +2033,7 @@ func TestSendEntireBalance(t *testing.T) {
 	// now try sending all balance, minus the funds needed for gas
 	currentBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
 
-	currentBalanceInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		currentBalance,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)
@@ -1933,11 +2047,12 @@ func TestSendEntireBalance(t *testing.T) {
 	require.NoError(t, err)
 
 	feePolicy := env.Chain.GetGasFeePolicy()
-	tokensForGasBudget := feePolicy.FeeFromGas(estimatedGas)
+	gasPrice := feePolicy.DefaultGasPriceFullDecimals(testparameters.GetL1ParamsForTesting().BaseToken.Decimals)
+	tokensForGasBudget := feePolicy.FeeFromGas(estimatedGas, gasPrice, testparameters.GetL1ParamsForTesting().BaseToken.Decimals)
 
-	gasLimit := feePolicy.GasBudgetFromTokens(tokensForGasBudget)
+	gasLimit := feePolicy.GasBudgetFromTokens(tokensForGasBudget, gasPrice, testparameters.GetL1ParamsForTesting().BaseToken.Decimals)
 
-	valueToSendInEthDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(
+	valueToSendInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
 		currentBalance-tokensForGasBudget,
 		testparameters.GetL1ParamsForTesting().BaseToken.Decimals,
 	)

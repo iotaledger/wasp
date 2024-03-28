@@ -131,14 +131,12 @@ func HasEnoughForAllowance(v isc.SchemaVersion, state kv.KVStoreReader, agentID 
 		return true
 	}
 	accountKey := accountKey(agentID, chainID)
-	if allowance != nil {
-		if getBaseTokens(v)(state, accountKey) < allowance.BaseTokens {
+	if getBaseTokens(v)(state, accountKey) < allowance.BaseTokens {
+		return false
+	}
+	for _, nativeToken := range allowance.NativeTokens {
+		if getNativeTokenAmount(state, accountKey, nativeToken.ID).Cmp(nativeToken.Amount) < 0 {
 			return false
-		}
-		for _, nativeToken := range allowance.NativeTokens {
-			if getNativeTokenAmount(state, accountKey, nativeToken.ID).Cmp(nativeToken.Amount) < 0 {
-				return false
-			}
 		}
 	}
 	for _, nftID := range allowance.NFTs {

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -144,11 +145,8 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 	gasLimits, err := gas.LimitsFromBytes(gasLimitsBytes)
 	log.Check(err)
 
-	if feePolicy.GasPerToken.IsEmpty() {
-		return 0
-	}
 	// assumes deposit fee == minGasPerRequest fee
-	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest)
+	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest, nil, parameters.L1().BaseToken.Decimals)
 }
 
 func initDepositCmd() *cobra.Command {

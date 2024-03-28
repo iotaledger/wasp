@@ -2,6 +2,7 @@ package vmimpl
 
 import (
 	"math"
+	"math/big"
 	"os"
 	"runtime/debug"
 	"time"
@@ -117,7 +118,7 @@ func (reqctx *requestContext) creditAssetsToChain() {
 
 	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalance(sender)
 
-	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee()
+	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(reqctx.txGasPrice(), parameters.L1().BaseToken.Decimals)
 	if senderBaseTokens < storageDepositNeeded+minReqCost {
 		// user doesn't have enough funds to pay for the SD needs of this request
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
@@ -129,6 +130,20 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		reqctx.sdCharged = storageDepositNeeded
 		debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
 	}
+}
+
+// txGasPrice returns:
+// for ISC request: nil,
+// for EVM tx: the gas price set in the EVM tx (full decimals), or 0 if gas price is unset
+func (reqctx *requestContext) txGasPrice() *big.Int {
+	callMsg := reqctx.req.EVMCallMsg()
+	if callMsg == nil {
+		return nil
+	}
+	if callMsg.GasPrice == nil {
+		return big.NewInt(0)
+	}
+	return callMsg.GasPrice
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
@@ -339,10 +354,19 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
 	guaranteedFeeTokens := reqctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget
-	f1, f2 := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(gasBudget, guaranteedFeeTokens)
+	f1, f2 := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(
+		gasBudget,
+		guaranteedFeeTokens,
+		reqctx.txGasPrice(),
+		parameters.L1().BaseToken.Decimals,
+	)
 	maxTokensToSpendForGasFee = f1 + f2
 	// calculate affordableGas gas budget
-	affordableGas := reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
+	affordableGas := reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(
+		guaranteedFeeTokens,
+		reqctx.txGasPrice(),
+		parameters.L1().BaseToken.Decimals,
+	)
 	// adjust gas budget to what is affordable
 	affordableGas = min(gasBudget, affordableGas)
 	// cap gas to the maximum allowed per tx
@@ -383,13 +407,22 @@ func (reqctx *requestContext) chargeGasFee() {
 	}
 
 	availableToPayFee := reqctx.gas.maxTokensToSpendForGasFee
-	if !reqctx.vm.task.EstimateGasMode && !reqctx.vm.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
+	if !reqctx.vm.task.EstimateGasMode && !reqctx.vm.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(
+		availableToPayFee,
+		reqctx.txGasPrice(),
+		parameters.L1().BaseToken.Decimals,
+	) {
 		// user didn't specify enough base tokens to cover the minimum request fee, charge whatever is present in the user's account
 		availableToPayFee = reqctx.GetSenderTokenBalanceForFees()
 	}
 
 	// total fees to charge
-	sendToPayout, sendToValidator := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(reqctx.GasBurned(), availableToPayFee)
+	sendToPayout, sendToValidator := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(
+		reqctx.GasBurned(),
+		availableToPayFee,
+		reqctx.txGasPrice(),
+		parameters.L1().BaseToken.Decimals,
+	)
 	reqctx.gas.feeCharged = sendToPayout + sendToValidator
 
 	// calc gas totals

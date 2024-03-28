@@ -3,6 +3,7 @@ package gas
 import (
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -32,11 +33,11 @@ type FeePolicy struct {
 
 // FeeFromGasBurned calculates the how many tokens to take and where
 // to deposit them.
-func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendToOwner, sendToValidator uint64) {
-	var fee uint64
-
-	// round up
-	fee = p.FeeFromGas(gasUnits)
+// if gasPriceEVM == nil, the fee is calculated using the ISC GasPerToken
+// price. Otherwise, the given gasPrice (expressed in base tokens with 'full
+// decimals') is used instead.
+func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) (sendToOwner, sendToValidator uint64) {
+	fee := p.FeeFromGas(gasUnits, gasPrice, l1BaseTokenDecimals)
 	fee = min(fee, availableTokens)
 
 	validatorPercentage := p.ValidatorFeeShare
@@ -52,32 +53,52 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64) (sendToOw
 	return fee - sendToValidator, sendToValidator
 }
 
-func FeeFromGas(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
+// FeeFromGasWithGasPerToken calculates the gas fee using the given gasPrice
+// (expressed in ISC base tokens with 'full decimals').
+func FeeFromGasWithGasPrice(gasUnits uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) uint64 {
+	feeFullDecimals := new(big.Int).SetUint64(gasUnits)
+	feeFullDecimals.Mul(feeFullDecimals, gasPrice)
+	fee, remainder := util.EthereumDecimalsToBaseTokenDecimals(feeFullDecimals, l1BaseTokenDecimals)
+	if remainder != nil && remainder.Sign() != 0 {
+		fee++
+	}
+	return fee
+}
+
+// FeeFromGasWithGasPerToken calculates the gas fee using the ISC GasPerToken price
+func FeeFromGasWithGasPerToken(gasUnits uint64, gasPerToken util.Ratio32) uint64 {
+	if gasPerToken.IsEmpty() {
+		return 0
+	}
 	return gasPerToken.YCeil64(gasUnits)
 }
 
-func (p *FeePolicy) FeeFromGas(gasUnits uint64) uint64 {
-	return FeeFromGas(gasUnits, p.GasPerToken)
-}
-
-func (p *FeePolicy) MinFee() uint64 {
-	if p.GasPerToken.A == 0 {
+func (p *FeePolicy) FeeFromGas(gasUnits uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) uint64 {
+	if p.GasPerToken.IsEmpty() {
 		return 0
 	}
-	return p.FeeFromGas(BurnCodeMinimumGasPerRequest1P.Cost())
+	if gasPrice == nil {
+		return FeeFromGasWithGasPerToken(gasUnits, p.GasPerToken)
+	}
+	return FeeFromGasWithGasPrice(gasUnits, gasPrice, l1BaseTokenDecimals)
 }
 
-func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens uint64) bool {
-	return availableTokens >= p.MinFee()
+func (p *FeePolicy) MinFee(gasPrice *big.Int, l1BaseTokenDecimals uint32) uint64 {
+	return p.FeeFromGas(BurnCodeMinimumGasPerRequest1P.Cost(), gasPrice, l1BaseTokenDecimals)
 }
 
-// if GasPerToken is '0:0' then set the GasBudget to MaxGasPerRequest
-func (p *FeePolicy) GasBudgetFromTokens(availableTokens uint64, limits ...*Limits) uint64 {
+func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) bool {
+	return availableTokens >= p.MinFee(gasPrice, l1BaseTokenDecimals)
+}
+
+func (p *FeePolicy) GasBudgetFromTokens(availableTokens uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) uint64 {
 	if p.GasPerToken.IsEmpty() {
-		if len(limits) == 0 {
-			panic("GasBudgetFromTokens without giving limits when GasPerToken")
-		}
-		return limits[0].MaxGasPerRequest
+		return math.MaxUint64
+	}
+	if gasPrice != nil {
+		gasBudget := util.BaseTokensDecimalsToEthereumDecimals(availableTokens, l1BaseTokenDecimals)
+		gasBudget.Div(gasBudget, gasPrice)
+		return gasBudget.Uint64()
 	}
 	return p.GasPerToken.XFloor64(availableTokens)
 }
@@ -134,8 +155,9 @@ func (p *FeePolicy) Write(w io.Writer) error {
 	return ww.Err
 }
 
-// GasPriceWei returns the gas price converted to wei
-func (p *FeePolicy) GasPriceWei(l1BaseTokenDecimals uint32) *big.Int {
+// DefaultGasPriceFullDecimals returns the default gas price to be set in EVM
+// transactions, when using the ISC GasPerToken.
+func (p *FeePolicy) DefaultGasPriceFullDecimals(l1BaseTokenDecimals uint32) *big.Int {
 	// special case '0:0' for free request
 	if p.GasPerToken.IsEmpty() {
 		return big.NewInt(0)

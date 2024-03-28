@@ -30,7 +30,7 @@ func creditToAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, a
 	}
 
 	if assets.BaseTokens > 0 {
-		incomingTokensFullDecimals := util.MustBaseTokensDecimalsToEthereumDecimalsExact(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
+		incomingTokensFullDecimals := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
 		creditToAccountFullDecimals(v, state, accountKey, incomingTokensFullDecimals)
 	}
 	for _, nt := range assets.NativeTokens {
@@ -88,7 +88,7 @@ func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, 
 	// first check, then mutate
 	mutateBaseTokens := false
 
-	baseTokensToDebit := util.MustBaseTokensDecimalsToEthereumDecimalsExact(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
+	baseTokensToDebit := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
 	var baseTokensToSet *big.Int
 	if assets.BaseTokens > 0 {
 		balance := GetBaseTokensFullDecimals(v)(state, accountKey)

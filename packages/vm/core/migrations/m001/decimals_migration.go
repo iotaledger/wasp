@@ -20,7 +20,7 @@ var AccountDecimals = migrations.Migration{
 				return
 			}
 			amount := codec.MustDecodeUint64(amountBytes)
-			amountMigrated := util.MustBaseTokensDecimalsToEthereumDecimalsExact(amount, 6)
+			amountMigrated := util.BaseTokensDecimalsToEthereumDecimals(amount, 6)
 			state.Set(key, codec.EncodeBigIntAbs(amountMigrated))
 		}
 
