@@ -256,6 +256,9 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cl.handleInputConsensusOutputRejected(input)
 	case *inputConsensusTimeout:
 		return cl.handleInputConsensusTimeout(input)
+	case *inputMilestoneReceived:
+		cl.handleInputMilestoneReceived()
+		return nil
 	case *inputCanPropose:
 		cl.handleInputCanPropose()
 		return nil
@@ -297,6 +300,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusO
 
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+	cl.varOutput.HaveRejection()
 	msgs := gpa.NoMessages()
 	msgs.AddAll(cl.varLogIndex.ConsensusOutputReceived(input.logIndex)) // This should be superfluous, always follows handleInputConsensusOutputDone.
 	if _, tipUpdated := cl.varLocalView.AliasOutputRejected(input.aliasOutput); tipUpdated {
@@ -322,6 +326,10 @@ func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutput
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	return cl.varLogIndex.ConsensusRecoverReceived(input.logIndex)
+}
+
+func (cl *cmtLogImpl) handleInputMilestoneReceived() {
+	cl.varOutput.HaveMilestone()
 }
 
 func (cl *cmtLogImpl) handleInputCanPropose() {
