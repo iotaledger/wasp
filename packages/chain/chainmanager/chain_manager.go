@@ -248,6 +248,8 @@ func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cmi.handleInputConsensusOutputSkip(input)
 	case *inputConsensusTimeout:
 		return cmi.handleInputConsensusTimeout(input)
+	case *inputMilestoneReceived:
+		return cmi.handleInputMilestoneReceived()
 	case *inputCanPropose:
 		return cmi.handleInputCanPropose()
 	}
@@ -397,6 +399,13 @@ func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeou
 	cmi.log.Debugf("handleInputConsensusTimeout: %+v", input)
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
 		return cl.Input(cmt_log.NewInputConsensusTimeout(input.logIndex))
+	})
+}
+
+func (cmi *chainMgrImpl) handleInputMilestoneReceived() gpa.OutMessages {
+	cmi.log.Debugf("handleInputMilestoneReceived")
+	return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
+		return cl.Input(cmt_log.NewInputMilestoneReceived())
 	})
 }
 
