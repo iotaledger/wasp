@@ -3,15 +3,14 @@ package isc
 import (
 	"fmt"
 	"io"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -28,25 +27,17 @@ type Request interface {
 	Write(w io.Writer) error
 }
 
-type EVMCallData struct {
-	Value *big.Int
-	To    *common.Address
-	Gas   uint64
-}
-
-func EVMCallDataFromTx(tx *types.Transaction) *EVMCallData {
-	return &EVMCallData{
-		To:    tx.To(),
-		Value: tx.Value(),
-		Gas:   tx.Gas(),
-	}
-}
-
-func EVMCallDataFromCallMsg(msg ethereum.CallMsg) *EVMCallData {
-	return &EVMCallData{
-		To:    msg.To,
-		Value: msg.Value,
-		Gas:   msg.Gas,
+func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
+	return &ethereum.CallMsg{
+		From:       evmutil.MustGetSender(tx),
+		To:         tx.To(),
+		Gas:        tx.Gas(),
+		GasPrice:   tx.GasPrice(),
+		GasFeeCap:  tx.GasFeeCap(),
+		GasTipCap:  tx.GasTipCap(),
+		Value:      tx.Value(),
+		Data:       tx.Data(),
+		AccessList: tx.AccessList(),
 	}
 }
 
@@ -60,8 +51,7 @@ type Calldata interface {
 	Params() dict.Dict
 	SenderAccount() AgentID
 	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
-	TxValue() *big.Int
-	EVMCallData() *EVMCallData
+	EVMCallMsg() *ethereum.CallMsg
 }
 
 type Features interface {
@@ -90,7 +80,6 @@ type OffLedgerRequest interface {
 	ChainID() ChainID
 	Nonce() uint64
 	VerifySignature() error
-	EVMTransaction() *types.Transaction
 }
 
 type OnLedgerRequest interface {
