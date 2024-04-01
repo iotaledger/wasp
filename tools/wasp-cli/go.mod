@@ -10,7 +10,7 @@ replace (
 
 require (
 	github.com/99designs/keyring v1.2.2
-	github.com/awnumar/memguard v0.22.4
+	github.com/awnumar/memguard v0.22.5
 	github.com/dvsekhvalnov/jose2go v1.6.0
 	github.com/ethereum/go-ethereum v1.13.13
 	github.com/hashicorp/go-version v1.6.0
