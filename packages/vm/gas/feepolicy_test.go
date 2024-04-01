@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -41,7 +42,7 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 		220: 2,
 	}
 	for tokens, expectedGas := range cases {
-		require.EqualValues(t, expectedGas, feePolicy.GasBudgetFromTokens(tokens))
+		require.EqualValues(t, expectedGas, feePolicy.GasBudgetFromTokens(tokens, nil, parameters.L1ForTesting.BaseToken.Decimals))
 	}
 
 	// tokens charged for max gas
@@ -52,6 +53,9 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 		111: 110,
 	}
 	for tokens, expected := range cases2 {
-		require.EqualValues(t, expected, feePolicy.FeeFromGas(feePolicy.GasBudgetFromTokens(tokens)))
+		require.EqualValues(t, expected, feePolicy.FeeFromGas(
+			feePolicy.GasBudgetFromTokens(tokens, nil, parameters.L1ForTesting.BaseToken.Decimals),
+			nil, parameters.L1ForTesting.BaseToken.Decimals,
+		))
 	}
 }

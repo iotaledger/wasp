@@ -17,8 +17,7 @@ func getBaseTokensDEPRECATED(state kv.KVStoreReader, accountKey kv.Key) uint64 {
 
 func getBaseTokensFullDecimalsDEPRECATED(state kv.KVStoreReader, accountKey kv.Key) *big.Int {
 	amount := codec.MustDecodeUint64(state.Get(BaseTokensKey(accountKey)), 0)
-	baseTokens, _ := util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.L1().BaseToken.Decimals)
-	return baseTokens
+	return util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.L1().BaseToken.Decimals)
 }
 
 func setBaseTokensFullDecimalsDEPRECATED(state kv.KVStore, accountKey kv.Key, amount *big.Int) {

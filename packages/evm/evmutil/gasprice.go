@@ -2,21 +2,19 @@ package evmutil
 
 import (
 	"fmt"
-
-	"github.com/ethereum/go-ethereum/core/types"
+	"math/big"
 
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func CheckGasPrice(tx *types.Transaction, gasFeePolicy *gas.FeePolicy) error {
-	expectedGasPrice := gasFeePolicy.GasPriceWei(parameters.L1().BaseToken.Decimals)
-	gasPrice := tx.GasPrice()
-	if gasPrice.Cmp(expectedGasPrice) != 0 {
+func CheckGasPrice(gasPrice *big.Int, gasFeePolicy *gas.FeePolicy) error {
+	minimumGasPrice := gasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	if gasPrice.Cmp(minimumGasPrice) < 0 {
 		return fmt.Errorf(
-			"invalid gas price: got %s, want %s",
+			"insufficient gas price: got %s, minimum is %s",
 			gasPrice.Text(10),
-			expectedGasPrice.Text(10),
+			minimumGasPrice.Text(10),
 		)
 	}
 	return nil

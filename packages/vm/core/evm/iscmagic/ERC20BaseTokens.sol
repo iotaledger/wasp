@@ -8,33 +8,76 @@ import "./ISCSandbox.sol";
 import "./ISCPrivileged.sol";
 import "./ISCAccounts.sol";
 
-// The ERC20 contract for ISC L2 base tokens.
+/**
+ * @title ERC20BaseTokens
+ * @dev The ERC20 contract directly mapped to the L1 base token.
+ */
 contract ERC20BaseTokens {
     uint256 private constant MAX_UINT64 = type(uint64).max;
 
+    /**
+     * @dev Emitted when the approval of tokens is granted by a token owner to a spender.
+     *
+     * This event indicates that the token owner has approved the spender to transfer a certain amount of tokens on their behalf.
+     *
+     * @param tokenOwner The address of the token owner who granted the approval.
+     * @param spender The address of the spender who is granted the approval.
+     * @param tokens The amount of tokens approved for transfer.
+     */
     event Approval(
         address indexed tokenOwner,
         address indexed spender,
         uint256 tokens
     );
+
+    /**
+     * @dev Emitted when tokens are transferred from one address to another.
+     *
+     * This event indicates that a certain amount of tokens has been transferred from one address to another.
+     *
+     * @param from The address from which the tokens are transferred.
+     * @param to The address to which the tokens are transferred.
+     * @param tokens The amount of tokens transferred.
+     */
     event Transfer(address indexed from, address indexed to, uint256 tokens);
 
+    /**
+     * @dev Returns the name of the base token.
+     * @return The name of the base token.
+     */
     function name() public view returns (string memory) {
         return __iscSandbox.getBaseTokenProperties().name;
     }
 
+    /**
+     * @dev Returns the symbol of the base token.
+     * @return The symbol of the base token.
+     */
     function symbol() public view returns (string memory) {
         return __iscSandbox.getBaseTokenProperties().tickerSymbol;
     }
 
+    /**
+     * @dev Returns the number of decimals used by the base token.
+     * @return The number of decimals used by the base token.
+     */
     function decimals() public view returns (uint8) {
         return __iscSandbox.getBaseTokenProperties().decimals;
     }
 
+    /**
+     * @dev Returns the total supply of the base token.
+     * @return The total supply of the base token.
+     */
     function totalSupply() public view returns (uint256) {
         return __iscSandbox.getBaseTokenProperties().totalSupply;
     }
 
+    /**
+     * @dev Returns the balance of the specified token owner.
+     * @param tokenOwner The address of the token owner.
+     * @return The balance of the token owner.
+     */
     function balanceOf(address tokenOwner) public view returns (uint256) {
         ISCChainID chainID = __iscSandbox.getChainID();
         ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
@@ -44,6 +87,12 @@ contract ERC20BaseTokens {
         return __iscAccounts.getL2BalanceBaseTokens(ownerAgentID);
     }
 
+    /**
+     * @dev Transfers tokens from the caller's account to the specified receiver.
+     * @param receiver The address of the receiver.
+     * @param numTokens The number of tokens to transfer.
+     * @return true.
+     */
     function transfer(
         address receiver,
         uint256 numTokens
@@ -56,12 +105,12 @@ contract ERC20BaseTokens {
         return true;
     }
 
-    // Sets `numTokens` as the allowance of `delegate` over the caller’s tokens.
-    //
-    // NOTE: Base tokens are represented internally as an uint64.
-    //       If numTokens > MAX_UINT64, this call will fail.
-    //       Exception: as a special case, numTokens == MAX_UINT256 can be
-    //       specified as an "infinite" approval.
+    /**
+     * @dev Sets the allowance of `delegate` over the caller's tokens.
+     * @param delegate The address of the delegate.
+     * @param numTokens The number of tokens to allow.
+     * @return true.
+     */
     function approve(
         address delegate,
         uint256 numTokens
@@ -71,6 +120,12 @@ contract ERC20BaseTokens {
         return true;
     }
 
+    /**
+     * @dev Returns the allowance of the specified owner for the specified delegate.
+     * @param owner The address of the owner.
+     * @param delegate The address of the delegate.
+     * @return The allowance of the owner for the delegate.
+     */
     function allowance(
         address owner,
         address delegate
@@ -79,6 +134,13 @@ contract ERC20BaseTokens {
         return assets.baseTokens;
     }
 
+    /**
+     * @dev Transfers tokens from the specified owner's account to the specified buyer.
+     * @param owner The address of the owner.
+     * @param buyer The address of the buyer.
+     * @param numTokens The number of tokens to transfer.
+     * @return true.
+     */
     function transferFrom(
         address owner,
         address buyer,
