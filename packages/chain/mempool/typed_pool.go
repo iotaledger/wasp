@@ -14,6 +14,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
+// TODO limit this list.
+// TODO add gas to on-ledger requests
+// TODO this list needs to be periodically re-filled from L1 once the activity is lower
+
 type typedPool[V isc.Request] struct {
 	waitReq    WaitReq
 	requests   *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *typedPoolEntry[V]]
@@ -71,7 +75,7 @@ func (olp *typedPool[V]) Remove(request V) {
 	}
 }
 
-func (olp *typedPool[V]) Filter(predicate func(request V, ts time.Time) bool) {
+func (olp *typedPool[V]) Cleanup(predicate func(request V, ts time.Time) bool) {
 	olp.requests.ForEach(func(refKey isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
 		if !predicate(entry.req, entry.ts) {
 			if olp.requests.Delete(refKey) {

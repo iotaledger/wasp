@@ -1,6 +1,12 @@
 package testutil
 
 import (
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -23,4 +29,27 @@ func DummyOffledgerRequestForAccount(chainID isc.ChainID, nonce uint64, kp *cryp
 	args := dict.Dict{}
 	req := isc.NewOffLedgerRequest(chainID, contract, entrypoint, args, nonce, gas.LimitsDefault.MaxGasPerRequest)
 	return req.Sign(kp)
+}
+
+func DummyEVMRequest(chainID isc.ChainID, gasPrice *big.Int) isc.OffLedgerRequest {
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+
+	tx := types.MustSignNewTx(key, types.NewEIP155Signer(big.NewInt(0)),
+		&types.LegacyTx{
+			Nonce:    0,
+			To:       &common.MaxAddress,
+			Value:    big.NewInt(123),
+			Gas:      10000,
+			GasPrice: gasPrice,
+			Data:     []byte{},
+		})
+
+	req, err := isc.NewEVMOffLedgerTxRequest(chainID, tx)
+	if err != nil {
+		panic(err)
+	}
+	return req
 }

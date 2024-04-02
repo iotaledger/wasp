@@ -4,6 +4,8 @@
 package governance
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -64,4 +66,9 @@ func (sa *StateAccess) ChainOwnerID() isc.AgentID {
 
 func (sa *StateAccess) GetBlockKeepAmount() int32 {
 	return GetBlockKeepAmount(sa.state)
+}
+
+func (sa *StateAccess) DefaultGasPrice() *big.Int {
+	// TODO return the equivalent price defined by the feepolicy
+	panic("TODO implement DefaultGasPrice")
 }

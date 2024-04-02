@@ -20,6 +20,12 @@ type ParametersChains struct {
 	ConsensusInstsInAdvance          int           `default:"3" usage:""`
 	AwaitReceiptCleanupEvery         int           `default:"100" usage:"for every this number AwaitReceipt will be cleaned up"`
 	MempoolTTL                       time.Duration `default:"24h" usage:"Time that requests are allowed to sit in the mempool without being processed"`
+	MempoolMaxOffledgerInPool        time.Duration `default:"10000" usage:"Maximum number of off-ledger requests kept in the mempool"`
+	MempoolMaxOnledgerInPool         time.Duration `default:"2000" usage:"Maximum number of on-ledger requests kept in the mempool"`
+	MempoolMaxTimedInPool            time.Duration `default:"500" usage:"Maximum number of timed on-ledger requests kept in the mempool"`
+	MempoolMaxOnledgerToPropose      time.Duration `default:"200" usage:"Maximum number of offledger requests to propose for the next block"`
+	MempoolMaxOffledgerToPropose     time.Duration `default:"100" usage:"Maximum number of on-ledger requests to propose for the next block"`
+	MempoolMAxTimedToPropose         time.Duration `default:"100" usage:"Maximum number of timed on-ledger requests to propose for the next block"`
 }
 
 type ParametersWAL struct {

@@ -128,6 +128,6 @@ func (req *evmOffLedgerCallRequest) EVMCallMsg() *ethereum.CallMsg {
 }
 
 // GasPrice implements OffLedgerRequest.
-func (req *evmOffLedgerCallRequest) GasPrice() (price *big.Int, specified bool) {
-	return req.callMsg.GasPrice, true
+func (req *evmOffLedgerCallRequest) GasPrice() *big.Int {
+	return req.callMsg.GasPrice
 }

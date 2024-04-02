@@ -81,7 +81,8 @@ type OffLedgerRequest interface {
 	ChainID() ChainID
 	Nonce() uint64
 	VerifySignature() error
-	GasPrice() (price *big.Int, specified bool)
+	EVMTransaction() *types.Transaction // TODO remove?
+	GasPrice() *big.Int
 }
 
 type OnLedgerRequest interface {

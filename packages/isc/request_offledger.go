@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/minio/blake2b-simd"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -273,6 +274,10 @@ func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) Unsigne
 	return req
 }
 
-func (req *OffLedgerRequestData) GasPrice() (price *big.Int, specified bool) {
-	return big.NewInt(0), false
+func (*OffLedgerRequestData) EVMTransaction() *types.Transaction {
+	return nil
+}
+
+func (req *OffLedgerRequestData) GasPrice() *big.Int {
+	return nil
 }

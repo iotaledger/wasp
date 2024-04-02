@@ -155,6 +155,10 @@ func (req *evmOffLedgerTxRequest) EVMCallMsg() *ethereum.CallMsg {
 	return EVMCallDataFromTx(req.tx)
 }
 
-func (req *evmOffLedgerTxRequest) GasPrice() (price *big.Int, specified bool) {
-	return req.tx.GasPrice(), true
+func (req *evmOffLedgerTxRequest) TxValue() *big.Int {
+	return req.tx.Value()
+}
+
+func (req *evmOffLedgerTxRequest) GasPrice() *big.Int {
+	return req.tx.GasPrice()
 }

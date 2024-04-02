@@ -12,20 +12,22 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
+// TODO limit this (sort by timelock)
+
 // Maintains a pool of requests that have to be postponed until specified timestamp.
 type TimePool interface {
-	AddRequest(timestamp time.Time, request isc.Request)
-	TakeTill(timestamp time.Time) []isc.Request
+	AddRequest(timestamp time.Time, request isc.OnLedgerRequest)
+	TakeTill(timestamp time.Time) []isc.OnLedgerRequest
 	Has(reqID *isc.RequestRef) bool
-	Filter(predicate func(request isc.Request, ts time.Time) bool)
+	Cleanup(predicate func(request isc.OnLedgerRequest, ts time.Time) bool)
 }
 
 // Here we implement TimePool. We maintain the request in a list ordered by a timestamp.
 // The list is organized in slots. Each slot contains a list of requests that fit to the
 // slot boundaries.
 type timePoolImpl struct {
-	requests   *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.Request] // All the requests in this pool.
-	slots      *timeSlot                                                  // Structure to fetch them fast by their time.
+	requests   *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.OnLedgerRequest] // All the requests in this pool.
+	slots      *timeSlot                                                          // Structure to fetch them fast by their time.
 	sizeMetric func(int)
 	log        *logger.Logger
 }
@@ -33,7 +35,7 @@ type timePoolImpl struct {
 type timeSlot struct {
 	from time.Time
 	till time.Time
-	reqs *shrinkingmap.ShrinkingMap[time.Time, []isc.Request]
+	reqs *shrinkingmap.ShrinkingMap[time.Time, []isc.OnLedgerRequest]
 	next *timeSlot
 }
 
@@ -43,14 +45,14 @@ var _ TimePool = &timePoolImpl{}
 
 func NewTimePool(sizeMetric func(int), log *logger.Logger) TimePool {
 	return &timePoolImpl{
-		requests:   shrinkingmap.New[isc.RequestRefKey, isc.Request](),
+		requests:   shrinkingmap.New[isc.RequestRefKey, isc.OnLedgerRequest](),
 		slots:      nil,
 		sizeMetric: sizeMetric,
 		log:        log,
 	}
 }
 
-func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
+func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.OnLedgerRequest) {
 	reqRefKey := isc.RequestRefFromRequest(request).AsKey()
 
 	if tpi.requests.Has(reqRefKey) {
@@ -66,8 +68,8 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
 	prevNext := &tpi.slots
 	for slot := tpi.slots; ; {
 		if slot == nil || slot.from.After(reqFrom) { // Add new slot (append or insert).
-			newRequests := shrinkingmap.New[time.Time, []isc.Request]()
-			newRequests.Set(timestamp, []isc.Request{request})
+			newRequests := shrinkingmap.New[time.Time, []isc.OnLedgerRequest]()
+			newRequests.Set(timestamp, []isc.OnLedgerRequest{request})
 
 			newSlot := &timeSlot{
 				from: reqFrom,
@@ -79,7 +81,7 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
 			return
 		}
 		if slot.from == reqFrom { // Add to existing slot.
-			requests, _ := slot.reqs.GetOrCreate(timestamp, func() []isc.Request { return make([]isc.Request, 0, 1) })
+			requests, _ := slot.reqs.GetOrCreate(timestamp, func() []isc.OnLedgerRequest { return make([]isc.OnLedgerRequest, 0, 1) })
 			slot.reqs.Set(timestamp, append(requests, request))
 			return
 		}
@@ -88,13 +90,13 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.Request) {
 	}
 }
 
-func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.Request {
-	resp := []isc.Request{}
+func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.OnLedgerRequest {
+	resp := []isc.OnLedgerRequest{}
 	for slot := tpi.slots; slot != nil; slot = slot.next {
 		if slot.from.After(timestamp) {
 			break
 		}
-		slot.reqs.ForEach(func(ts time.Time, tsReqs []isc.Request) bool {
+		slot.reqs.ForEach(func(ts time.Time, tsReqs []isc.OnLedgerRequest) bool {
 			if ts == timestamp || ts.Before(timestamp) {
 				resp = append(resp, tsReqs...)
 				for _, req := range tsReqs {
@@ -121,10 +123,10 @@ func (tpi *timePoolImpl) Has(reqRef *isc.RequestRef) bool {
 	return tpi.requests.Has(reqRef.AsKey())
 }
 
-func (tpi *timePoolImpl) Filter(predicate func(request isc.Request, ts time.Time) bool) {
+func (tpi *timePoolImpl) Cleanup(predicate func(request isc.OnLedgerRequest, ts time.Time) bool) {
 	prevNext := &tpi.slots
 	for slot := tpi.slots; slot != nil; slot = slot.next {
-		slot.reqs.ForEach(func(ts time.Time, tsReqs []isc.Request) bool {
+		slot.reqs.ForEach(func(ts time.Time, tsReqs []isc.OnLedgerRequest) bool {
 			requests := tsReqs
 			for i, req := range requests {
 				if !predicate(req, ts) {

@@ -10,26 +10,31 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestTimePoolBasic(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	kp := cryptolib.NewKeyPair()
 	tp := mempool.NewTimePool(func(i int) {}, log)
 	t0 := time.Now()
 	t1 := t0.Add(17 * time.Nanosecond)
 	t2 := t0.Add(17 * time.Minute)
 	t3 := t0.Add(17 * time.Hour)
-	r0 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 0, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
-	r1 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 1, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
-	r2 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 2, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
-	r3 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 3, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
+
+	r0, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(0))
+	require.NoError(t, err)
+	r1, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(1))
+	require.NoError(t, err)
+	r2, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(2))
+	require.NoError(t, err)
+	r3, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(3))
+	require.NoError(t, err)
+
 	require.False(t, tp.Has(isc.RequestRefFromRequest(r0)))
 	require.False(t, tp.Has(isc.RequestRefFromRequest(r1)))
 	require.False(t, tp.Has(isc.RequestRefFromRequest(r2)))
@@ -43,7 +48,7 @@ func TestTimePoolBasic(t *testing.T) {
 	require.True(t, tp.Has(isc.RequestRefFromRequest(r2)))
 	require.True(t, tp.Has(isc.RequestRefFromRequest(r3)))
 
-	var taken []isc.Request
+	var taken []isc.OnLedgerRequest
 
 	taken = tp.TakeTill(t0)
 	require.Len(t, taken, 1)
@@ -106,7 +111,8 @@ func (sm *timePoolSM) Check(t *rapid.T) {
 
 func (sm *timePoolSM) AddRequest(t *rapid.T) {
 	ts := time.Unix(rapid.Int64().Draw(t, "req.ts"), 0)
-	req := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 0, gas.LimitsDefault.MaxGasPerRequest).Sign(sm.kp)
+	req, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(3))
+	require.NoError(t, err)
 	sm.tp.AddRequest(ts, req)
 	sm.added++
 }
