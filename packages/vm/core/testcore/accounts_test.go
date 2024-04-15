@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -1462,9 +1461,15 @@ func TestNFTMint(t *testing.T) {
 	ch := env.NewChain()
 	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar").Bytes()
 
+	_seedIndex := 0
+	seedIndex := func() int {
+		_seedIndex++
+		return _seedIndex
+	}
+
 	t.Run("mint for another user", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and keep it on chain
@@ -1487,8 +1492,8 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint with invalid IRC27 metadata", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and keep it on chain
@@ -1504,14 +1509,12 @@ func TestNFTMint(t *testing.T) {
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
 		_, err := ch.PostRequestSync(req, wallet)
 		require.Error(t, err)
-		var vmError *isc.VMError
-		errors.As(err, &vmError)
-		require.Equal(t, vmError.MessageFormat(), accounts.ErrImmutableMetadataInvalid.MessageFormat())
+		require.Equal(t, err.(*isc.VMError).MessageFormat(), accounts.ErrImmutableMetadataInvalid.MessageFormat())
 	})
 
 	t.Run("mint without IRC27 metadata", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and keep it on chain
@@ -1529,9 +1532,9 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(4))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and withdraw it
@@ -1566,7 +1569,7 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		agentID := isc.NewAgentID(address)
 
 		// mint NFT to self and keep it on chain
@@ -1639,7 +1642,7 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then withdraw it", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		agentID := isc.NewAgentID(address)
 
 		// mint NFT to self and keep it on chain
