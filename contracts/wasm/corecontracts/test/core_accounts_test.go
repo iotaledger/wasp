@@ -195,7 +195,7 @@ func TestFoundryNew(t *testing.T) {
 	require.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
 }
 
-func NativeTokenndryModifySupply(t *testing.T) {
+func TestNativeTokenFoundryModifySupply(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent("user0")
 

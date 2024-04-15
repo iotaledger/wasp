@@ -365,7 +365,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 		return collection
 	}()
 
-	RegisterERC721NFTCollectionByNFTId(emulator.StateDBSubrealm(ctx.State()), collection)
+	RegisterERC721NFTCollectionByNFTId(ctx.State(), collection)
 
 	return nil
 }
