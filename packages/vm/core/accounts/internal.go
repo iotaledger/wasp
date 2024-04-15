@@ -23,6 +23,7 @@ var (
 	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
 	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
 	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
+	ErrImmutableMetadataInvalid             = coreerrors.Register("IRC27 metadata is invalid: '%s'")
 )
 
 const (

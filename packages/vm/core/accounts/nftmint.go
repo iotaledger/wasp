@@ -136,6 +136,14 @@ func mintID(blockIndex uint32, positionInMintedList uint16) []byte {
 func mintNFT(ctx isc.Sandbox) dict.Dict {
 	params := mintParams(ctx)
 
+	// NFTs are now automatically registered inside the EVM.
+	// The EVM requires IRC27 metadata to be present. Therefore, any invalid metadata will panic here
+	// This will not check the metadata according to the schema, only syntactic validation applies. "{}" would be correct.
+	_, err := isc.IRC27NFTMetadataFromBytes(params.immutableMetadata)
+	if err != nil {
+		panic(ErrImmutableMetadataInvalid.Create(err.Error()))
+	}
+
 	positionInMintedList, nftOutput := ctx.Privileged().MintNFT(
 		params.targetAddress,
 		params.immutableMetadata,
