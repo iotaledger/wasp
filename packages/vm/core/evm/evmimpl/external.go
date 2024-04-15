@@ -18,7 +18,6 @@ func Nonce(evmPartition kv.KVStoreReader, addr common.Address) uint64 {
 }
 
 func RegisterERC721NFTCollectionByNFTId(store kv.KVStore, nft *isc.NFT) {
-
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	if err != nil {
 		panic(errEVMCanNotDecodeERC27Metadata)
