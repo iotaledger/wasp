@@ -20,7 +20,7 @@
     "@typescript-eslint/parser": "^4.29.2",
     "base64-js": "^1.5.1",
     "blakejs": "^1.1.1",
-    "eslint": "^7.32.0",
+    "eslint": "^9.0.0",
     "eslint-plugin-security": "^1.4.0",
     "eslint-plugin-svelte3": "^3.2.0",
     "ieee754": "^1.2.1",
