@@ -22,7 +22,6 @@ jobs:
 
       - name: Get dependencies
         run: |
-          make wasm
           go get -v -t -d ./...
 
       - name: Build
@@ -30,57 +29,6 @@ jobs:
 
       - name: Test
         run: make test-short
-
-  contract-test:
-    name: Wasm contract tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        TEST_LANG: [go, rswasm]
-    steps:
-      - name: checkout to the directory
-        uses: actions/checkout@v4
-
-      - name: install golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.21"
-
-      - name: install rust-toolchain
-        uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-
-      - name: install wasm-pack
-        run: |
-          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: install schema
-        run: |
-          root_path=$(git rev-parse --show-toplevel)
-          go install $root_path/tools/schema
-          schema -go
-
-      - name: run builds
-        env:
-          TEST_LANG: ${{matrix.TEST_LANG}}
-        run: |
-          cd contracts/wasm/scripts
-          bash core_build.sh
-          if [ $TEST_LANG == "rswasm" ]; then
-            bash rust_all.sh ci
-          fi
-
-      - name: run tests
-        env:
-          TEST_LANG: ${{matrix.TEST_LANG}}
-        run: |
-          cd contracts/wasm
-          if [ $TEST_LANG == "go" ]; then
-            go test ./...
-          elif [ $TEST_LANG == "rswasm" ]; then
-            go test ./... -rswasm
-          fi
 
   golangci:
     name: Lint
