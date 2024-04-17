@@ -679,7 +679,14 @@ func TestTTL(t *testing.T) {
 		chainMetrics.Mempool,
 		chainMetrics.Pipe,
 		chain.NewEmptyChainListener(),
-		200*time.Millisecond, // 200ms TTL
+		mempool.Settings{
+			TTL:                   200 * time.Millisecond,
+			MaxOffledgerInPool:    1000,
+			MaxOnledgerInPool:     1000,
+			MaxTimedInPool:        1000,
+			MaxOnledgerToPropose:  1000,
+			MaxOffledgerToPropose: 1000,
+		},
 		1*time.Second,
 	)
 	defer te.close()
@@ -804,7 +811,14 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chainMetrics.Mempool,
 			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
-			24*time.Hour,
+			mempool.Settings{
+				TTL:                   24 * time.Hour,
+				MaxOffledgerInPool:    1000,
+				MaxOnledgerInPool:     1000,
+				MaxTimedInPool:        1000,
+				MaxOnledgerToPropose:  1000,
+				MaxOffledgerToPropose: 1000,
+			},
 			1*time.Second,
 		)
 	}

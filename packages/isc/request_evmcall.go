@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 
@@ -127,7 +128,6 @@ func (req *evmOffLedgerCallRequest) EVMCallMsg() *ethereum.CallMsg {
 	return &req.callMsg
 }
 
-// GasPrice implements OffLedgerRequest.
 func (req *evmOffLedgerCallRequest) GasPrice() *big.Int {
 	return req.callMsg.GasPrice
 }

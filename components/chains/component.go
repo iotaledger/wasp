@@ -11,6 +11,7 @@ import (
 	hiveshutdown "github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/database"
@@ -127,7 +128,14 @@ func provide(c *dig.Container) error {
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
-				ParamsChains.MempoolTTL,
+				mempool.Settings{
+					TTL:                   ParamsChains.MempoolTTL,
+					MaxOffledgerInPool:    ParamsChains.MempoolMaxOffledgerInPool,
+					MaxOnledgerInPool:     ParamsChains.MempoolMaxOnledgerInPool,
+					MaxTimedInPool:        ParamsChains.MempoolMaxTimedInPool,
+					MaxOnledgerToPropose:  ParamsChains.MempoolMaxOnledgerToPropose,
+					MaxOffledgerToPropose: ParamsChains.MempoolMaxOffledgerToPropose,
+				},
 				ParamsChains.BroadcastInterval,
 				shutdown.NewCoordinator("chains", Component.Logger().Named("Shutdown")),
 				deps.ChainMetricsProvider,

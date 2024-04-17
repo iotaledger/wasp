@@ -124,6 +124,7 @@ func (tpi *timePoolImpl) Has(reqRef *isc.RequestRef) bool {
 }
 
 func (tpi *timePoolImpl) Cleanup(predicate func(request isc.OnLedgerRequest, ts time.Time) bool) {
+	// TODO iterate using an order (gas price)
 	prevNext := &tpi.slots
 	for slot := tpi.slots; slot != nil; slot = slot.next {
 		slot.reqs.ForEach(func(ts time.Time, tsReqs []isc.OnLedgerRequest) bool {

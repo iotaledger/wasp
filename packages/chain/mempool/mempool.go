@@ -46,6 +46,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/samber/lo"
@@ -113,6 +114,15 @@ type Mempool interface {
 	GetContents() io.Reader
 }
 
+type Settings struct {
+	TTL                   time.Duration // time to live (how much time requests are allowed to sit in the pool without being processed)
+	MaxOffledgerInPool    int
+	MaxOnledgerInPool     int // TODO unused
+	MaxTimedInPool        int // TODO unused
+	MaxOnledgerToPropose  int // (including timed-requests) // TODO unused
+	MaxOffledgerToPropose int
+}
+
 type RequestPool[V isc.Request] interface {
 	Has(reqRef *isc.RequestRef) bool
 	Get(reqRef *isc.RequestRef) V
@@ -136,7 +146,7 @@ type mempoolImpl struct {
 	tangleTime                     time.Time
 	timePool                       TimePool                         // TODO limit this pool
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
-	offLedgerPool                  *offLedgerPool
+	offLedgerPool                  *OffLedgerPool
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
 	chainHeadState                 state.State
@@ -160,7 +170,7 @@ type mempoolImpl struct {
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
 	activeConsensusInstances       []consGR.ConsensusID
-	ttl                            time.Duration // time to live (how much time requests are allowed to sit in the pool without being processed)
+	settings                       Settings
 	broadcastInterval              time.Duration // how often requests should be rebroadcasted
 	log                            *logger.Logger
 	metrics                        *metrics.ChainMempoolMetrics
@@ -214,9 +224,6 @@ type reqTrackNewChainHead struct {
 	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
 }
 
-// TODO make these configurable
-const MaxOffLedgerPoolSize = 1000
-
 func New(
 	ctx context.Context,
 	chainID isc.ChainID,
@@ -226,7 +233,7 @@ func New(
 	metrics *metrics.ChainMempoolMetrics,
 	pipeMetrics *metrics.ChainPipeMetrics,
 	listener ChainListener,
-	ttl time.Duration,
+	settings Settings,
 	broadcastInterval time.Duration,
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
@@ -236,7 +243,7 @@ func New(
 		tangleTime:                     time.Time{},
 		timePool:                       NewTimePool(metrics.SetTimePoolSize, log.Named("TIM")),
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
-		offLedgerPool:                  NewOffledgerPool(MaxOffLedgerPoolSize, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
+		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
 		chainHeadAO:                    nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
@@ -257,7 +264,7 @@ func New(
 		net:                            net,
 		consensusInstancesUpdatedPipe:  pipe.NewInfinitePipe[*reqConsensusInstancesUpdated](),
 		activeConsensusInstances:       []consGR.ConsensusID{},
-		ttl:                            ttl,
+		settings:                       settings,
 		broadcastInterval:              broadcastInterval,
 		log:                            log,
 		metrics:                        metrics,
@@ -593,11 +600,8 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 	mpi.handleConsensusProposalForChainHead(recv)
 }
 
+//nolint:gocyclo
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
-	// TODO add a limit of N requests to propose.
-
-	// TODO change to propose the "top priced requests"
-
 	//
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
@@ -606,21 +610,28 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 			if isc.RequestIsExpired(request, mpi.tangleTime) {
 				return false // Drop it from the mempool
 			}
-			if isc.RequestIsUnlockable(request, mpi.chainID.AsAddress(), mpi.tangleTime) {
+			if len(reqRefs) < mpi.settings.MaxOnledgerToPropose && isc.RequestIsUnlockable(request, mpi.chainID.AsAddress(), mpi.tangleTime) {
 				reqRefs = append(reqRefs, isc.RequestRefFromRequest(request))
 			}
 			return true // Keep them for now
 		})
 	}
 
-	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
-		agentID, err := isc.AgentIDFromString(account)
-		if err != nil {
-			panic(fmt.Errorf("invalid agentID string: %s", err.Error()))
-		}
-		accountNonce := mpi.nonce(agentID)
-		for _, e := range entries {
-			if time.Since(e.ts) > mpi.ttl { // stop proposing after TTL
+	//
+	// iterate the ordered txs and add the first valid ones (respect nonce) to propose
+	// stop iterating when either: got MaxOffledgerToPropose, or no requests were added during last iteration (there are gaps in nonces)
+	accNonces := make(map[string]uint64)                             // cache of account nonces so we don't propose gaps
+	orderedList := slices.Clone(mpi.offLedgerPool.orderedByGasPrice) // clone the ordered list of references to requests, so we can alter it safely
+	for {
+		added := 0
+		addedThisCycle := false
+		for i, e := range orderedList {
+			if e == nil {
+				continue
+			}
+			//
+			// drop tx with expired TTL
+			if time.Since(e.ts) > mpi.settings.TTL { // stop proposing after TTL
 				if !lo.Some(mpi.consensusInstances, e.proposedFor) {
 					// request not used in active consensus anymore, remove it
 					mpi.log.Debugf("refsToPropose, request TTL expired, removing: %s", e.req.ID().String())
@@ -633,31 +644,52 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 
 			if e.old {
 				// this request was marked as "old", do not propose it
-				mpi.log.Debugf("refsToPropose, account: %s, skipping old request: %s", account, e.req.ID().String())
+				mpi.log.Debugf("refsToPropose, skipping old request: %s", e.req.ID().String())
 				continue
+			}
+
+			reqAccount := e.req.SenderAccount()
+			reqAccountKey := reqAccount.String()
+			accountNonce, ok := accNonces[reqAccountKey]
+			if !ok {
+				accountNonce = mpi.nonce(reqAccount)
+				accNonces[reqAccountKey] = accountNonce
 			}
 
 			reqNonce := e.req.Nonce()
 			if reqNonce < accountNonce {
 				// nonce too old, delete
-				mpi.log.Debugf("refsToPropose, account: %s, removing request (%s) with old nonce (%d) from the pool", account, e.req.ID(), e.req.Nonce())
+				mpi.log.Debugf("refsToPropose, account: %s, removing request (%s) with old nonce (%d) from the pool", reqAccount, e.req.ID(), e.req.Nonce())
 				mpi.offLedgerPool.Remove(e.req)
 				continue
 			}
 
 			if reqNonce == accountNonce {
 				// expected nonce, add it to the list to propose
-				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", account, e.req.ID().String(), e.req.Nonce())
+				mpi.log.Debugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", reqAccount, e.req.ID().String(), e.req.Nonce())
 				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
 				e.proposedFor = append(e.proposedFor, consensusID)
+				addedThisCycle = true
+				added++
 				accountNonce++ // increment the account nonce to match the next valid request
+				accNonces[reqAccountKey] = accountNonce
+				// delete from this list
+				orderedList[i] = nil
 			}
+
+			if added >= mpi.settings.MaxOffledgerToPropose {
+				break // got enough requests
+			}
+
 			if reqNonce > accountNonce {
-				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nonce %d which is too high (expected %d), won't be proposed", account, e.req.ID().String(), e.req.Nonce(), accountNonce)
-				return // no more valid nonces for this account, continue to the next account
+				mpi.log.Debugf("refsToPropose, account: %s, req %s has a nonce %d which is too high (expected %d), won't be proposed", reqAccount, e.req.ID().String(), e.req.Nonce(), accountNonce)
+				continue // skip request
 			}
 		}
-	})
+		if !addedThisCycle || (added >= mpi.settings.MaxOffledgerToPropose) {
+			break
+		}
+	}
 
 	return reqRefs
 }
@@ -917,7 +949,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 func (mpi *mempoolImpl) handleForceCleanMempool() {
 	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
 		for _, e := range entries {
-			if time.Since(e.ts) > mpi.ttl && !lo.Some(mpi.consensusInstances, e.proposedFor) {
+			if time.Since(e.ts) > mpi.settings.TTL && !lo.Some(mpi.consensusInstances, e.proposedFor) {
 				mpi.log.Debugf("handleForceCleanMempool, request TTL expired, removing: %s", e.req.ID().String())
 				mpi.offLedgerPool.Remove(e.req)
 			}

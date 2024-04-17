@@ -76,6 +76,7 @@ func (olp *typedPool[V]) Remove(request V) {
 }
 
 func (olp *typedPool[V]) Cleanup(predicate func(request V, ts time.Time) bool) {
+	// TODO iterate using an order (gas price)
 	olp.requests.ForEach(func(refKey isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
 		if !predicate(entry.req, entry.ts) {
 			if olp.requests.Delete(refKey) {

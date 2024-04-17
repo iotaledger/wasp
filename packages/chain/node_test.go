@@ -19,6 +19,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
@@ -468,7 +469,14 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			10*time.Second,
 			accounts.CommonAccount(),
 			sm_gpa.NewStateManagerParameters(),
-			24*time.Hour,
+			mempool.Settings{
+				TTL:                   24 * time.Hour,
+				MaxOffledgerInPool:    1000,
+				MaxOnledgerInPool:     1000,
+				MaxTimedInPool:        1000,
+				MaxOnledgerToPropose:  1000,
+				MaxOffledgerToPropose: 1000,
+			},
 			1*time.Second,
 		)
 		require.NoError(t, err)

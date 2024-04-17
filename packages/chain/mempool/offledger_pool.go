@@ -18,7 +18,7 @@ import (
 )
 
 // keeps a map of requests ordered by nonce for each account
-type offLedgerPool struct {
+type OffLedgerPool struct {
 	waitReq WaitReq
 	refLUT  *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *OrderedPoolEntry]
 	// reqsByAcountOrdered keeps an ordered map of reqsByAcountOrdered for each account by nonce
@@ -32,8 +32,8 @@ type offLedgerPool struct {
 	log               *logger.Logger
 }
 
-func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) *offLedgerPool {
-	return &offLedgerPool{
+func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) *OffLedgerPool {
+	return &OffLedgerPool{
 		waitReq:             waitReq,
 		refLUT:              shrinkingmap.New[isc.RequestRefKey, *OrderedPoolEntry](),
 		reqsByAcountOrdered: shrinkingmap.New[string, []*OrderedPoolEntry](),
@@ -53,11 +53,11 @@ type OrderedPoolEntry struct {
 	proposedFor []consGR.ConsensusID
 }
 
-func (p *offLedgerPool) Has(reqRef *isc.RequestRef) bool {
+func (p *OffLedgerPool) Has(reqRef *isc.RequestRef) bool {
 	return p.refLUT.Has(reqRef.AsKey())
 }
 
-func (p *offLedgerPool) Get(reqRef *isc.RequestRef) isc.OffLedgerRequest {
+func (p *OffLedgerPool) Get(reqRef *isc.RequestRef) isc.OffLedgerRequest {
 	entry, exists := p.refLUT.Get(reqRef.AsKey())
 	if !exists {
 		return isc.OffLedgerRequest(nil)
@@ -65,7 +65,7 @@ func (p *offLedgerPool) Get(reqRef *isc.RequestRef) isc.OffLedgerRequest {
 	return entry.req
 }
 
-func (p *offLedgerPool) Add(request isc.OffLedgerRequest) {
+func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 	ref := isc.RequestRefFromRequest(request)
 	entry := &OrderedPoolEntry{req: request, ts: time.Now()}
 	account := request.SenderAccount().String()
@@ -139,7 +139,7 @@ func (p *offLedgerPool) Add(request isc.OffLedgerRequest) {
 }
 
 // LimitPoolSize drops the txs with the lowest price if the total number of requests is too big
-func (p *offLedgerPool) LimitPoolSize() {
+func (p *OffLedgerPool) LimitPoolSize() {
 	// TODO apply a similar limit to on-ledger/time pool (it cannot be unbound)
 	if len(p.orderedByGasPrice) <= p.maxPoolSize {
 		return // nothing to do
@@ -159,11 +159,12 @@ func (p *offLedgerPool) LimitPoolSize() {
 	}
 
 	for _, r := range reqsToDelete {
+		p.log.Debugf("LimitPoolSize dropping request: %v", r.req.ID())
 		p.Remove(r.req)
 	}
 }
 
-func (p *offLedgerPool) GasPrice(e *OrderedPoolEntry) *big.Int {
+func (p *OffLedgerPool) GasPrice(e *OrderedPoolEntry) *big.Int {
 	price := e.req.GasPrice()
 	if price != nil {
 		return price
@@ -172,7 +173,7 @@ func (p *offLedgerPool) GasPrice(e *OrderedPoolEntry) *big.Int {
 	return p.minGasPrice
 }
 
-func (p *offLedgerPool) SetMinGasPrice(newPrice *big.Int) {
+func (p *OffLedgerPool) SetMinGasPrice(newPrice *big.Int) {
 	if p.minGasPrice.Cmp(newPrice) == 0 {
 		// no change
 		return
@@ -182,7 +183,7 @@ func (p *offLedgerPool) SetMinGasPrice(newPrice *big.Int) {
 	slices.SortFunc(p.orderedByGasPrice, p.reqSort)
 }
 
-func (p *offLedgerPool) reqSort(a, b *OrderedPoolEntry) int {
+func (p *OffLedgerPool) reqSort(a, b *OrderedPoolEntry) int {
 	cmp := p.GasPrice(a).Cmp(p.GasPrice(b))
 	if cmp != 0 {
 		return cmp
@@ -202,7 +203,7 @@ func (p *offLedgerPool) reqSort(a, b *OrderedPoolEntry) int {
 	return 0
 }
 
-func (p *offLedgerPool) Remove(request isc.OffLedgerRequest) {
+func (p *OffLedgerPool) Remove(request isc.OffLedgerRequest) {
 	refKey := isc.RequestRefFromRequest(request).AsKey()
 	entry, exists := p.refLUT.Get(refKey)
 	if !exists {
@@ -255,14 +256,14 @@ func (p *offLedgerPool) Remove(request isc.OffLedgerRequest) {
 	}
 }
 
-func (p *offLedgerPool) Iterate(f func(account string, requests []*OrderedPoolEntry)) {
+func (p *OffLedgerPool) Iterate(f func(account string, requests []*OrderedPoolEntry)) {
 	p.reqsByAcountOrdered.ForEach(func(acc string, entries []*OrderedPoolEntry) bool {
 		f(acc, slices.Clone(entries))
 		return true
 	})
 }
 
-func (p *offLedgerPool) Cleanup(predicate func(request isc.OffLedgerRequest, ts time.Time) bool) {
+func (p *OffLedgerPool) Cleanup(predicate func(request isc.OffLedgerRequest, ts time.Time) bool) {
 	p.refLUT.ForEach(func(refKey isc.RequestRefKey, entry *OrderedPoolEntry) bool {
 		if !predicate(entry.req, entry.ts) {
 			p.Remove(entry.req)
@@ -272,11 +273,11 @@ func (p *offLedgerPool) Cleanup(predicate func(request isc.OffLedgerRequest, ts 
 	p.sizeMetric(p.refLUT.Size())
 }
 
-func (p *offLedgerPool) StatusString() string {
+func (p *OffLedgerPool) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", p.refLUT.Size())
 }
 
-func (p *offLedgerPool) WriteContent(w io.Writer) {
+func (p *OffLedgerPool) WriteContent(w io.Writer) {
 	p.reqsByAcountOrdered.ForEach(func(_ string, list []*OrderedPoolEntry) bool {
 		for _, entry := range list {
 			jsonData, err := isc.RequestToJSON(entry.req)
