@@ -19,7 +19,6 @@ import (
 
 const (
 	randomFile = "blob_test.go"
-	wasmFile   = "sbtests/sbtestsc/testcore_bg.wasm"
 )
 
 func TestUploadBlob(t *testing.T) {
@@ -112,54 +111,49 @@ func TestUploadBlob(t *testing.T) {
 	})
 }
 
-func TestUploadWasm(t *testing.T) {
-	t.Run("upload wasm", func(t *testing.T) {
+func TestUploadContractBinary(t *testing.T) {
+	vmType := "dummy"
+
+	t.Run("upload once", func(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
-		binary := []byte("supposed to be wasm")
-		hwasm, err := ch.UploadWasm(nil, binary)
+		binary := []byte("supposed to be binary")
+		hash, err := ch.UploadContractBinary(nil, vmType, binary)
 		require.NoError(t, err)
 
-		binBack, err := ch.GetWasmBinary(hwasm)
+		vmTypeBack, binBack, err := ch.GetContractBinary(hash)
 		require.NoError(t, err)
 
+		require.EqualValues(t, vmType, vmTypeBack)
 		require.EqualValues(t, binary, binBack)
 	})
 	t.Run("upload twice", func(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
-		binary := []byte("supposed to be wasm")
-		hwasm1, err := ch.UploadWasm(nil, binary)
+		binary := []byte("supposed to be binary")
+		hash1, err := ch.UploadContractBinary(nil, vmType, binary)
 		require.NoError(t, err)
 
 		// we upload exactly the same, if it exists it silently returns no error
-		hwasm2, err := ch.UploadWasm(nil, binary)
+		hash2, err := ch.UploadContractBinary(nil, vmType, binary)
 		require.NoError(t, err)
 
-		require.EqualValues(t, hwasm1, hwasm2)
+		require.EqualValues(t, hash1, hash2)
 
-		binBack, err := ch.GetWasmBinary(hwasm1)
+		vmTypeBack, binBack, err := ch.GetContractBinary(hash1)
 		require.NoError(t, err)
 
+		require.EqualValues(t, vmType, vmTypeBack)
 		require.EqualValues(t, binary, binBack)
-	})
-	t.Run("upload wasm from file", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-		ch.MustDepositBaseTokensToL2(100_000, nil)
-		progHash, err := ch.UploadWasmFromFile(nil, wasmFile)
-		require.NoError(t, err)
-
-		err = ch.DeployContract(nil, "testCore", progHash)
-		require.NoError(t, err)
 	})
 	t.Run("list blobs", func(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
-		_, err := ch.UploadWasmFromFile(nil, wasmFile)
+		binary := []byte("supposed to be binary")
+		_, err := ch.UploadContractBinary(nil, vmType, binary)
 		require.NoError(t, err)
 
 		ret, err := ch.CallView(blob.Contract.Name, blob.ViewListBlobs.Name)
@@ -173,9 +167,10 @@ func TestBigBlob(t *testing.T) {
 	ch := env.NewChain()
 	ch.MustDepositBaseTokensToL2(1*isc.Million, nil)
 
+	vmType := "dummy"
 	upload := func(n int) uint64 {
 		blobBin := make([]byte, n)
-		_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
+		_, err := ch.UploadContractBinary(ch.OriginatorPrivateKey, vmType, blobBin)
 		require.NoError(t, err)
 		return ch.LastReceipt().GasBurned
 	}

@@ -22,16 +22,12 @@ TEST_ARG=
 BUILD_PKGS ?= ./ ./tools/cluster/wasp-cluster/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
-WASP_CLI_TAGS = no_wasmhost
 
 # Docker image name and tag
 DOCKER_IMAGE_NAME=wasp
 DOCKER_IMAGE_TAG=develop
 
 all: build-lint
-
-wasm:
-	bash contracts/wasm/scripts/schema_all.sh
 
 compile-solidity:
 	cd packages/vm/core/evm/iscmagic && go generate
@@ -58,7 +54,7 @@ test: install
 	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
+	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) --short --count 1 -failfast $(shell go list ./...)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
@@ -113,4 +109,4 @@ deps-versions:
 		awk -F ":" '{ print $$1 }' | \
 		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
-.PHONY: all wasm compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions
+.PHONY: all compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions

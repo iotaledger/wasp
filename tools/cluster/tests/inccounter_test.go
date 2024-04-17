@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -38,7 +39,7 @@ type contractWithMessageCounterEnv struct {
 }
 
 func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
-	cEnv := env.deployWasmContract(incName, nil)
+	env.deployNativeIncCounterSC(0)
 
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, incHname)
@@ -53,7 +54,12 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(env.t, err)
 
-	return &contractWithMessageCounterEnv{contractEnv: cEnv}
+	return &contractWithMessageCounterEnv{
+		contractEnv: &contractEnv{
+			ChainEnv:    env,
+			programHash: inccounter.Contract.ProgramHash,
+		},
+	}
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {

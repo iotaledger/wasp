@@ -18,9 +18,9 @@ import (
 )
 
 func TestCounter(t *testing.T) { run2(t, testCounter) }
-func testCounter(t *testing.T, w bool) {
+func testCounter(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
@@ -37,9 +37,9 @@ func testCounter(t *testing.T, w bool) {
 }
 
 func TestConcurrency(t *testing.T) { run2(t, testConcurrency) }
-func testConcurrency(t *testing.T, w bool) {
+func testConcurrency(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
 
@@ -79,9 +79,9 @@ func testConcurrency(t *testing.T, w bool) {
 }
 
 func TestConcurrency2(t *testing.T) { run2(t, testConcurrency2) }
-func testConcurrency2(t *testing.T, w bool) {
+func testConcurrency2(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
 

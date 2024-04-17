@@ -29,13 +29,10 @@ func infiniteLoopRequest(ch *solo.Chain, gasBudget ...uint64) (*solo.CallParams,
 }
 
 func TestTxWithGasOverLimit(t *testing.T) { run2(t, testTxWithGasOverLimit) }
-func testTxWithGasOverLimit(t *testing.T, w bool) {
+func testTxWithGasOverLimit(t *testing.T) {
 	// create a TX that would use more than max gas limit, assert that only the maximum will be used
-	if w { // TODO the WASM version of this must be tested.
-		t.SkipNow()
-	}
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	req, wallet := infiniteLoopRequest(ch)
 	_, err := ch.PostRequestSync(req, wallet)
@@ -48,13 +45,10 @@ func testTxWithGasOverLimit(t *testing.T, w bool) {
 }
 
 func TestBlockGasOverflow(t *testing.T) { run2(t, testBlockGasOverflow) }
-func testBlockGasOverflow(t *testing.T, w bool) {
+func testBlockGasOverflow(t *testing.T) {
 	// queue many transactions with enough gas to fill a block, assert that they are split across blocks
-	if forceGoNoWasm && w {
-		t.SkipNow()
-	}
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 	initialBlockInfo := ch.GetLatestBlockInfo()
 
 	// produce 1 request over the block gas limit (each request uses the maximum amount of gas a call can use)
@@ -89,13 +83,10 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 }
 
 func TestGasBudget(t *testing.T) { run2(t, testGasBudget) }
-func testGasBudget(t *testing.T, w bool) {
+func testGasBudget(t *testing.T) {
 	// create a TX with not enough gas, assert the receipt is as expected
-	if w { // TODO the WASM version of this must be tested.
-		t.SkipNow()
-	}
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	limits := ch.GetGasLimits()
 	gasBudget := limits.MaxGasPerRequest / 2
@@ -117,12 +108,9 @@ func testGasBudget(t *testing.T, w bool) {
 }
 
 func TestViewGasLimit(t *testing.T) { run2(t, testViewGasLimit) }
-func testViewGasLimit(t *testing.T, w bool) {
-	if forceGoNoWasm && w {
-		t.SkipNow()
-	}
+func testViewGasLimit(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 	_, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)

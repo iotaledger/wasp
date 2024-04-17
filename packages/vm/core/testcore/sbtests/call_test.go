@@ -11,9 +11,9 @@ import (
 )
 
 func TestGetSet(t *testing.T) { run2(t, testGetSet) }
-func testGetSet(t *testing.T, w bool) {
+func testGetSet(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp",
@@ -32,9 +32,9 @@ func testGetSet(t *testing.T, w bool) {
 }
 
 func TestCallRecursive(t *testing.T) { run2(t, testCallRecursive) }
-func testCallRecursive(t *testing.T, w bool) {
+func testCallRecursive(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	depth := 27
 	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OriginatorAgentID))
@@ -65,9 +65,9 @@ func fibonacci(n int64) int64 {
 }
 
 func TestCallFibonacci(t *testing.T) { run2(t, testCallFibonacci) }
-func testCallFibonacci(t *testing.T, w bool) {
+func testCallFibonacci(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacci.Name,
 		sbtestsc.ParamN, fiboN,
@@ -79,9 +79,9 @@ func testCallFibonacci(t *testing.T, w bool) {
 }
 
 func TestCallFibonacciIndirect(t *testing.T) { run2(t, testCallFibonacciIndirect) }
-func testCallFibonacciIndirect(t *testing.T, w bool) {
+func testCallFibonacciIndirect(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacciIndirect.Name,
 		sbtestsc.ParamN, fiboN,
@@ -93,9 +93,9 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 }
 
 func TestIndirectCallFibonacci(t *testing.T) { run2(t, testIndirectCallFibonacci) }
-func testIndirectCallFibonacci(t *testing.T, w bool) { //nolint:dupl
+func testIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, fiboN,
@@ -117,9 +117,9 @@ func testIndirectCallFibonacci(t *testing.T, w bool) { //nolint:dupl
 }
 
 func TestIndirectCallFibonacciIndirect(t *testing.T) { run2(t, testIndirectCallFibonacciIndirect) }
-func testIndirectCallFibonacciIndirect(t *testing.T, w bool) { //nolint:dupl
+func testIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, fiboN,

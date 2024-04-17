@@ -17,7 +17,6 @@ fi
 # enter the specific test you want to run here
 TESTS="^TestNodeConn$ github.com/iotaledger/wasp/tools/cluster/tests"
 
-make wasm
 make install
 
 echo "Start tests... ${TESTS}"

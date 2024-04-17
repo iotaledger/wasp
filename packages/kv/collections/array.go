@@ -12,8 +12,6 @@ var ErrArrayOverflow = errors.New("Array overflow")
 
 // For easy distinction between arrays and map collections
 // we use '#' as separator for arrays and '.' for maps.
-// Do not change this value unless you want to break how
-// WasmLib maps these collections in the exact same way
 const arrayElemKeyCode = byte('#')
 
 func ArrayElemKey(name string, index uint32) kv.Key {

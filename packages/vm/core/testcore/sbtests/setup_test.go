@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -14,26 +13,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 )
 
 const (
-	debug         = false
-	forceGoNoWasm = false
-	forceSkipWasm = false
+	debug  = false
+	ScName = "testcore"
 )
 
-const (
-	ScName           = "testcore"
-	HScName          = isc.Hname(0x370d33ad)
-	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
-)
-
-func init() {
-	if isc.Hn(ScName) != HScName {
-		panic("isc.Hn(ScName) != HScName")
-	}
-}
+var HScName = isc.Hn(ScName)
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	env := solo.New(t, &solo.InitOptions{
@@ -62,47 +49,19 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 	return user, isc.NewAgentID(userAddr)
 }
 
-func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
+func run2(t *testing.T, test func(*testing.T)) {
 	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
-		test(t, false)
-	})
-	if forceSkipWasm || (len(skipWasm) > 0 && skipWasm[0]) {
-		t.Logf("skipped Wasm version of '%s'", t.Name())
-		return
-	}
-	t.Run(fmt.Sprintf("run Wasm version of %s", t.Name()), func(t *testing.T) {
-		test(t, true)
+		test(t)
 	})
 }
 
-func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
-	if forceSkipWasm || !runWasm {
-		// run core version of testcore
-		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
-	}
-
-	// enable this code to be able to debug using Go version of Wasm testcore SC
-	if forceGoNoWasm {
-		// run non-Wasm go version of testcore
-		wasmhost.GoWasmVM = func() wasmhost.WasmVM {
-			return wasmhost.NewWasmGoVM(ScName, testcoreimpl.OnDispatch)
-		}
-		hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
-		if err != nil {
-			return err
-		}
-		err = chain.DeployContract(user, ScName, hProg)
-		wasmhost.GoWasmVM = nil
-		return err
-	}
-
-	// run Rust Wasm version of testcore
-	return chain.DeployWasmContract(user, ScName, WasmFileTestcore)
+func deployContract(chain *solo.Chain, user *cryptolib.KeyPair) error {
+	return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 }
 
 // WARNING: setupTestSandboxSC will fail if AutoAdjustStorageDeposit is not enabled
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) isc.AgentID {
-	err := deployContract(chain, user, runWasm)
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair) isc.AgentID {
+	err := deployContract(chain, user)
 	require.NoError(t, err)
 
 	deployed := isc.NewContractAgentID(chain.ChainID, HScName)
@@ -115,14 +74,14 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair
 }
 
 func TestSetup1(t *testing.T) { run2(t, testSetup1) }
-func testSetup1(t *testing.T, w bool) {
+func testSetup1(t *testing.T) {
 	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil)
 }
 
 func TestSetup2(t *testing.T) { run2(t, testSetup2) }
-func testSetup2(t *testing.T, w bool) {
+func testSetup2(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	user, _ := setupDeployer(t, chain)
-	setupTestSandboxSC(t, chain, user, w)
+	setupTestSandboxSC(t, chain, user)
 }

@@ -47,8 +47,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 )
 
 const (
@@ -194,11 +192,6 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
 		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
 
-	err = ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (isc.VMProcessor, error) {
-		return wasmhost.GetProcessor(binaryCode, opt.Log)
-	})
-	require.NoError(t, err)
-
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
@@ -286,6 +279,12 @@ func (env *Solo) GetChainByName(name string) *Chain {
 // WithNativeContract registers a native contract so that it may be deployed
 func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 	env.processorConfig.RegisterNativeContract(c)
+	return env
+}
+
+// WithVMProcessor registers a VM processor for binary contracts
+func (env *Solo) WithVMProcessor(vmType string, constructor processors.VMConstructor) *Solo {
+	env.processorConfig.RegisterVMType(vmType, constructor)
 	return env
 }
 

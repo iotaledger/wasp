@@ -125,6 +125,7 @@ and other related interfaces.
 The binary, the blob, must be uploaded into the chain beforehand, usually with IPFS as a uploading/downloading service.
 
 ### VM type
+
 All _VM types_ are statically predefined in the Wasp node. It means, to implement a new type of VM plugin, you will need
 to modify the Wasp node by adding a new VM type. The _VM type_ is part of _VM abstraction_, so adding a new _VM type_ is transparent to the rest of the Wasp code.
 
@@ -137,23 +138,19 @@ new `isc.Processor` object from the binary data of the program.
 The following _VM types_ are pre-defined in the current release of the Wasp:
 * `core` represents core contracts
 * `native` represents example and other contracts (e.g. the `evm` contract) which conform to the native interface and are hardcoded before run
-* `wasmtime` represents Wasmtime WebAssembly interpreter and native `Rust/Wasm` environment to create smart contracts.
 
 To implement new types of interpreters, other languages or interpreters, a new _VM Type_
 must be implemented into Wasp.
 
 ### Program binary and blob hash
+
 To dynamically deploy a smart contract we need code of it in some binary format and dynamical linking of it  
 to be able to call from VM. The very idea is to make the binary executable code of the smart contract immutable,  
 which means it must be a part of the chain's state.
 
-For example, `WebAssembly` (_wasm_) smart contracts produced by the `Rust/Wasm` environment provided together  
-with the Wasp, are represented by `wasm` binaries. Other VM types may take different formats to represent its  
-executable code.
-
-To deploy a `wasmtime` smart contract on the chain, first we need to upload the corresponding `wasm` binary.  
-All `wasm` binaries (as well as any other files of data) are kept in the registry handled by the `blob` core contract.  
-To upload a `wasm` binary to the chain one must send a request to the `blob`. Each blob on the chain is referenced by  
+To deploy a smart contract of a custom VM type, first we need to upload its corresponding binary.  
+Contract binaries (as well as any other files of data) are kept in the registry handled by the `blob` core contract.  
+To upload a binary to the chain one must send a request to the `blob` core contract. Each blob on the chain is referenced by  
 its hash.
 
 The smart contract deployment takes VM type and binary blob hash as parameters. It makes the smart contract  
@@ -164,7 +161,7 @@ it with `processors.RegisterVMType`. The rest is handled by the generic logic of
 
 ## Processor and the sandbox interface
 
-In native and `wasmtime` implementations one _processor_ represents one smart contract. It gives full power
+In native and non-native implementations one _processor_ represents one smart contract. It gives full power
 to the smart contracts on the ISC chain, such as manipulate native IOTA assets, call other smart contracts (processors)
 on the same chain and send requests and assets to other ISC chains.
 

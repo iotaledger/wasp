@@ -214,8 +214,8 @@ type SendMetadata struct {
 	GasBudget      uint64
 }
 
-// Utils implement various utilities which are faster on host side than on wasm VM
-// Implement deterministic stateless computations
+// Utils provides various utilities that are faster on host side than on VM
+// interpreter side.
 type Utils interface {
 	Hashing() Hashing
 	ED25519() ED25519

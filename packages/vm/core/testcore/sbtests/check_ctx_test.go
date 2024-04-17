@@ -12,12 +12,12 @@ import (
 )
 
 func TestMainCallsFromFullEP(t *testing.T) { run2(t, testMainCallsFromFullEP) }
-func testMainCallsFromFullEP(t *testing.T, w bool) {
+func testMainCallsFromFullEP(t *testing.T) {
 	_, chain := setupChain(t, nil)
 
 	user, userAgentID := setupDeployer(t, chain)
 
-	setupTestSandboxSC(t, chain, user, w)
+	setupTestSandboxSC(t, chain, user)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCheckContextFromFullEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
@@ -31,12 +31,12 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 }
 
 func TestMainCallsFromViewEP(t *testing.T) { run2(t, testMainCallsFromViewEP) }
-func testMainCallsFromViewEP(t *testing.T, w bool) {
+func testMainCallsFromViewEP(t *testing.T) {
 	_, chain := setupChain(t, nil)
 
 	user, _ := setupDeployer(t, chain)
 
-	setupTestSandboxSC(t, chain, user, w)
+	setupTestSandboxSC(t, chain, user)
 
 	_, err := chain.CallView(ScName, sbtestsc.FuncCheckContextFromViewEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,

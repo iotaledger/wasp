@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/components/publisher"
 	"github.com/iotaledger/wasp/components/registry"
 	"github.com/iotaledger/wasp/components/users"
-	"github.com/iotaledger/wasp/components/wasmtimevm"
 	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/toolset"
 )
@@ -48,7 +47,6 @@ func App() *app.App {
 			peering.Component,
 			dkg.Component,
 			processors.Component,
-			wasmtimevm.Component,
 			chains.Component,
 			publisher.Component,
 			webapi.Component,
