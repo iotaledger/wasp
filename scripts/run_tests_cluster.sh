@@ -14,10 +14,9 @@ if [ "$OUTPUT_TO_FILE" = false ] && [ -x "$(command -v richgo)" ]; then
     GO_EXECUTABLE=richgo
 fi
 
-FILES=$(go list ./tools/cluster/... | grep -v github.com/iotaledger/wasp/contracts/wasm)
+FILES=$(go list ./tools/cluster/...)
 ${GO_EXECUTABLE} clean -testcache
 
-make wasm
 make install
 
 if [ "$OUTPUT_TO_FILE" = false ]; then

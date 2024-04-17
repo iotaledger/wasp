@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -126,17 +125,17 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// deploy a contract, test its working
 	{
-		vmtype := vmtypes.WasmTime
-		w.CopyFile(srcFile)
+		// TODO: rewrite to use a native contract?
+		/*
+				// deposit funds first to run offledger requests
+				w.MustRun("chain", "deposit", "base:10000000", "--node=0")
 
-		// deposit funds first to run offledger requests
-		w.MustRun("chain", "deposit", "base:10000000", "--node=0")
-
-		// test chain deploy-contract command
-		w.MustRun("chain", "deploy-contract", vmtype, inccounterSCName, "inccounter SC", file,
-			"string", "counter", "int64", "42",
-			"--node=0",
-		)
+				// test chain deploy-contract command
+				w.MustRun("chain", "deploy-contract", vmtype, inccounterSCName, "inccounter SC", file,
+				"string", "counter", "int64", "42",
+				"--node=0",
+			)
+		*/
 
 		checkCounter(w, 42)
 	}

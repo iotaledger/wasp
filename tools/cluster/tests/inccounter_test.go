@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -38,7 +39,7 @@ type contractWithMessageCounterEnv struct {
 }
 
 func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
-	cEnv := env.deployWasmContract(incName, nil)
+	env.deployNativeIncCounterSC(0)
 
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, incHname)
@@ -53,7 +54,12 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(env.t, err)
 
-	return &contractWithMessageCounterEnv{contractEnv: cEnv}
+	return &contractWithMessageCounterEnv{
+		contractEnv: &contractEnv{
+			ChainEnv:    env,
+			programHash: inccounter.Contract.ProgramHash,
+		},
+	}
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
@@ -98,7 +104,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 	}
 }
 
-func (e *ChainEnv) checkWasmContractCounter(expected int64) {
+func (e *ChainEnv) checkContractCounter(expected int64) {
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(incHname, i)
 		require.NoError(e.t, err)
@@ -122,7 +128,7 @@ func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
 	}
 
 	e.checkSC(numRequests)
-	e.checkWasmContractCounter(0)
+	e.checkContractCounter(0)
 }
 
 // executed in cluster_test.go
@@ -140,7 +146,7 @@ func testIncrement(t *testing.T, env *ChainEnv) {
 	}
 
 	e.checkSC(numRequests)
-	e.checkWasmContractCounter(int64(numRequests))
+	e.checkContractCounter(int64(numRequests))
 }
 
 // executed in cluster_test.go
@@ -150,7 +156,7 @@ func testIncrementWithTransfer(t *testing.T, env *ChainEnv) {
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
-	e.checkWasmContractCounter(1)
+	e.checkContractCounter(1)
 }
 
 // executed in cluster_test.go
@@ -160,7 +166,7 @@ func testIncCallIncrement1(t *testing.T, env *ChainEnv) {
 	entryPoint := isc.Hn("callIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
 
-	e.checkWasmContractCounter(2)
+	e.checkContractCounter(2)
 }
 
 // executed in cluster_test.go
@@ -170,7 +176,7 @@ func testIncCallIncrement2Recurse5x(t *testing.T, env *ChainEnv) {
 	entryPoint := isc.Hn("callIncrementRecurse5x")
 	e.postRequest(incHname, entryPoint, 1_000, nil)
 
-	e.checkWasmContractCounter(6)
+	e.checkContractCounter(6)
 }
 
 // executed in cluster_test.go
@@ -215,7 +221,7 @@ func testIncLocalStateInternalCall(t *testing.T, env *ChainEnv) {
 	e := setupContract(env)
 	entryPoint := isc.Hn("localStateInternalCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
-	e.checkWasmContractCounter(2)
+	e.checkContractCounter(2)
 }
 
 // executed in cluster_test.go
@@ -223,7 +229,7 @@ func testIncLocalStateSandboxCall(t *testing.T, env *ChainEnv) {
 	e := setupContract(env)
 	entryPoint := isc.Hn("localStateSandboxCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
-	e.checkWasmContractCounter(0)
+	e.checkContractCounter(0)
 }
 
 // executed in cluster_test.go
@@ -231,7 +237,7 @@ func testIncLocalStatePost(t *testing.T, env *ChainEnv) {
 	e := setupContract(env)
 	entryPoint := isc.Hn("localStatePost")
 	e.postRequest(incHname, entryPoint, 3, nil)
-	e.checkWasmContractCounter(0)
+	e.checkContractCounter(0)
 }
 
 // executed in cluster_test.go
@@ -239,7 +245,7 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 	e := setupContract(env)
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
-	e.checkWasmContractCounter(1)
+	e.checkContractCounter(1)
 
 	ret, err := apiextensions.CallView(
 		context.Background(),
@@ -262,14 +268,14 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 func testIncCounterTimelock(t *testing.T, env *ChainEnv) {
 	e := setupContract(env)
 	e.postRequest(incHname, isc.Hn("increment"), 0, nil)
-	e.checkWasmContractCounter(1)
+	e.checkContractCounter(1)
 
 	e.postRequest(incHname, isc.Hn("incrementWithDelay"), 0, map[string]interface{}{
 		varDelay: int32(50), // 50s delay()
 	})
 
 	time.Sleep(3000 * time.Millisecond) // equivalent of 30s
-	e.checkWasmContractCounter(1)
+	e.checkContractCounter(1)
 	time.Sleep(3000 * time.Millisecond) // equivalent of 30s
-	e.checkWasmContractCounter(2)
+	e.checkContractCounter(2)
 }

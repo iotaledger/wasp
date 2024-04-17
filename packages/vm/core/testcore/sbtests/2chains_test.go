@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 // TODO deposit fee needs to be constant, this test is using a placeholder value that will need to be changed
@@ -26,7 +25,7 @@ import (
 // SC tries to withdraw those funds from chain 1 to chain 2
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 
-func test2Chains(t *testing.T, w bool) {
+func test2Chains(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
@@ -44,8 +43,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
 
-	_ = setupTestSandboxSC(t, chain1, nil, w)
-	contractAgentID2 := setupTestSandboxSC(t, chain2, nil, w)
+	_ = setupTestSandboxSC(t, chain1, nil)
+	contractAgentID2 := setupTestSandboxSC(t, chain2, nil)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := isc.NewAgentID(userAddress)
@@ -102,7 +101,7 @@ func test2Chains(t *testing.T, w bool) {
 	// gas reserve for the 'TransferAllowanceTo' func call in 'TransferAccountToChain' func call
 	gasReserve := 10 * gas.LimitsDefault.MinGasPerRequest
 	withdrawFeeGas := 10 * gas.LimitsDefault.MinGasPerRequest
-	const storageDeposit = wasmlib.StorageDeposit
+	const storageDeposit = 20_000
 
 	// NOTE: make sure you READ THE DOCS for accounts.transferAccountToChain()
 	// to understand fully how to call it and why.

@@ -19,9 +19,9 @@ import (
 )
 
 func TestTooManyOutputsInASingleCall(t *testing.T) { run2(t, testTooManyOutputsInASingleCall) }
-func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
+func testTooManyOutputsInASingleCall(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	// send 1 tx will 1_000_000 BaseTokens which should result in too many outputs, so the request must fail
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
@@ -37,9 +37,9 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 }
 
 func TestSeveralOutputsInASingleCall(t *testing.T) { run2(t, testSeveralOutputsInASingleCall) }
-func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
+func testSeveralOutputsInASingleCall(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
@@ -63,9 +63,9 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 }
 
 func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
-func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
+func testSeveralOutputsInASingleCallFail(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
@@ -88,9 +88,9 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 }
 
 func TestSplitTokensFail(t *testing.T) { run2(t, testSplitTokensFail) }
-func testSplitTokensFail(t *testing.T, w bool) {
+func testSplitTokensFail(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
@@ -116,9 +116,9 @@ func testSplitTokensFail(t *testing.T, w bool) {
 }
 
 func TestSplitTokensSuccess(t *testing.T) { run2(t, testSplitTokensSuccess) }
-func testSplitTokensSuccess(t *testing.T, w bool) {
+func testSplitTokensSuccess(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 	agentID := isc.NewAgentID(addr)
@@ -147,10 +147,10 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 }
 
 func TestPingBaseTokens1(t *testing.T) { run2(t, testPingBaseTokens1) }
-func testPingBaseTokens1(t *testing.T, w bool) {
+func testPingBaseTokens1(t *testing.T) {
 	// TestPingBaseTokens1 sends some base tokens to SC and receives the whole allowance sent back to L1 as on-ledger request
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	user, userAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(1))
 
@@ -195,9 +195,9 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 }
 
 func TestEstimateMinimumStorageDeposit(t *testing.T) { run2(t, testEstimateMinimumStorageDeposit) }
-func testEstimateMinimumStorageDeposit(t *testing.T, w bool) {
+func testEstimateMinimumStorageDeposit(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
@@ -230,10 +230,10 @@ func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner
 }
 
 func TestSendNFTsBack(t *testing.T) { run2(t, testSendNFTsBack) }
-func testSendNFTsBack(t *testing.T, w bool) {
+func testSendNFTsBack(t *testing.T) {
 	// Send NFT and receive it back (on-ledger request)
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
@@ -258,10 +258,10 @@ func testSendNFTsBack(t *testing.T, w bool) {
 
 func TestNFTOffledgerWithdraw(t *testing.T) { run2(t, testNFTOffledgerWithdraw) }
 
-func testNFTOffledgerWithdraw(t *testing.T, w bool) {
+func testNFTOffledgerWithdraw(t *testing.T) {
 	// Deposit an NFT, then claim it back via offleger-request
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, issuerAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
@@ -296,10 +296,10 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 }
 
 func TestNFTMintToChain(t *testing.T) { run2(t, testNFTMintToChain) }
-func testNFTMintToChain(t *testing.T, w bool) {
+func testNFTMintToChain(t *testing.T) {
 	// Mints an NFT as a request
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	setupTestSandboxSC(t, ch, nil)
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 

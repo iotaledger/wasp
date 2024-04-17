@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -55,27 +54,6 @@ func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *Chai
 type contractEnv struct {
 	*ChainEnv
 	programHash hashing.HashValue
-}
-
-func (e *ChainEnv) deployWasmContract(wasmName string, initParams map[string]interface{}) *contractEnv {
-	ret := &contractEnv{ChainEnv: e}
-
-	wasmPath := "wasm/" + wasmName + "_bg.wasm"
-
-	wasm, err := os.ReadFile(wasmPath)
-	require.NoError(e.t, err)
-	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorKeyPair)
-
-	reqTx, err := chClient.DepositFunds(1_000_000)
-	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
-	require.NoError(e.t, err)
-
-	ph, err := e.Chain.DeployWasmContract(wasmName, wasm, initParams)
-	require.NoError(e.t, err)
-	ret.programHash = ph
-	e.t.Logf("deployContract: proghash = %s\n", ph.String())
-	return ret
 }
 
 func (e *ChainEnv) createNewClient() *scclient.SCClient {

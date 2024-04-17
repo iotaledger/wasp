@@ -46,7 +46,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 // solo chain implements Chain interface
@@ -207,56 +206,56 @@ func (ch *Chain) UploadBlobFromFile(keyPair *cryptolib.KeyPair, fileName, fieldN
 	return ch.UploadBlob(keyPair, par)
 }
 
-// UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
+// UploadContractBinary is a shortcut for calling UploadBlob in order to upload
+// a contract binary to the chain.
 //
-//	parameter 'binaryCode' is the binary of Wasm smart contract program
-//
-// The blob for the Wasm binary used fixed field names which are statically known by the
+// The blob for the contract binary uses fixed field names that are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
-func (ch *Chain) UploadWasm(keyPair *cryptolib.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
+func (ch *Chain) UploadContractBinary(keyPair *cryptolib.KeyPair, vmType string, binaryCode []byte) (ret hashing.HashValue, err error) {
 	return ch.UploadBlob(keyPair,
-		blob.VarFieldVMType, vmtypes.WasmTime,
+		blob.VarFieldVMType, vmType,
 		blob.VarFieldProgramBinary, binaryCode,
 	)
 }
 
-// UploadWasmFromFile is a syntactic sugar to upload file content as blob data to the chain
-func (ch *Chain) UploadWasmFromFile(keyPair *cryptolib.KeyPair, fileName string) (hashing.HashValue, error) {
+// UploadContractBinaryFromFile is a syntactic sugar to upload file content as blob data to the chain
+func (ch *Chain) UploadContractBinaryFromFile(keyPair *cryptolib.KeyPair, vmType, fileName string) (hashing.HashValue, error) {
 	var binary []byte
 	binary, err := os.ReadFile(fileName)
 	if err != nil {
 		return hashing.HashValue{}, err
 	}
-	return ch.UploadWasm(keyPair, binary)
+	return ch.UploadContractBinary(keyPair, vmType, binary)
 }
 
-// GetWasmBinary retrieves program binary in the format of Wasm blob from the chain by hash.
-func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
+// GetContractBinary retrieves a program binary by its hash.
+func (ch *Chain) GetContractBinary(progHash hashing.HashValue) (string, []byte, error) {
 	res, err := ch.CallView(blob.Contract.Name, blob.ViewGetBlobField.Name,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldVMType,
 	)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	require.EqualValues(ch.Env.T, vmtypes.WasmTime, string(res.Get(blob.ParamBytes)))
+	vmType := string(res.Get(blob.ParamBytes))
 
 	res, err = ch.CallView(blob.Contract.Name, blob.ViewGetBlobField.Name,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldProgramBinary,
 	)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	binary := res.Get(blob.ParamBytes)
-	return binary, nil
+	return vmType, binary, nil
 }
 
 // DeployContract deploys contract with the given name by its 'programHash'. 'sigScheme' represents
 // the private key of the creator (nil defaults to chain originator). The 'creator' becomes an immutable
 // property of the contract instance.
 // The parameter 'programHash' can be one of the following:
-//   - it is and ID of  the blob stored on the chain in the format of Wasm binary
+//   - it is the hash of the previously uploaded blob that contains the
+//     binary and vmtype
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
 func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
@@ -275,10 +274,10 @@ func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHas
 	return err
 }
 
-// DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
-// deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname string, params ...interface{}) error {
-	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
+// UploadAndDeployContract is a shortcut for uploading a contract binary from file and
+// deploying the smart contract.
+func (ch *Chain) UploadAndDeployContract(keyPair *cryptolib.KeyPair, name, vmType, fname string, params ...interface{}) error {
+	hprog, err := ch.UploadContractBinaryFromFile(keyPair, vmType, fname)
 	if err != nil {
 		return err
 	}

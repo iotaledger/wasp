@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -194,49 +193,6 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
-}
-
-// executed in cluster_test.go
-func testSpamCallViewWasm(t *testing.T, env *ChainEnv) {
-	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
-
-	wallet, _, err := env.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-	client := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), wallet)
-	{
-		// increment counter once
-		tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
-		require.NoError(t, err)
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 30*time.Second)
-		require.NoError(t, err)
-	}
-
-	const n = 200
-	ch := make(chan error, n)
-
-	for i := 0; i < n; i++ {
-		go func() {
-			r, err := client.CallView(context.Background(), "getCounter", nil)
-			if err != nil {
-				ch <- err
-				return
-			}
-
-			v, err := codec.DecodeInt64(r.Get(inccounter.VarCounter))
-			if err == nil && v != 1 {
-				err = errors.New("v != 1")
-			}
-			ch <- err
-		}()
-	}
-
-	for i := 0; i < n; i++ {
-		err := <-ch
-		if err != nil {
-			t.Error(err)
-		}
-	}
 }
 
 // executed in cluster_test.go

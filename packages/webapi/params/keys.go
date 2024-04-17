@@ -19,7 +19,7 @@ const (
 )
 
 const (
-	DescriptionAgentID              = "AgentID (Bech32 for WasmVM | Hex for EVM)"
+	DescriptionAgentID              = "AgentID (Bech32 for L1 accounts | Hex for EVM)"
 	DescriptionBlobHash             = "BlobHash (Hex)"
 	DescriptionChainID              = "ChainID (Bech32)"
 	DescriptionContractHName        = "The contract hname (Hex)"

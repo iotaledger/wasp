@@ -6,7 +6,4 @@ const (
 
 	// Native is the VM type name for native (non-core) contracts
 	Native = "native"
-
-	// WasmTime is the VM type name for contracts run by the WasmTime VM
-	WasmTime = "wasmtime"
 )

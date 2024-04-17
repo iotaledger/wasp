@@ -26,7 +26,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0 // indirect
-	github.com/bytecodealliance/wasmtime-go/v9 v9.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.11.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
@@ -170,7 +169,6 @@ require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/samber/lo v1.38.1 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
-	github.com/second-state/WasmEdge-go v0.13.4 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
@@ -185,7 +183,6 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/wasmerio/wasmer-go v1.0.4 // indirect
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect

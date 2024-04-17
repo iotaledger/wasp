@@ -23,7 +23,7 @@ const nativeIncCounterSCName = "NativeIncCounter"
 
 var nativeIncCounterSCHname = isc.Hn(nativeIncCounterSCName)
 
-// TODO deprecate, or refactor to use the WASM-based inccounter
+// TODO deprecate, or refactor to use a non-native VM
 func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	counterStartValue := 42
 	if len(initCounter) > 0 {

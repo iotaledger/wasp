@@ -63,7 +63,7 @@ func TestProofs(t *testing.T) {
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
 
-		_, err = ch.UploadWasm(nil, []byte("1234567890"))
+		_, err = ch.UploadContractBinary(nil, "dummy", []byte("1234567890"))
 		require.NoError(t, err)
 
 		bi, err := ch.GetBlockInfo(pastBlockIndex)
@@ -87,7 +87,7 @@ func TestProofs(t *testing.T) {
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
 
-		_, err = ch.UploadWasm(nil, []byte("1234567890"))
+		_, err = ch.UploadContractBinary(nil, "dummy", []byte("1234567890"))
 		require.NoError(t, err)
 
 		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)

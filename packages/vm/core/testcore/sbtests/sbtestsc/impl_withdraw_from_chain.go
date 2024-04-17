@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain
@@ -18,14 +17,14 @@ func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
 
 	// if it is not already present in the SC's account the caller should have
 	// provided enough base tokens to cover the gas fees for the current call
-	// (should be wasmlib.MinGasFee in default), and for the storage deposit
-	// plus gas fees for the outgoing request to accounts.transferAllowanceTo()
+	// and for the storage deposit plus gas fees for the outgoing request to
+	// accounts.transferAllowanceTo()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// gasReserve is the gas fee for the 'TransferAllowanceTo' function call ub 'TransferAccountToChain'
 	gasReserve := params.MustGetUint64(ParamGasReserve, gas.LimitsDefault.MinGasPerRequest)
 	gasReserveTransferAccountToChain := params.MustGetUint64(ParamGasReserveTransferAccountToChain, gas.LimitsDefault.MinGasPerRequest)
-	const storageDeposit = wasmlib.StorageDeposit
+	const storageDeposit = 20_000
 
 	// make sure to send enough to cover the storage deposit and gas fees
 	// the storage deposit will be returned along with the withdrawal

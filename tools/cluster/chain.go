@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type Chain struct {
@@ -132,9 +131,9 @@ func (ch *Chain) DeployContract(name, progHashStr string, initParams map[string]
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name string, progBinary []byte, initParams map[string]interface{}) (hashing.HashValue, error) {
+func (ch *Chain) DeployBinaryContract(name, vmType string, progBinary []byte, initParams map[string]interface{}) (hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
-		blob.VarFieldVMType:        vmtypes.WasmTime,
+		blob.VarFieldVMType:        vmType,
 		blob.VarFieldProgramBinary: progBinary,
 	})
 

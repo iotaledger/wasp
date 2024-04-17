@@ -101,7 +101,6 @@ func (s *SandboxBase) Timestamp() time.Time {
 }
 
 func (s *SandboxBase) Log() isc.LogInterface {
-	// TODO should Log be disabled for wasm contracts? not much of a point in exposing internal logging
 	return s.Ctx
 }
 

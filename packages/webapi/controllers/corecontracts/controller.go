@@ -62,7 +62,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 
 	api.GET("chains/:chainID/core/accounts/account/:agentID/foundries", c.getAccountFoundries).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM)").
+		AddParamPath("", "agentID", "AgentID (Bech32 for L1 accounts, Hex for EVM)").
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "All foundries owned by an account", mocker.Get(models.AccountFoundriesResponse{}), nil).

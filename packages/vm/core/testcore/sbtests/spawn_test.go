@@ -13,7 +13,7 @@ import (
 
 func TestSpawn(t *testing.T) {
 	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, false)
+	setupTestSandboxSC(t, ch, nil)
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 

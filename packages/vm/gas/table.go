@@ -32,7 +32,6 @@ const (
 	BurnCodeUtilsBLSAddrFromPubKey
 	BurnCodeUtilsBLSAggregateBLS1P
 
-	BurnCodeWasm1P
 	BurnCodeMinimumGasPerRequest1P
 
 	BurnCodeEVM1P
@@ -55,7 +54,6 @@ var burnTable = BurnTable{
 	BurnCodeDeployContract:             {"deploy", constValue(10)},
 	BurnCodeStorage1P:                  {"storage", linear(55)}, // 55 gas per byte
 	BurnCodeReadFromState1P:            {"state read", linear(1)},
-	BurnCodeWasm1P:                     {"wasm", linear(1)},
 	BurnCodeUtilsHashingBlake2b:        {"blake2b", constValue(50)},
 	BurnCodeUtilsHashingSha3:           {"sha3", constValue(80)},
 	BurnCodeUtilsHashingHname:          {"hname", constValue(50)},
