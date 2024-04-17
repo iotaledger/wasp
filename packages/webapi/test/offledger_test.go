@@ -27,7 +27,7 @@ func TestOffLedger(t *testing.T) {
 	chain.DepositBaseTokensToL2(env.L1BaseTokens(userAddress), userWallet)
 
 	req := isc.NewOffLedgerRequest(chain.ID(), accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), dict.New(), 0, math.MaxUint64)
-	altReq := isc.NewImpersonatedOffLedgerRequest(req.(isc.OffLedgerRequest)).
+	altReq := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestData)).
 		WithSenderAddress(userWallet.Address())
 
 	rec, err := common.EstimateGas(chain, altReq)

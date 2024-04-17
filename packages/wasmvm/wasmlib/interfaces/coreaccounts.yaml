@@ -34,16 +34,24 @@ funcs:
 
   # Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
   # The foundry must be owned by the caller.
-  foundryDestroy:
+  nativeTokenDestroy:
     params:
       foundrySN=s: Uint32 # serial number of the foundry
 
   # Mints or destroys tokens for the given foundry, which must be owned by the caller.
-  foundryModifySupply:
+  nativeTokenModifySupply:
     params:
       foundrySN=s: Uint32 # serial number of the foundry
       supplyDeltaAbs=d: BigInt # positive nonzero amount to mint or destroy
       destroyTokens=y: Bool? # mint (default) or destroy tokens
+
+  # Creates a new foundry and registers it as a ERC20 and IRC30 token
+  nativeTokenCreate:
+    params:
+      tokenScheme=t: Bytes # token scheme for the new foundry
+      tokenName=tn: String
+      tokenSymbol=ts: String
+      tokenDecimals=td: Uint8
 
   # Transfers the specified allowance from the sender SC's L2 account on
   # the target chain to the sender SC's L2 account on the origin chain.
@@ -131,7 +139,7 @@ views:
       tokens=B: BigInt # amount of native tokens in the account
 
   # Returns specified foundry output in serialized form.
-  foundryOutput:
+  nativeToken:
     params:
       foundrySN=s: Uint32 # serial number of the foundry
     results:

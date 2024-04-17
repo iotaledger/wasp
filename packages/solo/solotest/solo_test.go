@@ -24,7 +24,7 @@ func TestSaveSnapshot(t *testing.T) {
 	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.OriginatorPrivateKey)
 
 	// create foundry and native tokens on L2
-	sn, nativeTokenID, err := ch.NewFoundryParams(1000).CreateFoundry()
+	sn, nativeTokenID, err := ch.NewNativeTokenParams(1000).CreateFoundry()
 	require.NoError(t, err)
 	// mint some tokens for the user
 	err = ch.MintTokens(sn, 1000, ch.OriginatorPrivateKey)

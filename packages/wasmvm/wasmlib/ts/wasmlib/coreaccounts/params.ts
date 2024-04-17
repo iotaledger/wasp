@@ -20,21 +20,59 @@ export class MutableFoundryCreateNewParams extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableFoundryDestroyParams extends wasmtypes.ScProxy {
+export class ImmutableNativeTokenCreateParams extends wasmtypes.ScProxy {
+    tokenDecimals(): wasmtypes.ScImmutableUint8 {
+        return new wasmtypes.ScImmutableUint8(this.proxy.root(sc.ParamTokenDecimals));
+    }
+
+    tokenName(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamTokenName));
+    }
+
+    // token scheme for the new foundry
+    tokenScheme(): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamTokenScheme));
+    }
+
+    tokenSymbol(): wasmtypes.ScImmutableString {
+        return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamTokenSymbol));
+    }
+}
+
+export class MutableNativeTokenCreateParams extends wasmtypes.ScProxy {
+    tokenDecimals(): wasmtypes.ScMutableUint8 {
+        return new wasmtypes.ScMutableUint8(this.proxy.root(sc.ParamTokenDecimals));
+    }
+
+    tokenName(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamTokenName));
+    }
+
+    // token scheme for the new foundry
+    tokenScheme(): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamTokenScheme));
+    }
+
+    tokenSymbol(): wasmtypes.ScMutableString {
+        return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamTokenSymbol));
+    }
+}
+
+export class ImmutableNativeTokenDestroyParams extends wasmtypes.ScProxy {
     // serial number of the foundry
     foundrySN(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
     }
 }
 
-export class MutableFoundryDestroyParams extends wasmtypes.ScProxy {
+export class MutableNativeTokenDestroyParams extends wasmtypes.ScProxy {
     // serial number of the foundry
     foundrySN(): wasmtypes.ScMutableUint32 {
         return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
     }
 }
 
-export class ImmutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
+export class ImmutableNativeTokenModifySupplyParams extends wasmtypes.ScProxy {
     // mint (default) or destroy tokens
     destroyTokens(): wasmtypes.ScImmutableBool {
         return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamDestroyTokens));
@@ -51,7 +89,7 @@ export class ImmutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
     }
 }
 
-export class MutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
+export class MutableNativeTokenModifySupplyParams extends wasmtypes.ScProxy {
     // mint (default) or destroy tokens
     destroyTokens(): wasmtypes.ScMutableBool {
         return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamDestroyTokens));
@@ -240,20 +278,6 @@ export class MutableBalanceNativeTokenParams extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableFoundryOutputParams extends wasmtypes.ScProxy {
-    // serial number of the foundry
-    foundrySN(): wasmtypes.ScImmutableUint32 {
-        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
-    }
-}
-
-export class MutableFoundryOutputParams extends wasmtypes.ScProxy {
-    // serial number of the foundry
-    foundrySN(): wasmtypes.ScMutableUint32 {
-        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
-    }
-}
-
 export class ImmutableGetAccountNonceParams extends wasmtypes.ScProxy {
     // account agent ID
     agentID(): wasmtypes.ScImmutableAgentID {
@@ -265,6 +289,20 @@ export class MutableGetAccountNonceParams extends wasmtypes.ScProxy {
     // account agent ID
     agentID(): wasmtypes.ScMutableAgentID {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+    }
+}
+
+export class ImmutableNativeTokenParams extends wasmtypes.ScProxy {
+    // serial number of the foundry
+    foundrySN(): wasmtypes.ScImmutableUint32 {
+        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
+    }
+}
+
+export class MutableNativeTokenParams extends wasmtypes.ScProxy {
+    // serial number of the foundry
+    foundrySN(): wasmtypes.ScMutableUint32 {
+        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFoundrySN));
     }
 }
 

@@ -32,67 +32,113 @@ func (s MutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamTokenScheme))
 }
 
-type ImmutableFoundryDestroyParams struct {
+type ImmutableNativeTokenCreateParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func NewImmutableFoundryDestroyParams() ImmutableFoundryDestroyParams {
-	return ImmutableFoundryDestroyParams{Proxy: wasmlib.NewParamsProxy()}
+func NewImmutableNativeTokenCreateParams() ImmutableNativeTokenCreateParams {
+	return ImmutableNativeTokenCreateParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+func (s ImmutableNativeTokenCreateParams) TokenDecimals() wasmtypes.ScImmutableUint8 {
+	return wasmtypes.NewScImmutableUint8(s.Proxy.Root(ParamTokenDecimals))
+}
+
+func (s ImmutableNativeTokenCreateParams) TokenName() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamTokenName))
+}
+
+// token scheme for the new foundry
+func (s ImmutableNativeTokenCreateParams) TokenScheme() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamTokenScheme))
+}
+
+func (s ImmutableNativeTokenCreateParams) TokenSymbol() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamTokenSymbol))
+}
+
+type MutableNativeTokenCreateParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func (s MutableNativeTokenCreateParams) TokenDecimals() wasmtypes.ScMutableUint8 {
+	return wasmtypes.NewScMutableUint8(s.Proxy.Root(ParamTokenDecimals))
+}
+
+func (s MutableNativeTokenCreateParams) TokenName() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamTokenName))
+}
+
+// token scheme for the new foundry
+func (s MutableNativeTokenCreateParams) TokenScheme() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamTokenScheme))
+}
+
+func (s MutableNativeTokenCreateParams) TokenSymbol() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamTokenSymbol))
+}
+
+type ImmutableNativeTokenDestroyParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableNativeTokenDestroyParams() ImmutableNativeTokenDestroyParams {
+	return ImmutableNativeTokenDestroyParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 // serial number of the foundry
-func (s ImmutableFoundryDestroyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
+func (s ImmutableNativeTokenDestroyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
-type MutableFoundryDestroyParams struct {
+type MutableNativeTokenDestroyParams struct {
 	Proxy wasmtypes.Proxy
 }
 
 // serial number of the foundry
-func (s MutableFoundryDestroyParams) FoundrySN() wasmtypes.ScMutableUint32 {
+func (s MutableNativeTokenDestroyParams) FoundrySN() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
-type ImmutableFoundryModifySupplyParams struct {
+type ImmutableNativeTokenModifySupplyParams struct {
 	Proxy wasmtypes.Proxy
 }
 
-func NewImmutableFoundryModifySupplyParams() ImmutableFoundryModifySupplyParams {
-	return ImmutableFoundryModifySupplyParams{Proxy: wasmlib.NewParamsProxy()}
+func NewImmutableNativeTokenModifySupplyParams() ImmutableNativeTokenModifySupplyParams {
+	return ImmutableNativeTokenModifySupplyParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 // mint (default) or destroy tokens
-func (s ImmutableFoundryModifySupplyParams) DestroyTokens() wasmtypes.ScImmutableBool {
+func (s ImmutableNativeTokenModifySupplyParams) DestroyTokens() wasmtypes.ScImmutableBool {
 	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamDestroyTokens))
 }
 
 // serial number of the foundry
-func (s ImmutableFoundryModifySupplyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
+func (s ImmutableNativeTokenModifySupplyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 // positive nonzero amount to mint or destroy
-func (s ImmutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScImmutableBigInt {
+func (s ImmutableNativeTokenModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScImmutableBigInt {
 	return wasmtypes.NewScImmutableBigInt(s.Proxy.Root(ParamSupplyDeltaAbs))
 }
 
-type MutableFoundryModifySupplyParams struct {
+type MutableNativeTokenModifySupplyParams struct {
 	Proxy wasmtypes.Proxy
 }
 
 // mint (default) or destroy tokens
-func (s MutableFoundryModifySupplyParams) DestroyTokens() wasmtypes.ScMutableBool {
+func (s MutableNativeTokenModifySupplyParams) DestroyTokens() wasmtypes.ScMutableBool {
 	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamDestroyTokens))
 }
 
 // serial number of the foundry
-func (s MutableFoundryModifySupplyParams) FoundrySN() wasmtypes.ScMutableUint32 {
+func (s MutableNativeTokenModifySupplyParams) FoundrySN() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 // positive nonzero amount to mint or destroy
-func (s MutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScMutableBigInt {
+func (s MutableNativeTokenModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.Proxy.Root(ParamSupplyDeltaAbs))
 }
 
@@ -348,28 +394,6 @@ func (s MutableBalanceNativeTokenParams) TokenID() wasmtypes.ScMutableTokenID {
 	return wasmtypes.NewScMutableTokenID(s.Proxy.Root(ParamTokenID))
 }
 
-type ImmutableFoundryOutputParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewImmutableFoundryOutputParams() ImmutableFoundryOutputParams {
-	return ImmutableFoundryOutputParams{Proxy: wasmlib.NewParamsProxy()}
-}
-
-// serial number of the foundry
-func (s ImmutableFoundryOutputParams) FoundrySN() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
-}
-
-type MutableFoundryOutputParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-// serial number of the foundry
-func (s MutableFoundryOutputParams) FoundrySN() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
-}
-
 type ImmutableGetAccountNonceParams struct {
 	Proxy wasmtypes.Proxy
 }
@@ -390,6 +414,28 @@ type MutableGetAccountNonceParams struct {
 // account agent ID
 func (s MutableGetAccountNonceParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
+}
+
+type ImmutableNativeTokenParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+func NewImmutableNativeTokenParams() ImmutableNativeTokenParams {
+	return ImmutableNativeTokenParams{Proxy: wasmlib.NewParamsProxy()}
+}
+
+// serial number of the foundry
+func (s ImmutableNativeTokenParams) FoundrySN() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
+}
+
+type MutableNativeTokenParams struct {
+	Proxy wasmtypes.Proxy
+}
+
+// serial number of the foundry
+func (s MutableNativeTokenParams) FoundrySN() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 type ImmutableNftDataParams struct {

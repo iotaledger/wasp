@@ -41,27 +41,20 @@ var (
 )
 
 type ImpersonatedOffLedgerRequestData struct {
-	req     *OffLedgerRequestData
+	OffLedgerRequestData
 	address *iotago.Ed25519Address
 }
 
-func NewImpersonatedOffLedgerRequest(request OffLedgerRequest) ImpersonatedOffLedgerRequest {
-	gasBudget, _ := request.GasBudget()
+func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) ImpersonatedOffLedgerRequest {
+	copyReq := *request
+	copyReq.signature = offLedgerSignature{
+		signature: make([]byte, 0),
+		publicKey: cryptolib.NewEmptyPublicKey(),
+	}
 
 	return &ImpersonatedOffLedgerRequestData{
-		req: &OffLedgerRequestData{
-			allowance:  request.Allowance().Clone(),
-			chainID:    request.ChainID(),
-			contract:   request.CallTarget().Contract,
-			entryPoint: request.CallTarget().EntryPoint,
-			gasBudget:  gasBudget,
-			nonce:      request.Nonce(),
-			params:     request.Params().Clone(),
-			signature: offLedgerSignature{
-				signature: make([]byte, 0),
-				publicKey: cryptolib.NewEmptyPublicKey(),
-			},
-		},
+		OffLedgerRequestData: copyReq,
+		address:              nil,
 	}
 }
 
@@ -70,76 +63,8 @@ func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *iotago.Ed2
 	return r
 }
 
-func (r *ImpersonatedOffLedgerRequestData) Allowance() *Assets {
-	return r.req.Allowance()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) Assets() *Assets {
-	return r.req.Assets()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) CallTarget() CallTarget {
-	return r.req.CallTarget()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) GasBudget() (gas uint64, isEVM bool) {
-	return r.req.GasBudget()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) ID() RequestID {
-	return r.req.ID()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) NFT() *NFT {
-	return r.req.NFT()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) Params() dict.Dict {
-	return r.req.Params()
-}
-
 func (r *ImpersonatedOffLedgerRequestData) SenderAccount() AgentID {
 	return NewAgentID(r.address)
-}
-
-func (r *ImpersonatedOffLedgerRequestData) TargetAddress() iotago.Address {
-	return r.req.TargetAddress()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
-	return r.req.EVMCallMsg()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) Bytes() []byte {
-	return r.req.Bytes()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) IsOffLedger() bool {
-	return r.req.IsOffLedger()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) String() string {
-	return r.req.String()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) Read(reader io.Reader) error {
-	return r.req.Read(reader)
-}
-
-func (r *ImpersonatedOffLedgerRequestData) Write(w io.Writer) error {
-	return r.req.Write(w)
-}
-
-func (r *ImpersonatedOffLedgerRequestData) ChainID() ChainID {
-	return r.req.ChainID()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) Nonce() uint64 {
-	return r.req.Nonce()
-}
-
-func (r *ImpersonatedOffLedgerRequestData) VerifySignature() error {
-	return r.req.VerifySignature()
 }
 
 func NewOffLedgerRequest(

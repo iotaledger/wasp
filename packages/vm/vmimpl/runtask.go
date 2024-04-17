@@ -6,6 +6,8 @@ import (
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -122,9 +124,22 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	})
 
 	// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
+
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-			accounts.UpdateLatestOutputID(s, vmctx.task.AnchorOutputID.TransactionID(), vmctx.task.AnchorOutput.StateIndex)
+		withContractState(chainState, accounts.Contract, func(accountState kv.KVStore) {
+			newNFTIDs := accounts.UpdateLatestOutputID(accountState, vmctx.task.AnchorOutputID.TransactionID(), vmctx.task.AnchorOutput.StateIndex)
+
+			if len(newNFTIDs) == 0 {
+				return
+			}
+
+			withContractState(chainState, evm.Contract, func(evmState kv.KVStore) {
+				for _, nftID := range newNFTIDs {
+					nft := accounts.GetNFTData(accountState, nftID)
+
+					evmimpl.RegisterERC721NFTCollectionByNFTId(evmState, nft)
+				}
+			})
 		})
 	})
 

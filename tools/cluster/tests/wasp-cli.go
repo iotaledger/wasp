@@ -230,11 +230,15 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
 }
 
-func (w *WaspCLITest) CreateL2Foundry(tokenScheme iotago.TokenScheme) {
+func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
 	tokenSchemeBytes := codec.EncodeTokenScheme(tokenScheme)
 	out := w.PostRequestGetReceipt(
-		"accounts", accounts.FuncFoundryCreateNew.Name,
+		"accounts", accounts.FuncNativeTokenCreate.Name,
 		"string", accounts.ParamTokenScheme, "bytes", "0x"+hex.EncodeToString(tokenSchemeBytes),
+		"string", accounts.ParamTokenName, "bytes", "0x"+hex.EncodeToString(codec.EncodeString(tokenName)),
+		"string", accounts.ParamTokenTickerSymbol, "bytes", "0x"+hex.EncodeToString(codec.EncodeString(tokenSymbol)),
+		"string", accounts.ParamTokenDecimals, "bytes", "0x"+hex.EncodeToString(codec.EncodeUint8(tokenDecimals)),
+
 		"--allowance", "base:1000000", "--node=0",
 	)
 	require.Regexp(w.T, `.*Error: \(empty\).*`, strings.Join(out, "\n"))

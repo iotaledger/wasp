@@ -18,14 +18,19 @@ pub struct FoundryCreateNewCall<'a> {
     pub results: ImmutableFoundryCreateNewResults,
 }
 
-pub struct FoundryDestroyCall<'a> {
+pub struct NativeTokenCreateCall<'a> {
     pub func:   ScFunc<'a>,
-    pub params: MutableFoundryDestroyParams,
+    pub params: MutableNativeTokenCreateParams,
 }
 
-pub struct FoundryModifySupplyCall<'a> {
+pub struct NativeTokenDestroyCall<'a> {
     pub func:   ScFunc<'a>,
-    pub params: MutableFoundryModifySupplyParams,
+    pub params: MutableNativeTokenDestroyParams,
+}
+
+pub struct NativeTokenModifySupplyCall<'a> {
+    pub func:   ScFunc<'a>,
+    pub params: MutableNativeTokenModifySupplyParams,
 }
 
 pub struct TransferAccountToChainCall<'a> {
@@ -95,12 +100,6 @@ pub struct BalanceNativeTokenCall<'a> {
     pub results: ImmutableBalanceNativeTokenResults,
 }
 
-pub struct FoundryOutputCall<'a> {
-    pub func:    ScView<'a>,
-    pub params:  MutableFoundryOutputParams,
-    pub results: ImmutableFoundryOutputResults,
-}
-
 pub struct GetAccountNonceCall<'a> {
     pub func:    ScView<'a>,
     pub params:  MutableGetAccountNonceParams,
@@ -110,6 +109,12 @@ pub struct GetAccountNonceCall<'a> {
 pub struct GetNativeTokenIDRegistryCall<'a> {
     pub func:    ScView<'a>,
     pub results: ImmutableGetNativeTokenIDRegistryResults,
+}
+
+pub struct NativeTokenCall<'a> {
+    pub func:    ScView<'a>,
+    pub params:  MutableNativeTokenParams,
+    pub results: ImmutableNativeTokenResults,
 }
 
 pub struct NftDataCall<'a> {
@@ -146,22 +151,32 @@ impl ScFuncs {
         f
     }
 
+    // Creates a new foundry and registers it as a ERC20 and IRC30 token
+    pub fn native_token_create(ctx: &impl ScFuncClientContext) -> NativeTokenCreateCall {
+        let mut f = NativeTokenCreateCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_NATIVE_TOKEN_CREATE),
+            params:  MutableNativeTokenCreateParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
     // Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
     // The foundry must be owned by the caller.
-    pub fn foundry_destroy(ctx: &impl ScFuncClientContext) -> FoundryDestroyCall {
-        let mut f = FoundryDestroyCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_FOUNDRY_DESTROY),
-            params:  MutableFoundryDestroyParams { proxy: Proxy::nil() },
+    pub fn native_token_destroy(ctx: &impl ScFuncClientContext) -> NativeTokenDestroyCall {
+        let mut f = NativeTokenDestroyCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_NATIVE_TOKEN_DESTROY),
+            params:  MutableNativeTokenDestroyParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 
     // Mints or destroys tokens for the given foundry, which must be owned by the caller.
-    pub fn foundry_modify_supply(ctx: &impl ScFuncClientContext) -> FoundryModifySupplyCall {
-        let mut f = FoundryModifySupplyCall {
-            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_FOUNDRY_MODIFY_SUPPLY),
-            params:  MutableFoundryModifySupplyParams { proxy: Proxy::nil() },
+    pub fn native_token_modify_supply(ctx: &impl ScFuncClientContext) -> NativeTokenModifySupplyCall {
+        let mut f = NativeTokenModifySupplyCall {
+            func:    ScFunc::new(ctx, HSC_NAME, HFUNC_NATIVE_TOKEN_MODIFY_SUPPLY),
+            params:  MutableNativeTokenModifySupplyParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
@@ -303,18 +318,6 @@ impl ScFuncs {
         f
     }
 
-    // Returns specified foundry output in serialized form.
-    pub fn foundry_output(ctx: &impl ScViewClientContext) -> FoundryOutputCall {
-        let mut f = FoundryOutputCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_FOUNDRY_OUTPUT),
-            params:  MutableFoundryOutputParams { proxy: Proxy::nil() },
-            results: ImmutableFoundryOutputResults { proxy: Proxy::nil() },
-        };
-        ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
     // Returns the current account nonce for an Agent.
     // The account nonce is used to issue unique off-ledger requests.
     pub fn get_account_nonce(ctx: &impl ScViewClientContext) -> GetAccountNonceCall {
@@ -334,6 +337,18 @@ impl ScFuncs {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_NATIVE_TOKEN_ID_REGISTRY),
             results: ImmutableGetNativeTokenIDRegistryResults { proxy: Proxy::nil() },
         };
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    // Returns specified foundry output in serialized form.
+    pub fn native_token(ctx: &impl ScViewClientContext) -> NativeTokenCall {
+        let mut f = NativeTokenCall {
+            func:    ScView::new(ctx, HSC_NAME, HVIEW_NATIVE_TOKEN),
+            params:  MutableNativeTokenParams { proxy: Proxy::nil() },
+            results: ImmutableNativeTokenResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }

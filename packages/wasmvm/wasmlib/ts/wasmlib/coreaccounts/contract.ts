@@ -24,21 +24,30 @@ export class FoundryCreateNewCall {
     }
 }
 
-export class FoundryDestroyCall {
+export class NativeTokenCreateCall {
     func:   wasmlib.ScFunc;
-    params: sc.MutableFoundryDestroyParams = new sc.MutableFoundryDestroyParams(wasmlib.ScView.nilProxy);
+    params: sc.MutableNativeTokenCreateParams = new sc.MutableNativeTokenCreateParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncFoundryDestroy);
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncNativeTokenCreate);
     }
 }
 
-export class FoundryModifySupplyCall {
+export class NativeTokenDestroyCall {
     func:   wasmlib.ScFunc;
-    params: sc.MutableFoundryModifySupplyParams = new sc.MutableFoundryModifySupplyParams(wasmlib.ScView.nilProxy);
+    params: sc.MutableNativeTokenDestroyParams = new sc.MutableNativeTokenDestroyParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncClientContext) {
-        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncFoundryModifySupply);
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncNativeTokenDestroy);
+    }
+}
+
+export class NativeTokenModifySupplyCall {
+    func:   wasmlib.ScFunc;
+    params: sc.MutableNativeTokenModifySupplyParams = new sc.MutableNativeTokenModifySupplyParams(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScFuncClientContext) {
+        this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncNativeTokenModifySupply);
     }
 }
 
@@ -157,16 +166,6 @@ export class BalanceNativeTokenCall {
     }
 }
 
-export class FoundryOutputCall {
-    func:    wasmlib.ScView;
-    params:  sc.MutableFoundryOutputParams = new sc.MutableFoundryOutputParams(wasmlib.ScView.nilProxy);
-    results: sc.ImmutableFoundryOutputResults = new sc.ImmutableFoundryOutputResults(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScViewClientContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewFoundryOutput);
-    }
-}
-
 export class GetAccountNonceCall {
     func:    wasmlib.ScView;
     params:  sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams(wasmlib.ScView.nilProxy);
@@ -183,6 +182,16 @@ export class GetNativeTokenIDRegistryCall {
 
     public constructor(ctx: wasmlib.ScViewClientContext) {
         this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetNativeTokenIDRegistry);
+    }
+}
+
+export class NativeTokenCall {
+    func:    wasmlib.ScView;
+    params:  sc.MutableNativeTokenParams = new sc.MutableNativeTokenParams(wasmlib.ScView.nilProxy);
+    results: sc.ImmutableNativeTokenResults = new sc.ImmutableNativeTokenResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewClientContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewNativeToken);
     }
 }
 
@@ -219,18 +228,25 @@ export class ScFuncs {
         return f;
     }
 
+    // Creates a new foundry and registers it as a ERC20 and IRC30 token
+    static nativeTokenCreate(ctx: wasmlib.ScFuncClientContext): NativeTokenCreateCall {
+        const f = new NativeTokenCreateCall(ctx);
+        f.params = new sc.MutableNativeTokenCreateParams(wasmlib.newCallParamsProxy(f.func));
+        return f;
+    }
+
     // Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
     // The foundry must be owned by the caller.
-    static foundryDestroy(ctx: wasmlib.ScFuncClientContext): FoundryDestroyCall {
-        const f = new FoundryDestroyCall(ctx);
-        f.params = new sc.MutableFoundryDestroyParams(wasmlib.newCallParamsProxy(f.func));
+    static nativeTokenDestroy(ctx: wasmlib.ScFuncClientContext): NativeTokenDestroyCall {
+        const f = new NativeTokenDestroyCall(ctx);
+        f.params = new sc.MutableNativeTokenDestroyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
     // Mints or destroys tokens for the given foundry, which must be owned by the caller.
-    static foundryModifySupply(ctx: wasmlib.ScFuncClientContext): FoundryModifySupplyCall {
-        const f = new FoundryModifySupplyCall(ctx);
-        f.params = new sc.MutableFoundryModifySupplyParams(wasmlib.newCallParamsProxy(f.func));
+    static nativeTokenModifySupply(ctx: wasmlib.ScFuncClientContext): NativeTokenModifySupplyCall {
+        const f = new NativeTokenModifySupplyCall(ctx);
+        f.params = new sc.MutableNativeTokenModifySupplyParams(wasmlib.newCallParamsProxy(f.func));
         return f;
     }
 
@@ -327,14 +343,6 @@ export class ScFuncs {
         return f;
     }
 
-    // Returns specified foundry output in serialized form.
-    static foundryOutput(ctx: wasmlib.ScViewClientContext): FoundryOutputCall {
-        const f = new FoundryOutputCall(ctx);
-        f.params = new sc.MutableFoundryOutputParams(wasmlib.newCallParamsProxy(f.func));
-        f.results = new sc.ImmutableFoundryOutputResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
-
     // Returns the current account nonce for an Agent.
     // The account nonce is used to issue unique off-ledger requests.
     static getAccountNonce(ctx: wasmlib.ScViewClientContext): GetAccountNonceCall {
@@ -348,6 +356,14 @@ export class ScFuncs {
     static getNativeTokenIDRegistry(ctx: wasmlib.ScViewClientContext): GetNativeTokenIDRegistryCall {
         const f = new GetNativeTokenIDRegistryCall(ctx);
         f.results = new sc.ImmutableGetNativeTokenIDRegistryResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    // Returns specified foundry output in serialized form.
+    static nativeToken(ctx: wasmlib.ScViewClientContext): NativeTokenCall {
+        const f = new NativeTokenCall(ctx);
+        f.params = new sc.MutableNativeTokenParams(wasmlib.newCallParamsProxy(f.func));
+        f.results = new sc.ImmutableNativeTokenResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 

@@ -136,6 +136,14 @@ func mintID(blockIndex uint32, positionInMintedList uint16) []byte {
 func mintNFT(ctx isc.Sandbox) dict.Dict {
 	params := mintParams(ctx)
 
+	// NFTs are now automatically registered inside the EVM.
+	// The EVM requires IRC27 metadata to be present. Therefore, any invalid metadata will panic here
+	// This will not check the metadata according to the schema, only syntactic validation applies. "{}" would be correct.
+	_, err := isc.IRC27NFTMetadataFromBytes(params.immutableMetadata)
+	if err != nil {
+		panic(ErrImmutableMetadataInvalid.Create(err.Error()))
+	}
+
 	positionInMintedList, nftOutput := ctx.Privileged().MintNFT(
 		params.targetAddress,
 		params.immutableMetadata,
@@ -182,9 +190,11 @@ func SaveMintedNFTOutput(state kv.KVStore, positionInMintedList, outputIndex uin
 	mintMap.SetAt(key, rec.Bytes())
 }
 
-func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) {
+func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
 	mintMap := newlyMintedNFTsMap(state)
 	nftMap := NFTOutputMap(state)
+	newNFTIDs := make([]iotago.NFTID, 0)
+
 	mintMap.Iterate(func(_, recBytes []byte) bool {
 		mintedRec := mintedNFTRecordFromBytes(recBytes)
 		// calculate the NFTID from the anchor txID	+ outputIndex
@@ -203,7 +213,11 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 		}
 		// save the mapping of [mintID => NFTID]
 		mintIDMap(state).SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])
+		newNFTIDs = append(newNFTIDs, nftID)
+
 		return true
 	})
 	mintMap.Erase()
+
+	return newNFTIDs
 }
