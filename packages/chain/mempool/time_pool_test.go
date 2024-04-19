@@ -20,7 +20,7 @@ import (
 
 func TestTimePoolBasic(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	tp := mempool.NewTimePool(func(i int) {}, log)
+	tp := mempool.NewTimePool(1000, func(i int) {}, log)
 	t0 := time.Now()
 	t1 := t0.Add(17 * time.Nanosecond)
 	t2 := t0.Add(17 * time.Minute)
@@ -98,7 +98,7 @@ var _ rapid.StateMachine = &timePoolSM{}
 func newtimePoolSM(t *rapid.T) *timePoolSM {
 	sm := new(timePoolSM)
 	log := testlogger.NewLogger(t)
-	sm.tp = mempool.NewTimePool(func(i int) {}, log)
+	sm.tp = mempool.NewTimePool(1000, func(i int) {}, log)
 	sm.kp = cryptolib.NewKeyPair()
 	sm.added = 0
 	sm.taken = 0
@@ -121,4 +121,36 @@ func (sm *timePoolSM) TakeTill(t *rapid.T) {
 	ts := time.Unix(rapid.Int64().Draw(t, "take.ts"), 0)
 	res := sm.tp.TakeTill(ts)
 	sm.taken += len(res)
+}
+
+func TestTimePoolLimit(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	size := 0
+	tp := mempool.NewTimePool(3, func(newSize int) { size = newSize }, log)
+	t0 := time.Now().Add(4 * time.Hour)
+	t1 := time.Now().Add(3 * time.Hour)
+	t2 := time.Now().Add(2 * time.Hour)
+	t3 := time.Now().Add(1 * time.Hour)
+
+	r0, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(0))
+	require.NoError(t, err)
+	r1, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(1))
+	require.NoError(t, err)
+	r2, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(2))
+	require.NoError(t, err)
+	r3, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(3))
+	require.NoError(t, err)
+
+	tp.AddRequest(t0, r0)
+	tp.AddRequest(t1, r1)
+	tp.AddRequest(t2, r2)
+	tp.AddRequest(t3, r3)
+
+	require.Equal(t, 3, size)
+
+	// assert t0 was removed (the request scheduled to the latest time in the future)
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r0)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r1)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r2)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r3)))
 }

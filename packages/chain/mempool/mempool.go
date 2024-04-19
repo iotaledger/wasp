@@ -117,9 +117,9 @@ type Mempool interface {
 type Settings struct {
 	TTL                   time.Duration // time to live (how much time requests are allowed to sit in the pool without being processed)
 	MaxOffledgerInPool    int
-	MaxOnledgerInPool     int // TODO unused
-	MaxTimedInPool        int // TODO unused
-	MaxOnledgerToPropose  int // (including timed-requests) // TODO unused
+	MaxOnledgerInPool     int
+	MaxTimedInPool        int
+	MaxOnledgerToPropose  int // (including timed-requests)
 	MaxOffledgerToPropose int
 }
 
@@ -130,7 +130,7 @@ type RequestPool[V isc.Request] interface {
 	Remove(request V)
 	// this removes requests from the pool if predicate returns false
 	Cleanup(predicate func(request V, ts time.Time) bool)
-	Iterate(f func(e *typedPoolEntry[V]))
+	Iterate(f func(e *typedPoolEntry[V]) bool)
 	StatusString() string
 	WriteContent(io.Writer)
 }
@@ -241,8 +241,8 @@ func New(
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
 		tangleTime:                     time.Time{},
-		timePool:                       NewTimePool(metrics.SetTimePoolSize, log.Named("TIM")),
-		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
+		timePool:                       NewTimePool(settings.MaxTimedInPool, metrics.SetTimePoolSize, log.Named("TIM")),
+		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
 		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
 		chainHeadAO:                    nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
@@ -606,14 +606,19 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
-		mpi.onLedgerPool.Cleanup(func(request isc.OnLedgerRequest, _ time.Time) bool {
-			if isc.RequestIsExpired(request, mpi.tangleTime) {
-				return false // Drop it from the mempool
+		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
+			if isc.RequestIsExpired(e.req, mpi.tangleTime) {
+				mpi.onLedgerPool.Remove(e.req) // Drop it from the mempool
+				return true
 			}
-			if len(reqRefs) < mpi.settings.MaxOnledgerToPropose && isc.RequestIsUnlockable(request, mpi.chainID.AsAddress(), mpi.tangleTime) {
-				reqRefs = append(reqRefs, isc.RequestRefFromRequest(request))
+			if isc.RequestIsUnlockable(e.req, mpi.chainID.AsAddress(), mpi.tangleTime) {
+				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+				e.proposedFor = append(e.proposedFor, consensusID)
 			}
-			return true // Keep them for now
+			if len(reqRefs) >= mpi.settings.MaxOnledgerToPropose {
+				return false
+			}
+			return true
 		})
 	}
 
@@ -821,8 +826,9 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	//
 	// Notify existing on-ledger requests if that's first time update.
 	if oldTangleTime.IsZero() {
-		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) {
+		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
 			mpi.waitReq.MarkAvailable(e.req)
+			return true
 		})
 	}
 }
@@ -834,9 +840,6 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	defer close(req.responseCh)
 	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
-
-	// update defaultGasPrice for offLedger requests
-	mpi.offLedgerPool.SetMinGasPrice(governance.NewStateAccess(mpi.chainHeadState).DefaultGasPrice())
 
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
@@ -905,6 +908,9 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 		}
 		mpi.waitChainHead = newWaitChainHead
 	}
+
+	// update defaultGasPrice for offLedger requests
+	mpi.offLedgerPool.SetMinGasPrice(governance.NewStateAccess(mpi.chainHeadState).DefaultGasPrice())
 }
 
 func (mpi *mempoolImpl) handleNetMessage(recv *peering.PeerMessageIn) {

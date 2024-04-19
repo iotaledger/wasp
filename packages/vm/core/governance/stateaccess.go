@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type StateAccess struct {
@@ -69,6 +70,5 @@ func (sa *StateAccess) GetBlockKeepAmount() int32 {
 }
 
 func (sa *StateAccess) DefaultGasPrice() *big.Int {
-	// TODO return the equivalent price defined by the feepolicy
-	panic("TODO implement DefaultGasPrice")
+	return MustGetGasFeePolicy(sa.state).DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 }

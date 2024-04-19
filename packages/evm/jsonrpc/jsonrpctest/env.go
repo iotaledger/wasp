@@ -378,6 +378,19 @@ func (e *Env) TestRPCGasLimitTooLow() {
 func (e *Env) TestGasPrice() {
 	gasPrice := e.MustGetGasPrice()
 	require.NotZero(e.T, gasPrice.Uint64())
+
+	// assert sending txs with lower than set gas is not allowed
+	from, _ := e.NewAccountWithL2Funds()
+	tx, err := types.SignTx(
+		types.NewTransaction(0, common.Address{}, big.NewInt(123), math.MaxUint64, new(big.Int).Sub(gasPrice, big.NewInt(1)), nil),
+		e.Signer(),
+		from,
+	)
+	require.NoError(e.T, err)
+
+	_, err = e.SendTransactionAndWait(tx)
+	require.Error(e.T, err)
+	require.Regexp(e.T, `insufficient gas price: got \d+, minimum is \d+`, err.Error())
 }
 
 func (e *Env) TestRPCAccessHistoricalState() {

@@ -12,8 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-// TODO limit this (sort by timelock)
-
 // Maintains a pool of requests that have to be postponed until specified timestamp.
 type TimePool interface {
 	AddRequest(timestamp time.Time, request isc.OnLedgerRequest)
@@ -26,10 +24,11 @@ type TimePool interface {
 // The list is organized in slots. Each slot contains a list of requests that fit to the
 // slot boundaries.
 type timePoolImpl struct {
-	requests   *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.OnLedgerRequest] // All the requests in this pool.
-	slots      *timeSlot                                                          // Structure to fetch them fast by their time.
-	sizeMetric func(int)
-	log        *logger.Logger
+	requests    *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.OnLedgerRequest] // All the requests in this pool.
+	slots       *timeSlot                                                          // Structure to fetch them fast by their time.
+	maxPoolSize int
+	sizeMetric  func(int)
+	log         *logger.Logger
 }
 
 type timeSlot struct {
@@ -43,12 +42,13 @@ const slotPrecision = time.Minute
 
 var _ TimePool = &timePoolImpl{}
 
-func NewTimePool(sizeMetric func(int), log *logger.Logger) TimePool {
+func NewTimePool(maxTimedInPool int, sizeMetric func(int), log *logger.Logger) TimePool {
 	return &timePoolImpl{
-		requests:   shrinkingmap.New[isc.RequestRefKey, isc.OnLedgerRequest](),
-		slots:      nil,
-		sizeMetric: sizeMetric,
-		log:        log,
+		requests:    shrinkingmap.New[isc.RequestRefKey, isc.OnLedgerRequest](),
+		slots:       nil,
+		maxPoolSize: maxTimedInPool,
+		sizeMetric:  sizeMetric,
+		log:         log,
 	}
 }
 
@@ -59,10 +59,9 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.OnLedgerReq
 		return
 	}
 
-	if tpi.requests.Set(reqRefKey, request) {
-		tpi.log.Debugf("ADD %v as key=%v", request.ID(), reqRefKey)
+	if !tpi.requests.Set(reqRefKey, request) {
+		return
 	}
-	tpi.sizeMetric(tpi.requests.Size())
 
 	reqFrom, reqTill := tpi.timestampSlotBounds(timestamp)
 	prevNext := &tpi.slots
@@ -78,16 +77,51 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.OnLedgerReq
 				next: slot,
 			}
 			*prevNext = newSlot
-			return
+			break
 		}
 		if slot.from == reqFrom { // Add to existing slot.
 			requests, _ := slot.reqs.GetOrCreate(timestamp, func() []isc.OnLedgerRequest { return make([]isc.OnLedgerRequest, 0, 1) })
 			slot.reqs.Set(timestamp, append(requests, request))
-			return
+			break
 		}
 		prevNext = &slot.next
 		slot = slot.next
 	}
+
+	//
+	// keep the size of this pool limited
+	if tpi.requests.Size() > tpi.maxPoolSize {
+		// remove the slot most far out in the future
+		var prev *timeSlot
+		lastSlot := tpi.slots
+		for {
+			if lastSlot.next == nil {
+				break
+			}
+			prev = lastSlot
+			lastSlot = lastSlot.next
+		}
+
+		// remove the link to the lastSlot
+		if prev == nil {
+			tpi.slots = nil
+		} else {
+			prev.next = nil
+		}
+
+		// delete the requests included in the last slot
+		reqsToDelete := lastSlot.reqs.Values()
+		for _, reqs := range reqsToDelete {
+			for _, req := range reqs {
+				rKey := isc.RequestRefFromRequest(req).AsKey()
+				tpi.requests.Delete(rKey)
+			}
+		}
+	}
+
+	// log and update metrics
+	tpi.log.Debugf("ADD %v as key=%v", request.ID(), reqRefKey)
+	tpi.sizeMetric(tpi.requests.Size())
 }
 
 func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.OnLedgerRequest {
@@ -124,7 +158,6 @@ func (tpi *timePoolImpl) Has(reqRef *isc.RequestRef) bool {
 }
 
 func (tpi *timePoolImpl) Cleanup(predicate func(request isc.OnLedgerRequest, ts time.Time) bool) {
-	// TODO iterate using an order (gas price)
 	prevNext := &tpi.slots
 	for slot := tpi.slots; slot != nil; slot = slot.next {
 		slot.reqs.ForEach(func(ts time.Time, tsReqs []isc.OnLedgerRequest) bool {

@@ -10,6 +10,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
@@ -77,13 +79,6 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 		return // not added already exists
 	}
 
-	// update metrics and signal that the request is available, once this function ends
-	defer func() {
-		p.log.Debugf("ADD %v as key=%v, senderAccount: %s", request.ID(), ref, account)
-		p.sizeMetric(p.refLUT.Size())
-		p.waitReq.MarkAvailable(request)
-	}()
-
 	//
 	// add to the account requests, keep the slice ordered
 	{
@@ -115,7 +110,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 			reqsForAcount = append(reqsForAcount, entry) // add to the end of the list (thus extending the array)
 
 			// make room if target position is not at the end
-			if index != len(reqsForAcount)+1 {
+			if index != len(reqsForAcount)-1 {
 				copy(reqsForAcount[index+1:], reqsForAcount[index:])
 				reqsForAcount[index] = entry
 			}
@@ -129,20 +124,30 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 		index, _ := slices.BinarySearchFunc(p.orderedByGasPrice, entry, p.reqSort)
 		p.orderedByGasPrice = append(p.orderedByGasPrice, entry)
 		// make room if target position is not at the end
-		if index != len(p.orderedByGasPrice) {
+		if index != len(p.orderedByGasPrice)-1 {
 			copy(p.orderedByGasPrice[index+1:], p.orderedByGasPrice[index:])
 			p.orderedByGasPrice[index] = entry
 		}
 	}
 
-	p.LimitPoolSize()
+	// keep the pool size in check
+	deleted := p.LimitPoolSize()
+	if lo.Contains(deleted, entry) {
+		// this exact request was deleted from the pool, do not update metrics, or mark available
+		return
+	}
+
+	//
+	// update metrics and signal that the request is available
+	p.log.Debugf("ADD %v as key=%v, senderAccount: %s", request.ID(), ref, account)
+	p.sizeMetric(p.refLUT.Size())
+	p.waitReq.MarkAvailable(request)
 }
 
 // LimitPoolSize drops the txs with the lowest price if the total number of requests is too big
-func (p *OffLedgerPool) LimitPoolSize() {
-	// TODO apply a similar limit to on-ledger/time pool (it cannot be unbound)
+func (p *OffLedgerPool) LimitPoolSize() []*OrderedPoolEntry {
 	if len(p.orderedByGasPrice) <= p.maxPoolSize {
-		return // nothing to do
+		return nil // nothing to do
 	}
 
 	totalToDelete := len(p.orderedByGasPrice) - p.maxPoolSize
@@ -162,6 +167,7 @@ func (p *OffLedgerPool) LimitPoolSize() {
 		p.log.Debugf("LimitPoolSize dropping request: %v", r.req.ID())
 		p.Remove(r.req)
 	}
+	return reqsToDelete
 }
 
 func (p *OffLedgerPool) GasPrice(e *OrderedPoolEntry) *big.Int {

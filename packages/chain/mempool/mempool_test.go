@@ -516,14 +516,14 @@ func TestMempoolsNonceGaps(t *testing.T) {
 
 	askProposalExpectReqs := func(ao *isc.AliasOutputWithID, reqs ...isc.Request) *isc.AliasOutputWithID {
 		t.Log("Ask for proposals")
-		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
+		proposalCh := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i, node := range te.mempools {
-			proposals[i] = node.ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{})
+			proposalCh[i] = node.ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{})
 		}
 		t.Log("Wait for proposals and ask for decided requests")
 		decided := make([]<-chan []isc.Request, len(te.mempools))
 		for i, node := range te.mempools {
-			proposal := <-proposals[i]
+			proposal := <-proposalCh[i]
 			require.Len(t, proposal, len(reqs))
 			decided[i] = node.ConsensusRequestsAsync(te.ctx, proposal)
 		}
