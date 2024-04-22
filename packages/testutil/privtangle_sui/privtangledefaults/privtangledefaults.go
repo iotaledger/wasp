@@ -7,11 +7,7 @@ const (
 
 	NodePortOffsetRestAPI = iota
 	NodePortOffsetPeering
-	NodePortOffsetDashboard
-	NodePortOffsetProfiling
-	NodePortOffsetPrometheus
 	NodePortOffsetFaucet
 	NodePortOffsetIndexer
-	NodePortOffsetINX
-	NodePortOffsetCoordinator
+	NodePortOffsetGraphQL
 )
