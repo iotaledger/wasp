@@ -166,10 +166,14 @@ func New(
 	})
 
 	result.cleanupFun = func() {
-		result.inputPipe.Close()
-		result.messagePipe.Close()
-		result.nodePubKeysPipe.Close()
-		result.preliminaryBlockPipe.Close()
+		// The following lines cause this error:
+		//	2024-03-20T11:53:22.932Z	DEBUG	TestNodeBasic/N=1,F=0,Reliable=true.8188.N#0.C-0x431e910b.LI-5	cons/cons.go:454	uponDSSIndexProposalReady
+		//	panic: send on closed channel
+		// TODO: Find a way to close the channels avoiding the error.
+		// result.inputPipe.Close()
+		// result.messagePipe.Close()
+		// result.nodePubKeysPipe.Close()
+		// result.preliminaryBlockPipe.Close()
 		util.ExecuteIfNotNil(unhook)
 	}
 
