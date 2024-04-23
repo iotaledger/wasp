@@ -464,6 +464,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			nil,
 			true,
 			-1,
+			1,
 			10*time.Millisecond,
 			10*time.Second,
 			accounts.CommonAccount(),

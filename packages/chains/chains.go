@@ -41,14 +41,15 @@ type Provider func() *Chains // TODO: Use DI instead of that.
 type ChainProvider func(chainID isc.ChainID) chain.Chain
 
 type Chains struct {
-	ctx                       context.Context
-	log                       *logger.Logger
-	nodeConnection            chain.NodeConnection
-	processorConfig           *processors.Config
-	deriveAliasOutputByQuorum bool
-	pipeliningLimit           int
-	consensusDelay            time.Duration
-	recoveryTimeout           time.Duration
+	ctx                        context.Context
+	log                        *logger.Logger
+	nodeConnection             chain.NodeConnection
+	processorConfig            *processors.Config
+	deriveAliasOutputByQuorum  bool
+	pipeliningLimit            int
+	postponeRecoveryMilestones int
+	consensusDelay             time.Duration
+	recoveryTimeout            time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -108,6 +109,7 @@ func New(
 	validatorAddrStr string,
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	networkProvider peering.NetworkProvider,
@@ -417,6 +419,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
+		c.postponeRecoveryMilestones,
 		c.consensusDelay,
 		c.recoveryTimeout,
 		validatorAgentID,

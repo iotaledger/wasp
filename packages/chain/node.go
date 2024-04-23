@@ -278,6 +278,7 @@ func New(
 	onChainDisconnect func(),
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
@@ -395,6 +396,7 @@ func New(
 		},
 		deriveAliasOutputByQuorum,
 		pipeliningLimit,
+		postponeRecoveryMilestones,
 		cni.chainMetrics.CmtLog,
 		cni.log.Named("CM"),
 	)
@@ -732,6 +734,7 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
+	cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputMilestoneReceived()))
 	cni.consensusInsts.ForEach(func(address iotago.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {

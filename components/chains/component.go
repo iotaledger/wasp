@@ -99,6 +99,7 @@ func provide(c *dig.Container) error {
 				ParamsValidator.Address,
 				ParamsChains.DeriveAliasOutputByQuorum,
 				ParamsChains.PipeliningLimit,
+				ParamsChains.PostponeRecoveryMilestones,
 				ParamsChains.ConsensusDelay,
 				ParamsChains.RecoveryTimeout,
 				deps.NetworkProvider,
