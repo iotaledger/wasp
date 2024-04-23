@@ -32,7 +32,7 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	timeout := defaultTimeoutSeconds * time.Second
 
 	timeoutInSeconds := e.QueryParam("timeoutSeconds")
-	if len(timeoutInSeconds) > 0 {
+	if timeoutInSeconds != "" {
 		parsedTimeout, _ := strconv.Atoi(timeoutInSeconds)
 
 		if err != nil {

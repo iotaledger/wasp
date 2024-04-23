@@ -145,7 +145,6 @@ linters:
         - errcheck # Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
         - exportloopref # Checks for pointers to enclosing loop variables.
         - funlen # Tool for detection of long functions.
-        - goconst # Finds repeated strings that could be replaced by a constant.
         - gocritic # Provides many diagnostics that check for bugs, performance and style issues.
         - gocyclo # Computes and checks the cyclomatic complexity of functions.
         - goerr113 # Golang linter to check the errors handling expressions.
@@ -186,6 +185,7 @@ linters:
         - wastedassign # wastedassign finds wasted assignment statements. [fast: true, auto-fix: false]
 
 
+    # - goconst # Finds repeated strings that could be replaced by a constant.
     # - depguard # Go linter that checks if package imports are in a list of acceptable packages [fast: true, auto-fix: false]
     # nlreturn # nlreturn checks for a new line before return and branch statements to increase code clarity [fast: true, auto-fix: false]
     # don't enable:

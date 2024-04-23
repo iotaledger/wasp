@@ -7,20 +7,26 @@ import (
 )
 
 type ParametersChains struct {
-	BroadcastUpToNPeers              int           `default:"2" usage:"number of peers an offledger request is broadcasted to"`
-	BroadcastInterval                time.Duration `default:"0s" usage:"time between re-broadcast of offledger requests; 0 value means that re-broadcasting is disabled"`
-	APICacheTTL                      time.Duration `default:"300s" usage:"time to keep processed offledger requests in api cache"`
-	PullMissingRequestsFromCommittee bool          `default:"true" usage:"whether or not to pull missing requests from other committee members"`
-	DeriveAliasOutputByQuorum        bool          `default:"true" usage:"false means we propose own AliasOutput, true - by majority vote."`
-	PipeliningLimit                  int           `default:"-1" usage:"-1 -- infinite, 0 -- disabled, X -- build the chain if there is up to X transactions unconfirmed by L1."`
-	PostponeRecoveryMilestones       int           `default:"3" usage:"number of milestones to wait until a chain transition is considered as rejected"`
-	ConsensusDelay                   time.Duration `default:"500ms" usage:"Minimal delay between consensus runs."`
-	RecoveryTimeout                  time.Duration `default:"20s" usage:"Time after which another consensus attempt is made."`
-	RedeliveryPeriod                 time.Duration `default:"2s" usage:"the resend period for msg."`
-	PrintStatusPeriod                time.Duration `default:"3s" usage:"the period to print consensus instance status."`
-	ConsensusInstsInAdvance          int           `default:"3" usage:""`
-	AwaitReceiptCleanupEvery         int           `default:"100" usage:"for every this number AwaitReceipt will be cleaned up"`
-	MempoolTTL                       time.Duration `default:"24h" usage:"Time that requests are allowed to sit in the mempool without being processed"`
+	BroadcastUpToNPeers               int           `default:"2" usage:"number of peers an offledger request is broadcasted to"`
+	BroadcastInterval                 time.Duration `default:"0s" usage:"time between re-broadcast of offledger requests; 0 value means that re-broadcasting is disabled"`
+	APICacheTTL                       time.Duration `default:"300s" usage:"time to keep processed offledger requests in api cache"`
+	PullMissingRequestsFromCommittee  bool          `default:"true" usage:"whether or not to pull missing requests from other committee members"`
+	DeriveAliasOutputByQuorum         bool          `default:"true" usage:"false means we propose own AliasOutput, true - by majority vote."`
+	PipeliningLimit                   int           `default:"-1" usage:"-1 -- infinite, 0 -- disabled, X -- build the chain if there is up to X transactions unconfirmed by L1."`
+	PostponeRecoveryMilestones        int           `default:"3" usage:"number of milestones to wait until a chain transition is considered as rejected"`
+	ConsensusDelay                    time.Duration `default:"500ms" usage:"Minimal delay between consensus runs."`
+	RecoveryTimeout                   time.Duration `default:"20s" usage:"Time after which another consensus attempt is made."`
+	RedeliveryPeriod                  time.Duration `default:"2s" usage:"the resend period for msg."`
+	PrintStatusPeriod                 time.Duration `default:"3s" usage:"the period to print consensus instance status."`
+	ConsensusInstsInAdvance           int           `default:"3" usage:""`
+	AwaitReceiptCleanupEvery          int           `default:"100" usage:"for every this number AwaitReceipt will be cleaned up"`
+	MempoolTTL                        time.Duration `default:"24h" usage:"Time that requests are allowed to sit in the mempool without being processed"`
+	MempoolMaxOffledgerInPool         int           `default:"2000" usage:"Maximum number of off-ledger requests kept in the mempool"`
+	MempoolMaxOnledgerInPool          int           `default:"1000" usage:"Maximum number of on-ledger requests kept in the mempool"`
+	MempoolMaxTimedInPool             int           `default:"100" usage:"Maximum number of timed on-ledger requests kept in the mempool"`
+	MempoolMaxOffledgerToPropose      int           `default:"500" usage:"Maximum number of off-ledger requests to propose for the next block"`
+	MempoolMaxOnledgerToPropose       int           `default:"100" usage:"Maximum number of on-ledger requests to propose for the next block (includes timed requests)"`
+	MempoolOnLedgerRefreshMinInterval time.Duration `default:"10m" usage:"Minimum interval to try to refresh the list of on-ledger requests after some have been dropped from the pool (this interval is introduced to avoid dropping/refreshing cycle if there are too many requests on L1 to process)"`
 }
 
 type ParametersWAL struct {

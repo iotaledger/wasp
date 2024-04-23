@@ -141,6 +141,8 @@ type ChainNodeConn interface {
 		onChainConnect func(),
 		onChainDisconnect func(),
 	)
+	// called if the mempoll has dropped some requests during congestion, and now the congestion stopped
+	RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID)
 }
 
 type chainNodeImpl struct {
@@ -283,7 +285,7 @@ func New(
 	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
 	smParameters sm_gpa.StateManagerParameters,
-	mempoolTTL time.Duration,
+	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -433,9 +435,11 @@ func New(
 		chainMetrics.Mempool,
 		chainMetrics.Pipe,
 		cni.listener,
-		mempoolTTL,
+		mempoolSettings,
 		mempoolBroadcastInterval,
+		func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
 	)
+
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool

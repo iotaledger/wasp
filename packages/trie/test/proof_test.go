@@ -30,7 +30,7 @@ func TestProofScenariosBlake2b(t *testing.T) {
 				p := trr.MerkleProof([]byte(k))
 				err = p.Validate(root.Bytes())
 				require.NoError(t, err)
-				if len(v) > 0 {
+				if v != "" {
 					cID := trie.CommitToData([]byte(v))
 					err = p.ValidateWithTerminal(root.Bytes(), cID.Bytes())
 					require.NoError(t, err)

@@ -4,11 +4,14 @@
 package governance
 
 import (
+	"math/big"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type StateAccess struct {
@@ -64,4 +67,8 @@ func (sa *StateAccess) ChainOwnerID() isc.AgentID {
 
 func (sa *StateAccess) GetBlockKeepAmount() int32 {
 	return GetBlockKeepAmount(sa.state)
+}
+
+func (sa *StateAccess) DefaultGasPrice() *big.Int {
+	return MustGetGasFeePolicy(sa.state).DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 }
