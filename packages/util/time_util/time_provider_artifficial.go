@@ -1,4 +1,4 @@
-package sm_gpa_utils
+package time_util
 
 import (
 	"sync"

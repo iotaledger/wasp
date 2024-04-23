@@ -6,7 +6,7 @@ package sm_gpa
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/util/time_util"
 )
 
 type StateManagerParameters struct {
@@ -31,15 +31,15 @@ type StateManagerParameters struct {
 	// On single store pruning attempt at most this number of states will be deleted
 	PruningMaxStatesToDelete int
 
-	TimeProvider sm_gpa_utils.TimeProvider
+	TimeProvider time_util.TimeProvider
 }
 
-func NewStateManagerParameters(tpOpt ...sm_gpa_utils.TimeProvider) StateManagerParameters {
-	var tp sm_gpa_utils.TimeProvider
+func NewStateManagerParameters(tpOpt ...time_util.TimeProvider) StateManagerParameters {
+	var tp time_util.TimeProvider
 	if len(tpOpt) > 0 {
 		tp = tpOpt[0]
 	} else {
-		tp = sm_gpa_utils.NewDefaultTimeProvider()
+		tp = time_util.NewDefaultTimeProvider()
 	}
 	return StateManagerParameters{
 		BlockCacheMaxSize:                 1000,

@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/time_util"
 )
 
 type MockedSnapshotManager struct {
@@ -27,7 +27,7 @@ type MockedSnapshotManager struct {
 	readySnapshotsMutex sync.Mutex
 
 	snapshotCommitTime time.Duration
-	timeProvider       sm_gpa_utils.TimeProvider
+	timeProvider       time_util.TimeProvider
 
 	origStore      state.Store
 	nodeStore      state.Store
@@ -51,7 +51,7 @@ func NewMockedSnapshotManager(
 	nodeStore state.Store,
 	snapshotToLoad SnapshotInfo,
 	snapshotCommitTime time.Duration,
-	timeProvider sm_gpa_utils.TimeProvider,
+	timeProvider time_util.TimeProvider,
 	log *logger.Logger,
 ) *MockedSnapshotManager {
 	result := &MockedSnapshotManager{
