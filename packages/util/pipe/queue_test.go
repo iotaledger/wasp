@@ -170,12 +170,11 @@ func TestLimitPriorityLimitedPriorityHashQueueTwice(t *testing.T) {
 				return 3*index/2 - 20
 			}
 			return (3*index - 41) / 2
-		} else {
-			if index%2 == 1 {
-				return (3*index - 139) / 2
-			}
-			return 3*index/2 - 70
 		}
+		if index%2 == 1 {
+			return (3*index - 139) / 2
+		}
+		return 3*index/2 - 70
 	}
 	testQueueTwice(NewSimpleNothashableFactory(), q, elementsToAddSingle, alwaysTrueFun, limit, resultFun, t)
 }
@@ -262,12 +261,11 @@ func testPriorityQueueTwice[E IntConvertible](factory Factory[E], makePriorityQu
 				return 3*index/2 - 50
 			}
 			return (3*index - 101) / 2
-		} else {
-			if index%2 == 1 {
-				return (3*index - 199) / 2
-			}
-			return 3*index/2 - 100
 		}
+		if index%2 == 1 {
+			return (3*index - 199) / 2
+		}
+		return 3*index/2 - 100
 	}
 	testQueueTwice(factory, q, elementsToAddSingle, alwaysTrueFun, 2*elementsToAddSingle, resultFun, t)
 }
@@ -354,12 +352,11 @@ func TestLimitPriorityHashLimitedPriorityHashQueueDuplicates(t *testing.T) {
 				return 3*index - 40
 			}
 			return 3*index - 41
-		} else {
-			if index%2 == 0 {
-				return 3*index - 139
-			}
-			return 3*index - 140
 		}
+		if index%2 == 0 {
+			return 3*index - 139
+		}
+		return 3*index - 140
 	}
 	testQueueBasicAddLengthPeekRemove(NewSimpleHashableFactory(), q, 3*elementsToAddFirstIteration, addFun, addResultFun, limit, resultFun, t)
 }

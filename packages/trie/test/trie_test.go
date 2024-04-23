@@ -299,7 +299,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 				continue // key must not be empty
 			}
 			key = []byte(before)
-			if len(after) > 0 {
+			if after != "" {
 				value = []byte(after)
 			}
 		} else {
@@ -333,11 +333,11 @@ func checkResult(t *testing.T, trie *trie.TrieUpdatable, checklist map[string]st
 	for key, expectedValue := range checklist {
 		v := trie.GetStr(key)
 		if traceScenarios {
-			if len(v) > 0 {
+			if v != "" {
 				fmt.Printf("FOUND '%s': '%s' (expected '%s')\n", key, v, expectedValue)
 			} else {
 				fmt.Printf("NOT FOUND '%s' (expected '%s')\n", key, func() string {
-					if len(expectedValue) > 0 {
+					if expectedValue != "" {
 						return "FOUND"
 					}
 					return "NOT FOUND"

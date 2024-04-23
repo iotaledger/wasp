@@ -42,7 +42,7 @@ func StorageEncodeString(slotNumber uint8, s string) (ret map[common.Hash]common
 	ret[mainSlot] = common.BigToHash(big.NewInt(int64(len(s)*2) + 1))
 
 	i := 0
-	for len(s) > 0 {
+	for s != "" {
 		var chunk common.Hash
 		copy(chunk[:], s)
 

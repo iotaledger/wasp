@@ -87,7 +87,9 @@ func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID i
 	if !ok {
 		panic("unexpected chainID")
 	}
-	ncChain.refreshOwnedOutputs(ctx)
+	if err := ncChain.refreshOwnedOutputs(ctx); err != nil {
+		nc.LogError(fmt.Sprintf("error refreshing outputs: %s", err.Error()))
+	}
 }
 
 func New(

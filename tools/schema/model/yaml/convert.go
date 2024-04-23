@@ -85,10 +85,10 @@ func (n *Node) toStringElt() model.DefElt {
 
 func (n *Node) toDefElt() *model.DefElt {
 	comment := ""
-	if len(n.HeadComment) > 0 {
+	if n.HeadComment != "" {
 		// remove trailing '\n' and space
 		comment = strings.TrimSpace(n.HeadComment)
-	} else if len(n.LineComment) > 0 {
+	} else if n.LineComment != "" {
 		// remove trailing '\n' and space
 		comment = strings.TrimSpace(n.LineComment)
 	}
@@ -126,9 +126,9 @@ func (n *Node) toDefMapMap() model.DefMapMap {
 			continue
 		}
 		comment := ""
-		if len(yamlKey.HeadComment) > 0 {
+		if yamlKey.HeadComment != "" {
 			comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
-		} else if len(yamlKey.LineComment) > 0 {
+		} else if yamlKey.LineComment != "" {
 			comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 		}
 
@@ -146,9 +146,9 @@ func (n *Node) toDefMapMap() model.DefMapMap {
 func (n *Node) toFuncDef() model.FuncDef {
 	def := model.FuncDef{}
 	def.Line = n.Line
-	if len(n.HeadComment) > 0 {
+	if n.HeadComment != "" {
 		def.Comment = strings.TrimSpace(n.HeadComment) // remove trailing '\n'
-	} else if len(n.LineComment) > 0 {
+	} else if n.LineComment != "" {
 		def.Comment = strings.TrimSpace(n.LineComment) // remove trailing '\n'
 	}
 
@@ -164,9 +164,9 @@ func (n *Node) toFuncDef() model.FuncDef {
 				return model.FuncDef{}
 			}
 			def.Access = *yamlKey.Contents[0].toDefElt()
-			if len(yamlKey.HeadComment) > 0 {
+			if yamlKey.HeadComment != "" {
 				def.Access.Comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
-			} else if len(yamlKey.LineComment) > 0 {
+			} else if yamlKey.LineComment != "" {
 				def.Access.Comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 			}
 		case KeyParams:
@@ -188,9 +188,9 @@ func (n *Node) toFuncDefMap() model.FuncDefMap {
 			continue
 		}
 		comment := ""
-		if len(yamlKey.HeadComment) > 0 {
+		if yamlKey.HeadComment != "" {
 			comment = strings.TrimSpace(yamlKey.HeadComment) // remove trailing '\n'
-		} else if len(yamlKey.LineComment) > 0 {
+		} else if yamlKey.LineComment != "" {
 			comment = strings.TrimSpace(yamlKey.LineComment) // remove trailing '\n'
 		}
 		key := model.DefElt{
