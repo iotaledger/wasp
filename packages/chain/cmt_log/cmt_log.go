@@ -175,6 +175,7 @@ func New(
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	cclMetrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (CmtLog, error) {
@@ -228,7 +229,9 @@ func New(
 			// Nothing to do, if we cannot persist this.
 			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}
-	}, log.Named("VO"))
+	},
+		postponeRecoveryMilestones,
+		log.Named("VO"))
 	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, cl.varOutput.LogIndexAgreed, cclMetrics, log.Named("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, cl.varOutput.TipAOChanged, log.Named("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)

@@ -7,10 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-const (
-	postponeRecoveryMilestones = 3
-)
-
 type VarOutput interface {
 	// Summary of the internal state.
 	StatusString() string
@@ -24,26 +20,28 @@ type VarOutput interface {
 }
 
 type varOutputImpl struct {
-	candidateLI      LogIndex
-	candidateAO      *isc.AliasOutputWithID
-	canPropose       bool
-	milestonesToWait int
-	suspended        bool
-	outValue         *Output
-	persistUsed      func(li LogIndex)
-	log              *logger.Logger
+	candidateLI                LogIndex
+	candidateAO                *isc.AliasOutputWithID
+	canPropose                 bool
+	milestonesToWait           int
+	suspended                  bool
+	outValue                   *Output
+	persistUsed                func(li LogIndex)
+	postponeRecoveryMilestones int
+	log                        *logger.Logger
 }
 
-func NewVarOutput(persistUsed func(li LogIndex), log *logger.Logger) VarOutput {
+func NewVarOutput(persistUsed func(li LogIndex), postponeRecoveryMilestones int, log *logger.Logger) VarOutput {
 	return &varOutputImpl{
-		candidateLI:      NilLogIndex(),
-		candidateAO:      nil,
-		canPropose:       true,
-		milestonesToWait: 0,
-		suspended:        false,
-		outValue:         nil,
-		persistUsed:      persistUsed,
-		log:              log,
+		candidateLI:                NilLogIndex(),
+		candidateAO:                nil,
+		canPropose:                 true,
+		milestonesToWait:           0,
+		suspended:                  false,
+		outValue:                   nil,
+		persistUsed:                persistUsed,
+		postponeRecoveryMilestones: postponeRecoveryMilestones,
+		log:                        log,
 	}
 }
 
@@ -73,7 +71,7 @@ func (vo *varOutputImpl) TipAOChanged(ao *isc.AliasOutputWithID) {
 
 // This works in hand with HaveMilestone. See the comment there.
 func (vo *varOutputImpl) HaveRejection() {
-	vo.milestonesToWait = postponeRecoveryMilestones
+	vo.milestonesToWait = vo.postponeRecoveryMilestones
 	vo.tryOutput()
 }
 

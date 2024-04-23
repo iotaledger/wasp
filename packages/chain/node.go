@@ -278,6 +278,7 @@ func New(
 	onChainDisconnect func(),
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
@@ -395,6 +396,7 @@ func New(
 		},
 		deriveAliasOutputByQuorum,
 		pipeliningLimit,
+		postponeRecoveryMilestones,
 		cni.chainMetrics.CmtLog,
 		cni.log.Named("CM"),
 	)

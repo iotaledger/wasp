@@ -160,28 +160,29 @@ type cmtLogInst struct {
 }
 
 type chainMgrImpl struct {
-	chainID                 isc.ChainID                                                      // This instance is responsible for this chain.
-	chainStore              state.Store                                                      // Store of the chain state.
-	cmtLogs                 map[iotago.Ed25519Address]*cmtLogInst                            // All the committee log instances for this chain.
-	consensusStateRegistry  cmt_log.ConsensusStateRegistry                                   // Persistent store for log indexes.
-	latestActiveCmt         *iotago.Ed25519Address                                           // The latest active committee.
-	latestConfirmedAO       *isc.AliasOutputWithID                                           // The latest confirmed AO (follows Active AO).
-	activeNodesCB           func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB      func(ao *isc.AliasOutputWithID)                                  // We will call this to set new AO for the active state.
-	savePreliminaryBlockCB  func(block state.Block)                                          // We will call this, when a preliminary block matching the tx signatures is received.
-	committeeUpdatedCB      func(dkShare tcrypto.DKShare)                                    // Will be called, when a committee changes.
-	needConsensus           *NeedConsensus                                                   // Query for a consensus.
-	needPublishTX           *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] // Query to post TXes.
-	dkShareRegistryProvider registry.DKShareRegistryProvider                                 // Source for DKShares.
-	varAccessNodeState      VarAccessNodeState
-	output                  *Output
-	asGPA                   gpa.GPA
-	me                      gpa.NodeID
-	nodeIDFromPubKey        func(pubKey *cryptolib.PublicKey) gpa.NodeID
-	deriveAOByQuorum        bool // Config parameter.
-	pipeliningLimit         int  // Config parameter.
-	metrics                 *metrics.ChainCmtLogMetrics
-	log                     *logger.Logger
+	chainID                    isc.ChainID                                                      // This instance is responsible for this chain.
+	chainStore                 state.Store                                                      // Store of the chain state.
+	cmtLogs                    map[iotago.Ed25519Address]*cmtLogInst                            // All the committee log instances for this chain.
+	consensusStateRegistry     cmt_log.ConsensusStateRegistry                                   // Persistent store for log indexes.
+	latestActiveCmt            *iotago.Ed25519Address                                           // The latest active committee.
+	latestConfirmedAO          *isc.AliasOutputWithID                                           // The latest confirmed AO (follows Active AO).
+	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
+	trackActiveStateCB         func(ao *isc.AliasOutputWithID)                                  // We will call this to set new AO for the active state.
+	savePreliminaryBlockCB     func(block state.Block)                                          // We will call this, when a preliminary block matching the tx signatures is received.
+	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                    // Will be called, when a committee changes.
+	needConsensus              *NeedConsensus                                                   // Query for a consensus.
+	needPublishTX              *shrinkingmap.ShrinkingMap[iotago.TransactionID, *NeedPublishTX] // Query to post TXes.
+	dkShareRegistryProvider    registry.DKShareRegistryProvider                                 // Source for DKShares.
+	varAccessNodeState         VarAccessNodeState
+	output                     *Output
+	asGPA                      gpa.GPA
+	me                         gpa.NodeID
+	nodeIDFromPubKey           func(pubKey *cryptolib.PublicKey) gpa.NodeID
+	deriveAOByQuorum           bool // Config parameter.
+	pipeliningLimit            int  // Config parameter.
+	postponeRecoveryMilestones int  // Config parameter.
+	metrics                    *metrics.ChainCmtLogMetrics
+	log                        *logger.Logger
 }
 
 var (
@@ -202,28 +203,30 @@ func New(
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	metrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (ChainMgr, error) {
 	cmi := &chainMgrImpl{
-		chainID:                 chainID,
-		chainStore:              chainStore,
-		cmtLogs:                 map[iotago.Ed25519Address]*cmtLogInst{},
-		consensusStateRegistry:  consensusStateRegistry,
-		activeNodesCB:           activeNodesCB,
-		trackActiveStateCB:      trackActiveStateCB,
-		savePreliminaryBlockCB:  savePreliminaryBlockCB,
-		committeeUpdatedCB:      committeeUpdatedCB,
-		needConsensus:           nil,
-		needPublishTX:           shrinkingmap.New[iotago.TransactionID, *NeedPublishTX](),
-		dkShareRegistryProvider: dkShareRegistryProvider,
-		varAccessNodeState:      NewVarAccessNodeState(chainID, log.Named("VAS")),
-		me:                      me,
-		nodeIDFromPubKey:        nodeIDFromPubKey,
-		deriveAOByQuorum:        deriveAOByQuorum,
-		pipeliningLimit:         pipeliningLimit,
-		metrics:                 metrics,
-		log:                     log,
+		chainID:                    chainID,
+		chainStore:                 chainStore,
+		cmtLogs:                    map[iotago.Ed25519Address]*cmtLogInst{},
+		consensusStateRegistry:     consensusStateRegistry,
+		activeNodesCB:              activeNodesCB,
+		trackActiveStateCB:         trackActiveStateCB,
+		savePreliminaryBlockCB:     savePreliminaryBlockCB,
+		committeeUpdatedCB:         committeeUpdatedCB,
+		needConsensus:              nil,
+		needPublishTX:              shrinkingmap.New[iotago.TransactionID, *NeedPublishTX](),
+		dkShareRegistryProvider:    dkShareRegistryProvider,
+		varAccessNodeState:         NewVarAccessNodeState(chainID, log.Named("VAS")),
+		me:                         me,
+		nodeIDFromPubKey:           nodeIDFromPubKey,
+		deriveAOByQuorum:           deriveAOByQuorum,
+		pipeliningLimit:            pipeliningLimit,
+		metrics:                    metrics,
+		postponeRecoveryMilestones: postponeRecoveryMilestones,
+		log:                        log,
 	}
 	cmi.output = &Output{cmi: cmi}
 	cmi.asGPA = gpa.NewOwnHandler(me, cmi)
@@ -588,7 +591,15 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 	}
 
 	clInst, err := cmt_log.New(
-		cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.deriveAOByQuorum, cmi.pipeliningLimit, cmi.metrics,
+		cmi.me,
+		cmi.chainID,
+		dkShare,
+		cmi.consensusStateRegistry,
+		cmi.nodeIDFromPubKey,
+		cmi.deriveAOByQuorum,
+		cmi.pipeliningLimit,
+		cmi.postponeRecoveryMilestones,
+		cmi.metrics,
 		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsEd25519Address().String()[:10])),
 	)
 	if err != nil {
