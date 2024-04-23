@@ -688,6 +688,7 @@ func TestTTL(t *testing.T) {
 			MaxOffledgerToPropose: 1000,
 		},
 		1*time.Second,
+		func() {},
 	)
 	defer te.close()
 	start := time.Now()
@@ -820,6 +821,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 				MaxOffledgerToPropose: 1000,
 			},
 			1*time.Second,
+			func() {},
 		)
 	}
 	return te

@@ -115,24 +115,13 @@ type Mempool interface {
 }
 
 type Settings struct {
-	TTL                   time.Duration // time to live (how much time requests are allowed to sit in the pool without being processed)
-	MaxOffledgerInPool    int
-	MaxOnledgerInPool     int
-	MaxTimedInPool        int
-	MaxOnledgerToPropose  int // (including timed-requests)
-	MaxOffledgerToPropose int
-}
-
-type RequestPool[V isc.Request] interface {
-	Has(reqRef *isc.RequestRef) bool
-	Get(reqRef *isc.RequestRef) V
-	Add(request V)
-	Remove(request V)
-	// this removes requests from the pool if predicate returns false
-	Cleanup(predicate func(request V, ts time.Time) bool)
-	Iterate(f func(e *typedPoolEntry[V]) bool)
-	StatusString() string
-	WriteContent(io.Writer)
+	TTL                        time.Duration // time to live (how much time requests are allowed to sit in the pool without being processed)
+	OnLedgerRefreshMinInterval time.Duration
+	MaxOffledgerInPool         int
+	MaxOnledgerInPool          int
+	MaxTimedInPool             int
+	MaxOnledgerToPropose       int // (including timed-requests)
+	MaxOffledgerToPropose      int
 }
 
 // This implementation tracks single branch of the chain only. I.e. all the consensus
@@ -175,6 +164,8 @@ type mempoolImpl struct {
 	log                            *logger.Logger
 	metrics                        *metrics.ChainMempoolMetrics
 	listener                       ChainListener
+	refreshOnLedgerRequests        func()
+	lastRefreshTimestamp           time.Time
 }
 
 var _ Mempool = &mempoolImpl{}
@@ -235,6 +226,7 @@ func New(
 	listener ChainListener,
 	settings Settings,
 	broadcastInterval time.Duration,
+	refreshOnLedgerRequests func(),
 ) Mempool {
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
@@ -269,6 +261,8 @@ func New(
 		log:                            log,
 		metrics:                        metrics,
 		listener:                       listener,
+		refreshOnLedgerRequests:        refreshOnLedgerRequests,
+		lastRefreshTimestamp:           time.Now(),
 	}
 
 	pipeMetrics.TrackPipeLen("mp-serverNodesUpdatedPipe", mpi.serverNodesUpdatedPipe.Len)
@@ -392,7 +386,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 	debugTicker := time.NewTicker(distShareDebugTick)
 	timeTicker := time.NewTicker(distShareTimeTick)
 	rePublishTicker := time.NewTicker(distShareRePublishTick)
-	forceCleanMempoolTicker := time.NewTicker(forceCleanMempoolTick)
+	forceCleanMempoolTicker := time.NewTicker(forceCleanMempoolTick) // this exists to force mempool cleanup on access nodes // thought: maybe access nodes shouldn't have a mempool at all
 	for {
 		select {
 		case recv, ok := <-serverNodesUpdatedPipeOutCh:
@@ -950,6 +944,14 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 		}
 		return true
 	})
+
+	// periodically try to refresh On-ledger requests that might have been dropped
+	if time.Since(mpi.lastRefreshTimestamp) > mpi.settings.OnLedgerRefreshMinInterval {
+		if mpi.onLedgerPool.ShouldRefreshRequests() || mpi.timePool.ShouldRefreshRequests() {
+			mpi.refreshOnLedgerRequests()
+			mpi.lastRefreshTimestamp = time.Now()
+		}
+	}
 }
 
 func (mpi *mempoolImpl) handleForceCleanMempool() {

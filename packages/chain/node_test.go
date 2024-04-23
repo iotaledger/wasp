@@ -282,6 +282,8 @@ type testNodeConn struct {
 	attachWG        *sync.WaitGroup
 }
 
+var _ chain.NodeConnection = &testNodeConn{}
+
 func newTestNodeConn(t *testing.T) *testNodeConn {
 	tnc := &testNodeConn{
 		t:         t,
@@ -370,6 +372,11 @@ func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
 
 func (tnc *testNodeConn) GetL1ProtocolParams() *iotago.ProtocolParameters {
 	return testparameters.GetL1ProtocolParamsForTesting()
+}
+
+// RefreshOnLedgerRequests implements chain.NodeConnection.
+func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {
+	// noop
 }
 
 ////////////////////////////////////////////////////////////////////////////////

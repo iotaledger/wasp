@@ -18,16 +18,30 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
+type RequestPool[V isc.Request] interface {
+	Has(reqRef *isc.RequestRef) bool
+	Get(reqRef *isc.RequestRef) V
+	Add(request V)
+	Remove(request V)
+	// this removes requests from the pool if predicate returns false
+	Cleanup(predicate func(request V, ts time.Time) bool)
+	Iterate(f func(e *typedPoolEntry[V]) bool)
+	StatusString() string
+	WriteContent(io.Writer)
+	ShouldRefreshRequests() bool
+}
+
 // TODO add gas price to on-ledger requests
 // TODO this list needs to be periodically re-filled from L1 once the activity is lower
 type typedPool[V isc.Request] struct {
-	waitReq     WaitReq
-	requests    *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *typedPoolEntry[V]]
-	ordered     []*typedPoolEntry[V] // TODO use a better data structure instead!!! (probably RedBlackTree)
-	maxPoolSize int
-	sizeMetric  func(int)
-	timeMetric  func(time.Duration)
-	log         *logger.Logger
+	waitReq            WaitReq
+	requests           *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *typedPoolEntry[V]]
+	ordered            []*typedPoolEntry[V] // TODO use a better data structure instead!!! (probably RedBlackTree)
+	hasDroppedRequests bool
+	maxPoolSize        int
+	sizeMetric         func(int)
+	timeMetric         func(time.Duration)
+	log                *logger.Logger
 }
 
 type typedPoolEntry[V isc.Request] struct {
@@ -40,13 +54,14 @@ var _ RequestPool[isc.OffLedgerRequest] = &typedPool[isc.OffLedgerRequest]{}
 
 func NewTypedPool[V isc.Request](maxOnledgerInPool int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) RequestPool[V] {
 	return &typedPool[V]{
-		waitReq:     waitReq,
-		requests:    shrinkingmap.New[isc.RequestRefKey, *typedPoolEntry[V]](),
-		ordered:     []*typedPoolEntry[V]{},
-		maxPoolSize: maxOnledgerInPool,
-		sizeMetric:  sizeMetric,
-		timeMetric:  timeMetric,
-		log:         log,
+		waitReq:            waitReq,
+		requests:           shrinkingmap.New[isc.RequestRefKey, *typedPoolEntry[V]](),
+		ordered:            []*typedPoolEntry[V]{},
+		hasDroppedRequests: false,
+		maxPoolSize:        maxOnledgerInPool,
+		sizeMetric:         sizeMetric,
+		timeMetric:         timeMetric,
+		log:                log,
 	}
 }
 
@@ -122,6 +137,7 @@ func (olp *typedPool[V]) LimitPoolSize() []*typedPoolEntry[V] {
 		olp.log.Debugf("LimitPoolSize dropping request: %v", r.req.ID())
 		olp.Remove(r.req)
 	}
+	olp.hasDroppedRequests = true
 	return reqsToDelete
 }
 
@@ -166,6 +182,18 @@ func (olp *typedPool[V]) Remove(request V) {
 	olp.log.Debugf("DEL %v as key=%v", request.ID(), refKey)
 	olp.sizeMetric(olp.requests.Size())
 	olp.timeMetric(time.Since(entry.ts))
+}
+
+func (olp *typedPool[V]) ShouldRefreshRequests() bool {
+	if !olp.hasDroppedRequests {
+		return false
+	}
+	if olp.requests.Size() > 0 {
+		return false // wait until pool is empty to refresh
+	}
+	// assume after this function returns true, the requests will be refreshed
+	olp.hasDroppedRequests = false
+	return true
 }
 
 func (olp *typedPool[V]) Cleanup(predicate func(request V, ts time.Time) bool) {

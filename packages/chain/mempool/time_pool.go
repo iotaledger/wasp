@@ -18,17 +18,19 @@ type TimePool interface {
 	TakeTill(timestamp time.Time) []isc.OnLedgerRequest
 	Has(reqID *isc.RequestRef) bool
 	Cleanup(predicate func(request isc.OnLedgerRequest, ts time.Time) bool)
+	ShouldRefreshRequests() bool
 }
 
 // Here we implement TimePool. We maintain the request in a list ordered by a timestamp.
 // The list is organized in slots. Each slot contains a list of requests that fit to the
 // slot boundaries.
 type timePoolImpl struct {
-	requests    *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.OnLedgerRequest] // All the requests in this pool.
-	slots       *timeSlot                                                          // Structure to fetch them fast by their time.
-	maxPoolSize int
-	sizeMetric  func(int)
-	log         *logger.Logger
+	requests           *shrinkingmap.ShrinkingMap[isc.RequestRefKey, isc.OnLedgerRequest] // All the requests in this pool.
+	slots              *timeSlot                                                          // Structure to fetch them fast by their time.
+	hasDroppedRequests bool
+	maxPoolSize        int
+	sizeMetric         func(int)
+	log                *logger.Logger
 }
 
 type timeSlot struct {
@@ -44,11 +46,12 @@ var _ TimePool = &timePoolImpl{}
 
 func NewTimePool(maxTimedInPool int, sizeMetric func(int), log *logger.Logger) TimePool {
 	return &timePoolImpl{
-		requests:    shrinkingmap.New[isc.RequestRefKey, isc.OnLedgerRequest](),
-		slots:       nil,
-		maxPoolSize: maxTimedInPool,
-		sizeMetric:  sizeMetric,
-		log:         log,
+		requests:           shrinkingmap.New[isc.RequestRefKey, isc.OnLedgerRequest](),
+		slots:              nil,
+		hasDroppedRequests: false,
+		maxPoolSize:        maxTimedInPool,
+		sizeMetric:         sizeMetric,
+		log:                log,
 	}
 }
 
@@ -117,11 +120,24 @@ func (tpi *timePoolImpl) AddRequest(timestamp time.Time, request isc.OnLedgerReq
 				tpi.requests.Delete(rKey)
 			}
 		}
+		tpi.hasDroppedRequests = true
 	}
 
 	// log and update metrics
 	tpi.log.Debugf("ADD %v as key=%v", request.ID(), reqRefKey)
 	tpi.sizeMetric(tpi.requests.Size())
+}
+
+func (tpi *timePoolImpl) ShouldRefreshRequests() bool {
+	if !tpi.hasDroppedRequests {
+		return false
+	}
+	if tpi.requests.Size() > 0 {
+		return false // wait until pool is empty to refresh
+	}
+	// assume after this function returns true, the requests will be refreshed
+	tpi.hasDroppedRequests = false
+	return true
 }
 
 func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.OnLedgerRequest {

@@ -81,6 +81,15 @@ type nodeConnection struct {
 	shutdownHandler *shutdown.ShutdownHandler
 }
 
+// RefreshOnLedgerRequests implements chain.NodeConnection.
+func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {
+	ncChain, ok := nc.chainsMap.Get(chainID)
+	if !ok {
+		panic("unexpected chainID")
+	}
+	ncChain.refreshOwnedOutputs(ctx)
+}
+
 func New(
 	ctx context.Context,
 	log *logger.Logger,
