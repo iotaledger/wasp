@@ -38,7 +38,7 @@ func (rec *foundryOutputRec) Read(r io.Reader) error {
 	rec.Amount = rr.ReadUint64()
 	tokenScheme := rr.ReadBytes()
 	if rr.Err == nil {
-		rec.TokenScheme, rr.Err = codec.DecodeTokenScheme(tokenScheme)
+		rec.TokenScheme, rr.Err = codec.TokenScheme.Decode(tokenScheme)
 	}
 	rec.Metadata = rr.ReadBytes()
 	return rr.Err
@@ -49,7 +49,7 @@ func (rec *foundryOutputRec) Write(w io.Writer) error {
 	ww.WriteN(rec.OutputID[:])
 	ww.WriteUint64(rec.Amount)
 	if ww.Err == nil {
-		tokenScheme := codec.EncodeTokenScheme(rec.TokenScheme)
+		tokenScheme := codec.TokenScheme.Encode(rec.TokenScheme)
 		ww.WriteBytes(tokenScheme)
 	}
 	ww.WriteBytes(rec.Metadata)

@@ -11,7 +11,7 @@ import (
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx isc.Sandbox) bool {
-	permissionsEnabled, err := codec.DecodeBool(ctx.State().Get(root.VarDeployPermissionsEnabled))
+	permissionsEnabled, err := codec.Bool.Decode(ctx.State().Get(root.VarDeployPermissionsEnabled))
 	if err != nil {
 		return false
 	}

@@ -38,21 +38,21 @@ func passTypesFull(ctx isc.Sandbox) dict.Dict {
 	if s != "string" {
 		ctx.Log().Panicf("wrong string")
 	}
-	ret.Set("string", codec.EncodeString(s))
+	ret.Set("string", codec.String.Encode(s))
 
 	i64, err := params.GetInt64("int64")
 	checkFull(ctx, err)
 	if i64 != 42 {
 		ctx.Log().Panicf("wrong int64")
 	}
-	ret.Set("string", codec.EncodeInt64(42))
+	ret.Set("string", codec.Int64.Encode(42))
 
 	i64_0, err := params.GetInt64("int64-0")
 	checkFull(ctx, err)
 	if i64_0 != 0 {
 		ctx.Log().Panicf("wrong int64_0")
 	}
-	ret.Set("string", codec.EncodeInt64(0))
+	ret.Set("string", codec.Int64.Encode(0))
 
 	hash, err := params.GetHashValue("Hash")
 	checkFull(ctx, err)

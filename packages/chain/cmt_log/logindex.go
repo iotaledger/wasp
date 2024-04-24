@@ -15,7 +15,7 @@ func (li LogIndex) AsUint32() uint32 {
 }
 
 func (li LogIndex) Bytes() []byte {
-	return codec.EncodeUint32(li.AsUint32())
+	return codec.Uint32.Encode(li.AsUint32())
 }
 
 func (li LogIndex) IsNil() bool {

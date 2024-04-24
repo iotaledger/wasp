@@ -30,7 +30,7 @@ func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 	}
 	ctx.RequireCaller(nextOwner)
 
-	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(nextOwner))
+	state.Set(governance.VarChainOwnerID, codec.AgentID.Encode(nextOwner))
 	state.Del(governance.VarChainOwnerIDDelegated)
 	ctx.Log().Debugf("governance.chainChainOwner.success: chain owner changed: %s --> %s",
 		currentOwner.String(),
@@ -47,7 +47,7 @@ func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
-	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.EncodeAgentID(newOwnerID))
+	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.AgentID.Encode(newOwnerID))
 	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil
 }
@@ -55,7 +55,7 @@ func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
 func setPayoutAgentID(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAgentID)
-	ctx.State().Set(governance.VarPayoutAgentID, codec.EncodeAgentID(agent))
+	ctx.State().Set(governance.VarPayoutAgentID, codec.AgentID.Encode(agent))
 	return nil
 }
 
@@ -68,7 +68,7 @@ func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
 func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
-	ctx.State().Set(governance.VarMinBaseTokensOnCommonAccount, codec.EncodeUint64(minCommonAccountBalance))
+	ctx.State().Set(governance.VarMinBaseTokensOnCommonAccount, codec.Uint64.Encode(minCommonAccountBalance))
 	return nil
 }
 

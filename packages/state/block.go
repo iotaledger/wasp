@@ -75,7 +75,7 @@ func (b *block) PreviousL1Commitment() *L1Commitment {
 }
 
 func (b *block) StateIndex() uint32 {
-	return codec.MustDecodeUint32(b.MutationsReader().Get(kv.Key(coreutil.StatePrefixBlockIndex)))
+	return codec.Uint32.MustDecode(b.MutationsReader().Get(kv.Key(coreutil.StatePrefixBlockIndex)))
 }
 
 func (b *block) TrieRoot() trie.Hash {

@@ -15,59 +15,59 @@ import (
 func Encode(v interface{}) []byte {
 	switch vt := v.(type) {
 	case bool:
-		return EncodeBool(vt)
+		return Bool.Encode(vt)
 	case int: // default to int64
-		return EncodeInt64(int64(vt))
+		return Int64.Encode(int64(vt))
 	case int8:
-		return EncodeInt8(vt)
+		return Int8.Encode(vt)
 	case int16:
-		return EncodeInt16(vt)
+		return Int16.Encode(vt)
 	case int32:
-		return EncodeInt32(vt)
+		return Int32.Encode(vt)
 	case int64:
-		return EncodeInt64(vt)
+		return Int64.Encode(vt)
 	case uint8:
-		return EncodeUint8(vt)
+		return Uint8.Encode(vt)
 	case uint16:
-		return EncodeUint16(vt)
+		return Uint16.Encode(vt)
 	case uint32:
-		return EncodeUint32(vt)
+		return Uint32.Encode(vt)
 	case uint64:
-		return EncodeUint64(vt)
+		return Uint64.Encode(vt)
 	case string:
-		return EncodeString(vt)
+		return String.Encode(vt)
 	case *big.Int:
-		return EncodeBigIntAbs(vt)
+		return BigIntAbs.Encode(vt)
 	case []byte:
 		return vt
 	case *hashing.HashValue:
-		return EncodeHashValue(*vt)
+		return HashValue.Encode(*vt)
 	case hashing.HashValue:
-		return EncodeHashValue(vt)
+		return HashValue.Encode(vt)
 	case iotago.Address:
-		return EncodeAddress(vt)
+		return Address.Encode(vt)
 	case *isc.ChainID:
-		return EncodeChainID(*vt)
+		return ChainID.Encode(*vt)
 	case isc.ChainID:
-		return EncodeChainID(vt)
+		return ChainID.Encode(vt)
 	case isc.AgentID:
-		return EncodeAgentID(vt)
+		return AgentID.Encode(vt)
 	case isc.RequestID:
-		return EncodeRequestID(vt)
+		return RequestID.Encode(vt)
 	case *isc.RequestID:
-		return EncodeRequestID(*vt)
+		return RequestID.Encode(*vt)
 	case isc.Hname:
 		return vt.Bytes()
 	case iotago.NFTID:
-		return EncodeNFTID(vt)
+		return NFTID.Encode(vt)
 	case isc.VMErrorCode:
 		return vt.Bytes()
 	case time.Time:
-		return EncodeTime(vt)
+		return Time.Encode(vt)
 	case util.Ratio32:
-		return EncodeRatio32(vt)
+		return Ratio32.Encode(vt)
 	case *util.Ratio32:
-		return EncodeRatio32(*vt)
+		return Ratio32.Encode(*vt)
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))
 	}

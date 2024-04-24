@@ -7,8 +7,8 @@ import (
 )
 
 func testBoolEncodeDecode(t *testing.T, b bool) {
-	bin0 := EncodeBool(b)
-	zback, err := DecodeBool(bin0)
+	bin0 := Bool.Encode(b)
+	zback, err := Bool.Decode(bin0)
 	require.NoError(t, err)
 	require.Equal(t, zback, b)
 }

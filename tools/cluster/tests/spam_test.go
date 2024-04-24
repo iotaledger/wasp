@@ -107,7 +107,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
-	lastEventCounterValue := codec.MustDecodeInt64(eventBytes)
+	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 }
 
@@ -189,7 +189,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
-	lastEventCounterValue := codec.MustDecodeInt64(eventBytes)
+	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)

@@ -246,14 +246,14 @@ func nativeTokenCreate(ctx isc.Sandbox) dict.Dict {
 	// Register native token as an evm ERC20 token
 	ctx.Privileged().
 		CallOnBehalfOf(ctx.Caller(), evm.Contract.Hname(), evm.FuncRegisterERC20NativeToken.Hname(), dict.Dict{
-			evm.FieldFoundrySN:         codec.EncodeUint32(sn),
-			evm.FieldTokenName:         codec.EncodeString(metadata.Name),
-			evm.FieldTokenTickerSymbol: codec.EncodeString(metadata.Symbol),
-			evm.FieldTokenDecimals:     codec.EncodeUint8(metadata.Decimals),
+			evm.FieldFoundrySN:         codec.Uint32.Encode(sn),
+			evm.FieldTokenName:         codec.String.Encode(metadata.Name),
+			evm.FieldTokenTickerSymbol: codec.String.Encode(metadata.Symbol),
+			evm.FieldTokenDecimals:     codec.Uint8.Encode(metadata.Decimals),
 		}, ctx.AllowanceAvailable())
 
 	return dict.Dict{
-		ParamFoundrySN: codec.EncodeUint32(sn),
+		ParamFoundrySN: codec.Uint32.Encode(sn),
 	}
 }
 
@@ -286,7 +286,7 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	sn := foundryCreateNewWithMetadata(ctx, nil)
 
 	return dict.Dict{
-		ParamFoundrySN: codec.EncodeUint32(sn),
+		ParamFoundrySN: codec.Uint32.Encode(sn),
 	}
 }
 

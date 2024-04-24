@@ -136,7 +136,7 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.H
 
 	filteredEvents := make([][]byte, 0)
 	for blockNumber := fromBlock; blockNumber <= adjustedToBlock; blockNumber++ {
-		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.EncodeUint32(blockNumber))
+		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Uint32.Encode(blockNumber))
 
 		partition.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
 			parsedContractID, _ := isc.ContractIDFromEventBytes(value)

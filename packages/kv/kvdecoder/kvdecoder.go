@@ -46,7 +46,7 @@ func (p *kvdecoder) wrapError(key kv.Key, err error) error {
 }
 
 func (p *kvdecoder) GetInt8(key kv.Key, def ...int8) (int8, error) {
-	v, err := codec.DecodeInt8(p.Get(key), def...)
+	v, err := codec.Int8.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -57,7 +57,7 @@ func (p *kvdecoder) MustGetInt8(key kv.Key, def ...int8) int8 {
 }
 
 func (p *kvdecoder) GetUint8(key kv.Key, def ...uint8) (uint8, error) {
-	v, err := codec.DecodeUint8(p.Get(key), def...)
+	v, err := codec.Uint8.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -68,7 +68,7 @@ func (p *kvdecoder) MustGetUint8(key kv.Key, def ...uint8) uint8 {
 }
 
 func (p *kvdecoder) GetInt16(key kv.Key, def ...int16) (int16, error) {
-	v, err := codec.DecodeInt16(p.Get(key), def...)
+	v, err := codec.Int16.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -79,7 +79,7 @@ func (p *kvdecoder) MustGetInt16(key kv.Key, def ...int16) int16 {
 }
 
 func (p *kvdecoder) GetUint16(key kv.Key, def ...uint16) (uint16, error) {
-	v, err := codec.DecodeUint16(p.Get(key), def...)
+	v, err := codec.Uint16.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -90,7 +90,7 @@ func (p *kvdecoder) MustGetUint16(key kv.Key, def ...uint16) uint16 {
 }
 
 func (p *kvdecoder) GetInt32(key kv.Key, def ...int32) (int32, error) {
-	v, err := codec.DecodeInt32(p.Get(key), def...)
+	v, err := codec.Int32.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -101,7 +101,7 @@ func (p *kvdecoder) MustGetInt32(key kv.Key, def ...int32) int32 {
 }
 
 func (p *kvdecoder) GetUint32(key kv.Key, def ...uint32) (uint32, error) {
-	v, err := codec.DecodeUint32(p.Get(key), def...)
+	v, err := codec.Uint32.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -112,7 +112,7 @@ func (p *kvdecoder) MustGetUint32(key kv.Key, def ...uint32) uint32 {
 }
 
 func (p *kvdecoder) GetInt64(key kv.Key, def ...int64) (int64, error) {
-	v, err := codec.DecodeInt64(p.Get(key), def...)
+	v, err := codec.Int64.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -123,7 +123,7 @@ func (p *kvdecoder) MustGetInt64(key kv.Key, def ...int64) int64 {
 }
 
 func (p *kvdecoder) GetUint64(key kv.Key, def ...uint64) (uint64, error) {
-	v, err := codec.DecodeUint64(p.Get(key), def...)
+	v, err := codec.Uint64.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -134,7 +134,7 @@ func (p *kvdecoder) MustGetUint64(key kv.Key, def ...uint64) uint64 {
 }
 
 func (p *kvdecoder) GetBool(key kv.Key, def ...bool) (bool, error) {
-	v, err := codec.DecodeBool(p.Get(key), def...)
+	v, err := codec.Bool.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -145,7 +145,7 @@ func (p *kvdecoder) MustGetBool(key kv.Key, def ...bool) bool {
 }
 
 func (p *kvdecoder) GetTime(key kv.Key, def ...time.Time) (time.Time, error) {
-	v, err := codec.DecodeTime(p.Get(key), def...)
+	v, err := codec.Time.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -156,7 +156,7 @@ func (p *kvdecoder) MustGetTime(key kv.Key, def ...time.Time) time.Time {
 }
 
 func (p *kvdecoder) GetString(key kv.Key, def ...string) (string, error) {
-	v, err := codec.DecodeString(p.Get(key), def...)
+	v, err := codec.String.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -167,7 +167,7 @@ func (p *kvdecoder) MustGetString(key kv.Key, def ...string) string {
 }
 
 func (p *kvdecoder) GetHname(key kv.Key, def ...isc.Hname) (isc.Hname, error) {
-	v, err := codec.DecodeHname(p.Get(key), def...)
+	v, err := codec.Hname.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -178,7 +178,7 @@ func (p *kvdecoder) MustGetHname(key kv.Key, def ...isc.Hname) isc.Hname {
 }
 
 func (p *kvdecoder) GetHashValue(key kv.Key, def ...hashing.HashValue) (hashing.HashValue, error) {
-	v, err := codec.DecodeHashValue(p.Get(key), def...)
+	v, err := codec.HashValue.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -189,7 +189,7 @@ func (p *kvdecoder) MustGetHashValue(key kv.Key, def ...hashing.HashValue) hashi
 }
 
 func (p *kvdecoder) GetAddress(key kv.Key, def ...iotago.Address) (iotago.Address, error) {
-	v, err := codec.DecodeAddress(p.Get(key), def...)
+	v, err := codec.Address.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -200,7 +200,7 @@ func (p *kvdecoder) MustGetAddress(key kv.Key, def ...iotago.Address) iotago.Add
 }
 
 func (p *kvdecoder) GetRequestID(key kv.Key, def ...isc.RequestID) (isc.RequestID, error) {
-	v, err := codec.DecodeRequestID(p.Get(key), def...)
+	v, err := codec.RequestID.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -211,7 +211,7 @@ func (p *kvdecoder) MustGetRequestID(key kv.Key, def ...isc.RequestID) isc.Reque
 }
 
 func (p *kvdecoder) GetAgentID(key kv.Key, def ...isc.AgentID) (isc.AgentID, error) {
-	v, err := codec.DecodeAgentID(p.Get(key), def...)
+	v, err := codec.AgentID.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -222,7 +222,7 @@ func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...isc.AgentID) isc.AgentID {
 }
 
 func (p *kvdecoder) GetChainID(key kv.Key, def ...isc.ChainID) (isc.ChainID, error) {
-	v, err := codec.DecodeChainID(p.Get(key), def...)
+	v, err := codec.ChainID.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
@@ -283,7 +283,7 @@ func (p *kvdecoder) GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error) {
 		}
 		return nil, fmt.Errorf("GetBigInt: mandatory parameter '%s' does not exist", key)
 	}
-	return codec.DecodeBigIntAbs(v)
+	return codec.BigIntAbs.Decode(v)
 }
 
 func (p *kvdecoder) MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int {
@@ -300,7 +300,7 @@ func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) (i
 		}
 		return iotago.NativeTokenID{}, fmt.Errorf("GetNativeTokenID: mandatory parameter %q does not exist", key)
 	}
-	return codec.DecodeNativeTokenID(v)
+	return codec.NativeTokenID.Decode(v)
 }
 
 func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) iotago.NativeTokenID {
@@ -317,7 +317,7 @@ func (p *kvdecoder) GetNFTID(key kv.Key, def ...iotago.NFTID) (iotago.NFTID, err
 		}
 		return iotago.NFTID{}, fmt.Errorf("GetNFTID: mandatory parameter %q does not exist", key)
 	}
-	return codec.DecodeNFTID(v)
+	return codec.NFTID.Decode(v)
 }
 
 func (p *kvdecoder) MustGetNFTID(key kv.Key, def ...iotago.NFTID) iotago.NFTID {

@@ -29,7 +29,7 @@ func (e *ChainEnv) checkCoreContracts() {
 		ret, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		aid, err := codec.DecodeAgentID(ret.Get(governance.VarChainOwnerID))
+		aid, err := codec.AgentID.Decode(ret.Get(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
 
@@ -206,7 +206,7 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	hname := isc.Hn(name)
 
 	args := dict.Dict{
-		root.ParamHname: codec.EncodeHname(hname),
+		root.ParamHname: codec.Hname.Encode(hname),
 	}
 
 	// TODO: Validate with develop
@@ -258,7 +258,7 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
 		}
-		counter, err := codec.DecodeInt64(ret.Get(inccounter.VarCounter), 0)
+		counter, err := codec.Int64.Decode(ret.Get(inccounter.VarCounter), 0)
 		require.NoError(t, err)
 		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected

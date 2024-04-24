@@ -134,7 +134,7 @@ func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {
 			accounts.ViewBalanceBaseTokenEVM.Hname(),
 			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr).Bytes()},
 		)
-		ret = codec.MustDecodeBigIntAbs(res.Get(accounts.ParamBalance), big.NewInt(0))
+		ret = codec.BigIntAbs.MustDecode(res.Get(accounts.ParamBalance), big.NewInt(0))
 	})
 	return ret
 }

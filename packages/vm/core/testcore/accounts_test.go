@@ -139,12 +139,12 @@ func TestFoundries(t *testing.T) {
 		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenCreate.Name,
-			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
+			accounts.ParamTokenScheme, codec.TokenScheme.Encode(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: util.Big0, MeltedTokens: util.Big0},
 			),
-			accounts.ParamTokenName, codec.EncodeString("TEST"),
-			accounts.ParamTokenTickerSymbol, codec.EncodeString("TEST"),
-			accounts.ParamTokenDecimals, codec.EncodeUint8(8),
+			accounts.ParamTokenName, codec.String.Encode("TEST"),
+			accounts.ParamTokenTickerSymbol, codec.String.Encode("TEST"),
+			accounts.ParamTokenDecimals, codec.Uint8.Encode(8),
 		).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -157,12 +157,12 @@ func TestFoundries(t *testing.T) {
 		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
 		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenCreate.Name,
-			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
+			accounts.ParamTokenScheme, codec.TokenScheme.Encode(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: big.NewInt(10), MeltedTokens: big.NewInt(10)},
 			),
-			accounts.ParamTokenName, codec.EncodeString("TEST"),
-			accounts.ParamTokenTickerSymbol, codec.EncodeString("TEST"),
-			accounts.ParamTokenDecimals, codec.EncodeUint8(8),
+			accounts.ParamTokenName, codec.String.Encode("TEST"),
+			accounts.ParamTokenTickerSymbol, codec.String.Encode("TEST"),
+			accounts.ParamTokenDecimals, codec.Uint8.Encode(8),
 		).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
 		require.NoError(t, err)
@@ -487,7 +487,7 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		sn, err = codec.DecodeUint32(events[0].Payload)
+		sn, err = codec.Uint32.Decode(events[0].Payload)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 	})
@@ -817,7 +817,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		// create a new chain (ch2) with active state pruning set to keep only 1 block
 		blockKeepAmount := int32(1)
 		ch2, _ := v.env.NewChainExt(nil, 0, "evmchain", dict.Dict{
-			origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
+			origin.ParamBlockKeepAmount: codec.Int32.Encode(blockKeepAmount),
 		})
 
 		// deposit 1 native token from L1 into ch2
@@ -1187,7 +1187,7 @@ func TestUnprocessableWithNoPruning(t *testing.T) {
 
 func TestUnprocessableWithPruning(t *testing.T) {
 	testUnprocessable(t, dict.Dict{
-		origin.ParamBlockKeepAmount: codec.EncodeInt32(1),
+		origin.ParamBlockKeepAmount: codec.Int32.Encode(1),
 	}, true)
 }
 
@@ -1259,7 +1259,7 @@ func testUnprocessable(t *testing.T, originParams dict.Dict, verifyHash bool) {
 			blocklog.ParamRequestID, unprocessableReqID,
 		)
 		require.NoError(t, err2)
-		return codec.MustDecodeBool(res.Get(blocklog.ParamUnprocessableRequestExists))
+		return codec.Bool.MustDecode(res.Get(blocklog.ParamUnprocessableRequestExists))
 	}
 
 	require.True(t, isInUnprocessableList())

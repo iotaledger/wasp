@@ -5,6 +5,7 @@ package evmimpl
 
 import (
 	"encoding/hex"
+	"runtime/debug"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -177,16 +178,16 @@ var (
 )
 
 func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
-	foundrySN := codec.MustDecodeUint32(ctx.Params().Get(evm.FieldFoundrySN))
-	name := codec.MustDecodeString(ctx.Params().Get(evm.FieldTokenName))
-	tickerSymbol := codec.MustDecodeString(ctx.Params().Get(evm.FieldTokenTickerSymbol))
-	decimals := codec.MustDecodeUint8(ctx.Params().Get(evm.FieldTokenDecimals))
+	foundrySN := codec.Uint32.MustDecode(ctx.Params().Get(evm.FieldFoundrySN))
+	name := codec.String.MustDecode(ctx.Params().Get(evm.FieldTokenName))
+	tickerSymbol := codec.String.MustDecode(ctx.Params().Get(evm.FieldTokenTickerSymbol))
+	decimals := codec.Uint8.MustDecode(ctx.Params().Get(evm.FieldTokenDecimals))
 
 	{
 		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
-			accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller()),
+			accounts.ParamAgentID: codec.AgentID.Encode(ctx.Caller()),
 		})
-		if res[kv.Key(codec.EncodeUint32(foundrySN))] == nil {
+		if res[kv.Key(codec.Uint32.Encode(foundrySN))] == nil {
 			panic(errFoundryNotOwnedByCaller.Create(foundrySN))
 		}
 	}
@@ -195,8 +196,11 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
 	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
+	println("\n\n" + addr.String() + "\n\n")
 	if evmState.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
+	} else {
+		debug.PrintStack()
 	}
 	evmState.CreateAccount(addr)
 	evmState.SetCode(addr, iscmagic.ERC20NativeTokensRuntimeBytecode)
@@ -216,29 +220,29 @@ var (
 )
 
 func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
-	foundrySN := codec.MustDecodeUint32(ctx.Params().Get(evm.FieldFoundrySN))
-	name := codec.MustDecodeString(ctx.Params().Get(evm.FieldTokenName))
-	tickerSymbol := codec.MustDecodeString(ctx.Params().Get(evm.FieldTokenTickerSymbol))
-	decimals := codec.MustDecodeUint8(ctx.Params().Get(evm.FieldTokenDecimals))
-	target := codec.MustDecodeAddress(ctx.Params().Get(evm.FieldTargetAddress))
+	foundrySN := codec.Uint32.MustDecode(ctx.Params().Get(evm.FieldFoundrySN))
+	name := codec.String.MustDecode(ctx.Params().Get(evm.FieldTokenName))
+	tickerSymbol := codec.String.MustDecode(ctx.Params().Get(evm.FieldTokenTickerSymbol))
+	decimals := codec.Uint8.MustDecode(ctx.Params().Get(evm.FieldTokenDecimals))
+	target := codec.Address.MustDecode(ctx.Params().Get(evm.FieldTargetAddress))
 	if target.Type() != iotago.AddressAlias {
 		panic(errTargetMustBeAlias)
 	}
 
 	{
 		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
-			accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller()),
+			accounts.ParamAgentID: codec.AgentID.Encode(ctx.Caller()),
 		})
-		if res[kv.Key(codec.EncodeUint32(foundrySN))] == nil {
+		if res[kv.Key(codec.Uint32.Encode(foundrySN))] == nil {
 			panic(errFoundryNotOwnedByCaller.Create(foundrySN))
 		}
 	}
 
 	tokenScheme := func() iotago.TokenScheme {
 		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewNativeToken.Hname(), dict.Dict{
-			accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
+			accounts.ParamFoundrySN: codec.Uint32.Encode(foundrySN),
 		})
-		o := codec.MustDecodeOutput(res[accounts.ParamFoundryOutputBin])
+		o := codec.Output.MustDecode(res[accounts.ParamFoundryOutputBin])
 		foundryOutput, ok := o.(*iotago.FoundryOutput)
 		if !ok {
 			panic(errOutputMustBeFoundry)
@@ -253,11 +257,11 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
 			TargetContract: evm.Contract.Hname(),
 			EntryPoint:     evm.FuncRegisterERC20ExternalNativeToken.Hname(),
 			Params: dict.Dict{
-				evm.FieldFoundrySN:          codec.EncodeUint32(foundrySN),
-				evm.FieldTokenName:          codec.EncodeString(name),
-				evm.FieldTokenTickerSymbol:  codec.EncodeString(tickerSymbol),
-				evm.FieldTokenDecimals:      codec.EncodeUint8(decimals),
-				evm.FieldFoundryTokenScheme: codec.EncodeTokenScheme(tokenScheme),
+				evm.FieldFoundrySN:          codec.Uint32.Encode(foundrySN),
+				evm.FieldTokenName:          codec.String.Encode(name),
+				evm.FieldTokenTickerSymbol:  codec.String.Encode(tickerSymbol),
+				evm.FieldTokenDecimals:      codec.Uint8.Encode(decimals),
+				evm.FieldFoundryTokenScheme: codec.TokenScheme.Encode(tokenScheme),
 			},
 			// FIXME why does this gas budget is higher than the allowance below
 			GasBudget: 50 * gas.LimitsDefault.MinGasPerRequest,
@@ -289,15 +293,15 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox) dict.Dict {
 	}
 	alias := caller.ChainID().AsAliasAddress()
 
-	name := codec.MustDecodeString(ctx.Params().Get(evm.FieldTokenName))
-	tickerSymbol := codec.MustDecodeString(ctx.Params().Get(evm.FieldTokenTickerSymbol))
-	decimals := codec.MustDecodeUint8(ctx.Params().Get(evm.FieldTokenDecimals))
+	name := codec.String.MustDecode(ctx.Params().Get(evm.FieldTokenName))
+	tickerSymbol := codec.String.MustDecode(ctx.Params().Get(evm.FieldTokenTickerSymbol))
+	decimals := codec.Uint8.MustDecode(ctx.Params().Get(evm.FieldTokenDecimals))
 
 	// TODO: We should somehow inspect the real FoundryOutput, but it is on L1.
 	// Here we reproduce it from the given params (which we assume to be correct)
 	// in order to derive the FoundryID
-	foundrySN := codec.MustDecodeUint32(ctx.Params().Get(evm.FieldFoundrySN))
-	tokenScheme := codec.MustDecodeTokenScheme(ctx.Params().Get(evm.FieldFoundryTokenScheme))
+	foundrySN := codec.Uint32.MustDecode(ctx.Params().Get(evm.FieldFoundrySN))
+	tokenScheme := codec.TokenScheme.MustDecode(ctx.Params().Get(evm.FieldFoundryTokenScheme))
 	simpleTS, ok := tokenScheme.(*iotago.SimpleTokenScheme)
 	if !ok {
 		panic(errUnsupportedTokenScheme)
@@ -343,7 +347,7 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox) dict.Dict {
 }
 
 func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView) dict.Dict {
-	nativeTokenID := codec.MustDecodeNativeTokenID(ctx.Params().Get(evm.FieldNativeTokenID))
+	nativeTokenID := codec.NativeTokenID.MustDecode(ctx.Params().Get(evm.FieldNativeTokenID))
 	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
 	if !ok {
 		return nil
@@ -352,13 +356,13 @@ func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView) dict.Dict {
 }
 
 func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
-	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(evm.FieldNFTCollectionID))
+	collectionID := codec.NFTID.MustDecode(ctx.Params().Get(evm.FieldNFTCollectionID))
 
 	// The collection NFT must be deposited into the chain before registering. Afterwards it may be
 	// withdrawn to L1.
 	collection := func() *isc.NFT {
 		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewNFTData.Hname(), dict.Dict{
-			accounts.ParamNFTID: codec.EncodeNFTID(collectionID),
+			accounts.ParamNFTID: codec.NFTID.Encode(collectionID),
 		})
 		collection, err := isc.NFTFromBytes(res[accounts.ParamNFTData])
 		ctx.RequireNoError(err)
@@ -376,7 +380,7 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 			evm.EmulatorStateSubrealmR(ctx.StateR()),
 		),
 	)
-	return result(codec.EncodeUint16(chainID))
+	return result(codec.Uint16.Encode(chainID))
 }
 
 // include the revert reason in the error
@@ -430,7 +434,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 
 func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 	gasRatioViewRes := ctx.CallView(governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
-	return codec.MustDecodeRatio32(gasRatioViewRes.Get(governance.ParamEVMGasRatio), gas.DefaultEVMGasRatio)
+	return codec.Ratio32.MustDecode(gasRatioViewRes.Get(governance.ParamEVMGasRatio), gas.DefaultEVMGasRatio)
 }
 
 func newL1Deposit(ctx isc.Sandbox) dict.Dict {

@@ -36,7 +36,7 @@ func (e *StateErrorCollectionWriter) getErrorTemplateMap() *collections.Map {
 
 func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {
 	errorMap := e.getErrorTemplateMap()
-	errorIDKey := codec.EncodeUint16(errorID)
+	errorIDKey := codec.Uint16.Encode(errorID)
 
 	errorBytes := errorMap.GetAt(errorIDKey)
 	if errorBytes == nil {
@@ -65,7 +65,7 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErro
 
 	newError := isc.NewVMErrorTemplate(isc.NewVMErrorCode(e.hname, errorID), messageFormat)
 
-	errorMap.SetAt(codec.EncodeUint16(errorID), newError.Bytes())
+	errorMap.SetAt(codec.Uint16.Encode(errorID), newError.Bytes())
 
 	return newError, nil
 }
@@ -92,7 +92,7 @@ func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname isc.Hname) 
 
 func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {
 	errorMap := e.getErrorTemplateMap()
-	errorIDKey := codec.EncodeUint16(errorID)
+	errorIDKey := codec.Uint16.Encode(errorID)
 
 	errorBytes := errorMap.GetAt(errorIDKey)
 	if errorBytes == nil {

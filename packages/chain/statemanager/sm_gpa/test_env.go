@@ -72,7 +72,7 @@ func newTestEnvNoNodes(
 	if len(parametersOpt) > 0 {
 		parameters = parametersOpt[0]
 		chainInitParameters = dict.New()
-		chainInitParameters.Set(origin.ParamBlockKeepAmount, codec.EncodeInt32(int32(parameters.PruningMinStatesToKeep)))
+		chainInitParameters.Set(origin.ParamBlockKeepAmount, codec.Int32.Encode(int32(parameters.PruningMinStatesToKeep)))
 	} else {
 		parameters = NewStateManagerParameters()
 		chainInitParameters = nil

@@ -28,7 +28,7 @@ func (sa *StateAccess) MaintenanceStatus() bool {
 	if r == nil {
 		return false // chain is being initialized, governance has not been initialized yet
 	}
-	return codec.MustDecodeBool(r)
+	return codec.Bool.MustDecode(r)
 }
 
 func (sa *StateAccess) AccessNodes() []*cryptolib.PublicKey {

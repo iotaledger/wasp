@@ -42,7 +42,7 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
-		governance.AccessNodesMap(state).SetAt(ani.NodePubKey, codec.EncodeBool(true))
+		governance.AccessNodesMap(state).SetAt(ani.NodePubKey, codec.Bool.Encode(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 
@@ -99,7 +99,7 @@ func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 			accessNodes.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionAccept:
 			// TODO should the list of candidates be checked? we are just adding any pubkey
-			accessNodes.SetAt(pubKey, codec.EncodeBool(true))
+			accessNodes.SetAt(pubKey, codec.Bool.Encode(true))
 			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
 			accessNodes.DelAt(pubKey)

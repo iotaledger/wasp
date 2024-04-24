@@ -166,7 +166,7 @@ func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return codec.DecodeUint64(resultDict.Get(accounts.ParamAccountNonce))
+	return codec.Uint64.Decode(resultDict.Get(accounts.ParamAccountNonce))
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api

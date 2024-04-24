@@ -106,7 +106,7 @@ func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cr
 	transferAssets.AddBaseTokens(1 * isc.Million) // to pay for the fees
 	tx, err := accountsClient.PostRequest(accounts.FuncTransferAllowanceTo.Name, chainclient.PostRequestParams{
 		Transfer:                 transferAssets,
-		Args:                     map[kv.Key][]byte{accounts.ParamAgentID: codec.EncodeAgentID(targetAccount)},
+		Args:                     map[kv.Key][]byte{accounts.ParamAgentID: codec.AgentID.Encode(targetAccount)},
 		NFT:                      nft,
 		Allowance:                assets,
 		AutoAdjustStorageDeposit: false,

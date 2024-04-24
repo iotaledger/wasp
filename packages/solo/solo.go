@@ -317,7 +317,7 @@ func (env *Solo) deployChain(
 	initParams := dict.Dict{
 		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
 		// FIXME this will cause import cycle
-		// origin.ParamWaspVersion: codec.EncodeString(app.Version),
+		// origin.ParamWaspVersion: codec.String.Encode(app.Version),
 	}
 	if len(originParams) > 0 {
 		for k, v := range originParams[0] {

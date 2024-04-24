@@ -50,11 +50,11 @@ func BaseTokensKey(accountKey kv.Key) kv.Key {
 }
 
 func getBaseTokensFullDecimalsNEW(state kv.KVStoreReader, accountKey kv.Key) *big.Int {
-	return codec.MustDecodeBigIntAbs(state.Get(BaseTokensKey(accountKey)), big.NewInt(0))
+	return codec.BigIntAbs.MustDecode(state.Get(BaseTokensKey(accountKey)), big.NewInt(0))
 }
 
 func setBaseTokensFullDecimalsNEW(state kv.KVStore, accountKey kv.Key, amount *big.Int) {
-	state.Set(BaseTokensKey(accountKey), codec.EncodeBigIntAbs(amount))
+	state.Set(BaseTokensKey(accountKey), codec.BigIntAbs.Encode(amount))
 }
 
 func getBaseTokensNEW(state kv.KVStoreReader, accountKey kv.Key) uint64 {

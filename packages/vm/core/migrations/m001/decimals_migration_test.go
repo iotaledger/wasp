@@ -35,7 +35,7 @@ func TestM001Migration(t *testing.T) {
 	expectedOriginatorBalance := uint64(17994760)
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewBalanceBaseToken.Name, accounts.ParamAgentID, ch.OriginatorAgentID)
 	require.NoError(t, err)
-	require.EqualValues(t, expectedOriginatorBalance, codec.MustDecodeUint64(res.Get(accounts.ParamBalance)))
+	require.EqualValues(t, expectedOriginatorBalance, codec.Uint64.MustDecode(res.Get(accounts.ParamBalance)))
 
 	checkGasEstimationWorks := func() {
 		_, callData := solo.EVMCallDataFromArtifacts(t, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))

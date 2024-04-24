@@ -187,7 +187,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 		err = errors.New("internal error: no hash returned")
 		return ret, err
 	}
-	ret, err = codec.DecodeHashValue(resBin)
+	ret, err = codec.HashValue.Decode(resBin)
 	if err != nil {
 		return ret, err
 	}
@@ -332,7 +332,7 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	chainOwnerID, err := codec.DecodeAgentID(res.Get(governance.VarChainOwnerID))
+	chainOwnerID, err := codec.AgentID.Decode(res.Get(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
 
 	res, err = ch.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
@@ -566,7 +566,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 	addresses := collections.NewArrayReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	ret := make([]iotago.Address, addresses.Len())
 	for i := range ret {
-		ret[i], err = codec.DecodeAddress(addresses.GetAt(uint32(i)))
+		ret[i], err = codec.Address.Decode(addresses.GetAt(uint32(i)))
 		require.NoError(ch.Env.T, err)
 	}
 	return ret
@@ -733,7 +733,7 @@ func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
 	}
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetAccountNonce.Name, accounts.ParamAgentID, agentID)
 	require.NoError(ch.Env.T, err)
-	return codec.MustDecodeUint64(res.Get(accounts.ParamAccountNonce))
+	return codec.Uint64.MustDecode(res.Get(accounts.ParamAccountNonce))
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain

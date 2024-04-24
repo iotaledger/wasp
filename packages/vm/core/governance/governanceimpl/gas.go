@@ -39,7 +39,7 @@ var errInvalidGasRatio = coreerrors.Register("invalid gas ratio").Create()
 
 func setEVMGasRatio(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	ratio := codec.MustDecodeRatio32(ctx.Params().Get(governance.ParamEVMGasRatio))
+	ratio := codec.Ratio32.MustDecode(ctx.Params().Get(governance.ParamEVMGasRatio))
 	if !ratio.IsValid() {
 		panic(errInvalidGasRatio)
 	}

@@ -39,7 +39,7 @@ func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
 			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")
 		},
 		func(cmd *cobra.Command) []string {
-			chainID := codec.EncodeAddress(config.GetChain(targetChain).AsAddress())
+			chainID := codec.Address.Encode(config.GetChain(targetChain).AsAddress())
 			extraArgs := []string{"string", "A", "bytes", "0x" + hex.EncodeToString(chainID)}
 			return append(getRegisterERC20NativeTokenArgs(cmd), extraArgs...)
 		},

@@ -110,7 +110,7 @@ func viewHasUnprocessable(ctx isc.SandboxView) dict.Dict {
 	reqID := ctx.Params().MustGetRequestID(ParamRequestID)
 	exists := HasUnprocessable(ctx.StateR(), reqID)
 	return dict.Dict{
-		ParamUnprocessableRequestExists: codec.EncodeBool(exists),
+		ParamUnprocessableRequestExists: codec.Bool.Encode(exists),
 	}
 }
 

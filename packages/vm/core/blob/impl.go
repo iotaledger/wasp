@@ -53,7 +53,7 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	}
 
 	ret := dict.New()
-	ret.Set(ParamHash, codec.EncodeHashValue(blobHash))
+	ret.Set(ParamHash, codec.HashValue.Encode(blobHash))
 
 	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 

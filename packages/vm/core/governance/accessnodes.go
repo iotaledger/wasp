@@ -92,10 +92,10 @@ func AccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
 
 func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 	d := dict.New()
-	d.Set(ParamAccessNodeInfoForCommittee, codec.EncodeBool(a.ForCommittee))
+	d.Set(ParamAccessNodeInfoForCommittee, codec.Bool.Encode(a.ForCommittee))
 	d.Set(ParamAccessNodeInfoPubKey, a.NodePubKey)
 	d.Set(ParamAccessNodeInfoCertificate, a.Certificate)
-	d.Set(ParamAccessNodeInfoAccessAPI, codec.EncodeString(a.AccessAPI))
+	d.Set(ParamAccessNodeInfoAccessAPI, codec.String.Encode(a.AccessAPI))
 	return d
 }
 

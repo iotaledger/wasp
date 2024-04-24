@@ -124,7 +124,7 @@ func stringifyKey(k []byte, isState bool) string {
 	if !isState || len(k) < 4 {
 		return hex.EncodeToString(k)
 	}
-	hname := codec.MustDecodeHname(k[:4])
+	hname := codec.Hname.MustDecode(k[:4])
 	c, isCore := corecontracts.All[hname]
 	if !isCore {
 		return hex.EncodeToString(k)

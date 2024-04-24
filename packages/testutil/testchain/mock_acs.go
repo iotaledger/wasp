@@ -51,7 +51,7 @@ func (acs *MockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, stat
 		return
 	}
 
-	validator, err := codec.DecodeUint16(value)
+	validator, err := codec.Uint16.Decode(value)
 	if err != nil {
 		acs.log.Errorf("mockedACSRunner: cannot retrieve validator from batch proposal: %v", err)
 		return

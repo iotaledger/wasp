@@ -51,16 +51,16 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 	}
 	d := store.NewOriginStateDraft()
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Time.Encode(time.Unix(0, 0)))
 
 	contractState := func(contract *coreutil.ContractInfo) kv.KVStore {
 		return subrealm.New(d, kv.Key(contract.Hname().Bytes()))
 	}
 
-	evmChainID := codec.MustDecodeUint16(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
-	blockKeepAmount := codec.MustDecodeInt32(initParams.Get(ParamBlockKeepAmount), governance.DefaultBlockKeepAmount)
-	chainOwner := codec.MustDecodeAgentID(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
-	deployMagicWrap := codec.MustDecodeBool(initParams.Get(ParamDeployBaseTokenMagicWrap), false)
+	evmChainID := codec.Uint16.MustDecode(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
+	blockKeepAmount := codec.Int32.MustDecode(initParams.Get(ParamBlockKeepAmount), governance.DefaultBlockKeepAmount)
+	chainOwner := codec.AgentID.MustDecode(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
+	deployMagicWrap := codec.Bool.MustDecode(initParams.Get(ParamDeployBaseTokenMagicWrap), false)
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(v, contractState(root.Contract))

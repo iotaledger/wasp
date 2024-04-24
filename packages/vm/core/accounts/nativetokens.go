@@ -35,7 +35,7 @@ func setNativeTokenAmount(state kv.KVStore, accountKey kv.Key, tokenID iotago.Na
 	if n.Sign() == 0 {
 		nativeTokensMap(state, accountKey).DelAt(tokenID[:])
 	} else {
-		nativeTokensMap(state, accountKey).SetAt(tokenID[:], codec.EncodeBigIntAbs(n))
+		nativeTokensMap(state, accountKey).SetAt(tokenID[:], codec.BigIntAbs.Encode(n))
 	}
 }
 

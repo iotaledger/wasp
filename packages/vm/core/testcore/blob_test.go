@@ -95,7 +95,7 @@ func TestUploadBlob(t *testing.T) {
 		require.EqualValues(t, howMany, len(ret))
 		for _, h := range hashes {
 			sizeBin := ret.Get(kv.Key(h[:]))
-			size, err := codec.DecodeUint32(sizeBin)
+			size, err := codec.Uint32.Decode(sizeBin)
 			require.NoError(t, err)
 			require.EqualValues(t, len("dummy data #1"), int(size))
 

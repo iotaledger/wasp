@@ -15,8 +15,8 @@ func TestTokenSchemeSerialization(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}
-	enc := EncodeTokenScheme(ts)
-	tsBack, err := DecodeTokenScheme(enc)
+	enc := TokenScheme.Encode(ts)
+	tsBack, err := TokenScheme.Decode(enc)
 	require.NoError(t, err)
 	require.EqualValues(t, ts, tsBack)
 }

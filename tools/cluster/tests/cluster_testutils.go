@@ -106,7 +106,7 @@ func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
 	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
 
-	counter, err := codec.DecodeInt64(decodedDict.Get(inccounter.VarCounter), 0)
+	counter, err := codec.Int64.Decode(decodedDict.Get(inccounter.VarCounter), 0)
 	require.NoError(e.t, err)
 
 	return counter
