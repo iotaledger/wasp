@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/testutil/privtangle_sui/miniclient"
+	"github.com/iotaledger/wasp/packages/testutil/privtangle_sui/miniclient/types"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle_sui/privtangledefaults"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -25,47 +26,37 @@ import (
 type LogFunc func(format string, args ...interface{})
 
 type PrivTangle struct {
-	SnapshotInit string
-	ConfigFile   string
-	BaseDir      string
-	BasePort     int
-	NodeCount    int
-	NodeCommands []*exec.Cmd
-	ctx          context.Context
-	logfunc      LogFunc
+	BaseDir     string
+	BasePort    int
+	NodeCommand *exec.Cmd
+	ctx         context.Context
+	logfunc     LogFunc
 }
 
-func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc LogFunc) *PrivTangle {
+func Start(ctx context.Context, baseDir string, basePort int, logfunc LogFunc) *PrivTangle {
 	pt := PrivTangle{
-
-		SnapshotInit: "snapshot.init",
-		ConfigFile:   "config.json",
-		BaseDir:      baseDir,
-		BasePort:     basePort,
-		NodeCount:    nodeCount,
-		NodeCommands: make([]*exec.Cmd, nodeCount),
-		ctx:          ctx,
-		logfunc:      logfunc,
+		BaseDir:  baseDir,
+		BasePort: basePort,
+		ctx:      ctx,
+		logfunc:  logfunc,
 	}
 
-	pt.logf("Starting in baseDir=%s with basePort=%d, nodeCount=%d ...", baseDir, basePort, nodeCount)
+	pt.logf("Starting in baseDir=%s with basePort=%d ...", baseDir, basePort)
 
 	if err := os.MkdirAll(pt.BaseDir, 0o755); err != nil {
 		panic(fmt.Errorf("unable to create dir %v: %w", pt.BaseDir, err))
 	}
 
-	pt.StartServers(true)
+	pt.StartServer(true)
 
 	return &pt
 }
 
-func (pt *PrivTangle) StartServers(deleteExisting bool) {
+func (pt *PrivTangle) StartServer(deleteExisting bool) {
 	ts := time.Now()
 	pt.logf("Starting all SUI nodes...")
 
-	for i := range pt.NodeCommands {
-		pt.startNode(i, deleteExisting)
-	}
+	pt.startNode(0, deleteExisting)
 
 	pt.logf("Starting all SUI nodes... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 
@@ -99,7 +90,7 @@ func (pt *PrivTangle) startNode(i int, deleteExisting bool) {
 		//fmt.Sprintf("--indexer-rpc-port=%d", pt.NodePortIndexer(i)),
 	}
 
-	testValidatorCmd := exec.CommandContext(pt.ctx, "/home/luke/dev/iota_sui/target/debug/sui-test-validator", args...)
+	testValidatorCmd := exec.CommandContext(pt.ctx, "sui-test-validator", args...)
 
 	// kill SUI cmd if the go test process is killed
 	util.TerminateCmdWhenTestStops(testValidatorCmd)
@@ -107,7 +98,7 @@ func (pt *PrivTangle) startNode(i int, deleteExisting bool) {
 	testValidatorCmd.Env = os.Environ()
 	testValidatorCmd.Dir = nodePath
 
-	pt.NodeCommands[i] = testValidatorCmd
+	pt.NodeCommand = testValidatorCmd
 
 	writeOutputToFiles(nodePath, testValidatorCmd)
 
@@ -119,29 +110,39 @@ func (pt *PrivTangle) startNode(i int, deleteExisting bool) {
 func (pt *PrivTangle) Stop() {
 	pt.logf("Stopping...")
 
-	for i, c := range pt.NodeCommands {
-		if err := c.Process.Signal(syscall.SIGTERM); err != nil {
-			panic(fmt.Errorf("unable to send INT signal to SUI node [%d]: %w", i, err))
-		}
+	if err := pt.NodeCommand.Process.Signal(syscall.SIGTERM); err != nil {
+		panic(fmt.Errorf("unable to send INT signal to SUI node: %w", err))
 	}
 
-	for i, c := range pt.NodeCommands {
-		if err := c.Wait(); err != nil {
-			var errCode *exec.ExitError
-			ok := errors.As(err, &errCode)
+	if err := pt.NodeCommand.Wait(); err != nil {
+		var errCode *exec.ExitError
+		ok := errors.As(err, &errCode)
 
-			if ok && strings.Contains(errCode.Error(), "terminated") {
-				pt.logf("Stopping... Done")
-				return
-			}
+		pt.logf("%v %v %v", errCode.Error(), errCode.ExitCode(), errCode.Success())
 
-			panic(fmt.Errorf("SUI node [%d] failed: %s", i, c.ProcessState.String()))
+		if ok && strings.Contains(errCode.Error(), "terminated") {
+			pt.logf("Stopping... Done")
+			return
 		}
+
+		panic(fmt.Errorf("SUI node failed: %s", pt.NodeCommand.ProcessState.String()))
 	}
 }
 
 func (pt *PrivTangle) nodeClient(i int) *miniclient.MiniClient {
 	return miniclient.NewMiniClient(fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(i)))
+}
+
+func isHealthy(res *types.SuiX_GetLatestSuiSystemState, err error) bool {
+	if err != nil || res == nil {
+		return false
+	}
+
+	if res.Result.PendingActiveValidatorsSize != "0" {
+		return false
+	}
+
+	return true
 }
 
 func (pt *PrivTangle) waitAllHealthy(timeout time.Duration) {
@@ -156,19 +157,13 @@ func (pt *PrivTangle) waitAllHealthy(timeout time.Duration) {
 			panic("nodes didn't become healthy in time")
 		}
 
-		allOK := true
-		for i := range pt.NodeCommands {
-			res, err := pt.nodeClient(i).GetLatestSuiSystemState(pt.ctx)
-			if err != nil || res.Result.PendingActiveValidatorsSize != "0" {
-				pt.logf("Waiting healthy... node #%d not ready yet. time waiting: %v", i, time.Since(ts).Truncate(time.Millisecond))
-				allOK = false
-			}
-		}
-		if allOK {
+		res, err := pt.nodeClient(0).GetLatestSuiSystemState(pt.ctx)
+		if isHealthy(res, err) {
 			pt.logf("Waiting for all SUI nodes to become healthy... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 			return
 		}
 
+		pt.logf("Waiting healthy... node not ready yet. time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
 		time.Sleep(100 * time.Millisecond)
 	}
 }

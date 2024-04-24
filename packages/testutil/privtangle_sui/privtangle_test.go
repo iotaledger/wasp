@@ -15,7 +15,7 @@ import (
 func TestStart(t *testing.T) {
 	ctx := context.Background()
 
-	pt := Start(ctx, "/tmp/sui_test", 5000, 1, func(format string, args ...interface{}) {
+	pt := Start(ctx, "/tmp/sui_test", 5000, func(format string, args ...interface{}) {
 		fmt.Printf(format+"\n", args...)
 	})
 
