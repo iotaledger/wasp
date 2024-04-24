@@ -1,5 +1,5 @@
 **
 !*.sol
-!*.abi
+!*.json
 *_test.sol
-*_test.abi
+*_test.json
