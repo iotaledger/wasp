@@ -3,13 +3,10 @@ package privtangle_sui
 import (
 	"context"
 	"fmt"
-	"syscall"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/testutil/privtangle_sui/miniclient"
 )
 
 func TestStart(t *testing.T) {
@@ -30,17 +27,4 @@ func TestStart(t *testing.T) {
 
 	pt.Stop()
 
-}
-
-func TestClient(t *testing.T) {
-	client := miniclient.NewMiniClient("http://localhost:9000")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	res, err := client.GetLatestSuiSystemState(ctx)
-
-	require.NoError(t, err)
-	require.Equal(t, res.Jsonrpc, "2.0")
-}
-
-func TestA(t *testing.T) {
-	syscall.Kill(362590, syscall.SIGINT)
 }

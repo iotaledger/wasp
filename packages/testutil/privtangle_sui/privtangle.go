@@ -118,8 +118,6 @@ func (pt *PrivTangle) Stop() {
 		var errCode *exec.ExitError
 		ok := errors.As(err, &errCode)
 
-		pt.logf("%v %v %v", errCode.Error(), errCode.ExitCode(), errCode.Success())
-
 		if ok && strings.Contains(errCode.Error(), "terminated") {
 			pt.logf("Stopping... Done")
 			return
