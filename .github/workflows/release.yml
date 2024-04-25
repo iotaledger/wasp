@@ -6,7 +6,6 @@ on:
 
 jobs:
   setup:
-    environment: release
     name: Setup repository
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +66,7 @@ jobs:
 
   release-docker:
     needs: setup
+    environment: release
     name: Release Docker
     runs-on: ubuntu-latest
     outputs:
@@ -154,7 +154,7 @@ jobs:
       # Push wasp-cli README to Docker Hub
       - name: git checkout
         uses: actions/checkout@v4
-      
+
       - name: push README to Dockerhub
         uses: christian-korneck/update-container-description-action@v1
         env:

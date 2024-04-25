@@ -33,7 +33,7 @@ func TestNoSenderFeature(t *testing.T) {
 	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(withdrawAmount+gasFee), wallet)
 	require.NoError(t, err)
 	nativeTokenAmount := big.NewInt(123)
-	sn, nativeTokenID, err := ch.NewFoundryParams(1234).
+	sn, nativeTokenID, err := ch.NewNativeTokenParams(1234).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)

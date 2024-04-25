@@ -45,6 +45,28 @@ func (p *kvdecoder) wrapError(key kv.Key, err error) error {
 	return fmt.Errorf("cannot decode key '%s': %w", key, err)
 }
 
+func (p *kvdecoder) GetInt8(key kv.Key, def ...int8) (int8, error) {
+	v, err := codec.DecodeInt8(p.Get(key), def...)
+	return v, p.wrapError(key, err)
+}
+
+func (p *kvdecoder) MustGetInt8(key kv.Key, def ...int8) int8 {
+	ret, err := p.GetInt8(key, def...)
+	p.check(err)
+	return ret
+}
+
+func (p *kvdecoder) GetUint8(key kv.Key, def ...uint8) (uint8, error) {
+	v, err := codec.DecodeUint8(p.Get(key), def...)
+	return v, p.wrapError(key, err)
+}
+
+func (p *kvdecoder) MustGetUint8(key kv.Key, def ...uint8) uint8 {
+	ret, err := p.GetUint8(key, def...)
+	p.check(err)
+	return ret
+}
+
 func (p *kvdecoder) GetInt16(key kv.Key, def ...int16) (int16, error) {
 	v, err := codec.DecodeInt16(p.Get(key), def...)
 	return v, p.wrapError(key, err)

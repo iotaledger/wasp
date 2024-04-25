@@ -31,6 +31,9 @@ interface ISCAccounts {
     // Create a new foundry.
     function foundryCreateNew(NativeTokenScheme memory tokenScheme, ISCAssets memory allowance) external returns(uint32);
 
+    // Creates foundry + IRC30 metadata + ERC20 token registration
+    function createNativeTokenFoundry(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimals, NativeTokenScheme memory tokenScheme, ISCAssets memory allowance) external returns(uint32);
+
     // Mint new tokens. Only the owner of the foundry can call this function.
     function mintNativeTokens(uint32 foundrySN, uint256 amount, ISCAssets memory allowance) external;
 }

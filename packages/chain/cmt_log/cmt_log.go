@@ -175,6 +175,7 @@ func New(
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	cclMetrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (CmtLog, error) {
@@ -228,7 +229,9 @@ func New(
 			// Nothing to do, if we cannot persist this.
 			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}
-	}, log.Named("VO"))
+	},
+		postponeRecoveryMilestones,
+		log.Named("VO"))
 	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, cl.varOutput.LogIndexAgreed, cclMetrics, log.Named("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, cl.varOutput.TipAOChanged, log.Named("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
@@ -256,6 +259,9 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cl.handleInputConsensusOutputRejected(input)
 	case *inputConsensusTimeout:
 		return cl.handleInputConsensusTimeout(input)
+	case *inputMilestoneReceived:
+		cl.handleInputMilestoneReceived()
+		return nil
 	case *inputCanPropose:
 		cl.handleInputCanPropose()
 		return nil
@@ -297,6 +303,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusO
 
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+	cl.varOutput.HaveRejection()
 	msgs := gpa.NoMessages()
 	msgs.AddAll(cl.varLogIndex.ConsensusOutputReceived(input.logIndex)) // This should be superfluous, always follows handleInputConsensusOutputDone.
 	if _, tipUpdated := cl.varLocalView.AliasOutputRejected(input.aliasOutput); tipUpdated {
@@ -322,6 +329,10 @@ func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutput
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	return cl.varLogIndex.ConsensusRecoverReceived(input.logIndex)
+}
+
+func (cl *cmtLogImpl) handleInputMilestoneReceived() {
+	cl.varOutput.HaveMilestone()
 }
 
 func (cl *cmtLogImpl) handleInputCanPropose() {

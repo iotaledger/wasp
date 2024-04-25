@@ -19,7 +19,7 @@ func getChainInfo(ctx isc.SandboxView) dict.Dict {
 	ret.Set(governance.VarGasFeePolicyBytes, info.GasFeePolicy.Bytes())
 	ret.Set(governance.VarGasLimitsBytes, info.GasLimits.Bytes())
 
-	if len(info.PublicURL) > 0 {
+	if info.PublicURL != "" {
 		ret.Set(governance.VarPublicURL, codec.EncodeString(info.PublicURL))
 	}
 

@@ -141,6 +141,8 @@ type ChainNodeConn interface {
 		onChainConnect func(),
 		onChainDisconnect func(),
 	)
+	// called if the mempoll has dropped some requests during congestion, and now the congestion stopped
+	RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID)
 }
 
 type chainNodeImpl struct {
@@ -278,11 +280,12 @@ func New(
 	onChainDisconnect func(),
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
 	smParameters sm_gpa.StateManagerParameters,
-	mempoolTTL time.Duration,
+	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -395,6 +398,7 @@ func New(
 		},
 		deriveAliasOutputByQuorum,
 		pipeliningLimit,
+		postponeRecoveryMilestones,
 		cni.chainMetrics.CmtLog,
 		cni.log.Named("CM"),
 	)
@@ -431,9 +435,11 @@ func New(
 		chainMetrics.Mempool,
 		chainMetrics.Pipe,
 		cni.listener,
-		mempoolTTL,
+		mempoolSettings,
 		mempoolBroadcastInterval,
+		func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
 	)
+
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
@@ -732,6 +738,7 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
+	cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputMilestoneReceived()))
 	cni.consensusInsts.ForEach(func(address iotago.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {

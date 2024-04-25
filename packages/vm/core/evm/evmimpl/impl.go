@@ -163,6 +163,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
+
 	// revert the changes in the state / txbuilder in case of error
 	ctx.RequireNoError(revertErr)
 
@@ -170,8 +171,9 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 }
 
 var (
-	errFoundryNotOwnedByCaller = coreerrors.Register("foundry with serial number %d not owned by caller")
-	errEVMAccountAlreadyExists = coreerrors.Register("cannot register ERC20NativeTokens contract: EVM account already exists").Create()
+	errFoundryNotOwnedByCaller      = coreerrors.Register("foundry with serial number %d not owned by caller")
+	errEVMAccountAlreadyExists      = coreerrors.Register("cannot register ERC20NativeTokens contract: EVM account already exists").Create()
+	errEVMCanNotDecodeERC27Metadata = coreerrors.Register("cannot decode IRC27 collection NFT metadata")
 )
 
 func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
@@ -233,7 +235,7 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox) dict.Dict {
 	}
 
 	tokenScheme := func() iotago.TokenScheme {
-		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), dict.Dict{
+		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewNativeToken.Hname(), dict.Dict{
 			accounts.ParamFoundrySN: codec.EncodeUint32(foundrySN),
 		})
 		o := codec.MustDecodeOutput(res[accounts.ParamFoundryOutputBin])
@@ -363,25 +365,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 		return collection
 	}()
 
-	metadata, err := isc.IRC27NFTMetadataFromBytes(collection.Metadata)
-	ctx.RequireNoError(err, "cannot decode IRC27 collection NFT metadata")
-
-	// deploy the contract to the EVM state
-	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
-	emu := createEmulator(ctx)
-	evmState := emu.StateDB()
-	if evmState.Exist(addr) {
-		panic(errEVMAccountAlreadyExists)
-	}
-	evmState.CreateAccount(addr)
-	evmState.SetCode(addr, iscmagic.ERC721NFTCollectionRuntimeBytecode)
-	// see ERC721NFTCollection_storage.json
-	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeBytes32(collectionID[:]))
-	for k, v := range solidity.StorageEncodeString(3, metadata.Name) {
-		evmState.SetState(addr, k, v)
-	}
-
-	addToPrivileged(ctx.State(), addr)
+	RegisterERC721NFTCollectionByNFTId(ctx.State(), collection)
 
 	return nil
 }

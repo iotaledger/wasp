@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 
@@ -125,4 +126,8 @@ func (req *evmOffLedgerCallRequest) VerifySignature() error {
 
 func (req *evmOffLedgerCallRequest) EVMCallMsg() *ethereum.CallMsg {
 	return &req.callMsg
+}
+
+func (req *evmOffLedgerCallRequest) GasPrice() *big.Int {
+	return req.callMsg.GasPrice
 }

@@ -56,7 +56,7 @@ type ncChain struct {
 	ctx                  context.Context
 	nodeConn             *nodeConnection
 	chainID              isc.ChainID
-	requestOutputHandler func(iotago.MilestoneIndex, *isc.OutputInfo)
+	requestOutputHandler func(*isc.OutputInfo)
 	aliasOutputHandler   func(iotago.MilestoneIndex, *isc.OutputInfo)
 	milestoneHandler     func(iotago.MilestoneIndex, time.Time)
 
@@ -100,8 +100,8 @@ func newNCChain(
 		lastPendingTx:            nil,
 	}
 
-	chain.requestOutputHandler = func(milestoneIndex iotago.MilestoneIndex, outputInfo *isc.OutputInfo) {
-		chain.LogDebugf("applying request output: outputID: %s, milestoneIndex: %d, chainID: %s", outputInfo.OutputID.ToHex(), milestoneIndex, chainID)
+	chain.requestOutputHandler = func(outputInfo *isc.OutputInfo) {
+		chain.LogDebugf("applying request output: outputID: %s, , chainID: %s", outputInfo.OutputID.ToHex(), chainID)
 		requestOutputHandler(outputInfo)
 	}
 
@@ -168,7 +168,7 @@ func (ncc *ncChain) applyPendingLedgerUpdates(ledgerIndex iotago.MilestoneIndex)
 
 		switch update.Type {
 		case pendingLedgerUpdateTypeRequest:
-			ncc.requestOutputHandler(update.LedgerIndex, update.Update.(*isc.OutputInfo))
+			ncc.requestOutputHandler(update.Update.(*isc.OutputInfo))
 		case pendingLedgerUpdateTypeAlias:
 			ncc.aliasOutputHandler(update.LedgerIndex, update.Update.(*isc.OutputInfo))
 		case pendingLedgerUpdateTypeMilestone:
@@ -198,7 +198,7 @@ func (ncc *ncChain) HandleRequestOutput(ledgerIndex iotago.MilestoneIndex, outpu
 		return
 	}
 
-	ncc.requestOutputHandler(ledgerIndex, outputInfo)
+	ncc.requestOutputHandler(outputInfo)
 }
 
 func (ncc *ncChain) HandleAliasOutput(ledgerIndex iotago.MilestoneIndex, outputInfo *isc.OutputInfo) {
@@ -669,6 +669,19 @@ func (ncc *ncChain) SyncChainStateWithL1(ctx context.Context) error {
 	ncc.milestoneHandler(ledgerIndex, milestoneTimestamp)
 	ncc.aliasOutputHandler(ledgerIndex, aliasOutput)
 
+	if err := ncc.refreshOwnedOutputs(ctx); err != nil {
+		return err
+	}
+
+	if err := ncc.applyPendingLedgerUpdates(ledgerIndex); err != nil {
+		return err
+	}
+
+	ncc.LogInfof("Synchronizing chain state and owned outputs for %s... done. (LedgerIndex: %d)", ncc.chainID, ledgerIndex)
+	return nil
+}
+
+func (ncc *ncChain) refreshOwnedOutputs(ctx context.Context) error {
 	// the indexer returns the outputs in sorted order by timestampBooked,
 	// so we don't miss newly added outputs if the ledgerIndex increases during the query.
 	// HINT: requests might be applied twice, if they are part of a pendingLedgerUpdate that overlaps with
@@ -686,14 +699,8 @@ func (ncc *ncChain) SyncChainStateWithL1(ctx context.Context) error {
 		}
 
 		ncc.LogDebugf("received output, chainID: %s, outputID: %s", ncc.chainID, outputID.ToHex())
-		ncc.requestOutputHandler(ledgerIndex, isc.NewOutputInfo(outputID, output, iotago.TransactionID{}))
+		ncc.requestOutputHandler(isc.NewOutputInfo(outputID, output, iotago.TransactionID{}))
 	}
-
-	if err := ncc.applyPendingLedgerUpdates(ledgerIndex); err != nil {
-		return err
-	}
-
-	ncc.LogInfof("Synchronizing chain state and owned outputs for %s... done. (LedgerIndex: %d)", ncc.chainID, ledgerIndex)
 	return nil
 }
 

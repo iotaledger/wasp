@@ -22,6 +22,12 @@ contract ERC20Example {
       ISC.sandbox.registerERC20NativeToken(foundrySN, name, symbol, decimals, makeAllowanceBaseTokens(storageDeposit));
     }
 
+    function createNativeTokenFoundry(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimals, uint256 maxSupply, uint64 storageDeposit) public {
+        NativeTokenScheme memory tokenScheme;
+        tokenScheme.maximumSupply = maxSupply;
+        foundrySN = ISC.accounts.createNativeTokenFoundry(tokenName, tokenSymbol, tokenDecimals, tokenScheme, makeAllowanceBaseTokens(storageDeposit));
+    }
+
     function makeAllowanceBaseTokens(uint64 amount) private pure returns (ISCAssets memory) {
       ISCAssets memory assets;
       assets.baseTokens = amount;

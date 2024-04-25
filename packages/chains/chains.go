@@ -17,6 +17,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
@@ -41,14 +42,15 @@ type Provider func() *Chains // TODO: Use DI instead of that.
 type ChainProvider func(chainID isc.ChainID) chain.Chain
 
 type Chains struct {
-	ctx                       context.Context
-	log                       *logger.Logger
-	nodeConnection            chain.NodeConnection
-	processorConfig           *processors.Config
-	deriveAliasOutputByQuorum bool
-	pipeliningLimit           int
-	consensusDelay            time.Duration
-	recoveryTimeout           time.Duration
+	ctx                        context.Context
+	log                        *logger.Logger
+	nodeConnection             chain.NodeConnection
+	processorConfig            *processors.Config
+	deriveAliasOutputByQuorum  bool
+	pipeliningLimit            int
+	postponeRecoveryMilestones int
+	consensusDelay             time.Duration
+	recoveryTimeout            time.Duration
 
 	networkProvider              peering.NetworkProvider
 	trustedNetworkManager        peering.TrustedNetworkManager
@@ -92,7 +94,7 @@ type Chains struct {
 
 	validatorFeeAddr iotago.Address
 
-	mempoolTTL               time.Duration
+	mempoolSettings          mempool.Settings
 	mempoolBroadcastInterval time.Duration
 }
 
@@ -108,6 +110,7 @@ func New(
 	validatorAddrStr string,
 	deriveAliasOutputByQuorum bool,
 	pipeliningLimit int,
+	postponeRecoveryMilestones int,
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	networkProvider peering.NetworkProvider,
@@ -136,7 +139,7 @@ func New(
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
-	mempoolTTL time.Duration,
+	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
@@ -186,7 +189,7 @@ func New(
 		dkShareRegistryProvider:             dkShareRegistryProvider,
 		nodeIdentityProvider:                nodeIdentityProvider,
 		chainListener:                       nil, // See bellow.
-		mempoolTTL:                          mempoolTTL,
+		mempoolSettings:                     mempoolSettings,
 		mempoolBroadcastInterval:            mempoolBroadcastInterval,
 		consensusStateRegistry:              consensusStateRegistry,
 		shutdownCoordinator:                 shutdownCoordinator,
@@ -417,11 +420,12 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
 		c.deriveAliasOutputByQuorum,
 		c.pipeliningLimit,
+		c.postponeRecoveryMilestones,
 		c.consensusDelay,
 		c.recoveryTimeout,
 		validatorAgentID,
 		stateManagerParameters,
-		c.mempoolTTL,
+		c.mempoolSettings,
 		c.mempoolBroadcastInterval,
 	)
 	if err != nil {

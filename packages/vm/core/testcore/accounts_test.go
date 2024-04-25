@@ -138,10 +138,13 @@ func TestFoundries(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
-		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenCreate.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: util.Big0, MeltedTokens: util.Big0},
 			),
+			accounts.ParamTokenName, codec.EncodeString("TEST"),
+			accounts.ParamTokenTickerSymbol, codec.EncodeString("TEST"),
+			accounts.ParamTokenDecimals, codec.EncodeUint8(8),
 		).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -153,17 +156,20 @@ func TestFoundries(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
 
-		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenCreate.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: big.NewInt(10), MeltedTokens: big.NewInt(10)},
 			),
+			accounts.ParamTokenName, codec.EncodeString("TEST"),
+			accounts.ParamTokenTickerSymbol, codec.EncodeString("TEST"),
+			accounts.ParamTokenDecimals, codec.EncodeUint8(8),
 		).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
 		require.NoError(t, err)
 	})
 	t.Run("supply 10", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams(10).
+		sn, _, err := ch.NewNativeTokenParams(10).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -171,7 +177,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("supply 1", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams(1).
+		sn, _, err := ch.NewNativeTokenParams(1).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -179,7 +185,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("supply 0", func(t *testing.T) {
 		initTest()
-		_, _, err := ch.NewFoundryParams(0).
+		_, _, err := ch.NewNativeTokenParams(0).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		testmisc.RequireErrorToBe(t, err, vm.ErrCreateFoundryMaxSupplyMustBePositive)
@@ -187,14 +193,14 @@ func TestFoundries(t *testing.T) {
 	t.Run("supply negative", func(t *testing.T) {
 		initTest()
 		require.Panics(t, func() {
-			_, _, _ = ch.NewFoundryParams(-1).
+			_, _, _ = ch.NewNativeTokenParams(-1).
 				WithUser(senderKeyPair).
 				CreateFoundry()
 		})
 	})
 	t.Run("supply max possible", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams(abi.MaxUint256).
+		sn, _, err := ch.NewNativeTokenParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -205,12 +211,12 @@ func TestFoundries(t *testing.T) {
 		maxSupply := new(big.Int).Set(util.MaxUint256)
 		maxSupply.Add(maxSupply, big.NewInt(1))
 		require.Panics(t, func() {
-			_, _, _ = ch.NewFoundryParams(maxSupply).CreateFoundry()
+			_, _, _ = ch.NewNativeTokenParams(maxSupply).CreateFoundry()
 		})
 	})
 	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(10).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(10).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -232,7 +238,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply 1, mintTokens 1", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(1).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(1).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -251,7 +257,7 @@ func TestFoundries(t *testing.T) {
 
 	t.Run("max supply 1, mintTokens 2", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(1).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(1).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -265,7 +271,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(1000).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(1000).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -291,7 +297,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(abi.MaxUint256).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -311,7 +317,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply 100, destroy fail", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(abi.MaxUint256).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -324,7 +330,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(100).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(100).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -350,7 +356,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("max supply 1000000, mint_1000000, destroy_1000000", func(t *testing.T) {
 		initTest()
-		sn, nativeTokenID, err := ch.NewFoundryParams(1_000_000).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(1_000_000).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -387,7 +393,7 @@ func TestFoundries(t *testing.T) {
 		ch.MustDepositBaseTokensToL2(50_000_000, senderKeyPair)
 		nativeTokenIDs := make([]iotago.NativeTokenID, 11)
 		for sn := uint32(1); sn <= 10; sn++ {
-			snBack, nativeTokenID, err := ch.NewFoundryParams(uint64(sn + 1)).
+			snBack, nativeTokenID, err := ch.NewNativeTokenParams(uint64(sn + 1)).
 				WithUser(senderKeyPair).
 				CreateFoundry()
 			nativeTokenIDs[sn] = nativeTokenID
@@ -437,7 +443,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("constant storage deposit to hold a token UTXO", func(t *testing.T) {
 		initTest()
 		// create a foundry for the maximum amount of tokens possible
-		sn, nativeTokenID, err := ch.NewFoundryParams(util.MaxUint256).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(util.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -472,7 +478,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewFoundryParams(abi.MaxUint256).
+		sn, _, err := ch.NewNativeTokenParams(abi.MaxUint256).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -582,7 +588,7 @@ func initDepositTest(t *testing.T, originParams dict.Dict, initLoad ...uint64) *
 }
 
 func (v *testParams) createFoundryAndMint(maxSupply, amount interface{}) (uint32, iotago.NativeTokenID) {
-	sn, nativeTokenID, err := v.ch.NewFoundryParams(maxSupply).
+	sn, nativeTokenID, err := v.ch.NewNativeTokenParams(maxSupply).
 		WithUser(v.user).
 		CreateFoundry()
 	require.NoError(v.env.T, err)
@@ -855,7 +861,7 @@ func TestFoundryDestroy(t *testing.T) {
 	t.Run("destroy existing", func(t *testing.T) {
 		v := initDepositTest(t, nil)
 		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
-		sn, _, err := v.ch.NewFoundryParams(1_000_000).
+		sn, _, err := v.ch.NewNativeTokenParams(1_000_000).
 			WithUser(v.user).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -876,7 +882,7 @@ func TestTransferPartialAssets(t *testing.T) {
 	v := initDepositTest(t, nil)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
 	// setup a chain with some base tokens and native tokens for user1
-	sn, nativeTokenID, err := v.ch.NewFoundryParams(10).
+	sn, nativeTokenID, err := v.ch.NewNativeTokenParams(10).
 		WithUser(v.user).
 		CreateFoundry()
 	require.NoError(t, err)
@@ -1453,16 +1459,23 @@ func TestNonces(t *testing.T) {
 func TestNFTMint(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
+	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar").Bytes()
+
+	_seedIndex := 0
+	seedIndex := func() int {
+		_seedIndex++
+		return _seedIndex
+	}
 
 	t.Run("mint for another user", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
 		).
 			AddBaseTokens(2 * isc.Million).
@@ -1478,16 +1491,56 @@ func TestNFTMint(t *testing.T) {
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
 	})
 
-	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
+	t.Run("mint with invalid IRC27 metadata", func(t *testing.T) {
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(4))
+		// mint NFT to another user and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamNFTImmutableData, []byte{1, 2, 3},
+			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+		_, err := ch.PostRequestSync(req, wallet)
+		require.Error(t, err)
+		require.Equal(t, err.(*isc.VMError).MessageFormat(), accounts.ErrImmutableMetadataInvalid.MessageFormat())
+	})
+
+	t.Run("mint without IRC27 metadata", func(t *testing.T) {
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
+
+		// mint NFT to another user and keep it on chain
+		req := solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncMintNFT.Name,
+			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
+		).
+			AddBaseTokens(2 * isc.Million).
+			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithMaxAffordableGasBudget()
+
+		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+		_, err := ch.PostRequestSync(req, wallet)
+		require.ErrorContains(t, err, "GetBytes")
+	})
+
+	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
+		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+
+		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		anotherUserAgentID := isc.NewAgentID(anotherUserAddr)
 
 		// mint NFT to another user and withdraw it
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, anotherUserAgentID.Bytes(),
 			accounts.ParamNFTWithdrawOnMint, codec.Encode(true),
 		).
@@ -1516,13 +1569,13 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		agentID := isc.NewAgentID(address)
 
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, agentID.Bytes(),
 		).
 			AddBaseTokens(2 * isc.Million).
@@ -1540,13 +1593,13 @@ func TestNFTMint(t *testing.T) {
 		require.Len(t, userL2NFTs, 1)
 
 		// try minting another NFT using the first one as the collection
-		fistNFTID := userL2NFTs[0]
+		firstNFTID := userL2NFTs[0]
 
 		req = solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar_collection"),
+			accounts.ParamNFTImmutableData, isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection").Bytes(),
 			accounts.ParamAgentID, agentID.Bytes(),
-			accounts.ParamCollectionID, codec.Encode(fistNFTID),
+			accounts.ParamCollectionID, codec.Encode(firstNFTID),
 		).
 			AddBaseTokens(2 * isc.Million).
 			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
@@ -1574,11 +1627,11 @@ func TestNFTMint(t *testing.T) {
 
 		nftData, err := isc.NFTFromBytes(ret.Get(accounts.ParamNFTData))
 		require.NoError(t, err)
-		require.True(t, nftData.Issuer.Equal(fistNFTID.ToAddress()))
+		require.True(t, nftData.Issuer.Equal(firstNFTID.ToAddress()))
 		require.True(t, nftData.Owner.Equals(agentID))
 
 		// withdraw both NFTs
-		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(fistNFTID), wallet)
+		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(firstNFTID), wallet)
 		require.NoError(t, err)
 
 		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(iotago.NFTID(NFTIDInCollection)), wallet)
@@ -1589,13 +1642,13 @@ func TestNFTMint(t *testing.T) {
 	})
 
 	t.Run("mint to self, then withdraw it", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 		agentID := isc.NewAgentID(address)
 
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, []byte("foobar"),
+			accounts.ParamNFTImmutableData, mockNFTMetadata,
 			accounts.ParamAgentID, agentID.Bytes(),
 		).
 			AddBaseTokens(2 * isc.Million).

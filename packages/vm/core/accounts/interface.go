@@ -8,10 +8,15 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 var (
 	// Funcs
-	FuncDeposit                = coreutil.Func("deposit")
-	FuncFoundryCreateNew       = coreutil.Func("foundryCreateNew")
-	FuncFoundryDestroy         = coreutil.Func("foundryDestroy")
-	FuncFoundryModifySupply    = coreutil.Func("foundryModifySupply")
+	FuncDeposit = coreutil.Func("deposit")
+
+	// Kept for compatibility reasons
+	FuncFoundryCreateNew = coreutil.Func("foundryCreateNew")
+	//
+	FuncNativeTokenCreate       = coreutil.Func("nativeTokenCreate")
+	FuncNativeTokenModifySupply = coreutil.Func("nativeTokenModifySupply")
+	FuncNativeTokenDestroy      = coreutil.Func("nativeTokenDestroy")
+
 	FuncMintNFT                = coreutil.Func("mintNFT")
 	FuncTransferAccountToChain = coreutil.Func("transferAccountToChain")
 	FuncTransferAllowanceTo    = coreutil.Func("transferAllowanceTo")
@@ -31,11 +36,12 @@ var (
 	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
 	ViewBalanceBaseTokenEVM          = coreutil.ViewFunc("balanceBaseTokenEVM")
 	ViewBalanceNativeToken           = coreutil.ViewFunc("balanceNativeToken")
-	ViewFoundryOutput                = coreutil.ViewFunc("foundryOutput")
-	ViewGetAccountNonce              = coreutil.ViewFunc("getAccountNonce")
-	ViewGetNativeTokenIDRegistry     = coreutil.ViewFunc("getNativeTokenIDRegistry")
-	ViewNFTData                      = coreutil.ViewFunc("nftData")
-	ViewTotalAssets                  = coreutil.ViewFunc("totalAssets")
+	ViewNativeToken                  = coreutil.ViewFunc("nativeToken")
+
+	ViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
+	ViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
+	ViewNFTData                  = coreutil.ViewFunc("nftData")
+	ViewTotalAssets              = coreutil.ViewFunc("totalAssets")
 )
 
 // request parameters
@@ -48,6 +54,9 @@ const (
 	ParamForceMinimumBaseTokens = "f"
 	ParamFoundryOutputBin       = "b"
 	ParamFoundrySN              = "s"
+	ParamTokenName              = "tn"
+	ParamTokenTickerSymbol      = "ts"
+	ParamTokenDecimals          = "td"
 	ParamGasReserve             = "g"
 	ParamNFTAmount              = "A"
 	ParamNFTData                = "e"

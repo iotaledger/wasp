@@ -97,7 +97,7 @@ func testSplitTokensFail(t *testing.T) {
 	err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
 	require.NoError(t, err)
 
-	sn, nativeTokenID, err := ch.NewFoundryParams(100).
+	sn, nativeTokenID, err := ch.NewNativeTokenParams(100).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)
@@ -127,7 +127,7 @@ func testSplitTokensSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	amountMintedTokens := int64(100)
-	sn, nativeTokenID, err := ch.NewFoundryParams(amountMintedTokens).
+	sn, nativeTokenID, err := ch.NewNativeTokenParams(amountMintedTokens).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)

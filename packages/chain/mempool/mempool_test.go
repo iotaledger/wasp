@@ -516,14 +516,14 @@ func TestMempoolsNonceGaps(t *testing.T) {
 
 	askProposalExpectReqs := func(ao *isc.AliasOutputWithID, reqs ...isc.Request) *isc.AliasOutputWithID {
 		t.Log("Ask for proposals")
-		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
+		proposalCh := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i, node := range te.mempools {
-			proposals[i] = node.ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{})
+			proposalCh[i] = node.ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{})
 		}
 		t.Log("Wait for proposals and ask for decided requests")
 		decided := make([]<-chan []isc.Request, len(te.mempools))
 		for i, node := range te.mempools {
-			proposal := <-proposals[i]
+			proposal := <-proposalCh[i]
 			require.Len(t, proposal, len(reqs))
 			decided[i] = node.ConsensusRequestsAsync(te.ctx, proposal)
 		}
@@ -679,8 +679,16 @@ func TestTTL(t *testing.T) {
 		chainMetrics.Mempool,
 		chainMetrics.Pipe,
 		chain.NewEmptyChainListener(),
-		200*time.Millisecond, // 200ms TTL
+		mempool.Settings{
+			TTL:                   200 * time.Millisecond,
+			MaxOffledgerInPool:    1000,
+			MaxOnledgerInPool:     1000,
+			MaxTimedInPool:        1000,
+			MaxOnledgerToPropose:  1000,
+			MaxOffledgerToPropose: 1000,
+		},
 		1*time.Second,
+		func() {},
 	)
 	defer te.close()
 	start := time.Now()
@@ -804,8 +812,16 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			chainMetrics.Mempool,
 			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
-			24*time.Hour,
+			mempool.Settings{
+				TTL:                   24 * time.Hour,
+				MaxOffledgerInPool:    1000,
+				MaxOnledgerInPool:     1000,
+				MaxTimedInPool:        1000,
+				MaxOnledgerToPropose:  1000,
+				MaxOffledgerToPropose: 1000,
+			},
 			1*time.Second,
+			func() {},
 		)
 	}
 	return te

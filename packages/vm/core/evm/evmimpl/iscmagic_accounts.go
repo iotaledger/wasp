@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -102,11 +103,27 @@ func (h *magicContractHandler) FoundryCreateNew(tokenScheme iotago.SimpleTokenSc
 	return codec.MustDecodeUint32(ret.Get(accounts.ParamFoundrySN))
 }
 
+func (h *magicContractHandler) CreateNativeTokenFoundry(tokenName string, tickerSymbol string, decimals uint8, tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
+	ret := h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
+		accounts.Contract.Hname(),
+		accounts.FuncNativeTokenCreate.Hname(),
+		dict.Dict{
+			accounts.ParamTokenScheme:       codec.EncodeTokenScheme(&tokenScheme),
+			accounts.ParamTokenName:         codec.EncodeString(tokenName),
+			accounts.ParamTokenTickerSymbol: codec.EncodeString(tickerSymbol),
+			accounts.ParamTokenDecimals:     codec.EncodeUint8(decimals),
+		},
+		allowance.Unwrap(),
+	)
+	return codec.MustDecodeUint32(ret.Get(accounts.ParamFoundrySN))
+}
+
 // handler for ISCAccounts::mintBaseTokens
 func (h *magicContractHandler) MintNativeTokens(foundrySN uint32, amount *big.Int, allowance iscmagic.ISCAssets) {
 	h.call(
 		accounts.Contract.Hname(),
-		accounts.FuncFoundryModifySupply.Hname(),
+		accounts.FuncNativeTokenModifySupply.Hname(),
 		dict.Dict{
 			accounts.ParamFoundrySN:      codec.EncodeUint32(foundrySN),
 			accounts.ParamSupplyDeltaAbs: codec.EncodeBigIntAbs(amount),
