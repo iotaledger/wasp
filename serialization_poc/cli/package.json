@@ -11,5 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "@mysten/sui.js": "^0.51.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.1.1"
   }
 }
