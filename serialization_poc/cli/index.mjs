@@ -7,7 +7,7 @@ import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { readFileSync } from 'fs';
 
-import { start_new_chain } from './isc.mjs';
+import { Command, ISCAnchorContract, } from './isc.mjs';
 import { delay, prettyPrint } from './utils.mjs';
 
 const SUI_HOST = "http://127.0.0.1:9000";
@@ -117,7 +117,24 @@ async function main() {
 
   await handleFunds(client, keyPair);
   const packageId = await handlePublishContract(client, keyPair);
-  const chain = await start_new_chain(client, keyPair, packageId);
+  const iscContract = new ISCAnchorContract(client, keyPair, packageId);
+  const chain = await iscContract.start_new_chain();
+
+  const command = {
+    targetContract: 666666,
+    entryPoint: 1074,
+    gasBudget: 12345678,
+    params: [[1, 0, 7, 4]],
+    allowance: null,
+  };
+
+  await iscContract.send_request(chain.anchorId, {
+    targetContract: 666666,
+    entryPoint: 1074,
+    gasBudget: 12345678,
+    params: [[1, 0, 7, 4]],
+    allowance: null,
+  }, 1000n, null)
 
   prettyPrint(chain);
 }

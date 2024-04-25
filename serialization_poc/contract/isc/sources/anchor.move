@@ -40,7 +40,7 @@ module isc::anchor {
 	GasBudget uint64 `json:"gasBudget"`
     */
 
-    public struct Command<phantom T> has key, store {
+    public struct Command<phantom T> has key,store {
         id: UID,
         targetContract: u64,
         entryPoint: u64,
@@ -127,6 +127,26 @@ module isc::anchor {
         let treasury = anchor.minted_token_treasuries.borrow_mut<std::ascii::String, TreasuryCap<T>>(token_type);
 
        treasury.mint(amount, ctx)
+    }
+
+    /**
+           targetContract: u64,
+        entryPoint: u64,
+        params: vector<vector<u8>>,
+        allowance: Option<Balance<T>>,
+        gasBudget: u64,*/
+    public fun create_command<T>(targetContract: u64, entryPoint: u64, params: vector<vector<u8>>, allowance: Option<Balance<T>>, gasBudget: u64, ctx: &mut TxContext): (Command<T>) {
+        
+        let command = Command<T>{
+            id: object::new(ctx),
+            targetContract: targetContract,
+            entryPoint: entryPoint,
+            params: params,
+            allowance: allowance,
+            gasBudget: gasBudget, 
+        };
+
+        command
     }
 
     /// clients call this to send a request to the anchor
