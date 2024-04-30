@@ -19,9 +19,9 @@ var AccountDecimals = migrations.Migration{
 			if amountBytes == nil {
 				return
 			}
-			amount := codec.MustDecodeUint64(amountBytes)
+			amount := codec.Uint64.MustDecode(amountBytes)
 			amountMigrated := util.BaseTokensDecimalsToEthereumDecimals(amount, 6)
-			state.Set(key, codec.EncodeBigIntAbs(amountMigrated))
+			state.Set(key, codec.BigIntAbs.Encode(amountMigrated))
 		}
 
 		// iterate though all accounts,

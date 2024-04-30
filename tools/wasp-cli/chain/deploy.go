@@ -89,9 +89,9 @@ func initDeployCmd() *cobra.Command {
 				GovernanceController: govController,
 				InitParams: dict.Dict{
 					origin.ParamChainOwner:      isc.NewAgentID(govController).Bytes(),
-					origin.ParamEVMChainID:      codec.EncodeUint16(evmChainID),
-					origin.ParamBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
-					origin.ParamWaspVersion:     codec.EncodeString(app.Version),
+					origin.ParamEVMChainID:      codec.Uint16.Encode(evmChainID),
+					origin.ParamBlockKeepAmount: codec.Int32.Encode(blockKeepAmount),
+					origin.ParamWaspVersion:     codec.String.Encode(app.Version),
 				},
 			}
 

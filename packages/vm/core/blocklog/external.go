@@ -177,7 +177,7 @@ func ReceiptsFromViewCallResult(res dict.Dict) ([]*RequestReceipt, error) {
 	receipts := collections.NewArrayReadOnly(res, ParamRequestRecord)
 	ret := make([]*RequestReceipt, receipts.Len())
 	var err error
-	blockIndex, err := codec.DecodeUint32(res.Get(ParamBlockIndex))
+	blockIndex, err := codec.Uint32.Decode(res.Get(ParamBlockIndex))
 	if err != nil {
 		return nil, err
 	}

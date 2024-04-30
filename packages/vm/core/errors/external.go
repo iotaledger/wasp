@@ -13,12 +13,12 @@ type ViewCaller func(contractName string, funcName string, params dict.Dict) (di
 
 func GetMessageFormat(code isc.VMErrorCode, callView ViewCaller) (string, error) {
 	ret, err := callView(Contract.Name, ViewGetErrorMessageFormat.Name, dict.Dict{
-		ParamErrorCode: codec.EncodeVMErrorCode(code),
+		ParamErrorCode: codec.VMErrorCode.Encode(code),
 	})
 	if err != nil {
 		return "", err
 	}
-	return codec.DecodeString(ret.Get(ParamErrorMessageFormat))
+	return codec.String.Decode(ret.Get(ParamErrorMessageFormat))
 }
 
 func Resolve(e *isc.UnresolvedVMError, callView ViewCaller) (*isc.VMError, error) {

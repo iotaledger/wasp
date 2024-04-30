@@ -156,8 +156,8 @@ func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name
 	// calling root contract from another contract to install contract
 	// adding parameters specific to deployment
 	par := initParams.Clone()
-	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
-	par.Set(root.ParamName, codec.EncodeString(name))
+	par.Set(root.ParamProgramHash, codec.HashValue.Encode(programHash))
+	par.Set(root.ParamName, codec.String.Encode(name))
 	reqctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 
@@ -165,10 +165,10 @@ func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTe
 	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
 	params := dict.New()
-	params.Set(errors.ParamErrorMessageFormat, codec.EncodeString(messageFormat))
+	params.Set(errors.ParamErrorMessageFormat, codec.String.Encode(messageFormat))
 
 	result := reqctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
-	errorCode := codec.MustDecodeVMErrorCode(result.Get(errors.ParamErrorCode))
+	errorCode := codec.VMErrorCode.MustDecode(result.Get(errors.ParamErrorCode))
 
 	reqctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
 

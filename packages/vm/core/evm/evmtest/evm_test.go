@@ -1123,7 +1123,7 @@ func TestISCCall(t *testing.T) {
 		inccounter.ViewGetCounter.Name,
 	)
 	require.NoError(env.solo.T, err)
-	require.EqualValues(t, 42, codec.MustDecodeInt64(r.Get(inccounter.VarCounter)))
+	require.EqualValues(t, 42, codec.Int64.MustDecode(r.Get(inccounter.VarCounter)))
 }
 
 func TestFibonacciContract(t *testing.T) {
@@ -1191,7 +1191,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	checkCounter := func(c int) {
 		ret, err2 := env.Chain.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
 		require.NoError(t, err2)
-		counter := codec.MustDecodeUint64(ret.Get(inccounter.VarCounter))
+		counter := codec.Uint64.MustDecode(ret.Get(inccounter.VarCounter))
 		require.EqualValues(t, c, counter)
 	}
 	checkCounter(0)
@@ -1453,14 +1453,14 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		accounts.Contract.Hname(),
 		accounts.FuncNativeTokenCreate.Hname(),
 		dict.Dict{
-			accounts.ParamTokenScheme: codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+			accounts.ParamTokenScheme: codec.TokenScheme.Encode(&iotago.SimpleTokenScheme{
 				MaximumSupply: supply,
 				MeltedTokens:  big.NewInt(0),
 				MintedTokens:  big.NewInt(0),
 			}),
-			accounts.ParamTokenName:         codec.EncodeString(tokenName),
-			accounts.ParamTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
-			accounts.ParamTokenDecimals:     codec.EncodeUint8(tokenDecimals),
+			accounts.ParamTokenName:         codec.String.Encode(tokenName),
+			accounts.ParamTokenTickerSymbol: codec.String.Encode(tokenTickerSymbol),
+			accounts.ParamTokenDecimals:     codec.Uint8.Encode(tokenDecimals),
 		},
 		1*isc.Million, // allowance necessary to cover the foundry creation SD
 	)
@@ -1486,11 +1486,11 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		evm.Contract.Hname(),
 		evm.FuncRegisterERC20NativeTokenOnRemoteChain.Hname(),
 		dict.Dict{
-			evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
-			evm.FieldTokenName:         codec.EncodeString(tokenName),
-			evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
-			evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
-			evm.FieldTargetAddress:     codec.EncodeAddress(env.Chain.ChainID.AsAddress()), // the target chain is the test chain
+			evm.FieldFoundrySN:         codec.Uint32.Encode(foundrySN),
+			evm.FieldTokenName:         codec.String.Encode(tokenName),
+			evm.FieldTokenTickerSymbol: codec.String.Encode(tokenTickerSymbol),
+			evm.FieldTokenDecimals:     codec.Uint8.Encode(tokenDecimals),
+			evm.FieldTargetAddress:     codec.Address.Encode(env.Chain.ChainID.AsAddress()), // the target chain is the test chain
 		},
 		1*isc.Million, // provide funds for cross-chain request SD
 	)

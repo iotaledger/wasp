@@ -21,7 +21,7 @@ const incName = "incTest"
 func checkCounter(e *solo.Chain, expected int64) {
 	ret, err := e.CallView(incName, ViewGetCounter.Name)
 	require.NoError(e.Env.T, err)
-	c, err := codec.DecodeInt64(ret.Get(VarCounter))
+	c, err := codec.Int64.Decode(ret.Get(VarCounter))
 	require.NoError(e.Env.T, err)
 	require.EqualValues(e.Env.T, expected, c)
 }

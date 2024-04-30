@@ -43,7 +43,7 @@ func SetInitialState(v isc.SchemaVersion, state kv.KVStore) {
 	}
 
 	// forbid deployment of custom contracts by default
-	state.Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(true))
+	state.Set(root.VarDeployPermissionsEnabled, codec.Bool.Encode(true))
 
 	{
 		// register core contracts
@@ -135,7 +135,7 @@ func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
-	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
+	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.Bool.Encode(permissionsEnabled))
 	return nil
 }
 
@@ -149,7 +149,7 @@ func findContract(ctx isc.SandboxView) dict.Dict {
 	rec := root.FindContract(ctx.StateR(), hname)
 	ret := dict.New()
 	found := rec != nil
-	ret.Set(root.ParamContractFound, codec.EncodeBool(found))
+	ret.Set(root.ParamContractFound, codec.Bool.Encode(found))
 	if found {
 		ret.Set(root.ParamContractRecData, rec.Bytes())
 	}

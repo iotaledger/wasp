@@ -44,7 +44,7 @@ func (s *state) BlockIndex() uint32 {
 }
 
 func loadBlockIndexFromState(s kv.KVStoreReader) uint32 {
-	return codec.MustDecodeUint32(s.Get(kv.Key(coreutil.StatePrefixBlockIndex)))
+	return codec.Uint32.MustDecode(s.Get(kv.Key(coreutil.StatePrefixBlockIndex)))
 }
 
 func (s *state) Timestamp() time.Time {
@@ -55,7 +55,7 @@ func (s *state) Timestamp() time.Time {
 
 func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
 	tsBin := chainState.Get(kv.Key(coreutil.StatePrefixTimestamp))
-	ts, err := codec.DecodeTime(tsBin)
+	ts, err := codec.Time.Decode(tsBin)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("loadTimestampFromState: %w", err)
 	}

@@ -46,7 +46,7 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 	tx, err := env.NewChainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssetsBaseTokens(1_500_000),
 		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
+			accounts.ParamAgentID: codec.AgentID.Encode(contractAgentID),
 		},
 		Allowance: isc.NewAssetsBaseTokens(1_000_000),
 	})
@@ -87,7 +87,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		info, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		aid, err := codec.DecodeAgentID(info.Get(governance.VarChainOwnerID))
+		aid, err := codec.AgentID.Decode(info.Get(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
 
@@ -204,13 +204,13 @@ func testIncRepeatManyIncrement(t *testing.T, env *ChainEnv) {
 	for i := range e.Chain.CommitteeNodes {
 		b, err := e.Chain.GetStateVariable(incHname, varCounter, i)
 		require.NoError(t, err)
-		counterValue, err := codec.DecodeInt64(b, 0)
+		counterValue, err := codec.Int64.Decode(b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, numRepeats+1, counterValue)
 
 		b, err = e.Chain.GetStateVariable(incHname, varNumRepeats, i)
 		require.NoError(t, err)
-		repeats, err := codec.DecodeInt64(b, 0)
+		repeats, err := codec.Int64.Decode(b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, repeats)
 	}
@@ -257,7 +257,7 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 		})
 	require.NoError(t, err)
 
-	counter, err := codec.DecodeInt64(ret.Get(varCounter), 0)
+	counter, err := codec.Int64.Decode(ret.Get(varCounter), 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }

@@ -89,7 +89,7 @@ func setNFTOwner(state kv.KVStore, nftID iotago.NFTID, agentID isc.AgentID) {
 
 	// add to the mapping of agentID => []NFTIDs
 	nfts := accountToNFTsMap(state, agentID)
-	nfts.SetAt(nftID[:], codec.EncodeBool(true))
+	nfts.SetAt(nftID[:], codec.Bool.Encode(true))
 }
 
 func GetNFTData(state kv.KVStoreReader, nftID iotago.NFTID) *isc.NFT {
@@ -132,7 +132,7 @@ func creditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nftID iotago.NFTI
 
 	collectionKey := nftCollectionKey(issuer)
 	nftsByCollection := nftsByCollectionMap(state, agentID, collectionKey)
-	nftsByCollection.SetAt(nftID[:], codec.EncodeBool(true))
+	nftsByCollection.SetAt(nftID[:], codec.Bool.Encode(true))
 }
 
 // DebitNFTFromAccount removes an NFT from an account.

@@ -40,7 +40,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 		vm:               vmctx,
 		req:              req,
 		requestIndex:     requestIndex,
-		entropy:          hashing.HashData(append(codec.EncodeUint16(requestIndex), vmctx.task.Entropy[:]...)),
+		entropy:          hashing.HashData(append(codec.Uint16.Encode(requestIndex), vmctx.task.Entropy[:]...)),
 		uncommittedState: buffered.NewBufferedKVStore(vmctx.stateDraft),
 	}
 
@@ -53,7 +53,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	reqctx.uncommittedState.Set(
 		kv.Key(coreutil.StatePrefixTimestamp),
-		codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)),
+		codec.Time.Encode(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)),
 	)
 
 	if err = reqctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {

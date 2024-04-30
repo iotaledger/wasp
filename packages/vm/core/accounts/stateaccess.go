@@ -48,5 +48,5 @@ func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 			panic("bad key length")
 		}
 	}
-	return codec.DecodeAgentID([]byte(key))
+	return codec.AgentID.Decode([]byte(key))
 }

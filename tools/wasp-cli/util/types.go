@@ -42,7 +42,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "bool":
 		b, err := strconv.ParseBool(s)
 		log.Check(err)
-		return codec.EncodeBool(b)
+		return codec.Bool.Encode(b)
 	case "bytes", "hex":
 		b, err := iotago.DecodeHex(s)
 		log.Check(err)
@@ -55,7 +55,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 		d := dict.Dict{}
 		err := d.UnmarshalJSON([]byte(s))
 		log.Check(err)
-		return codec.EncodeDict(d)
+		return codec.Dict.Encode(d)
 	case "file":
 		return ReadFile(s)
 	case "hash":
@@ -69,19 +69,19 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "int8":
 		n, err := strconv.ParseInt(s, 10, 8)
 		log.Check(err)
-		return codec.EncodeInt8(int8(n))
+		return codec.Int8.Encode(int8(n))
 	case "int16":
 		n, err := strconv.ParseInt(s, 10, 16)
 		log.Check(err)
-		return codec.EncodeInt16(int16(n))
+		return codec.Int16.Encode(int16(n))
 	case "int32":
 		n, err := strconv.ParseInt(s, 10, 32)
 		log.Check(err)
-		return codec.EncodeInt32(int32(n))
+		return codec.Int32.Encode(int32(n))
 	case "int64", "int":
 		n, err := strconv.ParseInt(s, 10, 64)
 		log.Check(err)
-		return codec.EncodeInt64(n)
+		return codec.Int64.Encode(n)
 	case "nftid":
 		nid, err := iotago.DecodeHex(s)
 		log.Check(err)
@@ -105,19 +105,19 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "uint8":
 		n, err := strconv.ParseUint(s, 10, 8)
 		log.Check(err)
-		return codec.EncodeUint8(uint8(n))
+		return codec.Uint8.Encode(uint8(n))
 	case "uint16":
 		n, err := strconv.ParseUint(s, 10, 16)
 		log.Check(err)
-		return codec.EncodeUint16(uint16(n))
+		return codec.Uint16.Encode(uint16(n))
 	case "uint32":
 		n, err := strconv.ParseUint(s, 10, 32)
 		log.Check(err)
-		return codec.EncodeUint32(uint32(n))
+		return codec.Uint32.Encode(uint32(n))
 	case "uint64":
 		n, err := strconv.ParseUint(s, 10, 64)
 		log.Check(err)
-		return codec.EncodeUint64(n)
+		return codec.Uint64.Encode(n)
 	}
 	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
@@ -127,18 +127,18 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 func ValueToString(vtype string, v []byte) string {
 	switch strings.ToLower(vtype) {
 	case "address":
-		addr, err := codec.DecodeAddress(v)
+		addr, err := codec.Address.Decode(v)
 		log.Check(err)
 		return addr.Bech32(parameters.L1().Protocol.Bech32HRP)
 	case "agentid":
-		aid, err := codec.DecodeAgentID(v)
+		aid, err := codec.AgentID.Decode(v)
 		log.Check(err)
 		return aid.String()
 	case "bigint":
 		n := new(big.Int).SetBytes(v)
 		return n.String()
 	case "bool":
-		b, err := codec.DecodeBool(v)
+		b, err := codec.Bool.Decode(v)
 		log.Check(err)
 		if b {
 			return "true"
@@ -147,67 +147,67 @@ func ValueToString(vtype string, v []byte) string {
 	case "bytes", "hex":
 		return iotago.EncodeHex(v)
 	case "chainid":
-		cid, err := codec.DecodeChainID(v)
+		cid, err := codec.ChainID.Decode(v)
 		log.Check(err)
 		return cid.String()
 	case "dict":
-		d, err := codec.DecodeDict(v)
+		d, err := codec.Dict.Decode(v)
 		log.Check(err)
 		s, err := d.MarshalJSON()
 		log.Check(err)
 		return string(s)
 	case "hash":
-		hash, err := codec.DecodeHashValue(v)
+		hash, err := codec.HashValue.Decode(v)
 		log.Check(err)
 		return hash.String()
 	case "hname":
-		hn, err := codec.DecodeHname(v)
+		hn, err := codec.Hname.Decode(v)
 		log.Check(err)
 		return hn.String()
 	case "int8":
-		n, err := codec.DecodeInt8(v)
+		n, err := codec.Int8.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "int16":
-		n, err := codec.DecodeInt16(v)
+		n, err := codec.Int16.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "int32":
-		n, err := codec.DecodeInt32(v)
+		n, err := codec.Int32.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "int64", "int":
-		n, err := codec.DecodeInt64(v)
+		n, err := codec.Int64.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "nftid":
-		nid, err := codec.DecodeNFTID(v)
+		nid, err := codec.NFTID.Decode(v)
 		log.Check(err)
 		return nid.String()
 	case "requestid":
-		rid, err := codec.DecodeRequestID(v)
+		rid, err := codec.RequestID.Decode(v)
 		log.Check(err)
 		return rid.String()
 	case "string":
 		return fmt.Sprintf("%q", string(v))
 	case "tokenid":
-		tid, err := codec.DecodeNativeTokenID(v)
+		tid, err := codec.NativeTokenID.Decode(v)
 		log.Check(err)
 		return tid.String()
 	case "uint8":
-		n, err := codec.DecodeUint8(v)
+		n, err := codec.Uint8.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "uint16":
-		n, err := codec.DecodeUint16(v)
+		n, err := codec.Uint16.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "uint32":
-		n, err := codec.DecodeUint32(v)
+		n, err := codec.Uint32.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "uint64":
-		n, err := codec.DecodeUint64(v)
+		n, err := codec.Uint64.Decode(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	}

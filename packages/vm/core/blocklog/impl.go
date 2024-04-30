@@ -48,7 +48,7 @@ func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 		panic(ErrBlockNotFound)
 	}
 	return dict.Dict{
-		ParamBlockIndex: codec.EncodeUint32(blockIndex),
+		ParamBlockIndex: codec.Uint32.Encode(blockIndex),
 		ParamBlockInfo:  b,
 	}
 }
@@ -91,8 +91,8 @@ func viewGetRequestReceipt(ctx isc.SandboxView) dict.Dict {
 	}
 	return dict.Dict{
 		ParamRequestRecord: res.ReceiptBin,
-		ParamBlockIndex:    codec.EncodeUint32(res.BlockIndex),
-		ParamRequestIndex:  codec.EncodeUint16(res.RequestIndex),
+		ParamBlockIndex:    codec.Uint32.Encode(res.BlockIndex),
+		ParamRequestIndex:  codec.Uint16.Encode(res.RequestIndex),
 	}
 }
 
@@ -126,7 +126,7 @@ func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestReceipt, err := getRequestReceipt(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
 	return dict.Dict{
-		ParamRequestProcessed: codec.EncodeBool(requestReceipt != nil),
+		ParamRequestProcessed: codec.Bool.Encode(requestReceipt != nil),
 	}
 }
 

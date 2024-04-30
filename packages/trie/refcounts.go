@@ -96,13 +96,13 @@ func getRefcount(s KVStore, key []byte) uint32 {
 	if b == nil {
 		return 0
 	}
-	return codec.MustDecodeUint32(b)
+	return codec.Uint32.MustDecode(b)
 }
 
 func setRefcount(s KVStore, key []byte, n uint32) {
 	if n == 0 {
 		s.Del(key)
 	} else {
-		s.Set(key, codec.EncodeUint32(n))
+		s.Set(key, codec.Uint32.Encode(n))
 	}
 }

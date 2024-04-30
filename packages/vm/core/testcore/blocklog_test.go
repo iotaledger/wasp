@@ -218,7 +218,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 func TestBlocklogPruning(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
-		origin.ParamBlockKeepAmount: codec.EncodeInt32(10),
+		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
 	})
 	for i := 1; i <= 20; i++ {
 		ch.DepositBaseTokensToL2(1000, nil)
@@ -248,7 +248,7 @@ func TestBlocklogFoundriesWithPruning(t *testing.T) {
 
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
-		origin.ParamBlockKeepAmount: codec.EncodeInt32(10),
+		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
 	})
 	ch.DepositBaseTokensToL2(1*isc.Million, nil)
 

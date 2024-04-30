@@ -132,7 +132,7 @@ func (c *ChainService) GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot s
 		return 0, err
 	}
 
-	return codec.DecodeUint16(ret.Get(evm.FieldResult))
+	return codec.Uint16.Decode(ret.Get(evm.FieldResult))
 }
 
 func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {

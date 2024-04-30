@@ -227,10 +227,10 @@ const (
 func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
 	if fp.sch != nil {
-		par.Set(accounts.ParamTokenScheme, codec.EncodeTokenScheme(fp.sch))
-		par.Set(accounts.ParamTokenName, codec.EncodeString(fp.tokenName))
-		par.Set(accounts.ParamTokenTickerSymbol, codec.EncodeString(fp.tokenSymbol))
-		par.Set(accounts.ParamTokenDecimals, codec.EncodeUint8(fp.tokenDecimals))
+		par.Set(accounts.ParamTokenScheme, codec.TokenScheme.Encode(fp.sch))
+		par.Set(accounts.ParamTokenName, codec.String.Encode(fp.tokenName))
+		par.Set(accounts.ParamTokenTickerSymbol, codec.String.Encode(fp.tokenSymbol))
+		par.Set(accounts.ParamTokenDecimals, codec.Uint8.Encode(fp.tokenDecimals))
 	}
 
 	user := fp.ch.OriginatorPrivateKey
@@ -358,7 +358,7 @@ func (ch *Chain) TransferAllowanceTo(
 	callParams := NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		dict.Dict{
-			accounts.ParamAgentID: codec.EncodeAgentID(targetAccount),
+			accounts.ParamAgentID: codec.AgentID.Encode(targetAccount),
 		}).
 		WithAllowance(allowance).
 		WithFungibleTokens(allowance.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).

@@ -77,7 +77,7 @@ func TestWriteAmplification(t *testing.T) {
 
 	originSD := chainStore.NewOriginStateDraft()
 	originSD.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	originSD.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
+	originSD.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Time.Encode(time.Unix(0, 0)))
 	originBlock := chainStore.Commit(originSD)
 	require.NotNil(t, originBlock)
 

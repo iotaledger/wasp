@@ -259,7 +259,7 @@ func TestMaintenanceMode(t *testing.T) {
 		// TODO: Add maintenance status to wrapped core contracts
 		ret, err2 := ch.CallView(governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
 		require.NoError(t, err2)
-		maintenanceStatus := codec.MustDecodeBool(ret.Get(governance.VarMaintenanceStatus))
+		maintenanceStatus := codec.Bool.MustDecode(ret.Get(governance.VarMaintenanceStatus))
 		require.False(t, maintenanceStatus)
 	}
 
@@ -285,7 +285,7 @@ func TestMaintenanceMode(t *testing.T) {
 	{
 		ret, err2 := ch.CallView(governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
 		require.NoError(t, err2)
-		maintenanceStatus := codec.MustDecodeBool(ret.Get(governance.VarMaintenanceStatus))
+		maintenanceStatus := codec.Bool.MustDecode(ret.Get(governance.VarMaintenanceStatus))
 		require.True(t, maintenanceStatus)
 	}
 
@@ -688,7 +688,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 			accounts.Contract.Name,
 			accounts.FuncTransferAllowanceTo.Name,
 			dict.Dict{
-				accounts.ParamAgentID: codec.EncodeAgentID(userAgentID2),
+				accounts.ParamAgentID: codec.AgentID.Encode(userAgentID2),
 			},
 		).
 			AddBaseTokens(gasGreaterThanEstimatedGas).
@@ -711,7 +711,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 			accounts.Contract.Name,
 			accounts.FuncTransferAllowanceTo.Name,
 			dict.Dict{
-				accounts.ParamAgentID: codec.EncodeAgentID(userAgentID2),
+				accounts.ParamAgentID: codec.AgentID.Encode(userAgentID2),
 			},
 		).
 			AddBaseTokens(gasLessThanEstimatedGas).
@@ -749,7 +749,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 		governance.ViewGetPayoutAgentID.Name,
 	)
 	require.NoError(t, err)
-	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
+	retAgentID, err := codec.AgentID.Decode(retDict.Get(governance.ParamSetPayoutAgentID))
 	require.NoError(t, err)
 	require.Equal(t, userAgentID, retAgentID)
 
@@ -775,7 +775,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	)
 	require.NoError(t, err)
 	retByte := initRetDict.Get(governance.ParamSetMinCommonAccountBalance)
-	retMinCommonAccountBalance, err := codec.DecodeUint64(retByte)
+	retMinCommonAccountBalance, err := codec.Uint64.Decode(retByte)
 	require.NoError(t, err)
 	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
@@ -785,7 +785,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 			governance.Contract.Name,
 			governance.FuncSetMinCommonAccountBalance.Name,
 			governance.ParamSetMinCommonAccountBalance,
-			codec.EncodeUint64(minCommonAccountBalance),
+			codec.Uint64.Encode(minCommonAccountBalance),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -797,7 +797,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	)
 	require.NoError(t, err)
 	retByte = retDict.Get(governance.ParamSetMinCommonAccountBalance)
-	retMinCommonAccountBalance, err = codec.DecodeUint64(retByte)
+	retMinCommonAccountBalance, err = codec.Uint64.Decode(retByte)
 	require.NoError(t, err)
 	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
 }
@@ -876,7 +876,7 @@ func TestGasPayout(t *testing.T) {
 		governance.ViewGetPayoutAgentID.Name,
 	)
 	require.NoError(t, err)
-	retAgentID, err := codec.DecodeAgentID(retDict.Get(governance.ParamSetPayoutAgentID))
+	retAgentID, err := codec.AgentID.Decode(retDict.Get(governance.ParamSetPayoutAgentID))
 	require.NoError(t, err)
 	require.Equal(t, user1AgentID, retAgentID)
 

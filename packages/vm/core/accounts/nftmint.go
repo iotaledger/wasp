@@ -127,8 +127,8 @@ func mintParams(ctx isc.Sandbox) mintParameters {
 
 func mintID(blockIndex uint32, positionInMintedList uint16) []byte {
 	ret := make([]byte, 6)
-	copy(ret[0:], codec.EncodeUint32(blockIndex))
-	copy(ret[4:], codec.EncodeUint16(positionInMintedList))
+	copy(ret[0:], codec.Uint32.Encode(blockIndex))
+	copy(ret[4:], codec.Uint16.Encode(positionInMintedList))
 	return ret
 }
 

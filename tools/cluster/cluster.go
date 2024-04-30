@@ -262,10 +262,10 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 
 	initParams := dict.Dict{
 		origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
-		origin.ParamWaspVersion: codec.EncodeString(app.Version),
+		origin.ParamWaspVersion: codec.String.Encode(app.Version),
 	}
 	if len(blockKeepAmount) > 0 {
-		initParams[origin.ParamBlockKeepAmount] = codec.EncodeInt32(blockKeepAmount[0])
+		initParams[origin.ParamBlockKeepAmount] = codec.Int32.Encode(blockKeepAmount[0])
 	}
 
 	chainID, err := apilib.DeployChain(

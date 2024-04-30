@@ -27,7 +27,7 @@ func setMetadata(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(len(publicURLBytes)+len(metadataBytes) <= MaxCustomMetadataLength, "supplied publicUrl and metadata is too big (%d>%d)", len(publicURLBytes)+len(metadataBytes), MaxCustomMetadataLength)
 
 	if publicURLBytes != nil {
-		publicURL, err := codec.DecodeString(publicURLBytes, "")
+		publicURL, err := codec.String.Decode(publicURLBytes, "")
 		ctx.RequireNoError(err)
 		governance.SetPublicURL(ctx.State(), publicURL)
 	}

@@ -75,7 +75,7 @@ func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRo
 	foundrySNs, err := common.CallView(
 		ch,
 		accounts.Contract.Hname(),
-		accounts.ViewAccountFoundries.Hname(), dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(agentID)},
+		accounts.ViewAccountFoundries.Hname(), dict.Dict{accounts.ParamAgentID: codec.AgentID.Encode(agentID)},
 		blockIndexOrTrieRoot,
 	)
 	if err != nil {
@@ -83,7 +83,7 @@ func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRo
 	}
 	ret := make([]uint32, 0, len(foundrySNs))
 	for foundrySN := range foundrySNs {
-		sn, err := codec.DecodeUint32([]byte(foundrySN))
+		sn, err := codec.Uint32.Decode([]byte(foundrySN))
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func GetAccountNonce(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot s
 
 	nonce := ret.Get(accounts.ParamAccountNonce)
 
-	return codec.DecodeUint64(nonce)
+	return codec.Uint64.Decode(nonce)
 }
 
 func GetNFTData(ch chain.Chain, nftID iotago.NFTID, blockIndexOrTrieRoot string) (*isc.NFT, error) {

@@ -232,7 +232,7 @@ func TestPruning(t *testing.T) {
 			context.Background(),
 			blocklog.Contract.Hname(),
 			blocklog.ViewGetRequestReceiptsForBlock.Name,
-			dict.Dict{blocklog.ParamBlockIndex: codec.EncodeUint32(10)},
+			dict.Dict{blocklog.ParamBlockIndex: codec.Uint32.Encode(10)},
 			"10",
 		)
 		require.NoError(t, err)
@@ -247,7 +247,7 @@ func TestPruning(t *testing.T) {
 			context.Background(),
 			blocklog.Contract.Hname(),
 			blocklog.ViewGetRequestReceiptsForBlock.Name,
-			dict.Dict{blocklog.ParamBlockIndex: codec.EncodeUint32(9)},
+			dict.Dict{blocklog.ParamBlockIndex: codec.Uint32.Encode(9)},
 			"10",
 		)
 		require.Error(t, err)

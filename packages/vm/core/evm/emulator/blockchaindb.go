@@ -68,11 +68,11 @@ func (bc *BlockchainDB) Init(chainID uint16, timestamp uint64) {
 }
 
 func (bc *BlockchainDB) SetChainID(chainID uint16) {
-	bc.kv.Set(keyChainID, codec.EncodeUint16(chainID))
+	bc.kv.Set(keyChainID, codec.Uint16.Encode(chainID))
 }
 
 func GetChainIDFromBlockChainDBState(kv kv.KVStoreReader) uint16 {
-	return codec.MustDecodeUint16(kv.Get(keyChainID))
+	return codec.Uint16.MustDecode(kv.Get(keyChainID))
 }
 
 func (bc *BlockchainDB) GetChainID() uint16 {
@@ -80,23 +80,23 @@ func (bc *BlockchainDB) GetChainID() uint16 {
 }
 
 func (bc *BlockchainDB) setNumber(n uint64) {
-	bc.kv.Set(keyNumber, codec.EncodeUint64(n))
+	bc.kv.Set(keyNumber, codec.Uint64.Encode(n))
 }
 
 func (bc *BlockchainDB) GetNumber() uint64 {
-	return codec.MustDecodeUint64(bc.kv.Get(keyNumber))
+	return codec.Uint64.MustDecode(bc.kv.Get(keyNumber))
 }
 
 func makeTransactionsByBlockNumberKey(blockNumber uint64) kv.Key {
-	return keyTransactionsByBlockNumber + kv.Key(codec.EncodeUint64(blockNumber))
+	return keyTransactionsByBlockNumber + kv.Key(codec.Uint64.Encode(blockNumber))
 }
 
 func makeReceiptsByBlockNumberKey(blockNumber uint64) kv.Key {
-	return keyReceiptsByBlockNumber + kv.Key(codec.EncodeUint64(blockNumber))
+	return keyReceiptsByBlockNumber + kv.Key(codec.Uint64.Encode(blockNumber))
 }
 
 func makeBlockHeaderByBlockNumberKey(blockNumber uint64) kv.Key {
-	return keyBlockHeaderByBlockNumber + kv.Key(codec.EncodeUint64(blockNumber))
+	return keyBlockHeaderByBlockNumber + kv.Key(codec.Uint64.Encode(blockNumber))
 }
 
 func makeBlockNumberByBlockHashKey(hash common.Hash) kv.Key {
@@ -153,11 +153,11 @@ func (bc *BlockchainDB) AddTransaction(tx *types.Transaction, receipt *types.Rec
 	txArray.Push(evmtypes.EncodeTransaction(tx))
 	bc.kv.Set(
 		makeBlockNumberByTxHashKey(tx.Hash()),
-		codec.EncodeUint64(blockNumber),
+		codec.Uint64.Encode(blockNumber),
 	)
 	bc.kv.Set(
 		makeTxIndexInBlockByTxHashKey(tx.Hash()),
-		codec.EncodeUint32(txArray.Len()-1),
+		codec.Uint32.Encode(txArray.Len()-1),
 	)
 
 	receiptArray := bc.getReceiptArray(blockNumber)
@@ -300,7 +300,7 @@ func (bc *BlockchainDB) addBlock(header *types.Header) {
 	)
 	bc.kv.Set(
 		makeBlockNumberByBlockHashKey(header.Hash()),
-		codec.EncodeUint64(blockNumber),
+		codec.Uint64.Encode(blockNumber),
 	)
 	bc.setNumber(blockNumber)
 }
@@ -353,7 +353,7 @@ func (bc *BlockchainDB) getBlockNumberBy(key kv.Key) (uint64, bool) {
 	if b == nil {
 		return 0, false
 	}
-	return codec.MustDecodeUint64(b), true
+	return codec.Uint64.MustDecode(b), true
 }
 
 func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool) {
@@ -361,7 +361,7 @@ func (bc *BlockchainDB) GetBlockNumberByTxHash(txHash common.Hash) (uint64, bool
 }
 
 func (bc *BlockchainDB) GetTxIndexInBlockByTxHash(txHash common.Hash) uint32 {
-	return codec.MustDecodeUint32(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
+	return codec.Uint32.MustDecode(bc.kv.Get(makeTxIndexInBlockByTxHashKey(txHash)), 0)
 }
 
 func (bc *BlockchainDB) GetReceiptByTxHash(txHash common.Hash) *types.Receipt {

@@ -231,13 +231,13 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 }
 
 func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
-	tokenSchemeBytes := codec.EncodeTokenScheme(tokenScheme)
+	tokenSchemeBytes := codec.TokenScheme.Encode(tokenScheme)
 	out := w.PostRequestGetReceipt(
 		"accounts", accounts.FuncNativeTokenCreate.Name,
 		"string", accounts.ParamTokenScheme, "bytes", "0x"+hex.EncodeToString(tokenSchemeBytes),
-		"string", accounts.ParamTokenName, "bytes", "0x"+hex.EncodeToString(codec.EncodeString(tokenName)),
-		"string", accounts.ParamTokenTickerSymbol, "bytes", "0x"+hex.EncodeToString(codec.EncodeString(tokenSymbol)),
-		"string", accounts.ParamTokenDecimals, "bytes", "0x"+hex.EncodeToString(codec.EncodeUint8(tokenDecimals)),
+		"string", accounts.ParamTokenName, "bytes", "0x"+hex.EncodeToString(codec.String.Encode(tokenName)),
+		"string", accounts.ParamTokenTickerSymbol, "bytes", "0x"+hex.EncodeToString(codec.String.Encode(tokenSymbol)),
+		"string", accounts.ParamTokenDecimals, "bytes", "0x"+hex.EncodeToString(codec.Uint8.Encode(tokenDecimals)),
 
 		"--allowance", "base:1000000", "--node=0",
 	)
