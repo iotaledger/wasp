@@ -36,6 +36,9 @@ func getTracer(ctx isc.Sandbox) tracers.Tracer {
 	if tracer == nil {
 		return nil
 	}
+	if tracer.TxIndex != uint64(ctx.RequestIndex()) {
+		return nil // trace only the transaction we're interested in
+	}
 	return tracer.Tracer
 }
 
