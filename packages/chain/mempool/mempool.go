@@ -545,7 +545,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 		governanceState := governance.NewStateAccess(mpi.chainHeadState)
 		chainOwner := governanceState.ChainOwnerID()
 		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.CallTarget().Contract == governance.Contract.Hname()
-		if !isGovRequest {
+		if !isGovRequest || governanceState.DefaultGasPrice().Cmp(util.Big0) == 0 {
 			return fmt.Errorf("no funds on chain")
 		}
 	}
