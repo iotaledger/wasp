@@ -2,17 +2,22 @@
   "name": "cli",
   "version": "1.0.0",
   "description": "",
-  "main": "index.mjs",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.mjs"
+    "start": "tsx  src/main.ts"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mysten/sui.js": "^0.51.2"
+    "@mysten/sui.js": "0.52.0"
   },
   "devDependencies": {
-    "eslint": "^9.1.1"
+    "@types/node": "^20.12.10",
+    "eslint": "^9.1.1",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.6.2",
+    "tsx": "^4.9.3",
+    "typescript": "^5.4.5"
   }
 }

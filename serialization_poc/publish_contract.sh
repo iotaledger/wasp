@@ -31,9 +31,10 @@ if [ $FAUCET_REQUESTS -gt 0 ]; then
   sleep $FAUCET_WAIT_TIME
 fi
 
-cd contract/isc
+CUR_PWD=$PWD
+cd ../../kinesis/dapps/isc/sources/
 
 sui move build
 sui client publish --gas-budget 5000000000  
 
-cd ../../
+cd $CUR_PWD
