@@ -140,6 +140,9 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 
 	feePolicyBytes := callGovView(governance.ViewGetFeePolicy.Name).Get(governance.ParamFeePolicyBytes)
 	feePolicy := gas.MustFeePolicyFromBytes(feePolicyBytes)
+	if feePolicy.GasPerToken.HasZeroComponent() {
+		return 0
+	}
 
 	gasLimitsBytes := callGovView(governance.ViewGetGasLimits.Name).Get(governance.ParamGasLimitsBytes)
 	gasLimits, err := gas.LimitsFromBytes(gasLimitsBytes)
