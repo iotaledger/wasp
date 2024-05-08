@@ -5,18 +5,23 @@ package jsonrpctest
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -511,6 +516,74 @@ func TestRPCCustomError(t *testing.T) {
 
 	require.Len(t, args, 1)
 	require.EqualValues(t, 42, args[0])
+}
+
+func TestRPCTraceTx(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+	env.soloChain.WaitForRequestsMark()
+
+	// make it so that 2 requests are included in the same block
+	env.soloChain.WaitForRequestsMark()
+
+	tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    big.NewInt(123),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))),
+		})
+
+	tx2 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress) + 1,
+			To:       &contractAddress,
+			Value:    big.NewInt(123),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(1))),
+		})
+
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
+	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
+
+	// assert each tx only has internal txs that belong to their execution
+	var res1 json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"debug_traceTransaction",
+		tx1.Hash().Hex(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	// assert each tx only has internal txs that belong to their execution
+	var res2 json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res2,
+		"debug_traceTransaction",
+		tx2.Hash().Hex(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+	lastCallRegExp := regexp.MustCompile(`.*{"type":"CALL",.+"to":"0x([a-zA-Z0-9_.-]+)".*}`)
+	match1 := lastCallRegExp.Find(res1)
+	match2 := lastCallRegExp.Find(res2)
+	require.NotEqual(t, match1, match2)
 }
 
 func BenchmarkRPCEstimateGas(b *testing.B) {
