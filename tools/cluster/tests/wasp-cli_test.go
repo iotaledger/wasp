@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -68,7 +70,7 @@ func TestZeroGasFee(t *testing.T) {
 	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--evm-chainid=1091", "--block-keep-amount=123", "--node=0")
+	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--block-keep-amount=123", "--node=0")
 	w.ActivateChainOnAllNodes(chainName, 0)
 	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
 	require.NoError(t, err)
@@ -79,11 +81,15 @@ func TestZeroGasFee(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, outs, "Gas fee: gas units * (0/0)")
 
-	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
-	w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
-	checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
+	t.Run("send arbitrary EVM tx without funds", func(t *testing.T) {
+		ethPvtKey, _ := newEthereumAccount()
+		sendDummyEVMTx(t, w, ethPvtKey)
+	})
 
 	t.Run("deposit directly to EVM", func(t *testing.T) {
+		alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
+		w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
+		checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
 		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000)
@@ -826,6 +832,20 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
 }
 
+func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *types.Transaction {
+	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
+	tx, err := types.SignTx(
+		types.NewTransaction(0, common.Address{}, big.NewInt(123), 100000, gasPrice, []byte{}),
+		EVMSigner(),
+		ethPvtKey,
+	)
+	require.NoError(t, err)
+	err = jsonRPCClient.SendTransaction(context.Background(), tx)
+	require.NoError(t, err)
+	return tx
+}
+
 func TestEVMISCReceipt(t *testing.T) {
 	w := newWaspCLITest(t)
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -835,16 +855,7 @@ func TestEVMISCReceipt(t *testing.T) {
 	w.MustRun("chain", "deposit", ethAddr.String(), "base:100000000", "--node=0")
 
 	// send some arbitrary EVM tx
-	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
-	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
-	tx, err := types.SignTx(
-		types.NewTransaction(0, ethAddr, big.NewInt(123), 100000, gasPrice, []byte{}),
-		EVMSigner(),
-		ethPvtKey,
-	)
-	require.NoError(t, err)
-	err = jsonRPCClient.SendTransaction(context.Background(), tx)
-	require.NoError(t, err)
+	tx := sendDummyEVMTx(t, w, ethPvtKey)
 	out := w.MustRun("chain", "request", tx.Hash().Hex(), "--node=0")
 	require.Contains(t, out[0], "Request found in block")
 }
