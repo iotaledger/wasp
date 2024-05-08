@@ -19,13 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -56,7 +53,7 @@ type contractEnv struct {
 	programHash hashing.HashValue
 }
 
-func (e *ChainEnv) createNewClient() *scclient.SCClient {
+func (e *ChainEnv) createNewClient() *chainclient.Client {
 	keyPair, addr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 	retries := 0
@@ -72,7 +69,7 @@ func (e *ChainEnv) createNewClient() *scclient.SCClient {
 		}
 		time.Sleep(300 * time.Millisecond)
 	}
-	return e.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
+	return e.Chain.Client(keyPair)
 }
 
 func SetupWithChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
@@ -89,8 +86,8 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 }
 
 func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
-	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
-	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	client := e.Chain.Client(keyPair)
+	tx, err := client.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssetsBaseTokens(amount),
 	})
 	require.NoError(e.t, err)
@@ -101,12 +98,10 @@ func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 }
 
 func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cryptolib.KeyPair, targetAccount isc.AgentID) {
-	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	transferAssets := assets.Clone()
 	transferAssets.AddBaseTokens(1 * isc.Million) // to pay for the fees
-	tx, err := accountsClient.PostRequest(accounts.FuncTransferAllowanceTo.Name, chainclient.PostRequestParams{
+	tx, err := e.Chain.Client(keyPair).PostRequest(accounts.FuncTransferAllowanceTo.Message(targetAccount), chainclient.PostRequestParams{
 		Transfer:                 transferAssets,
-		Args:                     map[kv.Key][]byte{accounts.ParamAgentID: codec.AgentID.Encode(targetAccount)},
 		NFT:                      nft,
 		Allowance:                assets,
 		AutoAdjustStorageDeposit: false,

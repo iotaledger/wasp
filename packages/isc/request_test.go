@@ -18,7 +18,7 @@ func TestRequestDataSerialization(t *testing.T) {
 	var req Request
 	var err error
 	t.Run("off ledger", func(t *testing.T) {
-		req = NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 100).Sign(cryptolib.NewKeyPair())
+		req = NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, dict.New()), 1337, 100).Sign(cryptolib.NewKeyPair())
 		rwutil.ReadWriteTest(t, req.(*OffLedgerRequestData), new(OffLedgerRequestData))
 		rwutil.BytesTest(t, req, RequestFromBytes)
 	})
@@ -27,8 +27,7 @@ func TestRequestDataSerialization(t *testing.T) {
 		sender := tpkg.RandAliasAddress()
 		requestMetadata := &RequestMetadata{
 			SenderContract: ContractIdentityFromHname(Hn("sender_contract")),
-			TargetContract: Hn("target_contract"),
-			EntryPoint:     Hn("entrypoint"),
+			Message:        NewMessage(Hn("target_contract"), Hn("entrypoint")),
 			Allowance:      NewAssetsBaseTokens(1),
 			GasBudget:      1000,
 		}
@@ -55,7 +54,7 @@ func TestRequestDataSerialization(t *testing.T) {
 }
 
 func TestRequestIDSerialization(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
+	req := NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, dict.New()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
 	rwutil.ReadWriteTest(t, &requestID, new(RequestID))
 	rwutil.BytesTest(t, requestID, RequestIDFromBytes)
@@ -63,7 +62,7 @@ func TestRequestIDSerialization(t *testing.T) {
 }
 
 func TestRequestRefSerialization(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), 3, 14, dict.New(), 1337, 200).Sign(cryptolib.NewKeyPair())
+	req := NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, dict.New()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	reqRef0 := &RequestRef{
 		ID:   req.ID(),
 		Hash: hashing.PseudoRandomHash(nil),

@@ -84,11 +84,12 @@ func (req *evmOffLedgerTxRequest) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
 }
 
-func (req *evmOffLedgerTxRequest) CallTarget() CallTarget {
-	return CallTarget{
-		Contract:   Hn(evmnames.Contract),
-		EntryPoint: Hn(evmnames.FuncSendTransaction),
-	}
+func (req *evmOffLedgerTxRequest) Message() Message {
+	return NewMessage(
+		Hn(evmnames.Contract),
+		Hn(evmnames.FuncSendTransaction),
+		dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(req.tx)},
+	)
 }
 
 func (req *evmOffLedgerTxRequest) ChainID() ChainID {
@@ -113,10 +114,6 @@ func (req *evmOffLedgerTxRequest) NFT() *NFT {
 
 func (req *evmOffLedgerTxRequest) Nonce() uint64 {
 	return req.tx.Nonce()
-}
-
-func (req *evmOffLedgerTxRequest) Params() dict.Dict {
-	return dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(req.tx)}
 }
 
 func (req *evmOffLedgerTxRequest) SenderAccount() AgentID {

@@ -26,7 +26,7 @@ type ChainBackend interface {
 	EVMTraceTransaction(aliasOutput *isc.AliasOutputWithID, blockTime time.Time, iscRequestsInBlock []isc.Request, txIndex uint64, tracer tracers.Tracer) error
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID
-	ISCCallView(chainState state.State, scName string, funName string, args dict.Dict) (dict.Dict, error)
+	ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error)
 	ISCLatestAliasOutput() (*isc.AliasOutputWithID, error)
 	ISCLatestState() (state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)

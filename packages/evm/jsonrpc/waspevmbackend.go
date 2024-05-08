@@ -47,11 +47,11 @@ func (b *WaspEVMBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret, err := b.ISCCallView(state, governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
+	ret, err := b.ISCCallView(state, governance.ViewGetFeePolicy.Message())
 	if err != nil {
 		return nil, err
 	}
-	return gas.FeePolicyFromBytes(ret.Get(governance.ParamFeePolicyBytes))
+	return governance.ViewGetFeePolicy.Output.Decode(ret)
 }
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -101,8 +101,8 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	)
 }
 
-func (b *WaspEVMBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(chainState, b.chain, isc.Hn(scName), isc.Hn(funName), args)
+func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error) {
+	return chainutil.CallView(chainState, b.chain, msg)
 }
 
 func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {

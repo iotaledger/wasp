@@ -14,3 +14,18 @@ func MakeDict(vars map[string]interface{}) dict.Dict {
 }
 
 var Dict = NewCodecEx(dict.FromBytes)
+
+func DictFromSlice(params []any) dict.Dict {
+	if len(params)%2 != 0 {
+		panic("DictFromSlice: len(params) % 2 != 0")
+	}
+	r := dict.Dict{}
+	for i := 0; i < len(params)/2; i++ {
+		key, ok := params[2*i].(string)
+		if !ok {
+			panic("DictFromSlice: string expected")
+		}
+		r[kv.Key(key)] = Encode(params[2*i+1])
+	}
+	return r
+}

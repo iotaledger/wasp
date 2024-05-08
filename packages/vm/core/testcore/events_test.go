@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -21,8 +22,8 @@ var (
 	manyEventsContractName = "ManyEventsContract"
 	manyEventsContract     = coreutil.NewContract(manyEventsContractName)
 
-	funcManyEvents = coreutil.Func("manyevents")
-	funcBigEvent   = coreutil.Func("bigevent")
+	funcManyEvents = manyEventsContract.Func("manyevents")
+	funcBigEvent   = manyEventsContract.Func("bigevent")
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
 		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
@@ -75,9 +76,7 @@ func getBurnedGas(ch *solo.Chain, tx *iotago.Transaction, err error) (uint64, er
 	if err != nil {
 		return 0, err
 	}
-	receipt, err2 := ch.GetRequestReceipt(reqs[0].ID())
-	require.NoError(ch.Env.T, err2)
-
+	receipt, _ := ch.GetRequestReceipt(reqs[0].ID())
 	return receipt.GasBurned, nil
 }
 
@@ -87,7 +86,7 @@ func TestManyEvents(t *testing.T) {
 	postEvents := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
 		tx, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name, "n", n).
+			solo.NewCallParamsEx(manyEventsContract.Name, funcManyEvents.Name, "n", n).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -120,7 +119,7 @@ func TestEventTooLarge(t *testing.T) {
 	postEvent := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
 		tx, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name, "n", n).
+			solo.NewCallParamsEx(manyEventsContract.Name, funcBigEvent.Name, "n", n).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -141,7 +140,7 @@ func TestEventTooLarge(t *testing.T) {
 
 func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithGasBudget(math.MaxUint64),
+		solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).WithGasBudget(math.MaxUint64),
 		nil,
 	)
 	require.NoError(t, err)
@@ -150,42 +149,25 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 	return reqs[0].ID()
 }
 
-func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) (events []*isc.Event) {
-	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
-		blocklog.ParamRequestID, reqID,
-	)
+func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []*isc.Event {
+	res, err := chain.CallView(blocklog.ViewGetEventsForRequest.Message(reqID))
 	require.NoError(t, err)
-	events, err = blocklog.EventsFromViewResult(res)
-	require.NoError(t, err)
-	return events
+	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
 }
 
-func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) (events []*isc.Event) {
-	var res dict.Dict
-	var err error
-	if len(blockNumber) > 0 {
-		res, err = chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name,
-			blocklog.ParamBlockIndex, blockNumber[0],
-		)
-	} else {
-		res, err = chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForBlock.Name)
-	}
+func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) []*isc.Event {
+	res, err := chain.CallView(blocklog.ViewGetEventsForBlock.Message(coreutil.Optional(blockNumber...)))
 	require.NoError(t, err)
-	events, err = blocklog.EventsFromViewResult(res)
-	require.NoError(t, err)
-	return events
+	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
 }
 
-func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) (events []*isc.Event) {
-	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
-		blocklog.ParamContractHname, inccounter.Contract.Hname(),
-		blocklog.ParamFromBlock, fromBlock,
-		blocklog.ParamToBlock, toBlock,
-	)
+func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock uint32) []*isc.Event {
+	res, err := chain.CallView(blocklog.ViewGetEventsForContract.Message(blocklog.EventsForContractQuery{
+		Contract:   inccounter.Contract.Hname(),
+		BlockRange: &blocklog.BlockRange{From: fromBlock, To: toBlock},
+	}))
 	require.NoError(t, err)
-	events, err = blocklog.EventsFromViewResult(res)
-	require.NoError(t, err)
-	return events
+	return lo.Must(blocklog.ViewGetEventsForContract.Output.Decode(res))
 }
 
 func TestGetEvents(t *testing.T) {
@@ -196,7 +178,7 @@ func TestGetEvents(t *testing.T) {
 	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
-	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
+	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, nil)
 	require.NoError(t, err)
 
 	// block 1 = ch init

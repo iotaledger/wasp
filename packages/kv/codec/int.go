@@ -20,7 +20,7 @@ var (
 	BigIntAbs = NewCodec(decodeBigIntAbs, encodeBigIntAbs)
 )
 
-func newInt8Codec[T constraints.Integer]() *Codec[T] {
+func newInt8Codec[T constraints.Integer]() Codec[T] {
 	return NewCodec(
 		func(b []byte) (r T, err error) {
 			if len(b) != 1 {
@@ -34,7 +34,7 @@ func newInt8Codec[T constraints.Integer]() *Codec[T] {
 	)
 }
 
-func newIntCodec[T constraints.Integer, U constraints.Unsigned](size int, dec func([]byte) U, enc func([]byte, U)) *Codec[T] {
+func newIntCodec[T constraints.Integer, U constraints.Unsigned](size int, dec func([]byte) U, enc func([]byte, U)) Codec[T] {
 	return NewCodec(
 		func(b []byte) (r T, err error) {
 			if len(b) != size {

@@ -1,47 +1,25 @@
 package solo
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 	"sort"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // L2Accounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) L2Accounts() []isc.AgentID {
-	d, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccounts.Name)
+	d, err := ch.CallView(accounts.ViewAccounts.Message())
 	require.NoError(ch.Env.T, err)
-	keys := d.KeysSorted()
-	ret := make([]isc.AgentID, 0, len(keys)-1)
-	for _, key := range keys {
-		aid, err := accounts.AgentIDFromKey(key, ch.ChainID)
-		require.NoError(ch.Env.T, err)
-		ret = append(ret, aid)
-	}
-	return ret
-}
-
-func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *isc.Assets {
-	require.NoError(ch.Env.T, err)
-	if d.IsEmpty() {
-		return isc.NewEmptyAssets()
-	}
-	ret, err := isc.AssetsFromDict(d)
-	require.NoError(ch.Env.T, err)
-	return ret
+	return lo.Must(accounts.ViewAccounts.Output.DecodeAccounts(d, ch.ChainID))
 }
 
 func (ch *Chain) L2Ledger() map[string]*isc.Assets {
@@ -76,9 +54,9 @@ func (ch *Chain) L2Assets(agentID isc.AgentID) *isc.Assets {
 func (ch *Chain) L2AssetsAtStateIndex(agentID isc.AgentID, stateIndex uint32) *isc.Assets {
 	chainState, err := ch.store.StateByIndex(stateIndex)
 	require.NoError(ch.Env.T, err)
-	assets := ch.parseAccountBalance(
-		ch.CallViewAtState(chainState, accounts.Contract.Name, accounts.ViewBalance.Name, accounts.ParamAgentID, agentID),
-	)
+	assets := lo.Must(accounts.ViewBalance.Output.Decode(
+		lo.Must(ch.CallViewAtState(chainState, accounts.ViewBalance.Message(&agentID))),
+	))
 	assets.NFTs = ch.L2NFTs(agentID)
 	return assets
 }
@@ -92,14 +70,9 @@ func (ch *Chain) L2BaseTokensAtStateIndex(agentID isc.AgentID, stateIndex uint32
 }
 
 func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.NFTID {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccountNFTs.Name, accounts.ParamAgentID, agentID)
+	res, err := ch.CallView(accounts.ViewAccountNFTs.Message(&agentID))
 	require.NoError(ch.Env.T, err)
-	nftIDs := collections.NewArrayReadOnly(res, accounts.ParamNFTIDs)
-	ret := make([]iotago.NFTID, nftIDs.Len())
-	for i := range ret {
-		copy(ret[i][:], nftIDs.GetAt(uint32(i)))
-	}
-	return ret
+	return lo.Must(accounts.ViewAccountNFTs.Output.Decode(res))
 }
 
 func (ch *Chain) L2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
@@ -120,9 +93,9 @@ func (ch *Chain) L2CommonAccountNativeTokens(nativeTokenID iotago.NativeTokenID)
 
 // L2TotalAssets return total sum of ftokens contained in the on-chain accounts
 func (ch *Chain) L2TotalAssets() *isc.Assets {
-	return ch.parseAccountBalance(
-		ch.CallView(accounts.Contract.Name, accounts.ViewTotalAssets.Name),
-	)
+	r, err := ch.CallView(accounts.ViewTotalAssets.Message())
+	require.NoError(ch.Env.T, err)
+	return lo.Must(accounts.ViewTotalAssets.Output.Decode(r))
 }
 
 // L2TotalBaseTokens return total sum of base tokens in L2 (all accounts)
@@ -131,27 +104,21 @@ func (ch *Chain) L2TotalBaseTokens() uint64 {
 }
 
 func (ch *Chain) GetOnChainTokenIDs() []iotago.NativeTokenID {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetNativeTokenIDRegistry.Name)
+	res, err := ch.CallView(accounts.ViewGetNativeTokenIDRegistry.Message())
 	require.NoError(ch.Env.T, err)
-	ret := make([]iotago.NativeTokenID, 0, len(res))
-	for k := range res {
-		ret = append(ret, isc.MustNativeTokenIDFromBytes([]byte(k)))
-	}
-	return ret
+	return lo.Must(accounts.ViewGetNativeTokenIDRegistry.Output.Decode(res))
 }
 
 func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
-	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewNativeToken.Name,
-		accounts.ParamFoundrySN, sn,
-	)
+	res, err := ch.CallView(accounts.ViewNativeToken.Message(sn))
 	if err != nil {
 		return nil, err
 	}
-	outBin := res.Get(accounts.ParamFoundryOutputBin)
-	out := &iotago.FoundryOutput{}
-	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
-	require.NoError(ch.Env.T, err)
-	return out, nil
+	out, err := accounts.ViewNativeToken.Output.Decode(res)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*iotago.FoundryOutput), nil
 }
 
 func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, error) {
@@ -179,11 +146,11 @@ const (
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
-func (ch *Chain) NewNativeTokenParams(maxSupply interface{}) *newNativeTokenParams { //nolint:revive
+func (ch *Chain) NewNativeTokenParams(maxSupply *big.Int) *newNativeTokenParams { //nolint:revive
 	ret := &newNativeTokenParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{
-			MaximumSupply: util.ToBigInt(maxSupply),
+			MaximumSupply: maxSupply,
 			MeltedTokens:  big.NewInt(0),
 			MintedTokens:  big.NewInt(0),
 		},
@@ -225,29 +192,24 @@ const (
 )
 
 func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
-	par := dict.New()
+	var sch *iotago.TokenScheme
 	if fp.sch != nil {
-		par.Set(accounts.ParamTokenScheme, codec.TokenScheme.Encode(fp.sch))
-		par.Set(accounts.ParamTokenName, codec.String.Encode(fp.tokenName))
-		par.Set(accounts.ParamTokenTickerSymbol, codec.String.Encode(fp.tokenSymbol))
-		par.Set(accounts.ParamTokenDecimals, codec.Uint8.Encode(fp.tokenDecimals))
+		sch = &fp.sch
 	}
 
-	user := fp.ch.OriginatorPrivateKey
-	if fp.user != nil {
-		user = fp.user
-	}
-	req := CallParamsFromDict(accounts.Contract.Name, accounts.FuncNativeTokenCreate.Name, par).
+	metadata := isc.NewIRC30NativeTokenMetadata(fp.tokenName, fp.tokenSymbol, fp.tokenDecimals)
+
+	req := NewCallParams(accounts.FuncNativeTokenCreate.Message(metadata, sch)).
 		WithAllowance(isc.NewAssetsBaseTokens(allowanceForFoundryStorageDeposit)).
 		AddBaseTokens(allowanceForFoundryStorageDeposit).
 		WithMaxAffordableGasBudget()
 
-	_, estimate, err := fp.ch.EstimateGasOnLedger(req, user)
+	_, estimate, err := fp.ch.EstimateGasOnLedger(req, fp.user)
 	if err != nil {
 		return 0, iotago.NativeTokenID{}, err
 	}
 	req.WithGasBudget(estimate.GasBurned)
-	res, err := fp.ch.PostRequestSync(req, user)
+	res, err := fp.ch.PostRequestSync(req, fp.user)
 	if err != nil {
 		return 0, iotago.NativeTokenID{}, err
 	}
@@ -257,31 +219,15 @@ func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, e
 	return retSN, nativeTokenID, err
 }
 
-func toFoundrySN(foundry interface{}) uint32 {
-	switch f := foundry.(type) {
-	case uint32:
-		return f
-	case *iotago.NativeTokenID:
-		return f.FoundrySerialNumber()
-	case iotago.NativeTokenID:
-		return f.FoundrySerialNumber()
-	}
-	panic(fmt.Sprintf("toFoundrySN: type %T not supported", foundry))
-}
-
 func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenDestroy.Name,
-		accounts.ParamFoundrySN, sn).
+	req := NewCallParams(accounts.FuncNativeTokenDestroy.Message(sn)).
 		WithGasBudget(DestroyFoundryGasBudgetBaseTokens)
 	_, err := ch.PostRequestSync(req, user)
 	return err
 }
 
-func (ch *Chain) MintTokens(foundry, amount interface{}, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(foundry),
-		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-	).
+func (ch *Chain) MintTokens(sn uint32, amount *big.Int, user *cryptolib.KeyPair) error {
+	req := NewCallParams(accounts.FuncNativeTokenModifySupply.MintTokens(sn, amount)).
 		AddBaseTokens(allowanceForModifySupply).
 		WithAllowance(isc.NewAssetsBaseTokens(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
 		WithMaxAffordableGasBudget()
@@ -292,47 +238,30 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user cryptolib.VariantK
 	}
 
 	req.WithGasBudget(rec.GasBurned)
-	if user == nil {
-		user = ch.OriginatorPrivateKey
-	}
 	_, err = ch.PostRequestSync(req, user)
 	return err
 }
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
-func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount interface{}, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
-		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-		accounts.ParamDestroyTokens, true,
-	).WithAllowance(
-		isc.NewAssets(0, iotago.NativeTokens{
-			&iotago.NativeToken{
+func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount *big.Int, user *cryptolib.KeyPair) error {
+	req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
+		WithAllowance(
+			isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
 				ID:     nativeTokenID,
-				Amount: util.ToBigInt(amount),
-			},
-		}),
-	).WithGasBudget(DestroyTokensGasBudgetBaseTokens)
-
-	if user == nil {
-		user = ch.OriginatorPrivateKey
-	}
+				Amount: amount,
+			}}),
+		).
+		WithGasBudget(DestroyTokensGasBudgetBaseTokens)
 	_, err := ch.PostRequestSync(req, user)
 	return err
 }
 
 // DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
-func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount interface{}, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncNativeTokenModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
-		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
-		accounts.ParamDestroyTokens, true,
-	).WithGasBudget(DestroyTokensGasBudgetBaseTokens).AddBaseTokens(1000)
+func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount *big.Int, user cryptolib.VariantKeyPair) error {
+	req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
+		WithMaxAffordableGasBudget().AddBaseTokens(1000)
 	req.AddNativeTokens(nativeTokenID, amount)
 	req.AddAllowanceNativeTokens(nativeTokenID, amount)
-	if user == nil {
-		user = ch.OriginatorPrivateKey
-	}
 	_, err := ch.PostRequestSync(req, user)
 	return err
 }
@@ -340,7 +269,7 @@ func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount in
 // DepositAssetsToL2 deposits ftokens on user's on-chain account, if user is nil, then chain owner is assigned
 func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user cryptolib.VariantKeyPair) error {
 	_, err := ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		NewCallParams(accounts.FuncDeposit.Message()).
 			WithFungibleTokens(assets).
 			WithGasBudget(math.MaxUint64),
 		user,
@@ -355,11 +284,7 @@ func (ch *Chain) TransferAllowanceTo(
 	wallet cryptolib.VariantKeyPair,
 	nft ...*isc.NFT,
 ) error {
-	callParams := NewCallParams(
-		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-		dict.Dict{
-			accounts.ParamAgentID: codec.AgentID.Encode(targetAccount),
-		}).
+	callParams := NewCallParams(accounts.FuncTransferAllowanceTo.Message(targetAccount)).
 		WithAllowance(allowance).
 		WithFungibleTokens(allowance.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
 		WithGasBudget(math.MaxUint64)
@@ -397,7 +322,7 @@ func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.Va
 
 // Withdraw sends assets from the L2 account to L1
 func (ch *Chain) Withdraw(assets *isc.Assets, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+	req := NewCallParams(accounts.FuncWithdraw.Message()).
 		AddAllowance(assets).
 		WithGasBudget(math.MaxUint64)
 	if assets.BaseTokens == 0 {
@@ -413,9 +338,7 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Asset
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddBaseTokens(totalBaseTokens)
 	_, err := ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-			accounts.ParamAgentID, target,
-		).
+		NewCallParams(accounts.FuncTransferAllowanceTo.Message(target)).
 			AddFungibleTokens(sumAssets).
 			AddAllowance(toSend).
 			WithGasBudget(math.MaxUint64),
@@ -430,11 +353,8 @@ func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
 func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID, user cryptolib.VariantKeyPair) error {
-	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-		accounts.ParamAgentID, target,
-	)
-
-	req.AddBaseTokens(SendToL2AccountGasBudgetBaseTokens).
+	req := NewCallParams(accounts.FuncTransferAllowanceTo.Message(target)).
+		AddBaseTokens(SendToL2AccountGasBudgetBaseTokens).
 		AddAllowance(transfer).
 		WithGasBudget(SendToL2AccountGasBudgetBaseTokens)
 	_, err := ch.PostRequestSync(req, user)
@@ -445,7 +365,7 @@ func (ch *Chain) SendFromL2ToL2AccountBaseTokens(baseTokens uint64, target isc.A
 	return ch.SendFromL2ToL2Account(isc.NewAssetsBaseTokens(baseTokens), target, user)
 }
 
-func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount interface{}, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount *big.Int, user cryptolib.VariantKeyPair) error {
 	transfer := isc.NewEmptyAssets()
 	transfer.AddNativeTokens(id, amount)
 	return ch.SendFromL2ToL2Account(transfer, target, user)

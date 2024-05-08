@@ -22,13 +22,13 @@ func testCounter(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
 	}
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log())
@@ -43,7 +43,7 @@ func testConcurrency(t *testing.T) {
 
 	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
@@ -64,7 +64,7 @@ func testConcurrency(t *testing.T) {
 	}
 	require.True(t, chain.WaitForRequestsThrough(sum, 180*time.Second))
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log())
@@ -86,7 +86,7 @@ func testConcurrency2(t *testing.T) {
 	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
 
 	baseTokensSentPerRequest := 1 * isc.Million
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(baseTokensSentPerRequest).WithGasBudget(math.MaxUint64)
 
 	_, estimate, err := chain.EstimateGasOnLedger(req, nil)
@@ -113,7 +113,7 @@ func testConcurrency2(t *testing.T) {
 	}
 	require.True(t, chain.WaitForRequestsThrough(sum, 180*time.Second))
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log())

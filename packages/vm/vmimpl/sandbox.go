@@ -29,9 +29,9 @@ func NewSandbox(reqctx *requestContext) isc.Sandbox {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
+func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
-	return s.Ctx.Call(target, entryPoint, params, transfer)
+	return s.Ctx.Call(msg, transfer)
 }
 
 // DeployContract deploys contract by the binary hash
@@ -197,9 +197,9 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	return isc.NewAssetsBaseTokens(amount)
 }
 
-func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Assets) dict.Dict {
+func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
-	return s.reqctx.CallOnBehalfOf(caller, target, entryPoint, params, transfer)
+	return s.reqctx.CallOnBehalfOf(caller, msg, transfer)
 }
 
 func (s *contractSandbox) SendOnBehalfOf(caller isc.ContractIdentity, metadata isc.RequestParameters) {

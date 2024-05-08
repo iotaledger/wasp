@@ -1,14 +1,12 @@
 package blocklog
 
 import (
-	"math"
 	"time"
+
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -39,31 +37,24 @@ func SetInitialState(s kv.KVStore) {
 }
 
 // viewGetBlockInfo returns blockInfo for a given block.
-// params:
-// ParamBlockIndex - index of the block (defaults to the latest block)
-func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
-	blockIndex := getBlockIndexParams(ctx)
-	b := getBlockInfoBytes(ctx.StateR(), blockIndex)
-	if b == nil {
+func viewGetBlockInfo(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, *BlockInfo) {
+	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
+	b, ok := GetBlockInfo(ctx.StateR(), blockIndex)
+	if !ok {
 		panic(ErrBlockNotFound)
 	}
-	return dict.Dict{
-		ParamBlockIndex: codec.Uint32.Encode(blockIndex),
-		ParamBlockInfo:  b,
-	}
+	return blockIndex, b
 }
 
 var errNotFound = coreerrors.Register("not found").Create()
 
 // viewGetRequestIDsForBlock returns a list of requestIDs for a given block.
-// params:
-// ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
-	blockIndex := getBlockIndexParams(ctx)
+func viewGetRequestIDsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, []isc.RequestID) {
+	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
 
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return nil
+		return blockIndex, nil
 	}
 
 	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
@@ -71,40 +62,26 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		panic(errNotFound)
 	}
 
-	ret := dict.New()
-	requestIDs := collections.NewArray(ret, ParamRequestID)
-	for i, receipt := range receipts {
-		requestReceipt, err := RequestReceiptFromBytes(receipt, blockIndex, uint16(i))
+	return blockIndex, lo.Map(receipts, func(b []byte, i int) isc.RequestID {
+		receipt, err := RequestReceiptFromBytes(b, blockIndex, uint16(i))
 		ctx.RequireNoError(err)
-		requestIDs.Push(requestReceipt.Request.ID().Bytes())
-	}
-	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
-	return ret
+		return receipt.Request.ID()
+	})
 }
 
-func viewGetRequestReceipt(ctx isc.SandboxView) dict.Dict {
-	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	res, err := GetRequestRecordDataByRequestID(ctx.StateR(), requestID)
+func viewGetRequestReceipt(ctx isc.SandboxView, reqID isc.RequestID) *RequestReceipt {
+	rec, err := GetRequestRecordDataByRequestID(ctx.StateR(), reqID)
 	ctx.RequireNoError(err)
-	if res == nil {
-		return nil
-	}
-	return dict.Dict{
-		ParamRequestRecord: res.ReceiptBin,
-		ParamBlockIndex:    codec.Uint32.Encode(res.BlockIndex),
-		ParamRequestIndex:  codec.Uint16.Encode(res.RequestIndex),
-	}
+	return rec
 }
 
 // viewGetRequestReceiptsForBlock returns a list of receipts for a given block.
-// params:
-// ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
-	blockIndex := getBlockIndexParams(ctx)
+func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, []*RequestReceipt) {
+	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
 
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return nil
+		return 0, nil
 	}
 
 	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
@@ -112,43 +89,35 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 		panic(errNotFound)
 	}
 
-	ret := dict.New()
-	requestReceipts := collections.NewArray(ret, ParamRequestRecord)
-	for _, receipt := range receipts {
-		requestReceipts.Push(receipt)
-	}
-	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
-	return ret
+	return blockIndex, lo.Map(receipts, func(b []byte, i int) *RequestReceipt {
+		receipt, err := RequestReceiptFromBytes(b, blockIndex, uint16(i))
+		ctx.RequireNoError(err)
+		return receipt
+	})
 }
 
-func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
-	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
+func viewIsRequestProcessed(ctx isc.SandboxView, requestID isc.RequestID) bool {
 	requestReceipt, err := getRequestReceipt(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
-	return dict.Dict{
-		ParamRequestProcessed: codec.Bool.Encode(requestReceipt != nil),
-	}
+	return requestReceipt != nil
 }
 
 // viewGetEventsForRequest returns a list of events for a given request.
-// params:
-// ParamRequestID - requestID
-func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
-	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
+func viewGetEventsForRequest(ctx isc.SandboxView, requestID isc.RequestID) []*isc.Event {
 	events, err := getRequestEventsInternal(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
-	return eventsToDict(events)
+	return lo.Map(events, func(b []byte, _ int) *isc.Event {
+		return lo.Must(isc.EventFromBytes(b))
+	})
 }
 
 // viewGetEventsForBlock returns a list of events for a given block.
-// params:
-// ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
-	blockIndex := getBlockIndexParams(ctx)
+func viewGetEventsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, []*isc.Event) {
+	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
 
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return nil
+		return 0, nil
 	}
 
 	stateR := ctx.StateR()
@@ -156,22 +125,15 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	ctx.Requiref(ok, "block not found: %d", blockIndex)
 	events := GetEventsByBlockIndex(stateR, blockIndex, blockInfo.TotalRequests)
 
-	ret := eventsToDict(events)
-	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
-	return ret
+	return blockIndex, lo.Map(events, func(b []byte, _ int) *isc.Event {
+		return lo.Must(isc.EventFromBytes(b))
+	})
 }
 
 // viewGetEventsForContract returns a list of events for a given smart contract.
-// params:
-// ParamContractHname - hname of the contract
-// ParamFromBlock - defaults to 0
-// ParamToBlock - defaults to latest block
-func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
-	params := ctx.Params()
-	contract := params.MustGetHname(ParamContractHname)
-	fromBlock := params.MustGetUint32(ParamFromBlock, 0)
-	toBlock := params.MustGetUint32(ParamToBlock, math.MaxUint32)
-	events := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
-
-	return eventsToDict(events)
+func viewGetEventsForContract(ctx isc.SandboxView, q EventsForContractQuery) []*isc.Event {
+	events := getSmartContractEventsInternal(ctx.StateR(), q)
+	return lo.Map(events, func(b []byte, _ int) *isc.Event {
+		return lo.Must(isc.EventFromBytes(b))
+	})
 }

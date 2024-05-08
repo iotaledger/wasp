@@ -60,9 +60,9 @@ func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID iotag
 	reqctx.unprocessableToRetry = append(reqctx.unprocessableToRetry, retryReq)
 }
 
-func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, target, entryPoint isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
-	reqctx.Debugf("CallOnBehalfOf: caller = %s, target = %s, entryPoint = %s, params = %s", caller.String(), target.String(), entryPoint.String(), params.String())
-	return reqctx.callProgram(target, entryPoint, params, allowance, caller)
+func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, allowance *isc.Assets) dict.Dict {
+	reqctx.Debugf("CallOnBehalfOf: caller = %s, msg = %s", caller.String(), msg)
+	return reqctx.callProgram(msg, allowance, caller)
 }
 
 func (reqctx *requestContext) SendOnBehalfOf(caller isc.ContractIdentity, metadata isc.RequestParameters) {

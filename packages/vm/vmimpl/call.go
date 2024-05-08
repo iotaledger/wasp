@@ -16,9 +16,9 @@ import (
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
-func (reqctx *requestContext) Call(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets) dict.Dict {
-	reqctx.Debugf("Call: targetContract: %s entry point: %s", targetContract, epCode)
-	return reqctx.callProgram(targetContract, epCode, params, allowance, reqctx.CurrentContractAgentID())
+func (reqctx *requestContext) Call(msg isc.Message, allowance *isc.Assets) dict.Dict {
+	reqctx.Debugf("Call: targetContract: %s entry point: %s", msg.Target.Contract, msg.Target.EntryPoint)
+	return reqctx.callProgram(msg, allowance, reqctx.CurrentContractAgentID())
 }
 
 func (reqctx *requestContext) withoutGasBurn(f func()) {
@@ -28,15 +28,15 @@ func (reqctx *requestContext) withoutGasBurn(f func()) {
 	reqctx.GasBurnEnable(prev)
 }
 
-func (reqctx *requestContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Assets, caller isc.AgentID) dict.Dict {
+func (reqctx *requestContext) callProgram(msg isc.Message, allowance *isc.Assets, caller isc.AgentID) dict.Dict {
 	// don't charge gas for finding the contract (otherwise EVM requests may not produce EVM receipt)
 	var ep isc.VMProcessorEntryPoint
 	reqctx.withoutGasBurn(func() {
-		contractRecord := reqctx.GetContractRecord(targetContract)
-		ep = execution.GetEntryPointByProgHash(reqctx, targetContract, epCode, contractRecord.ProgramHash)
+		contractRecord := reqctx.GetContractRecord(msg.Target.Contract)
+		ep = execution.GetEntryPointByProgHash(reqctx, msg.Target.Contract, msg.Target.EntryPoint, contractRecord.ProgramHash)
 	})
 
-	reqctx.pushCallContext(targetContract, params, allowance, caller)
+	reqctx.pushCallContext(msg.Target.Contract, msg.Params, allowance, caller)
 	defer reqctx.popCallContext()
 
 	// distinguishing between two types of entry points. Passing different types of sandboxes
@@ -44,8 +44,8 @@ func (reqctx *requestContext) callProgram(targetContract, epCode isc.Hname, para
 		return ep.Call(sandbox.NewSandboxView(reqctx))
 	}
 	// prevent calling 'init' not from root contract
-	if epCode == isc.EntryPointInit && !caller.Equals(isc.NewContractAgentID(reqctx.vm.ChainID(), root.Contract.Hname())) {
-		panic(fmt.Errorf("%v: target=(%s, %s)", vm.ErrRepeatingInitCall, targetContract, epCode))
+	if msg.Target.EntryPoint == isc.EntryPointInit && !caller.Equals(isc.NewContractAgentID(reqctx.vm.ChainID(), root.Contract.Hname())) {
+		panic(fmt.Errorf("%v: target=(%s, %s)", vm.ErrRepeatingInitCall, msg.Target.Contract, msg.Target.EntryPoint))
 	}
 	return ep.Call(NewSandbox(reqctx))
 }

@@ -125,9 +125,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	offLedgerReq := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
-		isc.Hn("foo"),
-		isc.Hn("bar"),
-		dict.New(),
+		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
@@ -178,9 +176,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	// Add a message, we should get it now.
 	offLedgerReq2 := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
-		isc.Hn("foo"),
-		isc.Hn("bar"),
-		dict.New(),
+		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		1,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
@@ -492,9 +488,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	createReqWithNonce := func(nonce uint64) isc.OffLedgerRequest {
 		return isc.NewOffLedgerRequest(
 			isc.RandomChainID(),
-			isc.Hn("foo"),
-			isc.Hn("bar"),
-			dict.New(),
+			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 			nonce,
 			gas.LimitsDefault.MaxGasPerRequest,
 		).Sign(te.governor)
@@ -638,9 +632,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 
 	initialReq := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
-		isc.Hn("foo"),
-		isc.Hn("bar"),
-		dict.New(),
+		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
@@ -650,9 +642,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 
 	overwritingReq := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
-		isc.Hn("baz"),
-		isc.Hn("bar"),
-		dict.New(),
+		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
@@ -716,9 +706,7 @@ func TestTTL(t *testing.T) {
 	// send offledger request, assert it is returned, make 201ms pass, assert it is not returned anymore
 	offLedgerReq := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
-		isc.Hn("foo"),
-		isc.Hn("bar"),
-		dict.New(),
+		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
@@ -850,11 +838,13 @@ func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, 
 			TargetAddress: chainAddress,
 			Assets:        nil,
 			Metadata: &isc.SendMetadata{
-				TargetContract: isc.Hn("dummyTargetContract"),
-				EntryPoint:     isc.Hn("dummyEP"),
-				Params:         dict.New(),
-				Allowance:      nil,
-				GasBudget:      1000,
+				Message: isc.NewMessage(
+					isc.Hn("dummyTargetContract"),
+					isc.Hn("dummyEP"),
+					dict.New(),
+				),
+				Allowance: nil,
+				GasBudget: 1000,
 			},
 			AdjustToMinimumStorageDeposit: true,
 		}

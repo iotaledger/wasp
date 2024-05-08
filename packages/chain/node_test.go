@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -153,9 +152,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 	for i := 0; i < incCount; i++ {
 		scRequest := isc.NewOffLedgerRequest(
 			te.chainID,
-			inccounter.Contract.Hname(),
-			inccounter.FuncIncCounter.Hname(),
-			dict.New(), uint64(i),
+			inccounter.FuncIncCounter.Message(nil),
+			uint64(i),
 			2000000,
 		).Sign(scClient)
 		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
@@ -195,9 +193,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 			for ii := 0; ii < incCount; ii++ {
 				scRequest := isc.NewOffLedgerRequest(
 					te.chainID,
-					inccounter.Contract.Hname(),
-					inccounter.FuncIncCounter.Hname(),
-					dict.New(), uint64(ii),
+					inccounter.FuncIncCounter.Message(nil),
+					uint64(ii),
 					20000,
 				).Sign(scClient)
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())

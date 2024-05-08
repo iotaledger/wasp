@@ -6,23 +6,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
-
-func EventsFromViewResult(viewResult dict.Dict) (ret []*isc.Event, err error) {
-	events := collections.NewArrayReadOnly(viewResult, ParamEvent)
-	ret = make([]*isc.Event, events.Len())
-	for i := range ret {
-		ret[i], err = isc.EventFromBytes(events.GetAt(uint32(i)))
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
-}
 
 func GetRequestsInBlock(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, []isc.Request, error) {
 	blockInfo, ok := GetBlockInfo(partition, blockIndex)
@@ -90,15 +76,9 @@ func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid isc.RequestID) b
 	return ret
 }
 
-type GetRequestReceiptResult struct {
-	ReceiptBin   []byte
-	BlockIndex   uint32
-	RequestIndex uint16
-}
-
 // GetRequestRecordDataByRequestID tries to obtain the receipt data for a given request
 // returns nil if receipt was not found
-func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.RequestID) (*GetRequestReceiptResult, error) {
+func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(stateReader, prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.GetAt(lookupDigest[:])
@@ -119,11 +99,7 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 			return nil, err
 		}
 		if rec.Request.ID().Equals(reqID) {
-			return &GetRequestReceiptResult{
-				ReceiptBin:   recBin,
-				BlockIndex:   rec.BlockIndex,
-				RequestIndex: rec.RequestIndex,
-			}, nil
+			return rec, nil
 		}
 	}
 	return nil, nil
@@ -171,22 +147,4 @@ func Prune(partition kv.KVStore, latestBlockIndex uint32, blockKeepAmount int32)
 	// assume that all blocks prior to `toDelete` have been already deleted, so
 	// we only need to delete this one.
 	pruneBlock(partition, toDelete)
-}
-
-func ReceiptsFromViewCallResult(res dict.Dict) ([]*RequestReceipt, error) {
-	receipts := collections.NewArrayReadOnly(res, ParamRequestRecord)
-	ret := make([]*RequestReceipt, receipts.Len())
-	var err error
-	blockIndex, err := codec.Uint32.Decode(res.Get(ParamBlockIndex))
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range ret {
-		ret[i], err = RequestReceiptFromBytes(receipts.GetAt(uint32(i)), blockIndex, uint16(i))
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
 }

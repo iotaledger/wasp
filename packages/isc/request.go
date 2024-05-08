@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // Request wraps any data which can be potentially be interpreted as a request
@@ -45,11 +44,10 @@ func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
 type Calldata interface {
 	Allowance() *Assets // transfer of assets to the smart contract. Debited from sender account
 	Assets() *Assets    // attached assets for the UTXO request, nil for off-ledger. All goes to sender
-	CallTarget() CallTarget
+	Message() Message
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
 	NFT() *NFT // Not nil if the request is an NFT request
-	Params() dict.Dict
 	SenderAccount() AgentID
 	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	EVMCallMsg() *ethereum.CallMsg

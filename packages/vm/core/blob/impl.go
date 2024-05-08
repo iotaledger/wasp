@@ -1,6 +1,9 @@
 package blob
 
 import (
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -29,7 +32,7 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	state := ctx.State()
 	params := ctx.Params()
 	// calculate a deterministic hash of all blob fields
-	blobHash, kSorted, values := mustGetBlobHash(params.Dict)
+	blobHash, fieldsSorted, valuesSorted := mustGetBlobHash(params.Dict)
 
 	directory := GetDirectory(state)
 	if directory.HasAt(blobHash[:]) {
@@ -44,33 +47,27 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 	totalSizeWithKeys := uint32(0)
 
 	// save record of the blob.
-	for i, k := range kSorted {
-		size := uint32(len(values[i]))
-		blbValues.SetAt([]byte(k), values[i])
+	for i, k := range fieldsSorted {
+		size := uint32(len(valuesSorted[i]))
+		blbValues.SetAt([]byte(k), valuesSorted[i])
 		blbSizes.SetAt([]byte(k), EncodeSize(size))
 		totalSize += size
 		totalSizeWithKeys += size + uint32(len(k))
 	}
-
-	ret := dict.New()
-	ret.Set(ParamHash, codec.HashValue.Encode(blobHash))
-
 	directory.SetAt(blobHash[:], EncodeSize(totalSize))
 
 	eventStore(ctx, blobHash)
-	return ret
+
+	return dict.Dict{ParamHash: codec.HashValue.Encode(blobHash)}
 }
 
 // getBlobInfo return lengths of all fields in the blob
-func getBlobInfo(ctx isc.SandboxView) dict.Dict {
+func getBlobInfo(ctx isc.SandboxView, blobHash hashing.HashValue) map[string]uint32 {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
-
-	blobHash := ctx.Params().MustGetHashValue(ParamHash)
-
 	blbSizes := GetBlobSizesR(ctx.StateR(), blobHash)
-	ret := dict.New()
+	ret := map[string]uint32{}
 	blbSizes.Iterate(func(field []byte, value []byte) bool {
-		ret.Set(kv.Key(field), value)
+		ret[string(field)] = lo.Must(DecodeSize(value))
 		return true
 	})
 	return ret
@@ -78,14 +75,9 @@ func getBlobInfo(ctx isc.SandboxView) dict.Dict {
 
 var errNotFound = coreerrors.Register("not found").Create()
 
-func getBlobField(ctx isc.SandboxView) dict.Dict {
+func getBlobField(ctx isc.SandboxView, blobHash hashing.HashValue, field []byte) []byte {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.StateR()
-
-	params := ctx.Params()
-	blobHash := params.MustGetHashValue(ParamHash)
-	field := params.MustGetBytes(ParamField)
-
 	blobValues := GetBlobValuesR(state, blobHash)
 	if blobValues.Len() == 0 {
 		panic(errNotFound)
@@ -94,16 +86,14 @@ func getBlobField(ctx isc.SandboxView) dict.Dict {
 	if value == nil {
 		panic(errNotFound)
 	}
-	ret := dict.New()
-	ret.Set(ParamBytes, value)
-	return ret
+	return value
 }
 
-func listBlobs(ctx isc.SandboxView) dict.Dict {
+func listBlobs(ctx isc.SandboxView) map[hashing.HashValue]uint32 {
 	ctx.Log().Debugf("blob.listBlobs.begin")
-	ret := dict.New()
+	ret := map[hashing.HashValue]uint32{}
 	GetDirectoryR(ctx.StateR()).Iterate(func(hash []byte, totalSize []byte) bool {
-		ret.Set(kv.Key(hash), totalSize)
+		ret[lo.Must(codec.HashValue.Decode(hash))] = lo.Must(DecodeSize(totalSize))
 		return true
 	})
 	return ret

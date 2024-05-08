@@ -1,75 +1,56 @@
 package accounts
 
 import (
-	"math"
+	"math/big"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // viewBalance returns the balances of the account belonging to the AgentID
-// Params:
-// - ParamAgentID (optional -- default: caller)
-func viewBalance(ctx isc.SandboxView) dict.Dict {
+func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) *isc.Assets {
 	ctx.Log().Debugf("accounts.viewBalance")
-	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	return getAccountBalanceDict(ctx.SchemaVersion(), ctx.StateR(), accountKey(aid, ctx.ChainID()))
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return getFungibleTokens(ctx.SchemaVersion(), ctx.StateR(), accountKey(aid, ctx.ChainID()))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
-// Params:
-// - ParamAgentID (optional -- default: caller)
-func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
-	nTokens := getBaseTokens(ctx.SchemaVersion())(
+func viewBalanceBaseToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint64 {
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return getBaseTokens(ctx.SchemaVersion())(
 		ctx.StateR(),
-		accountKey(
-			ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller()),
-			ctx.ChainID(),
-		),
+		accountKey(aid, ctx.ChainID()),
 	)
-	return dict.Dict{ParamBalance: codec.Uint64.Encode(nTokens)}
 }
 
 // viewBalanceBaseTokenEVM returns the base tokens balance of the account belonging to the AgentID (in the EVM format with 18 decimals)
-// Params:
-// - ParamAgentID (optional -- default: caller)
-func viewBalanceBaseTokenEVM(ctx isc.SandboxView) dict.Dict {
-	nTokens := GetBaseTokensFullDecimals(ctx.SchemaVersion())(
+func viewBalanceBaseTokenEVM(ctx isc.SandboxView, optionalAgentID *isc.AgentID) *big.Int {
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return GetBaseTokensFullDecimals(ctx.SchemaVersion())(
 		ctx.StateR(),
-		accountKey(
-			ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller()),
-			ctx.ChainID(),
-		),
+		accountKey(aid, ctx.ChainID()),
 	)
-	return dict.Dict{ParamBalance: codec.BigIntAbs.Encode(nTokens)}
 }
 
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
-// Params:
-// - ParamAgentID (optional -- default: caller)
-// - ParamNativeTokenID
-// Returns: {ParamBalance: big.Int}
-func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
-	params := ctx.Params()
-	nativeTokenID := params.MustGetNativeTokenID(ParamNativeTokenID)
-	bal := getNativeTokenAmount(
+func viewBalanceNativeToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return getNativeTokenAmount(
 		ctx.StateR(),
-		accountKey(params.MustGetAgentID(ParamAgentID, ctx.Caller()), ctx.ChainID()),
+		accountKey(aid, ctx.ChainID()),
 		nativeTokenID,
 	)
-	return dict.Dict{ParamBalance: bal.Bytes()}
 }
 
 // viewTotalAssets returns total balances controlled by the chain
-func viewTotalAssets(ctx isc.SandboxView) dict.Dict {
+func viewTotalAssets(ctx isc.SandboxView) *isc.Assets {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(ctx.SchemaVersion(), ctx.StateR(), L2TotalsAccount)
+	return getFungibleTokens(ctx.SchemaVersion(), ctx.StateR(), L2TotalsAccount)
 }
 
 // viewAccounts returns list of all accounts
@@ -78,30 +59,29 @@ func viewAccounts(ctx isc.SandboxView) dict.Dict {
 }
 
 // nonces are only sent with off-ledger requests
-func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
-	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	nonce := AccountNonce(ctx.StateR(), account, ctx.ChainID())
-	ret := dict.New()
-	ret.Set(ParamAccountNonce, codec.Uint64.Encode(nonce))
-	return ret
+func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint64 {
+	account := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return AccountNonce(ctx.StateR(), account, ctx.ChainID())
 }
 
 // viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
-func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	nativeTokenOutputMapR(ctx.StateR()).IterateKeys(func(tokenID []byte) bool {
-		ret.Set(kv.Key(tokenID), []byte{0x01})
+func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) []iotago.NativeTokenID {
+	ntMap := nativeTokenOutputMapR(ctx.StateR())
+	ret := make([]iotago.NativeTokenID, 0, ntMap.Len())
+	ntMap.IterateKeys(func(b []byte) bool {
+		ntID := codec.NativeTokenID.MustDecode(b)
+		ret = append(ret, ntID)
 		return true
 	})
 	return ret
 }
 
 // viewAccountFoundries returns the foundries owned by the given agentID
-func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	accountFoundriesMapR(ctx.StateR(), account).IterateKeys(func(foundry []byte) bool {
-		ret.Set(kv.Key(foundry), []byte{0x01})
+func viewAccountFoundries(ctx isc.SandboxView, optionalAgentID *isc.AgentID) map[uint32]struct{} {
+	ret := make(map[uint32]struct{})
+	account := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	accountFoundriesMapR(ctx.StateR(), account).IterateKeys(func(b []byte) bool {
+		ret[codec.Uint32.MustDecode(b)] = struct{}{}
 		return true
 	})
 	return ret
@@ -110,76 +90,43 @@ func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
 var errFoundryNotFound = coreerrors.Register("foundry not found").Create()
 
 // viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
-func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
+func viewFoundryOutput(ctx isc.SandboxView, sn uint32) iotago.Output {
 	ctx.Log().Debugf("accounts.viewFoundryOutput")
-
-	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	out, _ := GetFoundryOutput(ctx.StateR(), sn, ctx.ChainID())
 	if out == nil {
 		panic(errFoundryNotFound)
 	}
-	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-	ctx.RequireNoError(err, "internal: error while serializing foundry output")
-	ret := dict.New()
-	ret.Set(ParamFoundryOutputBin, outBin)
-	return ret
+	return out
 }
 
 // viewAccountNFTs returns the NFTIDs of NFTs owned by an account
-func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
+func viewAccountNFTs(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []iotago.NFTID {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
-	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	nftIDs := getAccountNFTs(ctx.StateR(), aid)
-	return listNFTIDs(nftIDs)
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return getAccountNFTs(ctx.StateR(), aid)
 }
 
-func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
-	aid := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())
-	return dict.Dict{
-		ParamNFTAmount: codec.Uint32.Encode(accountToNFTsMapR(ctx.StateR(), aid).Len()),
-	}
+func viewAccountNFTAmount(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint32 {
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return accountToNFTsMapR(ctx.StateR(), aid).Len()
 }
 
-func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
-	params := ctx.Params()
-	aid := params.MustGetAgentID(ParamAgentID, ctx.Caller())
-	collectionID := params.MustGetNFTID(ParamCollectionID)
-	nftIDs := getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
-	return listNFTIDs(nftIDs)
+func viewAccountNFTsInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID iotago.NFTID) []iotago.NFTID {
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return getAccountNFTsInCollection(ctx.StateR(), aid, collectionID)
 }
 
-func listNFTIDs(nftIDs []iotago.NFTID) dict.Dict {
-	// TODO: add pagination?
-	if len(nftIDs) > math.MaxUint16 {
-		panic("too many NFTs")
-	}
-	ret := dict.New()
-	arr := collections.NewArray(ret, ParamNFTIDs)
-	for _, nftID := range nftIDs {
-		nftID := nftID
-		arr.Push(nftID[:])
-	}
-	return ret
-}
-
-func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
-	params := ctx.Params()
-	aid := params.MustGetAgentID(ParamAgentID, ctx.Caller())
-	collectionID := params.MustGetNFTID(ParamCollectionID)
-	return dict.Dict{
-		ParamNFTAmount: codec.Uint32.Encode(nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).Len()),
-	}
+func viewAccountNFTAmountInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID iotago.NFTID) uint32 {
+	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	return nftsByCollectionMapR(ctx.StateR(), aid, kv.Key(collectionID[:])).Len()
 }
 
 // viewNFTData returns the NFT data for a given NFTID
-func viewNFTData(ctx isc.SandboxView) dict.Dict {
+func viewNFTData(ctx isc.SandboxView, nftID iotago.NFTID) *isc.NFT {
 	ctx.Log().Debugf("accounts.viewNFTData")
-	nftID := ctx.Params().MustGetNFTID(ParamNFTID)
 	data := GetNFTData(ctx.StateR(), nftID)
 	if data == nil {
 		panic("NFTID not found")
 	}
-	return dict.Dict{
-		ParamNFTData: data.Bytes(),
-	}
+	return data
 }

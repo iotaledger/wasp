@@ -172,9 +172,8 @@ func initDepositCmd() *cobra.Command {
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
-
-					return cliclients.SCClient(client, chainID, accounts.Contract.Hname()).PostRequest(
-						accounts.FuncDeposit.Name,
+					return cliclients.ChainClient(client, chainID).PostRequest(
+						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
 							Transfer:                 tokens,
 							AutoAdjustStorageDeposit: adjustStorageDeposit,
@@ -205,13 +204,9 @@ func initDepositCmd() *cobra.Command {
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
-
-					return cliclients.SCClient(client, chainID, accounts.Contract.Hname()).PostRequest(
-						accounts.FuncTransferAllowanceTo.Name,
+					return cliclients.ChainClient(client, chainID).PostRequest(
+						accounts.FuncTransferAllowanceTo.Message(agentID),
 						chainclient.PostRequestParams{
-							Args: dict.Dict{
-								accounts.ParamAgentID: agentID.Bytes(),
-							},
 							Transfer:                 tokens,
 							Allowance:                allowance,
 							AutoAdjustStorageDeposit: adjustStorageDeposit,

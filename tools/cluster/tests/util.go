@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -25,19 +24,19 @@ import (
 
 func (e *ChainEnv) checkCoreContracts() {
 	for i := range e.Chain.AllPeers {
-		cl := e.Chain.SCClient(governance.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Name, nil)
+		cl := e.Chain.Client(nil, i)
+		ret, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Message())
+		require.NoError(e.t, err)
+		info, err := governance.ViewGetChainInfo.Output.Decode(ret)
 		require.NoError(e.t, err)
 
-		aid, err := codec.AgentID.Decode(ret.Get(governance.VarChainOwnerID))
-		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.OriginatorID(), aid)
+		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainOwnerID)
 
-		records, err := e.Chain.SCClient(root.Contract.Hname(), nil, i).
-			CallView(context.Background(), root.ViewGetContractRecords.Name, nil)
+		records, err := e.Chain.Client(nil, i).
+			CallView(context.Background(), root.ViewGetContractRecords.Message())
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.VarContractRegistry))
+		contractRegistry, err := root.ViewGetContractRecords.Output.Decode(records)
 		require.NoError(e.t, err)
 		for _, rec := range corecontracts.All {
 			cr := contractRegistry[rec.Hname()]
@@ -251,14 +250,14 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 			e.Chain.Cluster.WaspClient(nodeIndex),
 			e.Chain.ChainID.String(),
 			apiclient.ContractCallViewRequest{
-				ContractHName: nativeIncCounterSCHname.String(),
+				ContractHName: inccounter.Contract.Hname().String(),
 				FunctionHName: inccounter.ViewGetCounter.Hname().String(),
 			})
 		if err != nil {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
 		}
-		counter, err := codec.Int64.Decode(ret.Get(inccounter.VarCounter), 0)
+		counter, err := inccounter.ViewGetCounter.Output.Decode(ret)
 		require.NoError(t, err)
 		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected
@@ -273,11 +272,11 @@ func (e *ChainEnv) accountExists(agentID isc.AgentID) conditionFn {
 
 func (e *ChainEnv) contractIsDeployed() conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := e.findContract(nativeIncCounterSCName, nodeIndex)
+		ret, err := e.findContract(inccounter.Contract.Name, nodeIndex)
 		if err != nil {
 			return false
 		}
-		return ret.Name == nativeIncCounterSCName
+		return ret.Name == inccounter.Contract.Name
 	}
 }
 

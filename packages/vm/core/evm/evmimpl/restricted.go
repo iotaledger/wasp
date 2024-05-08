@@ -2,8 +2,6 @@ package evmimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -15,12 +13,5 @@ func cannotBeCalledFromContracts(ctx isc.Sandbox) {
 	caller := ctx.Caller()
 	if caller != nil && caller.Kind() == isc.AgentIDKindContract {
 		panic(vm.ErrIllegalCall)
-	}
-}
-
-func restricted(handler coreutil.Handler) coreutil.Handler {
-	return func(ctx isc.Sandbox) dict.Dict {
-		cannotBeCalledFromContracts(ctx)
-		return handler(ctx)
 	}
 }

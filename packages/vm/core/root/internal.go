@@ -37,8 +37,8 @@ func FindContract(state kv.KVStoreReader, hname isc.Hname) *ContractRecord {
 	return nil
 }
 
-// DecodeContractRegistry encodes the whole contract registry from the map into a Go map.
-func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc.Hname]*ContractRecord, error) {
+// decodeContractRegistry encodes the whole contract registry from the map into a Go map.
+func decodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc.Hname]*ContractRecord, error) {
 	ret := make(map[isc.Hname]*ContractRecord)
 	var err error
 	contractRegistry.Iterate(func(k []byte, v []byte) bool {

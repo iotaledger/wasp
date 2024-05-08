@@ -42,8 +42,8 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 	err := ch.DepositBaseTokensToL2(10*gas.LimitsDefault.MinGasPerRequest, user)
 	require.NoError(t, err)
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, isc.NewAgentID(userAddr)).WithGasBudget(100_000)
+	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAgentID(userAddr))).
+		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 	return user, isc.NewAgentID(userAddr)
@@ -65,7 +65,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair
 	require.NoError(t, err)
 
 	deployed := isc.NewContractAgentID(chain.ChainID, HScName)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncDoNothing.Name).
 		WithGasBudget(100_000)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)

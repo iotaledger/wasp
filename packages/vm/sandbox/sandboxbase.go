@@ -142,12 +142,12 @@ func (s *SandboxBase) RequireNoError(err error, str ...string) {
 	s.assert().RequireNoError(err, str...)
 }
 
-func (s *SandboxBase) CallView(contractHname, entryPoint isc.Hname, params dict.Dict) dict.Dict {
+func (s *SandboxBase) CallView(msg isc.Message) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
-	if params == nil {
-		params = make(dict.Dict)
+	if msg.Params == nil {
+		msg.Params = make(dict.Dict)
 	}
-	return s.Ctx.Call(contractHname, entryPoint, params, nil)
+	return s.Ctx.Call(msg, nil)
 }
 
 func (s *SandboxBase) StateR() kv.KVStoreReader {

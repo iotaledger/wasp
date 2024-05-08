@@ -67,11 +67,12 @@ func (req *evmOffLedgerCallRequest) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
 }
 
-func (req *evmOffLedgerCallRequest) CallTarget() CallTarget {
-	return CallTarget{
-		Contract:   Hn(evmnames.Contract),
-		EntryPoint: Hn(evmnames.FuncCallContract),
-	}
+func (req *evmOffLedgerCallRequest) Message() Message {
+	return NewMessage(
+		Hn(evmnames.Contract),
+		Hn(evmnames.FuncCallContract),
+		dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(req.callMsg)},
+	)
 }
 
 func (req *evmOffLedgerCallRequest) ChainID() ChainID {
@@ -96,10 +97,6 @@ func (req *evmOffLedgerCallRequest) NFT() *NFT {
 
 func (req *evmOffLedgerCallRequest) Nonce() uint64 {
 	return 0
-}
-
-func (req *evmOffLedgerCallRequest) Params() dict.Dict {
-	return dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(req.callMsg)}
 }
 
 func (req *evmOffLedgerCallRequest) SenderAccount() AgentID {

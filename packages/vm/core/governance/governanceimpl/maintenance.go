@@ -1,6 +1,8 @@
 package governanceimpl
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -29,8 +31,6 @@ func stopMaintenance(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func getMaintenanceStatus(ctx isc.SandboxView) dict.Dict {
-	return dict.Dict{
-		governance.VarMaintenanceStatus: ctx.StateR().Get(governance.VarMaintenanceStatus),
-	}
+func getMaintenanceStatus(ctx isc.SandboxView) bool {
+	return lo.Must(codec.Bool.Decode(ctx.StateR().Get(governance.VarMaintenanceStatus)))
 }

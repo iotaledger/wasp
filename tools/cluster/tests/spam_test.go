@@ -57,11 +57,11 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 			break
 		}
 		go func() {
-			chainClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
+			chainClient := env.Chain.Client(keyPair)
 			for i := 0; i < numRequestsPerAccount; i++ {
 				retries := 0
 				for {
-					tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
+					tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
 					if err != nil {
 						if retries >= 5 {
 							errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
@@ -126,7 +126,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
 
-	myClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
+	myClient := env.Chain.Client(keyPair)
 
 	durationsMutex := sync.Mutex{}
 	processingDurationsSum := uint64(0)
@@ -141,7 +141,11 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 			maxChan <- i
 			go func(nonce uint64) {
 				// send the request
-				req, er := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: nonce})
+				req, er := myClient.PostOffLedgerRequest(
+					context.Background(),
+					inccounter.FuncIncCounter.Message(nil),
+					chainclient.PostRequestParams{Nonce: nonce},
+				)
 				if er != nil {
 					reqErrorChan <- er
 					return

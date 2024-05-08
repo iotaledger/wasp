@@ -33,15 +33,17 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 
 	timeoutInSeconds := e.QueryParam("timeoutSeconds")
 	if timeoutInSeconds != "" {
-		parsedTimeout, _ := strconv.Atoi(timeoutInSeconds)
-
+		parsedTimeout, err := strconv.Atoi(timeoutInSeconds)
 		if err != nil {
-			if parsedTimeout > maximumTimeoutSeconds {
-				parsedTimeout = maximumTimeoutSeconds
-			}
-
-			timeout = time.Duration(parsedTimeout) * time.Second
+			return err
 		}
+		if parsedTimeout < 0 {
+			parsedTimeout = 0
+		}
+		if parsedTimeout > maximumTimeoutSeconds {
+			parsedTimeout = maximumTimeoutSeconds
+		}
+		timeout = time.Duration(parsedTimeout) * time.Second
 	}
 	var waitForL1Confirmation bool
 	echo.QueryParamsBinder(e).Bool("waitForL1Confirmation", &waitForL1Confirmation)

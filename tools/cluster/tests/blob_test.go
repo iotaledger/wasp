@@ -58,13 +58,7 @@ func testBlobStoreSmallBlob(t *testing.T, e *ChainEnv) {
 	require.NoError(t, err)
 
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
-	reqTx, err := chClient.Post1Request(
-		blob.Contract.Hname(),
-		blob.FuncStoreBlob.Hname(),
-		chainclient.PostRequestParams{
-			Args: fv,
-		},
-	)
+	reqTx, err := chClient.PostRequest(blob.FuncStoreBlob.Message(fv))
 	require.NoError(t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)

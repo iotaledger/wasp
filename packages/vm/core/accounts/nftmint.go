@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
@@ -82,15 +81,13 @@ type mintParameters struct {
 	withdrawOnMint    bool
 }
 
-func mintParams(ctx isc.Sandbox) mintParameters {
-	params := ctx.Params()
-
-	immutableMetadata := params.MustGetBytes(ParamNFTImmutableData)
-	targetAgentID := params.MustGetAgentID(ParamAgentID)
-	withdrawOnMint := params.MustGetBool(ParamNFTWithdrawOnMint, false)
-	emptyNFTID := iotago.NFTID{}
-	collectionID := params.MustGetNFTID(ParamCollectionID, emptyNFTID)
-
+func mintParams(
+	ctx isc.Sandbox,
+	immutableMetadata []byte,
+	targetAgentID isc.AgentID,
+	withdrawOnMint bool,
+	collectionID iotago.NFTID,
+) mintParameters {
 	chainAddress := ctx.ChainID().AsAddress()
 	ret := mintParameters{
 		immutableMetadata: slices.Clone(immutableMetadata),
@@ -100,7 +97,7 @@ func mintParams(ctx isc.Sandbox) mintParameters {
 		withdrawOnMint:    withdrawOnMint,
 	}
 
-	if collectionID != emptyNFTID {
+	if !collectionID.Empty() {
 		// assert the NFT of collectionID is on-chain and owned by the caller
 		if !hasNFT(ctx.State(), ctx.Caller(), collectionID) {
 			panic(errCollectionNotAllowed)
@@ -133,8 +130,14 @@ func mintID(blockIndex uint32, positionInMintedList uint16) []byte {
 }
 
 // NFTs are always minted with the minimumSD and that must be provided via allowance
-func mintNFT(ctx isc.Sandbox) dict.Dict {
-	params := mintParams(ctx)
+func mintNFT(
+	ctx isc.Sandbox,
+	immutableMetadata []byte,
+	target isc.AgentID,
+	withdrawOnMint bool,
+	collectionID iotago.NFTID,
+) []byte {
+	params := mintParams(ctx, immutableMetadata, target, withdrawOnMint, collectionID)
 
 	// NFTs are now automatically registered inside the EVM.
 	// The EVM requires IRC27 metadata to be present. Therefore, any invalid metadata will panic here
@@ -163,17 +166,13 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
-	return dict.Dict{
-		ParamMintID: mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
-	}
+	return mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList)
 }
 
-func viewNFTIDbyMintID(ctx isc.SandboxView) dict.Dict {
-	internalMintID := ctx.Params().MustGetBytes(ParamMintID)
-	nftID := mintIDMapR(ctx.StateR()).GetAt(internalMintID)
-	return dict.Dict{
-		ParamNFTID: nftID,
-	}
+func viewNFTIDbyMintID(ctx isc.SandboxView, internalMintID []byte) (ret iotago.NFTID) {
+	b := mintIDMapR(ctx.StateR()).GetAt(internalMintID)
+	copy(ret[:], b)
+	return ret
 }
 
 // ----  output management

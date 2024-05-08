@@ -11,7 +11,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -340,7 +339,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	t.Run("send some of the tokens in balance", func(t *testing.T) {
 		txb, mockedAccounts, nativeTokenIDs := initTest(5)
 		setNativeTokenAccountsBalance := func(id iotago.NativeTokenID, amount int64) {
-			mockedAccounts.assets.AddNativeTokens(id, amount)
+			mockedAccounts.assets.AddNativeTokens(id, big.NewInt(amount))
 			// create internal accounting outputs with 0 base tokens (they must be updated in the output side)
 			out := txb.newInternalTokenOutput(aliasID, id)
 			out.NativeTokens[0].Amount = new(big.Int).SetInt64(amount)
@@ -450,9 +449,7 @@ func TestSerDe(t *testing.T) {
 	t.Run("serde BasicOutput", func(t *testing.T) {
 		reqMetadata := isc.RequestMetadata{
 			SenderContract: isc.EmptyContractIdentity(),
-			TargetContract: 0,
-			EntryPoint:     0,
-			Params:         dict.New(),
+			Message:        isc.NewMessage(0, 0),
 			Allowance:      isc.NewEmptyAssets(),
 			GasBudget:      0,
 		}

@@ -36,9 +36,8 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 			TargetAddress: env.Chain.ChainAddress(),
 			Assets:        &isc.Assets{BaseTokens: 2 * isc.Million},
 			Metadata: &isc.SendMetadata{
-				TargetContract: nativeIncCounterSCHname,
-				EntryPoint:     inccounter.FuncIncCounter.Hname(),
-				GasBudget:      math.MaxUint64,
+				Message:   inccounter.FuncIncCounter.Message(nil),
+				GasBudget: math.MaxUint64,
 			},
 		},
 	})
@@ -91,7 +90,7 @@ func testSDRUC(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	require.EqualValues(t, initialBlockIdx, currentBlockIndex)
 
-	require.EqualValues(t, 0, env.getNativeContractCounter(nativeIncCounterSCHname))
+	require.EqualValues(t, 0, env.getNativeContractCounter())
 
 	// send an equivalent request without StorageDepositReturnUnlockCondition
 	txNormal := buildTX(t, env, addr, keyPair, false)
@@ -101,7 +100,7 @@ func testSDRUC(t *testing.T, env *ChainEnv) {
 	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, txNormal, false, 1*time.Minute)
 	require.NoError(t, err)
 
-	require.EqualValues(t, 1, env.getNativeContractCounter(nativeIncCounterSCHname))
+	require.EqualValues(t, 1, env.getNativeContractCounter())
 
 	currentBlockIndex2, err := env.Chain.BlockIndex()
 	require.NoError(t, err)

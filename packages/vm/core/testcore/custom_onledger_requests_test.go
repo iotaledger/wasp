@@ -5,12 +5,12 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -33,7 +33,7 @@ func TestNoSenderFeature(t *testing.T) {
 	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(withdrawAmount+gasFee), wallet)
 	require.NoError(t, err)
 	nativeTokenAmount := big.NewInt(123)
-	sn, nativeTokenID, err := ch.NewNativeTokenParams(1234).
+	sn, nativeTokenID, err := ch.NewNativeTokenParams(big.NewInt(1234)).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)
@@ -44,9 +44,7 @@ func TestNoSenderFeature(t *testing.T) {
 	// withdraw native tokens to L1
 	allowance := withdrawAmount
 	baseTokensToSend := allowance + gasFee
-	_, err = ch.PostRequestOffLedger(solo.NewCallParams(
-		accounts.Contract.Name, accounts.FuncWithdraw.Name,
-	).
+	_, err = ch.PostRequestOffLedger(solo.NewCallParams(accounts.FuncWithdraw.Message()).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(allowance).
 		AddAllowanceNativeTokensVect(&iotago.NativeToken{
@@ -79,9 +77,8 @@ func TestNoSenderFeature(t *testing.T) {
 				NFTs:         []iotago.NFTID{nft.ID},
 			},
 			Metadata: &isc.SendMetadata{
-				TargetContract: inccounter.Contract.Hname(),
-				EntryPoint:     inccounter.FuncIncCounter.Hname(),
-				GasBudget:      math.MaxUint64,
+				Message:   inccounter.FuncIncCounter.Message(nil),
+				GasBudget: math.MaxUint64,
 			},
 		},
 		NFT: nft,
@@ -128,21 +125,20 @@ func TestSendBack(t *testing.T) {
 	err := ch.DepositBaseTokensToL2(10*isc.Million, nil)
 	require.NoError(t, err)
 
-	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
+	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(0))
 	require.NoError(t, err)
 
 	// send a normal request
 	wallet, addr := env.NewKeyPairWithFunds()
 
-	req := solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithMaxAffordableGasBudget()
+	req := solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).WithMaxAffordableGasBudget()
 	_, _, err = ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
 
 	// check counter increments
-	ret, err := ch.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
+	ret, err := ch.CallView(inccounter.ViewGetCounter.Message())
 	require.NoError(t, err)
-	counter, err := codec.Int64.Decode(ret.Get(inccounter.VarCounter))
-	require.NoError(t, err)
+	counter := lo.Must(inccounter.ViewGetCounter.Output.Decode(ret))
 	require.EqualValues(t, 1, counter)
 
 	// send a custom request
@@ -156,9 +152,8 @@ func TestSendBack(t *testing.T) {
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets:        &isc.Assets{BaseTokens: 1 * isc.Million},
 			Metadata: &isc.SendMetadata{
-				TargetContract: inccounter.Contract.Hname(),
-				EntryPoint:     inccounter.FuncIncCounter.Hname(),
-				GasBudget:      math.MaxUint64,
+				Message:   inccounter.FuncIncCounter.Message(nil),
+				GasBudget: math.MaxUint64,
 			},
 		},
 	})
@@ -191,10 +186,9 @@ func TestSendBack(t *testing.T) {
 	require.Len(t, results, 0)
 
 	// check counter is still the same (1)
-	ret, err = ch.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
+	ret, err = ch.CallView(inccounter.ViewGetCounter.Message())
 	require.NoError(t, err)
-	counter, err = codec.Int64.Decode(ret.Get(inccounter.VarCounter))
-	require.NoError(t, err)
+	counter = lo.Must(inccounter.ViewGetCounter.Output.Decode(ret))
 	require.EqualValues(t, 1, counter)
 }
 
@@ -215,9 +209,8 @@ func TestBadMetadata(t *testing.T) {
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets:        &isc.Assets{BaseTokens: 1 * isc.Million},
 			Metadata: &isc.SendMetadata{
-				TargetContract: inccounter.Contract.Hname(),
-				EntryPoint:     inccounter.FuncIncCounter.Hname(),
-				GasBudget:      math.MaxUint64,
+				Message:   inccounter.FuncIncCounter.Message(nil),
+				GasBudget: math.MaxUint64,
 			},
 		},
 	})

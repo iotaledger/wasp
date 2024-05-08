@@ -32,7 +32,7 @@ func TestRootRepeatInit(t *testing.T) {
 
 	chain.CheckChain()
 
-	req := solo.NewCallParams(root.Contract.Name, "init")
+	req := solo.NewCallParamsEx(root.Contract.Name, "init")
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -140,8 +140,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	newOwnerAgentID := isc.NewAgentID(ownerAddr)
 
 	req := solo.NewCallParams(
-		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
-		governance.ParamChainOwner, newOwnerAgentID,
+		governance.FuncDelegateChainOwnership.Message(newOwnerAgentID),
 	).WithGasBudget(100_000).
 		AddBaseTokens(100_000)
 
@@ -151,7 +150,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	_, ownerAgentID, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
-	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).
+	req = solo.NewCallParams(governance.FuncClaimChainOwnership.Message()).
 		WithGasBudget(100_000).
 		AddBaseTokens(100_000)
 
@@ -168,7 +167,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := isc.NewAgentID(ownerAddr)
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, governance.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(newOwnerAgentID))
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 

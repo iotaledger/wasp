@@ -138,8 +138,8 @@ func (e *EVMChain) ChainID() uint16 {
 
 func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
 	e.log.Debugf("ViewCaller(chainState=%v)", chainState)
-	return func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
-		return e.backend.ISCCallView(chainState, contractName, funcName, params)
+	return func(msg isc.Message) (dict.Dict, error) {
+		return e.backend.ISCCallView(chainState, msg)
 	}
 }
 

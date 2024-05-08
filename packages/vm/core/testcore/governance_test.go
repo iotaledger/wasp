@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
@@ -117,7 +117,7 @@ func TestRotate(t *testing.T) {
 		ca := chain.GetControlAddresses()
 		require.True(t, ca.StateAddress.Equal(newAddr))
 
-		req := solo.NewCallParams("dummy", "dummy").WithMaxAffordableGasBudget()
+		req := solo.NewCallParamsEx("dummy", "dummy").WithMaxAffordableGasBudget()
 		_, err = chain.PostRequestSync(req, nil)
 		testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 	})
@@ -134,91 +134,69 @@ func TestAccessNodes(t *testing.T) {
 
 	//
 	// Initially the state is empty.
-	res, err = chain.CallView(
-		governance.Contract.Name,
-		governance.ViewGetChainNodes.Name,
-		governance.GetChainNodesRequest{}.AsDict(),
-	)
+	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse := governance.GetChainNodesResponseFromDict(res)
+	getChainNodesResponse := lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
 	//
 	// Add a single access node candidate.
 	_, err = chain.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncAddCandidateNode.Name,
+		solo.NewCallParams(governance.FuncAddCandidateNode.Message(
 			(&governance.AccessNodeInfo{
 				NodePubKey:   node1KP.GetPublicKey().AsBytes(),
 				ForCommittee: false,
 				AccessAPI:    "http://my-api/url",
-			}).AddCertificate(node1KP, node1OwnerAddr).ToAddCandidateNodeParams(),
-		).WithMaxAffordableGasBudget(),
+			}).AddCertificate(node1KP, node1OwnerAddr),
+		)).WithMaxAffordableGasBudget(),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)
 
 	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name()+"1")
 
-	res, err = chain.CallView(
-		governance.Contract.Name,
-		governance.ViewGetChainNodes.Name,
-		governance.GetChainNodesRequest{}.AsDict(),
-	)
+	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = governance.GetChainNodesResponseFromDict(res)
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
-	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[node1KP.GetPublicKey().AsKey()].AccessAPI)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
 	//
 	// Accept the node as an access node.
 	_, err = chain.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncChangeAccessNodes.Name,
-			governance.NewChangeAccessNodesRequest().Accept(node1KP.GetPublicKey()).AsDict(),
-		).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(governance.FuncChangeAccessNodes.Message(
+			governance.NewChangeAccessNodesRequest().Accept(node1KP.GetPublicKey()),
+		)).WithMaxAffordableGasBudget(),
 		chainKP,
 	)
 	require.NoError(t, err)
 
 	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name()+"2")
 
-	res, err = chain.CallView(
-		governance.Contract.Name,
-		governance.ViewGetChainNodes.Name,
-		governance.GetChainNodesRequest{}.AsDict(),
-	)
+	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = governance.GetChainNodesResponseFromDict(res)
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
-	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[0].AccessAPI)
+	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[node1KP.GetPublicKey().AsKey()].AccessAPI)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
 
 	//
 	// Revoke the access node (by the node owner).
 	_, err = chain.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncRevokeAccessNode.Name,
+		solo.NewCallParams(governance.FuncRevokeAccessNode.Message(
 			(&governance.AccessNodeInfo{
 				NodePubKey: node1KP.GetPublicKey().AsBytes(),
-			}).AddCertificate(node1KP, node1OwnerAddr).ToAddCandidateNodeParams(),
-		).WithMaxAffordableGasBudget(),
+			}).AddCertificate(node1KP, node1OwnerAddr),
+		)).WithMaxAffordableGasBudget(),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)
 
-	res, err = chain.CallView(
-		governance.Contract.Name,
-		governance.ViewGetChainNodes.Name,
-		governance.GetChainNodesRequest{}.AsDict(),
-	)
+	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = governance.GetChainNodesResponseFromDict(res)
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 }
@@ -238,9 +216,8 @@ func TestMaintenanceMode(t *testing.T) {
 	// set owner of the chain
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
-				governance.ParamChainOwner, codec.Encode(ownerAgentID),
-			).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerAgentID)).
+				WithMaxAffordableGasBudget(),
 			nil,
 		)
 		require.NoError(t, err2)
@@ -248,7 +225,7 @@ func TestMaintenanceMode(t *testing.T) {
 		testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
 		_, err2 = ch.PostRequestSync(
-			solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncClaimChainOwnership.Message()).WithMaxAffordableGasBudget(),
 			ownerWallet,
 		)
 		require.NoError(t, err2)
@@ -257,16 +234,16 @@ func TestMaintenanceMode(t *testing.T) {
 	// call the gov "maintenance status view", check it is OFF
 	{
 		// TODO: Add maintenance status to wrapped core contracts
-		ret, err2 := ch.CallView(governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+		ret, err2 := ch.CallView(governance.ViewGetMaintenanceStatus.Message())
 		require.NoError(t, err2)
-		maintenanceStatus := codec.Bool.MustDecode(ret.Get(governance.VarMaintenanceStatus))
+		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output.Decode(ret))
 		require.False(t, maintenanceStatus)
 	}
 
 	// test non-chain owner cannot call init maintenance
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncStartMaintenance.Message()).WithMaxAffordableGasBudget(),
 			userWallet,
 		)
 		require.ErrorContains(t, err2, "unauthorized")
@@ -275,7 +252,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// owner can start maintenance mode
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncStartMaintenance.Message()).WithMaxAffordableGasBudget(),
 			ownerWallet,
 		)
 		require.NoError(t, err2)
@@ -283,9 +260,9 @@ func TestMaintenanceMode(t *testing.T) {
 
 	// call the gov "maintenance status view", check it is ON
 	{
-		ret, err2 := ch.CallView(governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+		ret, err2 := ch.CallView(governance.ViewGetMaintenanceStatus.Message())
 		require.NoError(t, err2)
-		maintenanceStatus := codec.Bool.MustDecode(ret.Get(governance.VarMaintenanceStatus))
+		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output.Decode(ret))
 		require.True(t, maintenanceStatus)
 	}
 
@@ -295,7 +272,7 @@ func TestMaintenanceMode(t *testing.T) {
 	var reqs []isc.OffLedgerRequest
 	{
 		for _, wallet := range []*cryptolib.KeyPair{userWallet, ownerWallet} {
-			req := solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).
+			req := solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).
 				WithMaxAffordableGasBudget().
 				NewRequestOffLedger(ch, wallet)
 			env.AddRequestsToMempool(ch, []isc.Request{req})
@@ -320,11 +297,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// calls to governance are processed (try changing fees for example)
 	{
 		_, err2 := ch.PostRequestSync(solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetFeePolicy.Name,
-			dict.Dict{
-				governance.ParamFeePolicyBytes: fp.Bytes(),
-			},
+			governance.FuncSetFeePolicy.Message(fp),
 		), ownerWallet)
 		require.NoError(t, err2)
 	}
@@ -332,11 +305,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// calls to governance from non-owners should be processed, but fail
 	{
 		_, err2 := ch.PostRequestSync(solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetFeePolicy.Name,
-			dict.Dict{
-				governance.ParamFeePolicyBytes: fp.Bytes(),
-			},
+			governance.FuncSetFeePolicy.Message(fp),
 		), userWallet)
 		require.ErrorContains(t, err2, "unauthorized")
 	}
@@ -344,7 +313,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// test non-chain owner cannot call stop maintenance
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.Contract.Name, governance.FuncStopMaintenance.Name).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncStopMaintenance.Message()).WithMaxAffordableGasBudget(),
 			userWallet,
 		)
 		require.ErrorContains(t, err2, "unauthorized")
@@ -360,7 +329,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// owner can stop maintenance mode
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.Contract.Name, governance.FuncStopMaintenance.Name).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncStopMaintenance.Message()).WithMaxAffordableGasBudget(),
 			ownerWallet,
 		)
 		require.NoError(t, err2)
@@ -374,18 +343,18 @@ func TestMaintenanceMode(t *testing.T) {
 }
 
 var (
-	claimOwnershipFunc   = coreutil.Func("claimOwnership")
-	startMaintenanceFunc = coreutil.Func("initMaintenance")
+	ownerContract        = coreutil.NewContract("chain owner contract")
+	claimOwnershipFunc   = ownerContract.Func("claimOwnership")
+	startMaintenanceFunc = ownerContract.Func("initMaintenance")
 )
 
 func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
-	ownerContract := coreutil.NewContract("chain owner contract")
 	ownerContractProcessor := ownerContract.Processor(nil,
 		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			return ctx.Call(governance.Contract.Hname(), governance.FuncClaimChainOwnership.Hname(), nil, nil)
+			return ctx.Call(governance.FuncClaimChainOwnership.Message(), nil)
 		}),
 		startMaintenanceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			return ctx.Call(governance.Contract.Hname(), governance.FuncStartMaintenance.Hname(), nil, nil)
+			return ctx.Call(governance.FuncStartMaintenance.Message(), nil)
 		}),
 	)
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
@@ -406,22 +375,22 @@ func TestDisallowMaintenanceDeadlock1(t *testing.T) {
 
 	// from the initial owner - set maintenance
 	_, err := ch.PostRequestSync(
-		solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(governance.FuncStartMaintenance.Message()).WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
 	// set the "owner contract" as the new chain owner
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
-			governance.ParamChainOwner, codec.Encode(ownerContractAgentID)).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerContractAgentID)).
+			WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
 	// the "owner contract" cannot claim ownership
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(ownerContract.Name, claimOwnershipFunc.Name).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(claimOwnershipFunc.Message(nil)).WithMaxAffordableGasBudget(),
 		userWallet,
 	)
 	require.ErrorContains(t, err, "skipped")
@@ -435,21 +404,21 @@ func TestDisallowMaintenanceDeadlock2(t *testing.T) {
 
 	// set the "owner contract" as the new chain owner
 	_, err := ch.PostRequestSync(
-		solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
-			governance.ParamChainOwner, codec.Encode(ownerContractAgentID)).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerContractAgentID)).
+			WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(ownerContract.Name, claimOwnershipFunc.Name).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(claimOwnershipFunc.Message(nil)).WithMaxAffordableGasBudget(),
 		userWallet,
 	)
 	require.NoError(t, err)
 
 	// the "owner contract" is unable to start maintenance
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(ownerContract.Name, startMaintenanceFunc.Name).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(startMaintenanceFunc.Message(nil)).WithMaxAffordableGasBudget(),
 		userWallet,
 	)
 	require.ErrorContains(t, err, "unauthorized")
@@ -470,7 +439,7 @@ func TestMetadata(t *testing.T) {
 
 	testValue := "TESTYTEST"
 
-	testMetadata := isc.PublicChainMetadata{
+	testMetadata := &isc.PublicChainMetadata{
 		EVMJsonRPCURL:   testValue,
 		EVMWebSocketURL: testValue,
 		Name:            testValue,
@@ -481,10 +450,7 @@ func TestMetadata(t *testing.T) {
 	// Set proper metadata value
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMetadata.Name,
-			governance.ParamMetadata,
-			testMetadata.Bytes(),
+			governance.FuncSetMetadata.Message(nil, &testMetadata),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -492,39 +458,31 @@ func TestMetadata(t *testing.T) {
 
 	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
-	res, err := ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetMetadata.Name,
-	)
+	res, err := ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata := res.Get(governance.ParamMetadata)
+	resMetadata := lo.Must(governance.ViewGetMetadata.Output2.Decode(res))
 
 	// Chain name should be equal to the configured one.
-	require.Equal(t, testMetadata.Bytes(), resMetadata)
+	require.Equal(t, testMetadata.Bytes(), resMetadata.Bytes())
 
 	// Call SetMetadata without args. The metadata should be the same as it was previously configured and not be emptied.
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMetadata.Name,
-		).WithMaxAffordableGasBudget(),
+		solo.NewCallParams(governance.FuncSetMetadata.Message(nil, nil)).
+			WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
-	res, err = ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetMetadata.Name,
-	)
+	res, err = ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata = res.Get(governance.ParamMetadata)
+	resMetadata = lo.Must(governance.ViewGetMetadata.Output2.Decode(res))
 
 	// Chain name should be equal to the configured one.
-	require.Equal(t, testMetadata.Bytes(), resMetadata)
+	require.Equal(t, testMetadata.Bytes(), resMetadata.Bytes())
 
 	// Call SetMetadata with an empty arg. The metadata call should fail.
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
+		solo.NewCallParamsEx(
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamMetadata,
@@ -536,7 +494,7 @@ func TestMetadata(t *testing.T) {
 
 	// Test invalid custom metadata
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
+		solo.NewCallParamsEx(
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
 			governance.ParamMetadata,
@@ -547,15 +505,12 @@ func TestMetadata(t *testing.T) {
 	require.Error(t, err)
 
 	// set invalid custom metadata
-	hugePublicChainMetadata := isc.PublicChainMetadata{
+	hugePublicChainMetadata := &isc.PublicChainMetadata{
 		Website: string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
 	}
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMetadata.Name,
-			governance.ParamPublicURL,
-			hugePublicChainMetadata.Bytes(),
+			governance.FuncSetMetadata.Message(nil, &hugePublicChainMetadata),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -574,10 +529,7 @@ func TestL1Metadata(t *testing.T) {
 
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMetadata.Name,
-			governance.ParamPublicURL,
-			publicURLMetadata,
+			governance.FuncSetMetadata.Message(&publicURLMetadata, nil),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -586,13 +538,10 @@ func TestL1Metadata(t *testing.T) {
 	testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
 	// assert metadata is correct on view call
-	res, err := ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetMetadata.Name,
-	)
+	res, err := ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata := res.Get(governance.ParamPublicURL)
-	require.Equal(t, publicURLMetadata, string(resMetadata))
+	resPubURL := lo.Must(governance.ViewGetMetadata.Output1.Decode(res))
+	require.Equal(t, publicURLMetadata, resPubURL)
 
 	// assert metadata is correct on L1 alias output
 	ao, err := ch.LatestAliasOutput(chain.ActiveOrCommittedState)
@@ -616,10 +565,7 @@ func TestL1Metadata(t *testing.T) {
 	}
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetFeePolicy.Name,
-			governance.ParamFeePolicyBytes,
-			newFeePolicy.Bytes(),
+			governance.FuncSetFeePolicy.Message(newFeePolicy),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -663,18 +609,14 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	}
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetFeePolicy.Name,
-			governance.VarGasFeePolicyBytes,
-			fp.Bytes(),
+			governance.FuncSetFeePolicy.Message(fp),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
 	_, estimate, err := ch.EstimateGasOnLedger(solo.NewCallParams(
-		accounts.Contract.Name,
-		accounts.FuncDeposit.Name,
+		accounts.FuncDeposit.Message(),
 	), user1)
 	require.NoError(t, err)
 	require.Zero(t, estimate.GasFeeCharged)
@@ -685,11 +627,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	gasGreaterThanEstimatedGas := estimate.GasBurned + 100
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			accounts.Contract.Name,
-			accounts.FuncTransferAllowanceTo.Name,
-			dict.Dict{
-				accounts.ParamAgentID: codec.AgentID.Encode(userAgentID2),
-			},
+			accounts.FuncTransferAllowanceTo.Message(userAgentID2),
 		).
 			AddBaseTokens(gasGreaterThanEstimatedGas).
 			AddAllowanceBaseTokens(gasGreaterThanEstimatedGas).
@@ -708,11 +646,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	gasLessThanEstimatedGas := estimate.GasBurned - 100
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			accounts.Contract.Name,
-			accounts.FuncTransferAllowanceTo.Name,
-			dict.Dict{
-				accounts.ParamAgentID: codec.AgentID.Encode(userAgentID2),
-			},
+			accounts.FuncTransferAllowanceTo.Message(userAgentID2),
 		).
 			AddBaseTokens(gasLessThanEstimatedGas).
 			WithGasBudget(gasLessThanEstimatedGas),
@@ -735,30 +669,20 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetPayoutAgentID.Name,
-			governance.ParamSetPayoutAgentID,
-			userAgentID.Bytes(),
+			governance.FuncSetPayoutAgentID.Message(userAgentID),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
-	retDict, err := ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetPayoutAgentID.Name,
-	)
+	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
 	require.NoError(t, err)
-	retAgentID, err := codec.AgentID.Decode(retDict.Get(governance.ParamSetPayoutAgentID))
-	require.NoError(t, err)
+	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output.Decode(retDict))
 	require.Equal(t, userAgentID, retAgentID)
 
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetPayoutAgentID.Name,
-			governance.ParamSetPayoutAgentID,
-			userAgentID.Bytes(),
+			governance.FuncSetPayoutAgentID.Message(userAgentID),
 		).WithMaxAffordableGasBudget(),
 		user,
 	)
@@ -768,36 +692,23 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
-
-	initRetDict, err := ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetMinCommonAccountBalance.Name,
-	)
+	initRetDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
-	retByte := initRetDict.Get(governance.ParamSetMinCommonAccountBalance)
-	retMinCommonAccountBalance, err := codec.Uint64.Decode(retByte)
-	require.NoError(t, err)
+	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.Output.Decode(initRetDict))
 	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
 	minCommonAccountBalance := uint64(123456)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetMinCommonAccountBalance.Name,
-			governance.ParamSetMinCommonAccountBalance,
-			codec.Uint64.Encode(minCommonAccountBalance),
+			governance.FuncSetMinCommonAccountBalance.Message(minCommonAccountBalance),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
 	require.NoError(t, err)
 
-	retDict, err := ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetMinCommonAccountBalance.Name,
-	)
+	retDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
-	retByte = retDict.Get(governance.ParamSetMinCommonAccountBalance)
-	retMinCommonAccountBalance, err = codec.Uint64.Decode(retByte)
+	retMinCommonAccountBalance = lo.Must(governance.ViewGetMinCommonAccountBalance.Output.Decode(retDict))
 	require.NoError(t, err)
 	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
 }
@@ -808,12 +719,12 @@ func TestGovCallsNoBalance(t *testing.T) {
 
 	// the owner can call gov funcs without funds
 	_, err := ch.PostRequestOffLedger(
-		solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name),
+		solo.NewCallParams(governance.FuncStartMaintenance.Message()),
 		nil,
 	)
 	require.NoError(t, err)
 	_, err = ch.PostRequestOffLedger(
-		solo.NewCallParams(governance.Contract.Name, governance.FuncStopMaintenance.Name),
+		solo.NewCallParams(governance.FuncStopMaintenance.Message()),
 		nil,
 	)
 	require.NoError(t, err)
@@ -834,10 +745,8 @@ func TestGasPayout(t *testing.T) {
 	user1Bal1 := ch.L2Assets(user1AgentID)
 	transferAmt := uint64(2000)
 	_, err := ch.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name,
-			accounts.FuncDeposit.Name,
-		).AddBaseTokens(transferAmt),
+		solo.NewCallParams(accounts.FuncDeposit.Message()).
+			AddBaseTokens(transferAmt),
 		user1,
 	)
 	require.NoError(t, err)
@@ -853,10 +762,7 @@ func TestGasPayout(t *testing.T) {
 	// change the payoutAddress, so that user1 now receives the fees charged by the chain
 	_, err = ch.PostRequestOffLedger(
 		solo.NewCallParams(
-			governance.Contract.Name,
-			governance.FuncSetPayoutAgentID.Name,
-			governance.ParamSetPayoutAgentID,
-			user1AgentID.Bytes(),
+			governance.FuncSetPayoutAgentID.Message(user1AgentID),
 		),
 		nil,
 	)
@@ -871,21 +777,16 @@ func TestGasPayout(t *testing.T) {
 	require.Equal(t, user1Bal2.BaseTokens, user1Bal3.BaseTokens)
 
 	// assert new payoutAddr is correctly set
-	retDict, err := ch.CallView(
-		governance.Contract.Name,
-		governance.ViewGetPayoutAgentID.Name,
-	)
+	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
 	require.NoError(t, err)
-	retAgentID, err := codec.AgentID.Decode(retDict.Get(governance.ParamSetPayoutAgentID))
+	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output.Decode(retDict))
 	require.NoError(t, err)
 	require.Equal(t, user1AgentID, retAgentID)
 
 	// send a new request (another deposit from user1)
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name,
-			accounts.FuncDeposit.Name,
-		).AddBaseTokens(transferAmt),
+		solo.NewCallParams(accounts.FuncDeposit.Message()).
+			AddBaseTokens(transferAmt),
 		user1,
 	)
 	require.NoError(t, err)
