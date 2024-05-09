@@ -52,7 +52,7 @@ func testDeployContractOnly(t *testing.T, env *ChainEnv) {
 			ContractHName: root.Contract.Hname().String(),
 			FunctionHName: root.ViewFindContract.Hname().String(),
 			Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
-				root.ParamHname: isc.Hn(nativeIncCounterSCName).Bytes(),
+				root.ParamHname: inccounter.Contract.Hname().Bytes(),
 			}),
 		})
 
@@ -66,15 +66,11 @@ func testDeployContractOnly(t *testing.T, env *ChainEnv) {
 func testDeployContractAndSpawn(t *testing.T, env *ChainEnv) {
 	env.deployNativeIncCounterSC()
 
-	hname := isc.Hn(nativeIncCounterSCName)
-
 	nameNew := "spawnedContract"
 	hnameNew := isc.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	par := chainclient.NewPostRequestParams(
-		inccounter.VarName, nameNew,
-	).WithBaseTokens(100)
-	tx, err := env.Chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
+	par := chainclient.NewPostRequestParams().WithBaseTokens(100)
+	tx, err := env.Chain.OriginatorClient().PostRequest(inccounter.FuncSpawn.Message(nameNew), *par)
 	require.NoError(t, err)
 
 	receipts, err := env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, false, 30*time.Second)
@@ -99,7 +95,7 @@ func testDeployContractAndSpawn(t *testing.T, env *ChainEnv) {
 
 		require.EqualValues(t, nameNew, cr.Name)
 
-		counterValue, err := env.Chain.GetCounterValue(hname, i)
+		counterValue, err := env.Chain.GetCounterValue(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
 	}

@@ -8,6 +8,8 @@
 package rootimpl
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -105,62 +107,43 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 		ProgramHash: progHash,
 		Name:        name,
 	})
-	ctx.Call(isc.Hn(name), isc.EntryPointInit, initParams, nil)
+	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, initParams), nil)
 	eventDeploy(ctx, progHash, name)
 	return nil
 }
 
 // grantDeployPermission grants permission to deploy contracts
-// Input:
-//   - ParamDeployer isc.AgentID
-func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
+func grantDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 	collections.NewMap(ctx.State(), root.VarDeployPermissions).SetAt(deployer.Bytes(), []byte{0x01})
 	eventGrant(ctx, deployer)
 	return nil
 }
 
 // revokeDeployPermission revokes permission to deploy contracts
-// Input:
-//   - ParamDeployer isc.AgentID
-func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
+func revokeDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
 	collections.NewMap(ctx.State(), root.VarDeployPermissions).DelAt(deployer.Bytes())
 	eventRevoke(ctx, deployer)
 	return nil
 }
 
-func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
+func requireDeployPermissions(ctx isc.Sandbox, permissionsEnabled bool) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
 	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.Bool.Encode(permissionsEnabled))
 	return nil
 }
 
 // findContract view finds and returns encoded record of the contract
-// Input:
-// - ParamHname
-// Output:
-// - ParamData
-func findContract(ctx isc.SandboxView) dict.Dict {
-	hname := ctx.Params().MustGetHname(root.ParamHname)
+func findContract(ctx isc.SandboxView, hname isc.Hname) (bool, *root.ContractRecord) {
 	rec := root.FindContract(ctx.StateR(), hname)
-	ret := dict.New()
-	found := rec != nil
-	ret.Set(root.ParamContractFound, codec.Bool.Encode(found))
-	if found {
-		ret.Set(root.ParamContractRecData, rec.Bytes())
-	}
-	return ret
+	return rec != nil, rec
 }
 
-func getContractRecords(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	dst := collections.NewMap(ret, root.VarContractRegistry)
+func getContractRecords(ctx isc.SandboxView) map[isc.Hname]*root.ContractRecord {
+	ret := make(map[isc.Hname]*root.ContractRecord)
 	root.GetContractRegistryR(ctx.StateR()).Iterate(func(elemKey []byte, value []byte) bool {
-		dst.SetAt(elemKey, value)
+		ret[lo.Must(codec.Hname.Decode(elemKey))] = lo.Must(root.ContractRecordFromBytes(value))
 		return true
 	})
 

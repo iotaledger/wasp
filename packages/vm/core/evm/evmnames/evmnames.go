@@ -9,12 +9,12 @@ const (
 	// EVM state
 	FuncSendTransaction = "sendTransaction"
 	FuncCallContract    = "callContract"
-	FuncGetChainID      = "getChainID"
+	ViewGetChainID      = "getChainID"
 
 	FuncRegisterERC20NativeToken              = "registerERC20NativeToken"
 	FuncRegisterERC20NativeTokenOnRemoteChain = "registerERC20NativeTokenOnRemoteChain"
 	FuncRegisterERC20ExternalNativeToken      = "registerERC20ExternalNativeToken"
-	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
+	ViewGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
 	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
 	FuncNewL1Deposit = "newL1Deposit"
@@ -24,7 +24,6 @@ const (
 	FieldChainID          = "chid"
 	FieldAddress          = "a"
 	FieldAssets           = "s"
-	FieldKey              = "k"
 	FieldAgentID          = "i"
 	FieldTransactionIndex = "ti"
 	FieldTransactionHash  = "h"

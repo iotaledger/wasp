@@ -4,6 +4,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -43,7 +44,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+		_, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
 		require.NoError(t, err)
 	}
 
@@ -85,8 +86,8 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
-	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	accountsClient := e.Chain.Client(keyPair)
+	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssetsBaseTokens(1_000_000),
 	})
 	require.NoError(t, err)
@@ -94,10 +95,14 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 
-	myClient := e.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
+	myClient := e.Chain.Client(keyPair)
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i)})
+		_, err = myClient.PostOffLedgerRequest(
+			context.Background(),
+			inccounter.FuncIncCounter.Message(nil),
+			chainclient.PostRequestParams{Nonce: uint64(i)},
+		)
 		require.NoError(t, err)
 	}
 

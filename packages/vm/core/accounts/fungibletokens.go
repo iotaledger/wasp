@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -170,8 +169,4 @@ func GetAccountFungibleTokens(v isc.SchemaVersion, state kv.KVStoreReader, agent
 
 func GetTotalL2FungibleTokens(v isc.SchemaVersion, state kv.KVStoreReader) *isc.Assets {
 	return getFungibleTokens(v, state, L2TotalsAccount)
-}
-
-func getAccountBalanceDict(v isc.SchemaVersion, state kv.KVStoreReader, accountKey kv.Key) dict.Dict {
-	return getFungibleTokens(v, state, accountKey).ToDict()
 }

@@ -36,7 +36,7 @@ func (reqctx *requestContext) earlyCheckReasonToSkip(maintenanceMode bool) error
 	}
 
 	if maintenanceMode &&
-		reqctx.req.CallTarget().Contract != governance.Contract.Hname() {
+		reqctx.req.Message().Target.Contract != governance.Contract.Hname() {
 		return errors.New("skipped due to maintenance mode")
 	}
 

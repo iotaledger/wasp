@@ -65,7 +65,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 	bi := ch.GetLatestBlockInfo()
 	t.Logf("after ch deployment:\n%s", bi.String())
 	// uploading one blob
-	_, err = ch.UploadBlob(nil, "field", "dummy blob data")
+	_, err = ch.UploadBlob(nil, dict.Dict{"field": []byte("dummy blob data")})
 	require.NoError(t, err)
 
 	bi = ch.GetLatestBlockInfo()
@@ -86,7 +86,7 @@ func TestBlockInfoSeveral(t *testing.T) {
 
 	const numReqs = 5
 	for i := 0; i < numReqs; i++ {
-		_, err := ch.UploadBlob(nil, "field", fmt.Sprintf("dummy blob data #%d", i))
+		_, err := ch.UploadBlob(nil, dict.Dict{"field": []byte(fmt.Sprintf("dummy blob data #%d", i))})
 		require.NoError(t, err)
 	}
 
@@ -111,9 +111,8 @@ func TestRequestIsProcessed(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
-		governance.ParamPublicURL, []byte("foo"),
-	).
+	publicURL := "foo"
+	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -134,9 +133,8 @@ func TestRequestReceipt(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
-		governance.ParamPublicURL, []byte("foo"),
-	).
+	publicURL := "foo"
+	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -146,8 +144,7 @@ func TestRequestReceipt(t *testing.T) {
 	require.EqualValues(t, 1, len(reqs))
 	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 
-	receipt, err := ch.GetRequestReceipt(reqs[0].ID())
-	require.NoError(t, err)
+	receipt, _ := ch.GetRequestReceipt(reqs[0].ID())
 	a := reqs[0].Bytes()
 	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
@@ -163,9 +160,8 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
-		governance.ParamPublicURL, []byte("foo"),
-	).
+	publicURL := "foo"
+	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -188,9 +184,8 @@ func TestRequestIDsForBlocks(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetMetadata.Name,
-		governance.ParamPublicURL, []byte("foo"),
-	).
+	publicURL := "foo"
+	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
 		WithGasBudget(100_000)
 	tx, _, err := ch.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -210,9 +205,8 @@ func TestViewGetRequestReceipt(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 	// try to get a receipt for a request that does not exist
-	receipt, err := ch.GetRequestReceipt(isc.RequestID{})
-	require.Nil(t, receipt)
-	require.NoError(t, err)
+	_, ok := ch.GetRequestReceipt(isc.RequestID{})
+	require.False(t, ok)
 }
 
 func TestBlocklogPruning(t *testing.T) {
@@ -252,7 +246,7 @@ func TestBlocklogFoundriesWithPruning(t *testing.T) {
 	})
 	ch.DepositBaseTokensToL2(1*isc.Million, nil)
 
-	sn, _, err := ch.NewNativeTokenParams(10).CreateFoundry()
+	sn, _, err := ch.NewNativeTokenParams(big.NewInt(10)).CreateFoundry()
 	require.NoError(t, err)
 
 	// provoke the block where the foundry was stored to be pruned

@@ -1,6 +1,7 @@
 package solo_test
 
 import (
+	"math/big"
 	"os"
 	"testing"
 
@@ -24,21 +25,21 @@ func TestSaveSnapshot(t *testing.T) {
 	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.OriginatorPrivateKey)
 
 	// create foundry and native tokens on L2
-	sn, nativeTokenID, err := ch.NewNativeTokenParams(1000).CreateFoundry()
+	sn, nativeTokenID, err := ch.NewNativeTokenParams(big.NewInt(1000)).CreateFoundry()
 	require.NoError(t, err)
 	// mint some tokens for the user
-	err = ch.MintTokens(sn, 1000, ch.OriginatorPrivateKey)
+	err = ch.MintTokens(sn, big.NewInt(1000), ch.OriginatorPrivateKey)
 	require.NoError(t, err)
 
 	_, err = ch.GetNativeTokenIDByFoundrySN(sn)
 	require.NoError(t, err)
-	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, 1000)
+	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, big.NewInt(1000))
 
 	// create NFT on L1 and deposit on L2
 	nft, _, err := ch.Env.MintNFTL1(ch.OriginatorPrivateKey, ch.OriginatorAddress, []byte("foobar"))
 	require.NoError(t, err)
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+		solo.NewCallParams(accounts.FuncDeposit.Message()).
 			WithNFT(nft).
 			AddBaseTokens(10*isc.Million).
 			WithMaxAffordableGasBudget(),
@@ -65,5 +66,5 @@ func TestLoadSnapshot(t *testing.T) {
 
 	nativeTokenID, err := ch.GetNativeTokenIDByFoundrySN(1)
 	require.NoError(t, err)
-	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, 1000)
+	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, big.NewInt(1000))
 }

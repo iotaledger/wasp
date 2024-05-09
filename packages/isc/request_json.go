@@ -25,16 +25,16 @@ type RequestJSON struct {
 
 func RequestToJSONObject(request Request) RequestJSON {
 	gasBudget, isEVM := request.GasBudget()
-
+	msg := request.Message()
 	return RequestJSON{
 		Allowance:     assetsToJSONObject(request.Allowance()),
-		CallTarget:    callTargetToJSONObject(request.CallTarget()),
+		CallTarget:    callTargetToJSONObject(msg.Target),
 		Assets:        assetsToJSONObject(request.Assets()),
 		GasBudget:     strconv.FormatUint(gasBudget, 10),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),
 		NFT:           NFTToJSONObject(request.NFT()),
-		Params:        request.Params().JSONDict(),
+		Params:        msg.Params.JSONDict(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
 		TargetAddress: request.TargetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),

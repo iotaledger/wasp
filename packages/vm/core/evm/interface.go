@@ -4,7 +4,13 @@
 package evm
 
 import (
+	"github.com/ethereum/go-ethereum/common"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
@@ -14,21 +20,36 @@ var (
 	// FuncSendTransaction is the main entry point, called by an
 	// evmOffLedgerTxRequest in order to process an Ethereum tx (e.g.
 	// eth_sendRawTransaction).
-	FuncSendTransaction = coreutil.Func(evmnames.FuncSendTransaction)
+	FuncSendTransaction = Contract.Func(evmnames.FuncSendTransaction)
 
 	// FuncCallContract is the entry point called by an evmOffLedgerCallRequest
 	// in order to process a view call or gas estimation (e.g. eth_call, eth_estimateGas).
-	FuncCallContract = coreutil.Func(evmnames.FuncCallContract)
+	FuncCallContract = Contract.Func(evmnames.FuncCallContract)
 
-	FuncGetChainID = coreutil.ViewFunc(evmnames.FuncGetChainID)
+	FuncRegisterERC20NativeToken = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC20NativeToken,
+		InputRegisterERC20NativeToken{},
+	)
+	FuncRegisterERC20NativeTokenOnRemoteChain = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC20NativeTokenOnRemoteChain,
+		InputRegisterERC20NativeTokenOnRemoteChain{},
+	)
+	FuncRegisterERC20ExternalNativeToken = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC20ExternalNativeToken,
+		InputRegisterERC20ExteralNativeToken{},
+	)
+	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,
+		coreutil.FieldWithCodec(FieldNFTCollectionID, codec.NFTID),
+	)
+	FuncNewL1Deposit = coreutil.NewEP1(Contract, evmnames.FuncNewL1Deposit,
+		InputNewL1Deposit{},
+	)
 
-	FuncRegisterERC20NativeToken              = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
-	FuncRegisterERC20NativeTokenOnRemoteChain = coreutil.Func(evmnames.FuncRegisterERC20NativeTokenOnRemoteChain)
-	FuncRegisterERC20ExternalNativeToken      = coreutil.Func(evmnames.FuncRegisterERC20ExternalNativeToken)
-	FuncGetERC20ExternalNativeTokenAddress    = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
-	FuncRegisterERC721NFTCollection           = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
+	ViewGetChainID = coreutil.NewViewEP01(Contract, evmnames.ViewGetChainID,
+		coreutil.FieldWithCodec(FieldResult, codec.Uint16),
+	)
 
-	FuncNewL1Deposit = coreutil.Func(evmnames.FuncNewL1Deposit)
+	ViewGetERC20ExternalNativeTokenAddress = coreutil.NewViewEP11(Contract, evmnames.ViewGetERC20ExternalNativeTokenAddress,
+		coreutil.FieldWithCodec(FieldNativeTokenID, codec.NativeTokenID),
+		coreutil.FieldWithCodecOptional(FieldResult, codec.EthereumAddress),
+	)
 )
 
 const (
@@ -37,7 +58,6 @@ const (
 	FieldChainID          = evmnames.FieldChainID
 	FieldAddress          = evmnames.FieldAddress
 	FieldAssets           = evmnames.FieldAssets
-	FieldKey              = evmnames.FieldKey
 	FieldAgentID          = evmnames.FieldAgentID
 	FieldTransactionIndex = evmnames.FieldTransactionIndex
 	FieldTransactionHash  = evmnames.FieldTransactionHash
@@ -63,3 +83,131 @@ const (
 	// TODO shouldn't this be different between chain, to prevent replay attacks? (maybe derived from ISC ChainID)
 	DefaultChainID = uint16(1074) // IOTA -- get it?
 )
+
+type ERC20NativeTokenParams struct {
+	FoundrySN    uint32
+	Name         string
+	TickerSymbol string
+	Decimals     uint8
+}
+
+func (e ERC20NativeTokenParams) ToDict() dict.Dict {
+	return dict.Dict{
+		FieldFoundrySN:         codec.Uint32.Encode(e.FoundrySN),
+		FieldTokenName:         codec.String.Encode(e.Name),
+		FieldTokenTickerSymbol: codec.String.Encode(e.TickerSymbol),
+		FieldTokenDecimals:     codec.Uint8.Encode(e.Decimals),
+	}
+}
+
+func ERC20NativeTokenParamsFromDict(d dict.Dict) (ret ERC20NativeTokenParams, err error) {
+	ret.FoundrySN, err = codec.Uint32.Decode(d.Get(FieldFoundrySN))
+	if err != nil {
+		return
+	}
+	ret.Name, err = codec.String.Decode(d.Get(FieldTokenName))
+	if err != nil {
+		return
+	}
+	ret.TickerSymbol, err = codec.String.Decode(d.Get(FieldTokenTickerSymbol))
+	if err != nil {
+		return
+	}
+	ret.Decimals, err = codec.Uint8.Decode(d.Get(FieldTokenDecimals))
+	return
+}
+
+type InputRegisterERC20NativeToken struct{}
+
+func (_ InputRegisterERC20NativeToken) Encode(token ERC20NativeTokenParams) dict.Dict {
+	return token.ToDict()
+}
+
+func (_ InputRegisterERC20NativeToken) Decode(d dict.Dict) (ERC20NativeTokenParams, error) {
+	return ERC20NativeTokenParamsFromDict(d)
+}
+
+type RegisterERC20NativeTokenOnRemoteChainRequest struct {
+	TargetChain iotago.Address
+	Token       ERC20NativeTokenParams
+}
+
+type InputRegisterERC20NativeTokenOnRemoteChain struct{}
+
+func (_ InputRegisterERC20NativeTokenOnRemoteChain) Encode(p RegisterERC20NativeTokenOnRemoteChainRequest) dict.Dict {
+	d := p.Token.ToDict()
+	d[FieldTargetAddress] = codec.Address.Encode(p.TargetChain)
+	return d
+}
+
+func (_ InputRegisterERC20NativeTokenOnRemoteChain) Decode(d dict.Dict) (ret RegisterERC20NativeTokenOnRemoteChainRequest, err error) {
+	ret.Token, err = ERC20NativeTokenParamsFromDict(d)
+	if err != nil {
+		return
+	}
+	ret.TargetChain, err = codec.Address.Decode(d[FieldTargetAddress])
+	return
+}
+
+type RegisterERC20ExternalNativeTokenRequest struct {
+	SourceChain        iotago.Address
+	FoundryTokenScheme iotago.TokenScheme
+	Token              ERC20NativeTokenParams
+}
+
+type InputRegisterERC20ExteralNativeToken struct{}
+
+func (_ InputRegisterERC20ExteralNativeToken) Encode(p RegisterERC20ExternalNativeTokenRequest) dict.Dict {
+	d := p.Token.ToDict()
+	d[FieldTargetAddress] = codec.Address.Encode(p.SourceChain)
+	d[FieldFoundryTokenScheme] = codec.TokenScheme.Encode(p.FoundryTokenScheme)
+	return d
+}
+
+func (_ InputRegisterERC20ExteralNativeToken) Decode(d dict.Dict) (ret RegisterERC20ExternalNativeTokenRequest, err error) {
+	ret.Token, err = ERC20NativeTokenParamsFromDict(d)
+	if err != nil {
+		return
+	}
+	ret.SourceChain, err = codec.Address.Decode(d[FieldTargetAddress])
+	if err != nil {
+		return
+	}
+	ret.FoundryTokenScheme, err = codec.TokenScheme.Decode(d[FieldFoundryTokenScheme])
+	if err != nil {
+		return
+	}
+	return
+}
+
+type NewL1DepositRequest struct {
+	DepositOriginator isc.AgentID
+	Receiver          common.Address
+	Assets            *isc.Assets
+}
+
+type InputNewL1Deposit struct{}
+
+func (_ InputNewL1Deposit) Decode(d dict.Dict) (ret NewL1DepositRequest, err error) {
+	ret.DepositOriginator, err = codec.AgentID.Decode(d[FieldAgentIDDepositOriginator])
+	if err != nil {
+		return
+	}
+	ret.Receiver, err = codec.EthereumAddress.Decode(d[FieldAddress])
+	if err != nil {
+		return
+	}
+	ret.Assets, err = codec.NewCodecEx(isc.AssetsFromBytes).Decode(d[FieldAssets])
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (_ InputNewL1Deposit) Encode(r NewL1DepositRequest) dict.Dict {
+	return dict.Dict{
+		FieldAddress:                  codec.EthereumAddress.Encode(r.Receiver),
+		FieldAssets:                   codec.NewCodecEx(isc.AssetsFromBytes).Encode(r.Assets),
+		FieldAgentIDDepositOriginator: codec.AgentID.Encode(r.DepositOriginator),
+	}
+}

@@ -20,7 +20,7 @@ import (
 func TestBatchProposal1Serialization(t *testing.T) {
 	var reqRefs []*isc.RequestRef
 	for i := uint64(0); i < 5; i++ {
-		req := isc.NewOffLedgerRequest(isc.RandomChainID(), 3, 14, dict.New(), i, 200).Sign(cryptolib.NewKeyPair())
+		req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(3, 14, dict.New()), i, 200).Sign(cryptolib.NewKeyPair())
 		reqRefs = append(reqRefs, &isc.RequestRef{
 			ID:   req.ID(),
 			Hash: hashing.PseudoRandomHash(nil),

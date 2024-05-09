@@ -292,11 +292,11 @@ func (a *Assets) AddBaseTokens(amount uint64) *Assets {
 	return a
 }
 
-func (a *Assets) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *Assets {
+func (a *Assets) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount *big.Int) *Assets {
 	b := NewAssets(0, iotago.NativeTokens{
 		&iotago.NativeToken{
 			ID:     nativeTokenID,
-			Amount: util.ToBigInt(amount),
+			Amount: amount,
 		},
 	})
 	return a.Add(b)

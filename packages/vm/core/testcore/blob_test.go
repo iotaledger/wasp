@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -28,7 +28,7 @@ func TestUploadBlob(t *testing.T) {
 
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 
-		h, err := ch.UploadBlob(nil, "field", "dummy data")
+		h, err := ch.UploadBlob(nil, dict.Dict{"field": []byte("dummy data")})
 		require.NoError(t, err)
 
 		_, ok := ch.GetBlobInfo(h)
@@ -53,7 +53,7 @@ func TestUploadBlob(t *testing.T) {
 		randomData := make([]byte, size+1)
 		_, err = rand.Read(randomData)
 		require.NoError(t, err)
-		h, err := ch.UploadBlob(nil, "field", randomData)
+		h, err := ch.UploadBlob(nil, dict.Dict{"field": randomData})
 		require.NoError(t, err)
 
 		_, ok := ch.GetBlobInfo(h)
@@ -83,30 +83,25 @@ func TestUploadBlob(t *testing.T) {
 		hashes := make([]hashing.HashValue, howMany)
 		for i := 0; i < howMany; i++ {
 			data := []byte(fmt.Sprintf("dummy data #%d", i))
-			hashes[i], err = ch.UploadBlob(nil, "field", data)
+			hashes[i], err = ch.UploadBlob(nil, dict.Dict{"field": data})
 			require.NoError(t, err)
 			m, ok := ch.GetBlobInfo(hashes[i])
 			require.True(t, ok)
 			require.EqualValues(t, 1, len(m))
 			require.EqualValues(t, len(data), m["field"])
 		}
-		ret, err := ch.CallView(blob.Contract.Name, blob.ViewListBlobs.Name)
+		ret, err := ch.CallView(blob.ViewListBlobs.Message())
 		require.NoError(t, err)
-		require.EqualValues(t, howMany, len(ret))
+		sizes := lo.Must(blob.ViewListBlobs.Output.Decode(ret))
+		require.EqualValues(t, howMany, len(sizes))
 		for _, h := range hashes {
-			sizeBin := ret.Get(kv.Key(h[:]))
-			size, err := codec.Uint32.Decode(sizeBin)
-			require.NoError(t, err)
+			size := sizes[h]
 			require.EqualValues(t, len("dummy data #1"), int(size))
 
-			ret, err := ch.CallView(blob.Contract.Name, blob.ViewGetBlobField.Name,
-				blob.ParamHash, h,
-				blob.ParamField, "field",
-			)
+			ret, err := ch.CallView(blob.ViewGetBlobField.Message(h, []byte("field")))
 			require.NoError(t, err)
-			require.EqualValues(t, 1, len(ret))
-			data := ret.Get(blob.ParamBytes)
-			require.EqualValues(t, size, len(data))
+			v := lo.Must(blob.ViewGetBlobField.Output.Decode(ret))
+			require.EqualValues(t, size, len(v))
 		}
 	})
 }
@@ -156,9 +151,10 @@ func TestUploadContractBinary(t *testing.T) {
 		_, err := ch.UploadContractBinary(nil, vmType, binary)
 		require.NoError(t, err)
 
-		ret, err := ch.CallView(blob.Contract.Name, blob.ViewListBlobs.Name)
+		ret, err := ch.CallView(blob.ViewListBlobs.Message())
 		require.NoError(t, err)
-		require.EqualValues(t, 1, len(ret))
+		sizes := lo.Must(blob.ViewListBlobs.Output.Decode(ret))
+		require.EqualValues(t, 1, len(sizes))
 	})
 }
 

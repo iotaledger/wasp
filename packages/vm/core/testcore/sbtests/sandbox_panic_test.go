@@ -20,7 +20,7 @@ func testPanicCallView(t *testing.T, funName string, gasBudget uint64, panicView
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParams(ScName, funName).WithGasBudget(gasBudget)
+	req := solo.NewCallParamsEx(ScName, funName).WithGasBudget(gasBudget)
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, panicView)
 
@@ -55,7 +55,7 @@ func testPanicViewCall(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	_, err := chain.CallView(ScName, sbtestsc.FuncPanicViewEP.Name)
+	_, err := chain.CallViewEx(ScName, sbtestsc.FuncPanicViewEP.Name)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
 	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
@@ -85,7 +85,7 @@ func testCallPanicFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCallPanicFullEP.Name).WithGasBudget(17000)
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallPanicFullEP.Name).WithGasBudget(17000)
 	_, err := chain.PostRequestSync(req, nil)
 	testmisc.RequireErrorToBe(t, err, coreerrors.ErrUntypedError.Create(sbtestsc.MsgFullPanic))
 
@@ -124,7 +124,7 @@ func testCallPanicViewFromView(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	_, err := chain.CallView(ScName, sbtestsc.FuncCallPanicViewEPFromView.Name)
+	_, err := chain.CallViewEx(ScName, sbtestsc.FuncCallPanicViewEPFromView.Name)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
 	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)

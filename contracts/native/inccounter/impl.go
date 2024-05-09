@@ -5,6 +5,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -14,6 +16,23 @@ import (
 
 var Contract = coreutil.NewContract("inccounter")
 
+var (
+	FuncIncCounter = coreutil.NewEP1(Contract, "incCounter",
+		coreutil.FieldWithCodecOptional(VarCounter, codec.Int64),
+	)
+	FuncIncAndRepeatOnceAfter2s = coreutil.NewEP0(Contract, "incAndRepeatOnceAfter5s")
+	FuncIncAndRepeatMany        = coreutil.NewEP2(Contract, "incAndRepeatMany",
+		coreutil.FieldWithCodecOptional(VarCounter, codec.Int64),
+		coreutil.FieldWithCodecOptional(VarNumRepeats, codec.Int64),
+	)
+	FuncSpawn = coreutil.NewEP1(Contract, "spawn",
+		coreutil.FieldWithCodec(VarName, codec.String),
+	)
+	ViewGetCounter = coreutil.NewViewEP01(Contract, "getCounter",
+		coreutil.FieldWithCodec(VarCounter, codec.Int64),
+	)
+)
+
 var Processor = Contract.Processor(initialize,
 	FuncIncCounter.WithHandler(incCounter),
 	FuncIncAndRepeatOnceAfter2s.WithHandler(incCounterAndRepeatOnce),
@@ -22,13 +41,9 @@ var Processor = Contract.Processor(initialize,
 	ViewGetCounter.WithHandler(getCounter),
 )
 
-var (
-	FuncIncCounter              = coreutil.Func("incCounter")
-	FuncIncAndRepeatOnceAfter2s = coreutil.Func("incAndRepeatOnceAfter5s")
-	FuncIncAndRepeatMany        = coreutil.Func("incAndRepeatMany")
-	FuncSpawn                   = coreutil.Func("spawn")
-	ViewGetCounter              = coreutil.ViewFunc("getCounter")
-)
+func InitParams(initialValue int64) dict.Dict {
+	return dict.Dict{VarCounter: codec.Int64.Encode(initialValue)}
+}
 
 const (
 	VarNumRepeats = "numRepeats"
@@ -45,10 +60,9 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func incCounter(ctx isc.Sandbox) dict.Dict {
+func incCounter(ctx isc.Sandbox, incOpt *int64) dict.Dict {
+	inc := coreutil.FromOptional(incOpt, 1)
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
-	params := ctx.Params()
-	inc := params.MustGetInt64(VarCounter, 1)
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter, 0)
@@ -79,9 +93,8 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 		Assets:                        isc.NewAssets(allowance.BaseTokens, nil),
 		AdjustToMinimumStorageDeposit: true,
 		Metadata: &isc.SendMetadata{
-			TargetContract: ctx.Contract(),
-			EntryPoint:     FuncIncCounter.Hname(),
-			GasBudget:      math.MaxUint64,
+			Message:   isc.NewMessage(ctx.Contract(), FuncIncCounter.Hname()),
+			GasBudget: math.MaxUint64,
 		},
 		Options: isc.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),
@@ -91,24 +104,17 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
+func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) dict.Dict {
+	val := coreutil.FromOptional(valOpt, 0)
+	numRepeats := coreutil.FromOptional(valOpt, lo.Must(codec.Int64.Decode(ctx.State().Get(VarNumRepeats), 0)))
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
-	params := ctx.Params()
-
-	val := codec.Int64.MustDecode(state.Get(VarCounter), 0)
 
 	state.Set(VarCounter, codec.Int64.Encode(val+1))
 	eventCounter(ctx, val+1)
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
-	var numRepeats int64
-	if params.Has(VarNumRepeats) {
-		numRepeats = codec.Int64.MustDecode(params.Get(VarNumRepeats), 0)
-	} else {
-		numRepeats = codec.Int64.MustDecode(state.Get(VarNumRepeats), 0)
-	}
 	if numRepeats == 0 {
 		ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
 		return nil
@@ -123,10 +129,9 @@ func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 		Assets:                        isc.NewAssets(1000, nil),
 		AdjustToMinimumStorageDeposit: true,
 		Metadata: &isc.SendMetadata{
-			TargetContract: ctx.Contract(),
-			EntryPoint:     FuncIncAndRepeatMany.Hname(),
-			GasBudget:      math.MaxUint64,
-			Allowance:      isc.NewAssetsBaseTokens(1000),
+			Message:   isc.NewMessage(ctx.Contract(), FuncIncAndRepeatMany.Hname()),
+			GasBudget: math.MaxUint64,
+			Allowance: isc.NewAssetsBaseTokens(1000),
 		},
 		Options: isc.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),
@@ -138,13 +143,11 @@ func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 }
 
 // spawn deploys new contract and calls it
-func spawn(ctx isc.Sandbox) dict.Dict {
+func spawn(ctx isc.Sandbox, name string) dict.Dict {
 	ctx.Log().Debugf("inccounter.spawn")
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	val := state.MustGetInt64(VarCounter)
-	params := ctx.Params()
-	name := params.MustGetString(VarName)
 
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.Int64.Encode(val+1))
@@ -152,14 +155,11 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 	ctx.DeployContract(Contract.ProgramHash, name, callPar)
 
 	// increase counter in newly spawned contract
-	hname := isc.Hn(name)
-	ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
+	ctx.Call(FuncIncCounter.Message(nil), nil)
 
 	return nil
 }
 
-func getCounter(ctx isc.SandboxView) dict.Dict {
-	state := ctx.StateR()
-	val := codec.Int64.MustDecode(state.Get(VarCounter), 0)
-	return dict.Dict{VarCounter: codec.Int64.Encode(val)}
+func getCounter(ctx isc.SandboxView) int64 {
+	return lo.Must(codec.Int64.Decode(ctx.StateR().Get(VarCounter), 0))
 }

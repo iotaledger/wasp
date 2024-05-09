@@ -52,17 +52,14 @@ func initChangeAccessNodesCmd() *cobra.Command {
 					pars.Drop(pubkey)
 				}
 			}
-			params := chainclient.PostRequestParams{
-				Args: pars.AsDict(),
-			}
 			postRequest(
 				node,
 				chain,
-				governance.Contract.Name,
-				governance.FuncChangeAccessNodes.Name,
-				params,
+				governance.FuncChangeAccessNodes.Message(pars),
+				chainclient.PostRequestParams{},
 				offLedger,
-				true)
+				true,
+			)
 		},
 	}
 
@@ -105,20 +102,14 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			feePolicy := gas.MustFeePolicyFromBytes(feePolicyBytes)
 			feePolicy.GasPerToken = util.Ratio32{}
 
-			params := chainclient.PostRequestParams{
-				Args: dict.Dict{
-					governance.VarGasFeePolicyBytes: feePolicy.Bytes(),
-				},
-			}
-
 			postRequest(
 				node,
 				chain,
-				governance.Contract.Name,
-				governance.FuncSetFeePolicy.Name,
-				params,
+				governance.FuncSetFeePolicy.Message(feePolicy),
+				chainclient.PostRequestParams{},
 				offLedger,
-				true)
+				true,
+			)
 		},
 	}
 

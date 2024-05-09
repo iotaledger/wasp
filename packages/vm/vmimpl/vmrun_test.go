@@ -25,10 +25,7 @@ import (
 )
 
 func TestNFTDepositNoIssuer(t *testing.T) {
-	metadata := isc.RequestMetadata{
-		TargetContract: accounts.Contract.Hname(),
-		EntryPoint:     accounts.FuncDeposit.Hname(),
-	}
+	metadata := isc.RequestMetadata{Message: accounts.FuncDeposit.Message()}
 	o := &iotago.NFTOutput{
 		Amount:       100 * isc.Million,
 		NativeTokens: []*iotago.NativeToken{},

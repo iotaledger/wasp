@@ -139,9 +139,7 @@ func MakeRequestTransactionOutput(par NewRequestTransactionParams) iotago.Output
 		assets,
 		&isc.RequestMetadata{
 			SenderContract: isc.EmptyContractIdentity(),
-			TargetContract: req.Metadata.TargetContract,
-			EntryPoint:     req.Metadata.EntryPoint,
-			Params:         req.Metadata.Params,
+			Message:        req.Metadata.Message,
 			Allowance:      req.Metadata.Allowance,
 			GasBudget:      req.Metadata.GasBudget,
 		},

@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/m001"
@@ -33,9 +33,9 @@ func TestM001Migration(t *testing.T) {
 	// call views in pre-migration state
 	// originator owns 17994760 tokens in the snapshot
 	expectedOriginatorBalance := uint64(17994760)
-	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewBalanceBaseToken.Name, accounts.ParamAgentID, ch.OriginatorAgentID)
+	res, err := ch.CallView(accounts.ViewBalanceBaseToken.Message(&ch.OriginatorAgentID))
 	require.NoError(t, err)
-	require.EqualValues(t, expectedOriginatorBalance, codec.Uint64.MustDecode(res.Get(accounts.ParamBalance)))
+	require.EqualValues(t, expectedOriginatorBalance, lo.Must(accounts.ViewBalanceBaseToken.Output.Decode(res)))
 
 	checkGasEstimationWorks := func() {
 		_, callData := solo.EVMCallDataFromArtifacts(t, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))

@@ -11,11 +11,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -132,12 +132,9 @@ func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {
 	ret := new(big.Int)
 	// do not charge gas for this, internal checks of the emulator require this function to run before executing the request
 	ctx.WithoutGasBurn(func() {
-		res := ctx.sandbox.CallView(
-			accounts.Contract.Hname(),
-			accounts.ViewBalanceBaseTokenEVM.Hname(),
-			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr).Bytes()},
-		)
-		ret = codec.BigIntAbs.MustDecode(res.Get(accounts.ParamBalance), big.NewInt(0))
+		var agentID isc.AgentID = isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr)
+		res := ctx.sandbox.CallView(accounts.ViewBalanceBaseTokenEVM.Message(&agentID))
+		ret = lo.Must(accounts.ViewBalanceBaseTokenEVM.Output.Decode(res))
 	})
 	return ret
 }

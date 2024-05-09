@@ -25,7 +25,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		chain.AssertL2BaseTokens(userAgentID, 0)
 		chain.AssertL2BaseTokens(cAID, 0)
 
-		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
+		req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 			sbtestsc.ParamIntParamValue, 314,
 		)
@@ -55,7 +55,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		ch.AssertL2BaseTokens(userAgentID, expectedUser)
 		require.NoError(t, err)
 
-		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
+		req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 			sbtestsc.ParamIntParamValue, 314,
 		).WithGasBudget(100_000)
@@ -65,7 +65,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		require.NoError(t, rec.Error.AsGoError())
 		t.Logf("receipt: %s", rec)
 
-		res, err := ch.CallView(ScName, sbtestsc.FuncGetInt.Name,
+		res, err := ch.CallViewEx(ScName, sbtestsc.FuncGetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 		)
 		require.NoError(t, err)

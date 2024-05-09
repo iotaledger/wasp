@@ -16,10 +16,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-const incName = "incTest"
-
 func checkCounter(e *solo.Chain, expected int64) {
-	ret, err := e.CallView(incName, ViewGetCounter.Name)
+	ret, err := e.CallView(ViewGetCounter.Message())
 	require.NoError(e.Env.T, err)
 	c, err := codec.Int64.Decode(ret.Get(VarCounter))
 	require.NoError(e.Env.T, err)
@@ -38,7 +36,7 @@ func TestDeployInc(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
@@ -51,7 +49,7 @@ func TestDeployIncInitParams(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash, InitParams(17))
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 	chain.CheckAccountLedger()
@@ -61,11 +59,11 @@ func TestIncDefaultParam(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash, InitParams(17))
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name).
+	req := solo.NewCallParams(FuncIncCounter.Message(nil)).
 		AddBaseTokens(1).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
@@ -78,11 +76,12 @@ func TestIncParam(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash, InitParams(17))
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).
+	n := int64(3)
+	req := solo.NewCallParams(FuncIncCounter.Message(&n)).
 		AddBaseTokens(1).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
@@ -96,13 +95,13 @@ func TestIncWith1Post(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash, InitParams(17))
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
 	chain.WaitForRequestsMark()
 
-	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
+	req := solo.NewCallParams(FuncIncAndRepeatOnceAfter2s.Message()).
 		AddBaseTokens(2 * isc.Million).
 		WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
 		WithMaxAffordableGasBudget()
@@ -121,18 +120,17 @@ func TestSpawn(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash, InitParams(17))
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
 	nameNew := "spawnedContract"
-	req := solo.NewCallParams(incName, FuncSpawn.Name,
-		VarName, nameNew,
-	).AddBaseTokens(1).WithMaxAffordableGasBudget()
+	req := solo.NewCallParams(FuncSpawn.Message(nameNew)).
+		AddBaseTokens(1).WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	res, err := chain.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
+	res, err := chain.CallView(root.ViewGetContractRecords.Message())
 	require.NoError(t, err)
 	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
 	require.True(t, int(creg.Len()) == len(corecontracts.All)+2)
@@ -146,13 +144,13 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	env := solo.New(b, opts).WithNativeContract(Processor)
 	chain := env.NewChain()
 
-	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 0)
+	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash, InitParams(0))
 	require.NoError(b, err)
 
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
 	for i := 0; i < b.N; i++ {
-		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddBaseTokens(1)
+		reqs[i] = solo.NewCallParams(FuncIncCounter.Message(nil)).AddBaseTokens(1)
 	}
 
 	return chain, reqs

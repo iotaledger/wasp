@@ -3,14 +3,12 @@ package blocklog
 import (
 	"errors"
 	"fmt"
-	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -125,22 +123,22 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) (
 	}
 }
 
-func getSmartContractEventsInternal(partition kv.KVStoreReader, contractID isc.Hname, fromBlock, toBlock uint32) [][]byte {
+func getSmartContractEventsInternal(partition kv.KVStoreReader, q EventsForContractQuery) [][]byte {
 	registry := collections.NewArrayReadOnly(partition, PrefixBlockRegistry)
 	latestBlockIndex := registry.Len() - 1
-	adjustedToBlock := toBlock
+	adjustedToBlock := q.BlockRange.To
 
 	if adjustedToBlock > latestBlockIndex {
 		adjustedToBlock = latestBlockIndex
 	}
 
 	filteredEvents := make([][]byte, 0)
-	for blockNumber := fromBlock; blockNumber <= adjustedToBlock; blockNumber++ {
+	for blockNumber := q.BlockRange.From; blockNumber <= adjustedToBlock; blockNumber++ {
 		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Uint32.Encode(blockNumber))
 
 		partition.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
 			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
-			if parsedContractID != contractID {
+			if parsedContractID != q.Contract {
 				return true
 			}
 
@@ -261,10 +259,9 @@ func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16)
 }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
-func getBlockIndexParams(ctx isc.SandboxView) uint32 {
-	ret := ctx.Params().MustGetUint32(ParamBlockIndex, math.MaxUint32)
-	if ret != math.MaxUint32 {
-		return ret
+func getBlockIndexParams(ctx isc.SandboxView, blockIndexOptional *uint32) uint32 {
+	if blockIndexOptional != nil {
+		return *blockIndexOptional
 	}
 	registry := collections.NewArrayReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.Len() - 1
@@ -280,13 +277,4 @@ func pruneBlock(partition kv.KVStore, blockIndex uint32) {
 	registry.PruneAt(blockIndex)
 	pruneRequestLogRecordsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
 	pruneEventsByBlockIndex(partition, blockIndex, blockInfo.TotalRequests)
-}
-
-func eventsToDict(events [][]byte) dict.Dict {
-	ret := dict.New()
-	retEvents := collections.NewArray(ret, ParamEvent)
-	for _, event := range events {
-		retEvents.Push(event)
-	}
-	return ret
 }

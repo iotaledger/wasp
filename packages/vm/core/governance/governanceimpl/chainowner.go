@@ -4,6 +4,8 @@
 package governanceimpl
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -42,44 +44,35 @@ func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 // delegateChainOwnership stores next possible (delegated) chain owner to another agentID
 // checks authorization by the current owner
 // Two-step process allow/change is in order to avoid mistakes
-func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
+func delegateChainOwnership(ctx isc.Sandbox, newOwnerID isc.AgentID) dict.Dict {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
 	ctx.RequireCallerIsChainOwner()
 
-	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
 	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.AgentID.Encode(newOwnerID))
 	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil
 }
 
-func setPayoutAgentID(ctx isc.Sandbox) dict.Dict {
+func setPayoutAgentID(ctx isc.Sandbox, agent isc.AgentID) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAgentID)
 	ctx.State().Set(governance.VarPayoutAgentID, codec.AgentID.Encode(agent))
 	return nil
 }
 
-func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	ret.Set(governance.ParamSetPayoutAgentID, ctx.StateR().Get(governance.VarPayoutAgentID))
-	return ret
+func getPayoutAgentID(ctx isc.SandboxView) isc.AgentID {
+	return lo.Must(codec.AgentID.Decode(ctx.StateR().Get(governance.VarPayoutAgentID)))
 }
 
-func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
+func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance uint64) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
 	ctx.State().Set(governance.VarMinBaseTokensOnCommonAccount, codec.Uint64.Encode(minCommonAccountBalance))
 	return nil
 }
 
-func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
-	return dict.Dict{
-		governance.ParamSetMinCommonAccountBalance: ctx.StateR().Get(governance.VarMinBaseTokensOnCommonAccount),
-	}
+func getMinCommonAccountBalance(ctx isc.SandboxView) uint64 {
+	return lo.Must(codec.Uint64.Decode(ctx.StateR().Get(governance.VarMinBaseTokensOnCommonAccount)))
 }
 
-func getChainOwner(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	ret.Set(governance.ParamChainOwner, ctx.StateR().Get(governance.VarChainOwnerID))
-	return ret
+func getChainOwner(ctx isc.SandboxView) isc.AgentID {
+	return lo.Must(codec.AgentID.Decode(ctx.StateR().Get(governance.VarChainOwnerID)))
 }

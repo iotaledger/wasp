@@ -10,8 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -127,12 +125,11 @@ func (c *ChainService) GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot s
 	if err != nil {
 		return 0, err
 	}
-	ret, err := common.CallView(ch, evm.Contract.Hname(), evm.FuncGetChainID.Hname(), nil, blockIndexOrTrieRoot)
+	ret, err := common.CallView(ch, evm.ViewGetChainID.Message(), blockIndexOrTrieRoot)
 	if err != nil {
 		return 0, err
 	}
-
-	return codec.Uint16.Decode(ret.Get(evm.FieldResult))
+	return evm.ViewGetChainID.Output.Decode(ret)
 }
 
 func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
@@ -180,17 +177,11 @@ func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot st
 	if err != nil {
 		return nil, err
 	}
-	recs, err := common.CallView(ch, root.Contract.Hname(), root.ViewGetContractRecords.Hname(), nil, blockIndexOrTrieRoot)
+	res, err := common.CallView(ch, root.ViewGetContractRecords.Message(), blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
 	}
-
-	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
-	if err != nil {
-		return nil, err
-	}
-
-	return contracts, nil
+	return root.ViewGetContractRecords.Output.Decode(res)
 }
 
 func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {

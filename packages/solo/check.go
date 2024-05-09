@@ -5,12 +5,12 @@ package solo
 
 import (
 	"bytes"
+	"math/big"
 
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -22,14 +22,13 @@ type tHelper interface {
 	Helper()
 }
 
-func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID, bal interface{}) {
+func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID, expected *big.Int) {
 	if h, ok := ch.Env.T.(tHelper); ok {
 		h.Helper()
 	}
 
 	bals := ch.L2Assets(agentID)
 	actualTokenBalance := bals.AmountNativeToken(nativeTokenID)
-	expected := util.ToBigInt(bal)
 	require.Truef(ch.Env.T,
 		expected.Cmp(actualTokenBalance) == 0,
 		"expected: %v, got: %v", expected.String(), actualTokenBalance.String(),
@@ -45,7 +44,7 @@ func (ch *Chain) AssertL2BaseTokens(agentID isc.AgentID, bal uint64) {
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
+	_, err := ch.CallView(governance.ViewGetChainInfo.Message())
 	require.NoError(ch.Env.T, err)
 
 	for _, c := range corecontracts.All {
@@ -77,12 +76,12 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 }
 
-func (ch *Chain) AssertL2TotalNativeTokens(nativeTokenID iotago.NativeTokenID, bal interface{}) {
+func (ch *Chain) AssertL2TotalNativeTokens(nativeTokenID iotago.NativeTokenID, bal *big.Int) {
 	if h, ok := ch.Env.T.(tHelper); ok {
 		h.Helper()
 	}
 	bals := ch.L2TotalAssets()
-	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(nativeTokenID)) == 0)
+	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(nativeTokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
@@ -120,11 +119,11 @@ func (env *Solo) AssertL1BaseTokens(addr iotago.Address, expected uint64) {
 	require.EqualValues(env.T, int(expected), int(env.L1BaseTokens(addr)))
 }
 
-func (env *Solo) AssertL1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID, expected interface{}) {
+func (env *Solo) AssertL1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID, expected *big.Int) {
 	if h, ok := env.T.(tHelper); ok {
 		h.Helper()
 	}
-	require.True(env.T, env.L1NativeTokens(addr, nativeTokenID).Cmp(util.ToBigInt(expected)) == 0)
+	require.True(env.T, env.L1NativeTokens(addr, nativeTokenID).Cmp(expected) == 0)
 }
 
 func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {

@@ -29,7 +29,7 @@ func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 
 	require.NoError(t, err)
 
-	_, _ = env.Chain.DeployContract(nativeIncCounterSCName, progHash.String(), nil)
+	_, _ = env.Chain.DeployContract(inccounter.Contract.Name, progHash.String(), nil)
 	waitUntil(t, env.contractIsDeployed(), env.Clu.Config.AllNodes(), 50*time.Second, "contract is deployed")
 
 	return &SabotageEnv{
@@ -42,7 +42,7 @@ func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) {
 	client := e.chainEnv.createNewClient()
 	for i := 0; i < numRequests; i++ {
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+		_, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
 		require.NoError(e.chainEnv.t, err)
 
 		time.Sleep(messageDelay)
@@ -161,7 +161,7 @@ func runTestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T, clusterSize, num
 	wg.Wait()
 	// quorum is not met, incCounter should not equal numRequests
 	time.Sleep(time.Second * 25)
-	counter := env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
+	counter := env.chainEnv.getNativeContractCounter()
 	require.NotEqual(t, numRequests, int(counter))
 }
 

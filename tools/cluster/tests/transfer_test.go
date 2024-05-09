@@ -42,7 +42,7 @@ func TestDepositWithdraw(t *testing.T) {
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(depositBaseTokens)
-	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
+	reqTx, err := chClient.PostRequest(accounts.FuncDeposit.Message(), *par)
 	require.NoError(t, err)
 
 	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, true, 30*time.Second)
@@ -62,7 +62,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// withdraw some base tokens back
 	baseTokensToWithdraw := 1 * isc.Million
-	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssetsBaseTokens(baseTokensToWithdraw),
 		},

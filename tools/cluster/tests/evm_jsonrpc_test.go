@@ -19,9 +19,6 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -87,15 +84,13 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	} else {
 		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
-	tx, err := e.Chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
-		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: codec.AgentID.Encode(
-				isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr),
-			),
+	tx, err := e.Chain.Client(walletKey).PostRequest(
+		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)),
+		chainclient.PostRequestParams{
+			Transfer:  isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
+			Allowance: isc.NewAssetsBaseTokens(amount),
 		},
-		Allowance: isc.NewAssetsBaseTokens(amount),
-	})
+	)
 	require.NoError(e.T, err)
 
 	// We have to wait not only for the committee to process the request, but also for access nodes to get that info.
@@ -136,28 +131,15 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 		A: 0,
 		B: 0,
 	}
-	govClient := e.Chain.SCClient(governance.Contract.Hname(), e.Chain.OriginatorKeyPair)
-	reqTx, err := govClient.PostRequest(
-		governance.FuncSetFeePolicy.Name,
-		chainclient.PostRequestParams{
-			Args: dict.Dict{
-				governance.VarGasFeePolicyBytes: fp1.Bytes(),
-			},
-		},
-	)
+	govClient := e.Chain.Client(e.Chain.OriginatorKeyPair)
+	reqTx, err := govClient.PostRequest(governance.FuncSetFeePolicy.Message(fp1))
 	require.NoError(t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
-	d, err := govClient.CallView(
-		context.Background(),
-		governance.ViewGetFeePolicy.Name,
-		dict.Dict{
-			governance.VarGasFeePolicyBytes: fp1.Bytes(),
-		},
-	)
+	d, err := govClient.CallView(context.Background(), governance.ViewGetFeePolicy.Message())
 	require.NoError(t, err)
-	fp2, err := gas.FeePolicyFromBytes(d.Get(governance.VarGasFeePolicyBytes))
+	fp2, err := governance.ViewGetFeePolicy.Output.Decode(d)
 	require.NoError(t, err)
 	require.Equal(t, fp1, fp2)
 	e.TestRPCGetLogs()

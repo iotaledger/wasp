@@ -37,11 +37,11 @@ func TestInxShutdownTest(t *testing.T) {
 	// assert requests are processed
 	client := env.createNewClient()
 
-	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+	tx, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
-	env.expectCounter(nativeIncCounterSCHname, 1)
+	env.expectCounter(1)
 }

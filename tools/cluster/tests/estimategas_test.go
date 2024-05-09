@@ -15,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
@@ -30,11 +28,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 			TargetAddress: env.Chain.ChainAddress(),
 			Assets:        isc.NewAssetsBaseTokens(1 * isc.Million),
 			Metadata: &isc.SendMetadata{
-				TargetContract: accounts.Contract.Hname(),
-				EntryPoint:     accounts.FuncTransferAllowanceTo.Hname(),
-				Params: map[kv.Key][]byte{
-					accounts.ParamAgentID: isc.NewAgentID(&iotago.Ed25519Address{}).Bytes(),
-				},
+				Message:   accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(&iotago.Ed25519Address{})),
 				Allowance: isc.NewAssetsBaseTokens(5000),
 				GasBudget: 1 * isc.Million,
 			},
@@ -58,19 +52,17 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	feeCharged, err := strconv.ParseUint(estimatedReceipt.GasFeeCharged, 10, 64)
 	require.NoError(t, err)
 
-	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokens(feeCharged),
-		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: isc.NewAgentID(&iotago.Ed25519Address{}).Bytes(),
-		},
+		Transfer:  isc.NewAssetsBaseTokens(feeCharged),
 		Allowance: isc.NewAssetsBaseTokens(5000),
 	}
 	gasBudget, err := strconv.ParseUint(estimatedReceipt.GasBurned, 10, 64)
 	require.NoError(t, err)
 	par.WithGasBudget(gasBudget)
 
-	tx, err := accountsClient.PostRequest(accounts.FuncTransferAllowanceTo.Name,
+	tx, err := client.PostRequest(
+		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(&iotago.Ed25519Address{})),
 		par,
 	)
 	require.NoError(t, err)
@@ -106,11 +98,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 			AdjustToMinimumStorageDeposit: true,
 			TargetAddress:                 env.Chain.ChainAddress(),
 			Metadata: &isc.SendMetadata{
-				TargetContract: accounts.Contract.Hname(),
-				EntryPoint:     accounts.FuncTransferAllowanceTo.Hname(),
-				Params: map[kv.Key][]byte{
-					accounts.ParamAgentID: targetAgentID.Bytes(),
-				},
+				Message:   accounts.FuncTransferAllowanceTo.Message(targetAgentID),
 				Allowance: isc.NewEmptyAssets().AddNFTs(nft.ID),
 				GasBudget: 1 * isc.Million,
 			},
@@ -135,12 +123,9 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)
 
-	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokens(output.Deposit()),
-		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: targetAgentID.Bytes(),
-		},
+		Transfer:                 isc.NewAssetsBaseTokens(output.Deposit()),
 		Allowance:                isc.NewEmptyAssets().AddNFTs(nft.ID),
 		NFT:                      nft,
 		AutoAdjustStorageDeposit: false,
@@ -149,7 +134,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	par.WithGasBudget(gasBudget)
 
-	tx, err := accountsClient.PostRequest(accounts.FuncTransferAllowanceTo.Name, par)
+	tx, err := client.PostRequest(accounts.FuncTransferAllowanceTo.Message(targetAgentID), par)
 	require.NoError(t, err)
 	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(t, err)
@@ -164,12 +149,9 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	env.DepositFunds(10*isc.Million, keyPair)
 
-	estimationReq := isc.NewOffLedgerRequest(env.Chain.ChainID,
-		accounts.Contract.Hname(),
-		accounts.FuncTransferAllowanceTo.Hname(),
-		dict.Dict{
-			accounts.ParamAgentID: isc.NewAgentID(&iotago.Ed25519Address{}).Bytes(),
-		},
+	estimationReq := isc.NewOffLedgerRequest(
+		env.Chain.ChainID,
+		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(&iotago.Ed25519Address{})),
 		0,
 		1*isc.Million,
 	).WithAllowance(isc.NewAssetsBaseTokens(5000)).
@@ -196,16 +178,15 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)
 
-	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID: isc.NewAgentID(&iotago.Ed25519Address{}).Bytes(),
-		},
 		Allowance: isc.NewAssetsBaseTokens(5000),
 	}
 	par.WithGasBudget(1 * isc.Million)
 
-	req, err := accountsClient.PostOffLedgerRequest(accounts.FuncTransferAllowanceTo.Name,
+	req, err := client.PostOffLedgerRequest(
+		context.Background(),
+		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(&iotago.Ed25519Address{})),
 		par,
 	)
 	require.NoError(t, err)

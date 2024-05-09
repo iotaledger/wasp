@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -172,7 +171,7 @@ func updateMetadata(node string, chainAliasName string, chainID isc.ChainID, wit
 	validateAndPushURL(&chainInfo.Metadata.Website, metadataArgs.ChainWebsite)
 
 	// Map data to serialize to bytes
-	chainMetadata := isc.PublicChainMetadata{
+	chainMetadata := &isc.PublicChainMetadata{
 		EVMJsonRPCURL:   chainInfo.Metadata.EvmJsonRpcURL,
 		EVMWebSocketURL: chainInfo.Metadata.EvmWebSocketURL,
 		Name:            chainInfo.Metadata.Name,
@@ -180,12 +179,12 @@ func updateMetadata(node string, chainAliasName string, chainID isc.ChainID, wit
 		Website:         chainInfo.Metadata.Website,
 	}
 
-	params := chainclient.PostRequestParams{
-		Args: dict.Dict{
-			governance.ParamPublicURL: []byte(publicURL),
-			governance.ParamMetadata:  chainMetadata.Bytes(),
-		},
-	}
-
-	postRequest(node, chainAliasName, governance.Contract.Name, governance.FuncSetMetadata.Name, params, withOffLedger, true)
+	postRequest(
+		node,
+		chainAliasName,
+		governance.FuncSetMetadata.Message(&publicURL, &chainMetadata),
+		chainclient.PostRequestParams{},
+		withOffLedger,
+		true,
+	)
 }

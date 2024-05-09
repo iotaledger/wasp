@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -106,12 +105,8 @@ func RemoveUnprocessable(state kv.KVStore, reqID isc.RequestID) {
 // ---- entrypoints
 
 // view used to check if a given requestID exists on the unprocessable list
-func viewHasUnprocessable(ctx isc.SandboxView) dict.Dict {
-	reqID := ctx.Params().MustGetRequestID(ParamRequestID)
-	exists := HasUnprocessable(ctx.StateR(), reqID)
-	return dict.Dict{
-		ParamUnprocessableRequestExists: codec.Bool.Encode(exists),
-	}
+func viewHasUnprocessable(ctx isc.SandboxView, reqID isc.RequestID) bool {
+	return HasUnprocessable(ctx.StateR(), reqID)
 }
 
 var (
@@ -120,8 +115,7 @@ var (
 	ErrUnprocessableWrongSender  = coreerrors.Register("unprocessable request sender does not match the retry sender").Create()
 )
 
-func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
-	reqID := ctx.Params().MustGetRequestID(ParamRequestID)
+func retryUnprocessable(ctx isc.Sandbox, reqID isc.RequestID) dict.Dict {
 	exists := HasUnprocessable(ctx.StateR(), reqID)
 	if !exists {
 		panic(ErrUnprocessableAlreadyExist)
