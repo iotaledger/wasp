@@ -42,7 +42,10 @@ func (reqctx *requestContext) DestroyFoundry(sn uint32) uint64 {
 
 func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	out, _ := accounts.GetFoundryOutput(reqctx.contractStateWithGasBurn(), sn, reqctx.ChainID())
+	var out *iotago.FoundryOutput
+	reqctx.vm.withAccountsState(reqctx.uncommittedState, func(s *accounts.StateWriter) {
+		out, _ = s.GetFoundryOutput(sn, reqctx.ChainID())
+	})
 	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
 		panic(fmt.Errorf("internal: %w", err))

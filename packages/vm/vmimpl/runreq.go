@@ -108,15 +108,15 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		}
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req, reqctx.ChainID())
-		creditToAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, payoutAgentID, req.Assets(), reqctx.ChainID())
+		reqctx.creditNFTToAccount(payoutAgentID)
+		reqctx.creditToAccount(payoutAgentID, req.Assets())
 		if storageDepositNeeded > 0 {
-			debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
+			reqctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), false)
 		}
 		return
 	}
 
-	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalance(sender)
+	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
 	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(reqctx.txGasPrice(), parameters.L1().BaseToken.Decimals)
 	if senderBaseTokens < storageDepositNeeded+minReqCost {
@@ -124,11 +124,11 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
-	creditToAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, req.Assets(), reqctx.ChainID())
-	creditNFTToAccount(reqctx.uncommittedState, sender, req, reqctx.ChainID())
+	reqctx.creditToAccount(sender, req.Assets())
+	reqctx.creditNFTToAccount(sender)
 	if storageDepositNeeded > 0 {
 		reqctx.sdCharged = storageDepositNeeded
-		debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
+		reqctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded), false)
 	}
 }
 
@@ -367,7 +367,7 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (reqctx *requestContext) calcGuaranteedFeeTokens() uint64 {
-	tokensGuaranteed := reqctx.GetBaseTokensBalance(reqctx.req.SenderAccount())
+	tokensGuaranteed := reqctx.GetBaseTokensBalanceDiscardRemainder(reqctx.req.SenderAccount())
 	// safely subtract the allowed from the sender to the target
 	if allowed := reqctx.req.Allowance(); allowed != nil {
 		if tokensGuaranteed < allowed.BaseTokens {
@@ -428,13 +428,11 @@ func (reqctx *requestContext) chargeGasFee() {
 	if sendToValidator != 0 {
 		transferToValidator := &isc.Assets{}
 		transferToValidator.BaseTokens = sendToValidator
-		mustMoveBetweenAccounts(
-			reqctx.SchemaVersion(),
-			reqctx.uncommittedState,
+		reqctx.mustMoveBetweenAccounts(
 			sender,
 			reqctx.vm.task.ValidatorFeeTarget,
 			transferToValidator,
-			reqctx.ChainID(),
+			false,
 		)
 	}
 
@@ -444,7 +442,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	withContractState(reqctx.uncommittedState, governance.Contract, func(s kv.KVStore) {
 		minBalanceInCommonAccount = governance.MustGetMinCommonAccountBalance(s)
 	})
-	commonAccountBal := reqctx.GetBaseTokensBalance(accounts.CommonAccount())
+	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
 	if commonAccountBal < minBalanceInCommonAccount {
 		// pay to common account since the balance of common account is less than minSD
 		transferToCommonAcc := sendToPayout
@@ -454,24 +452,20 @@ func (reqctx *requestContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		mustMoveBetweenAccounts(
-			reqctx.SchemaVersion(),
-			reqctx.uncommittedState,
+		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),
 			isc.NewAssetsBaseTokens(transferToCommonAcc),
-			reqctx.ChainID(),
+			false,
 		)
 	}
 	if sendToPayout > 0 {
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		mustMoveBetweenAccounts(
-			reqctx.SchemaVersion(),
-			reqctx.uncommittedState,
+		reqctx.mustMoveBetweenAccounts(
 			sender,
 			payoutAgentID,
 			isc.NewAssetsBaseTokens(sendToPayout),
-			reqctx.ChainID(),
+			false,
 		)
 	}
 }

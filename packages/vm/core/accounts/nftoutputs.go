@@ -2,35 +2,34 @@ package accounts
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-func newNFTsArray(state kv.KVStore) *collections.Array {
-	return collections.NewArray(state, keyNewNFTs)
+func (s *StateWriter) newNFTsArray() *collections.Array {
+	return collections.NewArray(s.state, keyNewNFTs)
 }
 
-func NFTOutputMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, keyNFTOutputRecords)
+func (s *StateWriter) nftOutputMap() *collections.Map {
+	return collections.NewMap(s.state, keyNFTOutputRecords)
 }
 
-func nftOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, keyNFTOutputRecords)
+func (s *StateReader) nftOutputMapR() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, keyNFTOutputRecords)
 }
 
-func SaveNFTOutput(state kv.KVStore, out *iotago.NFTOutput, outputIndex uint16) {
+func (s *StateWriter) SaveNFTOutput(out *iotago.NFTOutput, outputIndex uint16) {
 	tokenRec := NFTOutputRec{
 		// TransactionID is unknown yet, will be filled next block
 		OutputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
 		Output:   out,
 	}
-	NFTOutputMap(state).SetAt(out.NFTID[:], tokenRec.Bytes())
-	newNFTsArray(state).Push(out.NFTID[:])
+	s.nftOutputMap().SetAt(out.NFTID[:], tokenRec.Bytes())
+	s.newNFTsArray().Push(out.NFTID[:])
 }
 
-func updateNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
-	newNFTs := newNFTsArray(state)
-	allNFTs := NFTOutputMap(state)
+func (s *StateWriter) updateNFTOutputIDs(anchorTxID iotago.TransactionID) {
+	newNFTs := s.newNFTsArray()
+	allNFTs := s.nftOutputMap()
 	n := newNFTs.Len()
 	for i := uint32(0); i < n; i++ {
 		nftID := newNFTs.GetAt(i)
@@ -41,12 +40,12 @@ func updateNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
 	newNFTs.Erase()
 }
 
-func DeleteNFTOutput(state kv.KVStore, nftID iotago.NFTID) {
-	NFTOutputMap(state).DelAt(nftID[:])
+func (s *StateWriter) DeleteNFTOutput(nftID iotago.NFTID) {
+	s.nftOutputMap().DelAt(nftID[:])
 }
 
-func GetNFTOutput(state kv.KVStoreReader, nftID iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
-	data := nftOutputMapR(state).GetAt(nftID[:])
+func (s *StateReader) GetNFTOutput(nftID iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
+	data := s.nftOutputMapR().GetAt(nftID[:])
 	if data == nil {
 		return nil, iotago.OutputID{}
 	}

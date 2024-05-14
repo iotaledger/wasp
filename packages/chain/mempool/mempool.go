@@ -511,14 +511,20 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 	return false
 }
 
+func (mpi *mempoolImpl) accountsState() *accounts.StateReader {
+	return accounts.NewStateReader(
+		mpi.chainHeadState.SchemaVersion(),
+		accounts.ContractStateR(mpi.chainHeadState),
+	)
+}
+
 func (mpi *mempoolImpl) nonce(account isc.AgentID) uint64 {
-	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
 	evmState := evmimpl.NewStateAccess(mpi.chainHeadState)
 
 	if evmSender, ok := account.(*isc.EthereumAddressAgentID); ok {
 		return evmState.Nonce(evmSender.EthAddress())
 	}
-	return accountsState.Nonce(account, mpi.chainID)
+	return mpi.accountsState().AccountNonce(account, mpi.chainID)
 }
 
 func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) error {
@@ -539,8 +545,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	}
 
 	// check user has on-chain balance
-	accountsState := accounts.NewStateAccess(mpi.chainHeadState)
-	if !accountsState.AccountExists(req.SenderAccount(), mpi.chainID) {
+	if !mpi.accountsState().AccountExists(req.SenderAccount(), mpi.chainID) {
 		// make an exception for gov calls (sender is chan owner and target is gov contract)
 		governanceState := governance.NewStateAccess(mpi.chainHeadState)
 		chainOwner := governanceState.ChainOwnerID()

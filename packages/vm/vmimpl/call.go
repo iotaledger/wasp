@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -85,6 +86,18 @@ func (reqctx *requestContext) getCallContext() *callContext {
 
 func withContractState(chainState kv.KVStore, c *coreutil.ContractInfo, f func(s kv.KVStore)) {
 	f(subrealm.New(chainState, kv.Key(c.Hname().Bytes())))
+}
+
+func (vm *vmContext) withAccountsState(chainState kv.KVStore, f func(*accounts.StateWriter)) {
+	withContractState(chainState, accounts.Contract, func(contractState kv.KVStore) {
+		f(accounts.NewStateWriter(vm.schemaVersion, contractState))
+	})
+}
+
+func (reqctx *requestContext) callAccounts(f func(*accounts.StateWriter)) {
+	reqctx.callCore(accounts.Contract, func(contractState kv.KVStore) {
+		f(accounts.NewStateWriter(reqctx.vm.schemaVersion, contractState))
+	})
 }
 
 func (reqctx *requestContext) callCore(c *coreutil.ContractInfo, f func(s kv.KVStore)) {

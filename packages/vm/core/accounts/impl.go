@@ -59,7 +59,7 @@ var Processor = Contract.Processor(nil,
 // this expects the origin amount minus SD
 func SetInitialState(v isc.SchemaVersion, state kv.KVStore, baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	CreditToAccount(v, state, CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
+	NewStateWriter(v, state).CreditToAccount(CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -271,7 +271,7 @@ func foundryCreateNewWithMetadata(ctx isc.Sandbox, optionalTokenScheme *iotago.T
 	debitBaseTokensFromAllowance(ctx, storageDepositConsumed, ctx.ChainID())
 
 	// add to the ownership list of the account
-	addFoundryToAccount(ctx.State(), ctx.Caller(), sn)
+	NewStateWriterFromSandbox(ctx).addFoundryToAccount(ctx.Caller(), sn)
 
 	eventFoundryCreated(ctx, sn)
 
@@ -295,13 +295,13 @@ var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zer
 func nativeTokenDestroy(ctx isc.Sandbox, sn uint32) dict.Dict {
 	ctx.Log().Debugf("accounts.nativeTokenDestroy")
 	// check if foundry is controlled by the caller
-	state := ctx.State()
+	state := NewStateWriterFromSandbox(ctx)
 	caller := ctx.Caller()
-	if !hasFoundry(state, caller, sn) {
+	if !state.hasFoundry(caller, sn) {
 		panic(vm.ErrUnauthorized)
 	}
 
-	out, _ := GetFoundryOutput(state, sn, ctx.ChainID())
+	out, _ := state.GetFoundryOutput(sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
 	if !util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)) {
 		panic(errFoundryWithCirculatingSupply)
@@ -309,12 +309,10 @@ func nativeTokenDestroy(ctx isc.Sandbox, sn uint32) dict.Dict {
 
 	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
-	deleteFoundryFromAccount(state, caller, sn)
-	DeleteFoundryOutput(state, sn)
+	state.deleteFoundryFromAccount(caller, sn)
+	state.DeleteFoundryOutput(sn)
 	// the storage deposit goes to the caller's account
-	CreditToAccount(
-		ctx.SchemaVersion(),
-		state,
+	state.CreditToAccount(
 		caller,
 		&isc.Assets{BaseTokens: storageDepositReleased},
 		ctx.ChainID(),
@@ -328,14 +326,14 @@ func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy
 	if util.IsZeroBigInt(delta) {
 		return
 	}
-	state := ctx.State()
+	state := NewStateWriterFromSandbox(ctx)
 	caller := ctx.Caller()
 	// check if foundry is controlled by the caller
-	if !hasFoundry(state, caller, sn) {
+	if !state.hasFoundry(caller, sn) {
 		panic(vm.ErrUnauthorized)
 	}
 
-	out, _ := GetFoundryOutput(state, sn, ctx.ChainID())
+	out, _ := state.GetFoundryOutput(sn, ctx.ChainID())
 	if out == nil {
 		panic(errFoundryNotFound)
 	}
@@ -357,10 +355,10 @@ func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy
 				},
 			}),
 		)
-		DebitFromAccount(ctx.SchemaVersion(), state, accountID, deltaAssets, ctx.ChainID())
+		state.DebitFromAccount(accountID, deltaAssets, ctx.ChainID())
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
-		CreditToAccount(ctx.SchemaVersion(), state, caller, deltaAssets, ctx.ChainID())
+		state.CreditToAccount(caller, deltaAssets, ctx.ChainID())
 		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
@@ -371,7 +369,7 @@ func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy
 		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment), ctx.ChainID())
 	case storageDepositAdjustment > 0:
 		// storage deposit is returned to the caller account
-		CreditToAccount(ctx.SchemaVersion(), state, caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
+		state.CreditToAccount(caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
 	}
 	eventFoundryModified(ctx, sn)
 	return

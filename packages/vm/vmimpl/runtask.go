@@ -126,8 +126,8 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
 
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		withContractState(chainState, accounts.Contract, func(accountState kv.KVStore) {
-			newNFTIDs := accounts.UpdateLatestOutputID(accountState, vmctx.task.AnchorOutputID.TransactionID(), vmctx.task.AnchorOutput.StateIndex)
+		vmctx.withAccountsState(chainState, func(s *accounts.StateWriter) {
+			newNFTIDs := s.UpdateLatestOutputID(vmctx.task.AnchorOutputID.TransactionID(), vmctx.task.AnchorOutput.StateIndex)
 
 			if len(newNFTIDs) == 0 {
 				return
@@ -135,7 +135,7 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 
 			withContractState(chainState, evm.Contract, func(evmState kv.KVStore) {
 				for _, nftID := range newNFTIDs {
-					nft := accounts.GetNFTData(accountState, nftID)
+					nft := s.GetNFTData(nftID)
 
 					evmimpl.RegisterERC721NFTCollectionByNFTId(evmState, nft)
 				}

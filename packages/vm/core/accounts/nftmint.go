@@ -6,7 +6,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -55,16 +54,16 @@ func mintedNFTRecordFromBytes(data []byte) *mintedNFTRecord {
 	return record
 }
 
-func newlyMintedNFTsMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixNewlyMintedNFTs)
+func (s *StateWriter) newlyMintedNFTsMap() *collections.Map {
+	return collections.NewMap(s.state, prefixNewlyMintedNFTs)
 }
 
-func mintIDMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixMintIDMap)
+func (s *StateWriter) mintIDMap() *collections.Map {
+	return collections.NewMap(s.state, prefixMintIDMap)
 }
 
-func mintIDMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, prefixMintIDMap)
+func (s *StateReader) mintIDMapR() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, prefixMintIDMap)
 }
 
 var (
@@ -97,9 +96,10 @@ func mintParams(
 		withdrawOnMint:    withdrawOnMint,
 	}
 
+	state := NewStateReaderFromSandbox(ctx)
 	if !collectionID.Empty() {
 		// assert the NFT of collectionID is on-chain and owned by the caller
-		if !hasNFT(ctx.State(), ctx.Caller(), collectionID) {
+		if !state.hasNFT(ctx.Caller(), collectionID) {
 			panic(errCollectionNotAllowed)
 		}
 		ret.issuerAddress = collectionID.ToAddress()
@@ -154,8 +154,9 @@ func mintNFT(
 	)
 
 	// debit the SD required for the NFT from the sender account
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount))                                          // claim tokens from allowance
-	DebitFromAccount(ctx.SchemaVersion(), ctx.State(), ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount), ctx.ChainID()) // debit from this SC account
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount)) // claim tokens from allowance
+	state := NewStateWriterFromSandbox(ctx)
+	state.DebitFromAccount(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount), ctx.ChainID()) // debit from this SC account
 
 	rec := mintedNFTRecord{
 		positionInMintedList: positionInMintedList,
@@ -164,21 +165,22 @@ func mintNFT(
 		output:               nftOutput,
 	}
 	// save the info required to credit the NFT on next block
-	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
+	state.newlyMintedNFTsMap().SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
 	return mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList)
 }
 
 func viewNFTIDbyMintID(ctx isc.SandboxView, internalMintID []byte) (ret iotago.NFTID) {
-	b := mintIDMapR(ctx.StateR()).GetAt(internalMintID)
+	state := NewStateReaderFromSandbox(ctx)
+	b := state.mintIDMapR().GetAt(internalMintID)
 	copy(ret[:], b)
 	return ret
 }
 
 // ----  output management
 
-func SaveMintedNFTOutput(state kv.KVStore, positionInMintedList, outputIndex uint16) {
-	mintMap := newlyMintedNFTsMap(state)
+func (s *StateWriter) SaveMintedNFTOutput(positionInMintedList, outputIndex uint16) {
+	mintMap := s.newlyMintedNFTsMap()
 	key := codec.Encode(positionInMintedList)
 	recBytes := mintMap.GetAt(key)
 	if recBytes == nil {
@@ -189,9 +191,9 @@ func SaveMintedNFTOutput(state kv.KVStore, positionInMintedList, outputIndex uin
 	mintMap.SetAt(key, rec.Bytes())
 }
 
-func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
-	mintMap := newlyMintedNFTsMap(state)
-	nftMap := NFTOutputMap(state)
+func (s *StateWriter) updateNewlyMintedNFTOutputIDs(anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
+	mintMap := s.newlyMintedNFTsMap()
+	nftMap := s.nftOutputMap()
 	newNFTIDs := make([]iotago.NFTID, 0)
 
 	mintMap.Iterate(func(_, recBytes []byte) bool {
@@ -208,10 +210,10 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 			// save the updated data in the NFT map
 			nftMap.SetAt(nftID[:], outputRec.Bytes())
 			// credit the NFT to the target owner
-			creditNFTToAccount(state, mintedRec.owner, nftID, mintedRec.output.ImmutableFeatureSet().IssuerFeature().Address)
+			s.creditNFTToAccount(mintedRec.owner, nftID, mintedRec.output.ImmutableFeatureSet().IssuerFeature().Address)
 		}
 		// save the mapping of [mintID => NFTID]
-		mintIDMap(state).SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])
+		s.mintIDMap().SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])
 		newNFTIDs = append(newNFTIDs, nftID)
 
 		return true

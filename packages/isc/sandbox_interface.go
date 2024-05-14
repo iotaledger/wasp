@@ -73,7 +73,7 @@ type Authorize interface {
 
 type Balance interface {
 	// BalanceBaseTokens returns number of base tokens in the balance of the smart contract
-	BalanceBaseTokens() uint64
+	BalanceBaseTokens() (bts uint64, remainder *big.Int)
 	// BalanceNativeToken returns number of native token or nil if it is empty
 	BalanceNativeToken(iotago.NativeTokenID) *big.Int
 	// BalanceNativeTokens returns all native tokens owned by the smart contract

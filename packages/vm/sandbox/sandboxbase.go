@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/iotaledger/hive.go/lo"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
@@ -40,7 +41,7 @@ func (s *SandboxBase) Caller() isc.AgentID {
 	return s.Ctx.Caller()
 }
 
-func (s *SandboxBase) BalanceBaseTokens() uint64 {
+func (s *SandboxBase) BalanceBaseTokens() (bts uint64, remainder *big.Int) {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())
 }
@@ -63,7 +64,7 @@ func (s *SandboxBase) OwnedNFTs() []iotago.NFTID {
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
-		BaseTokens:   s.Ctx.GetBaseTokensBalance(agentID),
+		BaseTokens:   lo.Return1(s.Ctx.GetBaseTokensBalance(agentID)),
 		NativeTokens: s.Ctx.GetNativeTokens(agentID),
 		NFTs:         s.Ctx.GetAccountNFTs(agentID),
 	}
