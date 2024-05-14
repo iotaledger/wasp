@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -66,11 +65,12 @@ func (ctx *ViewContext) stateReaderWithGasBurn() kv.KVStoreReader {
 }
 
 func (ctx *ViewContext) contractStateReaderWithGasBurn(contract isc.Hname) kv.KVStoreReader {
-	return subrealm.NewReadOnly(ctx.stateReaderWithGasBurn(), kv.Key(contract.Bytes()))
+	return isc.ContractStateSubrealmR(ctx.stateReaderWithGasBurn(), contract)
 }
 
 func (ctx *ViewContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	return blob.LocateProgram(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname()), programHash)
+	return blob.NewStateReader(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname())).
+		LocateProgram(programHash)
 }
 
 func (ctx *ViewContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {

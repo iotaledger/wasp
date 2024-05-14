@@ -512,9 +512,9 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 }
 
 func (mpi *mempoolImpl) accountsState() *accounts.StateReader {
-	return accounts.NewStateReader(
+	return accounts.NewStateReaderFromChainState(
 		mpi.chainHeadState.SchemaVersion(),
-		accounts.ContractStateR(mpi.chainHeadState),
+		mpi.chainHeadState,
 	)
 }
 

@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -53,23 +52,19 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Time.Encode(time.Unix(0, 0)))
 
-	contractState := func(contract *coreutil.ContractInfo) kv.KVStore {
-		return subrealm.New(d, kv.Key(contract.Hname().Bytes()))
-	}
-
 	evmChainID := codec.Uint16.MustDecode(initParams.Get(ParamEVMChainID), evm.DefaultChainID)
 	blockKeepAmount := codec.Int32.MustDecode(initParams.Get(ParamBlockKeepAmount), governance.DefaultBlockKeepAmount)
 	chainOwner := codec.AgentID.MustDecode(initParams.Get(ParamChainOwner), &isc.NilAgentID{})
 	deployMagicWrap := codec.Bool.MustDecode(initParams.Get(ParamDeployBaseTokenMagicWrap), false)
 
 	// init the state of each core contract
-	rootimpl.SetInitialState(v, contractState(root.Contract))
-	blob.SetInitialState(contractState(blob.Contract))
-	accounts.SetInitialState(v, contractState(accounts.Contract), originDeposit)
-	blocklog.SetInitialState(contractState(blocklog.Contract))
-	errors.SetInitialState(contractState(errors.Contract))
-	governanceimpl.SetInitialState(contractState(governance.Contract), chainOwner, blockKeepAmount)
-	evmimpl.SetInitialState(contractState(evm.Contract), evmChainID, deployMagicWrap)
+	rootimpl.SetInitialState(v, root.Contract.StateSubrealm(d))
+	blob.SetInitialState(blob.Contract.StateSubrealm(d))
+	accounts.SetInitialState(v, accounts.Contract.StateSubrealm(d), originDeposit)
+	blocklog.SetInitialState(blocklog.Contract.StateSubrealm(d))
+	errors.SetInitialState(errors.Contract.StateSubrealm(d))
+	governanceimpl.SetInitialState(governance.Contract.StateSubrealm(d), chainOwner, blockKeepAmount)
+	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), evmChainID, deployMagicWrap)
 
 	block := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {

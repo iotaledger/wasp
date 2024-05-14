@@ -306,9 +306,9 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash *rpc
 }
 
 func (e *EVMChain) accountsState(chainState state.State) *accounts.StateReader {
-	return accounts.NewStateReader(
+	return accounts.NewStateReaderFromChainState(
 		chainState.SchemaVersion(),
-		accounts.ContractStateR(chainState),
+		chainState,
 	)
 }
 

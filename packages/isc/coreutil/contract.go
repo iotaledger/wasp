@@ -88,6 +88,14 @@ func (i *ContractInfo) ViewFunc(name string) EntryPointInfo[isc.SandboxView] {
 	}
 }
 
+func (i *ContractInfo) StateSubrealm(chainState kv.KVStore) kv.KVStore {
+	return isc.ContractStateSubrealm(chainState, i.Hname())
+}
+
+func (i *ContractInfo) StateSubrealmR(chainState kv.KVStoreReader) kv.KVStoreReader {
+	return isc.ContractStateSubrealmR(chainState, i.Hname())
+}
+
 // EntryPointInfo holds basic information about an entry point
 type EntryPointInfo[S isc.SandboxBase] struct {
 	Contract *ContractInfo

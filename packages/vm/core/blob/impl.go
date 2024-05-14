@@ -29,19 +29,19 @@ var errBlobAlreadyExists = coreerrors.Register("blob already exists").Create()
 // Returns hash of the blob
 func storeBlob(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("blob.storeBlob.begin")
-	state := ctx.State()
+	state := NewStateWriterFromSandbox(ctx)
 	params := ctx.Params()
 	// calculate a deterministic hash of all blob fields
 	blobHash, fieldsSorted, valuesSorted := mustGetBlobHash(params.Dict)
 
-	directory := GetDirectory(state)
+	directory := state.GetDirectory()
 	if directory.HasAt(blobHash[:]) {
 		panic(errBlobAlreadyExists)
 	}
 
 	// get a record by blob hash
-	blbValues := GetBlobValues(state, blobHash)
-	blbSizes := GetBlobSizes(state, blobHash)
+	blbValues := state.GetBlobValues(blobHash)
+	blbSizes := state.GetBlobSizes(blobHash)
 
 	totalSize := uint32(0)
 	totalSizeWithKeys := uint32(0)
@@ -64,9 +64,9 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 // getBlobInfo return lengths of all fields in the blob
 func getBlobInfo(ctx isc.SandboxView, blobHash hashing.HashValue) map[string]uint32 {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
-	blbSizes := GetBlobSizesR(ctx.StateR(), blobHash)
+	state := NewStateReaderFromSandbox(ctx)
 	ret := map[string]uint32{}
-	blbSizes.Iterate(func(field []byte, value []byte) bool {
+	state.GetBlobSizes(blobHash).Iterate(func(field []byte, value []byte) bool {
 		ret[string(field)] = lo.Must(DecodeSize(value))
 		return true
 	})
@@ -77,8 +77,8 @@ var errNotFound = coreerrors.Register("not found").Create()
 
 func getBlobField(ctx isc.SandboxView, blobHash hashing.HashValue, field []byte) []byte {
 	ctx.Log().Debugf("blob.getBlobField.begin")
-	state := ctx.StateR()
-	blobValues := GetBlobValuesR(state, blobHash)
+	state := NewStateReaderFromSandbox(ctx)
+	blobValues := state.GetBlobValues(blobHash)
 	if blobValues.Len() == 0 {
 		panic(errNotFound)
 	}
@@ -92,7 +92,7 @@ func getBlobField(ctx isc.SandboxView, blobHash hashing.HashValue, field []byte)
 func listBlobs(ctx isc.SandboxView) map[hashing.HashValue]uint32 {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := map[hashing.HashValue]uint32{}
-	GetDirectoryR(ctx.StateR()).Iterate(func(hash []byte, totalSize []byte) bool {
+	NewStateReaderFromSandbox(ctx).GetDirectory().Iterate(func(hash []byte, totalSize []byte) bool {
 		ret[lo.Must(codec.HashValue.Decode(hash))] = lo.Must(DecodeSize(totalSize))
 		return true
 	})

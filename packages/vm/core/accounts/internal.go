@@ -35,31 +35,31 @@ const (
 	// prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
 	// Covered in: TestFoundries
 	prefixBaseTokens = "b"
-	// prefixBaseTokens | <accountID> stores a map of <nativeTokenID> => big.Int
+	// prefixNativeTokens | <accountID> stores a map of <nativeTokenID> => big.Int
 	// Covered in: TestFoundries
-	PrefixNativeTokens = "t"
+	prefixNativeTokens = "t"
 
 	// L2TotalsAccount is the special <accountID> storing the total fungible tokens
 	// controlled by the chain
 	// Covered in: TestFoundries
 	L2TotalsAccount = "*"
 
-	// PrefixNFTs | <agentID> stores a map of <NFTID> => true
+	// prefixNFTs | <agentID> stores a map of <NFTID> => true
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	PrefixNFTs = "n"
-	// PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
+	prefixNFTs = "n"
+	// prefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
 	// Covered in: TestNFTMint
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	PrefixNFTsByCollection = "c"
+	prefixNFTsByCollection = "c"
 	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
 	// Covered in: TestNFTMint
 	prefixNewlyMintedNFTs = "N"
 	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
 	// Covered in: TestNFTMint
 	prefixMintIDMap = "M"
-	// PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
+	// prefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	// Covered in: TestFoundries
-	PrefixFoundries = "f"
+	prefixFoundries = "f"
 
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	// Covered in: TestNFTMint

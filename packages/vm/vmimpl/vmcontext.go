@@ -267,7 +267,7 @@ func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestRe
 
 func (vmctx *vmContext) locateProgram(chainState kv.KVStore, programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 	withContractState(chainState, blob.Contract, func(s kv.KVStore) {
-		vmtype, binary, err = blob.LocateProgram(s, programHash)
+		vmtype, binary, err = blob.NewStateReader(s).LocateProgram(programHash)
 	})
 	return vmtype, binary, err
 }

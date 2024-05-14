@@ -14,15 +14,15 @@ import (
 // observation: this uses the entire agentID as key, unlike acccounts.accountKey, which skips the chainID if it is the current chain. This means some bytes are wasted when saving NFTs
 
 func nftsMapKey(agentID isc.AgentID) string {
-	return PrefixNFTs + string(agentID.Bytes())
+	return prefixNFTs + string(agentID.Bytes())
 }
 
 func nftsByCollectionMapKey(agentID isc.AgentID, collectionKey kv.Key) string {
-	return PrefixNFTsByCollection + string(agentID.Bytes()) + string(collectionKey)
+	return prefixNFTsByCollection + string(agentID.Bytes()) + string(collectionKey)
 }
 
 func foundriesMapKey(agentID isc.AgentID) string {
-	return PrefixFoundries + string(agentID.Bytes())
+	return prefixFoundries + string(agentID.Bytes())
 }
 
 func (s *StateReader) accountToNFTsMapR(agentID isc.AgentID) *collections.ImmutableMap {
