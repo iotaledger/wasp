@@ -179,7 +179,7 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 	key := reqctx.requestLookupKey()
 	var err error
 	reqctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		err = blocklog.SaveRequestReceipt(s, receipt, key)
+		err = blocklog.NewStateWriter(s).SaveRequestReceipt(receipt, key)
 	})
 	if err != nil {
 		panic(err)
@@ -204,14 +204,15 @@ func (vmctx *vmContext) storeUnprocessable(chainState kv.KVStore, unprocessable 
 				continue
 			}
 			txsnapshot := vmctx.createTxBuilderSnapshot()
+			blocklogState := blocklog.NewStateWriter(s)
 			err := panicutil.CatchPanic(func() {
 				position := vmctx.txbuilder.ConsumeUnprocessable(r)
 				outputIndex := position + int(lastInternalAssetUTXOIndex)
-				if blocklog.HasUnprocessable(s, r.ID()) {
+				if blocklogState.HasUnprocessable(r.ID()) {
 					panic("already in unprocessable list")
 				}
 				// save the unprocessable requests and respective output indices onto the state so they can be retried later
-				blocklog.SaveUnprocessable(s, r, blockIndex, uint16(outputIndex))
+				blocklogState.SaveUnprocessable(r, blockIndex, uint16(outputIndex))
 			})
 			if err != nil {
 				// protocol exception triggered. Rollback
@@ -235,7 +236,7 @@ func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, p
 	}
 	eventKey := reqctx.eventLookupKey().Bytes()
 	reqctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		blocklog.SaveEvent(s, eventKey, event)
+		blocklog.NewStateWriter(s).SaveEvent(eventKey, event)
 	})
 	reqctx.requestEventIndex++
 }

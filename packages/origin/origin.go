@@ -61,7 +61,7 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 	rootimpl.SetInitialState(v, root.Contract.StateSubrealm(d))
 	blob.SetInitialState(blob.Contract.StateSubrealm(d))
 	accounts.SetInitialState(v, accounts.Contract.StateSubrealm(d), originDeposit)
-	blocklog.SetInitialState(blocklog.Contract.StateSubrealm(d))
+	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.SetInitialState(errors.Contract.StateSubrealm(d))
 	governanceimpl.SetInitialState(governance.Contract.StateSubrealm(d), chainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), evmChainID, deployMagicWrap)

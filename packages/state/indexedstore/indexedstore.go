@@ -73,7 +73,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 	blockKeepAmount := governance.NewStateAccess(state).GetBlockKeepAmount() // block keep amount cannot be changed (its set in stone from origin)
 
 	for blockKeepAmount != -1 { // no need to iterate if pruning is disabled
-		blocklogStateAccess := blocklog.NewStateAccess(state)
+		blocklogState := blocklog.NewStateReaderFromChainState(state)
 		earliestAvailableBlockIndex := uint32(0)
 		if uint32(blockKeepAmount) < state.BlockIndex() {
 			earliestAvailableBlockIndex = state.BlockIndex() - uint32(blockKeepAmount) + 1
@@ -81,7 +81,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 		if targetBlockIndex >= earliestAvailableBlockIndex {
 			break // found it
 		}
-		bi, ok := blocklogStateAccess.BlockInfo(earliestAvailableBlockIndex + 1) // get +1 to make things easier and get the actual block (because we do previousL1Commitment)
+		bi, ok := blocklogState.GetBlockInfo(earliestAvailableBlockIndex + 1) // get +1 to make things easier and get the actual block (because we do previousL1Commitment)
 		if !ok {
 			return trie.Hash{}, fmt.Errorf("iterating the chain: blocklog missing block index %d on active state %d", earliestAvailableBlockIndex, state.BlockIndex())
 		}
@@ -90,7 +90,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 			return trie.Hash{}, err
 		}
 	}
-	nextBlockInfo, ok := blocklog.NewStateAccess(state).BlockInfo(targetBlockIndex)
+	nextBlockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(targetBlockIndex)
 	if !ok {
 		return trie.Hash{}, fmt.Errorf("blocklog missing block index %d on active state %d", targetBlockIndex, state.BlockIndex())
 	}

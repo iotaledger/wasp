@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -56,7 +55,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		stateDraft: stateDraft,
 	}
 
-	vmctx.init(prevL1Commitment)
+	vmctx.init()
 
 	// run the batch of requests
 	requestResults, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(
@@ -103,7 +102,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	return taskResult
 }
 
-func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
+func (vmctx *vmContext) init() {
 	vmctx.loadChainConfig()
 
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
@@ -114,11 +113,8 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	// save the anchor tx ID of the current state
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		withContractState(chainState, blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(
-				s,
+			blocklog.NewStateWriter(s).UpdateLatestBlockInfo(
 				vmctx.task.AnchorOutputID.TransactionID(),
-				isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
-				prevL1Commitment,
 			)
 		})
 	})

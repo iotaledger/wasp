@@ -487,7 +487,7 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 	}
 	if mpi.chainHeadState != nil {
 		requestID := requestRef.ID
-		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, requestID)
+		receipt, err := blocklog.NewStateReaderFromChainState(mpi.chainHeadState).GetRequestReceipt(requestID)
 		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
 			mpi.log.Debugf("responding to RequestNeeded(ref=%v), found in blockLog", requestRef)
 			return receipt.Request
@@ -725,7 +725,7 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 		if reqs[i] == nil && mpi.chainHeadState != nil {
 			// Check also the processed backlog, to avoid consensus blocking while waiting for processed request.
 			// It will be rejected later (or state branch will change).
-			receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, reqRef.ID)
+			receipt, err := blocklog.NewStateReaderFromChainState(mpi.chainHeadState).GetRequestReceipt(reqRef.ID)
 			if err == nil && receipt != nil {
 				reqs[i] = receipt.Request
 			}
@@ -779,7 +779,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	//
 	// Maybe it has been processed before?
 	if mpi.chainHeadState != nil {
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
+		processed, err := blocklog.NewStateReaderFromChainState(mpi.chainHeadState).IsRequestProcessed(requestID)
 		if err != nil {
 			panic(fmt.Errorf("cannot check if request was processed: %w", err))
 		}
@@ -1035,7 +1035,7 @@ func unprocessedPredicate[V isc.Request](chainState state.State, log *logger.Log
 	return func(request V, ts time.Time) bool {
 		requestID := request.ID()
 
-		processed, err := blocklog.IsRequestProcessed(chainState, requestID)
+		processed, err := blocklog.NewStateReaderFromChainState(chainState).IsRequestProcessed(requestID)
 		if err != nil {
 			log.Warn("Cannot check if request %v is processed at state.TrieRoot=%v, err=%v", requestID, chainState.TrieRoot(), err)
 			return false

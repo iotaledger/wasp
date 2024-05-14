@@ -282,8 +282,7 @@ func (e *EVMChain) iscAliasOutputFromEVMBlockNumber(blockNumber *big.Int) (*isc.
 	if err != nil {
 		return nil, err
 	}
-	blocklogStatePartition := subrealm.NewReadOnly(nextISCState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	nextBlock, ok := blocklog.GetBlockInfo(blocklogStatePartition, nextISCBlockIndex)
+	nextBlock, ok := blocklog.NewStateReaderFromChainState(nextISCState).GetBlockInfo(nextISCBlockIndex)
 	if !ok {
 		return nil, fmt.Errorf("block not found: %d", nextISCBlockIndex)
 	}
@@ -640,9 +639,7 @@ func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInf
 	if err != nil {
 		return nil, nil, err
 	}
-	iscBlockIndex := iscState.BlockIndex()
-	blocklogStatePartition := subrealm.NewReadOnly(iscState, kv.Key(blocklog.Contract.Hname().Bytes()))
-	return blocklog.GetRequestsInBlock(blocklogStatePartition, iscBlockIndex)
+	return blocklog.NewStateReaderFromChainState(iscState).GetRequestsInBlock(iscState.BlockIndex())
 }
 
 func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {

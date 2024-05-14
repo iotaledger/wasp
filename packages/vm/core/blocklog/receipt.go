@@ -1,14 +1,11 @@
 package blocklog
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -41,25 +38,9 @@ func RequestReceiptFromBytes(data []byte, blockIndex uint32, reqIndex uint16) (*
 }
 
 func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
-	receipts := []*RequestReceipt{}
-	partition := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(Contract.Hname().Bytes()))
-
-	blockInfo, ok := GetBlockInfo(partition, block.StateIndex())
-	if !ok {
-		return nil, errors.New("inconsistency: BlockInfo not found in block mutations")
-	}
-	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		recBin, found := getRequestRecordDataByRef(partition, block.StateIndex(), reqIdx)
-		if !found {
-			return nil, errors.New("inconsistency: request log record wasn't found by exact reference")
-		}
-		receipt, err := RequestReceiptFromBytes(recBin, block.StateIndex(), reqIdx)
-		if err != nil {
-			return nil, fmt.Errorf("cannot deserialize requestReceipt: %w", err)
-		}
-		receipts = append(receipts, receipt)
-	}
-	return receipts, nil
+	state := NewStateReaderFromBlockMutations(block)
+	_, recs, err := state.GetRequestReceiptsInBlock(block.StateIndex())
+	return recs, err
 }
 
 func (rec *RequestReceipt) Bytes() []byte {

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -51,7 +53,7 @@ func (reqctx *requestContext) checkReasonRequestProcessed() error {
 	reqid := reqctx.req.ID()
 	var isProcessed bool
 	withContractState(reqctx.uncommittedState, blocklog.Contract, func(s kv.KVStore) {
-		isProcessed = blocklog.MustIsRequestProcessed(s, reqid)
+		isProcessed = lo.Must(blocklog.NewStateReader(s).IsRequestProcessed(reqid))
 	})
 	if isProcessed {
 		return errors.New("already processed")
