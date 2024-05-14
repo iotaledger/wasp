@@ -13,26 +13,26 @@ import (
 	"regexp"
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-const comparableChainCommitteeIDKeyLength = isc.ChainIDLength + iotago.Ed25519AddressBytesLength
+const comparableChainCommitteeIDKeyLength = isc.ChainIDLength + cryptolib.Ed25519AddressBytesLength
 
 type comparableChainCommitteeIDKey [comparableChainCommitteeIDKeyLength]byte
 
 type comparableChainCommitteeID struct {
 	key     comparableChainCommitteeIDKey
 	chainID isc.ChainID
-	address iotago.Address
+	address cryptolib.Address
 }
 
-func newComparableChainCommitteeID(chainID isc.ChainID, address iotago.Address) *comparableChainCommitteeID {
-	addressBytes := isc.AddressToBytes(address)
+func newComparableChainCommitteeID(chainID isc.ChainID, address cryptolib.Address) *comparableChainCommitteeID {
+	addressBytes := cryptolib.SerializeAddress(address)
 
 	key := comparableChainCommitteeIDKey{}
 	copy(key[:isc.ChainIDLength], chainID[:])
@@ -50,7 +50,7 @@ func (c *comparableChainCommitteeID) Key() comparableChainCommitteeIDKey {
 }
 
 func (c *comparableChainCommitteeID) String() string {
-	return fmt.Sprintf("%s-%s", c.chainID, c.address.Bech32(parameters.L1().Protocol.Bech32HRP))
+	return fmt.Sprintf("%s-%s", c.chainID, cryptolib.AddressToBech32String(parameters.L1().Protocol.Bech32HRP, c.address))
 }
 
 type consensusState struct {
@@ -74,7 +74,7 @@ func (c *consensusState) ChainID() isc.ChainID {
 	return c.identifier.chainID
 }
 
-func (c *consensusState) Address() iotago.Address {
+func (c *consensusState) Address() cryptolib.Address {
 	return c.identifier.address
 }
 
@@ -85,9 +85,9 @@ type jsonConsensusState struct {
 }
 
 func (c *consensusState) MarshalJSON() ([]byte, error) {
-	chainIDBech32 := c.identifier.chainID.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
+	chainIDBech32 := cryptolib.AddressToBech32String(parameters.L1().Protocol.Bech32HRP, c.identifier.chainID.AsAddress())
 
-	jAddressRaw, err := iotago.AddressToJSONRawMsg(c.identifier.address)
+	jAddressRaw, err := cryptolib.AddressToJSON(c.identifier.address)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	committeeAddress, err := iotago.AddressFromJSONRawMsg(j.CommitteeAddress)
+	committeeAddress, err := cryptolib.AddressFromJSON(j.CommitteeAddress)
 	if err != nil {
 		return err
 	}
@@ -127,13 +127,13 @@ type ConsensusStateRegistry struct {
 	onChangeMap *onchangemap.OnChangeMap[comparableChainCommitteeIDKey, *comparableChainCommitteeID, *consensusState]
 
 	folderPath    string
-	networkPrefix iotago.NetworkPrefix
+	networkPrefix parameters.NetworkPrefix
 }
 
 var _ cmt_log.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
-func NewConsensusStateRegistry(folderPath string, networkPrefix iotago.NetworkPrefix) (*ConsensusStateRegistry, error) {
+func NewConsensusStateRegistry(folderPath string, networkPrefix parameters.NetworkPrefix) (*ConsensusStateRegistry, error) {
 	// create the target directory during initialization
 	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 		}
 
 		committeeAddressBech32 := filesRegex.FindStringSubmatch(subFolderFile.Name())[1]
-		_, committeeAddress, err := iotago.ParseBech32(committeeAddressBech32)
+		_, committeeAddress, err := cryptolib.AddressFromBech32(committeeAddressBech32)
 		if err != nil {
 			return fmt.Errorf("unable to parse committee bech32 address (%s), error: %w", committeeAddressBech32, err)
 		}
@@ -238,16 +238,16 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 		}
 
 		chainAddressBech32 := foldersRegex.FindStringSubmatch(rootFolderFile.Name())[0]
-		_, chainAddress, err := iotago.ParseBech32(chainAddressBech32)
+		_, chainAddress, err := cryptolib.AddressFromBech32(chainAddressBech32)
 		if err != nil {
 			return fmt.Errorf("unable to parse consensus state bech32 address (%s), error: %w", chainAddressBech32, err)
 		}
 
-		if chainAddress.Type() != iotago.AddressAlias {
+		if chainAddress.Type() != cryptolib.AddressAlias {
 			return fmt.Errorf("chainID bech32 address is not an alias address (%s), error: %w", chainAddressBech32, err)
 		}
 
-		chainID := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
+		chainID := isc.ChainIDFromAddress(chainAddress.(*cryptolib.AliasAddress))
 
 		subFolderPath := path.Join(p.folderPath, rootFolderFile.Name())
 
@@ -268,8 +268,8 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 }
 
 func (p *ConsensusStateRegistry) getConsensusStateFilePath(state *consensusState) string {
-	chainAddressBech32 := state.ChainID().AsAddress().Bech32(p.networkPrefix)
-	committeeAddressBech32 := state.Address().Bech32(p.networkPrefix)
+	chainAddressBech32 := cryptolib.AddressToBech32String(p.networkPrefix, state.ChainID().AsAddress())
+	committeeAddressBech32 := cryptolib.AddressToBech32String(p.networkPrefix, state.Address())
 
 	return path.Join(p.folderPath, chainAddressBech32, fmt.Sprintf("%s.json", committeeAddressBech32))
 }
@@ -321,7 +321,7 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 }
 
 // Can return cmtLog.ErrCmtLogStateNotFound.
-func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress iotago.Address) (*cmt_log.State, error) {
+func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress cryptolib.Address) (*cmt_log.State, error) {
 	state, err := p.onChangeMap.Get(newComparableChainCommitteeID(chainID, committeeAddress))
 	if err != nil {
 		return nil, cmt_log.ErrCmtLogStateNotFound
@@ -350,7 +350,7 @@ func (p *ConsensusStateRegistry) add(state *consensusState) error {
 	return nil
 }
 
-func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress iotago.Address, state *cmt_log.State) error {
+func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress cryptolib.Address, state *cmt_log.State) error {
 	return p.add(&consensusState{
 		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 		LogIndex:   state.LogIndex,

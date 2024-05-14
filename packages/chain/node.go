@@ -89,7 +89,7 @@ type Chain interface {
 }
 
 type CommitteeInfo struct {
-	Address       iotago.Address
+	Address       cryptolib.Address
 	Size          uint16
 	Quorum        uint16
 	QuorumIsAlive bool
@@ -158,7 +158,7 @@ type chainNodeImpl struct {
 	recvAliasOutputPipe pipe.Pipe[*isc.AliasOutputWithID]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	recvMilestonePipe   pipe.Pipe[time.Time]
-	consensusInsts      *shrinkingmap.ShrinkingMap[iotago.Ed25519Address, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
+	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.Ed25519Address, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
 	consOutputPipe      pipe.Pipe[*consOutput]
 	consRecoverPipe     pipe.Pipe[*consRecover]
 	publishingTXes      *shrinkingmap.ShrinkingMap[iotago.TransactionID, context.CancelFunc] // TX'es now being published.
@@ -239,7 +239,7 @@ func (cr *consRecover) String() string {
 
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
-	committeeAddr   iotago.Ed25519Address
+	committeeAddr   cryptolib.Ed25519Address
 	logIndex        cmt_log.LogIndex
 	txID            iotago.TransactionID
 	nextAliasOutput *isc.AliasOutputWithID
@@ -305,7 +305,7 @@ func New(
 		recvAliasOutputPipe:    pipe.NewInfinitePipe[*isc.AliasOutputWithID](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
-		consensusInsts:         shrinkingmap.New[iotago.Ed25519Address, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
+		consensusInsts:         shrinkingmap.New[cryptolib.Ed25519Address, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
 		publishingTXes:         shrinkingmap.New[iotago.TransactionID, context.CancelFunc](),
@@ -739,7 +739,7 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
 	cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputMilestoneReceived()))
-	cni.consensusInsts.ForEach(func(address iotago.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+	cni.consensusInsts.ForEach(func(address cryptolib.Ed25519Address, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
 				consensusInstance.consensus.Time(timestamp)
@@ -908,7 +908,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 
 	// collect all active consensusIDs
 	activeConsensusInstances := []consGR.ConsensusID{}
-	cni.consensusInsts.ForEach(func(cAddr iotago.Ed25519Address, consMap *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+	cni.consensusInsts.ForEach(func(cAddr cryptolib.Ed25519Address, consMap *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		consMap.ForEach(func(li cmt_log.LogIndex, _ *consensusInst) bool {
 			activeConsensusInstances = append(activeConsensusInstances, consGR.NewConsensusID(&cAddr, &li))
 			return true
@@ -924,7 +924,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 
 // Cleanup consensus instances, except the instances with LogIndexes above the specified for a particular committee.
 // If nils are provided for the keep* variables, all the instances are cleaned up.
-func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr iotago.Ed25519Address, keepLogIndex cmt_log.LogIndex) {
+func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr cryptolib.Ed25519Address, keepLogIndex cmt_log.LogIndex) {
 	consensusInstances, exists := cni.consensusInsts.Get(committeeAddr)
 	if !exists {
 		return

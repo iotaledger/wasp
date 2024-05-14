@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -23,7 +24,7 @@ type NodeConnection interface {
 	ChainNodeConn
 	Run(ctx context.Context) error
 	WaitUntilInitiallySynced(context.Context) error
-	GetBech32HRP() iotago.NetworkPrefix
+	GetBech32HRP() cryptolib.NetworkPrefix
 	GetL1Params() *parameters.L1Params
 	GetL1ProtocolParams() *iotago.ProtocolParameters
 }

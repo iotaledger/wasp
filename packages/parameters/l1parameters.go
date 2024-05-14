@@ -12,9 +12,9 @@ import (
 
 // L1Params describes parameters coming from the L1Params node
 type L1Params struct {
-	MaxPayloadSize int                        `json:"maxPayloadSize" swagger:"required"`
-	Protocol       *iotago.ProtocolParameters `json:"protocol" swagger:"required"`
-	BaseToken      *BaseToken                 `json:"baseToken" swagger:"required"`
+	MaxPayloadSize int                 `json:"maxPayloadSize" swagger:"required"`
+	Protocol       *ProtocolParameters `json:"protocol" swagger:"required"`
+	BaseToken      *BaseToken          `json:"baseToken" swagger:"required"`
 }
 
 type BaseToken struct {
@@ -40,17 +40,17 @@ var (
 	L1ForTesting = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxPayloadSize: MaxPayloadSize,
-		Protocol: &iotago.ProtocolParameters{
+		Protocol: &ProtocolParameters{
 			Version:     tpkg.TestProtoParas.Version,
-			NetworkName: tpkg.TestProtoParas.NetworkName,
-			Bech32HRP:   tpkg.TestProtoParas.Bech32HRP,
-			MinPoWScore: tpkg.TestProtoParas.MinPoWScore,
-			RentStructure: iotago.RentStructure{
+			NetworkName: TestProtoParas.NetworkName,
+			Bech32HRP:   TestProtoParas.Bech32HRP,
+			MinPoWScore: TestProtoParas.MinPoWScore,
+			RentStructure: RentStructure{
 				VByteCost:    10,
 				VBFactorData: 1,
 				VBFactorKey:  1,
 			},
-			TokenSupply: tpkg.TestProtoParas.TokenSupply,
+			TokenSupply: TestProtoParas.TokenSupply,
 		},
 		BaseToken: &BaseToken{
 			Name:            "Iota",

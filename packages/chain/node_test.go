@@ -396,7 +396,7 @@ type testEnv struct {
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
-	cmtAddress       iotago.Address
+	cmtAddress       cryptolib.Address
 	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
 	originTx         *iotago.Transaction

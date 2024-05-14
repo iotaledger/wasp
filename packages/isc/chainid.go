@@ -7,20 +7,20 @@ import (
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-const ChainIDLength = iotago.AliasIDLength
+const ChainIDLength = cryptolib.AliasIDLength
 
 var emptyChainID = ChainID{}
 
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
 type (
-	ChainID    iotago.AliasID
+	ChainID    cryptolib.AliasID
 	ChainIDKey string
 )
 
@@ -29,12 +29,12 @@ func EmptyChainID() ChainID {
 	return emptyChainID
 }
 
-func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
+func ChainIDFromAddress(addr *cryptolib.AliasAddress) ChainID {
 	return ChainIDFromAliasID(addr.AliasID())
 }
 
 // ChainIDFromAliasID creates new chain ID from alias address
-func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
+func ChainIDFromAliasID(aliasID cryptolib.AliasID) ChainID {
 	return ChainID(aliasID)
 }
 
@@ -45,14 +45,14 @@ func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 }
 
 func ChainIDFromString(bech32 string) (ChainID, error) {
-	_, addr, err := iotago.ParseBech32(bech32)
+	_, addr, err := cryptolib.AddressFromBech32(bech32)
 	if err != nil {
 		return ChainID{}, err
 	}
-	if addr.Type() != iotago.AddressAlias {
+	if addr.Type() != cryptolib.AddressAlias {
 		return ChainID{}, fmt.Errorf("chainID must be an alias address (%s)", bech32)
 	}
-	return ChainIDFromAddress(addr.(*iotago.AliasAddress)), nil
+	return ChainIDFromAddress(addr.(*cryptolib.AliasAddress)), nil
 }
 
 func ChainIDFromKey(key ChainIDKey) ChainID {
@@ -78,17 +78,17 @@ func RandomChainID(seed ...[]byte) ChainID {
 	return chainID
 }
 
-func (id ChainID) AsAddress() iotago.Address {
-	addr := iotago.AliasAddress(id)
+func (id ChainID) AsAddress() cryptolib.Address {
+	addr := cryptolib.AliasAddress(id)
 	return &addr
 }
 
-func (id ChainID) AsAliasAddress() iotago.AliasAddress {
-	return iotago.AliasAddress(id)
+func (id ChainID) AsAliasAddress() cryptolib.AliasAddress {
+	return cryptolib.AliasAddress(id)
 }
 
-func (id ChainID) AsAliasID() iotago.AliasID {
-	return iotago.AliasID(id)
+func (id ChainID) AsAliasID() cryptolib.AliasID {
+	return cryptolib.AliasID(id)
 }
 
 func (id ChainID) Bytes() []byte {
@@ -121,7 +121,7 @@ func (id ChainID) ShortString() string {
 
 // String human-readable form (bech32)
 func (id ChainID) String() string {
-	return id.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
+	return cryptolib.AddressToBech32String(parameters.L1().Protocol.Bech32HRP, id.AsAddress())
 }
 
 func (id *ChainID) Read(r io.Reader) error {

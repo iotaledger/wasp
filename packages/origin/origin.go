@@ -129,8 +129,8 @@ func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaV
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
 	keyPair cryptolib.VariantKeyPair,
-	stateControllerAddress iotago.Address,
-	governanceControllerAddress iotago.Address,
+	stateControllerAddress cryptolib.Address,
+	governanceControllerAddress cryptolib.Address,
 	deposit uint64,
 	initParams dict.Dict,
 	unspentOutputs iotago.OutputSet,

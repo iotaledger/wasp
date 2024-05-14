@@ -126,16 +126,16 @@ func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Outp
 	return inputs
 }
 
-func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress iotago.Address, stateIndex uint32) *isc.AliasOutputWithID {
+func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress cryptolib.Address, stateIndex uint32) *isc.AliasOutputWithID {
 	outputID := testiotago.RandOutputID()
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       aliasID,
 		StateIndex:    stateIndex,
 		StateMetadata: []byte{},
-		Conditions: iotago.UnlockConditions{
+		/*Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governorAddress},
-		},
+		},*/
 	}
 	return isc.NewAliasOutputWithID(aliasOutput, outputID)
 }
