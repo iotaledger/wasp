@@ -69,5 +69,5 @@ func (s *stateDraft) PreviousL1Commitment() *L1Commitment {
 }
 
 func (s *stateDraft) SchemaVersion() isc.SchemaVersion {
-	return root.NewStateAccess(s).SchemaVersion()
+	return root.NewStateReaderFromChainState(s).GetSchemaVersion()
 }

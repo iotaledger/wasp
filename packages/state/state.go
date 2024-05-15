@@ -74,7 +74,7 @@ func loadPrevL1CommitmentFromState(chainState kv.KVStoreReader) *L1Commitment {
 }
 
 func (s *state) SchemaVersion() isc.SchemaVersion {
-	return root.NewStateAccess(s).SchemaVersion()
+	return root.NewStateReaderFromChainState(s).GetSchemaVersion()
 }
 
 func (s *state) String() string {

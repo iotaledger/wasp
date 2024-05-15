@@ -78,7 +78,7 @@ func (reqctx *requestContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc
 
 func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *root.ContractRecord) {
 	withContractState(chainState, root.Contract, func(s kv.KVStore) {
-		ret = root.FindContract(s, contractHname)
+		ret = root.NewStateReader(s).FindContract(contractHname)
 	})
 	return ret
 }

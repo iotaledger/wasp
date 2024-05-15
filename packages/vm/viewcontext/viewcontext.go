@@ -69,12 +69,13 @@ func (ctx *ViewContext) contractStateReaderWithGasBurn(contract isc.Hname) kv.KV
 }
 
 func (ctx *ViewContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	return blob.NewStateReader(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname())).
-		LocateProgram(programHash)
+	blobState := blob.NewStateReader(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname()))
+	return blobState.LocateProgram(programHash)
 }
 
 func (ctx *ViewContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
-	return root.FindContract(ctx.contractStateReaderWithGasBurn(root.Contract.Hname()), contractHname)
+	rootState := root.NewStateReader(ctx.contractStateReaderWithGasBurn(root.Contract.Hname()))
+	return rootState.FindContract(contractHname)
 }
 
 func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {

@@ -37,10 +37,10 @@ var (
 
 // state variables
 const (
-	VarSchemaVersion            = "v" // covered in: TestDeployNativeContract
-	VarContractRegistry         = "r" // covered in: TestDeployNativeContract
-	VarDeployPermissionsEnabled = "a" // covered in: TestDeployNativeContract
-	VarDeployPermissions        = "p" // covered in: TestDeployNativeContract
+	varSchemaVersion            = "v" // covered in: TestDeployNativeContract
+	varContractRegistry         = "r" // covered in: TestDeployNativeContract
+	varDeployPermissionsEnabled = "a" // covered in: TestDeployNativeContract
+	varDeployPermissions        = "p" // covered in: TestDeployNativeContract
 )
 
 // request parameters
@@ -71,7 +71,7 @@ type OutputContractRecords struct{}
 
 func (c OutputContractRecords) Encode(recs map[isc.Hname]*ContractRecord) dict.Dict {
 	ret := dict.Dict{}
-	dst := collections.NewMap(ret, VarContractRegistry)
+	dst := collections.NewMap(ret, varContractRegistry)
 	for hname, rec := range recs {
 		dst.SetAt(codec.Hname.Encode(hname), ContractRegistryCodec.Encode(rec))
 	}
@@ -79,5 +79,10 @@ func (c OutputContractRecords) Encode(recs map[isc.Hname]*ContractRecord) dict.D
 }
 
 func (c OutputContractRecords) Decode(d dict.Dict) (map[isc.Hname]*ContractRecord, error) {
-	return decodeContractRegistry(collections.NewMapReadOnly(d, VarContractRegistry))
+	ret := make(map[isc.Hname]*ContractRecord)
+	collections.NewMapReadOnly(d, varContractRegistry).Iterate(func(k []byte, v []byte) bool {
+		ret[codec.Hname.MustDecode(k)] = ContractRegistryCodec.MustDecode(v)
+		return true
+	})
+	return ret, nil
 }

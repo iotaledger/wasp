@@ -107,7 +107,7 @@ func (vmctx *vmContext) init() {
 
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		vmctx.runMigrations(chainState, vmctx.task.Migrations)
-		vmctx.schemaVersion = root.NewStateAccess(chainState).SchemaVersion()
+		vmctx.schemaVersion = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 	})
 
 	// save the anchor tx ID of the current state
