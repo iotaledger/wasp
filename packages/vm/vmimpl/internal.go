@@ -4,7 +4,8 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/iotaledger/hive.go/lo"
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -21,16 +22,12 @@ import (
 
 // creditToAccount credits assets to the chain ledger
 func (reqctx *requestContext) creditToAccount(agentID isc.AgentID, ftokens *isc.Assets) {
-	reqctx.vm.withAccountsState(reqctx.uncommittedState, func(s *accounts.StateWriter) {
-		s.CreditToAccount(agentID, ftokens, reqctx.ChainID())
-	})
+	reqctx.accountsStateWriter(false).CreditToAccount(agentID, ftokens, reqctx.ChainID())
 }
 
 // creditToAccountFullDecimals credits assets to the chain ledger
 func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, amount *big.Int, gasBurn bool) {
-	reqctx.vm.withAccountsState(reqctx.chainState(gasBurn), func(s *accounts.StateWriter) {
-		s.CreditToAccountFullDecimals(agentID, amount, reqctx.ChainID())
-	})
+	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount, reqctx.ChainID())
 }
 
 func (reqctx *requestContext) creditNFTToAccount(agentID isc.AgentID) {
@@ -44,43 +41,30 @@ func (reqctx *requestContext) creditNFTToAccount(agentID isc.AgentID) {
 	if nftOutput.NFTID.Empty() {
 		nftOutput.NFTID = util.NFTIDFromNFTOutput(nftOutput, req.OutputID()) // handle NFTs that were minted diractly to the chain
 	}
-	reqctx.vm.withAccountsState(reqctx.uncommittedState, func(s *accounts.StateWriter) {
-		s.CreditNFTToAccount(agentID, nftOutput, reqctx.ChainID())
-	})
+	reqctx.accountsStateWriter(false).CreditNFTToAccount(agentID, nftOutput, reqctx.ChainID())
 }
 
 // debitFromAccount subtracts tokens from account if there are enough.
 func (reqctx *requestContext) debitFromAccount(agentID isc.AgentID, transfer *isc.Assets, gasBurn bool) {
-	reqctx.vm.withAccountsState(reqctx.chainState(gasBurn), func(s *accounts.StateWriter) {
-		s.DebitFromAccount(agentID, transfer, reqctx.ChainID())
-	})
+	reqctx.accountsStateWriter(gasBurn).DebitFromAccount(agentID, transfer, reqctx.ChainID())
 }
 
 // debitFromAccountFullDecimals subtracts basetokens tokens from account if there are enough.
 func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int, gasBurn bool) {
-	reqctx.vm.withAccountsState(reqctx.chainState(gasBurn), func(s *accounts.StateWriter) {
-		s.DebitFromAccountFullDecimals(agentID, amount, reqctx.ChainID())
-	})
+	reqctx.accountsStateWriter(gasBurn).DebitFromAccountFullDecimals(agentID, amount, reqctx.ChainID())
 }
 
 // debitNFTFromAccount removes a NFT from an account.
 func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, nftID iotago.NFTID, gasBurn bool) {
-	reqctx.vm.withAccountsState(reqctx.chainState(gasBurn), func(s *accounts.StateWriter) {
-		s.DebitNFTFromAccount(agentID, nftID, reqctx.ChainID())
-	})
+	reqctx.accountsStateWriter(gasBurn).DebitNFTFromAccount(agentID, nftID, reqctx.ChainID())
 }
 
 func (reqctx *requestContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, gasBurn bool) {
-	reqctx.vm.withAccountsState(reqctx.chainState(gasBurn), func(s *accounts.StateWriter) {
-		s.MustMoveBetweenAccounts(fromAgentID, toAgentID, assets, reqctx.ChainID())
-	})
+	lo.Must0(reqctx.accountsStateWriter(gasBurn).MoveBetweenAccounts(fromAgentID, toAgentID, assets, reqctx.ChainID()))
 }
 
 func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *root.ContractRecord) {
-	withContractState(chainState, root.Contract, func(s kv.KVStore) {
-		ret = root.NewStateReader(s).FindContract(contractHname)
-	})
-	return ret
+	return root.NewStateReaderFromChainState(chainState).FindContract(contractHname)
 }
 
 func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) (bts uint64, remainder *big.Int) {
@@ -91,7 +75,8 @@ func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) (bts uin
 }
 
 func (reqctx *requestContext) GetBaseTokensBalanceDiscardRemainder(agentID isc.AgentID) (bts uint64) {
-	return lo.Return1(reqctx.GetBaseTokensBalance(agentID))
+	bal, _ := reqctx.GetBaseTokensBalance(agentID)
+	return bal
 }
 
 func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
@@ -198,28 +183,26 @@ func (vmctx *vmContext) storeUnprocessable(chainState kv.KVStore, unprocessable 
 	}
 	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
 
-	withContractState(chainState, blocklog.Contract, func(s kv.KVStore) {
-		for _, r := range unprocessable {
-			if r.SenderAccount() == nil {
-				continue
-			}
-			txsnapshot := vmctx.createTxBuilderSnapshot()
-			blocklogState := blocklog.NewStateWriter(s)
-			err := panicutil.CatchPanic(func() {
-				position := vmctx.txbuilder.ConsumeUnprocessable(r)
-				outputIndex := position + int(lastInternalAssetUTXOIndex)
-				if blocklogState.HasUnprocessable(r.ID()) {
-					panic("already in unprocessable list")
-				}
-				// save the unprocessable requests and respective output indices onto the state so they can be retried later
-				blocklogState.SaveUnprocessable(r, blockIndex, uint16(outputIndex))
-			})
-			if err != nil {
-				// protocol exception triggered. Rollback
-				vmctx.restoreTxBuilderSnapshot(txsnapshot)
-			}
+	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState))
+	for _, r := range unprocessable {
+		if r.SenderAccount() == nil {
+			continue
 		}
-	})
+		txsnapshot := vmctx.createTxBuilderSnapshot()
+		err := panicutil.CatchPanic(func() {
+			position := vmctx.txbuilder.ConsumeUnprocessable(r)
+			outputIndex := position + int(lastInternalAssetUTXOIndex)
+			if blocklogState.HasUnprocessable(r.ID()) {
+				panic("already in unprocessable list")
+			}
+			// save the unprocessable requests and respective output indices onto the state so they can be retried later
+			blocklogState.SaveUnprocessable(r, blockIndex, uint16(outputIndex))
+		})
+		if err != nil {
+			// protocol exception triggered. Rollback
+			vmctx.restoreTxBuilderSnapshot(txsnapshot)
+		}
+	}
 }
 
 func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, payload []byte) {

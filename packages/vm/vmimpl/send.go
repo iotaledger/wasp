@@ -6,17 +6,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 const MaxPostedOutputsInOneRequest = 4
 
 func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.NFTID) *isc.NFT {
-	var nft *isc.NFT
-	vmctx.withAccountsState(chainState, func(s *accounts.StateWriter) {
-		nft = s.GetNFTData(nftID)
-	})
-	return nft
+	return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
 }
 
 func (reqctx *requestContext) send(par isc.RequestParameters) {

@@ -23,16 +23,12 @@ func (vmctx *vmContext) runMigrations(chainState kv.KVStore, migrationScheme *mi
 	for currentVersion < latestSchemaVersion {
 		migration := migrationScheme.Migrations[currentVersion-migrationScheme.BaseSchemaVersion]
 
-		withContractState(chainState, migration.Contract, func(s kv.KVStore) {
-			err := migration.Apply(s, vmctx.task.Log)
-			if err != nil {
-				panic(fmt.Sprintf("failed applying migration: %s", err))
-			}
-		})
+		err := migration.Apply(migration.Contract.StateSubrealm(chainState), vmctx.task.Log)
+		if err != nil {
+			panic(fmt.Sprintf("failed applying migration: %s", err))
+		}
 
 		currentVersion++
-		withContractState(chainState, root.Contract, func(s kv.KVStore) {
-			root.NewStateWriter(s).SetSchemaVersion(currentVersion)
-		})
+		root.NewStateWriter(root.Contract.StateSubrealm(chainState)).SetSchemaVersion(currentVersion)
 	}
 }

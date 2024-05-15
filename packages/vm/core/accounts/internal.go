@@ -177,13 +177,6 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 	return nil
 }
 
-func (s *StateWriter) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
-	err := s.MoveBetweenAccounts(fromAgentID, toAgentID, assets, chainID)
-	if err != nil {
-		panic(err)
-	}
-}
-
 // debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
 // It takes base tokens from allowance to the common account and then removes them from the L2 ledger
 func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.ChainID) {

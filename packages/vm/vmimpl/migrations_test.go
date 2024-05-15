@@ -40,9 +40,7 @@ func (e *migrationsTestEnv) getSchemaVersion() (ret isc.SchemaVersion) {
 
 func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 	e.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		withContractState(chainState, root.Contract, func(s kv.KVStore) {
-			root.NewStateWriter(s).SetSchemaVersion(v)
-		})
+		root.NewStateWriter(root.Contract.StateSubrealm(chainState)).SetSchemaVersion(v)
 	})
 }
 

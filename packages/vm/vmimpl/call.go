@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -84,19 +83,21 @@ func (reqctx *requestContext) getCallContext() *callContext {
 	return reqctx.callStack[len(reqctx.callStack)-1]
 }
 
-func withContractState(chainState kv.KVStore, c *coreutil.ContractInfo, f func(s kv.KVStore)) {
-	f(subrealm.New(chainState, kv.Key(c.Hname().Bytes())))
+func (vm *vmContext) accountsStateWriterFromChainState(chainState kv.KVStore) *accounts.StateWriter {
+	return vm.accountsStateWriter(accounts.Contract.StateSubrealm(chainState))
 }
 
-func (vm *vmContext) withAccountsState(chainState kv.KVStore, f func(*accounts.StateWriter)) {
-	withContractState(chainState, accounts.Contract, func(contractState kv.KVStore) {
-		f(accounts.NewStateWriter(vm.schemaVersion, contractState))
-	})
+func (vm *vmContext) accountsStateWriter(contractState kv.KVStore) *accounts.StateWriter {
+	return accounts.NewStateWriter(vm.schemaVersion, contractState)
+}
+
+func (reqctx *requestContext) accountsStateWriter(gasBurn bool) *accounts.StateWriter {
+	return reqctx.vm.accountsStateWriter(accounts.Contract.StateSubrealm(reqctx.chainState(gasBurn)))
 }
 
 func (reqctx *requestContext) callAccounts(f func(*accounts.StateWriter)) {
 	reqctx.callCore(accounts.Contract, func(contractState kv.KVStore) {
-		f(accounts.NewStateWriter(reqctx.vm.schemaVersion, contractState))
+		f(reqctx.vm.accountsStateWriter(contractState))
 	})
 }
 

@@ -158,7 +158,8 @@ func testCreditDebit4(t *testing.T, v isc.SchemaVersion) {
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = isc.NewAssetsBaseTokens(20)
-	accounts.NewStateWriter(v, state).MustMoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
+	require.NoError(t, err)
 	total = checkLedgerT(t, v, state)
 
 	keys = accounts.NewStateReader(v, state).AllAccountsAsDict().Keys()
@@ -229,7 +230,8 @@ func testCreditDebit6(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isc.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	accounts.NewStateWriter(v, state).MustMoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
+	require.NoError(t, err)
 	total = checkLedgerT(t, v, state)
 
 	keys := accounts.NewStateReader(v, state).AllAccountsAsDict().Keys()
@@ -276,7 +278,8 @@ func testMoveAll(t *testing.T, v isc.SchemaVersion) {
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
-	accounts.NewStateWriter(v, state).MustMoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
+	require.NoError(t, err)
 	accs = accounts.NewStateReader(v, state).AllAccountsAsDict()
 	require.Len(t, accs, 2)
 	require.EqualValues(t, 2, len(accs))
@@ -357,7 +360,8 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(iotago.NFTID{111}), isc.ChainID{}))
 
 	// moves successfully when the NFT is owned
-	accounts.NewStateWriter(v, state).MustMoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(NFT1.ID), isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(NFT1.ID), isc.ChainID{})
+	require.NoError(t, err)
 
 	user1NFTs = accounts.NewStateReader(v, state).GetAccountNFTs(agentID1)
 	require.Len(t, user1NFTs, 0)
