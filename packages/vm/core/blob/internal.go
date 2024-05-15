@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-const DirectoryPrefix = "d"
+const directoryPrefix = "d"
 
 func valuesMapName(blobHash hashing.HashValue) string {
 	return "v" + string(blobHash[:])
@@ -46,17 +46,17 @@ func MustGetBlobHash(fields dict.Dict) hashing.HashValue {
 
 // GetDirectory retrieves the blob directory from the state
 func (s *StateWriter) GetDirectory() *collections.Map {
-	return collections.NewMap(s.state, DirectoryPrefix)
+	return collections.NewMap(s.state, directoryPrefix)
 }
 
 // GetDirectory retrieves the blob directory from the state
 func (s *StateReader) GetDirectory() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, DirectoryPrefix)
+	return collections.NewMapReadOnly(s.state, directoryPrefix)
 }
 
 // GetDirectoryR retrieves the blob directory from the read-only state
 func (s *StateReader) contractStateGetDirectory() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, DirectoryPrefix)
+	return collections.NewMapReadOnly(s.state, directoryPrefix)
 }
 
 // GetBlobValues retrieves the blob field-value map from the state

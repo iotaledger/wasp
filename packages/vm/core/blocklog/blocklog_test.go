@@ -138,7 +138,7 @@ func TestGetEventsInternal(t *testing.T) {
 
 	d := dict.Dict{}
 
-	registry := collections.NewArray(d, PrefixBlockRegistry)
+	registry := collections.NewArray(d, prefixBlockRegistry)
 
 	eventMap := collections.NewMap(d, prefixRequestEvents)
 	createEventLookupKeys(registry, eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)

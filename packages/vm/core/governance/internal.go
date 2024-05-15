@@ -31,7 +31,7 @@ func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount in
 // If succeeds, it means this block is fake.
 // If fails, return nil
 func (s *StateReader) GetRotationAddress() iotago.Address {
-	ret, err := codec.Address.Decode(s.state.Get(VarRotateToAddress), nil)
+	ret, err := codec.Address.Decode(s.state.Get(varRotateToAddress), nil)
 	if err != nil {
 		return nil
 	}
@@ -39,7 +39,7 @@ func (s *StateReader) GetRotationAddress() iotago.Address {
 }
 
 func (s *StateWriter) SetRotationAddress(a iotago.Address) {
-	s.state.Set(VarRotateToAddress, codec.Address.Encode(a))
+	s.state.Set(varRotateToAddress, codec.Address.Encode(a))
 }
 
 // GetChainInfo returns global variables of the chain
@@ -58,46 +58,46 @@ func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 }
 
 func (s *StateReader) GetMinCommonAccountBalance() uint64 {
-	return lo.Must(codec.Uint64.Decode(s.state.Get(VarMinBaseTokensOnCommonAccount)))
+	return lo.Must(codec.Uint64.Decode(s.state.Get(varMinBaseTokensOnCommonAccount)))
 }
 
 func (s *StateWriter) SetMinCommonAccountBalance(m uint64) {
-	s.state.Set(VarMinBaseTokensOnCommonAccount, codec.Uint64.Encode(m))
+	s.state.Set(varMinBaseTokensOnCommonAccount, codec.Uint64.Encode(m))
 }
 
 func (s *StateReader) GetChainOwnerID() isc.AgentID {
-	return lo.Must(codec.AgentID.Decode(s.state.Get(VarChainOwnerID)))
+	return lo.Must(codec.AgentID.Decode(s.state.Get(varChainOwnerID)))
 }
 
 func (s *StateWriter) SetChainOwnerID(a isc.AgentID) {
-	s.state.Set(VarChainOwnerID, codec.AgentID.Encode(a))
+	s.state.Set(varChainOwnerID, codec.AgentID.Encode(a))
 	if s.GetChainOwnerIDDelegated() != nil {
-		s.state.Del(VarChainOwnerIDDelegated)
+		s.state.Del(varChainOwnerIDDelegated)
 	}
 }
 
 func (s *StateReader) GetChainOwnerIDDelegated() isc.AgentID {
-	return lo.Must(codec.AgentID.Decode(s.state.Get(VarChainOwnerIDDelegated), nil))
+	return lo.Must(codec.AgentID.Decode(s.state.Get(varChainOwnerIDDelegated), nil))
 }
 
 func (s *StateWriter) SetChainOwnerIDDelegated(a isc.AgentID) {
-	s.state.Set(VarChainOwnerIDDelegated, codec.AgentID.Encode(a))
+	s.state.Set(varChainOwnerIDDelegated, codec.AgentID.Encode(a))
 }
 
 func (s *StateReader) GetPayoutAgentID() isc.AgentID {
-	return lo.Must(codec.AgentID.Decode(s.state.Get(VarPayoutAgentID)))
+	return lo.Must(codec.AgentID.Decode(s.state.Get(varPayoutAgentID)))
 }
 
 func (s *StateWriter) SetPayoutAgentID(a isc.AgentID) {
-	s.state.Set(VarPayoutAgentID, codec.AgentID.Encode(a))
+	s.state.Set(varPayoutAgentID, codec.AgentID.Encode(a))
 }
 
 func (s *StateReader) GetGasFeePolicy() *gas.FeePolicy {
-	return lo.Must(gas.FeePolicyFromBytes(s.state.Get(VarGasFeePolicyBytes)))
+	return lo.Must(gas.FeePolicyFromBytes(s.state.Get(varGasFeePolicyBytes)))
 }
 
 func (s *StateWriter) SetGasFeePolicy(fp *gas.FeePolicy) {
-	s.state.Set(VarGasFeePolicyBytes, fp.Bytes())
+	s.state.Set(varGasFeePolicyBytes, fp.Bytes())
 }
 
 func (s *StateReader) GetDefaultGasPrice() *big.Int {
@@ -105,7 +105,7 @@ func (s *StateReader) GetDefaultGasPrice() *big.Int {
 }
 
 func (s *StateReader) GetGasLimits() *gas.Limits {
-	data := s.state.Get(VarGasLimitsBytes)
+	data := s.state.Get(varGasLimitsBytes)
 	if data == nil {
 		return gas.LimitsDefault
 	}
@@ -113,31 +113,31 @@ func (s *StateReader) GetGasLimits() *gas.Limits {
 }
 
 func (s *StateWriter) SetGasLimits(gl *gas.Limits) {
-	s.state.Set(VarGasLimitsBytes, gl.Bytes())
+	s.state.Set(varGasLimitsBytes, gl.Bytes())
 }
 
 func (s *StateReader) GetBlockKeepAmount() int32 {
-	return lo.Must(codec.Int32.Decode(s.state.Get(VarBlockKeepAmount), DefaultBlockKeepAmount))
+	return lo.Must(codec.Int32.Decode(s.state.Get(varBlockKeepAmount), DefaultBlockKeepAmount))
 }
 
 func (s *StateWriter) SetBlockKeepAmount(n int32) {
-	s.state.Set(VarBlockKeepAmount, codec.Int32.Encode(n))
+	s.state.Set(varBlockKeepAmount, codec.Int32.Encode(n))
 }
 
 func (s *StateWriter) SetPublicURL(url string) {
-	s.state.Set(VarPublicURL, codec.String.Encode(url))
+	s.state.Set(varPublicURL, codec.String.Encode(url))
 }
 
 func (s *StateReader) GetPublicURL() string {
-	return codec.String.MustDecode(s.state.Get(VarPublicURL), "")
+	return codec.String.MustDecode(s.state.Get(varPublicURL), "")
 }
 
 func (s *StateWriter) SetMetadata(metadata *isc.PublicChainMetadata) {
-	s.state.Set(VarMetadata, metadata.Bytes())
+	s.state.Set(varMetadata, metadata.Bytes())
 }
 
 func (s *StateReader) GetMetadata() *isc.PublicChainMetadata {
-	metadataBytes := s.state.Get(VarMetadata)
+	metadataBytes := s.state.Get(varMetadata)
 	if metadataBytes == nil {
 		return &isc.PublicChainMetadata{}
 	}
@@ -145,31 +145,31 @@ func (s *StateReader) GetMetadata() *isc.PublicChainMetadata {
 }
 
 func (s *StateWriter) AccessNodesMap() *collections.Map {
-	return collections.NewMap(s.state, VarAccessNodes)
+	return collections.NewMap(s.state, varAccessNodes)
 }
 
 func (s *StateReader) AccessNodesMap() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, VarAccessNodes)
+	return collections.NewMapReadOnly(s.state, varAccessNodes)
 }
 
 func (s *StateWriter) AccessNodeCandidatesMap() *collections.Map {
-	return collections.NewMap(s.state, VarAccessNodeCandidates)
+	return collections.NewMap(s.state, varAccessNodeCandidates)
 }
 
 func (s *StateReader) AccessNodeCandidatesMap() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, VarAccessNodeCandidates)
+	return collections.NewMapReadOnly(s.state, varAccessNodeCandidates)
 }
 
 func (s *StateWriter) AllowedStateControllerAddressesMap() *collections.Map {
-	return collections.NewMap(s.state, VarAllowedStateControllerAddresses)
+	return collections.NewMap(s.state, varAllowedStateControllerAddresses)
 }
 
 func (s *StateReader) AllowedStateControllerAddressesMap() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, VarAllowedStateControllerAddresses)
+	return collections.NewMapReadOnly(s.state, varAllowedStateControllerAddresses)
 }
 
 func (s *StateReader) GetMaintenanceStatus() bool {
-	r := s.state.Get(VarMaintenanceStatus)
+	r := s.state.Get(varMaintenanceStatus)
 	if r == nil {
 		return false // chain is being initialized, governance has not been initialized yet
 	}
@@ -177,7 +177,7 @@ func (s *StateReader) GetMaintenanceStatus() bool {
 }
 
 func (s *StateWriter) SetMaintenanceStatus(status bool) {
-	s.state.Set(VarMaintenanceStatus, codec.Bool.Encode(status))
+	s.state.Set(varMaintenanceStatus, codec.Bool.Encode(status))
 }
 
 func (s *StateReader) AccessNodes() []*cryptolib.PublicKey {

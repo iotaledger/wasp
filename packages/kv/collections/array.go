@@ -14,6 +14,10 @@ var ErrArrayOverflow = errors.New("Array overflow")
 // we use '#' as separator for arrays and '.' for maps.
 const arrayElemKeyCode = byte('#')
 
+func ArrayElemPrefix(name string) kv.Key {
+	return kv.Key(name) + kv.Key([]byte{arrayElemKeyCode})
+}
+
 func ArrayElemKey(name string, index uint32) kv.Key {
 	return kv.Key(rwutil.NewBytesWriter().
 		WriteN([]byte(name)).
