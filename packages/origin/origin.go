@@ -59,10 +59,10 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 
 	// init the state of each core contract
 	rootimpl.SetInitialState(v, root.Contract.StateSubrealm(d))
-	blob.SetInitialState(blob.Contract.StateSubrealm(d))
-	accounts.SetInitialState(v, accounts.Contract.StateSubrealm(d), originDeposit)
+	blob.NewStateWriter(blob.Contract.StateSubrealm(d)).SetInitialState()
+	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
-	errors.SetInitialState(errors.Contract.StateSubrealm(d))
+	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governanceimpl.SetInitialState(governance.Contract.StateSubrealm(d), chainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), evmChainID, deployMagicWrap)
 

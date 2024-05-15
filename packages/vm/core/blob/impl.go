@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -18,7 +17,7 @@ var Processor = Contract.Processor(nil,
 	ViewListBlobs.WithHandler(listBlobs),
 )
 
-func SetInitialState(state kv.KVStore) {
+func (s *StateWriter) SetInitialState() {
 	// does not do anything
 }
 

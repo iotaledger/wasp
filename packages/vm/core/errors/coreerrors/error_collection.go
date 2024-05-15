@@ -7,7 +7,7 @@ import (
 // CoreErrorCollection implements ErrorCollection. Is used for global errors. Does not require vm context state.
 type CoreErrorCollection map[uint16]*isc.VMErrorTemplate
 
-func NewCoreErrorCollection() ErrorCollection {
+func NewCoreErrorCollection() ErrorCollectionWriter {
 	return CoreErrorCollection{}
 }
 

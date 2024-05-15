@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -17,21 +16,19 @@ func errorTemplateKey(contractID isc.Hname) string {
 // StateErrorCollectionWriter implements ErrorCollection. Is used for contract internal errors.
 // It requires a reference to a KVStore such as the vmctx and the hname of the caller.
 type StateErrorCollectionWriter struct {
-	partition kv.KVStore
-	hname     isc.Hname
+	w     *StateWriter
+	hname isc.Hname
 }
 
-func NewStateErrorCollectionWriter(partition kv.KVStore, hname isc.Hname) coreerrors.ErrorCollection {
-	errorCollection := StateErrorCollectionWriter{
-		partition: partition,
-		hname:     hname,
+func (s *StateWriter) ErrorCollection(hname isc.Hname) coreerrors.ErrorCollectionWriter {
+	return &StateErrorCollectionWriter{
+		w:     s,
+		hname: hname,
 	}
-
-	return &errorCollection
 }
 
 func (e *StateErrorCollectionWriter) getErrorTemplateMap() *collections.Map {
-	return collections.NewMap(e.partition, errorTemplateKey(e.hname))
+	return collections.NewMap(e.w.state, errorTemplateKey(e.hname))
 }
 
 func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {
@@ -73,21 +70,19 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErro
 // StateErrorCollectionReader implements ErrorCollection partially. Is used for contract internal error readings only.
 // It requires a reference to a KVStoreReader such as the vmctx and the hname of the caller.
 type StateErrorCollectionReader struct {
-	partition kv.KVStoreReader
-	hname     isc.Hname
+	r     *StateReader
+	hname isc.Hname
 }
 
 func (e *StateErrorCollectionReader) getErrorTemplateMap() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(e.partition, errorTemplateKey(e.hname))
+	return collections.NewMapReadOnly(e.r.state, errorTemplateKey(e.hname))
 }
 
-func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname isc.Hname) coreerrors.ErrorCollection {
-	errorCollection := StateErrorCollectionReader{
-		partition: partition,
-		hname:     hname,
+func (s *StateReader) ErrorCollection(hname isc.Hname) coreerrors.ErrorCollection {
+	return &StateErrorCollectionReader{
+		r:     s,
+		hname: hname,
 	}
-
-	return &errorCollection
 }
 
 func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, bool) {

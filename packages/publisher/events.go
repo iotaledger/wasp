@@ -6,8 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -97,10 +95,10 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	if err != nil {
 		log.Errorf("unable to get receipts from a block: %v", err)
 	} else {
-		errorStatePartition := subrealm.NewReadOnly(blockApplied.latestState, kv.Key(errors.Contract.Hname().Bytes()))
+		errorsState := errors.NewStateReaderFromChainState(blockApplied.latestState)
 
 		for index, receipt := range receipts {
-			vmError, resolveError := errors.ResolveFromState(errorStatePartition, receipt.Error)
+			vmError, resolveError := errorsState.Resolve(receipt.Error)
 			if resolveError != nil {
 				log.Errorf("Could not parse vmerror of receipt [%v]: %v", receipt.Request.ID(), resolveError)
 			}
