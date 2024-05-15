@@ -4,149 +4,204 @@
 package governance
 
 import (
+	"math/big"
+
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
+
+func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount int32) {
+	s.SetChainOwnerID(chainOwner)
+	s.SetGasFeePolicy(gas.DefaultFeePolicy())
+	s.SetGasLimits(gas.LimitsDefault)
+	s.SetMaintenanceStatus(false)
+	s.SetBlockKeepAmount(blockKeepAmount)
+	s.SetMinCommonAccountBalance(DefaultMinBaseTokensOnCommonAccount)
+	s.SetPayoutAgentID(chainOwner)
+}
 
 // GetRotationAddress tries to read the state of 'governance' and extract rotation address
 // If succeeds, it means this block is fake.
 // If fails, return nil
-func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
-	ret, err := codec.Address.Decode(state.Get(VarRotateToAddress), nil)
+func (s *StateReader) GetRotationAddress() iotago.Address {
+	ret, err := codec.Address.Decode(s.state.Get(VarRotateToAddress), nil)
 	if err != nil {
 		return nil
 	}
 	return ret
 }
 
+func (s *StateWriter) SetRotationAddress(a iotago.Address) {
+	s.state.Set(VarRotateToAddress, codec.Address.Encode(a))
+}
+
 // GetChainInfo returns global variables of the chain
-func GetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) (*isc.ChainInfo, error) {
-	d := kvdecoder.New(state)
+func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 	ret := &isc.ChainInfo{
 		ChainID:  chainID,
 		Metadata: &isc.PublicChainMetadata{},
 	}
-	var err error
-	if ret.ChainOwnerID, err = d.GetAgentID(VarChainOwnerID); err != nil {
-		return nil, err
+	ret.ChainOwnerID = s.GetChainOwnerID()
+	ret.GasFeePolicy = s.GetGasFeePolicy()
+	ret.GasLimits = s.GetGasLimits()
+	ret.BlockKeepAmount = s.GetBlockKeepAmount()
+	ret.PublicURL = s.GetPublicURL()
+	ret.Metadata = s.GetMetadata()
+	return ret
+}
+
+func (s *StateReader) GetMinCommonAccountBalance() uint64 {
+	return lo.Must(codec.Uint64.Decode(s.state.Get(VarMinBaseTokensOnCommonAccount)))
+}
+
+func (s *StateWriter) SetMinCommonAccountBalance(m uint64) {
+	s.state.Set(VarMinBaseTokensOnCommonAccount, codec.Uint64.Encode(m))
+}
+
+func (s *StateReader) GetChainOwnerID() isc.AgentID {
+	return lo.Must(codec.AgentID.Decode(s.state.Get(VarChainOwnerID)))
+}
+
+func (s *StateWriter) SetChainOwnerID(a isc.AgentID) {
+	s.state.Set(VarChainOwnerID, codec.AgentID.Encode(a))
+	if s.GetChainOwnerIDDelegated() != nil {
+		s.state.Del(VarChainOwnerIDDelegated)
 	}
-
-	if ret.GasFeePolicy, err = GetGasFeePolicy(state); err != nil {
-		return nil, err
-	}
-
-	if ret.GasLimits, err = GetGasLimits(state); err != nil {
-		return nil, err
-	}
-
-	ret.BlockKeepAmount = GetBlockKeepAmount(state)
-	if ret.PublicURL, err = GetPublicURL(state); err != nil {
-		return nil, err
-	}
-
-	if ret.Metadata, err = GetMetadata(state); err != nil {
-		return nil, err
-	}
-
-	return ret, nil
 }
 
-// MustGetChainInfo return global variables of the chain
-func MustGetChainInfo(state kv.KVStoreReader, chainID isc.ChainID) *isc.ChainInfo {
-	info, err := GetChainInfo(state, chainID)
-	if err != nil {
-		panic(err)
-	}
-	return info
+func (s *StateReader) GetChainOwnerIDDelegated() isc.AgentID {
+	return lo.Must(codec.AgentID.Decode(s.state.Get(VarChainOwnerIDDelegated), nil))
 }
 
-func MustGetMinCommonAccountBalance(state kv.KVStoreReader) uint64 {
-	return kvdecoder.New(state).MustGetUint64(VarMinBaseTokensOnCommonAccount)
+func (s *StateWriter) SetChainOwnerIDDelegated(a isc.AgentID) {
+	s.state.Set(VarChainOwnerIDDelegated, codec.AgentID.Encode(a))
 }
 
-func MustGetPayoutAgentID(state kv.KVStoreReader) isc.AgentID {
-	return kvdecoder.New(state).MustGetAgentID(VarPayoutAgentID)
+func (s *StateReader) GetPayoutAgentID() isc.AgentID {
+	return lo.Must(codec.AgentID.Decode(s.state.Get(VarPayoutAgentID)))
 }
 
-func mustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
-	d := kvdecoder.New(state)
-	return d.MustGetAgentID(VarChainOwnerID)
+func (s *StateWriter) SetPayoutAgentID(a isc.AgentID) {
+	s.state.Set(VarPayoutAgentID, codec.AgentID.Encode(a))
 }
 
-// GetGasFeePolicy returns gas policy from the state
-func GetGasFeePolicy(state kv.KVStoreReader) (*gas.FeePolicy, error) {
-	return gas.FeePolicyFromBytes(state.Get(VarGasFeePolicyBytes))
+func (s *StateReader) GetGasFeePolicy() *gas.FeePolicy {
+	return lo.Must(gas.FeePolicyFromBytes(s.state.Get(VarGasFeePolicyBytes)))
 }
 
-func MustGetGasFeePolicy(state kv.KVStoreReader) *gas.FeePolicy {
-	return gas.MustFeePolicyFromBytes(state.Get(VarGasFeePolicyBytes))
+func (s *StateWriter) SetGasFeePolicy(fp *gas.FeePolicy) {
+	s.state.Set(VarGasFeePolicyBytes, fp.Bytes())
 }
 
-func MustGetGasLimits(state kv.KVStoreReader) *gas.Limits {
-	gl, err := GetGasLimits(state)
-	if err != nil {
-		panic(err)
-	}
-	return gl
+func (s *StateReader) GetDefaultGasPrice() *big.Int {
+	return s.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
 }
 
-func GetGasLimits(state kv.KVStoreReader) (*gas.Limits, error) {
-	data := state.Get(VarGasLimitsBytes)
+func (s *StateReader) GetGasLimits() *gas.Limits {
+	data := s.state.Get(VarGasLimitsBytes)
 	if data == nil {
-		return gas.LimitsDefault, nil
+		return gas.LimitsDefault
 	}
-	return gas.LimitsFromBytes(data)
+	return lo.Must(gas.LimitsFromBytes(data))
 }
 
-func GetBlockKeepAmount(state kv.KVStoreReader) int32 {
-	return codec.Int32.MustDecode(state.Get(VarBlockKeepAmount), DefaultBlockKeepAmount)
+func (s *StateWriter) SetGasLimits(gl *gas.Limits) {
+	s.state.Set(VarGasLimitsBytes, gl.Bytes())
 }
 
-func SetPublicURL(state kv.KVStore, url string) {
-	state.Set(VarPublicURL, codec.String.Encode(url))
+func (s *StateReader) GetBlockKeepAmount() int32 {
+	return lo.Must(codec.Int32.Decode(s.state.Get(VarBlockKeepAmount), DefaultBlockKeepAmount))
 }
 
-func GetPublicURL(state kv.KVStoreReader) (string, error) {
-	return codec.String.Decode(state.Get(VarPublicURL), "")
+func (s *StateWriter) SetBlockKeepAmount(n int32) {
+	s.state.Set(VarBlockKeepAmount, codec.Int32.Encode(n))
 }
 
-func SetMetadata(state kv.KVStore, metadata *isc.PublicChainMetadata) {
-	state.Set(VarMetadata, metadata.Bytes())
+func (s *StateWriter) SetPublicURL(url string) {
+	s.state.Set(VarPublicURL, codec.String.Encode(url))
 }
 
-func GetMetadata(state kv.KVStoreReader) (*isc.PublicChainMetadata, error) {
-	metadataBytes := state.Get(VarMetadata)
+func (s *StateReader) GetPublicURL() string {
+	return codec.String.MustDecode(s.state.Get(VarPublicURL), "")
+}
+
+func (s *StateWriter) SetMetadata(metadata *isc.PublicChainMetadata) {
+	s.state.Set(VarMetadata, metadata.Bytes())
+}
+
+func (s *StateReader) GetMetadata() *isc.PublicChainMetadata {
+	metadataBytes := s.state.Get(VarMetadata)
 	if metadataBytes == nil {
-		return &isc.PublicChainMetadata{}, nil
+		return &isc.PublicChainMetadata{}
 	}
-	return isc.PublicChainMetadataFromBytes(metadataBytes)
+	return lo.Must(isc.PublicChainMetadataFromBytes(metadataBytes))
 }
 
-func MustGetMetadata(state kv.KVStoreReader) *isc.PublicChainMetadata {
-	metadata, err := GetMetadata(state)
-	if err != nil {
-		panic(err)
+func (s *StateWriter) AccessNodesMap() *collections.Map {
+	return collections.NewMap(s.state, VarAccessNodes)
+}
+
+func (s *StateReader) AccessNodesMap() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, VarAccessNodes)
+}
+
+func (s *StateWriter) AccessNodeCandidatesMap() *collections.Map {
+	return collections.NewMap(s.state, VarAccessNodeCandidates)
+}
+
+func (s *StateReader) AccessNodeCandidatesMap() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, VarAccessNodeCandidates)
+}
+
+func (s *StateWriter) AllowedStateControllerAddressesMap() *collections.Map {
+	return collections.NewMap(s.state, VarAllowedStateControllerAddresses)
+}
+
+func (s *StateReader) AllowedStateControllerAddressesMap() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, VarAllowedStateControllerAddresses)
+}
+
+func (s *StateReader) GetMaintenanceStatus() bool {
+	r := s.state.Get(VarMaintenanceStatus)
+	if r == nil {
+		return false // chain is being initialized, governance has not been initialized yet
 	}
-	return metadata
+	return lo.Must(codec.Bool.Decode(r))
 }
 
-func AccessNodesMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, VarAccessNodes)
+func (s *StateWriter) SetMaintenanceStatus(status bool) {
+	s.state.Set(VarMaintenanceStatus, codec.Bool.Encode(status))
 }
 
-func AccessNodesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, VarAccessNodes)
+func (s *StateReader) AccessNodes() []*cryptolib.PublicKey {
+	accessNodes := []*cryptolib.PublicKey{}
+	s.AccessNodesMap().IterateKeys(func(pubKeyBytes []byte) bool {
+		pubKey, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
+		if err != nil {
+			panic(err)
+		}
+		accessNodes = append(accessNodes, pubKey)
+		return true
+	})
+	return accessNodes
 }
 
-func AccessNodeCandidatesMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, VarAccessNodeCandidates)
-}
-
-func AccessNodeCandidatesMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, VarAccessNodeCandidates)
+func (s *StateReader) CandidateNodes() []*AccessNodeInfo {
+	candidateNodes := []*AccessNodeInfo{}
+	s.AccessNodeCandidatesMap().Iterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
+		ani, err := AccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
+		if err != nil {
+			panic(err)
+		}
+		candidateNodes = append(candidateNodes, ani)
+		return true
+	})
+	return candidateNodes
 }

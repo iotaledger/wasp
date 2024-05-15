@@ -223,11 +223,8 @@ func (ctx *ViewContext) callView(msg isc.Message) (ret dict.Dict) {
 }
 
 func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret dict.Dict) {
-	ctx.chainInfo = governance.MustGetChainInfo(
-		ctx.contractStateReaderWithGasBurn(governance.Contract.Hname()),
-		ctx.chainID,
-	)
-
+	ctx.chainInfo = governance.NewStateReader(ctx.contractStateReaderWithGasBurn(governance.Contract.Hname())).
+		GetChainInfo(ctx.chainID)
 	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
 	if ctx.gasBurnLoggingEnabled {
 		ctx.gasBurnLog = gas.NewGasBurnLog()

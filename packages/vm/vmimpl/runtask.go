@@ -60,7 +60,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	// run the batch of requests
 	requestResults, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(
 		vmctx.task.Requests,
-		governance.NewStateAccess(stateDraft).MaintenanceStatus(),
+		governance.NewStateReaderFromChainState(stateDraft).GetMaintenanceStatus(),
 		vmctx.task.Log,
 	)
 

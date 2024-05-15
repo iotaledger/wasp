@@ -22,8 +22,9 @@ func (vmctx *vmContext) stateMetadata(stateCommitment *state.L1Commitment) []byt
 
 	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
 		// On error, the publicURL is len(0)
-		stateMetadata.PublicURL, _ = governance.GetPublicURL(s)
-		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
+		govState := governance.NewStateReader(s)
+		stateMetadata.PublicURL = govState.GetPublicURL()
+		stateMetadata.GasFeePolicy = govState.GetGasFeePolicy()
 	})
 
 	return stateMetadata.Bytes()

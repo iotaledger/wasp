@@ -131,7 +131,7 @@ func (vmctx *vmContext) extractBlock(
 
 func (vmctx *vmContext) checkRotationAddress() (ret iotago.Address) {
 	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
-		ret = governance.GetRotationAddress(s)
+		ret = governance.NewStateReader(s).GetRotationAddress()
 	})
 	return
 }

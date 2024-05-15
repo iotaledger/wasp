@@ -70,7 +70,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 	targetBlockIndex := index + 1
 	state := latestState
 
-	blockKeepAmount := governance.NewStateAccess(state).GetBlockKeepAmount() // block keep amount cannot be changed (its set in stone from origin)
+	blockKeepAmount := governance.NewStateReaderFromChainState(state).GetBlockKeepAmount() // block keep amount cannot be changed (its set in stone from origin)
 
 	for blockKeepAmount != -1 { // no need to iterate if pruning is disabled
 		blocklogState := blocklog.NewStateReaderFromChainState(state)

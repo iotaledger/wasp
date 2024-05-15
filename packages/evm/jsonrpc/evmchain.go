@@ -28,12 +28,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -149,23 +147,14 @@ func (e *EVMChain) BlockNumber() *big.Int {
 	return big.NewInt(0).SetUint64(db.GetNumber())
 }
 
-func (e *EVMChain) GasRatio() util.Ratio32 {
-	e.log.Debugf("GasRatio()")
-	govPartition := subrealm.NewReadOnly(lo.Must(e.backend.ISCLatestState()), kv.Key(governance.Contract.Hname().Bytes()))
-	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
-	return gasFeePolicy.EVMGasRatio
-}
-
 func (e *EVMChain) GasFeePolicy() *gas.FeePolicy {
-	govPartition := subrealm.NewReadOnly(lo.Must(e.backend.ISCLatestState()), kv.Key(governance.Contract.Hname().Bytes()))
-	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
-	return gasFeePolicy
+	govState := governance.NewStateReaderFromChainState(lo.Must(e.backend.ISCLatestState()))
+	return govState.GetGasFeePolicy()
 }
 
 func (e *EVMChain) gasLimits() *gas.Limits {
-	govPartition := subrealm.NewReadOnly(lo.Must(e.backend.ISCLatestState()), kv.Key(governance.Contract.Hname().Bytes()))
-	gasLimits := governance.MustGetGasLimits(govPartition)
-	return gasLimits
+	govState := governance.NewStateReaderFromChainState(lo.Must(e.backend.ISCLatestState()))
+	return govState.GetGasLimits()
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
@@ -696,10 +685,10 @@ func evmBlockNumberByISCBlockIndex(n uint32) uint64 {
 }
 
 func blockchainDB(chainState state.State) *emulator.BlockchainDB {
-	govPartition := subrealm.NewReadOnly(chainState, kv.Key(governance.Contract.Hname().Bytes()))
-	gasLimits := governance.MustGetGasLimits(govPartition)
-	gasFeePolicy := governance.MustGetGasFeePolicy(govPartition)
-	blockKeepAmount := governance.GetBlockKeepAmount(govPartition)
+	govState := governance.NewStateReaderFromChainState(chainState)
+	gasLimits := govState.GetGasLimits()
+	gasFeePolicy := govState.GetGasFeePolicy()
+	blockKeepAmount := govState.GetBlockKeepAmount()
 	return emulator.NewBlockchainDB(
 		buffered.NewBufferedKVStore(evm.EmulatorStateSubrealmR(evm.ContractPartitionR(chainState))),
 		gas.EVMBlockGasLimit(gasLimits, &gasFeePolicy.EVMGasRatio),

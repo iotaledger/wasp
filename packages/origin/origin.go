@@ -23,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -63,7 +62,7 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams dict.Dict, ori
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	governanceimpl.SetInitialState(governance.Contract.StateSubrealm(d), chainOwner, blockKeepAmount)
+	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(chainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), evmChainID, deployMagicWrap)
 
 	block := store.Commit(d)

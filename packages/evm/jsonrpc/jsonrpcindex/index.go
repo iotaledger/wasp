@@ -53,7 +53,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	if err != nil {
 		panic(err)
 	}
-	blockKeepAmount := governance.NewStateAccess(state).GetBlockKeepAmount()
+	blockKeepAmount := governance.NewStateReaderFromChainState(state).GetBlockKeepAmount()
 	if blockKeepAmount == -1 {
 		return // pruning disabled, never cache anything
 	}

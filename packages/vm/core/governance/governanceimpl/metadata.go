@@ -16,14 +16,15 @@ const (
 
 func setMetadata(ctx isc.Sandbox, publicURLOpt *string, metadataOpt **isc.PublicChainMetadata) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
+	state := governance.NewStateWriterFromSandbox(ctx)
 	n := 0
 	if publicURLOpt != nil {
 		n += len(*publicURLOpt)
-		governance.SetPublicURL(ctx.State(), *publicURLOpt)
+		state.SetPublicURL(*publicURLOpt)
 	}
 	if metadataOpt != nil {
 		n += len((*metadataOpt).Bytes())
-		governance.SetMetadata(ctx.State(), *metadataOpt)
+		state.SetMetadata(*metadataOpt)
 	}
 	ctx.Requiref(n <= MaxCustomMetadataLength, "supplied publicURL and metadata is too big (%d>%d)", n, MaxCustomMetadataLength)
 
@@ -31,7 +32,8 @@ func setMetadata(ctx isc.Sandbox, publicURLOpt *string, metadataOpt **isc.Public
 }
 
 func getMetadata(ctx isc.SandboxView) (string, *isc.PublicChainMetadata) {
-	publicURL, _ := governance.GetPublicURL(ctx.StateR())
-	metadata := governance.MustGetMetadata(ctx.StateR())
+	state := governance.NewStateReaderFromSandbox(ctx)
+	publicURL := state.GetPublicURL()
+	metadata := state.GetMetadata()
 	return publicURL, metadata
 }

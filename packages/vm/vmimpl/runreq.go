@@ -84,7 +84,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 	var payoutAgentID isc.AgentID
 	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
-		payoutAgentID = governance.MustGetPayoutAgentID(s)
+		payoutAgentID = governance.NewStateReader(s).GetPayoutAgentID()
 	})
 	return payoutAgentID
 }
@@ -160,7 +160,7 @@ func (reqctx *requestContext) shouldChargeGasFee() bool {
 	// NOT FOR PUBLIC NETWORK
 	var freeGasPerToken bool
 	reqctx.callCore(governance.Contract, func(s kv.KVStore) {
-		gasPerToken := governance.MustGetGasFeePolicy(s).GasPerToken
+		gasPerToken := governance.NewStateReader(s).GetGasFeePolicy().GasPerToken
 		freeGasPerToken = gasPerToken.A == 0 && gasPerToken.B == 0
 	})
 	if freeGasPerToken {
@@ -311,7 +311,7 @@ func (reqctx *requestContext) getGasBudget() uint64 {
 
 	var gasRatio util.Ratio32
 	reqctx.callCore(governance.Contract, func(s kv.KVStore) {
-		gasRatio = governance.MustGetGasFeePolicy(s).EVMGasRatio
+		gasRatio = governance.NewStateReader(s).GetGasFeePolicy().EVMGasRatio
 	})
 	return gas.EVMGasToISC(gasBudget, &gasRatio)
 }
@@ -440,7 +440,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
 	var minBalanceInCommonAccount uint64
 	withContractState(reqctx.uncommittedState, governance.Contract, func(s kv.KVStore) {
-		minBalanceInCommonAccount = governance.MustGetMinCommonAccountBalance(s)
+		minBalanceInCommonAccount = governance.NewStateReader(s).GetMinCommonAccountBalance()
 	})
 	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
 	if commonAccountBal < minBalanceInCommonAccount {
@@ -488,7 +488,7 @@ func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *r
 }
 
 func (vmctx *vmContext) loadChainConfig() {
-	vmctx.chainInfo = governance.NewStateAccess(vmctx.stateDraft).ChainInfo(vmctx.ChainID())
+	vmctx.chainInfo = governance.NewStateReaderFromChainState(vmctx.stateDraft).GetChainInfo(vmctx.ChainID())
 }
 
 // checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit

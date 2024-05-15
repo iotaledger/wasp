@@ -238,7 +238,7 @@ func (o OutputChainInfo) Decode(r dict.Dict) (*isc.ChainInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return GetChainInfo(r, chainID)
+	return NewStateReader(r).GetChainInfo(chainID), nil
 }
 
 type InputAddCandidateNode struct{}

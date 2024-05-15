@@ -547,10 +547,10 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	// check user has on-chain balance
 	if !mpi.accountsState().AccountExists(req.SenderAccount(), mpi.chainID) {
 		// make an exception for gov calls (sender is chan owner and target is gov contract)
-		governanceState := governance.NewStateAccess(mpi.chainHeadState)
-		chainOwner := governanceState.ChainOwnerID()
+		governanceState := governance.NewStateReaderFromChainState(mpi.chainHeadState)
+		chainOwner := governanceState.GetChainOwnerID()
 		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.Message().Target.Contract == governance.Contract.Hname()
-		if !isGovRequest && governanceState.DefaultGasPrice().Cmp(util.Big0) != 0 {
+		if !isGovRequest && governanceState.GetDefaultGasPrice().Cmp(util.Big0) != 0 {
 			return fmt.Errorf("no funds on chain")
 		}
 	}
@@ -909,7 +909,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	}
 
 	// update defaultGasPrice for offLedger requests
-	mpi.offLedgerPool.SetMinGasPrice(governance.NewStateAccess(mpi.chainHeadState).DefaultGasPrice())
+	mpi.offLedgerPool.SetMinGasPrice(governance.NewStateReaderFromChainState(mpi.chainHeadState).GetDefaultGasPrice())
 }
 
 func (mpi *mempoolImpl) handleNetMessage(recv *peering.PeerMessageIn) {
