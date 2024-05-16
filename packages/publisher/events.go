@@ -6,8 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -73,8 +71,8 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	//
 	// Publish notifications about the state change (new block).
 	blockIndex := block.StateIndex()
-	blocklogStatePartition := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
-	blockInfo, ok := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
+	blocklogState := blocklog.NewStateReaderFromBlockMutations(block)
+	blockInfo, ok := blocklogState.GetBlockInfo(blockIndex)
 	if !ok {
 		log.Errorf("unable to get blockInfo for blockIndex %d", blockIndex)
 	}
@@ -97,10 +95,10 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	if err != nil {
 		log.Errorf("unable to get receipts from a block: %v", err)
 	} else {
-		errorStatePartition := subrealm.NewReadOnly(blockApplied.latestState, kv.Key(errors.Contract.Hname().Bytes()))
+		errorsState := errors.NewStateReaderFromChainState(blockApplied.latestState)
 
 		for index, receipt := range receipts {
-			vmError, resolveError := errors.ResolveFromState(errorStatePartition, receipt.Error)
+			vmError, resolveError := errorsState.Resolve(receipt.Error)
 			if resolveError != nil {
 				log.Errorf("Could not parse vmerror of receipt [%v]: %v", receipt.Request.ID(), resolveError)
 			}
@@ -122,7 +120,7 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	}
 
 	// Publish contract-issued events.
-	blockEvents := blocklog.GetEventsByBlockIndex(blocklogStatePartition, blockIndex, blockInfo.TotalRequests)
+	blockEvents := blocklogState.GetEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 	var payload []*isc.Event
 	for _, eventData := range blockEvents {
 		event, err := isc.EventFromBytes(eventData)

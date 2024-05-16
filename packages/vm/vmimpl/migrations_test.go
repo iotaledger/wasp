@@ -33,16 +33,14 @@ type migrationsTestEnv struct {
 
 func (e *migrationsTestEnv) getSchemaVersion() (ret isc.SchemaVersion) {
 	e.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		ret = root.NewStateAccess(chainState).SchemaVersion()
+		ret = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 	})
 	return
 }
 
 func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 	e.vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		withContractState(chainState, root.Contract, func(s kv.KVStore) {
-			root.SetSchemaVersion(s, v)
-		})
+		root.NewStateWriter(root.Contract.StateSubrealm(chainState)).SetSchemaVersion(v)
 	})
 }
 

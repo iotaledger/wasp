@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -119,8 +118,8 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 	if reqctx.vm.isCoreAccount(caller) {
 		caller = accounts.CommonAccount()
 	}
-	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		if err := accounts.MoveBetweenAccounts(reqctx.SchemaVersion(), s, caller, target, toMove, reqctx.ChainID()); err != nil {
+	reqctx.callAccounts(func(s *accounts.StateWriter) {
+		if err := s.MoveBetweenAccounts(caller, target, toMove, reqctx.ChainID()); err != nil {
 			panic(vm.ErrNotEnoughFundsForAllowance)
 		}
 	})

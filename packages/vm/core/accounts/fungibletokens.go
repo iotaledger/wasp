@@ -12,25 +12,25 @@ import (
 
 // CreditToAccount brings new funds to the on chain ledger
 // NOTE: this function does not take NFTs into account
-func CreditToAccount(v isc.SchemaVersion, state kv.KVStore, agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
+func (s *StateWriter) CreditToAccount(agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
-	creditToAccount(v, state, accountKey(agentID, chainID), assets)
-	creditToAccount(v, state, L2TotalsAccount, assets)
-	touchAccount(state, agentID, chainID)
+	s.creditToAccount(accountKey(agentID, chainID), assets)
+	s.creditToAccount(L2TotalsAccount, assets)
+	s.touchAccount(agentID, chainID)
 }
 
 // creditToAccount adds assets to the internal account map
 // NOTE: this function does not take NFTs into account
-func creditToAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, assets *isc.Assets) {
+func (s *StateWriter) creditToAccount(accountKey kv.Key, assets *isc.Assets) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
 
 	if assets.BaseTokens > 0 {
 		incomingTokensFullDecimals := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
-		creditToAccountFullDecimals(v, state, accountKey, incomingTokensFullDecimals)
+		s.creditToAccountFullDecimals(accountKey, incomingTokensFullDecimals)
 	}
 	for _, nt := range assets.NativeTokens {
 		if nt.Amount.Sign() == 0 {
@@ -39,47 +39,47 @@ func creditToAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, a
 		if nt.Amount.Sign() < 0 {
 			panic(ErrBadAmount)
 		}
-		balance := getNativeTokenAmount(state, accountKey, nt.ID)
+		balance := s.getNativeTokenAmount(accountKey, nt.ID)
 		balance.Add(balance, nt.Amount)
 		if balance.Cmp(util.MaxUint256) > 0 {
 			panic(ErrOverflow)
 		}
-		setNativeTokenAmount(state, accountKey, nt.ID, balance)
+		s.setNativeTokenAmount(accountKey, nt.ID, balance)
 	}
 }
 
-func CreditToAccountFullDecimals(v isc.SchemaVersion, state kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
 	if !util.IsPositiveBigInt(amount) {
 		return
 	}
-	creditToAccountFullDecimals(v, state, accountKey(agentID, chainID), amount)
-	creditToAccountFullDecimals(v, state, L2TotalsAccount, amount)
-	touchAccount(state, agentID, chainID)
+	s.creditToAccountFullDecimals(accountKey(agentID, chainID), amount)
+	s.creditToAccountFullDecimals(L2TotalsAccount, amount)
+	s.touchAccount(agentID, chainID)
 }
 
 // creditToAccountFullDecimals adds assets to the internal account map
-func creditToAccountFullDecimals(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, amount *big.Int) {
-	setBaseTokensFullDecimals(v)(state, accountKey, new(big.Int).Add(GetBaseTokensFullDecimals(v)(state, accountKey), amount))
+func (s *StateWriter) creditToAccountFullDecimals(accountKey kv.Key, amount *big.Int) {
+	s.setBaseTokensFullDecimals(accountKey, new(big.Int).Add(s.getBaseTokensFullDecimals(accountKey), amount))
 }
 
 // DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
 // NOTE: this function does not take NFTs into account
-func DebitFromAccount(v isc.SchemaVersion, state kv.KVStore, agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
+func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
 	if assets == nil || assets.IsEmpty() {
 		return
 	}
-	if !debitFromAccount(v, state, accountKey(agentID, chainID), assets) {
+	if !s.debitFromAccount(accountKey(agentID, chainID), assets) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", assets, agentID, ErrNotEnoughFunds))
 	}
-	if !debitFromAccount(v, state, L2TotalsAccount, assets) {
+	if !s.debitFromAccount(L2TotalsAccount, assets) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
-	touchAccount(state, agentID, chainID)
+	s.touchAccount(agentID, chainID)
 }
 
 // debitFromAccount debits assets from the internal accounts map
 // NOTE: this function does not take NFTs into account
-func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, assets *isc.Assets) bool {
+func (s *StateWriter) debitFromAccount(accountKey kv.Key, assets *isc.Assets) bool {
 	if assets == nil || assets.IsEmpty() {
 		return true
 	}
@@ -90,7 +90,7 @@ func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, 
 	baseTokensToDebit := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
 	var baseTokensToSet *big.Int
 	if assets.BaseTokens > 0 {
-		balance := GetBaseTokensFullDecimals(v)(state, accountKey)
+		balance := s.getBaseTokensFullDecimals(accountKey)
 		if baseTokensToDebit.Cmp(balance) > 0 {
 			return false
 		}
@@ -106,7 +106,7 @@ func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, 
 		if nt.Amount.Sign() < 0 {
 			panic(ErrBadAmount)
 		}
-		balance := getNativeTokenAmount(state, accountKey, nt.ID)
+		balance := s.getNativeTokenAmount(accountKey, nt.ID)
 		balance = balance.Sub(balance, nt.Amount)
 		if balance.Sign() < 0 {
 			return false
@@ -115,44 +115,45 @@ func debitFromAccount(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, 
 	}
 
 	if mutateBaseTokens {
-		setBaseTokensFullDecimals(v)(state, accountKey, baseTokensToSet)
+		s.setBaseTokensFullDecimals(accountKey, baseTokensToSet)
 	}
 	for _, nt := range nativeTokensMutations.NativeTokens {
-		setNativeTokenAmount(state, accountKey, nt.ID, nt.Amount)
+		s.setNativeTokenAmount(accountKey, nt.ID, nt.Amount)
 	}
 	return true
 }
 
 // DebitFromAccountFullDecimals removes the amount from the chain ledger. If not enough it panics
-func DebitFromAccountFullDecimals(v isc.SchemaVersion, state kv.KVStore, agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+func (s *StateWriter) DebitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
 	if !util.IsPositiveBigInt(amount) {
 		return
 	}
-	if !debitFromAccountFullDecimals(v, state, accountKey(agentID, chainID), amount) {
+	if !s.debitFromAccountFullDecimals(accountKey(agentID, chainID), amount) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", amount.String(), agentID, ErrNotEnoughFunds))
 	}
 
-	if !debitFromAccountFullDecimals(v, state, L2TotalsAccount, amount) {
+	if !s.debitFromAccountFullDecimals(L2TotalsAccount, amount) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
-	touchAccount(state, agentID, chainID)
+	s.touchAccount(agentID, chainID)
 }
 
 // debitFromAccountFullDecimals debits the amount from the internal accounts map
-func debitFromAccountFullDecimals(v isc.SchemaVersion, state kv.KVStore, accountKey kv.Key, amount *big.Int) bool {
-	balance := GetBaseTokensFullDecimals(v)(state, accountKey)
+func (s *StateWriter) debitFromAccountFullDecimals(accountKey kv.Key, amount *big.Int) bool {
+	balance := s.getBaseTokensFullDecimals(accountKey)
 	if balance.Cmp(amount) < 0 {
 		return false
 	}
-	setBaseTokensFullDecimals(v)(state, accountKey, new(big.Int).Sub(balance, amount))
+	s.setBaseTokensFullDecimals(accountKey, new(big.Int).Sub(balance, amount))
 	return true
 }
 
 // getFungibleTokens returns the fungible tokens owned by an account (base tokens extra decimals will be discarded)
-func getFungibleTokens(v isc.SchemaVersion, state kv.KVStoreReader, accountKey kv.Key) *isc.Assets {
+func (s *StateReader) getFungibleTokens(accountKey kv.Key) *isc.Assets {
 	ret := isc.NewEmptyAssets()
-	ret.AddBaseTokens(getBaseTokens(v)(state, accountKey))
-	NativeTokensMapR(state, accountKey).Iterate(func(idBytes []byte, val []byte) bool {
+	bts, _ := s.getBaseTokens(accountKey)
+	ret.AddBaseTokens(bts)
+	s.nativeTokensMapR(accountKey).Iterate(func(idBytes []byte, val []byte) bool {
 		ret.AddNativeTokens(
 			isc.MustNativeTokenIDFromBytes(idBytes),
 			new(big.Int).SetBytes(val),
@@ -163,10 +164,10 @@ func getFungibleTokens(v isc.SchemaVersion, state kv.KVStoreReader, accountKey k
 }
 
 // GetAccountFungibleTokens returns all fungible tokens belonging to the agentID on the state
-func GetAccountFungibleTokens(v isc.SchemaVersion, state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) *isc.Assets {
-	return getFungibleTokens(v, state, accountKey(agentID, chainID))
+func (s *StateReader) GetAccountFungibleTokens(agentID isc.AgentID, chainID isc.ChainID) *isc.Assets {
+	return s.getFungibleTokens(accountKey(agentID, chainID))
 }
 
-func GetTotalL2FungibleTokens(v isc.SchemaVersion, state kv.KVStoreReader) *isc.Assets {
-	return getFungibleTokens(v, state, L2TotalsAccount)
+func (s *StateReader) GetTotalL2FungibleTokens() *isc.Assets {
+	return s.getFungibleTokens(L2TotalsAccount)
 }

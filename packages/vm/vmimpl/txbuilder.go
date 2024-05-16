@@ -3,10 +3,8 @@ package vmimpl
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
@@ -18,13 +16,12 @@ func (vmctx *vmContext) stateMetadata(stateCommitment *state.L1Commitment) []byt
 		L1Commitment: stateCommitment,
 	}
 
-	stateMetadata.SchemaVersion = root.NewStateAccess(vmctx.stateDraft).SchemaVersion()
+	stateMetadata.SchemaVersion = root.NewStateReaderFromChainState(vmctx.stateDraft).GetSchemaVersion()
 
-	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
-		// On error, the publicURL is len(0)
-		stateMetadata.PublicURL, _ = governance.GetPublicURL(s)
-		stateMetadata.GasFeePolicy = governance.MustGetGasFeePolicy(s)
-	})
+	// On error, the publicURL is len(0)
+	govState := governance.NewStateReaderFromChainState(vmctx.stateDraft)
+	stateMetadata.PublicURL = govState.GetPublicURL()
+	stateMetadata.GasFeePolicy = govState.GetGasFeePolicy()
 
 	return stateMetadata.Bytes()
 }
@@ -47,30 +44,17 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 }
 
 func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (out *iotago.BasicOutput, id iotago.OutputID) {
-	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		out, id = accounts.GetNativeTokenOutput(s, nativeTokenID, vmctx.ChainID())
-	})
-	return
+	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNativeTokenOutput(nativeTokenID, vmctx.ChainID())
 }
 
 func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, id iotago.OutputID) {
-	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		out, id = accounts.GetFoundryOutput(s, serNum, vmctx.ChainID())
-	})
-	return
+	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetFoundryOutput(serNum, vmctx.ChainID())
 }
 
 func (vmctx *vmContext) loadNFT(nftID iotago.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
-	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		out, id = accounts.GetNFTOutput(s, nftID)
-	})
-	return
+	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNFTOutput(nftID)
 }
 
 func (vmctx *vmContext) loadTotalFungibleTokens() *isc.Assets {
-	var totalAssets *isc.Assets
-	withContractState(vmctx.stateDraft, accounts.Contract, func(s kv.KVStore) {
-		totalAssets = accounts.GetTotalL2FungibleTokens(vmctx.schemaVersion, s)
-	})
-	return totalAssets
+	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetTotalL2FungibleTokens()
 }

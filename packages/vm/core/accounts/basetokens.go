@@ -3,6 +3,8 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -10,73 +12,71 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type (
-	getBaseTokensFn             func(state kv.KVStoreReader, accountKey kv.Key) uint64
-	GetBaseTokensFullDecimalsFn func(state kv.KVStoreReader, accountKey kv.Key) *big.Int
-	setBaseTokensFullDecimalsFn func(state kv.KVStore, accountKey kv.Key, amount *big.Int)
-)
-
-func getBaseTokens(v isc.SchemaVersion) getBaseTokensFn {
-	switch v {
+func (s *StateReader) getBaseTokens(accountKey kv.Key) (tokens uint64, remainder *big.Int) {
+	switch s.v {
 	case 0:
-		return getBaseTokensDEPRECATED
+		return lo.Must(codec.Uint64.Decode(s.state.Get(BaseTokensKey(accountKey)), 0)), big.NewInt(0)
 	default:
-		return getBaseTokensNEW
+		amount := s.getBaseTokensFullDecimals(accountKey)
+		// convert from 18 decimals, discard the remainder
+		return util.EthereumDecimalsToBaseTokenDecimals(amount, parameters.L1().BaseToken.Decimals)
 	}
 }
 
-func GetBaseTokensFullDecimals(v isc.SchemaVersion) GetBaseTokensFullDecimalsFn {
-	switch v {
+const v0BaseTokenDecimals = 6 // all v0 state was saved with 6 decimals
+
+func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
+	switch s.v {
 	case 0:
-		return getBaseTokensFullDecimalsDEPRECATED
+		baseTokens, _ := s.getBaseTokens(accountKey)
+		return util.BaseTokensDecimalsToEthereumDecimals(baseTokens, v0BaseTokenDecimals)
 	default:
-		return getBaseTokensFullDecimalsNEW
+		return lo.Must(codec.BigIntAbs.Decode(s.state.Get(BaseTokensKey(accountKey)), big.NewInt(0)))
 	}
 }
 
-func setBaseTokensFullDecimals(v isc.SchemaVersion) setBaseTokensFullDecimalsFn {
-	switch v {
+func (s *StateWriter) setBaseTokens(accountKey kv.Key, amount uint64) {
+	switch s.v {
 	case 0:
-		return setBaseTokensFullDecimalsDEPRECATED
+		s.state.Set(BaseTokensKey(accountKey), codec.Uint64.Encode(uint64(amount)))
 	default:
-		return setBaseTokensFullDecimalsNEW
+		fullDecimals := util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.L1().BaseToken.Decimals)
+		s.setBaseTokensFullDecimals(accountKey, fullDecimals)
 	}
 }
 
-// -------------------------------------------------------------------------------
+func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, amount *big.Int) {
+	switch s.v {
+	case 0:
+		baseTokens := util.MustEthereumDecimalsToBaseTokenDecimalsExact(amount, v0BaseTokenDecimals)
+		s.setBaseTokens(accountKey, baseTokens)
+	default:
+		s.state.Set(BaseTokensKey(accountKey), codec.BigIntAbs.Encode(amount))
+	}
+}
 
 func BaseTokensKey(accountKey kv.Key) kv.Key {
 	return prefixBaseTokens + accountKey
 }
 
-func getBaseTokensFullDecimalsNEW(state kv.KVStoreReader, accountKey kv.Key) *big.Int {
-	return codec.BigIntAbs.MustDecode(state.Get(BaseTokensKey(accountKey)), big.NewInt(0))
-}
-
-func setBaseTokensFullDecimalsNEW(state kv.KVStore, accountKey kv.Key, amount *big.Int) {
-	state.Set(BaseTokensKey(accountKey), codec.BigIntAbs.Encode(amount))
-}
-
-func getBaseTokensNEW(state kv.KVStoreReader, accountKey kv.Key) uint64 {
-	amount := getBaseTokensFullDecimalsNEW(state, accountKey)
-	// convert from 18 decimals, discard the remainder
-	convertedAmount, _ := util.EthereumDecimalsToBaseTokenDecimals(amount, parameters.L1().BaseToken.Decimals)
-	return convertedAmount
-}
-
-func AdjustAccountBaseTokens(v isc.SchemaVersion, state kv.KVStore, account isc.AgentID, adjustment int64, chainID isc.ChainID) {
+func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment int64, chainID isc.ChainID) {
 	switch {
 	case adjustment > 0:
-		CreditToAccount(v, state, account, isc.NewAssets(uint64(adjustment), nil), chainID)
+		s.CreditToAccount(account, isc.NewAssets(uint64(adjustment), nil), chainID)
 	case adjustment < 0:
-		DebitFromAccount(v, state, account, isc.NewAssets(uint64(-adjustment), nil), chainID)
+		s.DebitFromAccount(account, isc.NewAssets(uint64(-adjustment), nil), chainID)
 	}
 }
 
-func GetBaseTokensBalance(v isc.SchemaVersion, state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) uint64 {
-	return getBaseTokens(v)(state, accountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts uint64, remainder *big.Int) {
+	return s.getBaseTokens(accountKey(agentID, chainID))
 }
 
-func GetBaseTokensBalanceFullDecimals(v isc.SchemaVersion, state kv.KVStoreReader, agentID isc.AgentID, chainID isc.ChainID) *big.Int {
-	return GetBaseTokensFullDecimals(v)(state, accountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID, chainID isc.ChainID) *big.Int {
+	return s.getBaseTokensFullDecimals(accountKey(agentID, chainID))
+}
+
+func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) uint64 {
+	bts, _ := s.getBaseTokens(accountKey(agentID, chainID))
+	return bts
 }

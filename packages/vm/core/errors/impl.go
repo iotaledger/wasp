@@ -2,7 +2,6 @@ package errors
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -13,7 +12,7 @@ var Processor = Contract.Processor(nil,
 	ViewGetErrorMessageFormat.WithHandler(funcGetErrorMessageFormat),
 )
 
-func SetInitialState(state kv.KVStore) {
+func (s *StateWriter) SetInitialState() {
 	// does not do anything
 }
 
@@ -24,7 +23,7 @@ func funcRegisterError(ctx isc.Sandbox, errorMessageFormat string) dict.Dict {
 		panic(coreerrors.ErrMessageFormatEmpty)
 	}
 
-	e := NewStateErrorCollectionWriter(ctx.State(), ctx.Contract())
+	e := NewStateWriterFromSandbox(ctx).ErrorCollection(ctx.Contract())
 	template, err := e.Register(errorMessageFormat)
 	ctx.RequireNoError(err)
 
@@ -32,7 +31,7 @@ func funcRegisterError(ctx isc.Sandbox, errorMessageFormat string) dict.Dict {
 }
 
 func funcGetErrorMessageFormat(ctx isc.SandboxView, code isc.VMErrorCode) string {
-	template, ok := getErrorMessageFormat(ctx.StateR(), code)
+	template, ok := NewStateReaderFromSandbox(ctx).getErrorMessageFormat(code)
 	if !ok {
 		panic(coreerrors.ErrErrorNotFound)
 	}
@@ -40,12 +39,12 @@ func funcGetErrorMessageFormat(ctx isc.SandboxView, code isc.VMErrorCode) string
 	return template.MessageFormat()
 }
 
-func getErrorMessageFormat(state kv.KVStoreReader, code isc.VMErrorCode) (*isc.VMErrorTemplate, bool) {
+func (s *StateReader) getErrorMessageFormat(code isc.VMErrorCode) (*isc.VMErrorTemplate, bool) {
 	var e coreerrors.ErrorCollection
 	if code.ContractID == isc.VMCoreErrorContractID {
 		e = coreerrors.All()
 	} else {
-		e = NewStateErrorCollectionReader(state, code.ContractID)
+		e = s.ErrorCollection(code.ContractID)
 	}
 	return e.Get(code.ID)
 }

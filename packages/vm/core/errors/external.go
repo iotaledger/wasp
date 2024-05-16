@@ -2,7 +2,6 @@ package errors
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
@@ -31,11 +30,11 @@ func Resolve(e *isc.UnresolvedVMError, callView ViewCaller) (*isc.VMError, error
 	return isc.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params...), nil
 }
 
-func ResolveFromState(state kv.KVStoreReader, e *isc.UnresolvedVMError) (*isc.VMError, error) {
+func (s *StateReader) Resolve(e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	if e == nil {
 		return nil, nil
 	}
-	template, ok := getErrorMessageFormat(state, e.Code())
+	template, ok := s.getErrorMessageFormat(e.Code())
 	if !ok {
 		return nil, coreerrors.ErrErrorNotFound
 	}

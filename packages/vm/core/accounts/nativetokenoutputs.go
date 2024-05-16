@@ -4,37 +4,36 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-func newNativeTokensArray(state kv.KVStore) *collections.Array {
-	return collections.NewArray(state, keyNewNativeTokens)
+func (s *StateWriter) newNativeTokensArray() *collections.Array {
+	return collections.NewArray(s.state, keyNewNativeTokens)
 }
 
-func NativeTokenOutputMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, keyNativeTokenOutputMap)
+func (s *StateWriter) nativeTokenOutputMap() *collections.Map {
+	return collections.NewMap(s.state, keyNativeTokenOutputMap)
 }
 
-func nativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, keyNativeTokenOutputMap)
+func (s *StateReader) nativeTokenOutputMapR() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, keyNativeTokenOutputMap)
 }
 
 // SaveNativeTokenOutput map nativeTokenID -> foundryRec
-func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, outputIndex uint16) {
+func (s *StateWriter) SaveNativeTokenOutput(out *iotago.BasicOutput, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
 		// TransactionID is unknown yet, will be filled next block
 		OutputID:          iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
 		StorageBaseTokens: out.Amount,
 		Amount:            out.NativeTokens[0].Amount,
 	}
-	NativeTokenOutputMap(state).SetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
-	newNativeTokensArray(state).Push(out.NativeTokens[0].ID[:])
+	s.nativeTokenOutputMap().SetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
+	s.newNativeTokensArray().Push(out.NativeTokens[0].ID[:])
 }
 
-func updateNativeTokenOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID) {
-	newNativeTokens := newNativeTokensArray(state)
-	allNativeTokens := NativeTokenOutputMap(state)
+func (s *StateWriter) updateNativeTokenOutputIDs(anchorTxID iotago.TransactionID) {
+	newNativeTokens := s.newNativeTokensArray()
+	allNativeTokens := s.nativeTokenOutputMap()
 	n := newNativeTokens.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newNativeTokens.GetAt(i)
@@ -45,12 +44,12 @@ func updateNativeTokenOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionI
 	newNativeTokens.Erase()
 }
 
-func DeleteNativeTokenOutput(state kv.KVStore, nativeTokenID iotago.NativeTokenID) {
-	NativeTokenOutputMap(state).DelAt(nativeTokenID[:])
+func (s *StateWriter) DeleteNativeTokenOutput(nativeTokenID iotago.NativeTokenID) {
+	s.nativeTokenOutputMap().DelAt(nativeTokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, iotago.OutputID) {
-	data := nativeTokenOutputMapR(state).GetAt(nativeTokenID[:])
+func (s *StateReader) GetNativeTokenOutput(nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, iotago.OutputID) {
+	data := s.nativeTokenOutputMapR().GetAt(nativeTokenID[:])
 	if data == nil {
 		return nil, iotago.OutputID{}
 	}

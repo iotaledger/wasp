@@ -82,7 +82,7 @@ const (
 const (
 	// Array of blockIndex => BlockInfo (pruned)
 	// Covered in: TestGetEvents
-	PrefixBlockRegistry = "a"
+	prefixBlockRegistry = "a"
 
 	// Map of request.ID().LookupDigest() => []RequestLookupKey (pruned)
 	//   LookupDigest = reqID[:6] | outputIndex

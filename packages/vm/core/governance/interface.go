@@ -105,7 +105,7 @@ var (
 	FuncStartMaintenance     = coreutil.NewEP0(Contract, "startMaintenance")
 	FuncStopMaintenance      = coreutil.NewEP0(Contract, "stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.NewViewEP01(Contract, "getMaintenanceStatus",
-		coreutil.FieldWithCodec(VarMaintenanceStatus, codec.Bool),
+		coreutil.FieldWithCodec(ParamMaintenanceStatus, codec.Bool),
 	)
 
 	// public chain metadata
@@ -122,35 +122,35 @@ var (
 // state variables
 const (
 	// state controller
-	VarAllowedStateControllerAddresses = "a" // covered in: TestGovernance1
-	VarRotateToAddress                 = "r" // should never persist in the state
+	varAllowedStateControllerAddresses = "a" // covered in: TestGovernance1
+	varRotateToAddress                 = "r" // should never persist in the state
 
-	VarPayoutAgentID                = "pa" // covered in: TestMetadata
-	VarMinBaseTokensOnCommonAccount = "vs" // covered in: TestMetadata
+	varPayoutAgentID                = "pa" // covered in: TestMetadata
+	varMinBaseTokensOnCommonAccount = "vs" // covered in: TestMetadata
 
 	// chain owner
-	VarChainOwnerID          = "o" // covered in: TestMetadata
-	VarChainOwnerIDDelegated = "n" // covered in: TestMaintenanceMode
+	varChainOwnerID          = "o" // covered in: TestMetadata
+	varChainOwnerIDDelegated = "n" // covered in: TestMaintenanceMode
 
 	// gas
-	VarGasFeePolicyBytes = "g" // covered in: TestMetadata
-	VarGasLimitsBytes    = "l" // covered in: TestMetadata
+	varGasFeePolicyBytes = "g" // covered in: TestMetadata
+	varGasLimitsBytes    = "l" // covered in: TestMetadata
 
 	// access nodes
-	VarAccessNodes          = "an" // covered in: TestAccessNodes
-	VarAccessNodeCandidates = "ac" // covered in: TestAccessNodes
+	varAccessNodes          = "an" // covered in: TestAccessNodes
+	varAccessNodeCandidates = "ac" // covered in: TestAccessNodes
 
 	// maintenance
-	VarMaintenanceStatus = "m" // covered in: TestMetadata
+	varMaintenanceStatus = "m" // covered in: TestMetadata
 
 	// L2 metadata (provided by the webapi, located by the public url)
-	VarMetadata = "md" // covered in: TestMetadata
+	varMetadata = "md" // covered in: TestMetadata
 
 	// L1 metadata (stored and provided in the tangle)
-	VarPublicURL = "x" // covered in: TestL1Metadata
+	varPublicURL = "x" // covered in: TestL1Metadata
 
 	// state pruning
-	VarBlockKeepAmount = "b" // covered in: TestMetadata
+	varBlockKeepAmount = "b" // covered in: TestMetadata
 )
 
 // request parameters
@@ -196,6 +196,8 @@ const (
 
 	// set min SD
 	ParamSetMinCommonAccountBalance = "ms"
+
+	ParamMaintenanceStatus = "m"
 )
 
 // contract constants
@@ -222,13 +224,13 @@ type OutputChainInfo struct{}
 func (o OutputChainInfo) Encode(info *isc.ChainInfo) dict.Dict {
 	ret := dict.Dict{
 		ParamChainID:         codec.ChainID.Encode(info.ChainID),
-		VarChainOwnerID:      codec.AgentID.Encode(info.ChainOwnerID),
-		VarGasFeePolicyBytes: info.GasFeePolicy.Bytes(),
-		VarGasLimitsBytes:    info.GasLimits.Bytes(),
-		VarMetadata:          info.Metadata.Bytes(),
+		varChainOwnerID:      codec.AgentID.Encode(info.ChainOwnerID),
+		varGasFeePolicyBytes: info.GasFeePolicy.Bytes(),
+		varGasLimitsBytes:    info.GasLimits.Bytes(),
+		varMetadata:          info.Metadata.Bytes(),
 	}
 	if len(info.PublicURL) > 0 {
-		ret.Set(VarPublicURL, codec.String.Encode(info.PublicURL))
+		ret.Set(varPublicURL, codec.String.Encode(info.PublicURL))
 	}
 	return ret
 }
@@ -238,7 +240,7 @@ func (o OutputChainInfo) Decode(r dict.Dict) (*isc.ChainInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return GetChainInfo(r, chainID)
+	return NewStateReader(r).GetChainInfo(chainID), nil
 }
 
 type InputAddCandidateNode struct{}

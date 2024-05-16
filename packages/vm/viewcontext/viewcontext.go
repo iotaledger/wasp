@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -66,15 +65,17 @@ func (ctx *ViewContext) stateReaderWithGasBurn() kv.KVStoreReader {
 }
 
 func (ctx *ViewContext) contractStateReaderWithGasBurn(contract isc.Hname) kv.KVStoreReader {
-	return subrealm.NewReadOnly(ctx.stateReaderWithGasBurn(), kv.Key(contract.Bytes()))
+	return isc.ContractStateSubrealmR(ctx.stateReaderWithGasBurn(), contract)
 }
 
 func (ctx *ViewContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	return blob.LocateProgram(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname()), programHash)
+	blobState := blob.NewStateReader(ctx.contractStateReaderWithGasBurn(blob.Contract.Hname()))
+	return blobState.LocateProgram(programHash)
 }
 
 func (ctx *ViewContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
-	return root.FindContract(ctx.contractStateReaderWithGasBurn(root.Contract.Hname()), contractHname)
+	rootState := root.NewStateReader(ctx.contractStateReaderWithGasBurn(root.Contract.Hname()))
+	return rootState.FindContract(contractHname)
 }
 
 func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
@@ -114,31 +115,32 @@ func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
+func (ctx *ViewContext) accountsStateWithGasBurn() *accounts.StateReader {
+	return accounts.NewStateReader(ctx.schemaVersion, ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()))
+}
+
 func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
-	return accounts.GetNativeTokens(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetNativeTokens(agentID, ctx.chainID)
 }
 
 func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
-	return accounts.GetAccountNFTs(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID)
+	return ctx.accountsStateWithGasBurn().GetAccountNFTs(agentID)
 }
 
 func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
-	return accounts.GetNFTData(ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), nftID)
+	return ctx.accountsStateWithGasBurn().GetNFTData(nftID)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {
 	return ctx.stateReader.Timestamp()
 }
 
-func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
-	return accounts.GetBaseTokensBalance(ctx.schemaVersion, ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()), agentID, ctx.chainID)
+func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (uint64, *big.Int) {
+	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID, ctx.chainID)
 }
 
 func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
-	return accounts.GetNativeTokenBalance(
-		ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()),
-		agentID,
-		nativeTokenID, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetNativeTokenBalance(agentID, nativeTokenID, ctx.chainID)
 }
 
 func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) dict.Dict {
@@ -222,11 +224,8 @@ func (ctx *ViewContext) callView(msg isc.Message) (ret dict.Dict) {
 }
 
 func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret dict.Dict) {
-	ctx.chainInfo = governance.MustGetChainInfo(
-		ctx.contractStateReaderWithGasBurn(governance.Contract.Hname()),
-		ctx.chainID,
-	)
-
+	ctx.chainInfo = governance.NewStateReader(ctx.contractStateReaderWithGasBurn(governance.Contract.Hname())).
+		GetChainInfo(ctx.chainID)
 	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
 	if ctx.gasBurnLoggingEnabled {
 		ctx.gasBurnLog = gas.NewGasBurnLog()

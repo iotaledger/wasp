@@ -4,11 +4,7 @@
 package governanceimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 var Processor = governance.Contract.Processor(nil,
@@ -53,13 +49,3 @@ var Processor = governance.Contract.Processor(nil,
 	governance.FuncSetMetadata.WithHandler(setMetadata),
 	governance.ViewGetMetadata.WithHandler(getMetadata),
 )
-
-func SetInitialState(state kv.KVStore, chainOwner isc.AgentID, blockKeepAmount int32) {
-	state.Set(governance.VarChainOwnerID, chainOwner.Bytes())
-	state.Set(governance.VarGasFeePolicyBytes, gas.DefaultFeePolicy().Bytes())
-	state.Set(governance.VarGasLimitsBytes, gas.LimitsDefault.Bytes())
-	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
-	state.Set(governance.VarBlockKeepAmount, codec.Int32.Encode(blockKeepAmount))
-	state.Set(governance.VarMinBaseTokensOnCommonAccount, codec.Uint64.Encode(governance.DefaultMinBaseTokensOnCommonAccount))
-	state.Set(governance.VarPayoutAgentID, chainOwner.Bytes())
-}

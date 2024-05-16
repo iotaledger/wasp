@@ -9,7 +9,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -22,8 +21,8 @@ import (
 func rotateStateController(ctx isc.Sandbox, newStateControllerAddr iotago.Address) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	// check is address is allowed
-	state := ctx.State()
-	amap := collections.NewMapReadOnly(state, governance.VarAllowedStateControllerAddresses)
+	state := governance.NewStateWriterFromSandbox(ctx)
+	amap := state.AllowedStateControllerAddressesMap()
 	if !amap.HasAt(isc.AddressToBytes(newStateControllerAddr)) {
 		panic(vm.ErrUnauthorized)
 	}
@@ -33,7 +32,7 @@ func rotateStateController(ctx isc.Sandbox, newStateControllerAddr iotago.Addres
 		// By setting VarRotateToAddress we signal the VM this special situation
 		// VarRotateToAddress value should never persist in the state
 		ctx.Log().Infof("Governance::RotateStateController: newStateControllerAddress=%s", newStateControllerAddr.String())
-		state.Set(governance.VarRotateToAddress, isc.AddressToBytes(newStateControllerAddr))
+		state.SetRotationAddress(newStateControllerAddr)
 		return nil
 	}
 	// here the new state controller address from the request equals to the state controller address in the anchor output
@@ -52,20 +51,23 @@ func rotateStateController(ctx isc.Sandbox, newStateControllerAddr iotago.Addres
 
 func addAllowedStateControllerAddress(ctx isc.Sandbox, addr iotago.Address) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	amap := collections.NewMap(ctx.State(), governance.VarAllowedStateControllerAddresses)
+	state := governance.NewStateWriterFromSandbox(ctx)
+	amap := state.AllowedStateControllerAddressesMap()
 	amap.SetAt(codec.Address.Encode(addr), []byte{0x01})
 	return nil
 }
 
 func removeAllowedStateControllerAddress(ctx isc.Sandbox, addr iotago.Address) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	amap := collections.NewMap(ctx.State(), governance.VarAllowedStateControllerAddresses)
+	state := governance.NewStateWriterFromSandbox(ctx)
+	amap := state.AllowedStateControllerAddressesMap()
 	amap.DelAt(codec.Address.Encode(addr))
 	return nil
 }
 
 func getAllowedStateControllerAddresses(ctx isc.SandboxView) []iotago.Address {
-	amap := collections.NewMapReadOnly(ctx.StateR(), governance.VarAllowedStateControllerAddresses)
+	state := governance.NewStateReaderFromSandbox(ctx)
+	amap := state.AllowedStateControllerAddressesMap()
 	ret := make([]iotago.Address, 0)
 	amap.IterateKeys(func(elemKey []byte) bool {
 		ret = append(ret, lo.Must(codec.Address.Decode(elemKey)))

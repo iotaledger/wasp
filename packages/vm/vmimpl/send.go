@@ -6,17 +6,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 const MaxPostedOutputsInOneRequest = 4
 
 func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.NFTID) *isc.NFT {
-	var nft *isc.NFT
-	withContractState(chainState, accounts.Contract, func(s kv.KVStore) {
-		nft = accounts.GetNFTData(s, nftID)
-	})
-	return nft
+	return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
 }
 
 func (reqctx *requestContext) send(par isc.RequestParameters) {
@@ -37,7 +32,7 @@ func (reqctx *requestContext) doSend(caller isc.ContractIdentity, par isc.Reques
 			par,
 			nft,
 		)
-		debitNFTFromAccount(reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), nft.ID, reqctx.ChainID())
+		reqctx.debitNFTFromAccount(reqctx.CurrentContractAccountID(), nft.ID, true)
 		reqctx.sendOutput(out)
 		return
 	}
@@ -66,5 +61,5 @@ func (reqctx *requestContext) sendOutput(o iotago.Output) {
 	reqctx.adjustL2BaseTokensIfNeeded(baseTokenAdjustmentL2, reqctx.CurrentContractAccountID())
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
-	debitFromAccount(reqctx.SchemaVersion(), reqctx.chainStateWithGasBurn(), reqctx.CurrentContractAccountID(), assets, reqctx.ChainID())
+	reqctx.debitFromAccount(reqctx.CurrentContractAccountID(), assets, true)
 }

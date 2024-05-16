@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -132,8 +132,8 @@ func TestSpawn(t *testing.T) {
 
 	res, err := chain.CallView(root.ViewGetContractRecords.Message())
 	require.NoError(t, err)
-	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
-	require.True(t, int(creg.Len()) == len(corecontracts.All)+2)
+	creg := lo.Must(root.ViewGetContractRecords.Output.Decode(res))
+	require.True(t, int(len(creg)) == len(corecontracts.All)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {

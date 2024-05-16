@@ -6,7 +6,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -26,8 +25,8 @@ var Processor = Contract.Processor(nil,
 
 var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
 
-func SetInitialState(s kv.KVStore) {
-	SaveNextBlockInfo(s, &BlockInfo{
+func (s *StateWriter) SetInitialState() {
+	s.SaveNextBlockInfo(&BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
 		Timestamp:             time.Time{},
 		TotalRequests:         1,
@@ -39,7 +38,7 @@ func SetInitialState(s kv.KVStore) {
 // viewGetBlockInfo returns blockInfo for a given block.
 func viewGetBlockInfo(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, *BlockInfo) {
 	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
-	b, ok := GetBlockInfo(ctx.StateR(), blockIndex)
+	b, ok := NewStateReaderFromSandbox(ctx).GetBlockInfo(blockIndex)
 	if !ok {
 		panic(ErrBlockNotFound)
 	}
@@ -57,7 +56,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) 
 		return blockIndex, nil
 	}
 
-	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	receipts, found := NewStateReaderFromSandbox(ctx).getRequestLogRecordsForBlockBin(blockIndex)
 	if !found {
 		panic(errNotFound)
 	}
@@ -70,7 +69,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) 
 }
 
 func viewGetRequestReceipt(ctx isc.SandboxView, reqID isc.RequestID) *RequestReceipt {
-	rec, err := GetRequestRecordDataByRequestID(ctx.StateR(), reqID)
+	rec, err := NewStateReaderFromSandbox(ctx).GetRequestRecordDataByRequestID(reqID)
 	ctx.RequireNoError(err)
 	return rec
 }
@@ -84,7 +83,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uin
 		return 0, nil
 	}
 
-	receipts, found := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	receipts, found := NewStateReaderFromSandbox(ctx).getRequestLogRecordsForBlockBin(blockIndex)
 	if !found {
 		panic(errNotFound)
 	}
@@ -97,14 +96,14 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uin
 }
 
 func viewIsRequestProcessed(ctx isc.SandboxView, requestID isc.RequestID) bool {
-	requestReceipt, err := getRequestReceipt(ctx.StateR(), requestID)
+	requestReceipt, err := NewStateReaderFromSandbox(ctx).GetRequestReceipt(requestID)
 	ctx.RequireNoError(err)
 	return requestReceipt != nil
 }
 
 // viewGetEventsForRequest returns a list of events for a given request.
 func viewGetEventsForRequest(ctx isc.SandboxView, requestID isc.RequestID) []*isc.Event {
-	events, err := getRequestEventsInternal(ctx.StateR(), requestID)
+	events, err := NewStateReaderFromSandbox(ctx).getRequestEventsInternal(requestID)
 	ctx.RequireNoError(err)
 	return lo.Map(events, func(b []byte, _ int) *isc.Event {
 		return lo.Must(isc.EventFromBytes(b))
@@ -120,10 +119,10 @@ func viewGetEventsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uin
 		return 0, nil
 	}
 
-	stateR := ctx.StateR()
-	blockInfo, ok := GetBlockInfo(stateR, blockIndex)
+	state := NewStateReaderFromSandbox(ctx)
+	blockInfo, ok := state.GetBlockInfo(blockIndex)
 	ctx.Requiref(ok, "block not found: %d", blockIndex)
-	events := GetEventsByBlockIndex(stateR, blockIndex, blockInfo.TotalRequests)
+	events := state.GetEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 
 	return blockIndex, lo.Map(events, func(b []byte, _ int) *isc.Event {
 		return lo.Must(isc.EventFromBytes(b))
@@ -132,7 +131,7 @@ func viewGetEventsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uin
 
 // viewGetEventsForContract returns a list of events for a given smart contract.
 func viewGetEventsForContract(ctx isc.SandboxView, q EventsForContractQuery) []*isc.Event {
-	events := getSmartContractEventsInternal(ctx.StateR(), q)
+	events := NewStateReaderFromSandbox(ctx).getSmartContractEventsInternal(q)
 	return lo.Map(events, func(b []byte, _ int) *isc.Event {
 		return lo.Must(isc.EventFromBytes(b))
 	})

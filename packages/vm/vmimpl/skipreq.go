@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
@@ -49,10 +49,7 @@ func (reqctx *requestContext) earlyCheckReasonToSkip(maintenanceMode bool) error
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
 func (reqctx *requestContext) checkReasonRequestProcessed() error {
 	reqid := reqctx.req.ID()
-	var isProcessed bool
-	withContractState(reqctx.uncommittedState, blocklog.Contract, func(s kv.KVStore) {
-		isProcessed = blocklog.MustIsRequestProcessed(s, reqid)
-	})
+	isProcessed := lo.Must(blocklog.NewStateReaderFromChainState(reqctx.uncommittedState).IsRequestProcessed(reqid))
 	if isProcessed {
 		return errors.New("already processed")
 	}
@@ -73,17 +70,9 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 	reqNonce := offledgerReq.Nonce()
 	var expectedNonce uint64
 	if evmAgentID, ok := senderAccount.(*isc.EthereumAddressAgentID); ok {
-		withContractState(reqctx.uncommittedState, evm.Contract, func(s kv.KVStore) {
-			expectedNonce = evmimpl.Nonce(s, evmAgentID.EthAddress())
-		})
+		expectedNonce = evmimpl.Nonce(evm.Contract.StateSubrealm(reqctx.uncommittedState), evmAgentID.EthAddress())
 	} else {
-		withContractState(reqctx.uncommittedState, accounts.Contract, func(s kv.KVStore) {
-			expectedNonce = accounts.AccountNonce(
-				s,
-				senderAccount,
-				reqctx.ChainID(),
-			)
-		})
+		expectedNonce = reqctx.accountsStateWriter(false).AccountNonce(senderAccount, reqctx.ChainID())
 	}
 	if reqNonce != expectedNonce {
 		return fmt.Errorf(

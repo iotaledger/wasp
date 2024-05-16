@@ -9,24 +9,42 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-type StateAccess struct {
+type StateReader struct {
+	v     isc.SchemaVersion
 	state kv.KVStoreReader
 }
 
-func NewStateAccess(store kv.KVStoreReader) *StateAccess {
-	state := subrealm.NewReadOnly(store, kv.Key(Contract.Hname().Bytes()))
-	return &StateAccess{state: state}
+func NewStateReader(v isc.SchemaVersion, contractState kv.KVStoreReader) *StateReader {
+	return &StateReader{
+		v:     v,
+		state: contractState,
+	}
 }
 
-func (sa *StateAccess) Nonce(agentID isc.AgentID, chainID isc.ChainID) uint64 {
-	return AccountNonce(sa.state, agentID, chainID)
+func NewStateReaderFromSandbox(ctx isc.SandboxBase) *StateReader {
+	return NewStateReader(ctx.SchemaVersion(), ctx.StateR())
 }
 
-func (sa *StateAccess) AccountExists(agentID isc.AgentID, chainID isc.ChainID) bool {
-	return accountExists(sa.state, agentID, chainID)
+func NewStateReaderFromChainState(v isc.SchemaVersion, chainState kv.KVStoreReader) *StateReader {
+	return NewStateReader(v, Contract.StateSubrealmR(chainState))
+}
+
+type StateWriter struct {
+	*StateReader
+	state kv.KVStore
+}
+
+func NewStateWriter(v isc.SchemaVersion, contractState kv.KVStore) *StateWriter {
+	return &StateWriter{
+		StateReader: NewStateReader(v, contractState),
+		state:       contractState,
+	}
+}
+
+func NewStateWriterFromSandbox(ctx isc.Sandbox) *StateWriter {
+	return NewStateWriter(ctx.SchemaVersion(), ctx.State())
 }
 
 // converts an account key from the accounts contract (shortform without chainID) to an AgentID

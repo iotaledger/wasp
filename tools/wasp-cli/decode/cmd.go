@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	wasp_util "github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -85,16 +84,8 @@ func initDecodeWALCmd() *cobra.Command {
 			fmt.Printf("L1 Commitment: %v\n", block.L1Commitment().String())
 
 			blockInfos := make([]*blocklog.BlockInfo, 0)
-			b := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
-			b.IterateKeys(blocklog.PrefixBlockRegistry, func(key kv.Key) bool {
-				val2 := b.Get(key)
-				info, blockErr := blocklog.BlockInfoFromBytes(val2)
-
-				if blockErr == nil {
-					blockInfos = append(blockInfos, info)
-				}
-
-				return true
+			blocklog.NewStateReaderFromBlockMutations(block).IterateBlockRegistryPrefix(func(bi *blocklog.BlockInfo) {
+				blockInfos = append(blockInfos, bi)
 			})
 
 			fmt.Printf("Found BlockInfos:\n\n")
