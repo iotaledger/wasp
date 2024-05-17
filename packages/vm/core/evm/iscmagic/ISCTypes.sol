@@ -58,6 +58,12 @@ struct IRC27NFTMetadata {
     string standard;
     string version;
     string mimeType;
+    // Note: uri field is encoded as a data URL with:
+    // base64(jsonEncode({
+    //   "name": NFT.name,
+    //   "description": NFT.description,
+    //   "image": NFT.URI
+    // }))
     string uri;
     string name;
 }

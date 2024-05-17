@@ -109,6 +109,12 @@ interface ISCSandbox {
     function getNFTData(NFTID id) external view returns (ISCNFT memory);
 
     // Get information about an on-chain IRC27 NFT
+    // Note: the metadata.uri field is encoded as a data URL with:
+    // base64(jsonEncode({
+    //   "name": NFT.name,
+    //   "description": NFT.description,
+    //   "image": NFT.URI
+    // }))
     function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
 
     // Get the address of an ERC20NativeTokens contract for the given foundry serial number
