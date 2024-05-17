@@ -1103,7 +1103,11 @@ func TestERC721NFTCollection(t *testing.T) {
 	{
 		var uri string
 		erc721.callView("tokenURI", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &uri)
-		require.EqualValues(t, nftMetadatas[0].URI, uri)
+		p, err := evm.DecodePackedNFTURI(uri)
+		require.NoError(t, err)
+		require.EqualValues(t, nftMetadatas[0].URI, p.Image)
+		require.EqualValues(t, nftMetadatas[0].Name, p.Name)
+		require.EqualValues(t, nftMetadatas[0].Description, p.Description)
 	}
 }
 

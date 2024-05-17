@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -39,6 +40,9 @@ func (h *magicContractHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT 
 func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
+	// This hack is so that the ERC721 tokenURI view function returns the NFT name and description
+	// for explorers
+	metadata.URI = evm.EncodePackedNFTURI(metadata)
 	h.ctx.RequireNoError(err)
 	return iscmagic.IRC27NFT{
 		Nft:      iscmagic.WrapISCNFT(nft),
