@@ -205,7 +205,8 @@ func (req *OffLedgerRequestData) ReturnAmount() (uint64, bool) {
 }
 
 func (req *OffLedgerRequestData) SenderAccount() AgentID {
-	return NewAgentID(req.signature.publicKey.AsEd25519Address())
+	//return NewAgentID(req.signature.publicKey.AsAddress())
+	return nil // TODO: use cryptolib.Address
 }
 
 // Sign signs the essence

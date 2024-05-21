@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -28,11 +29,11 @@ type comparableChainCommitteeIDKey [comparableChainCommitteeIDKeyLength]byte
 type comparableChainCommitteeID struct {
 	key     comparableChainCommitteeIDKey
 	chainID isc.ChainID
-	address iotago.Address
+	address *cryptolib.Address
 }
 
-func newComparableChainCommitteeID(chainID isc.ChainID, address iotago.Address) *comparableChainCommitteeID {
-	addressBytes := isc.AddressToBytes(address)
+func newComparableChainCommitteeID(chainID isc.ChainID, address *cryptolib.Address) *comparableChainCommitteeID {
+	addressBytes := address.Bytes()
 
 	key := comparableChainCommitteeIDKey{}
 	copy(key[:isc.ChainIDLength], chainID[:])
@@ -74,7 +75,7 @@ func (c *consensusState) ChainID() isc.ChainID {
 	return c.identifier.chainID
 }
 
-func (c *consensusState) Address() iotago.Address {
+func (c *consensusState) Address() *cryptolib.Address {
 	return c.identifier.address
 }
 
@@ -321,7 +322,7 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 }
 
 // Can return cmtLog.ErrCmtLogStateNotFound.
-func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress iotago.Address) (*cmt_log.State, error) {
+func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*cmt_log.State, error) {
 	state, err := p.onChangeMap.Get(newComparableChainCommitteeID(chainID, committeeAddress))
 	if err != nil {
 		return nil, cmt_log.ErrCmtLogStateNotFound

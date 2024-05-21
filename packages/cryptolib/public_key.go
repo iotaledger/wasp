@@ -11,6 +11,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/minio/blake2b-simd"
 )
 
 type PublicKey struct {
@@ -62,9 +63,14 @@ func (pkT *PublicKey) AsKey() PublicKeyKey {
 	return result
 }
 
-func (pkT *PublicKey) AsEd25519Address() *iotago.Ed25519Address {
-	ret := iotago.Ed25519AddressFromPubKey(pkT.key)
-	return &ret
+func (pkT *PublicKey) AsAddress() *Address {
+	typeKey := []byte{0}
+	typeKey = append(typeKey, pkT.key...)
+	return newAddressFromBytes(blake2b.Sum256(typeKey))
+}
+
+func (pkT *PublicKey) AsAddressLegacy() *Address {
+	return newAddressFromBytes(blake2b.Sum256(pkT.key))
 }
 
 func (pkT *PublicKey) AsKyberPoint() (kyber.Point, error) {
