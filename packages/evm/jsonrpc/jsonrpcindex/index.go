@@ -53,7 +53,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	if err != nil {
 		panic(err)
 	}
-	blockKeepAmount := governance.NewStateAccess(state).GetBlockKeepAmount()
+	blockKeepAmount := governance.NewStateReaderFromChainState(state).GetBlockKeepAmount()
 	if blockKeepAmount == -1 {
 		return // pruning disabled, never cache anything
 	}
@@ -69,7 +69,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	}
 
 	// we need to look at the next block to get the trie commitment of the block we want to cache
-	nextBlockInfo, found := blocklog.NewStateAccess(state).BlockInfo(blockIndexToCache + 1)
+	nextBlockInfo, found := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(blockIndexToCache + 1)
 	if !found {
 		panic(fmt.Errorf("block %d not found on active state %d", blockIndexToCache, state.BlockIndex()))
 	}
@@ -83,7 +83,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	for i := blockIndexToCache; i >= cacheUntil; i-- {
 		// walk back and save all blocks between [lastBlockIndexCached...blockIndexToCache]
 
-		blockinfo, found := blocklog.NewStateAccess(activeStateToCache).BlockInfo(i)
+		blockinfo, found := blocklog.NewStateReaderFromChainState(activeStateToCache).GetBlockInfo(i)
 		if !found {
 			panic(fmt.Errorf("block %d not found on active state %d", i, state.BlockIndex()))
 		}

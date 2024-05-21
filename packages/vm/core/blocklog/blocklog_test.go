@@ -18,7 +18,7 @@ import (
 
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
-	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("0"), isc.Hn("0"), nil, nonce, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(isc.Hn("0"), isc.Hn("0")), nonce, gas.LimitsDefault.MaxGasPerRequest)
 	signedReq := req.Sign(cryptolib.NewKeyPair())
 	rec := &RequestReceipt{
 		Request: signedReq,
@@ -68,7 +68,7 @@ func TestPruneRequestIndexLookupTable(t *testing.T) {
 	requestIndexLUT.SetAt(requestIDDigest1[:], createRequestLookupKeys(maxBlocks, requestsToCreate))
 
 	require.NotPanics(t, func() {
-		pruneRequestLookupTable(d, requestIDDigest0, blockToPrune)
+		NewStateWriter(d).pruneRequestLookupTable(requestIDDigest0, blockToPrune)
 	})
 
 	validatePrunedRequestIndexLookupBlock(t, d, kv.Key(requestIDDigest0[:]), blockToPrune)
@@ -138,11 +138,11 @@ func TestGetEventsInternal(t *testing.T) {
 
 	d := dict.Dict{}
 
-	registry := collections.NewArray(d, PrefixBlockRegistry)
+	registry := collections.NewArray(d, prefixBlockRegistry)
 
 	eventMap := collections.NewMap(d, prefixRequestEvents)
 	createEventLookupKeys(registry, eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)
 
-	events := getSmartContractEventsInternal(d, contractID, blockFrom, blockTo)
+	events := NewStateWriter(d).getSmartContractEventsInternal(EventsForContractQuery{contractID, &BlockRange{blockFrom, blockTo}})
 	validateEvents(t, events, maxRequests, maxEventsPerRequest, blockFrom, blockTo)
 }

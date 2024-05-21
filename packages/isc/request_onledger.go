@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -113,14 +112,11 @@ func (req *onLedgerRequestData) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
 }
 
-func (req *onLedgerRequestData) CallTarget() CallTarget {
+func (req *onLedgerRequestData) Message() Message {
 	if req.requestMetadata == nil {
-		return CallTarget{}
+		return Message{}
 	}
-	return CallTarget{
-		Contract:   req.requestMetadata.TargetContract,
-		EntryPoint: req.requestMetadata.EntryPoint,
-	}
+	return req.requestMetadata.Message
 }
 
 func (req *onLedgerRequestData) Clone() OnLedgerRequest {
@@ -214,13 +210,6 @@ func (req *onLedgerRequestData) OutputID() iotago.OutputID {
 	return req.outputID
 }
 
-func (req *onLedgerRequestData) Params() dict.Dict {
-	if req.requestMetadata == nil {
-		return dict.Dict{}
-	}
-	return req.requestMetadata.Params
-}
-
 func (req *onLedgerRequestData) ReturnAmount() (uint64, bool) {
 	storageDepositReturn := req.unlockConditions.StorageDepositReturn()
 	if storageDepositReturn == nil {
@@ -259,9 +248,9 @@ func (req *onLedgerRequestData) String() string {
 	return fmt.Sprintf("onLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, GasBudget: %d }",
 		req.ID().String(),
 		metadata.SenderContract.String(),
-		metadata.TargetContract.String(),
-		metadata.EntryPoint.String(),
-		metadata.Params.String(),
+		metadata.Message.Target.Contract.String(),
+		metadata.Message.Target.EntryPoint.String(),
+		metadata.Message.Params.String(),
 		metadata.GasBudget,
 	)
 }

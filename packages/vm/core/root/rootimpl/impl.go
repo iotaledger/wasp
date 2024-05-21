@@ -8,20 +8,14 @@
 package rootimpl
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -33,38 +27,6 @@ var Processor = root.Contract.Processor(nil,
 	root.ViewFindContract.WithHandler(findContract),
 	root.ViewGetContractRecords.WithHandler(getContractRecords),
 )
-
-func SetInitialState(v isc.SchemaVersion, state kv.KVStore) {
-	root.SetSchemaVersion(state, v)
-
-	contractRegistry := collections.NewMap(state, root.VarContractRegistry)
-	if contractRegistry.Len() != 0 {
-		panic("contract registry must be empty on chain start")
-	}
-
-	// forbid deployment of custom contracts by default
-	state.Set(root.VarDeployPermissionsEnabled, codec.Bool.Encode(true))
-
-	{
-		// register core contracts
-		contracts := []*coreutil.ContractInfo{
-			root.Contract,
-			blob.Contract,
-			accounts.Contract,
-			blocklog.Contract,
-			errors.Contract,
-			governance.Contract,
-			evm.Contract,
-		}
-
-		for _, c := range contracts {
-			storeContractRecord(
-				state,
-				root.ContractRecordFromContractInfo(c),
-			)
-		}
-	}
-}
 
 var errInvalidContractName = coreerrors.Register("invalid contract name").Create()
 
@@ -101,68 +63,54 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
-	storeContractRecord(ctx.State(), &root.ContractRecord{
+	state := root.NewStateWriterFromSandbox(ctx)
+	state.StoreContractRecord(&root.ContractRecord{
 		ProgramHash: progHash,
 		Name:        name,
 	})
-	ctx.Call(isc.Hn(name), isc.EntryPointInit, initParams, nil)
+	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, initParams), nil)
 	eventDeploy(ctx, progHash, name)
 	return nil
 }
 
 // grantDeployPermission grants permission to deploy contracts
-// Input:
-//   - ParamDeployer isc.AgentID
-func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
+func grantDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	collections.NewMap(ctx.State(), root.VarDeployPermissions).SetAt(deployer.Bytes(), []byte{0x01})
+	state := root.NewStateWriterFromSandbox(ctx)
+	state.GetDeployPermissions().SetAt(deployer.Bytes(), []byte{0x01})
 	eventGrant(ctx, deployer)
 	return nil
 }
 
 // revokeDeployPermission revokes permission to deploy contracts
-// Input:
-//   - ParamDeployer isc.AgentID
-func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
+func revokeDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	collections.NewMap(ctx.State(), root.VarDeployPermissions).DelAt(deployer.Bytes())
+	state := root.NewStateWriterFromSandbox(ctx)
+	state.GetDeployPermissions().DelAt(deployer.Bytes())
 	eventRevoke(ctx, deployer)
 	return nil
 }
 
-func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
+func requireDeployPermissions(ctx isc.Sandbox, permissionsEnabled bool) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
-	ctx.State().Set(root.VarDeployPermissionsEnabled, codec.Bool.Encode(permissionsEnabled))
+	state := root.NewStateWriterFromSandbox(ctx)
+	state.SetDeployPermissionsEnabled(permissionsEnabled)
 	return nil
 }
 
 // findContract view finds and returns encoded record of the contract
-// Input:
-// - ParamHname
-// Output:
-// - ParamData
-func findContract(ctx isc.SandboxView) dict.Dict {
-	hname := ctx.Params().MustGetHname(root.ParamHname)
-	rec := root.FindContract(ctx.StateR(), hname)
-	ret := dict.New()
-	found := rec != nil
-	ret.Set(root.ParamContractFound, codec.Bool.Encode(found))
-	if found {
-		ret.Set(root.ParamContractRecData, rec.Bytes())
-	}
-	return ret
+func findContract(ctx isc.SandboxView, hname isc.Hname) (bool, *root.ContractRecord) {
+	state := root.NewStateReaderFromSandbox(ctx)
+	rec := state.FindContract(hname)
+	return rec != nil, rec
 }
 
-func getContractRecords(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	dst := collections.NewMap(ret, root.VarContractRegistry)
-	root.GetContractRegistryR(ctx.StateR()).Iterate(func(elemKey []byte, value []byte) bool {
-		dst.SetAt(elemKey, value)
+func getContractRecords(ctx isc.SandboxView) map[isc.Hname]*root.ContractRecord {
+	ret := make(map[isc.Hname]*root.ContractRecord)
+	state := root.NewStateReaderFromSandbox(ctx)
+	state.GetContractRegistry().Iterate(func(elemKey []byte, value []byte) bool {
+		ret[lo.Must(codec.Hname.Decode(elemKey))] = lo.Must(root.ContractRecordFromBytes(value))
 		return true
 	})
-
 	return ret
 }

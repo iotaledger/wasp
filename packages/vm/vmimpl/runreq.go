@@ -82,11 +82,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 }
 
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {
-	var payoutAgentID isc.AgentID
-	withContractState(vmctx.stateDraft, governance.Contract, func(s kv.KVStore) {
-		payoutAgentID = governance.MustGetPayoutAgentID(s)
-	})
-	return payoutAgentID
+	return governance.NewStateReaderFromChainState(vmctx.stateDraft).GetPayoutAgentID()
 }
 
 // creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
@@ -108,15 +104,15 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		}
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		creditNFTToAccount(reqctx.uncommittedState, payoutAgentID, req, reqctx.ChainID())
-		creditToAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, payoutAgentID, req.Assets(), reqctx.ChainID())
+		reqctx.creditNFTToAccount(payoutAgentID)
+		reqctx.creditToAccount(payoutAgentID, req.Assets())
 		if storageDepositNeeded > 0 {
-			debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
+			reqctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), false)
 		}
 		return
 	}
 
-	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalance(sender)
+	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
 	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(reqctx.txGasPrice(), parameters.L1().BaseToken.Decimals)
 	if senderBaseTokens < storageDepositNeeded+minReqCost {
@@ -124,11 +120,11 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		panic(vmexceptions.ErrNotEnoughFundsForSD)
 	}
 
-	creditToAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, req.Assets(), reqctx.ChainID())
-	creditNFTToAccount(reqctx.uncommittedState, sender, req, reqctx.ChainID())
+	reqctx.creditToAccount(sender, req.Assets())
+	reqctx.creditNFTToAccount(sender)
 	if storageDepositNeeded > 0 {
 		reqctx.sdCharged = storageDepositNeeded
-		debitFromAccount(reqctx.SchemaVersion(), reqctx.uncommittedState, sender, isc.NewAssetsBaseTokens(storageDepositNeeded), reqctx.ChainID())
+		reqctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded), false)
 	}
 }
 
@@ -160,7 +156,7 @@ func (reqctx *requestContext) shouldChargeGasFee() bool {
 	// NOT FOR PUBLIC NETWORK
 	var freeGasPerToken bool
 	reqctx.callCore(governance.Contract, func(s kv.KVStore) {
-		gasPerToken := governance.MustGetGasFeePolicy(s).GasPerToken
+		gasPerToken := governance.NewStateReader(s).GetGasFeePolicy().GasPerToken
 		freeGasPerToken = gasPerToken.A == 0 && gasPerToken.B == 0
 	})
 	if freeGasPerToken {
@@ -169,7 +165,7 @@ func (reqctx *requestContext) shouldChargeGasFee() bool {
 	if reqctx.req.SenderAccount() == nil {
 		return false
 	}
-	if reqctx.req.SenderAccount().Equals(reqctx.vm.ChainOwnerID()) && reqctx.req.CallTarget().Contract == governance.Contract.Hname() {
+	if reqctx.req.SenderAccount().Equals(reqctx.vm.ChainOwnerID()) && reqctx.req.Message().Target.Contract == governance.Contract.Hname() {
 		return false
 	}
 	return true
@@ -300,16 +296,7 @@ func (reqctx *requestContext) callFromRequest() dict.Dict {
 		panic(vm.ErrSenderUnknown)
 	}
 
-	contract := req.CallTarget().Contract
-	entryPoint := req.CallTarget().EntryPoint
-
-	return reqctx.callProgram(
-		contract,
-		entryPoint,
-		req.Params(),
-		req.Allowance(),
-		req.SenderAccount(),
-	)
+	return reqctx.callProgram(req.Message(), req.Allowance(), req.SenderAccount())
 }
 
 func (reqctx *requestContext) getGasBudget() uint64 {
@@ -320,7 +307,7 @@ func (reqctx *requestContext) getGasBudget() uint64 {
 
 	var gasRatio util.Ratio32
 	reqctx.callCore(governance.Contract, func(s kv.KVStore) {
-		gasRatio = governance.MustGetGasFeePolicy(s).EVMGasRatio
+		gasRatio = governance.NewStateReader(s).GetGasFeePolicy().EVMGasRatio
 	})
 	return gas.EVMGasToISC(gasBudget, &gasRatio)
 }
@@ -376,7 +363,7 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (reqctx *requestContext) calcGuaranteedFeeTokens() uint64 {
-	tokensGuaranteed := reqctx.GetBaseTokensBalance(reqctx.req.SenderAccount())
+	tokensGuaranteed := reqctx.GetBaseTokensBalanceDiscardRemainder(reqctx.req.SenderAccount())
 	// safely subtract the allowed from the sender to the target
 	if allowed := reqctx.req.Allowance(); allowed != nil {
 		if tokensGuaranteed < allowed.BaseTokens {
@@ -437,23 +424,18 @@ func (reqctx *requestContext) chargeGasFee() {
 	if sendToValidator != 0 {
 		transferToValidator := &isc.Assets{}
 		transferToValidator.BaseTokens = sendToValidator
-		mustMoveBetweenAccounts(
-			reqctx.SchemaVersion(),
-			reqctx.uncommittedState,
+		reqctx.mustMoveBetweenAccounts(
 			sender,
 			reqctx.vm.task.ValidatorFeeTarget,
 			transferToValidator,
-			reqctx.ChainID(),
+			false,
 		)
 	}
 
 	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
-	var minBalanceInCommonAccount uint64
-	withContractState(reqctx.uncommittedState, governance.Contract, func(s kv.KVStore) {
-		minBalanceInCommonAccount = governance.MustGetMinCommonAccountBalance(s)
-	})
-	commonAccountBal := reqctx.GetBaseTokensBalance(accounts.CommonAccount())
+	minBalanceInCommonAccount := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetMinCommonAccountBalance()
+	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
 	if commonAccountBal < minBalanceInCommonAccount {
 		// pay to common account since the balance of common account is less than minSD
 		transferToCommonAcc := sendToPayout
@@ -463,24 +445,20 @@ func (reqctx *requestContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		mustMoveBetweenAccounts(
-			reqctx.SchemaVersion(),
-			reqctx.uncommittedState,
+		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),
 			isc.NewAssetsBaseTokens(transferToCommonAcc),
-			reqctx.ChainID(),
+			false,
 		)
 	}
 	if sendToPayout > 0 {
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		mustMoveBetweenAccounts(
-			reqctx.SchemaVersion(),
-			reqctx.uncommittedState,
+		reqctx.mustMoveBetweenAccounts(
 			sender,
 			payoutAgentID,
 			isc.NewAssetsBaseTokens(sendToPayout),
-			reqctx.ChainID(),
+			false,
 		)
 	}
 }
@@ -503,7 +481,7 @@ func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *r
 }
 
 func (vmctx *vmContext) loadChainConfig() {
-	vmctx.chainInfo = governance.NewStateAccess(vmctx.stateDraft).ChainInfo(vmctx.ChainID())
+	vmctx.chainInfo = governance.NewStateReaderFromChainState(vmctx.stateDraft).GetChainInfo(vmctx.ChainID())
 }
 
 // checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit

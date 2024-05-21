@@ -18,7 +18,7 @@ func testTypesFull(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull.Name,
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPassTypesFull.Name,
 		"address", ch.ChainID.AsAddress(),
 		"agentID", ch.OriginatorAgentID,
 		"chainID", ch.ChainID,
@@ -40,7 +40,7 @@ func testTypesView(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	cID := setupTestSandboxSC(t, chain, nil)
 
-	_, err := chain.CallView(ScName, sbtestsc.FuncPassTypesView.Name,
+	_, err := chain.CallViewEx(ScName, sbtestsc.FuncPassTypesView.Name,
 		"string", "string",
 		"string-0", "",
 		"int64", 42,

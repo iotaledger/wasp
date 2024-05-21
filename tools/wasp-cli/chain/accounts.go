@@ -140,6 +140,9 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 
 	feePolicyBytes := callGovView(governance.ViewGetFeePolicy.Name).Get(governance.ParamFeePolicyBytes)
 	feePolicy := gas.MustFeePolicyFromBytes(feePolicyBytes)
+	if feePolicy.GasPerToken.HasZeroComponent() {
+		return 0
+	}
 
 	gasLimitsBytes := callGovView(governance.ViewGetGasLimits.Name).Get(governance.ParamGasLimitsBytes)
 	gasLimits, err := gas.LimitsFromBytes(gasLimitsBytes)
@@ -169,9 +172,8 @@ func initDepositCmd() *cobra.Command {
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
-
-					return cliclients.SCClient(client, chainID, accounts.Contract.Hname()).PostRequest(
-						accounts.FuncDeposit.Name,
+					return cliclients.ChainClient(client, chainID).PostRequest(
+						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
 							Transfer:                 tokens,
 							AutoAdjustStorageDeposit: adjustStorageDeposit,
@@ -202,13 +204,9 @@ func initDepositCmd() *cobra.Command {
 
 				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
 					client := cliclients.WaspClient(node)
-
-					return cliclients.SCClient(client, chainID, accounts.Contract.Hname()).PostRequest(
-						accounts.FuncTransferAllowanceTo.Name,
+					return cliclients.ChainClient(client, chainID).PostRequest(
+						accounts.FuncTransferAllowanceTo.Message(agentID),
 						chainclient.PostRequestParams{
-							Args: dict.Dict{
-								accounts.ParamAgentID: agentID.Bytes(),
-							},
 							Transfer:                 tokens,
 							Allowance:                allowance,
 							AutoAdjustStorageDeposit: adjustStorageDeposit,

@@ -6,10 +6,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -50,32 +48,32 @@ func (rec *unprocessableRequestRecord) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func newUnprocessableRequestsArray(state kv.KVStore) *collections.Array {
-	return collections.NewArray(state, prefixNewUnprocessableRequests)
+func (s *StateWriter) newUnprocessableRequestsArray() *collections.Array {
+	return collections.NewArray(s.state, prefixNewUnprocessableRequests)
 }
 
-func unprocessableMap(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, prefixUnprocessableRequests)
+func (s *StateWriter) unprocessableMap() *collections.Map {
+	return collections.NewMap(s.state, prefixUnprocessableRequests)
 }
 
-func unprocessableMapR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, prefixUnprocessableRequests)
+func (s *StateReader) unprocessableMap() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, prefixUnprocessableRequests)
 }
 
 // save request reference / address of the sender
-func SaveUnprocessable(state kv.KVStore, req isc.OnLedgerRequest, blockIndex uint32, outputIndex uint16) {
+func (s *StateWriter) SaveUnprocessable(req isc.OnLedgerRequest, blockIndex uint32, outputIndex uint16) {
 	rec := unprocessableRequestRecord{
 		// TransactionID is unknown yet, will be filled next block
 		outputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
 		req:      req,
 	}
-	unprocessableMap(state).SetAt(req.ID().Bytes(), rec.Bytes())
-	newUnprocessableRequestsArray(state).Push(req.ID().Bytes())
+	s.unprocessableMap().SetAt(req.ID().Bytes(), rec.Bytes())
+	s.newUnprocessableRequestsArray().Push(req.ID().Bytes())
 }
 
-func updateUnprocessableRequestsOutputID(state kv.KVStore, anchorTxID iotago.TransactionID) {
-	newReqs := newUnprocessableRequestsArray(state)
-	allReqs := unprocessableMap(state)
+func (s *StateWriter) updateUnprocessableRequestsOutputID(anchorTxID iotago.TransactionID) {
+	newReqs := s.newUnprocessableRequestsArray()
+	allReqs := s.unprocessableMap()
 	n := newReqs.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newReqs.GetAt(i)
@@ -86,8 +84,8 @@ func updateUnprocessableRequestsOutputID(state kv.KVStore, anchorTxID iotago.Tra
 	newReqs.Erase()
 }
 
-func GetUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) (req isc.Request, outputID iotago.OutputID, err error) {
-	recData := unprocessableMapR(state).GetAt(reqID.Bytes())
+func (s *StateReader) GetUnprocessable(reqID isc.RequestID) (req isc.Request, outputID iotago.OutputID, err error) {
+	recData := s.unprocessableMap().GetAt(reqID.Bytes())
 	rec, err := unprocessableRequestRecordFromBytes(recData)
 	if err != nil {
 		return nil, iotago.OutputID{}, err
@@ -95,23 +93,19 @@ func GetUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) (req isc.Requ
 	return rec.req, rec.outputID, nil
 }
 
-func HasUnprocessable(state kv.KVStoreReader, reqID isc.RequestID) bool {
-	return unprocessableMapR(state).HasAt(reqID.Bytes())
+func (s *StateReader) HasUnprocessable(reqID isc.RequestID) bool {
+	return s.unprocessableMap().HasAt(reqID.Bytes())
 }
 
-func RemoveUnprocessable(state kv.KVStore, reqID isc.RequestID) {
-	unprocessableMap(state).DelAt(reqID.Bytes())
+func (s *StateWriter) RemoveUnprocessable(reqID isc.RequestID) {
+	s.unprocessableMap().DelAt(reqID.Bytes())
 }
 
 // ---- entrypoints
 
 // view used to check if a given requestID exists on the unprocessable list
-func viewHasUnprocessable(ctx isc.SandboxView) dict.Dict {
-	reqID := ctx.Params().MustGetRequestID(ParamRequestID)
-	exists := HasUnprocessable(ctx.StateR(), reqID)
-	return dict.Dict{
-		ParamUnprocessableRequestExists: codec.Bool.Encode(exists),
-	}
+func viewHasUnprocessable(ctx isc.SandboxView, reqID isc.RequestID) bool {
+	return NewStateReaderFromSandbox(ctx).HasUnprocessable(reqID)
 }
 
 var (
@@ -120,13 +114,13 @@ var (
 	ErrUnprocessableWrongSender  = coreerrors.Register("unprocessable request sender does not match the retry sender").Create()
 )
 
-func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
-	reqID := ctx.Params().MustGetRequestID(ParamRequestID)
-	exists := HasUnprocessable(ctx.StateR(), reqID)
+func retryUnprocessable(ctx isc.Sandbox, reqID isc.RequestID) dict.Dict {
+	state := NewStateReaderFromSandbox(ctx)
+	exists := state.HasUnprocessable(reqID)
 	if !exists {
 		panic(ErrUnprocessableAlreadyExist)
 	}
-	rec, outputID, err := GetUnprocessable(ctx.StateR(), reqID)
+	rec, outputID, err := state.GetUnprocessable(reqID)
 	if err != nil {
 		panic(ErrUnprocessableUnexpected)
 	}
@@ -139,10 +133,10 @@ func retryUnprocessable(ctx isc.Sandbox) dict.Dict {
 }
 
 func UnprocessableRequestsAddedInBlock(block state.Block) ([]isc.Request, error) {
+	state := NewStateReaderFromBlockMutations(block)
 	var respErr error
 	requests := []isc.Request{}
-	kvStore := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(Contract.Hname().Bytes()))
-	unprocessableMapR(kvStore).Iterate(func(_, recData []byte) bool {
+	state.unprocessableMap().Iterate(func(_, recData []byte) bool {
 		rec, err := unprocessableRequestRecordFromBytes(recData)
 		if err != nil {
 			respErr = err

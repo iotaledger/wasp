@@ -28,9 +28,9 @@ func callOnChain(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Infof("param IN = %d, hnameContract = %s, hnameEP = %s, counter = %d",
 		paramIn, hnameContract, hnameEP, counter)
 
-	return ctx.Call(hnameContract, hnameEP, codec.MakeDict(map[string]interface{}{
+	return ctx.Call(isc.NewMessage(hnameContract, hnameEP, codec.MakeDict(map[string]interface{}{
 		ParamN: paramIn,
-	}), nil)
+	})), nil)
 }
 
 func incCounter(ctx isc.Sandbox) dict.Dict {
@@ -55,10 +55,10 @@ func runRecursion(ctx isc.Sandbox) dict.Dict {
 	if depth == 0 {
 		return nil
 	}
-	return ctx.Call(ctx.Contract(), FuncCallOnChain.Hname(), codec.MakeDict(map[string]interface{}{
+	return ctx.Call(isc.NewMessage(ctx.Contract(), FuncCallOnChain.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamHnameEP: FuncRunRecursion.Hname(),
 		ParamN:       depth - 1,
-	}), nil)
+	})), nil)
 }
 
 func fibonacci(n uint64) uint64 {
@@ -91,15 +91,15 @@ func getFibonacciIndirect(ctx isc.SandboxView) dict.Dict {
 
 	hContract := ctx.Contract()
 	hFibonacci := FuncGetFibonacciIndirect.Hname()
-	ret1 := ctx.CallView(hContract, hFibonacci, codec.MakeDict(map[string]interface{}{
+	ret1 := ctx.CallView(isc.NewMessage(hContract, hFibonacci, codec.MakeDict(map[string]interface{}{
 		ParamN: n - 1,
-	}))
+	})))
 	decoder := kvdecoder.New(ret1, ctx.Log())
 	n1 := decoder.MustGetUint64(ParamN)
 
-	ret2 := ctx.CallView(hContract, hFibonacci, codec.MakeDict(map[string]interface{}{
+	ret2 := ctx.CallView(isc.NewMessage(hContract, hFibonacci, codec.MakeDict(map[string]interface{}{
 		ParamN: n - 2,
-	}))
+	})))
 	decoder = kvdecoder.New(ret2, ctx.Log())
 	n2 := decoder.MustGetUint64(ParamN)
 
@@ -109,9 +109,9 @@ func getFibonacciIndirect(ctx isc.SandboxView) dict.Dict {
 
 // calls the "fib indirect" view and stores the result in the state
 func calcFibonacciIndirectStoreValue(ctx isc.Sandbox) dict.Dict {
-	ret := ctx.CallView(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), dict.Dict{
+	ret := ctx.CallView(isc.NewMessage(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), dict.Dict{
 		ParamN: ctx.Params().Get(ParamN),
-	})
+	}))
 	ctx.State().Set(ParamN, ret.Get(ParamN))
 	return nil
 }
@@ -155,6 +155,6 @@ func infiniteLoop(ctx isc.Sandbox) dict.Dict {
 func infiniteLoopView(ctx isc.SandboxView) dict.Dict {
 	for {
 		// do nothing, just waste gas
-		ctx.CallView(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{})
+		ctx.CallView(isc.NewMessage(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{}))
 	}
 }

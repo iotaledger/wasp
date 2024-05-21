@@ -4,34 +4,28 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-func EventsFromViewResult(viewResult dict.Dict) (ret []*isc.Event, err error) {
-	events := collections.NewArrayReadOnly(viewResult, ParamEvent)
-	ret = make([]*isc.Event, events.Len())
-	for i := range ret {
-		ret[i], err = isc.EventFromBytes(events.GetAt(uint32(i)))
-		if err != nil {
-			return nil, err
-		}
+func (s *StateReader) GetRequestsInBlock(blockIndex uint32) (*BlockInfo, []isc.Request, error) {
+	bi, recs, err := s.GetRequestReceiptsInBlock(blockIndex)
+	if err != nil {
+		return nil, nil, err
 	}
-	return ret, nil
+	return bi, lo.Map(recs, func(rec *RequestReceipt, _ int) isc.Request { return rec.Request }), nil
 }
 
-func GetRequestsInBlock(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, []isc.Request, error) {
-	blockInfo, ok := GetBlockInfo(partition, blockIndex)
+func (s *StateReader) GetRequestReceiptsInBlock(blockIndex uint32) (*BlockInfo, []*RequestReceipt, error) {
+	blockInfo, ok := s.GetBlockInfo(blockIndex)
 	if !ok {
 		return nil, nil, fmt.Errorf("block not found: %d", blockIndex)
 	}
-	reqs := make([]isc.Request, blockInfo.TotalRequests)
+	recs := make([]*RequestReceipt, blockInfo.TotalRequests)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		recBin, ok := getRequestRecordDataByRef(partition, blockIndex, reqIdx)
+		recBin, ok := s.getRequestRecordDataByRef(blockIndex, reqIdx)
 		if !ok {
 			return nil, nil, fmt.Errorf("request not found: %d/%d", blockIndex, reqIdx)
 		}
@@ -39,68 +33,25 @@ func GetRequestsInBlock(partition kv.KVStoreReader, blockIndex uint32) (*BlockIn
 		if err != nil {
 			return nil, nil, err
 		}
-		reqs[reqIdx] = rec.Request
+		recs[reqIdx] = rec
 	}
-	return blockInfo, reqs, nil
-}
-
-// GetRequestIDsForBlock reads blocklog from chain state and returns request IDs settled in specific block
-// Can only panic on DB error of internal error
-func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]isc.RequestID, error) {
-	if blockIndex == 0 {
-		return []isc.RequestID{}, nil
-	}
-	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
-
-	recsBin, exist := getRequestLogRecordsForBlockBin(partition, blockIndex)
-	if !exist {
-		return []isc.RequestID{}, fmt.Errorf("block index %v does not exist", blockIndex)
-	}
-	ret := make([]isc.RequestID, len(recsBin))
-	for i, d := range recsBin {
-		rec, err := RequestReceiptFromBytes(d, blockIndex, uint16(i))
-		if err != nil {
-			panic(err)
-		}
-		ret[i] = rec.Request.ID()
-	}
-	return ret, nil
-}
-
-// GetRequestReceipt returns the receipt for the given request, or nil if not found
-func GetRequestReceipt(stateReader kv.KVStoreReader, requestID isc.RequestID) (*RequestReceipt, error) {
-	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
-	return getRequestReceipt(partition, requestID)
+	return blockInfo, recs, nil
 }
 
 // IsRequestProcessed check if requestID is stored in the chain state as processed
-func IsRequestProcessed(stateReader kv.KVStoreReader, requestID isc.RequestID) (bool, error) {
-	requestReceipt, err := GetRequestReceipt(stateReader, requestID)
+func (s *StateReader) IsRequestProcessed(requestID isc.RequestID) (bool, error) {
+	requestReceipt, err := s.GetRequestReceipt(requestID)
 	if err != nil {
 		return false, fmt.Errorf("cannot get request receipt: %w", err)
 	}
 	return requestReceipt != nil, nil
 }
 
-func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid isc.RequestID) bool {
-	ret, err := IsRequestProcessed(stateReader, reqid)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-type GetRequestReceiptResult struct {
-	ReceiptBin   []byte
-	BlockIndex   uint32
-	RequestIndex uint16
-}
-
 // GetRequestRecordDataByRequestID tries to obtain the receipt data for a given request
 // returns nil if receipt was not found
-func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.RequestID) (*GetRequestReceiptResult, error) {
+func (s *StateReader) GetRequestRecordDataByRequestID(reqID isc.RequestID) (*RequestReceipt, error) {
 	lookupDigest := reqID.LookupDigest()
-	lookupTable := collections.NewMapReadOnly(stateReader, prefixRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(s.state, prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.GetAt(lookupDigest[:])
 	if lookupKeyListBin == nil {
 		return nil, nil
@@ -110,7 +61,7 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 		return nil, err
 	}
 	for i := range lookupKeyList {
-		recBin, found := getRequestRecordDataByRef(stateReader, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
+		recBin, found := s.getRequestRecordDataByRef(lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
 		if !found {
 			return nil, errors.New("inconsistency: request log record wasn't found by exact reference")
 		}
@@ -119,19 +70,15 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 			return nil, err
 		}
 		if rec.Request.ID().Equals(reqID) {
-			return &GetRequestReceiptResult{
-				ReceiptBin:   recBin,
-				BlockIndex:   rec.BlockIndex,
-				RequestIndex: rec.RequestIndex,
-			}, nil
+			return rec, nil
 		}
 	}
 	return nil, nil
 }
 
-func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) [][]byte {
+func (s *StateReader) GetEventsByBlockIndex(blockIndex uint32, totalRequests uint16) [][]byte {
 	var ret [][]byte
-	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
+	events := collections.NewMapReadOnly(s.state, prefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
@@ -147,8 +94,8 @@ func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalR
 	return ret
 }
 
-func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, bool) {
-	data := getBlockInfoBytes(partition, blockIndex)
+func (s *StateReader) GetBlockInfo(blockIndex uint32) (*BlockInfo, bool) {
+	data := s.getBlockInfoBytes(blockIndex)
 	if data == nil {
 		return nil, false
 	}
@@ -159,7 +106,7 @@ func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, bo
 	return ret, true
 }
 
-func Prune(partition kv.KVStore, latestBlockIndex uint32, blockKeepAmount int32) {
+func (s *StateWriter) Prune(latestBlockIndex uint32, blockKeepAmount int32) {
 	if blockKeepAmount <= 0 {
 		// keep all blocks
 		return
@@ -170,23 +117,5 @@ func Prune(partition kv.KVStore, latestBlockIndex uint32, blockKeepAmount int32)
 	toDelete := latestBlockIndex - uint32(blockKeepAmount)
 	// assume that all blocks prior to `toDelete` have been already deleted, so
 	// we only need to delete this one.
-	pruneBlock(partition, toDelete)
-}
-
-func ReceiptsFromViewCallResult(res dict.Dict) ([]*RequestReceipt, error) {
-	receipts := collections.NewArrayReadOnly(res, ParamRequestRecord)
-	ret := make([]*RequestReceipt, receipts.Len())
-	var err error
-	blockIndex, err := codec.Uint32.Decode(res.Get(ParamBlockIndex))
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range ret {
-		ret[i], err = RequestReceiptFromBytes(receipts.GetAt(uint32(i)), blockIndex, uint16(i))
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
+	s.pruneBlock(toDelete)
 }

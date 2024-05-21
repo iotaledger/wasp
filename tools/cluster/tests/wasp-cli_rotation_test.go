@@ -156,7 +156,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 			t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
 			continue
 		}
-		out, err = w2.Pipe(out, "decode", "string", governance.VarMaintenanceStatus, "bool")
+		out, err = w2.Pipe(out, "decode", "string", governance.ParamMaintenanceStatus, "bool")
 		if err != nil {
 			t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
 			continue

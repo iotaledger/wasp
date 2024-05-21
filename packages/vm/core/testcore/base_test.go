@@ -12,6 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
@@ -116,7 +117,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
-		req := solo.NewCallParams("dummyContract", "dummyEP").
+		req := solo.NewCallParamsEx("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
@@ -154,7 +155,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
-		req := solo.NewCallParams("dummyContract", "dummyEP").
+		req := solo.NewCallParamsEx("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
@@ -193,7 +194,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
-		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
+		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
@@ -231,7 +232,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
-		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
+		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
@@ -270,7 +271,7 @@ func TestNoTargetView(t *testing.T) {
 		chain := env.NewChain()
 		chain.AssertControlAddresses()
 
-		_, err := chain.CallView("dummyContract", "dummyEP")
+		_, err := chain.CallViewEx("dummyContract", "dummyEP")
 		require.Error(t, err)
 	})
 	t.Run("no EP view", func(t *testing.T) {
@@ -278,7 +279,7 @@ func TestNoTargetView(t *testing.T) {
 		chain := env.NewChain()
 		chain.AssertControlAddresses()
 
-		_, err := chain.CallView(root.Contract.Name, "dummyEP")
+		_, err := chain.CallViewEx(root.Contract.Name, "dummyEP")
 		require.Error(t, err)
 	})
 }
@@ -292,13 +293,13 @@ func TestEstimateGas(t *testing.T) {
 	require.NoError(t, err)
 
 	callParams := func() *solo.CallParams {
-		return solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncCalcFibonacciIndirectStoreValue.Name,
+		return solo.NewCallParamsEx(sbtestsc.Contract.Name, sbtestsc.FuncCalcFibonacciIndirectStoreValue.Name,
 			sbtestsc.ParamN, uint64(10),
 		)
 	}
 
 	getResult := func() int64 {
-		res, err2 := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncViewCalcFibonacciResult.Name)
+		res, err2 := ch.CallViewEx(sbtestsc.Contract.Name, sbtestsc.FuncViewCalcFibonacciResult.Name)
 		require.NoError(t, err2)
 		n, err2 := codec.Int64.Decode(res.Get(sbtestsc.ParamN), 0)
 		require.NoError(t, err2)
@@ -393,7 +394,7 @@ func TestRepeatInit(t *testing.T) {
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
-		req := solo.NewCallParams(root.Contract.Name, "init").
+		req := solo.NewCallParamsEx(root.Contract.Name, "init").
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -405,7 +406,7 @@ func TestRepeatInit(t *testing.T) {
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
-		req := solo.NewCallParams(accounts.Contract.Name, "init").
+		req := solo.NewCallParamsEx(accounts.Contract.Name, "init").
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -417,7 +418,7 @@ func TestRepeatInit(t *testing.T) {
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
-		req := solo.NewCallParams(blocklog.Contract.Name, "init").
+		req := solo.NewCallParamsEx(blocklog.Contract.Name, "init").
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -429,7 +430,7 @@ func TestRepeatInit(t *testing.T) {
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
-		req := solo.NewCallParams(blob.Contract.Name, "init").
+		req := solo.NewCallParamsEx(blob.Contract.Name, "init").
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -441,7 +442,7 @@ func TestRepeatInit(t *testing.T) {
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
-		req := solo.NewCallParams(governance.Contract.Name, "init").
+		req := solo.NewCallParamsEx(governance.Contract.Name, "init").
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestSync(req, nil)
 		require.Error(t, err)
@@ -467,8 +468,7 @@ func TestDeployNativeContract(t *testing.T) {
 	require.NoError(t, err)
 	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, isc.NewAgentID(senderAddr)).
+	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAgentID(senderAddr))).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)
@@ -496,7 +496,7 @@ func TestBurnLog(t *testing.T) {
 	t.Logf("receipt 1:\n%s", rec)
 	t.Logf("burn log 1:\n%s", rec.GasBurnLog)
 
-	_, err := ch.UploadBlob(nil, "field", strings.Repeat("dummy data", 1000))
+	_, err := ch.UploadBlob(nil, dict.Dict{"field": []byte(strings.Repeat("dummy data", 1000))})
 	require.NoError(t, err)
 
 	rec = ch.LastReceipt()
@@ -529,7 +529,7 @@ func TestMessageSize(t *testing.T) {
 	for i := 0; i < len(reqs); i++ {
 		req, err := solo.ISCRequestFromCallParams(
 			ch,
-			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
+			solo.NewCallParamsEx(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
 				sbtestsc.ParamSize, uint32(reqSize),
 			).
 				AddBaseTokens(storageDeposit).
@@ -548,8 +548,7 @@ func TestMessageSize(t *testing.T) {
 	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex())
 
 	for _, req := range reqs {
-		receipt, err := ch.GetRequestReceipt(req.ID())
-		require.NoError(t, err)
+		receipt, _ := ch.GetRequestReceipt(req.ID())
 		require.Nil(t, receipt.Error)
 	}
 }
@@ -557,7 +556,7 @@ func TestMessageSize(t *testing.T) {
 func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	req := isc.NewOffLedgerRequest(ch.ID(), isc.Hn("contract"), isc.Hn("entrypoint"), nil, 0, math.MaxUint64)
+	req := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64)
 	badReqBytes := req.(*isc.OffLedgerRequestData).EssenceBytes()
 	// append 33 bytes to the req essence to simulate a bad signature (32 bytes for the pubkey + 1 for 0 length signature)
 	for i := 0; i < 33; i++ {
@@ -568,9 +567,8 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	env.AddRequestsToMempool(ch, []isc.Request{badReq})
 	time.Sleep(200 * time.Millisecond)
 	// request won't be processed
-	receipt, err := ch.GetRequestReceipt(badReq.ID())
-	require.NoError(t, err)
-	require.Nil(t, receipt)
+	_, ok := ch.GetRequestReceipt(badReq.ID())
+	require.False(t, ok)
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
@@ -581,8 +579,8 @@ func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
 	require.NoError(t, err)
 
 	// create a request with an invalid nonce that must be skipped
-	skipReq := isc.NewOffLedgerRequest(ch.ID(), isc.Hn("contract"), isc.Hn("entrypoint"), nil, 0, math.MaxUint64).WithNonce(9999).Sign(user)
-	validReq := isc.NewOffLedgerRequest(ch.ID(), isc.Hn("contract"), isc.Hn("entrypoint"), nil, 0, math.MaxUint64).WithNonce(0).Sign(user)
+	skipReq := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(9999).Sign(user)
+	validReq := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(0).Sign(user)
 
 	ch.RunRequestsSync([]isc.Request{skipReq, validReq}, "")
 

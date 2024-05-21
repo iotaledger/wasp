@@ -623,7 +623,7 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateInde
 		smT.log.Errorf("Cannot get latest chain state: %v", err)
 		statesToKeepFromChain = 0
 	} else {
-		statesToKeepFromChain = int(governance.NewStateAccess(chainState).GetBlockKeepAmount())
+		statesToKeepFromChain = int(governance.NewStateReaderFromChainState(chainState).GetBlockKeepAmount())
 	}
 	var statesToKeep int
 	if statesToKeepFromChain > smT.parameters.PruningMinStatesToKeep {

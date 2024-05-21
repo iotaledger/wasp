@@ -15,9 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-type Handler func(ctx isc.Sandbox) dict.Dict
-
-type ViewHandler func(ctx isc.SandboxView) dict.Dict
+type Handler[S isc.SandboxBase] func(ctx S) dict.Dict
 
 //********************************* *********************************\\
 
@@ -26,8 +24,6 @@ type ContractInfo struct {
 	Name        string
 	ProgramHash hashing.HashValue
 }
-
-var FuncDefaultInitializer = Func("initializer")
 
 func NewContract(name string) *ContractInfo {
 	return &ContractInfo{
@@ -46,13 +42,14 @@ func defaultInitFunc(ctx isc.Sandbox) dict.Dict {
 }
 
 // Processor creates a ContractProcessor with the provided handlers
-func (i *ContractInfo) Processor(init Handler, eps ...isc.ProcessorEntryPoint) *ContractProcessor {
+func (i *ContractInfo) Processor(init Handler[isc.Sandbox], eps ...isc.ProcessorEntryPoint) *ContractProcessor {
 	if init == nil {
 		init = defaultInitFunc
 	}
+	funcInit := i.Func(isc.FuncInit)
 	handlers := map[isc.Hname]isc.ProcessorEntryPoint{
 		// constructor:
-		isc.EntryPointInit: FuncDefaultInitializer.WithHandler(init),
+		isc.EntryPointInit: funcInit.WithHandler(init),
 	}
 	for _, ep := range eps {
 		hname := ep.Hname()
@@ -74,93 +71,74 @@ func (i *ContractInfo) FullKey(postfix []byte) []byte {
 	return append(i.Hname().Bytes(), postfix...)
 }
 
-//********************************* *********************************\\
-
-// EntryPointInfo holds basic information about a full entry point
-type EntryPointInfo struct{ Name string }
-
-// Func declares a full entry point
-func Func(name string) EntryPointInfo {
-	return EntryPointInfo{Name: name}
-}
-
-// WithHandler specifies the handler function for the entry point
-func (ep *EntryPointInfo) WithHandler(fn Handler) *EntryPointHandler {
-	return &EntryPointHandler{Info: ep, Handler: fn}
-}
-
-func (ep *EntryPointInfo) Hname() isc.Hname {
-	return isc.Hn(ep.Name)
-}
-
-//********************************* *********************************\\
-
-type EntryPointHandler struct {
-	Info    *EntryPointInfo
-	Handler Handler
-}
-
-var _ isc.ProcessorEntryPoint = &EntryPointHandler{}
-
-func (h *EntryPointHandler) Call(ctx interface{}) dict.Dict {
-	return h.Handler(ctx.(isc.Sandbox))
-}
-
-func (h *EntryPointHandler) IsView() bool {
-	return false
-}
-
-func (h *EntryPointHandler) Name() string {
-	return h.Info.Name
-}
-
-func (h *EntryPointHandler) Hname() isc.Hname {
-	return h.Info.Hname()
-}
-
-//********************************* *********************************\\
-
-// ViewEntryPointInfo holds basic information about a view entry point
-type ViewEntryPointInfo struct {
-	Name string
+func (i *ContractInfo) Func(name string) EntryPointInfo[isc.Sandbox] {
+	return EntryPointInfo[isc.Sandbox]{
+		Contract: i,
+		Name:     name,
+		isView:   false,
+	}
 }
 
 // ViewFunc declares a view entry point
-func ViewFunc(name string) ViewEntryPointInfo {
-	return ViewEntryPointInfo{Name: name}
+func (i *ContractInfo) ViewFunc(name string) EntryPointInfo[isc.SandboxView] {
+	return EntryPointInfo[isc.SandboxView]{
+		Contract: i,
+		Name:     name,
+		isView:   true,
+	}
 }
 
-// WithHandler specifies the handler function for the entry point
-func (ep *ViewEntryPointInfo) WithHandler(fn ViewHandler) *ViewEntryPointHandler {
-	return &ViewEntryPointHandler{Info: ep, Handler: fn}
+func (i *ContractInfo) StateSubrealm(chainState kv.KVStore) kv.KVStore {
+	return isc.ContractStateSubrealm(chainState, i.Hname())
 }
 
-func (ep *ViewEntryPointInfo) Hname() isc.Hname {
+func (i *ContractInfo) StateSubrealmR(chainState kv.KVStoreReader) kv.KVStoreReader {
+	return isc.ContractStateSubrealmR(chainState, i.Hname())
+}
+
+// EntryPointInfo holds basic information about an entry point
+type EntryPointInfo[S isc.SandboxBase] struct {
+	Contract *ContractInfo
+	Name     string
+	isView   bool
+}
+
+func (ep *EntryPointInfo[S]) Hname() isc.Hname {
 	return isc.Hn(ep.Name)
 }
 
-//********************************* *********************************\\
-
-type ViewEntryPointHandler struct {
-	Info    *ViewEntryPointInfo
-	Handler ViewHandler
+func (ep *EntryPointInfo[S]) Message(params dict.Dict) isc.Message {
+	return isc.NewMessage(ep.Contract.Hname(), ep.Hname(), params)
 }
 
-var _ isc.ProcessorEntryPoint = &ViewEntryPointHandler{}
-
-func (h *ViewEntryPointHandler) Call(ctx interface{}) dict.Dict {
-	return h.Handler(ctx.(isc.SandboxView))
+// WithHandler specifies the handler function for the entry point
+func (ep *EntryPointInfo[S]) WithHandler(fn Handler[S]) *EntryPointHandler[S] {
+	return &EntryPointHandler[S]{Info: ep, Handler: fn}
 }
 
-func (h *ViewEntryPointHandler) IsView() bool {
-	return true
+type EntryPointHandler[S isc.SandboxBase] struct {
+	Info    *EntryPointInfo[S]
+	Handler Handler[S]
 }
 
-func (h *ViewEntryPointHandler) Name() string {
+var (
+	_ isc.ProcessorEntryPoint = &EntryPointHandler[isc.Sandbox]{}
+	_ isc.ProcessorEntryPoint = &EntryPointHandler[isc.SandboxView]{}
+)
+
+func (h *EntryPointHandler[S]) Call(ctx any) dict.Dict {
+	return h.Handler(ctx.(S))
+}
+
+func (h *EntryPointHandler[S]) IsView() bool {
+	return h.Info.isView
+}
+
+func (h *EntryPointHandler[S]) Name() string {
 	return h.Info.Name
 }
 
-func (h *ViewEntryPointHandler) Hname() isc.Hname {
+func (h *EntryPointHandler[S]) Hname() isc.Hname {
 	return h.Info.Hname()
 }
 

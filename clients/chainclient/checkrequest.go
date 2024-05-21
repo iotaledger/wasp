@@ -15,10 +15,8 @@ func (c *Client) CheckRequestResult(ctx context.Context, reqID isc.RequestID) er
 	if err != nil {
 		return errors.New("could not fetch receipt for request: not found in blocklog")
 	}
-
 	if receipt.ErrorMessage != nil {
 		return fmt.Errorf("the request was rejected: %v", receipt.ErrorMessage)
 	}
-
 	return nil
 }

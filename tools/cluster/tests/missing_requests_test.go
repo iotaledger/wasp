@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -44,7 +43,7 @@ func TestMissingRequests(t *testing.T) {
 
 	// TODO: Validate offleder logic
 	// send off-ledger request to all nodes except #3
-	req := isc.NewOffLedgerRequest(chainID, nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname(), dict.Dict{}, 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
+	req := isc.NewOffLedgerRequest(chainID, inccounter.FuncIncCounter.Message(nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
 	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),
@@ -54,7 +53,7 @@ func TestMissingRequests(t *testing.T) {
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
-	req2 := isc.NewOffLedgerRequest(chainID, isc.Hn("foo"), isc.Hn("bar"), nil, 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
+	req2 := isc.NewOffLedgerRequest(chainID, isc.NewMessageFromNames("foo", "bar"), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
 	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),

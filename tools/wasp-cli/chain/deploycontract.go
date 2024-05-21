@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -70,17 +69,8 @@ func initDeployContractCmd() *cobra.Command {
 
 func deployContract(client *apiclient.APIClient, chainID isc.ChainID, node, name string, progHash hashing.HashValue, initParams dict.Dict) {
 	util.WithOffLedgerRequest(chainID, node, func() (isc.OffLedgerRequest, error) {
-		args := codec.MakeDict(map[string]interface{}{
-			root.ParamName:        name,
-			root.ParamProgramHash: progHash,
-		})
-		args.Extend(initParams)
 		return cliclients.ChainClient(client, chainID).PostOffLedgerRequest(context.Background(),
-			root.Contract.Hname(),
-			root.FuncDeployContract.Hname(),
-			chainclient.PostRequestParams{
-				Args: args,
-			},
+			root.FuncDeployContract.Message(name, progHash, initParams),
 		)
 	})
 }

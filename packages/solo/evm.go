@@ -42,11 +42,11 @@ func (b *jsonRPCSoloBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error
 	if err != nil {
 		return nil, err
 	}
-	ret, err := b.ISCCallView(state, governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
+	ret, err := b.ISCCallView(state, governance.ViewGetFeePolicy.Message())
 	if err != nil {
 		return nil, err
 	}
-	return gas.FeePolicyFromBytes(ret.Get(governance.ParamFeePolicyBytes))
+	return governance.ViewGetFeePolicy.Output.Decode(ret)
 }
 
 func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -79,8 +79,8 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 	)
 }
 
-func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return b.Chain.CallViewAtState(chainState, scName, funName, args)
+func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error) {
+	return b.Chain.CallViewAtState(chainState, msg)
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {

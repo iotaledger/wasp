@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -42,18 +42,17 @@ func TestValidatorFees(t *testing.T) {
 
 	// set validator split fees to 50/50
 	{
-		originatorSCClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
-		newGasFeePolicy := gas.FeePolicy{
+		originatorSCClient := chain.Client(chain.OriginatorKeyPair)
+		newGasFeePolicy := &gas.FeePolicy{
 			GasPerToken:       util.Ratio32{A: 1, B: 10},
 			ValidatorFeeShare: 50,
 			EVMGasRatio:       gas.DefaultEVMGasRatio,
 		}
-		req, err2 := originatorSCClient.PostOffLedgerRequest(governance.FuncSetFeePolicy.Name, chainclient.PostRequestParams{
-			Args: dict.Dict{
-				governance.ParamFeePolicyBytes: newGasFeePolicy.Bytes(),
-			},
-			Nonce: 0,
-		})
+		req, err2 := originatorSCClient.PostOffLedgerRequest(
+			context.Background(),
+			governance.FuncSetFeePolicy.Message(newGasFeePolicy),
+			chainclient.PostRequestParams{Nonce: 0},
+		)
 		require.NoError(t, err2)
 		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), false, 30*time.Second)
 		require.NoError(t, err2)
@@ -65,7 +64,7 @@ func TestValidatorFees(t *testing.T) {
 	require.NoError(t, err)
 	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
 	for i := 0; i < 20; i++ {
-		reqTx, err := scClient.Post1Request(nativeIncCounterSCHname, inccounter.FuncIncCounter.Hname())
+		reqTx, err := scClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
 		require.NoError(t, err)
 		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
 		require.NoError(t, err)

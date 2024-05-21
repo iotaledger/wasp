@@ -131,20 +131,11 @@ func rotateTo(chain string, newStateControllerAddr iotago.Address) {
 }
 
 func setMaintenanceStatus(chain, node string, status bool, offledger bool) {
-	entrypoint := governance.FuncStartMaintenance.Name
+	msg := governance.FuncStartMaintenance.Message()
 	if !status {
-		entrypoint = governance.FuncStopMaintenance.Name
+		msg = governance.FuncStopMaintenance.Message()
 	}
-	params := chainclient.PostRequestParams{}
-	postRequest(
-		node,
-		chain,
-		governance.Contract.Name,
-		entrypoint,
-		params,
-		offledger,
-		true,
-	)
+	postRequest(node, chain, msg, chainclient.PostRequestParams{}, offledger, true)
 }
 
 func initChangeGovControllerCmd() *cobra.Command {

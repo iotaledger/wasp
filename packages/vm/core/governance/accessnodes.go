@@ -4,14 +4,10 @@
 package governance
 
 import (
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
@@ -63,6 +59,23 @@ func AccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
 	}, rr.Err
 }
 
+var (
+	errInvalidCertificate      = coreerrors.Register("invalid certificate").Create()
+	errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()
+)
+
+func AccessNodeInfoWithValidatorAddress(ctx isc.Sandbox, ani *AccessNodeInfo) *AccessNodeInfo {
+	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
+	if validatorAddr == nil {
+		panic(errSenderMustHaveL1Address)
+	}
+	ani.validatorAddr = codec.Address.Encode(validatorAddr)
+	if !ani.ValidateCertificate() {
+		panic(errInvalidCertificate)
+	}
+	return ani
+}
+
 func (a *AccessNodeInfo) Bytes() []byte {
 	ww := rwutil.NewBytesWriter()
 	ww.WriteBytes(a.validatorAddr)
@@ -70,54 +83,6 @@ func (a *AccessNodeInfo) Bytes() []byte {
 	ww.WriteBool(a.ForCommittee)
 	ww.WriteString(a.AccessAPI)
 	return ww.Bytes()
-}
-
-var errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()
-
-func AccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
-	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
-	if validatorAddr == nil {
-		panic(errSenderMustHaveL1Address)
-	}
-	params := ctx.Params()
-	ani := AccessNodeInfo{
-		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		validatorAddr: isc.AddressToBytes(validatorAddr),
-		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
-		ForCommittee:  params.MustGetBool(ParamAccessNodeInfoForCommittee, false),
-		AccessAPI:     params.MustGetString(ParamAccessNodeInfoAccessAPI, ""),
-	}
-	return &ani
-}
-
-func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
-	d := dict.New()
-	d.Set(ParamAccessNodeInfoForCommittee, codec.Bool.Encode(a.ForCommittee))
-	d.Set(ParamAccessNodeInfoPubKey, a.NodePubKey)
-	d.Set(ParamAccessNodeInfoCertificate, a.Certificate)
-	d.Set(ParamAccessNodeInfoAccessAPI, codec.String.Encode(a.AccessAPI))
-	return d
-}
-
-func AccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
-	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
-	if validatorAddr == nil {
-		panic(errSenderMustHaveL1Address)
-	}
-	params := ctx.Params()
-	ani := AccessNodeInfo{
-		NodePubKey:    params.MustGetBytes(ParamAccessNodeInfoPubKey),
-		validatorAddr: isc.AddressToBytes(validatorAddr), // Not from params, to have it validated.
-		Certificate:   params.MustGetBytes(ParamAccessNodeInfoCertificate),
-	}
-	return &ani
-}
-
-func (a *AccessNodeInfo) ToRevokeAccessNodeParams() dict.Dict {
-	d := dict.New()
-	d.Set(ParamAccessNodeInfoPubKey, a.NodePubKey)
-	d.Set(ParamAccessNodeInfoCertificate, a.Certificate)
-	return d
 }
 
 func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) *AccessNodeInfo {
@@ -138,45 +103,10 @@ func (a *AccessNodeInfo) ValidateCertificate() bool {
 	return cert.Verify(nodePubKey, validatorAddr)
 }
 
-// GetChainNodesRequest
-type GetChainNodesRequest struct{}
-
-func (req GetChainNodesRequest) AsDict() dict.Dict {
-	return dict.New()
-}
-
 // GetChainNodesResponse
 type GetChainNodesResponse struct {
-	AccessNodeCandidates []*AccessNodeInfo      // Application info for the AccessNodes.
-	AccessNodes          []*cryptolib.PublicKey // Public Keys of Access Nodes.
-}
-
-func GetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
-	res := GetChainNodesResponse{
-		AccessNodeCandidates: make([]*AccessNodeInfo, 0),
-		AccessNodes:          make([]*cryptolib.PublicKey, 0),
-	}
-
-	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
-	ac.Iterate(func(pubKey, value []byte) bool {
-		ani, err := AccessNodeInfoFromBytes(pubKey, value)
-		if err != nil {
-			panic(fmt.Errorf("unable to decode access node info: %w", err))
-		}
-		res.AccessNodeCandidates = append(res.AccessNodeCandidates, ani)
-		return true
-	})
-
-	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
-	an.Iterate(func(pubKeyBin, value []byte) bool {
-		publicKey, err := cryptolib.PublicKeyFromBytes(pubKeyBin)
-		if err != nil {
-			panic(fmt.Errorf("unable to decode public key: %w", err))
-		}
-		res.AccessNodes = append(res.AccessNodes, publicKey)
-		return true
-	})
-	return &res
+	AccessNodeCandidates map[cryptolib.PublicKeyKey]*AccessNodeInfo // Application info for the AccessNodes.
+	AccessNodes          map[cryptolib.PublicKeyKey]struct{}        // Public Keys of Access Nodes.
 }
 
 //
@@ -189,38 +119,26 @@ const (
 	ChangeAccessNodeActionRemove = ChangeAccessNodeAction(iota)
 	ChangeAccessNodeActionAccept
 	ChangeAccessNodeActionDrop
+	ChangeAccessNodeActionLast
 )
 
-type ChangeAccessNodesRequest struct {
-	actions map[cryptolib.PublicKeyKey]ChangeAccessNodeAction
+type ChangeAccessNodesRequest map[cryptolib.PublicKeyKey]ChangeAccessNodeAction
+
+func NewChangeAccessNodesRequest() ChangeAccessNodesRequest {
+	return ChangeAccessNodesRequest(make(map[cryptolib.PublicKeyKey]ChangeAccessNodeAction))
 }
 
-func NewChangeAccessNodesRequest() *ChangeAccessNodesRequest {
-	return &ChangeAccessNodesRequest{
-		actions: make(map[cryptolib.PublicKeyKey]ChangeAccessNodeAction),
-	}
-}
-
-func (req *ChangeAccessNodesRequest) Remove(pubKey *cryptolib.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[pubKey.AsKey()] = ChangeAccessNodeActionRemove
+func (req ChangeAccessNodesRequest) Remove(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
+	req[pubKey.AsKey()] = ChangeAccessNodeActionRemove
 	return req
 }
 
-func (req *ChangeAccessNodesRequest) Accept(pubKey *cryptolib.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[pubKey.AsKey()] = ChangeAccessNodeActionAccept
+func (req ChangeAccessNodesRequest) Accept(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
+	req[pubKey.AsKey()] = ChangeAccessNodeActionAccept
 	return req
 }
 
-func (req *ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) *ChangeAccessNodesRequest {
-	req.actions[pubKey.AsKey()] = ChangeAccessNodeActionDrop
+func (req ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
+	req[pubKey.AsKey()] = ChangeAccessNodeActionDrop
 	return req
-}
-
-func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
-	d := dict.New()
-	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
-	for pubKey, action := range req.actions {
-		actionsMap.SetAt(pubKey[:], []byte{byte(action)})
-	}
-	return d
 }

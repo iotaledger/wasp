@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -65,15 +66,13 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 			allowanceTokens := util.ParseFungibleTokens(postrequestParams.allowance)
 
 			params := chainclient.PostRequestParams{
-				Args:      util.EncodeParams(funcArgs(cmd), chainID),
 				Transfer:  util.ParseFungibleTokens(postrequestParams.transfer),
 				Allowance: allowanceTokens,
 			}
 			postRequest(
 				node,
 				chain,
-				hname,
-				fname,
+				isc.NewMessageFromNames(hname, fname, util.EncodeParams(funcArgs(cmd), chainID)),
 				params,
 				postrequestParams.offLedger,
 				postrequestParams.adjustStorageDeposit,

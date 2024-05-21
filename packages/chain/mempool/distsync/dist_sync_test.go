@@ -48,9 +48,7 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 
 	req := isc.NewOffLedgerRequest(
 		isc.RandomChainID(),
-		isc.Hn("foo"),
-		isc.Hn("bar"),
-		nil,
+		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(kp)

@@ -2,7 +2,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -19,18 +18,19 @@ func startMaintenance(ctx isc.Sandbox) dict.Dict {
 		caller.(*isc.ContractAgentID).ChainID().Equals(ctx.ChainID()) {
 		panic(vm.ErrUnauthorized)
 	}
-	ctx.State().Set(governance.VarMaintenanceStatus, codec.Encode(true))
+	state := governance.NewStateWriterFromSandbox(ctx)
+	state.SetMaintenanceStatus(true)
 	return nil
 }
 
 func stopMaintenance(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	ctx.State().Set(governance.VarMaintenanceStatus, codec.Encode(false))
+	state := governance.NewStateWriterFromSandbox(ctx)
+	state.SetMaintenanceStatus(false)
 	return nil
 }
 
-func getMaintenanceStatus(ctx isc.SandboxView) dict.Dict {
-	return dict.Dict{
-		governance.VarMaintenanceStatus: ctx.StateR().Get(governance.VarMaintenanceStatus),
-	}
+func getMaintenanceStatus(ctx isc.SandboxView) bool {
+	state := governance.NewStateReaderFromSandbox(ctx)
+	return state.GetMaintenanceStatus()
 }

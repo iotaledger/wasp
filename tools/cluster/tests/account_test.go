@@ -44,13 +44,7 @@ func TestBasicAccountsNLow(t *testing.T) {
 }
 
 func testAccounts(e *ChainEnv) {
-	hname := isc.Hn(nativeIncCounterSCName)
-	programHash1 := inccounter.Contract.ProgramHash
-
-	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash1.String(), map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        nativeIncCounterSCName,
-	})
+	tx, err := e.Chain.DeployContract(inccounter.Contract.Name, inccounter.Contract.ProgramHash.String(), inccounter.InitParams(42))
 	require.NoError(e.t, err)
 
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
@@ -70,14 +64,14 @@ func testAccounts(e *ChainEnv) {
 		require.NoError(e.t, err2)
 
 		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
-			return item.HName == hname.String()
+			return item.HName == inccounter.Contract.Hname().String()
 		})
 		require.True(e.t, ok)
 
-		require.EqualValues(e.t, programHash1.Hex(), cr.ProgramHash)
-		require.EqualValues(e.t, nativeIncCounterSCName, cr.Name)
+		require.EqualValues(e.t, inccounter.Contract.ProgramHash.Hex(), cr.ProgramHash)
+		require.EqualValues(e.t, inccounter.Contract.Name, cr.Name)
 
-		counterValue, err2 := e.Chain.GetCounterValue(hname, i)
+		counterValue, err2 := e.Chain.GetCounterValue(i)
 		require.NoError(e.t, err2)
 		require.EqualValues(e.t, 42, counterValue)
 	}
@@ -89,7 +83,7 @@ func testAccounts(e *ChainEnv) {
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
-	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
+	reqTx, err := chClient.PostRequest(inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(e.t, err)
 
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 10*time.Second)
@@ -101,7 +95,7 @@ func testAccounts(e *ChainEnv) {
 	e.checkBalanceOnChain(isc.NewAgentID(myAddress), isc.BaseTokenID, transferBaseTokens-fees)
 
 	for i := range e.Chain.CommitteeNodes {
-		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
+		counterValue, err := e.Chain.GetCounterValue(i)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, 43, counterValue)
 	}
@@ -110,20 +104,15 @@ func testAccounts(e *ChainEnv) {
 		e.t.Fatal()
 	}
 
-	incCounterAgentID := isc.NewContractAgentID(e.Chain.ChainID, hname)
+	incCounterAgentID := isc.NewContractAgentID(e.Chain.ChainID, inccounter.Contract.Hname())
 	e.checkBalanceOnChain(incCounterAgentID, isc.BaseTokenID, 0)
 }
 
 // executed in cluster_test.go
 func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	chain := env.Chain
-	hname := isc.Hn(nativeIncCounterSCName)
-	programHash1 := inccounter.Contract.ProgramHash
 
-	tx, err := chain.DeployContract(nativeIncCounterSCName, programHash1.String(), map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        nativeIncCounterSCName,
-	})
+	tx, err := chain.DeployContract(inccounter.Contract.Name, inccounter.Contract.ProgramHash.String(), inccounter.InitParams(42))
 	require.NoError(t, err)
 
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, false, 30*time.Second)
@@ -141,15 +130,15 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 
 		t.Logf("%+v", contractRegistry)
 		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
-			return item.HName == hname.String()
+			return item.HName == inccounter.Contract.Hname().String()
 		})
 		require.True(t, ok)
 		require.NotNil(t, cr)
 
-		require.EqualValues(t, programHash1.Hex(), cr.ProgramHash)
-		require.EqualValues(t, nativeIncCounterSCName, cr.Name)
+		require.EqualValues(t, inccounter.Contract.ProgramHash.Hex(), cr.ProgramHash)
+		require.EqualValues(t, inccounter.Contract.Name, cr.Name)
 
-		counterValue, err2 := chain.GetCounterValue(hname, i)
+		counterValue, err2 := chain.GetCounterValue(i)
 		require.NoError(t, err2)
 		require.EqualValues(t, 42, counterValue)
 	}
@@ -166,7 +155,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	myWalletClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
-	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
+	reqTx, err := myWalletClient.PostRequest(inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(t, err)
 
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, false, 30*time.Second)
@@ -174,7 +163,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	env.checkLedger()
 
 	for _, i := range chain.CommitteeNodes {
-		counterValue, err2 := chain.GetCounterValue(hname, i)
+		counterValue, err2 := chain.GetCounterValue(i)
 		require.NoError(t, err2)
 		require.EqualValues(t, 43, counterValue)
 	}
@@ -189,7 +178,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens
 	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	allowanceBaseTokens := uint64(800_000)
-	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
+	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssetsBaseTokens(allowanceBaseTokens),
 		},

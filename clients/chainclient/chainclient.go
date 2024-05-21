@@ -41,7 +41,6 @@ func New(
 
 type PostRequestParams struct {
 	Transfer                 *isc.Assets
-	Args                     dict.Dict
 	Nonce                    uint64
 	NFT                      *isc.NFT
 	Allowance                *isc.Assets
@@ -63,23 +62,18 @@ func defaultParams(params ...PostRequestParams) PostRequestParams {
 	return PostRequestParams{}
 }
 
-// Post1Request sends an on-ledger transaction with one request on it to the chain
-func (c *Client) Post1Request(
-	contractHname isc.Hname,
-	entryPoint isc.Hname,
-	params ...PostRequestParams,
-) (*iotago.Transaction, error) {
+// PostRequest sends an on-ledger transaction with one request on it to the chain
+func (c *Client) PostRequest(msg isc.Message, params ...PostRequestParams) (*iotago.Transaction, error) {
 	outputsSet, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
 	if err != nil {
 		return nil, err
 	}
-	return c.post1RequestWithOutputs(contractHname, entryPoint, outputsSet, params...)
+	return c.post1RequestWithOutputs(msg, outputsSet, params...)
 }
 
 // PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
 func (c *Client) PostNRequests(
-	contractHname isc.Hname,
-	entryPoint isc.Hname,
+	msg isc.Message,
 	requestsCount int,
 	params ...PostRequestParams,
 ) ([]*iotago.Transaction, error) {
@@ -90,7 +84,7 @@ func (c *Client) PostNRequests(
 	}
 	transactions := make([]*iotago.Transaction, requestsCount)
 	for i := 0; i < requestsCount; i++ {
-		transactions[i], err = c.post1RequestWithOutputs(contractHname, entryPoint, outputs, params...)
+		transactions[i], err = c.post1RequestWithOutputs(msg, outputs, params...)
 		if err != nil {
 			return nil, err
 		}
@@ -116,8 +110,7 @@ func (c *Client) PostNRequests(
 }
 
 func (c *Client) post1RequestWithOutputs(
-	contractHname isc.Hname,
-	entryPoint isc.Hname,
+	msg isc.Message,
 	outputs iotago.OutputSet,
 	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
@@ -133,11 +126,9 @@ func (c *Client) post1RequestWithOutputs(
 				Assets:                        par.Transfer,
 				AdjustToMinimumStorageDeposit: par.AutoAdjustStorageDeposit,
 				Metadata: &isc.SendMetadata{
-					TargetContract: contractHname,
-					EntryPoint:     entryPoint,
-					Params:         par.Args,
-					Allowance:      par.Allowance,
-					GasBudget:      par.GasBudget(),
+					Message:   msg,
+					Allowance: par.Allowance,
+					GasBudget: par.GasBudget(),
 				},
 			},
 			NFT: par.NFT,
@@ -171,8 +162,7 @@ func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
 func (c *Client) PostOffLedgerRequest(ctx context.Context,
-	contractHname isc.Hname,
-	entrypoint isc.Hname,
+	msg isc.Message,
 	params ...PostRequestParams,
 ) (isc.OffLedgerRequest, error) {
 	par := defaultParams(params...)
@@ -183,7 +173,7 @@ func (c *Client) PostOffLedgerRequest(ctx context.Context,
 		}
 		par.Nonce = nonce
 	}
-	req := isc.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce, par.GasBudget())
+	req := isc.NewOffLedgerRequest(c.ChainID, msg, par.Nonce, par.GasBudget())
 	req.WithAllowance(par.Allowance)
 	req.WithNonce(par.Nonce)
 	signed := req.Sign(c.KeyPair)
@@ -203,15 +193,13 @@ func (c *Client) PostOffLedgerRequest(ctx context.Context,
 }
 
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
-	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
+	return c.PostRequest(accounts.FuncDeposit.Message(), PostRequestParams{
 		Transfer: isc.NewAssets(n, nil),
 	})
 }
 
-// NewPostRequestParams simplifies encoding of request parameters
-func NewPostRequestParams(p ...interface{}) *PostRequestParams {
+func NewPostRequestParams() *PostRequestParams {
 	return &PostRequestParams{
-		Args:      parseParams(p),
 		Transfer:  isc.NewEmptyAssets(),
 		Allowance: isc.NewEmptyAssets(),
 	}
@@ -229,31 +217,5 @@ func (par *PostRequestParams) WithBaseTokens(i uint64) *PostRequestParams {
 
 func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
 	par.gasBudget = budget
-	return par
-}
-
-func parseParams(params []interface{}) dict.Dict {
-	if len(params) == 1 {
-		return params[0].(dict.Dict)
-	}
-	return codec.MakeDict(toMap(params))
-}
-
-// makes map without hashing
-func toMap(params []interface{}) map[string]interface{} {
-	par := make(map[string]interface{})
-	if len(params) == 0 {
-		return par
-	}
-	if len(params)%2 != 0 {
-		panic("toMap: len(params) % 2 != 0")
-	}
-	for i := 0; i < len(params)/2; i++ {
-		key, ok := params[2*i].(string)
-		if !ok {
-			panic("toMap: string expected")
-		}
-		par[key] = params[2*i+1]
-	}
 	return par
 }

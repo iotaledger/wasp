@@ -7,6 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/execution"
 )
 
+func (reqctx *requestContext) chainState(gasBurn bool) kv.KVStore {
+	if gasBurn {
+		return reqctx.chainStateWithGasBurn()
+	}
+	return reqctx.uncommittedState
+}
+
 func (reqctx *requestContext) chainStateWithGasBurn() kv.KVStore {
 	return execution.NewKVStoreWithGasBurn(reqctx.uncommittedState, reqctx)
 }

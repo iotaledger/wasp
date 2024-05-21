@@ -9,6 +9,8 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -82,4 +84,12 @@ func (hn *Hname) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteUint32(uint32(*hn))
 	return ww.Err
+}
+
+func ContractStateSubrealm(chainState kv.KVStore, contract Hname) kv.KVStore {
+	return subrealm.New(chainState, kv.Key(contract.Bytes()))
+}
+
+func ContractStateSubrealmR(chainState kv.KVStoreReader, contract Hname) kv.KVStoreReader {
+	return subrealm.NewReadOnly(chainState, kv.Key(contract.Bytes()))
 }

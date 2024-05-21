@@ -6,7 +6,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -119,8 +118,8 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 	if reqctx.vm.isCoreAccount(caller) {
 		caller = accounts.CommonAccount()
 	}
-	reqctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		if err := accounts.MoveBetweenAccounts(reqctx.SchemaVersion(), s, caller, target, toMove, reqctx.ChainID()); err != nil {
+	reqctx.callAccounts(func(s *accounts.StateWriter) {
+		if err := s.MoveBetweenAccounts(caller, target, toMove, reqctx.ChainID()); err != nil {
 			panic(vm.ErrNotEnoughFundsForAllowance)
 		}
 	})
@@ -152,25 +151,14 @@ func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
 // DeployContract deploys contract by its program hash with the name specific to the instance
 func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
 	reqctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
-
 	// calling root contract from another contract to install contract
-	// adding parameters specific to deployment
-	par := initParams.Clone()
-	par.Set(root.ParamProgramHash, codec.HashValue.Encode(programHash))
-	par.Set(root.ParamName, codec.String.Encode(name))
-	reqctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
+	reqctx.Call(root.FuncDeployContract.Message(name, programHash, initParams), nil)
 }
 
 func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
 	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
-
-	params := dict.New()
-	params.Set(errors.ParamErrorMessageFormat, codec.String.Encode(messageFormat))
-
-	result := reqctx.Call(errors.Contract.Hname(), errors.FuncRegisterError.Hname(), params, nil)
+	result := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), nil)
 	errorCode := codec.VMErrorCode.MustDecode(result.Get(errors.ParamErrorCode))
-
 	reqctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
-
 	return isc.NewVMErrorTemplate(errorCode, messageFormat)
 }

@@ -365,12 +365,10 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		}
 		scArgs.Accept(accessNodePubKey)
 	}
-	scParams := chainclient.
-		NewPostRequestParams(scArgs.AsDict()).
-		WithBaseTokens(1 * isc.Million)
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
+	govClient := chain.Client(chain.OriginatorKeyPair)
 
-	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
+	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Message(scArgs), *scParams)
 	if err != nil {
 		return err
 	}
@@ -425,12 +423,11 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		AccessAPI:    clu.Config.APIHost(accessNodeIndex),
 	}
 
-	scParams := chainclient.
-		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
-		WithBaseTokens(1000)
-
-	govClient := chain.SCClient(governance.Contract.Hname(), validatorKeyPair)
-	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
+	govClient := chain.Client(validatorKeyPair)
+	tx, err := govClient.PostRequest(
+		governance.FuncAddCandidateNode.Message(&scArgs),
+		*chainclient.NewPostRequestParams().WithBaseTokens(1000),
+	)
 	if err != nil {
 		return nil, err
 	}

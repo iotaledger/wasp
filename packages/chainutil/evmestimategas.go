@@ -126,7 +126,7 @@ func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call
 }
 
 func getChainInfo(ch chain.ChainCore) *isc.ChainInfo {
-	return governance.NewStateAccess(mustLatestState(ch)).ChainInfo(ch.ID())
+	return governance.NewStateReaderFromChainState(mustLatestState(ch)).GetChainInfo(ch.ID())
 }
 
 func resolveError(ch chain.ChainCore, receiptError *isc.UnresolvedVMError) (isOutOfGas bool, resolved *isc.VMError, err error) {

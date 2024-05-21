@@ -145,7 +145,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	for i := range nodes {
 		nodes[i].Time(time.Now())
 		mempools[i].addRequests(originAO.OutputID(), []isc.Request{
-			isc.NewOffLedgerRequest(chainID, isc.Hn("foo"), isc.Hn("bar"), nil, 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
+			isc.NewOffLedgerRequest(chainID, isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
 		})
 		stateMgrs[i].addOriginState(originAO)
 	}

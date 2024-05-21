@@ -2,6 +2,7 @@ package sbtestsc
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -41,7 +42,7 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
-			assets := isc.NewEmptyAssets().AddNativeTokens(nativeToken.ID, 1)
+			assets := isc.NewEmptyAssets().AddNativeTokens(nativeToken.ID, big.NewInt(1))
 			rem := ctx.TransferAllowedFunds(accountID, assets)
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
@@ -93,8 +94,7 @@ func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) dict.Dict {
 	requestParams := isc.RequestParameters{
 		TargetAddress: addr,
 		Metadata: &isc.SendMetadata{
-			EntryPoint:     isc.Hn("foo"),
-			TargetContract: isc.Hn("bar"),
+			Message: isc.NewMessage(isc.Hn("foo"), isc.Hn("bar")),
 		},
 		AdjustToMinimumStorageDeposit: true,
 	}
@@ -144,9 +144,11 @@ func sendLargeRequest(ctx isc.Sandbox) dict.Dict {
 	req := isc.RequestParameters{
 		TargetAddress: tpkg.RandEd25519Address(),
 		Metadata: &isc.SendMetadata{
-			EntryPoint:     isc.Hn("foo"),
-			TargetContract: isc.Hn("bar"),
-			Params:         dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
+			Message: isc.NewMessage(
+				isc.Hn("foo"),
+				isc.Hn("bar"),
+				dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
+			),
 		},
 		AdjustToMinimumStorageDeposit: true,
 		Assets:                        ctx.AllowanceAvailable(),

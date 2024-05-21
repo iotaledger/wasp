@@ -9,9 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -86,16 +84,13 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	time.Sleep(2 * time.Second)
 
 	// send a request to the access node
-	myClient := scclient.New(
-		chainclient.New(
-			env.Clu.L1Client(),
-			accessNodeClient,
-			env.Chain.ChainID,
-			keyPair,
-		),
-		isc.Hn(nativeIncCounterSCName),
+	myClient := chainclient.New(
+		env.Clu.L1Client(),
+		accessNodeClient,
+		env.Chain.ChainID,
+		keyPair,
 	)
-	req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+	req, err := myClient.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
 	// request has been processed
@@ -109,7 +104,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	time.Sleep(1 * time.Second) // Access/Server node info is exchanged asynchronously.
 
 	// try sending the request again
-	req, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+	req, err = myClient.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
 	// request is not processed after a while

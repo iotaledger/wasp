@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-const DirectoryPrefix = "d"
+const directoryPrefix = "d"
 
 func valuesMapName(blobHash hashing.HashValue) string {
 	return "v" + string(blobHash[:])
@@ -45,37 +45,47 @@ func MustGetBlobHash(fields dict.Dict) hashing.HashValue {
 }
 
 // GetDirectory retrieves the blob directory from the state
-func GetDirectory(state kv.KVStore) *collections.Map {
-	return collections.NewMap(state, DirectoryPrefix)
+func (s *StateWriter) GetDirectory() *collections.Map {
+	return collections.NewMap(s.state, directoryPrefix)
+}
+
+// GetDirectory retrieves the blob directory from the state
+func (s *StateReader) GetDirectory() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, directoryPrefix)
 }
 
 // GetDirectoryR retrieves the blob directory from the read-only state
-func GetDirectoryR(state kv.KVStoreReader) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, DirectoryPrefix)
+func (s *StateReader) contractStateGetDirectory() *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, directoryPrefix)
 }
 
 // GetBlobValues retrieves the blob field-value map from the state
-func GetBlobValues(state kv.KVStore, blobHash hashing.HashValue) *collections.Map {
-	return collections.NewMap(state, valuesMapName(blobHash))
+func (s *StateWriter) contractStateGetBlobValues(blobHash hashing.HashValue) *collections.Map {
+	return collections.NewMap(s.state, valuesMapName(blobHash))
 }
 
-// GetBlobValuesR retrieves the blob field-value map from the read-only state
-func GetBlobValuesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, valuesMapName(blobHash))
+// GetBlobValues retrieves the blob field-value map from the read-only state
+func (s *StateReader) GetBlobValues(blobHash hashing.HashValue) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, valuesMapName(blobHash))
+}
+
+// GetBlobValues retrieves the blob field-value map from the read-only state
+func (s *StateWriter) GetBlobValues(blobHash hashing.HashValue) *collections.Map {
+	return collections.NewMap(s.state, valuesMapName(blobHash))
 }
 
 // GetBlobSizes retrieves the writeable blob field-size map from the state
-func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *collections.Map {
-	return collections.NewMap(state, sizesMapName(blobHash))
+func (s *StateWriter) GetBlobSizes(blobHash hashing.HashValue) *collections.Map {
+	return collections.NewMap(s.state, sizesMapName(blobHash))
 }
 
-// GetBlobSizesR retrieves the blob field-size map from the read-only state
-func GetBlobSizesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(state, sizesMapName(blobHash))
+// GetBlobSizes retrieves the blob field-size map from the read-only state
+func (s *StateReader) GetBlobSizes(blobHash hashing.HashValue) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, sizesMapName(blobHash))
 }
 
-func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (string, []byte, error) {
-	blbValues := GetBlobValuesR(state, programHash)
+func (s *StateReader) LocateProgram(programHash hashing.HashValue) (string, []byte, error) {
+	blbValues := s.GetBlobValues(programHash)
 	programBinary := blbValues.GetAt([]byte(VarFieldProgramBinary))
 	if programBinary == nil {
 		return "", nil, fmt.Errorf("can't find program binary for hash %s", programHash.String())
@@ -96,7 +106,7 @@ func DecodeSize(size []byte) (uint32, error) {
 	return codec.Uint32.Decode(size)
 }
 
-func DecodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
+func decodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
 	ret := make(map[string]uint32)
 	for field, size := range sizes {
 		v, err := DecodeSize(size)
@@ -108,7 +118,7 @@ func DecodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
 	return ret, nil
 }
 
-func DecodeDirectory(blobs dict.Dict) (map[hashing.HashValue]uint32, error) {
+func decodeDirectory(blobs dict.Dict) (map[hashing.HashValue]uint32, error) {
 	ret := make(map[hashing.HashValue]uint32)
 	for hash, size := range blobs {
 		v, err := DecodeSize(size)

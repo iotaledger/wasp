@@ -19,7 +19,7 @@ func TestMsgMissingRequestSerialization(t *testing.T) {
 	contract := governance.Contract.Hname()
 	entryPoint := governance.FuncAddCandidateNode.Hname()
 	gasBudget := gas.LimitsDefault.MaxGasPerRequest
-	req := isc.NewOffLedgerRequest(isc.RandomChainID(), contract, entryPoint, nil, 0, gasBudget).Sign(senderKP)
+	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(contract, entryPoint, nil), 0, gasBudget).Sign(senderKP)
 
 	msg := &msgMissingRequest{
 		gpa.BasicMessage{},

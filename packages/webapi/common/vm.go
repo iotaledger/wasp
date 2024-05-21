@@ -26,7 +26,7 @@ func ParseReceipt(chain chainpkg.Chain, receipt *blocklog.RequestReceipt) (*isc.
 	return iscReceipt, nil
 }
 
-func CallView(ch chainpkg.Chain, contractName, functionName isc.Hname, params dict.Dict, blockIndexOrHash string) (dict.Dict, error) {
+func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (dict.Dict, error) {
 	var chainState state.State
 	var err error
 	switch {
@@ -58,7 +58,7 @@ func CallView(ch chainpkg.Chain, contractName, functionName isc.Hname, params di
 			return nil, fmt.Errorf("error getting block by index: %w", err)
 		}
 	}
-	return chainutil.CallView(chainState, ch, contractName, functionName, params)
+	return chainutil.CallView(chainState, ch, msg)
 }
 
 func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {

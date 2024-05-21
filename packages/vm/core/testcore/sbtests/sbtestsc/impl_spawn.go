@@ -14,7 +14,7 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 	ctx.DeployContract(progHash, name, nil)
 
 	for i := 0; i < 5; i++ {
-		ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
+		ctx.Call(isc.NewMessage(hname, FuncIncCounter.Hname(), nil), nil)
 	}
 	ctx.Log().Debugf("sbtestsc.spawn: new contract name = %s hname = %s", name, hname.String())
 	return nil

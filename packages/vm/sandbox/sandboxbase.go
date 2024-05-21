@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/iotaledger/hive.go/lo"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
@@ -40,7 +41,7 @@ func (s *SandboxBase) Caller() isc.AgentID {
 	return s.Ctx.Caller()
 }
 
-func (s *SandboxBase) BalanceBaseTokens() uint64 {
+func (s *SandboxBase) BalanceBaseTokens() (bts uint64, remainder *big.Int) {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())
 }
@@ -63,7 +64,7 @@ func (s *SandboxBase) OwnedNFTs() []iotago.NFTID {
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
-		BaseTokens:   s.Ctx.GetBaseTokensBalance(agentID),
+		BaseTokens:   lo.Return1(s.Ctx.GetBaseTokensBalance(agentID)),
 		NativeTokens: s.Ctx.GetNativeTokens(agentID),
 		NFTs:         s.Ctx.GetAccountNFTs(agentID),
 	}
@@ -142,12 +143,12 @@ func (s *SandboxBase) RequireNoError(err error, str ...string) {
 	s.assert().RequireNoError(err, str...)
 }
 
-func (s *SandboxBase) CallView(contractHname, entryPoint isc.Hname, params dict.Dict) dict.Dict {
+func (s *SandboxBase) CallView(msg isc.Message) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
-	if params == nil {
-		params = make(dict.Dict)
+	if msg.Params == nil {
+		msg.Params = make(dict.Dict)
 	}
-	return s.Ctx.Call(contractHname, entryPoint, params, nil)
+	return s.Ctx.Call(msg, nil)
 }
 
 func (s *SandboxBase) StateR() kv.KVStoreReader {

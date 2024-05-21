@@ -6,6 +6,7 @@ package solo
 import (
 	"errors"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -14,63 +15,36 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
 type CallParams struct {
-	targetName string
-	target     isc.Hname
-	epName     string
-	entryPoint isc.Hname
-	ftokens    *isc.Assets // ignored off-ledger
-	nft        *isc.NFT
-	allowance  *isc.Assets
-	gasBudget  uint64
-	nonce      uint64 // ignored for on-ledger
-	params     dict.Dict
-	sender     iotago.Address
+	msg       isc.Message
+	ftokens   *isc.Assets // ignored off-ledger
+	nft       *isc.NFT
+	allowance *isc.Assets
+	gasBudget uint64
+	nonce     uint64 // ignored for on-ledger
+	sender    iotago.Address
 }
 
-// NewCallParams creates structure which wraps in one object call parameters, used in PostRequestSync and callViewFull
-// calls:
-//   - 'scName' is a name of the target smart contract
-//   - 'funName' is a name of the target entry point (the function) of the smart contract program
-//   - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
-//     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
-//
-// With the WithTransfers the CallParams structure may be complemented with attached ftokens
-// sent together with the request
-func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
-	return CallParamsFromDict(scName, funName, parseParams(params))
+// NewCallParams creates a structure that wraps in one object call parameters,
+// used in PostRequestSync and CallView
+func NewCallParams(msg isc.Message) *CallParams {
+	return &CallParams{msg: msg}
 }
 
-func CallParamsFromDict(scName, funName string, par dict.Dict) *CallParams {
-	ret := CallParamsFromDictByHname(isc.Hn(scName), isc.Hn(funName), par)
-	ret.targetName = scName
-	ret.epName = funName
-	return ret
-}
-
-func CallParamsFromDictByHname(hContract, hFunction isc.Hname, par dict.Dict) *CallParams {
-	ret := &CallParams{
-		target:     hContract,
-		entryPoint: hFunction,
-	}
-	ret.params = dict.New()
-	for k, v := range par {
-		ret.params.Set(k, v)
-	}
-	return ret
+// NewCallParamsEx is a shortcut for NewCallParams
+func NewCallParamsEx(c, ep string, params ...any) *CallParams {
+	return NewCallParams(isc.NewMessageFromNames(c, ep, codec.DictFromSlice(params)))
 }
 
 func (r *CallParams) WithAllowance(allowance *isc.Assets) *CallParams {
@@ -101,14 +75,14 @@ func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.Native
 	return r
 }
 
-func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
+func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID, amount *big.Int) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
 	r.allowance.Add(&isc.Assets{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     nativeTokenID,
-			Amount: util.ToBigInt(amount),
+			Amount: amount,
 		}},
 	})
 	return r
@@ -142,11 +116,11 @@ func (r *CallParams) AddNativeTokensVect(nativeTokens ...*iotago.NativeToken) *C
 	})
 }
 
-func (r *CallParams) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
+func (r *CallParams) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount *big.Int) *CallParams {
 	return r.AddFungibleTokens(&isc.Assets{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     nativeTokenID,
-			Amount: util.ToBigInt(amount),
+			Amount: amount,
 		}},
 	})
 }
@@ -186,7 +160,7 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair cryptolib.VariantKey
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAgentID(keyPair.Address()))
 	}
-	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
+	ret := isc.NewOffLedgerRequest(ch.ID(), r.msg, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }
@@ -195,41 +169,10 @@ func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *iotago.
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAgentID(address))
 	}
-	ret := isc.NewOffLedgerRequest(ch.ID(), r.target, r.entryPoint, r.params, r.nonce, r.gasBudget).
+	ret := isc.NewOffLedgerRequest(ch.ID(), r.msg, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 
 	return isc.NewImpersonatedOffLedgerRequest(ret.(*isc.OffLedgerRequestData)).WithSenderAddress(address)
-}
-
-func parseParams(params []interface{}) dict.Dict {
-	if len(params) == 1 {
-		return params[0].(dict.Dict)
-	}
-	return codec.MakeDict(toMap(params))
-}
-
-// makes map without hashing
-func toMap(params []interface{}) map[string]interface{} {
-	par := make(map[string]interface{})
-	if len(params) == 0 {
-		return par
-	}
-	if len(params)%2 != 0 {
-		panic("WithParams: len(params) % 2 != 0")
-	}
-	for i := 0; i < len(params)/2; i++ {
-		var key string
-		switch p := params[2*i].(type) {
-		case string:
-			key = p
-		case kv.Key:
-			key = string(p)
-		default:
-			panic("WithParams: string or kv.Key expected")
-		}
-		par[key] = params[2*i+1]
-	}
-	return par
 }
 
 func (ch *Chain) createRequestTx(req *CallParams, keyPair cryptolib.VariantKeyPair) (*iotago.Transaction, error) {
@@ -273,11 +216,9 @@ func (ch *Chain) requestTransactionParams(req *CallParams, keyPair cryptolib.Var
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets:        req.ftokens,
 			Metadata: &isc.SendMetadata{
-				TargetContract: req.target,
-				EntryPoint:     req.entryPoint,
-				Params:         req.params,
-				Allowance:      req.allowance,
-				GasBudget:      req.gasBudget,
+				Message:   req.msg,
+				Allowance: req.allowance,
+				GasBudget: req.gasBudget,
 			},
 			Options: isc.SendOptions{},
 		},
@@ -436,40 +377,37 @@ func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair cryptolib
 }
 
 func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
-	resolved, err := vmerrors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
-		return ch.CallView(contractName, funcName, params)
-	})
+	resolved, err := vmerrors.Resolve(e, ch.CallView)
 	require.NoError(ch.Env.T, err)
 	return resolved
 }
 
-// CallView calls the view entry point of the smart contract.
-// The call params should be either a dict.Dict, or pairs of ('paramName',
-// 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
-// accepted by the 'codec' package
-func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
+// CallView calls a view entry point of a smart contract.
+func (ch *Chain) CallView(msg isc.Message) (dict.Dict, error) {
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err
 	}
-	return ch.CallViewAtState(latestState, scName, funName, params...)
+	return ch.CallViewAtState(latestState, msg)
 }
 
-func (ch *Chain) CallViewAtState(chainState state.State, scName, funName string, params ...interface{}) (dict.Dict, error) {
-	ch.Log().Debugf("callView: %s::%s", scName, funName)
-	return ch.callViewByHnameAtState(chainState, isc.Hn(scName), isc.Hn(funName), params...)
+// CallViewEx is a shortcut for CallView
+func (ch *Chain) CallViewEx(c, ep string, params ...any) (dict.Dict, error) {
+	return ch.CallView(isc.NewMessageFromNames(c, ep, codec.DictFromSlice(params)))
 }
 
-func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) CallViewAtState(chainState state.State, msg isc.Message) (dict.Dict, error) {
+	return ch.callViewByHnameAtState(chainState, msg)
+}
+
+func (ch *Chain) CallViewByHname(msg isc.Message) (dict.Dict, error) {
 	latestState, err := ch.store.LatestState()
 	require.NoError(ch.Env.T, err)
-	return ch.callViewByHnameAtState(latestState, hContract, hFunction, params...)
+	return ch.callViewByHnameAtState(latestState, msg)
 }
 
-func (ch *Chain) callViewByHnameAtState(chainState state.State, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
-	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
-
-	p := parseParams(params)
+func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message) (dict.Dict, error) {
+	ch.Log().Debugf("callView: %s::%s", msg.Target.Contract, msg.Target.EntryPoint)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
@@ -478,7 +416,7 @@ func (ch *Chain) callViewByHnameAtState(chainState state.State, hContract, hFunc
 	if err != nil {
 		return nil, err
 	}
-	return vmctx.CallViewExternal(hContract, hFunction, p)
+	return vmctx.CallViewExternal(msg)
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
@@ -510,15 +448,10 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	if err != nil {
 		return nil, nil, err
 	}
-	biBin, retProof, err := vmctx.GetBlockProof(blockIndex)
+	retBlockInfo, retProof, err := vmctx.GetBlockProof(blockIndex)
 	if err != nil {
 		return nil, nil, err
 	}
-	retBlockInfo, err := blocklog.BlockInfoFromBytes(biBin)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	return retBlockInfo, retProof, nil
 }
 

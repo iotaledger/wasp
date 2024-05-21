@@ -16,14 +16,14 @@ import (
 
 func TestSandboxStackOverflow(t *testing.T) {
 	contract := coreutil.NewContract("test stack overflow")
-	testFunc := coreutil.Func("overflow")
+	testFunc := contract.Func("overflow")
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustStorageDeposit: true,
 	}).WithNativeContract(
 		contract.Processor(
 			func(ctx isc.Sandbox) dict.Dict { return nil },
 			testFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-				ctx.Call(contract.Hname(), testFunc.Hname(), nil, nil)
+				ctx.Call(testFunc.Message(nil), nil)
 				return nil
 			}),
 		),
@@ -34,7 +34,7 @@ func TestSandboxStackOverflow(t *testing.T) {
 	err := chain.DeployContract(nil, contract.Name, contract.ProgramHash)
 	require.NoError(t, err)
 
-	_, err = chain.PostRequestSync(solo.NewCallParams(contract.Name, testFunc.Name).WithGasBudget(math.MaxUint64), nil)
+	_, err = chain.PostRequestSync(solo.NewCallParams(testFunc.Message(nil)).WithGasBudget(math.MaxUint64), nil)
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 }

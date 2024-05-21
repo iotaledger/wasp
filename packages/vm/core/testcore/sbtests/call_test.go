@@ -15,14 +15,14 @@ func testGetSet(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314).
 		WithGasBudget(100_000)
 	_, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
@@ -38,7 +38,7 @@ func testCallRecursive(t *testing.T) {
 
 	depth := 27
 	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OriginatorAgentID))
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, depth,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname()).
@@ -47,7 +47,7 @@ func testCallRecursive(t *testing.T) {
 	t.Logf("receipt: %s", chain.LastReceipt())
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err := codec.Int64.Decode(ret.Get(sbtestsc.VarCounter))
@@ -69,7 +69,7 @@ func testCallFibonacci(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacci.Name,
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetFibonacci.Name,
 		sbtestsc.ParamN, fiboN,
 	)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func testCallFibonacciIndirect(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacciIndirect.Name,
+	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetFibonacciIndirect.Name,
 		sbtestsc.ParamN, fiboN,
 	)
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func testIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, fiboN,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
@@ -108,7 +108,7 @@ func testIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
-	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err = chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err = codec.Uint64.Decode(ret.Get(sbtestsc.VarCounter))
@@ -121,7 +121,7 @@ func testIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, fiboN,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacciIndirect.Hname()).
@@ -132,7 +132,7 @@ func testIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
-	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err = chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err = codec.Uint64.Decode(ret.Get(sbtestsc.VarCounter))

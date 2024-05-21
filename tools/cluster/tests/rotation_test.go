@@ -12,8 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -28,10 +26,10 @@ func TestBasicRotation(t *testing.T) {
 	kp, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), kp)
+	myClient := env.Chain.Client(kp)
 
 	// check the chain works
-	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
+	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
 	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter (before rotation)")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
@@ -39,29 +37,15 @@ func TestBasicRotation(t *testing.T) {
 
 	// change the committee to the new one
 
-	govClient := env.Chain.SCClient(governance.Contract.Hname(), env.Chain.OriginatorKeyPair)
+	govClient := env.Chain.Client(env.Chain.OriginatorKeyPair)
 
-	tx, err = govClient.PostRequest(
-		governance.FuncAddAllowedStateControllerAddress.Name,
-		chainclient.PostRequestParams{
-			Args: dict.Dict{
-				governance.ParamStateControllerAddress: codec.Encode(newCmtAddr),
-			},
-		},
-	)
+	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr))
 	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncAddAllowedStateControllerAddress")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
-	tx, err = govClient.PostRequest(
-		governance.FuncRotateStateController.Name,
-		chainclient.PostRequestParams{
-			Args: dict.Dict{
-				governance.ParamStateControllerAddress: codec.Encode(newCmtAddr),
-			},
-		},
-	)
+	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Message(newCmtAddr))
 	require.NoError(t, err)
 	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - CoreEPRotateStateController")
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
@@ -72,13 +56,13 @@ func TestBasicRotation(t *testing.T) {
 	require.True(t, stateController.Equal(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
 
 	// check the chain still works
-	tx, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+	tx, err = myClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
 	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
-	require.EqualValues(t, 2, env.getNativeContractCounter(nativeIncCounterSCHname))
+	require.EqualValues(t, 2, env.getNativeContractCounter())
 }
 
 // cluster of 10 access nodes and two overlapping committees
@@ -102,18 +86,19 @@ func TestRotation(t *testing.T) {
 	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
+	myClient := chain.Client(keyPair)
 
-	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
+	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Message(nil), numRequests)
 	require.NoError(t, err)
 
 	waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 5*time.Second)
 
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+	govClient := chain.Client(chain.OriginatorKeyPair)
 
 	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
-	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithBaseTokens(1 * isc.Million)
-	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
+	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Message(rotation2.Address),
+		*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
+	)
 	require.NoError(t, err)
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 15*time.Second)
 	require.NoError(t, err)
@@ -121,14 +106,13 @@ func TestRotation(t *testing.T) {
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
 
 	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
-	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithBaseTokens(1 * isc.Million)
-	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
+	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Message(rotation2.Address))
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 15*time.Second))
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 15*time.Second)
 	require.NoError(t, err)
 
-	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
+	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Message(nil), numRequests)
 	require.NoError(t, err)
 
 	waitUntil(t, chEnv.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
@@ -170,10 +154,10 @@ func TestRotationFromSingle(t *testing.T) {
 			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err2)
 			return
 		}
-		myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
+		myClient := chain.Client(keyPair)
 		for i := 0; i < numRequests; i++ {
 			t.Logf("Posting inccounter request number %v", i)
-			_, err2 = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+			_, err2 = myClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
 			if err2 != nil {
 				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
 				return
@@ -183,12 +167,13 @@ func TestRotationFromSingle(t *testing.T) {
 		incCounterResultChan <- nil
 	}()
 
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+	govClient := chain.Client(chain.OriginatorKeyPair)
 
 	time.Sleep(500 * time.Millisecond)
 	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
-	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithBaseTokens(1 * isc.Million)
-	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
+	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Message(rotation2.Address),
+		*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
+	)
 	require.NoError(t, err)
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
@@ -197,8 +182,7 @@ func TestRotationFromSingle(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
-	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithBaseTokens(1 * isc.Million)
-	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
+	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Message(rotation2.Address))
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 30*time.Second))
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 30*time.Second)
@@ -255,12 +239,13 @@ func TestRotationMany(t *testing.T) {
 
 	chEnv := newChainEnv(t, clu, chain)
 
-	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+	govClient := chain.Client(chain.OriginatorKeyPair)
 
 	for _, rotation := range rotations {
 		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation.Address, rotation.Committee)
-		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation.Address).WithBaseTokens(1 * isc.Million)
-		tx, err2 := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
+		tx, err2 := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Message(rotation.Address),
+			*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
+		)
 		require.NoError(t, err2)
 		_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, waitTimeout)
 		require.NoError(t, err2)
@@ -272,18 +257,17 @@ func TestRotationMany(t *testing.T) {
 	keyPair, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
+	myClient := chain.Client(keyPair)
 
 	for i, rotation := range rotations {
 		t.Logf("Rotating to %v-th committee %v with quorum %v and address %s", i, rotation.Committee, rotation.Quorum, rotation.Address)
 
-		_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
+		_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Message(nil), numRequests)
 		require.NoError(t, err)
 
 		waitUntil(t, chEnv.counterEquals(int64(numRequests*(i+1))), chEnv.Clu.Config.AllNodes(), 30*time.Second)
 
-		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation.Address).WithBaseTokens(1 * isc.Million)
-		tx, err := govClient.PostRequest(governance.FuncRotateStateController.Name, *par)
+		tx, err := govClient.PostRequest(governance.FuncRotateStateController.Message(rotation.Address))
 		require.NoError(t, err)
 		require.NoError(t, chEnv.waitStateControllers(rotation.Address, waitTimeout))
 		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, waitTimeout)

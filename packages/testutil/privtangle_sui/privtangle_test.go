@@ -10,6 +10,10 @@ import (
 )
 
 func TestStart(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	ctx := context.Background()
 
 	pt := Start(ctx, "/tmp/sui_test", 5000, func(format string, args ...interface{}) {
@@ -26,5 +30,4 @@ func TestStart(t *testing.T) {
 	<-w.Done()
 
 	pt.Stop()
-
 }

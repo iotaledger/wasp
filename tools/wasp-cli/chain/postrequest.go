@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -13,15 +15,15 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
+func postRequest(nodeName, chain string, msg isc.Message, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
 	chainID := config.GetChain(chain)
 
 	apiClient := cliclients.WaspClient(nodeName)
-	scClient := cliclients.SCClient(apiClient, chainID, isc.Hn(hname))
+	chainClient := cliclients.ChainClient(apiClient, chainID)
 
 	if offLedger {
 		util.WithOffLedgerRequest(chainID, nodeName, func() (isc.OffLedgerRequest, error) {
-			return scClient.PostOffLedgerRequest(fname, params)
+			return chainClient.PostOffLedgerRequest(context.Background(), msg, params)
 		})
 		return
 	}
@@ -30,13 +32,11 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 		// check if there are enough funds for SD
 		output := transaction.MakeBasicOutput(
 			chainID.AsAddress(),
-			scClient.ChainClient.KeyPair.Address(),
+			chainClient.KeyPair.Address(),
 			params.Transfer,
 			&isc.RequestMetadata{
 				SenderContract: isc.EmptyContractIdentity(),
-				TargetContract: isc.Hn(hname),
-				EntryPoint:     isc.Hn(fname),
-				Params:         params.Args,
+				Message:        msg,
 				Allowance:      params.Allowance,
 				GasBudget:      params.GasBudget(),
 			},
@@ -46,7 +46,7 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 	}
 
 	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotago.Transaction, error) {
-		return scClient.PostRequest(fname, params)
+		return chainClient.PostRequest(msg, params)
 	})
 }
 
@@ -66,16 +66,17 @@ func initPostRequestCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
-			hname := args[0]
+			cname := args[0]
 			fname := args[1]
+			params := util.EncodeParams(args[2:], chainID)
+			msg := isc.NewMessage(isc.Hn(cname), isc.Hn(fname), params)
 
 			allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
-			params := chainclient.PostRequestParams{
-				Args:      util.EncodeParams(args[2:], chainID),
+			postParams := chainclient.PostRequestParams{
 				Transfer:  util.ParseFungibleTokens(postRequestParams.transfer),
 				Allowance: allowanceTokens,
 			}
-			postRequest(node, chain, hname, fname, params, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
+			postRequest(node, chain, msg, postParams, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
 		},
 	}
 

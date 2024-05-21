@@ -5,9 +5,7 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -19,19 +17,17 @@ var errOwnerNotDelegated = coreerrors.Register("not delegated to another chain o
 // Note that ownership is only changed by the successful call to  claimChainOwnership
 func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
-	state := ctx.State()
+	state := governance.NewStateWriterFromSandbox(ctx)
 
-	stateDecoder := kvdecoder.New(state, ctx.Log())
-	currentOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerID)
-	nextOwner := stateDecoder.MustGetAgentID(governance.VarChainOwnerIDDelegated, currentOwner)
+	currentOwner := state.GetChainOwnerID()
+	nextOwner := state.GetChainOwnerIDDelegated()
 
-	if nextOwner.Equals(currentOwner) {
+	if nextOwner == nil {
 		panic(errOwnerNotDelegated)
 	}
 	ctx.RequireCaller(nextOwner)
 
-	state.Set(governance.VarChainOwnerID, codec.AgentID.Encode(nextOwner))
-	state.Del(governance.VarChainOwnerIDDelegated)
+	state.SetChainOwnerID(nextOwner)
 	ctx.Log().Debugf("governance.chainChainOwner.success: chain owner changed: %s --> %s",
 		currentOwner.String(),
 		nextOwner.String(),
@@ -42,44 +38,40 @@ func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 // delegateChainOwnership stores next possible (delegated) chain owner to another agentID
 // checks authorization by the current owner
 // Two-step process allow/change is in order to avoid mistakes
-func delegateChainOwnership(ctx isc.Sandbox) dict.Dict {
+func delegateChainOwnership(ctx isc.Sandbox, newOwnerID isc.AgentID) dict.Dict {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
 	ctx.RequireCallerIsChainOwner()
-
-	newOwnerID := ctx.Params().MustGetAgentID(governance.ParamChainOwner)
-	ctx.State().Set(governance.VarChainOwnerIDDelegated, codec.AgentID.Encode(newOwnerID))
+	state := governance.NewStateWriterFromSandbox(ctx)
+	state.SetChainOwnerIDDelegated(newOwnerID)
 	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
 	return nil
 }
 
-func setPayoutAgentID(ctx isc.Sandbox) dict.Dict {
+func setPayoutAgentID(ctx isc.Sandbox, agent isc.AgentID) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	agent := ctx.Params().MustGetAgentID(governance.ParamSetPayoutAgentID)
-	ctx.State().Set(governance.VarPayoutAgentID, codec.AgentID.Encode(agent))
+	state := governance.NewStateWriterFromSandbox(ctx)
+	state.SetPayoutAgentID(agent)
 	return nil
 }
 
-func getPayoutAgentID(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	ret.Set(governance.ParamSetPayoutAgentID, ctx.StateR().Get(governance.VarPayoutAgentID))
-	return ret
+func getPayoutAgentID(ctx isc.SandboxView) isc.AgentID {
+	state := governance.NewStateReaderFromSandbox(ctx)
+	return state.GetPayoutAgentID()
 }
 
-func setMinCommonAccountBalance(ctx isc.Sandbox) dict.Dict {
+func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance uint64) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	minCommonAccountBalance := ctx.Params().MustGetUint64(governance.ParamSetMinCommonAccountBalance)
-	ctx.State().Set(governance.VarMinBaseTokensOnCommonAccount, codec.Uint64.Encode(minCommonAccountBalance))
+	state := governance.NewStateWriterFromSandbox(ctx)
+	state.SetMinCommonAccountBalance(minCommonAccountBalance)
 	return nil
 }
 
-func getMinCommonAccountBalance(ctx isc.SandboxView) dict.Dict {
-	return dict.Dict{
-		governance.ParamSetMinCommonAccountBalance: ctx.StateR().Get(governance.VarMinBaseTokensOnCommonAccount),
-	}
+func getMinCommonAccountBalance(ctx isc.SandboxView) uint64 {
+	state := governance.NewStateReaderFromSandbox(ctx)
+	return state.GetMinCommonAccountBalance()
 }
 
-func getChainOwner(ctx isc.SandboxView) dict.Dict {
-	ret := dict.New()
-	ret.Set(governance.ParamChainOwner, ctx.StateR().Get(governance.VarChainOwnerID))
-	return ret
+func getChainOwner(ctx isc.SandboxView) isc.AgentID {
+	state := governance.NewStateReaderFromSandbox(ctx)
+	return state.GetChainOwnerID()
 }

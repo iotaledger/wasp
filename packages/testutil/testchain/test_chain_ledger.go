@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
@@ -84,9 +83,8 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 				Assets:                        isc.NewAssetsBaseTokens(100_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
-					TargetContract: accounts.Contract.Hname(),
-					EntryPoint:     accounts.FuncDeposit.Hname(),
-					GasBudget:      2 * gas.LimitsDefault.MinGasPerRequest,
+					Message:   accounts.FuncDeposit.Message(),
+					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},
 		},
@@ -110,13 +108,11 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 				Assets:                        isc.NewAssetsBaseTokens(2_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
-					TargetContract: root.Contract.Hname(),
-					EntryPoint:     root.FuncDeployContract.Hname(),
-					Params: codec.MakeDict(map[string]interface{}{
-						root.ParamProgramHash: inccounter.Contract.ProgramHash,
-						root.ParamName:        inccounter.Contract.Name,
-						inccounter.VarCounter: 0,
-					}),
+					Message: root.FuncDeployContract.Message(
+						inccounter.Contract.Name,
+						inccounter.Contract.ProgramHash,
+						inccounter.InitParams(0),
+					),
 					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},

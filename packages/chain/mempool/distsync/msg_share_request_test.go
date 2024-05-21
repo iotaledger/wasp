@@ -22,7 +22,7 @@ import (
 
 func TestMsgShareRequestSerialization(t *testing.T) {
 	{
-		req := isc.NewOffLedgerRequest(isc.RandomChainID(), 3, 14, dict.New(), 1337, 100).Sign(cryptolib.NewKeyPair())
+		req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(3, 14, dict.New()), 1337, 100).Sign(cryptolib.NewKeyPair())
 		msg := &msgShareRequest{
 			gpa.BasicMessage{},
 			req,
@@ -35,8 +35,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		sender := tpkg.RandAliasAddress()
 		requestMetadata := &isc.RequestMetadata{
 			SenderContract: isc.ContractIdentityFromHname(isc.Hn("sender_contract")),
-			TargetContract: isc.Hn("target_contract"),
-			EntryPoint:     isc.Hn("entrypoint"),
+			Message:        isc.NewMessage(isc.Hn("target_contract"), isc.Hn("entrypoint")),
 			Allowance:      isc.NewAssetsBaseTokens(1),
 			GasBudget:      1000,
 		}
