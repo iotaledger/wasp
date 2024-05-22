@@ -12,23 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-func GetAccounts(ch chain.Chain, blockIndexOrTrieRoot string) ([]isc.AgentID, error) {
-	accountIDs, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil, blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]isc.AgentID, 0)
-	for accountID := range accountIDs {
-		agentID, err := accounts.AgentIDFromKey(accountID, ch.ID())
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, agentID)
-	}
-	return ret, nil
-}
-
 func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.Assets, error) {
 	ret, err := common.CallView(ch, accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil, blockIndexOrTrieRoot)
 	if err != nil {

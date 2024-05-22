@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -91,8 +92,8 @@ func TestUploadBlob(t *testing.T) {
 			require.EqualValues(t, 1, len(m))
 			require.EqualValues(t, len(data), m["field"])
 		}
-		ret, err := ch.CallView(blob.Contract.Name, blob.ViewListBlobs.Name)
-		require.NoError(t, err)
+
+		ret := blob.ListBlobs(lo.Must(ch.Store().LatestState()))
 		require.EqualValues(t, howMany, len(ret))
 		for _, h := range hashes {
 			sizeBin := ret.Get(kv.Key(h[:]))
@@ -162,8 +163,7 @@ func TestUploadWasm(t *testing.T) {
 		_, err := ch.UploadWasmFromFile(nil, wasmFile)
 		require.NoError(t, err)
 
-		ret, err := ch.CallView(blob.Contract.Name, blob.ViewListBlobs.Name)
-		require.NoError(t, err)
+		ret := blob.ListBlobs(lo.Must(ch.Store().LatestState()))
 		require.EqualValues(t, 1, len(ret))
 	})
 }

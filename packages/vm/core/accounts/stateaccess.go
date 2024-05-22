@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
@@ -49,4 +50,8 @@ func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 		}
 	}
 	return codec.DecodeAgentID([]byte(key))
+}
+
+func (sa *StateAccess) AllAccounts() dict.Dict {
+	return AllAccountsAsDict(sa.state)
 }

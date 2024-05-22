@@ -4,7 +4,9 @@
 package blocklog
 
 import (
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
@@ -19,4 +21,9 @@ func NewStateAccess(store kv.KVStoreReader) *StateAccess {
 
 func (sa *StateAccess) BlockInfo(blockIndex uint32) (*BlockInfo, bool) {
 	return GetBlockInfo(sa.state, blockIndex)
+}
+
+func (sa *StateAccess) GetSmartContractEvents(contractID isc.Hname, fromBlock, toBlock uint32) dict.Dict {
+	events := getSmartContractEventsInternal(sa.state, contractID, fromBlock, toBlock)
+	return eventsToDict(events)
 }

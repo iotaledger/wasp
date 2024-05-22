@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -346,15 +347,9 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 
 // GetEventsForContract calls the view in the 'blocklog' core smart contract to retrieve events for a given smart contract.
 func (ch *Chain) GetEventsForContract(name string) ([]*isc.Event, error) {
-	viewResult, err := ch.CallView(
-		blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
-		blocklog.ParamContractHname, isc.Hn(name),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return blocklog.EventsFromViewResult(viewResult)
+	ret := blocklog.NewStateAccess(lo.Must(ch.Store().LatestState())).
+		GetSmartContractEvents(isc.Hn(name), 0, math.MaxUint32)
+	return blocklog.EventsFromViewResult(ret)
 }
 
 // GetEventsForRequest calls the view in the 'blocklog' core smart contract to retrieve events for a given request.

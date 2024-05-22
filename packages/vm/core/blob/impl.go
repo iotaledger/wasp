@@ -12,7 +12,6 @@ var Processor = Contract.Processor(nil,
 	FuncStoreBlob.WithHandler(storeBlob),
 	ViewGetBlobField.WithHandler(getBlobField),
 	ViewGetBlobInfo.WithHandler(getBlobInfo),
-	ViewListBlobs.WithHandler(listBlobs),
 )
 
 func SetInitialState(state kv.KVStore) {
@@ -96,15 +95,5 @@ func getBlobField(ctx isc.SandboxView) dict.Dict {
 	}
 	ret := dict.New()
 	ret.Set(ParamBytes, value)
-	return ret
-}
-
-func listBlobs(ctx isc.SandboxView) dict.Dict {
-	ctx.Log().Debugf("blob.listBlobs.begin")
-	ret := dict.New()
-	GetDirectoryR(ctx.StateR()).Iterate(func(hash []byte, totalSize []byte) bool {
-		ret.Set(kv.Key(hash), totalSize)
-		return true
-	})
 	return ret
 }
