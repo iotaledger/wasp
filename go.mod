@@ -5,6 +5,7 @@ go 1.21
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.13.12-wasp1
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
+	github.com/howjmay/sui-go => ./sui-go
 )
 
 require (
@@ -60,6 +61,7 @@ require (
 	golang.org/x/time v0.5.0
 	nhooyr.io/websocket v1.8.11
 	pgregory.net/rapid v1.0.0
+	github.com/howjmay/sui-go v0.0.1
 )
 
 require (
