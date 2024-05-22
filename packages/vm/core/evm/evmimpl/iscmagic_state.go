@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -45,8 +46,8 @@ func isCallerPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
 	return state.Has(keyPrivileged(addr))
 }
 
-func addToPrivileged(s kv.KVStore, addr common.Address) {
-	state := evm.ISCMagicSubrealm(s)
+func addToPrivileged(evmState kv.KVStore, addr common.Address) {
+	state := evm.ISCMagicSubrealm(evmState)
 	state.Set(keyPrivileged(addr), []byte{1})
 }
 
@@ -136,4 +137,19 @@ func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID iota
 	}
 	copy(ret[:], b)
 	return ret, true
+}
+
+// findERC20NativeTokenContractAddress returns the address of an
+// ERC20NativeTokens or ERC20ExternalNativeTokens contract.
+func findERC20NativeTokenContractAddress(ctx isc.Sandbox, nativeTokenID iotago.NativeTokenID) (common.Address, bool) {
+	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
+	if ok {
+		return addr, true
+	}
+	addr = iscmagic.ERC20NativeTokensAddress(nativeTokenID.FoundrySerialNumber())
+	stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
+	if stateDB.Exist(addr) {
+		return addr, true
+	}
+	return common.Address{}, false
 }

@@ -5,10 +5,13 @@ package evmimpl
 
 import (
 	"encoding/hex"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -465,10 +468,38 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 		},
 	)
 
-	// create a fake receipt
+	logs := make([]*types.Log, 0)
+	for _, nt := range assets.NativeTokens {
+		if nt.Amount.Sign() == 0 {
+			continue
+		}
+		// emit a Transfer event from the ERC20NativeTokens / ERC20ExternalNativeTokens contract
+		erc20Address, ok := findERC20NativeTokenContractAddress(ctx, nt.ID)
+		if !ok {
+			continue
+		}
+		logs = append(logs, makeTransferEvent(erc20Address, addr, nt.Amount))
+	}
+	for _, nftID := range assets.NFTs {
+		// emit a Transfer event from the ERC721NFTs contract
+		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+
+		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
+		if nft := ctx.GetNFTData(nftID); nft != nil {
+			if collectionNFTAddress, ok := nft.Issuer.(*iotago.NFTAddress); ok {
+				collectionID := collectionNFTAddress.NFTID()
+				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
+				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
+				if stateDB.Exist(erc721CollectionContractAddress) {
+					logs = append(logs, makeTransferEvent(erc721CollectionContractAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+				}
+			}
+		}
+	}
+
 	receipt := &types.Receipt{
 		Type:   types.LegacyTxType,
-		Logs:   make([]*types.Log, 0),
+		Logs:   logs,
 		Status: types.ReceiptStatusSuccessful,
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
@@ -480,4 +511,20 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	})
 
 	return nil
+}
+
+var transferEventTopic = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+
+func makeTransferEvent(contractAddress, to common.Address, uint256Data *big.Int) *types.Log {
+	var addrTopic common.Hash
+	copy(addrTopic[len(addrTopic)-len(to):], to[:])
+	return &types.Log{
+		Address: contractAddress,
+		Topics: []common.Hash{
+			transferEventTopic, // event topic
+			{},                 // indexed `from` address
+			addrTopic,          // indexed `to` address
+		},
+		Data: lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Pack(uint256Data)),
+	}
 }

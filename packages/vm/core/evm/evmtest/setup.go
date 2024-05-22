@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -178,14 +179,14 @@ func (e *SoloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *IscCont
 }
 
 func (e *SoloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundrySN uint32) *IscContractInstance {
-	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
+	ntABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
 		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC20NativeTokensAddress(foundrySN),
-			abi:           erc20BaseABI,
+			abi:           ntABI,
 		},
 	}
 }
@@ -290,4 +291,10 @@ func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.Ke
 		evm.FieldNFTCollectionID: codec.EncodeNFTID(collectionID),
 	}).WithMaxAffordableGasBudget(), collectionOwner)
 	return err
+}
+
+func (e *SoloChainEnv) latestEVMTxs() types.Transactions {
+	block, err := e.Chain.EVM().BlockByNumber(nil)
+	require.NoError(e.t, err)
+	return block.Transactions()
 }
