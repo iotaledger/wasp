@@ -4,17 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui"
-	"github.com/howjmay/sui-go/sui/conn"
-	"github.com/howjmay/sui-go/sui_signer"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui"
+	"github.com/iotaledger/isc-private/sui-go/sui/conn"
+	"github.com/iotaledger/isc-private/sui-go/sui_signer"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestAccountSignAndSend(t *testing.T) {
-	signer, err := sui_signer.NewSignerWithMnemonic(sui_signer.TEST_MNEMONIC)
+	signer, err := sui_signer.NewSignerWithMnemonic(sui_signer.TEST_MNEMONIC, sui_signer.KeySchemeFlagDefault)
 	require.NoError(t, err)
 	t.Log(signer.Address)
 

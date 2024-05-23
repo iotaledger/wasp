@@ -1,4 +1,4 @@
-module github.com/howjmay/sui-go
+module github.com/iotaledger/isc-private/sui-go
 
 go 1.20
 

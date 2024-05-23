@@ -1,6 +1,6 @@
 package sui_types
 
-import "github.com/howjmay/sui-go/sui_types/serialization"
+import "github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
 
 type TransactionData struct {
 	V1 *TransactionDataV1

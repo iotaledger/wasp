@@ -3,8 +3,8 @@ package sui
 import (
 	"context"
 
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 )
 
 // TODO: execution_mode : <SuiTransactionBlockBuilderMode>
@@ -35,6 +35,8 @@ func (s *ImplSuiAPI) MergeCoins(
 // TODO: not support param `typeArguments` yet.
 // So now only methods with `typeArguments` are supported
 // TODO: execution_mode : <SuiTransactionBlockBuilderMode>
+// `arguments: []any` *SuiAddress can be arguments here, it will automatically convert to Address in hex string.
+// [][]byte can't be passed. User should encode array of hex string.
 func (s *ImplSuiAPI) MoveCall(
 	ctx context.Context,
 	signer *sui_types.SuiAddress,
@@ -87,6 +89,7 @@ func (s *ImplSuiAPI) PayAllSui(
 	return &resp, s.http.CallContext(ctx, &resp, payAllSui, signer, inputCoins, recipient, gasBudget)
 }
 
+// see explanation in https://forums.sui.io/t/how-to-use-the-sui-paysui-method/2282
 func (s *ImplSuiAPI) PaySui(
 	ctx context.Context,
 	signer *sui_types.SuiAddress,
@@ -135,7 +138,8 @@ func (s *ImplSuiAPI) RequestWithdrawStake(
 	return &resp, s.http.CallContext(ctx, &resp, requestWithdrawStake, signer, stakedSuiId, gas, gasBudget)
 }
 
-// SplitCoin Create an unsigned transaction to split a coin object into multiple coins.
+// SplitCoin Creates an unsigned transaction to split a coin object into multiple coins.
+// better to replace with unsafe_pay API which consumes less gas
 func (s *ImplSuiAPI) SplitCoin(
 	ctx context.Context,
 	signer *sui_types.SuiAddress,
@@ -148,7 +152,8 @@ func (s *ImplSuiAPI) SplitCoin(
 	return &resp, s.http.CallContext(ctx, &resp, splitCoin, signer, coin, splitAmounts, gas, gasBudget)
 }
 
-// SplitCoinEqual Create an unsigned transaction to split a coin object into multiple equal-size coins.
+// SplitCoinEqual Creates an unsigned transaction to split a coin object into multiple equal-size coins.
+// better to replace with unsafe_pay API which consumes less gas
 func (s *ImplSuiAPI) SplitCoinEqual(
 	ctx context.Context,
 	signer *sui_types.SuiAddress,

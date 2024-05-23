@@ -1,15 +1,15 @@
 package models
 
 import (
-	"github.com/howjmay/sui-go/sui_types"
-	"github.com/howjmay/sui-go/sui_types/serialization"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
 )
 
 type SuiObjectRef struct {
 	/** Base64 string representing the object digest */
 	Digest sui_types.TransactionDigest `json:"digest"`
 	/** Hex code as string representing the object id */
-	ObjectID string `json:"objectId"`
+	ObjectID string `json:"objectId"` // TODO refactor datatype to ObjectID
 	/** Object version */
 	Version sui_types.SequenceNumber `json:"version"`
 }
@@ -125,7 +125,7 @@ type SuiObjectData struct {
 	Display interface{} `json:"display,omitempty"`
 }
 
-func (data *SuiObjectData) Reference() sui_types.ObjectRef {
+func (data *SuiObjectData) Ref() sui_types.ObjectRef {
 	return sui_types.ObjectRef{
 		ObjectID: data.ObjectID,
 		Version:  data.Version.data,

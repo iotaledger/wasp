@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 )
 
 const (
