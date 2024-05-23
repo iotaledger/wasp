@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui"
-	"github.com/howjmay/sui-go/sui/conn"
-	"github.com/howjmay/sui-go/sui_signer"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui"
+	"github.com/iotaledger/isc-private/sui-go/sui/conn"
+	"github.com/iotaledger/isc-private/sui-go/sui_signer"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,7 +45,7 @@ func TestDryRunTransaction(t *testing.T) {
 
 	amount := sui_types.SUI(0.01).Uint64()
 	gasBudget := sui_types.SUI(0.01).Uint64()
-	pickedCoins, err := models.PickupCoins(coins, big.NewInt(0).SetUint64(amount), gasBudget, 0, 0)
+	pickedCoins, err := models.PickupCoins(coins, new(big.Int).SetUint64(amount), gasBudget, 0, 0)
 	require.NoError(t, err)
 	tx, err := api.PayAllSui(
 		context.Background(), signer, signer,

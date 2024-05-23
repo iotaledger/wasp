@@ -5,18 +5,13 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui"
-	"github.com/howjmay/sui-go/sui_signer"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui"
+	"github.com/iotaledger/isc-private/sui-go/sui_signer"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 
 	"github.com/stretchr/testify/require"
 )
-
-func AddressFromStrMust(str string) *sui_types.SuiAddress {
-	s, _ := sui_types.SuiAddressFromHex(str)
-	return s
-}
 
 // @return types.DryRunTransactionBlockResponse
 func dryRunTxn(

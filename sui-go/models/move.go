@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 )
 
 type ResourceType struct {

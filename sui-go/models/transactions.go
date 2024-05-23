@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/howjmay/sui-go/sui_types"
-	"github.com/howjmay/sui-go/sui_types/serialization"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
 )
 
 type ExecuteTransactionRequestType string

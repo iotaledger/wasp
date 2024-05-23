@@ -1,8 +1,8 @@
 package sui
 
 import (
-	"github.com/howjmay/sui-go/sui/conn"
-	"github.com/howjmay/sui-go/sui_signer"
+	"github.com/iotaledger/isc-private/sui-go/sui/conn"
+	"github.com/iotaledger/isc-private/sui-go/sui_signer"
 )
 
 type ImplSuiAPI struct {
@@ -16,14 +16,23 @@ func NewSuiClient(url string) *ImplSuiAPI {
 	}
 }
 
-// test only func, which supports only testnet/devnet/localnet
-func (i *ImplSuiAPI) WithSignerAndFund(mnemonic string) (*ImplSuiAPI, *sui_signer.Signer) {
-	signer, err := sui_signer.NewSignerWithMnemonic(mnemonic)
+// test only. If localnet is used then iota network will be connect
+func NewTestSuiClientWithSignerAndFund(url string, mnemonic string) (*ImplSuiAPI, *sui_signer.Signer) {
+	client := &ImplSuiAPI{
+		http: conn.NewHttpClient(url),
+	}
+
+	keySchemeFlag := sui_signer.KeySchemeFlagEd25519
+	// special case if localnet is used, then
+	if client.http.Url() == conn.LocalnetEndpointUrl {
+		keySchemeFlag = sui_signer.KeySchemeFlagIotaEd25519
+	}
+	signer, err := sui_signer.NewSignerWithMnemonic(mnemonic, keySchemeFlag)
 	if err != nil {
 		panic(err)
 	}
 	var faucetUrl string
-	switch i.http.Url() {
+	switch client.http.Url() {
 	case conn.TestnetEndpointUrl:
 		faucetUrl = conn.TestnetFaucetUrl
 	case conn.DevnetEndpointUrl:
@@ -33,11 +42,11 @@ func (i *ImplSuiAPI) WithSignerAndFund(mnemonic string) (*ImplSuiAPI, *sui_signe
 	default:
 		panic("not supported network")
 	}
-	_, err = RequestFundFromFaucet(signer.Address, faucetUrl)
+	err = RequestFundFromFaucet(signer.Address, faucetUrl)
 	if err != nil {
 		panic(err)
 	}
-	return i, signer
+	return client, signer
 }
 
 func (i *ImplSuiAPI) WithWebsocket(url string) {
@@ -52,4 +61,5 @@ func NewSuiWebsocketClient(url string) *ImplSuiAPI {
 
 const (
 	DefaultGasBudget uint64 = 10000000
+	DefaultGasPrice  uint64 = 1000
 )

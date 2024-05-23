@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/howjmay/sui-go/sui"
-	"github.com/howjmay/sui-go/sui/conn"
-	"github.com/howjmay/sui-go/sui_signer"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/sui"
+	"github.com/iotaledger/isc-private/sui-go/sui/conn"
+	"github.com/iotaledger/isc-private/sui-go/sui_signer"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 
-	serialization "github.com/howjmay/sui-go/examples/event_pubsub/lib"
+	serialization "github.com/iotaledger/isc-private/sui-go/examples/event_pubsub/lib"
 )
 
 func main() {
@@ -20,15 +20,14 @@ func main() {
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-	sender, err := sui_signer.NewSignerWithMnemonic(sui_signer.TEST_MNEMONIC)
+	sender, err := sui_signer.NewSignerWithMnemonic(sui_signer.TEST_MNEMONIC, sui_signer.KeySchemeFlagDefault)
 	if err != nil {
 		log.Panic(err)
 	}
-	digest, err := sui.RequestFundFromFaucet(sender.Address, conn.TestnetFaucetUrl)
+	err = sui.RequestFundFromFaucet(sender.Address, conn.TestnetFaucetUrl)
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Println("digest: ", digest)
 
 	packageID, err := sui_types.PackageIDFromHex("")
 	if err != nil {

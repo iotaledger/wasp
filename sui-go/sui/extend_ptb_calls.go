@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui_types"
-	"github.com/howjmay/sui-go/sui_types/serialization"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
 )
 
 // NOTE: This a copy the query limit from our Rust JSON RPC backend, this needs to be kept in sync!

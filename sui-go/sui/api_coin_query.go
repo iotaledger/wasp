@@ -3,8 +3,8 @@ package sui
 import (
 	"context"
 
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 )
 
 func (s *ImplSuiAPI) GetAllBalances(ctx context.Context, owner *sui_types.SuiAddress) ([]*models.Balance, error) {
@@ -17,7 +17,7 @@ func (s *ImplSuiAPI) GetAllCoins(
 	ctx context.Context,
 	owner *sui_types.SuiAddress,
 	cursor *sui_types.ObjectID,
-	limit uint,
+	limit uint, // TODO set it into ptr
 ) (*models.CoinPage, error) {
 	var resp models.CoinPage
 	return &resp, s.http.CallContext(ctx, &resp, getAllCoins, owner, cursor, limit)
@@ -45,7 +45,7 @@ func (s *ImplSuiAPI) GetCoins(
 	owner *sui_types.SuiAddress,
 	coinType *string,
 	cursor *sui_types.ObjectID,
-	limit uint,
+	limit uint, // TODO set it into ptr
 ) (*models.CoinPage, error) {
 	var resp models.CoinPage
 	return &resp, s.http.CallContext(ctx, &resp, getCoins, owner, coinType, cursor, limit)
