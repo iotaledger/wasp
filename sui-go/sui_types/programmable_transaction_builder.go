@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
+	"github.com/iotaledger/wasp/sui-go/utils/indexmap"
+	"github.com/mitchellh/hashstructure/v2"
 
 	"github.com/fardream/go-bcs/bcs"
-	"github.com/mitchellh/hashstructure/v2"
 )
 
 type BuilderArg struct {
@@ -26,22 +27,25 @@ func (b BuilderArg) GetHash() uint64 {
 }
 
 type ProgrammableTransactionBuilder struct {
-	Inputs         map[uint64]CallArg //maybe has hash clash
-	InputsKeyOrder []BuilderArg
-	Commands       []Command
+	Inputs *indexmap.IndexMap[uint64, CallArg] //maybe has hash clash
+	// InputsKeyOrder []BuilderArg
+	Commands []Command
 }
 
 func NewProgrammableTransactionBuilder() *ProgrammableTransactionBuilder {
 	return &ProgrammableTransactionBuilder{
-		Inputs: make(map[uint64]CallArg),
+		Inputs: indexmap.NewIndexMap[uint64, CallArg](),
 	}
 }
 
 func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 	var inputs []CallArg
-	for _, v := range p.InputsKeyOrder {
-		inputs = append(inputs, p.Inputs[v.GetHash()])
-	}
+	// for _, v := range p.InputsKeyOrder {
+	// 	inputs = append(inputs, p.Inputs[v.GetHash()])
+	// }
+	p.Inputs.ForEach(func(k uint64, v CallArg) {
+		inputs = append(inputs, v)
+	})
 	return ProgrammableTransaction{
 		Inputs:   inputs,
 		Commands: p.Commands,
@@ -51,22 +55,22 @@ func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 // `insertFull` is the go implementation of rust crate `indexmap::insert_full()`
 // It inserts the key/value pair into the map
 // see more info in https://docs.rs/indexmap/latest/indexmap/map/struct.IndexMap.html#method.insert
-func (p *ProgrammableTransactionBuilder) insertFull(key BuilderArg, value CallArg) uint16 {
-	builderArgHash := key.GetHash()
+// func (p *ProgrammableTransactionBuilder) insertFull(key BuilderArg, value CallArg) uint16 {
+// 	builderArgHash := key.GetHash()
 
-	_, ok := p.Inputs[builderArgHash]
-	p.Inputs[builderArgHash] = value
-	if !ok {
-		p.InputsKeyOrder = append(p.InputsKeyOrder, key)
-		return uint16(len(p.InputsKeyOrder) - 1)
-	}
-	for i, v := range p.InputsKeyOrder {
-		if v.GetHash() == builderArgHash {
-			return uint16(i)
-		}
-	}
-	return 0
-}
+// 	_, ok := p.Inputs[builderArgHash]
+// 	p.Inputs[builderArgHash] = value
+// 	if !ok {
+// 		p.InputsKeyOrder = append(p.InputsKeyOrder, key)
+// 		return uint16(len(p.InputsKeyOrder) - 1)
+// 	}
+// 	for i, v := range p.InputsKeyOrder {
+// 		if v.GetHash() == builderArgHash {
+// 			return uint16(i)
+// 		}
+// 	}
+// 	return 0
+// }
 
 func (p *ProgrammableTransactionBuilder) Pure(value any) (Argument, error) {
 	pureData, err := bcs.Marshal(value)
@@ -88,7 +92,7 @@ func (p *ProgrammableTransactionBuilder) MustPure(value any) Argument {
 func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error) {
 	id := objArg.id()
 	var oj ObjectArg
-	if oldValue, ok := p.Inputs[BuilderArg{Object: id}.GetHash()]; ok {
+	if oldValue, ok := p.Inputs.Get(BuilderArg{Object: id}.GetHash()); ok {
 		var oldObjArg ObjectArg
 		switch {
 		case oldValue.Pure != nil:
@@ -125,13 +129,10 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 	} else {
 		oj = objArg
 	}
-	i := p.insertFull(
-		BuilderArg{
-			Object: id,
-		}, CallArg{
-			Object: &oj,
-		},
-	)
+	i := uint16(p.Inputs.InsertFull(
+		BuilderArg{Object: id}.GetHash(),
+		CallArg{Object: &oj},
+	))
 	return Argument{
 		Input: &i,
 	}, nil
@@ -148,7 +149,7 @@ func (p *ProgrammableTransactionBuilder) ForceSeparatePure(value any) (Argument,
 func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate bool) Argument {
 	var arg BuilderArg
 	if forceSeparate {
-		length := uint(len(p.Inputs))
+		length := uint(p.Inputs.Len())
 		arg = BuilderArg{
 			ForcedNonUniquePure: &length,
 		}
@@ -157,11 +158,11 @@ func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate b
 			Pure: &bytes,
 		}
 	}
-	i := p.insertFull(
-		arg,
-		CallArg{
-			Pure: &bytes,
-		},
+	i := uint16(
+		p.Inputs.InsertFull(
+			arg.GetHash(),
+			CallArg{Pure: &bytes},
+		),
 	)
 	return Argument{
 		Input: &i,
