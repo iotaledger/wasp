@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type Publisher struct {
@@ -43,13 +43,15 @@ func (p *Publisher) PublishEvents(ctx context.Context, packageID *sui_types.Pack
 		log.Panic(err)
 	}
 
-	txnResponse, err := p.client.ExecuteTransactionBlock(ctx, txnBytes.TxBytes.Data(), []*sui_signer.Signature{&signature}, &models.SuiTransactionBlockResponseOptions{
-		ShowInput:          true,
-		ShowEffects:        true,
-		ShowEvents:         true,
-		ShowObjectChanges:  true,
-		ShowBalanceChanges: true,
-	}, models.TxnRequestTypeWaitForLocalExecution)
+	txnResponse, err := p.client.ExecuteTransactionBlock(
+		ctx, txnBytes.TxBytes.Data(), []*sui_signer.Signature{&signature}, &models.SuiTransactionBlockResponseOptions{
+			ShowInput:          true,
+			ShowEffects:        true,
+			ShowEvents:         true,
+			ShowObjectChanges:  true,
+			ShowBalanceChanges: true,
+		}, models.TxnRequestTypeWaitForLocalExecution,
+	)
 	if err != nil {
 		log.Panic(err)
 	}

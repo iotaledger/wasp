@@ -1,6 +1,6 @@
 package sui_types
 
-import "github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
+import "github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 // https://sdk.mystenlabs.com/typescript/transaction-building/basics#object-references
 // https://docs.sui.io/concepts/transactions/prog-txn-blocks

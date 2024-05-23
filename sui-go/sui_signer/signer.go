@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	math_rand "math/rand"
 
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/blake2b"
 )

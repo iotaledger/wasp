@@ -1,6 +1,6 @@
 package isc
 
-import "github.com/iotaledger/isc-private/sui-go/models"
+import "github.com/iotaledger/wasp/sui-go/models"
 
 type NormalizedID struct {
 	ID string `json:"id"`

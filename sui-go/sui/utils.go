@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 // requires `ShowObjectChanges: true`
-func GetCreatedObjectIdAndType(txRes *models.SuiTransactionBlockResponse, moduleName string, objectName string) (*sui_types.ObjectID, string, error) {
+func GetCreatedObjectIdAndType(
+	txRes *models.SuiTransactionBlockResponse,
+	moduleName string,
+	objectName string,
+) (*sui_types.ObjectID, string, error) {
 	if txRes.ObjectChanges == nil {
 		return nil, "", fmt.Errorf("no ObjectChanges")
 	}

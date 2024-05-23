@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/isc"
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui/conn"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/utils"
+	"github.com/iotaledger/wasp/sui-go/isc"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/conn"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/utils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -27,12 +27,21 @@ func TestStartNewChain(t *testing.T) {
 	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
 	require.NoError(t, err)
 
-	txnBytes, err := client.Publish(context.Background(), signer.Address, modules.Modules, modules.Dependencies, nil, models.NewSafeSuiBigInt(uint64(100000000)))
+	txnBytes, err := client.Publish(
+		context.Background(),
+		signer.Address,
+		modules.Modules,
+		modules.Dependencies,
+		nil,
+		models.NewSafeSuiBigInt(uint64(100000000)),
+	)
 	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
@@ -93,11 +102,16 @@ func TestSendCoin(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.True(t, sendCoinRes.Effects.Data.IsSuccess())
 
-	getObjectRes, err := client.GetObject(context.Background(), coins.Data[0].CoinObjectID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(
+		context.Background(),
+		coins.Data[0].CoinObjectID,
+		&models.SuiObjectDataOptions{ShowOwner: true},
+	)
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 }
@@ -151,11 +165,16 @@ func TestReceiveCoin(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.True(t, sendCoinRes.Effects.Data.IsSuccess())
 
-	getObjectRes, err := client.GetObject(context.Background(), coins.Data[0].CoinObjectID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(
+		context.Background(),
+		coins.Data[0].CoinObjectID,
+		&models.SuiObjectDataOptions{ShowOwner: true},
+	)
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
@@ -169,7 +188,8 @@ func TestReceiveCoin(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.True(t, receiveCoinRes.Effects.Data.IsSuccess())
 	assets2, err = client.GetAssets(context.Background(), iscPackageID, anchorObjID)
@@ -212,7 +232,8 @@ func TestCreateRequest(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.True(t, createReqRes.Effects.Data.IsSuccess())
 

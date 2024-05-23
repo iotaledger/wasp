@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/fardream/go-bcs/bcs"
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui/conn"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/conn"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,7 +56,11 @@ func TestPTB_Pay(t *testing.T) {
 	require.Len(t, simulate.ObjectChanges, 5)
 	for _, change := range simulate.ObjectChanges {
 		if change.Data.Mutated != nil {
-			require.Contains(t, []*sui_types.ObjectID{gasCoin.CoinObjectID, transferCoins[0].CoinObjectID}, &change.Data.Mutated.ObjectID)
+			require.Contains(
+				t,
+				[]*sui_types.ObjectID{gasCoin.CoinObjectID, transferCoins[0].CoinObjectID},
+				&change.Data.Mutated.ObjectID,
+			)
 		} else if change.Data.Deleted != nil {
 			require.Equal(t, transferCoins[1].CoinObjectID, &change.Data.Deleted.ObjectID)
 		}

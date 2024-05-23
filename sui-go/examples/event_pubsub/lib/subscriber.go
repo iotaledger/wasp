@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type Subscriber struct {

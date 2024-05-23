@@ -1,15 +1,15 @@
 # sui-go
 Sui Golang SDK
 
-[![Documentation (main)](https://img.shields.io/badge/docs-master-59f)](https://github.com/iotaledger/isc-private/sui-go)
-[![License](https://img.shields.io/badge/license-Apache-green.svg)](https://github.com/iotaledger/isc-private/sui-go/blob/main/LICENSE)
+[![Documentation (main)](https://img.shields.io/badge/docs-master-59f)](https://github.com/iotaledger/wasp/sui-go)
+[![License](https://img.shields.io/badge/license-Apache-green.svg)](https://github.com/iotaledger/wasp/sui-go/blob/main/LICENSE)
 
 The Sui Golang SDK. We welcome other developers to participate in the development and testing of sui-sdk.
 
 ## Install
 
 ```sh
-go get github.com/iotaledger/isc-private/sui-go
+go get github.com/iotaledger/wasp/sui-go
 ```
 
 ## Usage
@@ -19,7 +19,7 @@ go get github.com/iotaledger/isc-private/sui-go
 Singer is a struct which holds the keypair of a user and will be used to sign transactions.
 
 ```go
-import "github.com/iotaledger/isc-private/sui-go/sui_signer"
+import "github.com/iotaledger/wasp/sui-go/sui_signer"
 
 // Create a sui_signer.Signer with mnemonic
 mnemonic := "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
@@ -45,8 +45,8 @@ signedData := signer1.Sign(data)
 All data interactions on the Sui chain are implemented through the JSON RPC client.
 
 ```go
-import "github.com/iotaledger/isc-private/sui-go/sui"
-import "github.com/iotaledger/isc-private/sui-go/sui_types"
+import "github.com/iotaledger/wasp/sui-go/sui"
+import "github.com/iotaledger/wasp/sui-go/sui_types"
 
 client := sui.NewSuiClient(rpcUrl) // some hardcoded endpoints are provided e.g. conn.TestnetEndpointUrl
 

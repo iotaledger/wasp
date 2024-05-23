@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui/conn"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/conn"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/stretchr/testify/require"
 )
 

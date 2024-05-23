@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/utils"
+	"github.com/iotaledger/wasp/sui-go/utils"
 
 	"github.com/stretchr/testify/require"
 )

@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui/conn"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/conn"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 
-	serialization "github.com/iotaledger/isc-private/sui-go/examples/event_pubsub/lib"
+	serialization "github.com/iotaledger/wasp/sui-go/examples/event_pubsub/lib"
 )
 
 func main() {

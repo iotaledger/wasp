@@ -3,9 +3,9 @@ package sui_test
 import (
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui/conn"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/conn"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
 
 	"github.com/stretchr/testify/require"
 )
