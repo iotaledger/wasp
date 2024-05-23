@@ -14,15 +14,24 @@ import (
 
 // test only
 func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer.Signer) *sui_types.PackageID {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/isc/contracts/isc/")
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
 	require.NoError(t, err)
 
-	txnBytes, err := client.Publish(context.Background(), sui_signer.TEST_ADDRESS, modules.Modules, modules.Dependencies, nil, models.NewSafeSuiBigInt(uint64(100000000)))
+	txnBytes, err := client.Publish(
+		context.Background(),
+		sui_signer.TEST_ADDRESS,
+		modules.Modules,
+		modules.Dependencies,
+		nil,
+		models.NewSafeSuiBigInt(uint64(100000000)),
+	)
 	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, txnResponse.Effects.Data.V1.Status.Status)
 
@@ -32,16 +41,28 @@ func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer
 }
 
 // test only
-func BuildDeployMintTestcoin(t *testing.T, client *Client, signer *sui_signer.Signer) (*sui_types.PackageID, *sui_types.ObjectID) {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/testcoin/")
+func BuildDeployMintTestcoin(t *testing.T, client *Client, signer *sui_signer.Signer) (
+	*sui_types.PackageID,
+	*sui_types.ObjectID,
+) {
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/testcoin/")
 	require.NoError(t, err)
 
-	txnBytes, err := client.Publish(context.Background(), sui_signer.TEST_ADDRESS, modules.Modules, modules.Dependencies, nil, models.NewSafeSuiBigInt(uint64(100000000)))
+	txnBytes, err := client.Publish(
+		context.Background(),
+		sui_signer.TEST_ADDRESS,
+		modules.Modules,
+		modules.Dependencies,
+		nil,
+		models.NewSafeSuiBigInt(uint64(100000000)),
+	)
 	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, txnResponse.Effects.Data.V1.Status.Status)
 

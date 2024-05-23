@@ -50,20 +50,32 @@ func TestMintToken(t *testing.T) {
 
 }
 
-func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer *sui_signer.Signer) (*sui_types.PackageID, *sui_types.ObjectID) {
-	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/contracts/testcoin/contract_base64.json")
+func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
+	*sui_types.PackageID,
+	*sui_types.ObjectID,
+) {
+	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/sui-go/contracts/testcoin/contract_base64.json")
 	require.NoError(t, err)
 
 	var modules utils.CompiledMoveModules
 	err = json.Unmarshal(jsonData, &modules)
 	require.NoError(t, err)
 
-	txnBytes, err := client.Publish(context.Background(), sui_signer.TEST_ADDRESS, modules.Modules, modules.Dependencies, nil, models.NewSafeSuiBigInt(uint64(100000000)))
+	txnBytes, err := client.Publish(
+		context.Background(),
+		sui_signer.TEST_ADDRESS,
+		modules.Modules,
+		modules.Dependencies,
+		nil,
+		models.NewSafeSuiBigInt(uint64(100000000)),
+	)
 	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, txnResponse.Effects.Data.V1.Status.Status)
 

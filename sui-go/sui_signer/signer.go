@@ -33,7 +33,7 @@ func NewSigner(seed []byte) *Signer {
 	prikey := ed25519.NewKeyFromSeed(seed[:])
 	pubkey := prikey.Public().(ed25519.PublicKey)
 
-	buf := append([]byte{FlagEd25519.Byte()}, pubkey...)
+	buf := append([]byte{ /*FlagEd25519.Byte()*/ }, pubkey...)
 	addrBytes := blake2b.Sum256(buf)
 	addr := "0x" + hex.EncodeToString(addrBytes[:])
 

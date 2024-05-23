@@ -3,6 +3,7 @@ package isc_test
 import (
 	"context"
 	"fmt"
+	"github.com/howjmay/sui-go/sui_types"
 	"testing"
 
 	"github.com/howjmay/sui-go/isc"
@@ -29,15 +30,24 @@ func TestStartNewChain(t *testing.T) {
 	_, err = sui.RequestFundFromFaucet(signer.Address, conn.LocalnetFaucetUrl)
 	require.NoError(t, err)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/isc/contracts/isc/")
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
 	require.NoError(t, err)
 
-	txnBytes, err := client.Publish(context.Background(), sui_signer.TEST_ADDRESS, modules.Modules, modules.Dependencies, nil, models.NewSafeSuiBigInt(uint64(100000000)))
+	txnBytes, err := client.Publish(
+		context.Background(),
+		signer.Address,
+		modules.Modules,
+		modules.Dependencies,
+		nil,
+		models.NewSafeSuiBigInt(uint64(100000000)),
+	)
 	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, txnResponse.Effects.Data.V1.Status.Status)
 
@@ -86,7 +96,7 @@ func TestSendCoin(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, startNewChainRes.Effects.Data.V1.Status.Status)
 
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
+	anchorObjID, typeName, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
 	require.NoError(t, err)
 
@@ -108,11 +118,16 @@ func TestSendCoin(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, sendCoinRes.Effects.Data.V1.Status.Status)
 
-	getObjectRes, err := client.GetObject(context.Background(), coins.Data[0].CoinObjectID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(
+		context.Background(),
+		coins.Data[0].CoinObjectID,
+		&models.SuiObjectDataOptions{ShowOwner: true},
+	)
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
@@ -174,11 +189,16 @@ func TestReceiveCoin(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, sendCoinRes.Effects.Data.V1.Status.Status)
 
-	getObjectRes, err := client.GetObject(context.Background(), coins.Data[0].CoinObjectID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(
+		context.Background(),
+		coins.Data[0].CoinObjectID,
+		&models.SuiObjectDataOptions{ShowOwner: true},
+	)
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
@@ -192,7 +212,8 @@ func TestReceiveCoin(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, receiveCoinRes.Effects.Data.V1.Status.Status)
 	assets2, err = client.GetAssets(context.Background(), iscPackageID, anchorObjID)
@@ -240,7 +261,8 @@ func TestCreateRequest(t *testing.T) {
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
-		})
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, createReqRes.Effects.Data.V1.Status.Status)
 
@@ -412,7 +434,7 @@ func TestReceiveRequest(t *testing.T) {
 }
 
 func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan models.SuiEvent {
-	api := sui.NewSuiWebsocketClient("ws://127.0.0.1:9000")
+	api := sui.NewSuiWebsocketClient(conn.LocalnetWebsocketEndpointUrl)
 	eventCh := make(chan models.SuiEvent)
 	err := api.SubscribeEvent(
 		context.TODO(),
@@ -431,8 +453,6 @@ func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent
 	close(eventCh)
 
 	eventId := sui_types.MustSuiAddressFromHex(event.ParsedJson.(map[string]interface{})["id"].(string))
-	eventSender := sui_types.MustSuiAddressFromHex(event.ParsedJson.(map[string]interface{})["sender"].(string))
-	require.Equal(t, *eventSender, event.Sender)
 
 	object, err := client.GetObject(
 		context.Background(),

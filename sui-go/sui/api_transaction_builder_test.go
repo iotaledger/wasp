@@ -51,9 +51,9 @@ func TestMoveCall(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_MNEMONIC)
 
 	// directly build (need sui toolchain)
-	// modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/contract_tests/")
+	// modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/contract_tests/")
 	// require.NoError(t, err)
-	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/contracts/contract_tests/contract_base64.json")
+	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/sui-go/contracts/contract_tests/contract_base64.json")
 	require.NoError(t, err)
 
 	var modules utils.CompiledMoveModules
@@ -217,10 +217,10 @@ func TestPublish(t *testing.T) {
 	_, err = sui.RequestFundFromFaucet(signer.Address, conn.TestnetFaucetUrl)
 	require.NoError(t, err)
 	// If local side has installed Sui-cli then the user can use the following func to build move contracts
-	// modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/testcoin")
+	// modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/testcoin")
 	// require.NoError(t, err)
 
-	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/contracts/testcoin/contract_base64.json")
+	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/sui-go/contracts/testcoin/contract_base64.json")
 	require.NoError(t, err)
 
 	var modules utils.CompiledMoveModules
@@ -243,9 +243,11 @@ func TestPublish(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	txnResponse, err := client.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-		ShowEffects: true,
-	})
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects: true,
+		},
+	)
 	require.NoError(t, err)
 	require.Equal(t, models.ExecutionStatusSuccess, txnResponse.Effects.Data.V1.Status.Status)
 }
