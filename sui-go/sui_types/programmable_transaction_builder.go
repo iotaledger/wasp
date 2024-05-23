@@ -48,37 +48,6 @@ func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 	}
 }
 
-func (p *ProgrammableTransactionBuilder) ForceSeparatePure(value any) (Argument, error) {
-	pureData, err := bcs.Marshal(value)
-	if err != nil {
-		return Argument{}, err
-	}
-	return p.pureBytes(pureData, true), nil
-}
-
-func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate bool) Argument {
-	var arg BuilderArg
-	if forceSeparate {
-		length := uint(len(p.Inputs))
-		arg = BuilderArg{
-			ForcedNonUniquePure: &length,
-		}
-	} else {
-		arg = BuilderArg{
-			Pure: &bytes,
-		}
-	}
-	i := p.insertFull(
-		arg,
-		CallArg{
-			Pure: &bytes,
-		},
-	)
-	return Argument{
-		Input: &i,
-	}
-}
-
 // `insertFull` is the go implementation of rust crate `indexmap::insert_full()`
 // It inserts the key/value pair into the map
 // see more info in https://docs.rs/indexmap/latest/indexmap/map/struct.IndexMap.html#method.insert
@@ -168,6 +137,40 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 	}, nil
 }
 
+func (p *ProgrammableTransactionBuilder) ForceSeparatePure(value any) (Argument, error) {
+	pureData, err := bcs.Marshal(value)
+	if err != nil {
+		return Argument{}, err
+	}
+	return p.pureBytes(pureData, true), nil
+}
+
+func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate bool) Argument {
+	var arg BuilderArg
+	if forceSeparate {
+		length := uint(len(p.Inputs))
+		arg = BuilderArg{
+			ForcedNonUniquePure: &length,
+		}
+	} else {
+		arg = BuilderArg{
+			Pure: &bytes,
+		}
+	}
+	i := p.insertFull(
+		arg,
+		CallArg{
+			Pure: &bytes,
+		},
+	)
+	return Argument{
+		Input: &i,
+	}
+}
+
+// developers should only use `Pure()`, `MustPure()` and `Obj()` to create PTB Arguments
+// `Input()` is a function for internal usage
+// TODO add explanation for `Input()`
 func (p *ProgrammableTransactionBuilder) Input(callArg CallArg) (Argument, error) {
 	switch {
 	case callArg.Pure != nil:
@@ -179,7 +182,7 @@ func (p *ProgrammableTransactionBuilder) Input(callArg CallArg) (Argument, error
 	}
 }
 
-func (p *ProgrammableTransactionBuilder) MakeObjList(objs []ObjectArg) (Argument, error) {
+func (p *ProgrammableTransactionBuilder) MakeObjVec(objs []ObjectArg) (Argument, error) {
 	var objArgs []Argument
 	for _, v := range objs {
 		objArg, err := p.Obj(v)
@@ -303,6 +306,7 @@ func (p *ProgrammableTransactionBuilder) MoveCall(
 	return nil
 }
 
+// the gas coin is consumed as the coin to be paid
 func (p *ProgrammableTransactionBuilder) PayAllSui(recipient *SuiAddress) error {
 	recArg, err := p.Pure(recipient)
 	if err != nil {
@@ -319,6 +323,7 @@ func (p *ProgrammableTransactionBuilder) PayAllSui(recipient *SuiAddress) error 
 	return nil
 }
 
+// the gas coin is consumed as the coin to be paid
 func (p *ProgrammableTransactionBuilder) PaySui(
 	recipients []*SuiAddress,
 	amounts []uint64,
@@ -326,6 +331,8 @@ func (p *ProgrammableTransactionBuilder) PaySui(
 	return p.payImpl(recipients, amounts, Argument{GasCoin: &serialization.EmptyEnum{}})
 }
 
+// merge all given coins into the 1st coin, and pay it
+// with the corresponding amounts to the corresponding recipients
 func (p *ProgrammableTransactionBuilder) Pay(
 	coins []*ObjectRef,
 	recipients []*SuiAddress,
@@ -366,7 +373,7 @@ func (p *ProgrammableTransactionBuilder) Pay(
 func (p *ProgrammableTransactionBuilder) payImpl(
 	recipients []*SuiAddress,
 	amounts []uint64,
-	coin Argument,
+	coin Argument, // the coin to be consumed
 ) error {
 	if len(recipients) != len(amounts) {
 		return fmt.Errorf(
