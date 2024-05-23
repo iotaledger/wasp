@@ -3,8 +3,8 @@ package sui
 import (
 	"context"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 // TODO getChainIdentifier

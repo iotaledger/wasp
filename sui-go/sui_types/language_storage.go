@@ -1,6 +1,6 @@
 package sui_types
 
-import "github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
+import "github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 type StructTag struct {
 	Address    SuiAddress

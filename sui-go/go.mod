@@ -1,4 +1,4 @@
-module github.com/iotaledger/isc-private/sui-go
+module github.com/iotaledger/wasp/sui-go
 
 go 1.20
 

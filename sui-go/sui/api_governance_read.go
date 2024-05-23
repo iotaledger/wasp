@@ -3,8 +3,8 @@ package sui
 import (
 	"context"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 // TODO GetCommitteeInfo
@@ -24,7 +24,10 @@ func (s *ImplSuiAPI) GetStakes(ctx context.Context, owner *sui_types.SuiAddress)
 	return resp, s.http.CallContext(ctx, &resp, getStakes, owner)
 }
 
-func (s *ImplSuiAPI) GetStakesByIds(ctx context.Context, stakedSuiIds []sui_types.ObjectID) ([]*models.DelegatedStake, error) {
+func (s *ImplSuiAPI) GetStakesByIds(ctx context.Context, stakedSuiIds []sui_types.ObjectID) (
+	[]*models.DelegatedStake,
+	error,
+) {
 	var resp []*models.DelegatedStake
 	return resp, s.http.CallContext(ctx, &resp, getStakesByIds, stakedSuiIds)
 }

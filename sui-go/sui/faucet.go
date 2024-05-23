@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 // refer the implementation of `request_tokens_from_faucet()` in

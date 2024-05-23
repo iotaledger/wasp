@@ -3,8 +3,8 @@ package sui
 import (
 	"context"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 func (s *ImplSuiAPI) GetAllBalances(ctx context.Context, owner *sui_types.SuiAddress) ([]*models.Balance, error) {
@@ -24,7 +24,10 @@ func (s *ImplSuiAPI) GetAllCoins(
 }
 
 // GetBalance to use default sui coin(0x2::sui::SUI) when coinType is empty
-func (s *ImplSuiAPI) GetBalance(ctx context.Context, owner *sui_types.SuiAddress, coinType string) (*models.Balance, error) {
+func (s *ImplSuiAPI) GetBalance(ctx context.Context, owner *sui_types.SuiAddress, coinType string) (
+	*models.Balance,
+	error,
+) {
 	resp := models.Balance{}
 	if coinType == "" {
 		return &resp, s.http.CallContext(ctx, &resp, getBalance, owner)

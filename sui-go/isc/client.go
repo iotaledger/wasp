@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/fardream/go-bcs/bcs"
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type Client struct {
@@ -160,7 +160,8 @@ func (c *Client) GetAssets(
 		anchorAddress,
 		&models.SuiObjectDataOptions{
 			ShowContent: true,
-		})
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 	}
@@ -202,7 +203,8 @@ func (c *Client) GetAssets(
 			coin.CoinObjectID,
 			&models.SuiObjectDataOptions{
 				ShowContent: true,
-			})
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 		}
@@ -234,7 +236,11 @@ func (c *Client) CreateRequest(
 				Module:        "request",
 				Function:      "create_request",
 				TypeArguments: []sui_types.TypeTag{},
-				Arguments:     []sui_types.Argument{ptb.MustPure(iscContractName), ptb.MustPure(iscFunctionName), ptb.MustPure(args)},
+				Arguments: []sui_types.Argument{
+					ptb.MustPure(iscContractName),
+					ptb.MustPure(iscFunctionName),
+					ptb.MustPure(args),
+				},
 			},
 		},
 	)

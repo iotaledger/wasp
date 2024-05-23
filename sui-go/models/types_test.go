@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,10 +103,12 @@ func TestIsSameStringAddress(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := models.IsSameAddressString(tt.args.addr1, tt.args.addr2); got != tt.want {
-				t.Errorf("IsSameStringAddress(): %v, want %v", got, tt.want)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				if got := models.IsSameAddressString(tt.args.addr1, tt.args.addr2); got != tt.want {
+					t.Errorf("IsSameStringAddress(): %v, want %v", got, tt.want)
+				}
+			},
+		)
 	}
 }

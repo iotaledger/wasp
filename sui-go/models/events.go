@@ -1,6 +1,6 @@
 package models
 
-import "github.com/iotaledger/isc-private/sui-go/sui_types"
+import "github.com/iotaledger/wasp/sui-go/sui_types"
 
 type EventId struct {
 	TxDigest sui_types.TransactionDigest `json:"txDigest"`

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,7 +79,11 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 				gasAmount:  2,
 				pickMethod: models.PickSmaller,
 			},
-			want:    models.Coins{{Balance: balanceObject(1)}, {Balance: balanceObject(3)}, {Balance: balanceObject(4)}},
+			want: models.Coins{
+				{Balance: balanceObject(1)},
+				{Balance: balanceObject(3)},
+				{Balance: balanceObject(4)},
+			},
 			want1:   &models.Coin{Balance: balanceObject(2)},
 			wantErr: false,
 		},
@@ -181,10 +185,14 @@ func TestCoins_PickCoins(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "smaller 2",
-			cs:      testCoins,
-			args:    args{amount: big.NewInt(4), pickMethod: models.PickSmaller},
-			want:    models.Coins{{Balance: balanceObject(1)}, {Balance: balanceObject(2)}, {Balance: balanceObject(3)}},
+			name: "smaller 2",
+			cs:   testCoins,
+			args: args{amount: big.NewInt(4), pickMethod: models.PickSmaller},
+			want: models.Coins{
+				{Balance: balanceObject(1)},
+				{Balance: balanceObject(2)},
+				{Balance: balanceObject(3)},
+			},
 			wantErr: false,
 		},
 		{

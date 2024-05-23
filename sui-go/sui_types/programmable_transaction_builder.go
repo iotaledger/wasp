@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/mitchellh/hashstructure/v2"

@@ -5,16 +5,19 @@ import (
 	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
-	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 )
 
 // NOTE: This a copy the query limit from our Rust JSON RPC backend, this needs to be kept in sync!
 const QUERY_MAX_RESULT_LIMIT = 50
 
 // GetSuiCoinsOwnedByAddress This function will retrieve a maximum of 200 coins.
-func (s *ImplSuiAPI) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui_types.SuiAddress) (models.Coins, error) {
+func (s *ImplSuiAPI) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui_types.SuiAddress) (
+	models.Coins,
+	error,
+) {
 	coinType := models.SuiCoinType
 	page, err := s.GetCoins(ctx, address, &coinType, nil, 200)
 	if err != nil {
@@ -118,29 +121,38 @@ func BCS_RequestAddStake(
 	return bcs.Marshal(tx)
 }
 
-func BCS_RequestWithdrawStake(signer *sui_types.SuiAddress, stakedSuiRef sui_types.ObjectRef, gas []*sui_types.ObjectRef, gasBudget, gasPrice uint64) ([]byte, error) {
+func BCS_RequestWithdrawStake(
+	signer *sui_types.SuiAddress,
+	stakedSuiRef sui_types.ObjectRef,
+	gas []*sui_types.ObjectRef,
+	gasBudget, gasPrice uint64,
+) ([]byte, error) {
 	// build with BCS
 	ptb := sui_types.NewProgrammableTransactionBuilder()
 	arg0, err := ptb.Obj(sui_types.SuiSystemMutObj)
 	if err != nil {
 		return nil, err
 	}
-	arg1, err := ptb.Obj(sui_types.ObjectArg{
-		ImmOrOwnedObject: &stakedSuiRef,
-	})
+	arg1, err := ptb.Obj(
+		sui_types.ObjectArg{
+			ImmOrOwnedObject: &stakedSuiRef,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-	ptb.Command(sui_types.Command{
-		MoveCall: &sui_types.ProgrammableMoveCall{
-			Package:  sui_types.SuiSystemAddress,
-			Module:   sui_types.SuiSystemModuleName,
-			Function: sui_types.WithdrawStakeFunName,
-			Arguments: []sui_types.Argument{
-				arg0, arg1,
+	ptb.Command(
+		sui_types.Command{
+			MoveCall: &sui_types.ProgrammableMoveCall{
+				Package:  sui_types.SuiSystemAddress,
+				Module:   sui_types.SuiSystemModuleName,
+				Function: sui_types.WithdrawStakeFunName,
+				Arguments: []sui_types.Argument{
+					arg0, arg1,
+				},
 			},
 		},
-	})
+	)
 	pt := ptb.Finish()
 	tx := sui_types.NewProgrammable(
 		signer, pt, gas, gasBudget, gasPrice,

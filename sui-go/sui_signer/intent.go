@@ -3,7 +3,7 @@ package sui_signer
 import (
 	"bytes"
 
-	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 	"github.com/fardream/go-bcs/bcs"
 )

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/isc-private/sui-go/models"
-	"github.com/iotaledger/isc-private/sui-go/sui_signer"
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 func (s *ImplSuiAPI) GetCoinObjectForGasFee(
@@ -39,7 +39,13 @@ func (s *ImplSuiAPI) SignAndExecuteTransaction(
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction block: %w", err)
 	}
-	resp, err := s.ExecuteTransactionBlock(ctx, txBytes, []*sui_signer.Signature{&signature}, options, models.TxnRequestTypeWaitForLocalExecution)
+	resp, err := s.ExecuteTransactionBlock(
+		ctx,
+		txBytes,
+		[]*sui_signer.Signature{&signature},
+		options,
+		models.TxnRequestTypeWaitForLocalExecution,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
 	}

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
-	"github.com/iotaledger/isc-private/sui-go/sui_types/serialization"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 	"github.com/stretchr/testify/require"
 )
