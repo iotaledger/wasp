@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/howjmay/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/models"
 	"github.com/stretchr/testify/require"
 )
 

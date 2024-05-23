@@ -6,8 +6,8 @@ import (
 	"errors"
 	"log"
 
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/isc-private/sui-go/models"
+	"github.com/iotaledger/isc-private/sui-go/sui_types"
 	"github.com/tidwall/gjson"
 )
 
