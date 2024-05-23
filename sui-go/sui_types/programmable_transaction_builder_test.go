@@ -82,7 +82,7 @@ func TestPTB_PaySui(t *testing.T) {
 	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
 	recipients := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 2)
 	coinType := models.SuiCoinType
-	limit := uint(3)
+	limit := uint(1)
 	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
 	require.NoError(t, err)
 	coin := coinPages.Data[0]
@@ -107,16 +107,6 @@ func TestPTB_PaySui(t *testing.T) {
 	txBytes, err := bcs.Marshal(tx)
 	require.NoError(t, err)
 
-	// txnResponse, err := client.SignAndExecuteTransaction(context.TODO(), sender, txBytes, &models.SuiTransactionBlockResponseOptions{
-	// 	ShowInput:          true,
-	// 	ShowEffects:        true,
-	// 	ShowObjectChanges:  true,
-	// 	ShowBalanceChanges: true,
-	// 	ShowEvents:         true,
-	// })
-	// require.NoError(t, err)
-	// require.True(t, txnResponse.Effects.Data.IsSuccess())
-
 	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
 	require.NoError(t, err)
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
@@ -124,31 +114,24 @@ func TestPTB_PaySui(t *testing.T) {
 	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.Data.V1.GasObject.Reference.ObjectID)
 
 	// 2 for Mutated (1 gas coin and 1 merged coin in pay pt), 2 created (the 2 transfer in pay pt),
-	// 	require.Len(t, simulate.ObjectChanges, 5)
+	require.Len(t, simulate.ObjectChanges, 3)
 	// for _, change := range simulate.ObjectChanges {
 	// 	if change.Data.Mutated != nil {
-	// 		fmt.Println("change.Data.Mutated.ObjectID: ", change.Data.Mutated.ObjectID)
-	// 	} else if change.Data.Created != nil {
-	// 		fmt.Println("change.Data.Created.ObjectID: ", change.Data.Created.ObjectID)
+	// 		require.Contains(t, []*sui_types.ObjectID{gasCoin.CoinObjectID, transferCoins[0].CoinObjectID}, &change.Data.Mutated.ObjectID)
 	// 	} else if change.Data.Deleted != nil {
-	// 		fmt.Println("change.Data.Deleted.ObjectID: ", change.Data.Deleted.ObjectID)
+	// 		require.Equal(t, transferCoins[1].CoinObjectID, &change.Data.Deleted.ObjectID)
 	// 	}
-	// if change.Data.Mutated != nil {
-	// 	require.Contains(t, []*sui_types.ObjectID{gasCoin.CoinObjectID, transferCoins[0].CoinObjectID}, &change.Data.Mutated.ObjectID)
-	// } else if change.Data.Deleted != nil {
-	// 	require.Equal(t, transferCoins[1].CoinObjectID, &change.Data.Deleted.ObjectID)
 	// }
-	// }
-	// 	require.Len(t, simulate.BalanceChanges, 3)
-	// 	for _, balChange := range simulate.BalanceChanges {
-	// 		if balChange.Owner.AddressOwner == sender.Address {
-	// 			require.Equal(t, totalBal-(amounts[0]+amounts[1]), balChange.Amount)
-	// 		} else if balChange.Owner.AddressOwner == recipients[0].Address {
-	// 			require.Equal(t, amounts[0], balChange.Amount)
-	// 		} else if balChange.Owner.AddressOwner == recipients[1].Address {
-	// 			require.Equal(t, amounts[1], balChange.Amount)
-	// 		}
+	require.Len(t, simulate.BalanceChanges, 3)
+	// for _, balChange := range simulate.BalanceChanges {
+	// 	if balChange.Owner.AddressOwner == sender.Address {
+	// 		require.Equal(t, totalBal-(amounts[0]+amounts[1]), balChange.Amount)
+	// 	} else if balChange.Owner.AddressOwner == recipients[0].Address {
+	// 		require.Equal(t, amounts[0], balChange.Amount)
+	// 	} else if balChange.Owner.AddressOwner == recipients[1].Address {
+	// 		require.Equal(t, amounts[1], balChange.Amount)
 	// 	}
+	// }
 }
 
 // func TestPTB_TransferObject(t *testing.T) {

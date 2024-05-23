@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestForEach(t *testing.T) {
+func TestIndexMap(t *testing.T) {
 	t.Run("primitive type", func(t *testing.T) {
 		m := indexmap.NewIndexMap[string, int]()
 		m.Insert("first", 1)

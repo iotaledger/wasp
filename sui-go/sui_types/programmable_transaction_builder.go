@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 	"github.com/iotaledger/wasp/sui-go/utils/indexmap"
-	"github.com/mitchellh/hashstructure/v2"
 
 	"github.com/fardream/go-bcs/bcs"
 )
@@ -17,33 +16,20 @@ type BuilderArg struct {
 	ForcedNonUniquePure *uint
 }
 
-func (b BuilderArg) GetHash() uint64 {
-	// TODO we can implement our own hash func for go structs
-	hash, err := hashstructure.Hash(b, hashstructure.FormatV2, nil)
-	if err != nil {
-		panic(err)
-	}
-	return hash
-}
-
 type ProgrammableTransactionBuilder struct {
-	Inputs *indexmap.IndexMap[uint64, CallArg] //maybe has hash clash
-	// InputsKeyOrder []BuilderArg
+	Inputs   *indexmap.IndexMap[BuilderArg, CallArg] //maybe has hash clash
 	Commands []Command
 }
 
 func NewProgrammableTransactionBuilder() *ProgrammableTransactionBuilder {
 	return &ProgrammableTransactionBuilder{
-		Inputs: indexmap.NewIndexMap[uint64, CallArg](),
+		Inputs: indexmap.NewIndexMap[BuilderArg, CallArg](),
 	}
 }
 
 func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 	var inputs []CallArg
-	// for _, v := range p.InputsKeyOrder {
-	// 	inputs = append(inputs, p.Inputs[v.GetHash()])
-	// }
-	p.Inputs.ForEach(func(k uint64, v CallArg) {
+	p.Inputs.ForEach(func(k BuilderArg, v CallArg) {
 		inputs = append(inputs, v)
 	})
 	return ProgrammableTransaction{
@@ -51,26 +37,6 @@ func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 		Commands: p.Commands,
 	}
 }
-
-// `insertFull` is the go implementation of rust crate `indexmap::insert_full()`
-// It inserts the key/value pair into the map
-// see more info in https://docs.rs/indexmap/latest/indexmap/map/struct.IndexMap.html#method.insert
-// func (p *ProgrammableTransactionBuilder) insertFull(key BuilderArg, value CallArg) uint16 {
-// 	builderArgHash := key.GetHash()
-
-// 	_, ok := p.Inputs[builderArgHash]
-// 	p.Inputs[builderArgHash] = value
-// 	if !ok {
-// 		p.InputsKeyOrder = append(p.InputsKeyOrder, key)
-// 		return uint16(len(p.InputsKeyOrder) - 1)
-// 	}
-// 	for i, v := range p.InputsKeyOrder {
-// 		if v.GetHash() == builderArgHash {
-// 			return uint16(i)
-// 		}
-// 	}
-// 	return 0
-// }
 
 func (p *ProgrammableTransactionBuilder) Pure(value any) (Argument, error) {
 	pureData, err := bcs.Marshal(value)
@@ -92,7 +58,7 @@ func (p *ProgrammableTransactionBuilder) MustPure(value any) Argument {
 func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error) {
 	id := objArg.id()
 	var oj ObjectArg
-	if oldValue, ok := p.Inputs.Get(BuilderArg{Object: id}.GetHash()); ok {
+	if oldValue, ok := p.Inputs.Get(BuilderArg{Object: id}); ok {
 		var oldObjArg ObjectArg
 		switch {
 		case oldValue.Pure != nil:
@@ -130,7 +96,7 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 		oj = objArg
 	}
 	i := uint16(p.Inputs.InsertFull(
-		BuilderArg{Object: id}.GetHash(),
+		BuilderArg{Object: id},
 		CallArg{Object: &oj},
 	))
 	return Argument{
@@ -160,7 +126,7 @@ func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate b
 	}
 	i := uint16(
 		p.Inputs.InsertFull(
-			arg.GetHash(),
+			arg,
 			CallArg{Pure: &bytes},
 		),
 	)
