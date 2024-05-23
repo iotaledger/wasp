@@ -89,9 +89,14 @@ func TestSendCoin(t *testing.T) {
 	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
 	require.NoError(t, err)
+
+	fmt.Printf("anchor type: %s\ncoin type  : %s\n", typeName, coinType)
+
 	// the signer should have only one coin object which belongs to testcoin type
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
+
+	eventCh := subscribeEvents(t, iscPackageID)
 
 	sendCoinRes, err := client.SendCoin(
 		context.Background(),
@@ -110,6 +115,9 @@ func TestSendCoin(t *testing.T) {
 	getObjectRes, err := client.GetObject(context.Background(), coins.Data[0].CoinObjectID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
+
+	object := receiveEvent(t, client, eventCh)
+	_ = object
 }
 
 func TestReceiveCoin(t *testing.T) {
@@ -291,6 +299,8 @@ func TestSendRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
 
+	eventCh := subscribeEvents(t, iscPackageID)
+
 	sendReqRes, err := client.SendRequest(
 		context.Background(),
 		signer,
@@ -308,6 +318,9 @@ func TestSendRequest(t *testing.T) {
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
+
+	object := receiveEvent(t, client, eventCh)
+	_ = object
 }
 
 func TestReceiveRequest(t *testing.T) {
@@ -396,4 +409,38 @@ func TestReceiveRequest(t *testing.T) {
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.NotNil(t, getObjectRes.Error.Data.Deleted)
+}
+
+func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan models.SuiEvent {
+	api := sui.NewSuiWebsocketClient("ws://127.0.0.1:9000")
+	eventCh := make(chan models.SuiEvent)
+	err := api.SubscribeEvent(
+		context.TODO(),
+		&models.EventFilter{
+			Package: iscPackageID,
+		},
+		eventCh,
+	)
+	require.NoError(t, err)
+	return eventCh
+}
+
+func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent) *models.SuiObjectResponse {
+	event := <-eventCh
+	fmt.Println("event: ", event)
+	close(eventCh)
+
+	eventId := sui_types.MustSuiAddressFromHex(event.ParsedJson.(map[string]interface{})["id"].(string))
+	eventSender := sui_types.MustSuiAddressFromHex(event.ParsedJson.(map[string]interface{})["sender"].(string))
+	require.Equal(t, *eventSender, event.Sender)
+
+	object, err := client.GetObject(
+		context.Background(),
+		eventId,
+		&models.SuiObjectDataOptions{ShowContent: true},
+	)
+	require.NoError(t, err)
+	require.Equal(t, eventId, object.Data.ObjectID)
+	fmt.Println("object: ", object.Data.Content.Data.MoveObject)
+	return object
 }

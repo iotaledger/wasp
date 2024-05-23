@@ -6,9 +6,10 @@ edition = "2024.beta"
 # authors = ["Eric Hop (eric@iota.org)"]
 
 [dependencies]
-MoveStdlib = {local = "../../../../kinesis/crates/sui-framework/packages/move-stdlib"}
-Stardust = { local = "../../../../kinesis/crates/sui-framework/packages/stardust" }
-Sui = { local = "../../../../kinesis/crates/sui-framework/packages/sui-framework" }
+MoveStdlib = { local = "../../../../../kinesis/crates/sui-framework/packages/move-stdlib"}
+Stardust   = { local = "../../../../../kinesis/crates/sui-framework/packages/stardust" }
+Sui        = { local = "../../../../../kinesis/crates/sui-framework/packages/sui-framework" }
+# SuiSystem  = { local = "../../../../../kinesis/crates/sui-framework/packages/sui-system" }
 
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
 # Revision can be a branch, a tag, and a commit hash.
@@ -22,9 +23,10 @@ Sui = { local = "../../../../kinesis/crates/sui-framework/packages/sui-framework
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
+isc = "0x0"
 std = "0x1"
 sui = "0x2"
-isc = "0x0"
+# sui_system = "0x3"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.
