@@ -15,26 +15,26 @@ module isc::assets_test {
         let iota = coin::mint_for_testing<IOTA>(10, ctx);
 
         let mut assets = assets::new(ctx);
-        assert!(!assets.has_tokens<SUI>(), 0);
-        assert!(!assets.has_tokens<IOTA>(), 0);
+        assert!(!assets.has_coin<SUI>(), 0);
+        assert!(!assets.has_coin<IOTA>(), 0);
 
-        assets.add_tokens(sui.into_balance());
-        assert!(assets.has_tokens<SUI>(), 0);
+        assets.add_balance(sui.into_balance());
+        assert!(assets.has_coin<SUI>(), 0);
 
-        assets.add_tokens(iota.into_balance());
-        assert!(assets.has_tokens<IOTA>(), 0);
+        assets.add_balance(iota.into_balance());
+        assert!(assets.has_coin<IOTA>(), 0);
 
-        let suis = assets.take_tokens<SUI>(5);
+        let suis = assets.take_coin<SUI>(5);
         test_utils::destroy(suis);
-        assert!(!assets.has_tokens<SUI>(), 0);
+        assert!(!assets.has_coin<SUI>(), 0);
 
-        let iotas = assets.take_tokens<IOTA>(4);
+        let iotas = assets.take_coin<IOTA>(4);
         test_utils::destroy(iotas);
-        assert!(assets.has_tokens<IOTA>(), 0);
+        assert!(assets.has_coin<IOTA>(), 0);
 
-        let iotas2 = assets.take_tokens<IOTA>(6);
+        let iotas2 = assets.take_coin<IOTA>(6);
         test_utils::destroy(iotas2);
-        assert!(!assets.has_tokens<IOTA>(), 0);
+        assert!(!assets.has_coin<IOTA>(), 0);
 
         assets.destroy_empty();
    }
