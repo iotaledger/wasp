@@ -105,7 +105,7 @@ func BCS_RequestAddStake(
 	ptb.Command(
 		sui_types.Command{
 			MoveCall: &sui_types.ProgrammableMoveCall{
-				Package:  sui_types.SuiSystemAddress,
+				Package:  sui_types.SuiPackageIdSuiSystem,
 				Module:   sui_types.SuiSystemModuleName,
 				Function: sui_types.AddStakeFunName,
 				Arguments: []sui_types.Argument{
@@ -144,7 +144,7 @@ func BCS_RequestWithdrawStake(
 	ptb.Command(
 		sui_types.Command{
 			MoveCall: &sui_types.ProgrammableMoveCall{
-				Package:  sui_types.SuiSystemAddress,
+				Package:  sui_types.SuiPackageIdSuiSystem,
 				Module:   sui_types.SuiSystemModuleName,
 				Function: sui_types.WithdrawStakeFunName,
 				Arguments: []sui_types.Argument{
