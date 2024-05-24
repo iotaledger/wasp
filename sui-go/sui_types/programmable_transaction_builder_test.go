@@ -13,7 +13,106 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPTB_Pay(t *testing.T) {
+func TestPTBPayAllSui(t *testing.T) {
+	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	recipient := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 1)[0]
+	coinType := models.SuiCoinType
+	limit := uint(3)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	require.NoError(t, err)
+	coins := models.Coins(coinPages.Data)
+
+	// build with BCS
+	ptb := sui_types.NewProgrammableTransactionBuilder()
+	err = ptb.PayAllSui(recipient.Address)
+	require.NoError(t, err)
+	pt := ptb.Finish()
+	tx := sui_types.NewProgrammable(
+		sender.Address,
+		pt,
+		coins.CoinRefs(),
+		sui.DefaultGasBudget,
+		sui.DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(tx)
+	require.NoError(t, err)
+
+	// build with remote rpc
+	txn, err := client.PayAllSui(
+		context.Background(),
+		sender.Address,
+		recipient.Address,
+		coins.ObjectIDs(),
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+	)
+	require.NoError(t, err)
+	txBytesRemote := txn.TxBytes.Data()
+	require.Equal(t, txBytes, txBytesRemote)
+}
+
+func TestPTBPaySui(t *testing.T) {
+	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	recipients := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 2)
+	coinType := models.SuiCoinType
+	limit := uint(1)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	require.NoError(t, err)
+	coin := coinPages.Data[0]
+
+	ptb := sui_types.NewProgrammableTransactionBuilder()
+	err = ptb.PaySui(
+		[]*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address},
+		[]uint64{123, 456},
+	)
+	require.NoError(t, err)
+	pt := ptb.Finish()
+
+	tx := sui_types.NewProgrammable(
+		sender.Address,
+		pt,
+		[]*sui_types.ObjectRef{
+			coin.Ref(),
+		},
+		sui.DefaultGasBudget,
+		sui.DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(tx)
+	require.NoError(t, err)
+
+	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
+	require.NoError(t, err)
+	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
+	require.True(t, simulate.Effects.Data.IsSuccess())
+	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.Data.V1.GasObject.Reference.ObjectID)
+
+	// 1 for Mutated, 2 created (the 2 transfer in pay_sui pt),
+	require.Len(t, simulate.ObjectChanges, 3)
+	for _, change := range simulate.ObjectChanges {
+		if change.Data.Mutated != nil {
+			require.Equal(t, coin.CoinObjectID, &change.Data.Mutated.ObjectID)
+		} else if change.Data.Created != nil {
+			require.Contains(t, []*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address}, change.Data.Created.Owner.AddressOwner)
+		}
+	}
+
+	// build with remote rpc
+	txn, err := client.PaySui(
+		context.Background(),
+		sender.Address,
+		[]*sui_types.ObjectID{coin.CoinObjectID},
+		[]*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address},
+		[]models.SafeSuiBigInt[uint64]{
+			models.NewSafeSuiBigInt(uint64(123)),
+			models.NewSafeSuiBigInt(uint64(456)),
+		},
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+	)
+	require.NoError(t, err)
+	txBytesRemote := txn.TxBytes.Data()
+	require.Equal(t, txBytes, txBytesRemote)
+}
+
+func TestPTBPay(t *testing.T) {
 	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
 	recipients := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 2)
 	coinType := models.SuiCoinType
@@ -75,63 +174,23 @@ func TestPTB_Pay(t *testing.T) {
 			require.Equal(t, amounts[1], balChange.Amount)
 		}
 	}
-}
 
-func TestPTB_PaySui(t *testing.T) {
-	var err error
-	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	recipients := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 2)
-	coinType := models.SuiCoinType
-	limit := uint(1)
-	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
-	require.NoError(t, err)
-	coin := coinPages.Data[0]
-
-	ptb := sui_types.NewProgrammableTransactionBuilder()
-	err = ptb.PaySui(
-		[]*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address},
-		[]uint64{123, 456},
-	)
-	require.NoError(t, err)
-	pt := ptb.Finish()
-
-	tx := sui_types.NewProgrammable(
+	// build with remote rpc
+	txn, err := client.Pay(
+		context.Background(),
 		sender.Address,
-		pt,
-		[]*sui_types.ObjectRef{
-			coin.Ref(),
+		transferCoins.ObjectIDs(),
+		[]*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address},
+		[]models.SafeSuiBigInt[uint64]{
+			models.NewSafeSuiBigInt(amounts[0]),
+			models.NewSafeSuiBigInt(amounts[1]),
 		},
-		sui.DefaultGasBudget,
-		sui.DefaultGasPrice,
+		gasCoin.CoinObjectID,
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
 	)
-	txBytes, err := bcs.Marshal(tx)
 	require.NoError(t, err)
-
-	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
-	require.NoError(t, err)
-	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
-	require.True(t, simulate.Effects.Data.IsSuccess())
-	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.Data.V1.GasObject.Reference.ObjectID)
-
-	// 2 for Mutated (1 gas coin and 1 merged coin in pay pt), 2 created (the 2 transfer in pay pt),
-	require.Len(t, simulate.ObjectChanges, 3)
-	// for _, change := range simulate.ObjectChanges {
-	// 	if change.Data.Mutated != nil {
-	// 		require.Contains(t, []*sui_types.ObjectID{gasCoin.CoinObjectID, transferCoins[0].CoinObjectID}, &change.Data.Mutated.ObjectID)
-	// 	} else if change.Data.Deleted != nil {
-	// 		require.Equal(t, transferCoins[1].CoinObjectID, &change.Data.Deleted.ObjectID)
-	// 	}
-	// }
-	require.Len(t, simulate.BalanceChanges, 3)
-	// for _, balChange := range simulate.BalanceChanges {
-	// 	if balChange.Owner.AddressOwner == sender.Address {
-	// 		require.Equal(t, totalBal-(amounts[0]+amounts[1]), balChange.Amount)
-	// 	} else if balChange.Owner.AddressOwner == recipients[0].Address {
-	// 		require.Equal(t, amounts[0], balChange.Amount)
-	// 	} else if balChange.Owner.AddressOwner == recipients[1].Address {
-	// 		require.Equal(t, amounts[1], balChange.Amount)
-	// 	}
-	// }
+	txBytesRemote := txn.TxBytes.Data()
+	require.Equal(t, txBytes, txBytesRemote)
 }
 
 // func TestPTB_TransferObject(t *testing.T) {
@@ -214,49 +273,6 @@ func TestPTB_PaySui(t *testing.T) {
 // 		context.Background(), sender, recipient, coin.CoinObjectID,
 // 		models.NewSafeSuiBigInt(amount),
 // 		models.NewSafeSuiBigInt(gasBudget),
-// 	)
-// 	require.NoError(t, err)
-// 	txBytesRemote := txn.TxBytes.Data()
-
-// 	require.Equal(t, txBytesBCS, txBytesRemote)
-// }
-
-// func TestPTB_PayAllSui(t *testing.T) {
-// 	sender := sui_signer.TEST_ADDRESS
-// 	recipient := sender
-// 	// gasBudget := sui_types.SUI(0.01).Uint64()
-
-// 	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-// 	err := sui.RequestFundFromFaucet(sender, conn.TestnetFaucetUrl)
-// 	require.NoError(t, err)
-// 	coins := getCoins(t, api, sender, 2)
-// 	coin, coin2 := coins[0], coins[1]
-
-// 	// build with BCS
-// 	ptb := sui_types.NewProgrammableTransactionBuilder()
-// 	err = ptb.PayAllSui(recipient)
-// 	require.NoError(t, err)
-// 	pt := ptb.Finish()
-// 	tx := sui_types.NewProgrammable(
-// 		sender,
-// 		pt,
-// 		[]*sui_types.ObjectRef{
-// 			coin.Ref(),
-// 			coin2.Ref(),
-// 		},
-// 		sui.DefaultGasBudget,
-// 		sui.DefaultGasPrice,
-// 	)
-// 	txBytesBCS, err := bcs.Marshal(tx)
-// 	require.NoError(t, err)
-
-// 	// build with remote rpc
-// 	txn, err := api.PayAllSui(
-// 		context.Background(), sender, recipient,
-// 		[]*sui_types.ObjectID{
-// 			coin.CoinObjectID, coin2.CoinObjectID,
-// 		},
-// 		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
 // 	)
 // 	require.NoError(t, err)
 // 	txBytesRemote := txn.TxBytes.Data()
