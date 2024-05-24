@@ -93,10 +93,7 @@ func (p *PickedCoins) SuggestMaxGasBudget() uint64 {
 // @throw ErrNoCoinsFound If the count of input coins is 0.
 // @throw ErrInsufficientBalance If the input coins are all that is left and the total amount is less than the target amount.
 // @throw ErrNeedMergeCoin If there are many coins, but the total amount of coins limited is less than the target amount.
-func PickupCoins(inputCoins *CoinPage, targetAmount *big.Int, gasBudget uint64, limit int, moreCount int) (
-	*PickedCoins,
-	error,
-) {
+func PickupCoins(inputCoins *CoinPage, targetAmount *big.Int, gasBudget uint64, limit int, moreCount int) (*PickedCoins, error) {
 	inputCount := len(inputCoins.Data)
 	if inputCount <= 0 {
 		return nil, ErrNoCoinsFound

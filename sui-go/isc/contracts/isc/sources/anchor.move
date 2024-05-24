@@ -28,7 +28,6 @@ module isc::anchor {
     ///   call `receive_request()` to finalize receiving the request and subsequently destroy it.
     public struct AnchorEvent has copy, drop {
         id: ID,
-        sender: address,
     }
 
     /// starts a new chain by creating a new `Anchor` for it
@@ -40,8 +39,8 @@ module isc::anchor {
     }
  
     /// Client calls this to send a `Coint<T>` to the `Anchor`'s address
-    public fun send_coin<T>(anchor_address: address, coin: Coin<T>, ctx: &mut TxContext) {
-        event::emit(AnchorEvent { id: object::id(&coin), sender: ctx.sender() });
+    public fun send_coin<T>(anchor_address: address, coin: Coin<T>, _ctx: &mut TxContext) {
+        event::emit(AnchorEvent { id: object::id(&coin) });
         transfer::public_transfer(coin, anchor_address)
     }
  
@@ -52,8 +51,8 @@ module isc::anchor {
     }
  
     /// Client calls this to send an `Nft` to the `Anchor`'s address
-    public fun send_nft(anchor_address: address, nft: Nft, ctx: &mut TxContext) {
-        event::emit(AnchorEvent { id: object::id(&nft), sender: ctx.sender() });
+    public fun send_nft(anchor_address: address, nft: Nft, _ctx: &mut TxContext) {
+        event::emit(AnchorEvent { id: object::id(&nft) });
         transfer::public_transfer(nft, anchor_address)
     }
  
@@ -64,8 +63,8 @@ module isc::anchor {
    }
 
     /// Client calls this to send a `Request` to the `Anchor`'s address
-    public fun send_request(anchor_address: address, request: Request, ctx: &mut TxContext) {
-        event::emit(AnchorEvent { id: object::id(&request), sender: ctx.sender() });
+    public fun send_request(anchor_address: address, request: Request, _ctx: &mut TxContext) {
+        event::emit(AnchorEvent { id: object::id(&request) });
         transfer::public_transfer(request, anchor_address)
     }
 
