@@ -10,8 +10,174 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 	"github.com/stretchr/testify/require"
 )
+
+func TestPTBMoveCall(t *testing.T) {
+	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	coinType := models.SuiCoinType
+	limit := uint(3)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	require.NoError(t, err)
+	coins := models.Coins(coinPages.Data)
+
+	// a random validator on devnet
+	validatorAddress, err := sui_types.SuiAddressFromHex("0x1571d9d389181f509c3fd2bb0f0eb06dc8ba73152188567878a5dc85097a0eab")
+	require.NoError(t, err)
+
+	// case 1: split target amount
+	ptb1 := sui_types.NewProgrammableTransactionBuilder()
+	arg0, err := ptb1.Obj(sui_types.SuiSystemMutObj)
+	require.NoError(t, err)
+	// if sui is not enough, the transaction will fail
+	splitAmountArg := ptb1.MustPure(uint64(1e9))
+	arg1 := ptb1.Command(sui_types.Command{
+		SplitCoins: &sui_types.ProgrammableSplitCoins{
+			Coin:    sui_types.Argument{GasCoin: &serialization.EmptyEnum{}},
+			Amounts: []sui_types.Argument{splitAmountArg},
+		}},
+	)
+	arg2 := ptb1.MustPure(validatorAddress)
+	ptb1.Command(sui_types.Command{
+		MoveCall: &sui_types.ProgrammableMoveCall{
+			Package:       sui_types.SuiPackageIdSuiSystem,
+			Module:        sui_types.SuiSystemModuleName,
+			Function:      sui_types.AddStakeFunName,
+			TypeArguments: []sui_types.TypeTag{},
+			Arguments:     []sui_types.Argument{arg0, arg1, arg2},
+		}},
+	)
+	pt1 := ptb1.Finish()
+	tx1 := sui_types.NewProgrammable(
+		sender.Address,
+		pt1,
+		[]*sui_types.ObjectRef{coins[0].Ref()},
+		sui.DefaultGasBudget,
+		sui.DefaultGasPrice,
+	)
+	txBytes1, err := bcs.Marshal(tx1)
+	require.NoError(t, err)
+	simulate1, err := client.DryRunTransaction(context.Background(), txBytes1)
+	require.NoError(t, err)
+	require.Empty(t, simulate1.Effects.Data.V1.Status.Error)
+	require.True(t, simulate1.Effects.Data.IsSuccess())
+	require.Equal(t, coins[0].CoinObjectID.String(), simulate1.Effects.Data.V1.GasObject.Reference.ObjectID)
+
+	// case 2: direct stake the specified coin
+	ptb2 := sui_types.NewProgrammableTransactionBuilder()
+	coinArg := sui_types.CallArg{
+		Object: &sui_types.ObjectArg{
+			ImmOrOwnedObject: coins[1].Ref(),
+		},
+	}
+	addrBytes := validatorAddress.Data()
+	addrArg := sui_types.CallArg{
+		Pure: &addrBytes,
+	}
+	err = ptb2.MoveCall(
+		sui_types.SuiPackageIdSuiSystem,
+		sui_types.SuiSystemModuleName,
+		sui_types.AddStakeFunName,
+		[]sui_types.TypeTag{},
+		[]sui_types.CallArg{sui_types.SuiSystemMut, coinArg, addrArg},
+	)
+	require.NoError(t, err)
+	pt2 := ptb2.Finish()
+	tx2 := sui_types.NewProgrammable(
+		sender.Address,
+		pt2,
+		[]*sui_types.ObjectRef{coins[0].Ref()},
+		sui.DefaultGasBudget,
+		sui.DefaultGasPrice,
+	)
+
+	txBytes2, err := bcs.Marshal(tx2)
+	require.NoError(t, err)
+	simulate2, err := client.DryRunTransaction(context.Background(), txBytes2)
+	require.NoError(t, err)
+	require.Empty(t, simulate2.Effects.Data.V1.Status.Error)
+	require.True(t, simulate2.Effects.Data.IsSuccess())
+	require.Equal(t, coins[0].CoinObjectID.String(), simulate2.Effects.Data.V1.GasObject.Reference.ObjectID)
+}
+
+func TestPTBTransferObject(t *testing.T) {
+	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	recipient := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 1)[0]
+	coinType := models.SuiCoinType
+	limit := uint(2)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	require.NoError(t, err)
+	coins := models.Coins(coinPages.Data)
+	gasCoin := coins[0]
+	transferCoin := coins[1]
+
+	ptb := sui_types.NewProgrammableTransactionBuilder()
+	err = ptb.TransferObject(recipient.Address, transferCoin.Ref())
+	require.NoError(t, err)
+	pt := ptb.Finish()
+	tx := sui_types.NewProgrammable(
+		sender.Address,
+		pt,
+		[]*sui_types.ObjectRef{gasCoin.Ref()},
+		sui.DefaultGasBudget,
+		sui.DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(tx)
+	require.NoError(t, err)
+
+	// build with remote rpc
+	txn, err := client.TransferObject(
+		context.Background(),
+		sender.Address,
+		recipient.Address,
+		transferCoin.CoinObjectID,
+		gasCoin.CoinObjectID,
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+	)
+	require.NoError(t, err)
+	txBytesRemote := txn.TxBytes.Data()
+	require.Equal(t, txBytes, txBytesRemote)
+}
+
+func TestPTBTransferSui(t *testing.T) {
+	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	recipient := sui_signer.NewRandomSigners(sui_signer.KeySchemeFlagDefault, 1)[0]
+	coinType := models.SuiCoinType
+	limit := uint(1)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	require.NoError(t, err)
+	coin := models.Coins(coinPages.Data)[0]
+	amount := uint64(123)
+
+	// build with BCS
+	ptb := sui_types.NewProgrammableTransactionBuilder()
+	ptb.TransferSui(recipient.Address, &amount)
+	require.NoError(t, err)
+	pt := ptb.Finish()
+	tx := sui_types.NewProgrammable(
+		sender.Address,
+		pt,
+		[]*sui_types.ObjectRef{coin.Ref()},
+		sui.DefaultGasBudget,
+		sui.DefaultGasPrice,
+	)
+	txBytesBCS, err := bcs.Marshal(tx)
+	require.NoError(t, err)
+
+	// build with remote rpc
+	txn, err := client.TransferSui(
+		context.Background(),
+		sender.Address,
+		recipient.Address,
+		coin.CoinObjectID,
+		models.NewSafeSuiBigInt(amount),
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+	)
+	require.NoError(t, err)
+	txBytesRemote := txn.TxBytes.Data()
+	require.Equal(t, txBytesBCS, txBytesRemote)
+}
 
 func TestPTBPayAllSui(t *testing.T) {
 	client, sender := sui.NewTestSuiClientWithSignerAndFund(conn.DevnetEndpointUrl, sui_signer.TEST_MNEMONIC)
@@ -191,214 +357,4 @@ func TestPTBPay(t *testing.T) {
 	require.NoError(t, err)
 	txBytesRemote := txn.TxBytes.Data()
 	require.Equal(t, txBytes, txBytesRemote)
-}
-
-// func TestPTB_TransferObject(t *testing.T) {
-// 	sender := sui_signer.TEST_ADDRESS
-// 	recipient := sui_signer.TEST_ADDRESS
-// 	gasBudget := sui_types.SUI(0.1).Uint64()
-
-// 	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-// 	err := sui.RequestFundFromFaucet(sender, conn.TestnetFaucetUrl)
-// 	require.NoError(t, err)
-// 	coins := getCoins(t, api, sender, 2)
-// 	coin, gas := coins[0], coins[1]
-
-// 	gasPrice := uint64(1000)
-// 	// gasPrice, err := api.GetReferenceGasPrice(context.Background())
-
-// 	// build with BCS
-// 	ptb := sui_types.NewProgrammableTransactionBuilder()
-// 	err = ptb.TransferObject(recipient, []*sui_types.ObjectRef{coin.Ref()})
-// 	require.NoError(t, err)
-// 	pt := ptb.Finish()
-// 	tx := sui_types.NewProgrammable(
-// 		sender,
-// 		pt,
-// 		[]*sui_types.ObjectRef{
-// 			gas.Ref(),
-// 		},
-// 		gasBudget,
-// 		gasPrice,
-// 	)
-// 	txBytesBCS, err := bcs.Marshal(tx)
-// 	require.NoError(t, err)
-
-// 	// build with remote rpc
-// 	txn, err := api.TransferObject(
-// 		context.Background(), sender, recipient,
-// 		coin.CoinObjectID,
-// 		gas.CoinObjectID,
-// 		models.NewSafeSuiBigInt(gasBudget),
-// 	)
-// 	require.NoError(t, err)
-// 	txBytesRemote := txn.TxBytes.Data()
-
-// 	require.Equal(t, txBytesBCS, txBytesRemote)
-// }
-
-// func TestPTB_TransferSui(t *testing.T) {
-// 	sender := sui_signer.TEST_ADDRESS
-// 	recipient := sender
-// 	amount := sui_types.SUI(0.001).Uint64()
-// 	gasBudget := sui_types.SUI(0.01).Uint64()
-
-// 	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-// 	err := sui.RequestFundFromFaucet(sender, conn.TestnetFaucetUrl)
-// 	require.NoError(t, err)
-// 	coin := getCoins(t, api, sender, 1)[0]
-
-// 	gasPrice := uint64(1000)
-// 	// gasPrice, err := api.GetReferenceGasPrice(context.Background())
-
-// 	// build with BCS
-// 	ptb := sui_types.NewProgrammableTransactionBuilder()
-// 	err = ptb.TransferSui(recipient, &amount)
-// 	require.NoError(t, err)
-// 	pt := ptb.Finish()
-// 	tx := sui_types.NewProgrammable(
-// 		sender,
-// 		pt,
-// 		[]*sui_types.ObjectRef{
-// 			coin.Ref(),
-// 		},
-// 		gasBudget,
-// 		gasPrice,
-// 	)
-// 	txBytesBCS, err := bcs.Marshal(tx)
-// 	require.NoError(t, err)
-
-// 	// build with remote rpc
-// 	txn, err := api.TransferSui(
-// 		context.Background(), sender, recipient, coin.CoinObjectID,
-// 		models.NewSafeSuiBigInt(amount),
-// 		models.NewSafeSuiBigInt(gasBudget),
-// 	)
-// 	require.NoError(t, err)
-// 	txBytesRemote := txn.TxBytes.Data()
-
-// 	require.Equal(t, txBytesBCS, txBytesRemote)
-// }
-
-// func TestPTB_MoveCall(t *testing.T) {
-// 	sender := sui_signer.TEST_ADDRESS
-// 	gasBudget := sui_types.SUI(0.1).Uint64()
-// 	gasPrice := uint64(1000)
-
-// 	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-// 	err := sui.RequestFundFromFaucet(sender, conn.TestnetFaucetUrl)
-// 	require.NoError(t, err)
-// 	coins := getCoins(t, api, sender, 2)
-// 	coin, coin2 := coins[0], coins[1]
-
-// 	validatorAddress, err := sui_types.SuiAddressFromHex(ComingChatValidatorAddress)
-// 	require.NoError(t, err)
-
-// 	// build with BCS
-// 	ptb := sui_types.NewProgrammableTransactionBuilder()
-
-// 	// case 1: split target amount
-// 	amtArg, err := ptb.Pure(sui_types.SUI(1).Uint64())
-// 	require.NoError(t, err)
-// 	arg1 := ptb.Command(
-// 		sui_types.Command{
-// 			SplitCoins: &sui_types.ProgrammableSplitCoins{
-// 				Coin:    sui_types.Argument{GasCoin: &serialization.EmptyEnum{}},
-// 				Amounts: []sui_types.Argument{amtArg},
-// 			},
-// 		},
-// 	) // the coin is split result argument
-// 	arg2, err := ptb.Pure(validatorAddress)
-// 	require.NoError(t, err)
-// 	arg0, err := ptb.Obj(sui_types.SuiSystemMutObj)
-// 	require.NoError(t, err)
-// 	ptb.Command(
-// 		sui_types.Command{
-// 			MoveCall: &sui_types.ProgrammableMoveCall{
-// 				Package:  sui_types.SuiSystemAddress,
-// 				Module:   sui_types.SuiSystemModuleName,
-// 				Function: sui_types.AddStakeFunName,
-// 				Arguments: []sui_types.Argument{
-// 					arg0, arg1, arg2,
-// 				},
-// 			},
-// 		},
-// 	)
-// 	pt := ptb.Finish()
-// 	tx := sui_types.NewProgrammable(
-// 		sender,
-// 		pt,
-// 		[]*sui_types.ObjectRef{
-// 			coin.Ref(),
-// 			coin2.Ref(),
-// 		},
-// 		gasBudget,
-// 		gasPrice,
-// 	)
-
-// 	// case 2: direct stake the specified coin
-// 	// coinArg := sui_types.CallArg{
-// 	// 	Object: &sui_types.ObjectArg{
-// 	// 		ImmOrOwnedObject: coin.Ref(),
-// 	// 	},
-// 	// }
-// 	// addrBytes := validatorAddress.Data()
-// 	// addrArg := sui_types.CallArg{
-// 	// 	Pure: &addrBytes,
-// 	// }
-// 	// err = ptb.MoveCall(
-// 	// 	*sui_types.SuiSystemAddress,
-// 	// 	sui_system_state.SuiSystemModuleName,
-// 	// 	sui_types.AddStakeFunName,
-// 	// 	[]sui_types.TypeTag{},
-// 	// 	[]sui_types.CallArg{
-// 	// 		sui_types.SuiSystemMut,
-// 	// 		coinArg,
-// 	// 		addrArg,
-// 	// 	},
-// 	// )
-// 	// require.NoError(t, err)
-// 	// pt := ptb.Finish()
-// 	// tx := sui_types.NewProgrammable(
-// 	// 	sender, []*sui_types.ObjectRef{
-// 	// 		coin2.Ref(),
-// 	// 	},
-// 	// 	pt, gasBudget, gasPrice,
-// 	// )
-
-// 	// build & simulate
-// 	txBytesBCS, err := bcs.Marshal(tx)
-// 	require.NoError(t, err)
-// 	resp := dryRunTxn(t, api, txBytesBCS, true)
-// 	t.Log(resp.Effects.Data.GasFee())
-// }
-
-func TestTransferSui(t *testing.T) {
-	recipient, err := sui_types.SuiAddressFromHex("0x7e875ea78ee09f08d72e2676cf84e0f1c8ac61d94fa339cc8e37cace85bebc6e")
-	require.NoError(t, err)
-
-	ptb := sui_types.NewProgrammableTransactionBuilder()
-	amount := uint64(100000)
-	ptb.TransferSui(recipient, &amount)
-	require.NoError(t, err)
-	pt := ptb.Finish()
-	digest := sui_types.MustNewDigest("HvbE2UZny6cP4KukaXetmj4jjpKTDTjVo23XEcu7VgSn")
-	objectId, err := sui_types.SuiAddressFromHex("0x13c1c3d0e15b4039cec4291c75b77c972c10c8e8e70ab4ca174cf336917cb4db")
-	require.NoError(t, err)
-	tx := sui_types.NewProgrammable(
-		recipient,
-		pt,
-		[]*sui_types.ObjectRef{
-			{
-				ObjectID: objectId,
-				Version:  14924029,
-				Digest:   digest,
-			},
-		},
-		10000000,
-		1000,
-	)
-	txByte, err := bcs.Marshal(tx)
-	require.NoError(t, err)
-	t.Logf("%x", txByte)
 }

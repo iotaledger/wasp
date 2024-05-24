@@ -3,8 +3,8 @@ package indexmap_test
 import (
 	"testing"
 
-	"github.com/iotaledger/isc-private/sui-go/sui_types"
-	"github.com/iotaledger/isc-private/sui-go/utils/indexmap"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/utils/indexmap"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +17,7 @@ func TestIndexMap(t *testing.T) {
 		val, ok := m.Get("first")
 		require.True(t, ok)
 		require.Equal(t, 1, val)
-		idx, ok := m.Index("first")
+		idx, ok := m.Find("first")
 		require.True(t, ok)
 		require.Equal(t, idx, 0)
 
@@ -25,7 +25,7 @@ func TestIndexMap(t *testing.T) {
 		val, ok = m.Get("first")
 		require.True(t, ok)
 		require.Equal(t, 3, val)
-		idx, ok = m.Index("first")
+		idx, ok = m.Find("first")
 		require.True(t, ok)
 		require.Equal(t, idx, 0)
 
@@ -52,7 +52,7 @@ func TestIndexMap(t *testing.T) {
 		val, ok := m.Get(sui_types.BuilderArg{Pure: &testBytes[0]})
 		require.True(t, ok)
 		require.Equal(t, sui_types.CallArg{Pure: &testBytes[0]}, val)
-		idx, ok := m.Index(sui_types.BuilderArg{Pure: &testBytes[0]})
+		idx, ok := m.Find(sui_types.BuilderArg{Pure: &testBytes[0]})
 		require.True(t, ok)
 		require.Equal(t, idx, 0)
 
@@ -60,7 +60,7 @@ func TestIndexMap(t *testing.T) {
 		val, ok = m.Get(sui_types.BuilderArg{Pure: &testBytes[0]})
 		require.True(t, ok)
 		require.Equal(t, sui_types.CallArg{Pure: &testBytes[2]}, val)
-		idx, ok = m.Index(sui_types.BuilderArg{Pure: &testBytes[0]})
+		idx, ok = m.Find(sui_types.BuilderArg{Pure: &testBytes[0]})
 		require.True(t, ok)
 		require.Equal(t, idx, 0)
 

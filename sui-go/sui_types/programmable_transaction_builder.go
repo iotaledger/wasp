@@ -294,7 +294,6 @@ func (p *ProgrammableTransactionBuilder) TransferSui(recipient *SuiAddress, amou
 	var coinArg Argument
 	if amount != nil {
 		amtArg := p.MustPure(amount)
-
 		coinArg = p.Command(Command{
 			SplitCoins: &ProgrammableSplitCoins{
 				Coin:    Argument{GasCoin: &serialization.EmptyEnum{}},
