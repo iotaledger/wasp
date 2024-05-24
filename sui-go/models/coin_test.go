@@ -5,8 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/sui-go/models"
 )
 
 func balanceObject(val uint64) models.SafeSuiBigInt[uint64] {

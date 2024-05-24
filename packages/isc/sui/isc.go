@@ -1,7 +1,7 @@
 package sui
 
 import (
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )

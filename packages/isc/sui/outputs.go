@@ -1,8 +1,8 @@
 package sui
 
 import (
-	"github.com/howjmay/sui-go/models"
-	"github.com/howjmay/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 // Related to: https://github.com/iotaledger/kinesis/blob/develop/crates/sui-framework/packages/stardust/sources/unlock_condition/storage_deposit_return_unlock_condition.move
