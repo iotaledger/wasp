@@ -119,6 +119,13 @@ func TestReceiveCoin(t *testing.T) {
 	require.Len(t, assets.Coins, 1)
 }
 
+type ReceivedCoin struct {
+	objectID *sui_types.SuiAddress
+	sender   *sui_types.SuiAddress
+	coinType string
+	balance  uint64
+}
+
 func TestSendReceiveCoin(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
@@ -152,17 +159,27 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.Equal(t, signer.Address, sender)
 
 	coin := object.Data.Content.Data.MoveObject
-	require.True(t, strings.HasPrefix(coin.Type, "0x2::coin::Coin<") && strings.HasSuffix(coin.Type, ">"))
-	coinType = coin.Type[len("0x2::coin::Coin<") : len(coin.Type)-1]
-	coinBalance := coin.Fields.(map[string]interface{})["balance"].(string)
+	const coinPrefix = "0x2::coin::Coin<"
+	const coinSuffix = ">"
+	require.True(t, strings.HasPrefix(coin.Type, coinPrefix) && strings.HasSuffix(coin.Type, coinSuffix))
+	balance, err := strconv.ParseUint(coin.Fields.(map[string]interface{})["balance"].(string), 10, 64)
+	require.NoError(t, err)
 
-	receiveCoin(t, client, chainSigner, iscPackageID, anchorObjID, coinType, coins)
+	// NOTE: this is the data that ISC should use to append the tokens to the account of the sender
+	receivedCoin := &ReceivedCoin{
+		objectID: object.Data.ObjectID,
+		sender:   sender,
+		coinType: coin.Type[len(coinPrefix) : len(coin.Type)-len(coinSuffix)],
+		balance:  balance,
+	}
+
+	receiveCoin(t, client, chainSigner, iscPackageID, anchorObjID, receivedCoin.coinType, coins)
 
 	assets, err := client.GetAssets(context.Background(), iscPackageID, anchorObjID)
 	require.NoError(t, err)
 	require.Len(t, assets.Coins, 1)
 	require.Equal(t, coinType, "0x"+assets.Coins[0].CoinType)
-	require.Equal(t, coinBalance, strconv.FormatUint(assets.Coins[0].Balance.Uint64(), 10))
+	require.Equal(t, balance, assets.Coins[0].Balance.Uint64())
 }
 
 func TestCreateRequest(t *testing.T) {
@@ -231,6 +248,16 @@ func TestReceiveRequest(t *testing.T) {
 	require.NotNil(t, getObjectRes.Error.Data.Deleted)
 }
 
+type ReceivedRequest struct {
+	objectID  *sui_types.SuiAddress
+	sender    *sui_types.SuiAddress
+	anchorID  *sui_types.ObjectID
+	contract  string
+	function  string
+	args      [][]byte
+	allowance []byte
+}
+
 func TestSendReceiveRequest(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
@@ -262,15 +289,25 @@ func TestSendReceiveRequest(t *testing.T) {
 	req := object.Data.Content.Data.MoveObject
 	require.True(t, strings.HasSuffix(req.Type, "::request::Request"))
 	require.Equal(t, reqType, req.Type)
-	reqData := req.Fields.(map[string]interface{})["data"].(map[string]interface{})["fields"].(map[string]interface{})
-	contract := reqData["contract"].(string)
-	require.Equal(t, "isc_test_contract_name", contract)
-	function := reqData["function"].(string)
-	require.Equal(t, "isc_test_func_name", function)
-	args := reqData["args"].([]interface{})
-	require.Empty(t, args)
-	allowance := reqData["allowance"]
-	require.Nil(t, allowance)
+
+	reqData := req.Fields.(map[string]interface{})["data"].(map[string]interface{})
+	reqFields := reqData["fields"].(map[string]interface{})
+	args := [][]byte{}
+
+	// NOTE: this is the data that ISC should use as the request from the sender
+	receivedRequest := &ReceivedRequest{
+		objectID:  object.Data.ObjectID,
+		sender:    sender,
+		anchorID:  anchorObjID,
+		contract:  reqFields["contract"].(string),
+		function:  reqFields["function"].(string),
+		args:      args,
+		allowance: nil,
+	}
+	require.Equal(t, "isc_test_contract_name", receivedRequest.contract)
+	require.Equal(t, "isc_test_func_name", receivedRequest.function)
+	require.Empty(t, receivedRequest.args)
+	require.Nil(t, receivedRequest.allowance)
 
 	receiveRequest(t, client, chainSigner, iscPackageID, anchorObjID, reqObjID)
 }
