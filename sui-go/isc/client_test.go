@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/sui-go/isc"
@@ -16,14 +18,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Client struct {
-	API sui.ImplSuiAPI
+const SEEDFORUSER = "0x1234"
+const SEEDFORCHAIN = "0x5678"
+
+func newClient(t *testing.T) *isc.Client {
+	// NOTE: comment out the next line to run local tests against sui-test-validator
+	t.Skip("only for localnet")
+	return isc.NewIscClient(sui.NewSuiClient(conn.LocalnetEndpointUrl))
 }
 
 func TestStartNewChain(t *testing.T) {
-	// t.Skip("only for localnet")
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
 
 	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
 	require.NoError(t, err)
@@ -46,72 +52,30 @@ func TestStartNewChain(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID := txnResponse.GetPublishedPackageID()
-	t.Log("packageID: ", packageID)
+	iscPackageID := txnResponse.GetPublishedPackageID()
+	t.Log("packageID: ", iscPackageID)
 
-	startNewChainRes, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		packageID,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
-	t.Logf("StartNewChain response: %#v\n", startNewChainRes)
+	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
+	t.Log("anchorObjID: ", anchorObjID)
 }
 
 func TestSendCoin(t *testing.T) {
-	// t.Skip("only for localnet")
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
 
 	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+
+	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
+
 	tokenPackageID, _ := isc.BuildDeployMintTestcoin(t, client, signer)
-
-	// start a new chain
-	startNewChainRes, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		iscPackageID,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
-
-	anchorObjID, typeName, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
-	require.NoError(t, err)
-
-	fmt.Printf("anchor type: %s\ncoin type  : %s\n", typeName, coinType)
+	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
 
-	eventCh := subscribeEvents(t, iscPackageID)
-
-	sendCoinRes, err := client.SendCoin(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		coinType,
-		coins.Data[0].CoinObjectID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, sendCoinRes.Effects.Data.IsSuccess())
+	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
 
 	getObjectRes, err := client.GetObject(
 		context.Background(),
@@ -120,64 +84,25 @@ func TestSendCoin(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
-
-	object := receiveEvent(t, client, eventCh)
-	_ = object
 }
 
 func TestReceiveCoin(t *testing.T) {
-	// t.Skip("only for localnet")
-	var err error
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
 
 	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+
+	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
+
 	tokenPackageID, _ := isc.BuildDeployMintTestcoin(t, client, signer)
-
-	// start a new chain
-	startNewChainRes, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		iscPackageID,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
-
-	var assets1, assets2 *isc.Assets
-	for _, change := range startNewChainRes.ObjectChanges {
-		if change.Data.Created != nil {
-			assets1, err = client.GetAssets(context.Background(), iscPackageID, &change.Data.Created.ObjectID)
-			require.NoError(t, err)
-			require.Len(t, assets1.Coins, 0)
-		}
-	}
-
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
-	require.NoError(t, err)
+	fmt.Printf("coin type: %s\n", coinType)
+
 	// the signer should have only one coin object which belongs to testcoin type
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
 
-	sendCoinRes, err := client.SendCoin(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		coinType,
-		coins.Data[0].CoinObjectID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, sendCoinRes.Effects.Data.IsSuccess())
+	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
 
 	getObjectRes, err := client.GetObject(
 		context.Background(),
@@ -187,108 +112,82 @@ func TestReceiveCoin(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
-	receiveCoinRes, err := client.ReceiveCoin(
+	receiveCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
+
+	assets, err := client.GetAssets(context.Background(), iscPackageID, anchorObjID)
+	require.NoError(t, err)
+	require.Len(t, assets.Coins, 1)
+}
+
+func TestSendReceiveCoin(t *testing.T) {
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
+	chainSigner := newSignerWithFunds(t, SEEDFORCHAIN)
+
+	iscPackageID := isc.BuildAndDeployIscContracts(t, client, chainSigner)
+
+	eventCh := subscribeEvents(t, iscPackageID)
+
+	anchorObjID := startChainAnchor(t, client, chainSigner, iscPackageID)
+
+	tokenPackageID, _ := isc.BuildDeployMintTestcoin(t, client, signer)
+	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
+	fmt.Printf("coin type: %s\n", coinType)
+
+	// the signer should have only one coin object which belongs to testcoin type
+	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
+	require.NoError(t, err)
+
+	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
+
+	getObjectRes, err := client.GetObject(
 		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		coinType,
 		coins.Data[0].CoinObjectID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+		&models.SuiObjectDataOptions{ShowOwner: true},
 	)
 	require.NoError(t, err)
-	require.True(t, receiveCoinRes.Effects.Data.IsSuccess())
-	assets2, err = client.GetAssets(context.Background(), iscPackageID, anchorObjID)
+	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
+
+	sender, object := receiveEvent(t, client, eventCh)
+	require.Equal(t, signer.Address, sender)
+
+	coin := object.Data.Content.Data.MoveObject
+	require.True(t, strings.HasPrefix(coin.Type, "0x2::coin::Coin<") && strings.HasSuffix(coin.Type, ">"))
+	coinType = coin.Type[len("0x2::coin::Coin<") : len(coin.Type)-1]
+	coinBalance := coin.Fields.(map[string]interface{})["balance"].(string)
+
+	receiveCoin(t, client, chainSigner, iscPackageID, anchorObjID, coinType, coins)
+
+	assets, err := client.GetAssets(context.Background(), iscPackageID, anchorObjID)
 	require.NoError(t, err)
-	require.Len(t, assets2.Coins, 1)
+	require.Len(t, assets.Coins, 1)
+	require.Equal(t, coinType, "0x"+assets.Coins[0].CoinType)
+	require.Equal(t, coinBalance, strconv.FormatUint(assets.Coins[0].Balance.Uint64(), 10))
 }
 
 func TestCreateRequest(t *testing.T) {
-	// t.Skip("only for localnet")
-	var err error
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
 
 	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
 
-	// start a new chain
-	startNewChainRes, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		iscPackageID,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
+	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
-	require.NoError(t, err)
-
-	createReqRes, err := client.CreateRequest(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		"isc_test_contract_name",
-		"isc_test_func_name",
-		[][]byte{}, // func input
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, createReqRes.Effects.Data.IsSuccess())
+	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 
 	_, _, err = sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
 }
 
 func TestSendRequest(t *testing.T) {
-	// t.Skip("only for localnet")
-	var err error
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
 
 	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
 
-	// start a new chain
-	startNewChainRes, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		iscPackageID,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
+	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
-	require.NoError(t, err)
-
-	createReqRes, err := client.CreateRequest(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		"isc_test_contract_name",
-		"isc_test_func_name",
-		[][]byte{}, // func input
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, createReqRes.Effects.Data.IsSuccess())
+	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 
 	reqObjID, _, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
@@ -296,69 +195,22 @@ func TestSendRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
 
-	eventCh := subscribeEvents(t, iscPackageID)
-
-	sendReqRes, err := client.SendRequest(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		reqObjID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, sendReqRes.Effects.Data.IsSuccess())
+	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
-
-	object := receiveEvent(t, client, eventCh)
-	_ = object
 }
 
 func TestReceiveRequest(t *testing.T) {
-	// t.Skip("only for localnet")
-	var err error
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
 
 	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
 
-	// start a new chain
-	startNewChainRes, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		iscPackageID,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
+	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
-	require.NoError(t, err)
-
-	createReqRes, err := client.CreateRequest(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		"isc_test_contract_name", // FIXME set up the proper ISC target contract name
-		"isc_test_func_name",     // FIXME set up the proper ISC target func name
-		[][]byte{},               // func input
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, createReqRes.Effects.Data.IsSuccess())
+	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 
 	reqObjID, _, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
@@ -366,41 +218,93 @@ func TestReceiveRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
 
-	sendReqRes, err := client.SendRequest(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		reqObjID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, sendReqRes.Effects.Data.IsSuccess())
+	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
 
-	receiveReqRes, err := client.ReceiveRequest(
-		context.Background(),
-		signer,
-		iscPackageID,
-		anchorObjID,
-		reqObjID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, receiveReqRes.Effects.Data.IsSuccess())
+	receiveRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.NotNil(t, getObjectRes.Error.Data.Deleted)
+}
+
+func TestSendReceiveRequest(t *testing.T) {
+	client := newClient(t)
+	signer := newSignerWithFunds(t, SEEDFORUSER)
+	chainSigner := newSignerWithFunds(t, SEEDFORCHAIN)
+
+	iscPackageID := isc.BuildAndDeployIscContracts(t, client, chainSigner)
+
+	eventCh := subscribeEvents(t, iscPackageID)
+
+	anchorObjID := startChainAnchor(t, client, chainSigner, iscPackageID)
+
+	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
+
+	reqObjID, reqType, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
+	require.NoError(t, err)
+	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	require.NoError(t, err)
+	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
+
+	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
+
+	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	require.NoError(t, err)
+	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
+
+	sender, object := receiveEvent(t, client, eventCh)
+	require.Equal(t, signer.Address, sender)
+
+	req := object.Data.Content.Data.MoveObject
+	require.True(t, strings.HasSuffix(req.Type, "::request::Request"))
+	require.Equal(t, reqType, req.Type)
+	reqData := req.Fields.(map[string]interface{})["data"].(map[string]interface{})["fields"].(map[string]interface{})
+	contract := reqData["contract"].(string)
+	require.Equal(t, "isc_test_contract_name", contract)
+	function := reqData["function"].(string)
+	require.Equal(t, "isc_test_func_name", function)
+	args := reqData["args"].([]interface{})
+	require.Empty(t, args)
+	allowance := reqData["allowance"]
+	require.Nil(t, allowance)
+
+	receiveRequest(t, client, chainSigner, iscPackageID, anchorObjID, reqObjID)
+}
+
+func newSignerWithFunds(t *testing.T, seed string) *sui_signer.Signer {
+	signer := sui_signer.NewSigner(sui_types.MustSuiAddressFromHex(seed)[:], sui_signer.KeySchemeFlagIotaEd25519)
+	err := sui.RequestFundFromFaucet(signer.Address, conn.LocalnetFaucetUrl)
+	require.NoError(t, err)
+	return signer
+}
+
+func startChainAnchor(
+	t *testing.T,
+	client *isc.Client,
+	signer *sui_signer.Signer,
+	iscPackageID *sui_types.PackageID,
+) *sui_types.ObjectID {
+	// start a new chain
+	startNewChainRes, err := client.StartNewChain(
+		context.Background(),
+		signer,
+		iscPackageID,
+		sui.DefaultGasBudget,
+		&models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
+
+	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
+	require.NoError(t, err)
+	return anchorObjID
 }
 
 func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan models.SuiEvent {
@@ -417,7 +321,10 @@ func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan model
 	return eventCh
 }
 
-func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent) *models.SuiObjectResponse {
+func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent) (
+	*sui_types.SuiAddress,
+	*models.SuiObjectResponse,
+) {
 	event := <-eventCh
 	fmt.Println("event: ", event)
 	close(eventCh)
@@ -432,5 +339,126 @@ func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent
 	require.NoError(t, err)
 	require.Equal(t, eventId, object.Data.ObjectID)
 	fmt.Println("object: ", object.Data.Content.Data.MoveObject)
-	return object
+	return &event.Sender, object
+}
+
+func sendCoin(
+	t *testing.T,
+	client *isc.Client,
+	signer *sui_signer.Signer,
+	iscPackageID *sui_types.PackageID,
+	anchorObjID *sui_types.ObjectID,
+	coinType string,
+	coins *models.CoinPage,
+) {
+	sendCoinRes, err := client.SendCoin(
+		context.Background(),
+		signer,
+		iscPackageID,
+		anchorObjID,
+		coinType,
+		coins.Data[0].CoinObjectID,
+		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, sendCoinRes.Effects.Data.IsSuccess())
+}
+
+func receiveCoin(
+	t *testing.T,
+	client *isc.Client,
+	signer *sui_signer.Signer,
+	iscPackageID *sui_types.PackageID,
+	anchorObjID *sui_types.ObjectID,
+	coinType string,
+	coins *models.CoinPage,
+) {
+	receiveCoinRes, err := client.ReceiveCoin(
+		context.Background(),
+		signer,
+		iscPackageID,
+		anchorObjID,
+		coinType,
+		coins.Data[0].CoinObjectID,
+		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, receiveCoinRes.Effects.Data.IsSuccess())
+}
+
+func createRequest(
+	t *testing.T,
+	client *isc.Client,
+	signer *sui_signer.Signer,
+	iscPackageID *sui_types.PackageID,
+	anchorObjID *sui_types.ObjectID,
+) (*models.SuiTransactionBlockResponse, error) {
+	createReqRes, err := client.CreateRequest(
+		context.Background(),
+		signer,
+		iscPackageID,
+		anchorObjID,
+		"isc_test_contract_name",
+		"isc_test_func_name",
+		[][]byte{}, // func input
+		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, createReqRes.Effects.Data.IsSuccess())
+	return createReqRes, err
+}
+
+func sendRequest(
+	t *testing.T,
+	client *isc.Client,
+	signer *sui_signer.Signer,
+	iscPackageID *sui_types.PackageID,
+	anchorObjID *sui_types.ObjectID,
+	reqObjID *sui_types.ObjectID,
+) {
+	sendReqRes, err := client.SendRequest(
+		context.Background(),
+		signer,
+		iscPackageID,
+		anchorObjID,
+		reqObjID,
+		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, sendReqRes.Effects.Data.IsSuccess())
+}
+
+func receiveRequest(
+	t *testing.T,
+	client *isc.Client,
+	signer *sui_signer.Signer,
+	iscPackageID *sui_types.PackageID,
+	anchorObjID *sui_types.ObjectID,
+	reqObjID *sui_types.ObjectID,
+) {
+	receiveReqRes, err := client.ReceiveRequest(
+		context.Background(),
+		signer,
+		iscPackageID,
+		anchorObjID,
+		reqObjID,
+		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(t, err)
+	require.True(t, receiveReqRes.Effects.Data.IsSuccess())
 }
