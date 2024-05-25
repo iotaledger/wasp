@@ -24,7 +24,7 @@ const SEEDFORCHAIN = "0x5678"
 
 func newClient(t *testing.T) *isc.Client {
 	// NOTE: comment out the next line to run local tests against sui-test-validator
-	t.Skip("only for localnet")
+	// t.Skip("only for localnet")
 	return isc.NewIscClient(sui.NewSuiClient(conn.LocalnetEndpointUrl))
 }
 
@@ -294,7 +294,16 @@ func TestSendReceiveRequest(t *testing.T) {
 
 	reqData := req.Fields.(map[string]interface{})["data"].(map[string]interface{})
 	reqFields := reqData["fields"].(map[string]interface{})
-	args := [][]byte{}
+	argFields := reqFields["args"].([]interface{})
+	args := make([][]byte, len(argFields))
+	for i, argField := range argFields {
+		argFieldBytes := argField.([]interface{})
+		arg := make([]byte, len(argFieldBytes))
+		for j, argFieldByte := range argFieldBytes {
+			arg[j] = byte(argFieldByte.(float64))
+		}
+		args[i] = arg
+	}
 
 	// NOTE: this is the data that ISC should use as the request from the sender
 	receivedRequest := &ReceivedRequest{
@@ -308,7 +317,10 @@ func TestSendReceiveRequest(t *testing.T) {
 	}
 	require.Equal(t, "isc_test_contract_name", receivedRequest.contract)
 	require.Equal(t, "isc_test_func_name", receivedRequest.function)
-	require.Empty(t, receivedRequest.args)
+	require.EqualValues(t, 3, len(receivedRequest.args))
+	require.Equal(t, "one", string(receivedRequest.args[0]))
+	require.Equal(t, "two", string(receivedRequest.args[1]))
+	require.Equal(t, "three", string(receivedRequest.args[2]))
 	require.Nil(t, receivedRequest.allowance)
 
 	receiveRequest(t, client, chainSigner, iscPackageID, anchorObjID, reqObjID)
@@ -445,7 +457,7 @@ func createRequest(
 		anchorObjID,
 		"isc_test_contract_name",
 		"isc_test_func_name",
-		[][]byte{}, // func input
+		[][]byte{[]byte("one"), []byte("two"), []byte("three")}, // func input
 		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
