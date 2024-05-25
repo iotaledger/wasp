@@ -3,10 +3,11 @@ package isc_test
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 
 	"github.com/iotaledger/wasp/sui-go/isc"
 	"github.com/iotaledger/wasp/sui-go/models"
@@ -52,7 +53,8 @@ func TestStartNewChain(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	iscPackageID := txnResponse.GetPublishedPackageID()
+	iscPackageID, err := txnResponse.GetPublishedPackageID()
+	require.NoError(t, err)
 	t.Log("packageID: ", iscPackageID)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
