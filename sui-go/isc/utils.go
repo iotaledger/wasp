@@ -35,7 +35,8 @@ func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID := txnResponse.GetPublishedPackageID()
+	packageID, err := txnResponse.GetPublishedPackageID()
+	require.NoError(t, err)
 
 	return packageID
 }
@@ -66,7 +67,8 @@ func BuildDeployMintTestcoin(t *testing.T, client *Client, signer *sui_signer.Si
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID := txnResponse.GetPublishedPackageID()
+	packageID, err := txnResponse.GetPublishedPackageID()
+	require.NoError(t, err)
 
 	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
 	require.NoError(t, err)
