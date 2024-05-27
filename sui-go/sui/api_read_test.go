@@ -3,6 +3,7 @@ package sui_test
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -50,7 +51,7 @@ func TestGetCheckpoint(t *testing.T) {
 func TestGetCheckpoints(t *testing.T) {
 	client := sui.NewSuiClient(conn.MainnetEndpointUrl)
 	cursor := models.NewSafeSuiBigInt(uint64(999))
-	limit := uint64(2)
+	limit := uint(2)
 	checkpointPage, err := client.GetCheckpoints(context.Background(), &cursor, &limit, false)
 	require.NoError(t, err)
 	targetCheckpoints := []*models.Checkpoint{
@@ -133,6 +134,14 @@ func TestGetLatestCheckpointSequenceNumber(t *testing.T) {
 	num, err := strconv.Atoi(sequenceNumber)
 	require.NoError(t, err)
 	require.Greater(t, num, 34317507)
+}
+
+func TestGetLoadedChildObjects(t *testing.T) {
+	client := sui.NewSuiClient(conn.MainnetEndpointUrl)
+
+	loadedChildObjects, err := client.GetLoadedChildObjects(context.Background(), sui_types.MustNewDigest("4mfJudSp1jZfzNftQcpAXeTysGGHjrZ2cLES46ttns41"))
+	require.NoError(t, err)
+	fmt.Println("loadedChildObjects: ", loadedChildObjects)
 }
 
 func TestGetObject(t *testing.T) {

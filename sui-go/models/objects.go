@@ -233,3 +233,12 @@ type SuiGetPastObjectRequest struct {
 }
 
 type SuiNamePage = Page[string, sui_types.ObjectID]
+
+type GetLoadedChildObjectResponse struct {
+	LoadedChildObjects []*LoadedChildObject `json:"loadedChildObjects"`
+}
+
+type LoadedChildObject struct {
+	ObjectId       *sui_types.ObjectID                     `json:"objectId"`
+	SequenceNumber SafeSuiBigInt[sui_types.SequenceNumber] `json:"sequenceNumber"`
+}

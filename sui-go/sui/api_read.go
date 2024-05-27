@@ -17,7 +17,7 @@ func (s *ImplSuiAPI) GetCheckpoint(ctx context.Context, checkpointId models.Safe
 	return &resp, s.http.CallContext(ctx, &resp, getCheckpoint, checkpointId)
 }
 
-func (s *ImplSuiAPI) GetCheckpoints(ctx context.Context, cursor *models.SafeSuiBigInt[uint64], limit *uint64, descendingOrder bool) (*models.CheckpointPage, error) {
+func (s *ImplSuiAPI) GetCheckpoints(ctx context.Context, cursor *models.SafeSuiBigInt[uint64], limit *uint, descendingOrder bool) (*models.CheckpointPage, error) {
 	var resp models.CheckpointPage
 	return &resp, s.http.CallContext(ctx, &resp, getCheckpoints, cursor, limit, descendingOrder)
 }
@@ -32,7 +32,13 @@ func (s *ImplSuiAPI) GetLatestCheckpointSequenceNumber(ctx context.Context) (str
 	return resp, s.http.CallContext(ctx, &resp, getLatestCheckpointSequenceNumber)
 }
 
-// TODO getLoadedChildObjects
+func (s *ImplSuiAPI) GetLoadedChildObjects(
+	ctx context.Context,
+	digest *sui_types.TransactionDigest,
+) (*models.GetLoadedChildObjectResponse, error) {
+	var resp models.GetLoadedChildObjectResponse
+	return &resp, s.http.CallContext(ctx, &resp, getLoadedChildObjects, digest)
+}
 
 func (s *ImplSuiAPI) GetObject(
 	ctx context.Context,
