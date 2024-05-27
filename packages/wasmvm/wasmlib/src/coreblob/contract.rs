@@ -26,11 +26,6 @@ pub struct GetBlobInfoCall<'a> {
     pub results: ImmutableGetBlobInfoResults,
 }
 
-pub struct ListBlobsCall<'a> {
-    pub func:    ScView<'a>,
-    pub results: ImmutableListBlobsResults,
-}
-
 pub struct ScFuncs {
 }
 
@@ -67,16 +62,6 @@ impl ScFuncs {
             results: ImmutableGetBlobInfoResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    // Returns a list of all blobs hashes in the registry and their sized.
-    pub fn list_blobs(ctx: &impl ScViewClientContext) -> ListBlobsCall {
-        let mut f = ListBlobsCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_LIST_BLOBS),
-            results: ImmutableListBlobsResults { proxy: Proxy::nil() },
-        };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }

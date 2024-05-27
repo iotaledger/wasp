@@ -26,16 +26,6 @@ export class GetEventsForBlockCall {
     }
 }
 
-export class GetEventsForContractCall {
-    func:    wasmlib.ScView;
-    params:  sc.MutableGetEventsForContractParams = new sc.MutableGetEventsForContractParams(wasmlib.ScView.nilProxy);
-    results: sc.ImmutableGetEventsForContractResults = new sc.ImmutableGetEventsForContractResults(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScViewClientContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetEventsForContract);
-    }
-}
-
 export class GetEventsForRequestCall {
     func:    wasmlib.ScView;
     params:  sc.MutableGetEventsForRequestParams = new sc.MutableGetEventsForRequestParams(wasmlib.ScView.nilProxy);
@@ -100,15 +90,6 @@ export class ScFuncs {
         const f = new GetEventsForBlockCall(ctx);
         f.params = new sc.MutableGetEventsForBlockParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableGetEventsForBlockResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
-
-    // Returns the list of events triggered by the given contract
-    // during the execution of the given block range.
-    static getEventsForContract(ctx: wasmlib.ScViewClientContext): GetEventsForContractCall {
-        const f = new GetEventsForContractCall(ctx);
-        f.params = new sc.MutableGetEventsForContractParams(wasmlib.newCallParamsProxy(f.func));
-        f.results = new sc.ImmutableGetEventsForContractResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 

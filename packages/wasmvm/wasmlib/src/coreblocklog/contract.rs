@@ -20,12 +20,6 @@ pub struct GetEventsForBlockCall<'a> {
     pub results: ImmutableGetEventsForBlockResults,
 }
 
-pub struct GetEventsForContractCall<'a> {
-    pub func:    ScView<'a>,
-    pub params:  MutableGetEventsForContractParams,
-    pub results: ImmutableGetEventsForContractResults,
-}
-
 pub struct GetEventsForRequestCall<'a> {
     pub func:    ScView<'a>,
     pub params:  MutableGetEventsForRequestParams,
@@ -78,19 +72,6 @@ impl ScFuncs {
             func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_BLOCK),
             params:  MutableGetEventsForBlockParams { proxy: Proxy::nil() },
             results: ImmutableGetEventsForBlockResults { proxy: Proxy::nil() },
-        };
-        ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    // Returns the list of events triggered by the given contract
-    // during the execution of the given block range.
-    pub fn get_events_for_contract(ctx: &impl ScViewClientContext) -> GetEventsForContractCall {
-        let mut f = GetEventsForContractCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_GET_EVENTS_FOR_CONTRACT),
-            params:  MutableGetEventsForContractParams { proxy: Proxy::nil() },
-            results: ImmutableGetEventsForContractResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

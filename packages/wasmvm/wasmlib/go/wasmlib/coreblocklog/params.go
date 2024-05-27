@@ -54,46 +54,6 @@ func (s MutableGetEventsForBlockParams) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamBlockIndex))
 }
 
-type ImmutableGetEventsForContractParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewImmutableGetEventsForContractParams() ImmutableGetEventsForContractParams {
-	return ImmutableGetEventsForContractParams{Proxy: wasmlib.NewParamsProxy()}
-}
-
-func (s ImmutableGetEventsForContractParams) ContractHname() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamContractHname))
-}
-
-// default first block
-func (s ImmutableGetEventsForContractParams) FromBlock() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFromBlock))
-}
-
-// default last block
-func (s ImmutableGetEventsForContractParams) ToBlock() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamToBlock))
-}
-
-type MutableGetEventsForContractParams struct {
-	Proxy wasmtypes.Proxy
-}
-
-func (s MutableGetEventsForContractParams) ContractHname() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamContractHname))
-}
-
-// default first block
-func (s MutableGetEventsForContractParams) FromBlock() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFromBlock))
-}
-
-// default last block
-func (s MutableGetEventsForContractParams) ToBlock() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamToBlock))
-}
-
 type ImmutableGetEventsForRequestParams struct {
 	Proxy wasmtypes.Proxy
 }

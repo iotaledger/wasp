@@ -70,54 +70,6 @@ impl MutableGetEventsForBlockParams {
 }
 
 #[derive(Clone)]
-pub struct ImmutableGetEventsForContractParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl ImmutableGetEventsForContractParams {
-    pub fn new() -> ImmutableGetEventsForContractParams {
-        ImmutableGetEventsForContractParams {
-            proxy: params_proxy(),
-        }
-    }
-
-    pub fn contract_hname(&self) -> ScImmutableHname {
-        ScImmutableHname::new(self.proxy.root(PARAM_CONTRACT_HNAME))
-    }
-
-    // default first block
-    pub fn from_block(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(PARAM_FROM_BLOCK))
-    }
-
-    // default last block
-    pub fn to_block(&self) -> ScImmutableUint32 {
-        ScImmutableUint32::new(self.proxy.root(PARAM_TO_BLOCK))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableGetEventsForContractParams {
-    pub(crate) proxy: Proxy,
-}
-
-impl MutableGetEventsForContractParams {
-    pub fn contract_hname(&self) -> ScMutableHname {
-        ScMutableHname::new(self.proxy.root(PARAM_CONTRACT_HNAME))
-    }
-
-    // default first block
-    pub fn from_block(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(PARAM_FROM_BLOCK))
-    }
-
-    // default last block
-    pub fn to_block(&self) -> ScMutableUint32 {
-        ScMutableUint32::new(self.proxy.root(PARAM_TO_BLOCK))
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetEventsForRequestParams {
     pub(crate) proxy: Proxy,
 }

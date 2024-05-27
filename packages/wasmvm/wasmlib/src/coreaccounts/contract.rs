@@ -77,11 +77,6 @@ pub struct AccountNFTsInCollectionCall<'a> {
     pub results: ImmutableAccountNFTsInCollectionResults,
 }
 
-pub struct AccountsCall<'a> {
-    pub func:    ScView<'a>,
-    pub results: ImmutableAccountsResults,
-}
-
 pub struct BalanceCall<'a> {
     pub func:    ScView<'a>,
     pub params:  MutableBalanceParams,
@@ -268,16 +263,6 @@ impl ScFuncs {
             results: ImmutableAccountNFTsInCollectionResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    // Returns a set of all agent IDs that own assets on the chain.
-    pub fn accounts(ctx: &impl ScViewClientContext) -> AccountsCall {
-        let mut f = AccountsCall {
-            func:    ScView::new(ctx, HSC_NAME, HVIEW_ACCOUNTS),
-            results: ImmutableAccountsResults { proxy: Proxy::nil() },
-        };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }

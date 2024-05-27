@@ -204,22 +204,3 @@ func TestGetEventsForBlock(t *testing.T) {
 		}
 	}
 }
-
-func TestGetEventsForContract(t *testing.T) {
-	ctx := setupBlockLog(t)
-	require.NoError(t, ctx.Err)
-
-	f := coreblocklog.ScFuncs.GetEventsForContract(ctx)
-	f.Params.ContractHname().SetValue(coreblocklog.HScName)
-	f.Params.FromBlock().SetValue(0)
-	f.Params.ToBlock().SetValue(5)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
-
-	events, err := ctx.Chain.GetEventsForContract(coreblocklog.ScName)
-	require.NoError(t, err)
-	require.Equal(t, uint32(len(events)), f.Results.Event().Length())
-	for i := uint32(0); i < uint32(len(events)); i++ {
-		require.Equal(t, events[i].Bytes(), f.Results.Event().GetBytes(i).Value())
-	}
-}

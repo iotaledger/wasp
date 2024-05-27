@@ -118,36 +118,6 @@ impl MutableGetEventsForBlockResults {
 }
 
 #[derive(Clone)]
-pub struct ImmutableGetEventsForContractResults {
-    pub proxy: Proxy,
-}
-
-impl ImmutableGetEventsForContractResults {
-    // Array of serialized events
-    pub fn event(&self) -> ArrayOfImmutableBytes {
-        ArrayOfImmutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableGetEventsForContractResults {
-    pub proxy: Proxy,
-}
-
-impl MutableGetEventsForContractResults {
-    pub fn new() -> MutableGetEventsForContractResults {
-        MutableGetEventsForContractResults {
-            proxy: results_proxy(),
-        }
-    }
-
-    // Array of serialized events
-    pub fn event(&self) -> ArrayOfMutableBytes {
-        ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
-    }
-}
-
-#[derive(Clone)]
 pub struct ImmutableGetEventsForRequestResults {
     pub proxy: Proxy,
 }

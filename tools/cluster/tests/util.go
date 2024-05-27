@@ -111,18 +111,6 @@ func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 	return ret
 }
 
-func (e *ChainEnv) getTotalBalance() *isc.Assets {
-	totalAssets, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
-		AccountsGetTotalAssets(context.Background(), e.Chain.ChainID.String()).
-		Execute()
-	require.NoError(e.t, err)
-
-	assets, err := apiextensions.AssetsFromAPIResponse(totalAssets)
-	require.NoError(e.t, err)
-
-	return assets
-}
-
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsApi.
 		GetChainInfo(context.Background(), e.Chain.ChainID.String()).

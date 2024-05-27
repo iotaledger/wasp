@@ -34,38 +34,6 @@ export class MutableGetEventsForBlockParams extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableGetEventsForContractParams extends wasmtypes.ScProxy {
-    contractHname(): wasmtypes.ScImmutableHname {
-        return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamContractHname));
-    }
-
-    // default first block
-    fromBlock(): wasmtypes.ScImmutableUint32 {
-        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFromBlock));
-    }
-
-    // default last block
-    toBlock(): wasmtypes.ScImmutableUint32 {
-        return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamToBlock));
-    }
-}
-
-export class MutableGetEventsForContractParams extends wasmtypes.ScProxy {
-    contractHname(): wasmtypes.ScMutableHname {
-        return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamContractHname));
-    }
-
-    // default first block
-    fromBlock(): wasmtypes.ScMutableUint32 {
-        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamFromBlock));
-    }
-
-    // default last block
-    toBlock(): wasmtypes.ScMutableUint32 {
-        return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ParamToBlock));
-    }
-}
-
 export class ImmutableGetEventsForRequestParams extends wasmtypes.ScProxy {
     // target request ID
     requestID(): wasmtypes.ScImmutableRequestID {

@@ -194,48 +194,6 @@ func (s MutableAccountNFTsInCollectionResults) NftIDs() ArrayOfMutableNftID {
 	return ArrayOfMutableNftID{Proxy: s.Proxy.Root(ResultNftIDs)}
 }
 
-type MapAgentIDToImmutableBool struct {
-	Proxy wasmtypes.Proxy
-}
-
-func (m MapAgentIDToImmutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(m.Proxy.Key(wasmtypes.AgentIDToBytes(key)))
-}
-
-type ImmutableAccountsResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-// agent IDs
-func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBool {
-	return MapAgentIDToImmutableBool(s)
-}
-
-type MapAgentIDToMutableBool struct {
-	Proxy wasmtypes.Proxy
-}
-
-func (m MapAgentIDToMutableBool) Clear() {
-	m.Proxy.ClearMap()
-}
-
-func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(m.Proxy.Key(wasmtypes.AgentIDToBytes(key)))
-}
-
-type MutableAccountsResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewMutableAccountsResults() MutableAccountsResults {
-	return MutableAccountsResults{Proxy: wasmlib.NewResultsProxy()}
-}
-
-// agent IDs
-func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBool {
-	return MapAgentIDToMutableBool(s)
-}
-
 type MapTokenIDToImmutableBigInt struct {
 	Proxy wasmtypes.Proxy
 }

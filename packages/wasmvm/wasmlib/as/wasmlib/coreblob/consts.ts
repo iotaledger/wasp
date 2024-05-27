@@ -24,9 +24,7 @@ export const ResultHash      = 'hash';
 export const FuncStoreBlob    = 'storeBlob';
 export const ViewGetBlobField = 'getBlobField';
 export const ViewGetBlobInfo  = 'getBlobInfo';
-export const ViewListBlobs    = 'listBlobs';
 
 export const HFuncStoreBlob    = new wasmtypes.ScHname(0xddd4c281);
 export const HViewGetBlobField = new wasmtypes.ScHname(0x1f448130);
 export const HViewGetBlobInfo  = new wasmtypes.ScHname(0xfde4ab46);
-export const HViewListBlobs    = new wasmtypes.ScHname(0x62ca7990);

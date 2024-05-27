@@ -33,12 +33,10 @@ const (
 	FuncStoreBlob    = "storeBlob"
 	ViewGetBlobField = "getBlobField"
 	ViewGetBlobInfo  = "getBlobInfo"
-	ViewListBlobs    = "listBlobs"
 )
 
 const (
 	HFuncStoreBlob    = wasmtypes.ScHname(0xddd4c281)
 	HViewGetBlobField = wasmtypes.ScHname(0x1f448130)
 	HViewGetBlobInfo  = wasmtypes.ScHname(0xfde4ab46)
-	HViewListBlobs    = wasmtypes.ScHname(0x62ca7990)
 )

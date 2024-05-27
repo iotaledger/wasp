@@ -31,16 +31,6 @@ views:
     results:
       event=e: Bytes[] # Array of serialized events
 
-  # Returns the list of events triggered by the given contract
-  # during the execution of the given block range.
-  getEventsForContract:
-    params:
-      contractHname=h: Hname
-      fromBlock=f: Uint32? # default first block
-      toBlock=t: Uint32? # default last block
-    results:
-      event=e: Bytes[] # Array of serialized events
-
   # Returns the list of events triggered during the execution of the given request.
   getEventsForRequest:
     params:

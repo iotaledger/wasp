@@ -25,11 +25,6 @@ type GetBlobInfoCall struct {
 	Results ImmutableGetBlobInfoResults
 }
 
-type ListBlobsCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableListBlobsResults
-}
-
 type Funcs struct{}
 
 var ScFuncs Funcs
@@ -58,25 +53,16 @@ func (sc Funcs) GetBlobInfo(ctx wasmlib.ScViewClientContext) *GetBlobInfoCall {
 	return f
 }
 
-// Returns a list of all blobs hashes in the registry and their sized.
-func (sc Funcs) ListBlobs(ctx wasmlib.ScViewClientContext) *ListBlobsCall {
-	f := &ListBlobsCall{Func: wasmlib.NewScView(ctx, HScName, HViewListBlobs)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncStoreBlob,
 		ViewGetBlobField,
 		ViewGetBlobInfo,
-		ViewListBlobs,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 	},

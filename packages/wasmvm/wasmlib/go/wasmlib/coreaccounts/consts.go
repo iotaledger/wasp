@@ -30,7 +30,6 @@ const (
 
 const (
 	ResultAccountNonce     = "n"
-	ResultAllAccounts      = "this"
 	ResultAmount           = "A"
 	ResultAssets           = "this"
 	ResultBalance          = "B"
@@ -58,7 +57,6 @@ const (
 	ViewAccountNFTAmountInCollection = "accountNFTAmountInCollection"
 	ViewAccountNFTs                  = "accountNFTs"
 	ViewAccountNFTsInCollection      = "accountNFTsInCollection"
-	ViewAccounts                     = "accounts"
 	ViewBalance                      = "balance"
 	ViewBalanceBaseToken             = "balanceBaseToken"
 	ViewBalanceNativeToken           = "balanceNativeToken"
@@ -83,7 +81,6 @@ const (
 	HViewAccountNFTAmountInCollection = wasmtypes.ScHname(0xd7028e1b)
 	HViewAccountNFTs                  = wasmtypes.ScHname(0x27422359)
 	HViewAccountNFTsInCollection      = wasmtypes.ScHname(0xa37fb50f)
-	HViewAccounts                     = wasmtypes.ScHname(0x3c4b5e02)
 	HViewBalance                      = wasmtypes.ScHname(0x84168cb4)
 	HViewBalanceBaseToken             = wasmtypes.ScHname(0x4c8ccd0f)
 	HViewBalanceNativeToken           = wasmtypes.ScHname(0x1fea3104)

@@ -127,15 +127,6 @@ export class AccountNFTsInCollectionCall {
     }
 }
 
-export class AccountsCall {
-    func:    wasmlib.ScView;
-    results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults(wasmlib.ScView.nilProxy);
-
-    public constructor(ctx: wasmlib.ScViewClientContext) {
-        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewAccounts);
-    }
-}
-
 export class BalanceCall {
     func:    wasmlib.ScView;
     params:  sc.MutableBalanceParams = new sc.MutableBalanceParams(wasmlib.ScView.nilProxy);
@@ -309,13 +300,6 @@ export class ScFuncs {
         const f = new AccountNFTsInCollectionCall(ctx);
         f.params = new sc.MutableAccountNFTsInCollectionParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableAccountNFTsInCollectionResults(wasmlib.newCallResultsProxy(f.func));
-        return f;
-    }
-
-    // Returns a set of all agent IDs that own assets on the chain.
-    static accounts(ctx: wasmlib.ScViewClientContext): AccountsCall {
-        const f = new AccountsCall(ctx);
-        f.results = new sc.ImmutableAccountsResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 
