@@ -3,7 +3,6 @@ import { Configuration} from '../configuration'
 import { Observable, of, from } from '../rxjsStub';
 import {mergeMap, map} from  '../rxjsStub';
 import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountListResponse } from '../models/AccountListResponse';
 import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
@@ -12,9 +11,7 @@ import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { Blob } from '../models/Blob';
 import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobListResponse } from '../models/BlobListResponse';
 import { BlobValueResponse } from '../models/BlobValueResponse';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
@@ -264,6 +261,29 @@ export class ObservableChainsApi {
                     middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
                 }
                 return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.deactivateChain(rsp)));
+            }));
+    }
+
+    /**
+     * dump accounts information into a humanly-readable format
+     * @param chainID ChainID (Bech32)
+     */
+    public dumpAccounts(chainID: string, _options?: Configuration): Observable<void> {
+        const requestContextPromise = this.requestFactory.dumpAccounts(chainID, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (let middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (let middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.dumpAccounts(rsp)));
             }));
     }
 
@@ -719,30 +739,6 @@ export class ObservableCorecontractsApi {
     }
 
     /**
-     * Get a list of all accounts
-     * @param chainID ChainID (Bech32)
-     * @param block Block index or trie root
-     */
-    public accountsGetAccounts(chainID: string, block?: string, _options?: Configuration): Observable<AccountListResponse> {
-        const requestContextPromise = this.requestFactory.accountsGetAccounts(chainID, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (let middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (let middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetAccounts(rsp)));
-            }));
-    }
-
-    /**
      * Get the foundry output
      * @param chainID ChainID (Bech32)
      * @param serialNumber Serial Number (uint32)
@@ -837,30 +833,6 @@ export class ObservableCorecontractsApi {
                     middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
                 }
                 return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetTotalAssets(rsp)));
-            }));
-    }
-
-    /**
-     * Get all stored blobs
-     * @param chainID ChainID (Bech32)
-     * @param block Block index or trie root
-     */
-    public blobsGetAllBlobs(chainID: string, block?: string, _options?: Configuration): Observable<BlobListResponse> {
-        const requestContextPromise = this.requestFactory.blobsGetAllBlobs(chainID, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (let middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (let middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.blobsGetAllBlobs(rsp)));
             }));
     }
 
@@ -986,31 +958,6 @@ export class ObservableCorecontractsApi {
                     middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
                 }
                 return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.blocklogGetEventsOfBlock(rsp)));
-            }));
-    }
-
-    /**
-     * Get events of a contract
-     * @param chainID ChainID (Bech32)
-     * @param contractHname The contract hname (Hex)
-     * @param block Block index or trie root
-     */
-    public blocklogGetEventsOfContract(chainID: string, contractHname: string, block?: string, _options?: Configuration): Observable<EventsResponse> {
-        const requestContextPromise = this.requestFactory.blocklogGetEventsOfContract(chainID, contractHname, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (let middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (let middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.blocklogGetEventsOfContract(rsp)));
             }));
     }
 

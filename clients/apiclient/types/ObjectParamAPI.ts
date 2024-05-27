@@ -2,7 +2,6 @@ import { ResponseContext, RequestContext, HttpFile } from '../http/http';
 import { Configuration} from '../configuration'
 
 import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountListResponse } from '../models/AccountListResponse';
 import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
@@ -11,9 +10,7 @@ import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { Blob } from '../models/Blob';
 import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobListResponse } from '../models/BlobListResponse';
 import { BlobValueResponse } from '../models/BlobValueResponse';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
@@ -179,6 +176,15 @@ export interface ChainsApiDeactivateChainRequest {
      * ChainID (Bech32)
      * @type string
      * @memberof ChainsApideactivateChain
+     */
+    chainID: string
+}
+
+export interface ChainsApiDumpAccountsRequest {
+    /**
+     * ChainID (Bech32)
+     * @type string
+     * @memberof ChainsApidumpAccounts
      */
     chainID: string
 }
@@ -416,6 +422,14 @@ export class ObjectChainsApi {
     }
 
     /**
+     * dump accounts information into a humanly-readable format
+     * @param param the request object
+     */
+    public dumpAccounts(param: ChainsApiDumpAccountsRequest, options?: Configuration): Promise<void> {
+        return this.api.dumpAccounts(param.chainID,  options).toPromise();
+    }
+
+    /**
      * Estimates gas for a given off-ledger ISC request
      * @param param the request object
      */
@@ -616,21 +630,6 @@ export interface CorecontractsApiAccountsGetAccountNonceRequest {
     block?: string
 }
 
-export interface CorecontractsApiAccountsGetAccountsRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccounts
-     */
-    chainID: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccounts
-     */
-    block?: string
-}
-
 export interface CorecontractsApiAccountsGetFoundryOutputRequest {
     /**
      * ChainID (Bech32)
@@ -699,21 +698,6 @@ export interface CorecontractsApiAccountsGetTotalAssetsRequest {
      * Block index or trie root
      * @type string
      * @memberof CorecontractsApiaccountsGetTotalAssets
-     */
-    block?: string
-}
-
-export interface CorecontractsApiBlobsGetAllBlobsRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiblobsGetAllBlobs
-     */
-    chainID: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiblobsGetAllBlobs
      */
     block?: string
 }
@@ -819,27 +803,6 @@ export interface CorecontractsApiBlocklogGetEventsOfBlockRequest {
      * Block index or trie root
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfBlock
-     */
-    block?: string
-}
-
-export interface CorecontractsApiBlocklogGetEventsOfContractRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiblocklogGetEventsOfContract
-     */
-    chainID: string
-    /**
-     * The contract hname (Hex)
-     * @type string
-     * @memberof CorecontractsApiblocklogGetEventsOfContract
-     */
-    contractHname: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiblocklogGetEventsOfContract
      */
     block?: string
 }
@@ -1121,14 +1084,6 @@ export class ObjectCorecontractsApi {
     }
 
     /**
-     * Get a list of all accounts
-     * @param param the request object
-     */
-    public accountsGetAccounts(param: CorecontractsApiAccountsGetAccountsRequest, options?: Configuration): Promise<AccountListResponse> {
-        return this.api.accountsGetAccounts(param.chainID, param.block,  options).toPromise();
-    }
-
-    /**
      * Get the foundry output
      * @param param the request object
      */
@@ -1158,14 +1113,6 @@ export class ObjectCorecontractsApi {
      */
     public accountsGetTotalAssets(param: CorecontractsApiAccountsGetTotalAssetsRequest, options?: Configuration): Promise<AssetsResponse> {
         return this.api.accountsGetTotalAssets(param.chainID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all stored blobs
-     * @param param the request object
-     */
-    public blobsGetAllBlobs(param: CorecontractsApiBlobsGetAllBlobsRequest, options?: Configuration): Promise<BlobListResponse> {
-        return this.api.blobsGetAllBlobs(param.chainID, param.block,  options).toPromise();
     }
 
     /**
@@ -1206,14 +1153,6 @@ export class ObjectCorecontractsApi {
      */
     public blocklogGetEventsOfBlock(param: CorecontractsApiBlocklogGetEventsOfBlockRequest, options?: Configuration): Promise<EventsResponse> {
         return this.api.blocklogGetEventsOfBlock(param.chainID, param.blockIndex, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get events of a contract
-     * @param param the request object
-     */
-    public blocklogGetEventsOfContract(param: CorecontractsApiBlocklogGetEventsOfContractRequest, options?: Configuration): Promise<EventsResponse> {
-        return this.api.blocklogGetEventsOfContract(param.chainID, param.contractHname, param.block,  options).toPromise();
     }
 
     /**

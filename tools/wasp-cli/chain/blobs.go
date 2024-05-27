@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -92,42 +91,6 @@ func initShowBlobCmd() *cobra.Command {
 				values.Set(kv.Key(field), decodedValue)
 			}
 			util.PrintDictAsJSON(values)
-		},
-	}
-	waspcmd.WithWaspNodeFlag(cmd, &node)
-	withChainFlag(cmd, &chain)
-	return cmd
-}
-
-func initListBlobsCmd() *cobra.Command {
-	var node string
-	var chain string
-	cmd := &cobra.Command{
-		Use:   "list-blobs",
-		Short: "List blobs in chain",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
-			chain = defaultChainFallback(chain)
-			client := cliclients.WaspClient(node)
-
-			blobsResponse, _, err := client.
-				CorecontractsApi.
-				BlobsGetAllBlobs(context.Background(), config.GetChain(chain).String()).
-				Execute() //nolint:bodyclose // false positive
-
-			log.Check(err)
-
-			log.Printf("Total %d blob(s) in chain %s\n", len(blobsResponse.Blobs), config.GetChain(chain))
-
-			header := []string{"hash", "size"}
-			rows := make([][]string, len(blobsResponse.Blobs))
-
-			for i, blob := range blobsResponse.Blobs {
-				rows[i] = []string{blob.Hash, fmt.Sprintf("%d", blob.Size)}
-			}
-
-			log.PrintTable(header, rows)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

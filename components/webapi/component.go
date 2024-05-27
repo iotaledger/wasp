@@ -291,6 +291,7 @@ func provide(c *dig.Container) error {
 			deps.APICacheTTL,
 			websocketService,
 			ParamsWebAPI.IndexDbPath,
+			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,

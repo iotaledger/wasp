@@ -157,8 +157,6 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 
 	e.expectCounter(contractID.Hname(), 42+5)
 	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
-
-	e.checkLedger()
 }
 
 // executed in cluster_test.go
@@ -199,5 +197,4 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 		isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
-	e.checkLedger()
 }

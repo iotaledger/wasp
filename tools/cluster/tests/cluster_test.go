@@ -22,6 +22,7 @@ func TestClusterSingleNode(t *testing.T) {
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
 	t.Run("spam EVM", func(t *testing.T) { run(t, testSpamEVM) })
 	t.Run("spam call wasm views", func(t *testing.T) { run(t, testSpamCallViewWasm) })
+	t.Run("accounts dump", func(t *testing.T) { run(t, testDumpAccounts) })
 }
 
 func TestClusterMultiNodeCommittee(t *testing.T) {

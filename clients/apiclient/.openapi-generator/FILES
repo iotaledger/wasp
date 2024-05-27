@@ -12,7 +12,6 @@ api_users.go
 client.go
 configuration.go
 docs/AccountFoundriesResponse.md
-docs/AccountListResponse.md
 docs/AccountNFTsResponse.md
 docs/AccountNonceResponse.md
 docs/AddUserRequest.md
@@ -22,9 +21,7 @@ docs/AssetsResponse.md
 docs/AuthApi.md
 docs/AuthInfoModel.md
 docs/BaseToken.md
-docs/Blob.md
 docs/BlobInfoResponse.md
-docs/BlobListResponse.md
 docs/BlobValueResponse.md
 docs/BlockInfoResponse.md
 docs/BurnRecord.md
@@ -112,7 +109,6 @@ docs/VersionResponse.md
 git_push.sh
 go.sum
 model_account_foundries_response.go
-model_account_list_response.go
 model_account_nfts_response.go
 model_account_nonce_response.go
 model_add_user_request.go
@@ -121,9 +117,7 @@ model_assets_json.go
 model_assets_response.go
 model_auth_info_model.go
 model_base_token.go
-model_blob.go
 model_blob_info_response.go
-model_blob_list_response.go
 model_blob_value_response.go
 model_block_info_response.go
 model_burn_record.go

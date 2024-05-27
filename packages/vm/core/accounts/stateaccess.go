@@ -11,15 +11,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 type StateAccess struct {
-	state kv.KVStoreReader
+	chainState state.State
+	state      kv.KVStoreReader
 }
 
-func NewStateAccess(store kv.KVStoreReader) *StateAccess {
-	state := subrealm.NewReadOnly(store, kv.Key(Contract.Hname().Bytes()))
-	return &StateAccess{state: state}
+func NewStateAccess(chainState state.State) *StateAccess {
+	state := subrealm.NewReadOnly(chainState, kv.Key(Contract.Hname().Bytes()))
+	return &StateAccess{state: state, chainState: chainState}
 }
 
 func (sa *StateAccess) Nonce(agentID isc.AgentID, chainID isc.ChainID) uint64 {
@@ -54,4 +56,15 @@ func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 
 func (sa *StateAccess) AllAccounts() dict.Dict {
 	return AllAccountsAsDict(sa.state)
+}
+
+func (sa *StateAccess) IterateAccounts() func(func(key []byte) bool) {
+	return AllAccountsMapR(sa.state).IterateKeys
+}
+
+// NOTE: passing the AgentID seems silly, but it's necessary because NFT's don't follow the same logic as the fungible tokens, and are instead stored by full agentID
+func (sa *StateAccess) AssetsOwnedBy(accKey kv.Key, agentID isc.AgentID) *isc.Assets {
+	ret := getFungibleTokens(sa.chainState.SchemaVersion(), sa.state, accKey)
+	ret.AddNFTs(getAccountNFTs(sa.state, agentID)...)
+	return ret
 }

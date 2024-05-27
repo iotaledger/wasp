@@ -3,7 +3,6 @@ package tests
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -95,43 +94,6 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expe
 	require.EqualValues(e.t, expected, actual)
 }
 
-func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
-	accounts, _, err := e.Chain.Cluster.WaspClient(0).CorecontractsApi.
-		AccountsGetAccounts(context.Background(), e.Chain.ChainID.String()).
-		Execute()
-
-	require.NoError(e.t, err)
-
-	ret := make([]isc.AgentID, 0)
-	for _, address := range accounts.Accounts {
-		aid, err2 := isc.AgentIDFromString(address)
-		require.NoError(e.t, err2)
-
-		ret = append(ret, aid)
-	}
-	require.NoError(e.t, err)
-
-	return ret
-}
-
-func (e *ChainEnv) getBalancesOnChain() map[string]*isc.Assets {
-	ret := make(map[string]*isc.Assets)
-	acc := e.getAccountsOnChain()
-
-	for _, agentID := range acc {
-		balance, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
-			AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
-			Execute()
-		require.NoError(e.t, err)
-
-		assets, err := apiextensions.AssetsFromAPIResponse(balance)
-		require.NoError(e.t, err)
-
-		ret[agentID.String()] = assets
-	}
-	return ret
-}
-
 func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
 		AccountsGetAccountNFTIDs(context.Background(), e.Chain.ChainID.String(), agentID.String()).
@@ -159,27 +121,6 @@ func (e *ChainEnv) getTotalBalance() *isc.Assets {
 	require.NoError(e.t, err)
 
 	return assets
-}
-
-func (e *ChainEnv) printAccounts(title string) {
-	allBalances := e.getBalancesOnChain()
-	s := fmt.Sprintf("------------------------------------- %s\n", title)
-	for k, bals := range allBalances {
-		aid, err := isc.AgentIDFromString(k)
-		require.NoError(e.t, err)
-		s += fmt.Sprintf("     %s\n", aid.String())
-		s += fmt.Sprintf("%s\n", bals.String())
-	}
-	fmt.Println(s)
-}
-
-func (e *ChainEnv) checkLedger() {
-	balances := e.getBalancesOnChain()
-	sum := isc.NewEmptyAssets()
-	for _, bal := range balances {
-		sum.Add(bal)
-	}
-	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
