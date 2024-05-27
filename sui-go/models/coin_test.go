@@ -42,7 +42,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     new(big.Int),
 				gasAmount:  0,
-				pickMethod: models.PickSmaller,
+				pickMethod: models.PickMethodSmaller,
 			},
 			want:    nil,
 			want1:   nil,
@@ -54,7 +54,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(1),
 				gasAmount:  2,
-				pickMethod: models.PickSmaller,
+				pickMethod: models.PickMethodSmaller,
 			},
 			want:    models.Coins{{Balance: balanceObject(1)}},
 			want1:   &models.Coin{Balance: balanceObject(2)},
@@ -66,7 +66,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(4),
 				gasAmount:  2,
-				pickMethod: models.PickSmaller,
+				pickMethod: models.PickMethodSmaller,
 			},
 			want:    models.Coins{{Balance: balanceObject(1)}, {Balance: balanceObject(3)}},
 			want1:   &models.Coin{Balance: balanceObject(2)},
@@ -78,7 +78,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(6),
 				gasAmount:  2,
-				pickMethod: models.PickSmaller,
+				pickMethod: models.PickMethodSmaller,
 			},
 			want:    models.Coins{{Balance: balanceObject(1)}, {Balance: balanceObject(3)}, {Balance: balanceObject(4)}},
 			want1:   &models.Coin{Balance: balanceObject(2)},
@@ -90,7 +90,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(6),
 				gasAmount:  6,
-				pickMethod: models.PickSmaller,
+				pickMethod: models.PickMethodSmaller,
 			},
 			want:    models.Coins{},
 			want1:   nil,
@@ -102,7 +102,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(100),
 				gasAmount:  3,
-				pickMethod: models.PickSmaller,
+				pickMethod: models.PickMethodSmaller,
 			},
 			want:    models.Coins{},
 			want1:   &models.Coin{Balance: balanceObject(3)},
@@ -114,7 +114,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(3),
 				gasAmount:  3,
-				pickMethod: models.PickBigger,
+				pickMethod: models.PickMethodBigger,
 			},
 			want:    models.Coins{{Balance: balanceObject(5)}},
 			want1:   &models.Coin{Balance: balanceObject(3)},
@@ -126,7 +126,7 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 			args: args{
 				amount:     big.NewInt(3),
 				gasAmount:  3,
-				pickMethod: models.PickByOrder,
+				pickMethod: models.PickMethodByOrder,
 			},
 			want:    models.Coins{{Balance: balanceObject(5)}},
 			want1:   &models.Coin{Balance: balanceObject(3)},
@@ -177,49 +177,49 @@ func TestCoins_PickCoins(t *testing.T) {
 		{
 			name:    "smaller 1",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(2), pickMethod: models.PickSmaller},
+			args:    args{amount: big.NewInt(2), pickMethod: models.PickMethodSmaller},
 			want:    models.Coins{{Balance: balanceObject(1)}, {Balance: balanceObject(2)}},
 			wantErr: false,
 		},
 		{
 			name:    "smaller 2",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(4), pickMethod: models.PickSmaller},
+			args:    args{amount: big.NewInt(4), pickMethod: models.PickMethodSmaller},
 			want:    models.Coins{{Balance: balanceObject(1)}, {Balance: balanceObject(2)}, {Balance: balanceObject(3)}},
 			wantErr: false,
 		},
 		{
 			name:    "bigger 1",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(2), pickMethod: models.PickBigger},
+			args:    args{amount: big.NewInt(2), pickMethod: models.PickMethodBigger},
 			want:    models.Coins{{Balance: balanceObject(5)}},
 			wantErr: false,
 		},
 		{
 			name:    "bigger 2",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(6), pickMethod: models.PickBigger},
+			args:    args{amount: big.NewInt(6), pickMethod: models.PickMethodBigger},
 			want:    models.Coins{{Balance: balanceObject(5)}, {Balance: balanceObject(4)}},
 			wantErr: false,
 		},
 		{
 			name:    "pick by order 1",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(6), pickMethod: models.PickByOrder},
+			args:    args{amount: big.NewInt(6), pickMethod: models.PickMethodByOrder},
 			want:    models.Coins{{Balance: balanceObject(3)}, {Balance: balanceObject(5)}},
 			wantErr: false,
 		},
 		{
 			name:    "pick by order 2",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(15), pickMethod: models.PickByOrder},
+			args:    args{amount: big.NewInt(15), pickMethod: models.PickMethodByOrder},
 			want:    testCoins,
 			wantErr: false,
 		},
 		{
 			name:    "pick error",
 			cs:      testCoins,
-			args:    args{amount: big.NewInt(16), pickMethod: models.PickByOrder},
+			args:    args{amount: big.NewInt(16), pickMethod: models.PickMethodByOrder},
 			want:    nil,
 			wantErr: true,
 		},
@@ -357,12 +357,8 @@ func TestPickupCoins(t *testing.T) {
 					tt.args.limit,
 					tt.args.moreCount,
 				)
-				if tt.wantErr != nil {
-					require.Equal(t, err, tt.wantErr)
-				} else {
-					require.Equal(t, got, tt.want)
-					t.Log("suggest max gas budget: ", tt.want.SuggestMaxGasBudget())
-				}
+				require.Equal(t, err, tt.wantErr)
+				require.Equal(t, got, tt.want)
 			},
 		)
 	}
