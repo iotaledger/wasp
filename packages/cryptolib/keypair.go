@@ -11,6 +11,12 @@ type KeyPair struct {
 	publicKey  *PublicKey
 }
 
+var (
+	_ rwutil.IoReader = &KeyPair{}
+	_ rwutil.IoWriter = &KeyPair{}
+	_ Signer          = &KeyPair{}
+)
+
 // NewKeyPair creates a new key pair with a randomly generated seed
 func NewKeyPair() *KeyPair {
 	privateKey := NewPrivateKey()
@@ -55,21 +61,21 @@ func (k *KeyPair) GetPublicKey() *PublicKey {
 	return k.publicKey
 }
 
+func (k *KeyPair) Address() *Address {
+	return k.GetPublicKey().AsAddress()
+}
+
 func (k *KeyPair) SignBytes(data []byte) []byte {
 	return k.GetPrivateKey().Sign(data)
 }
 
 func (k *KeyPair) Sign(payload []byte) (*Signature, error) {
-	return newSignature(k.GetPublicKey(), k.SignBytes(payload)), nil
+	return NewSignature(k.GetPublicKey(), k.SignBytes(payload)), nil
 }
 
 /*func (k *KeyPair) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
 	return k.GetPrivateKey().AddressKeysForEd25519Address(addr)
 }*/
-
-func (k *KeyPair) Address() *Address {
-	return k.GetPublicKey().AsAddress()
-}
 
 func (k *KeyPair) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)

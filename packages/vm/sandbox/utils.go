@@ -92,13 +92,13 @@ func (u utilImpl) ValidSignature(data, pubKey, signature []byte) bool {
 	return pk.Verify(data, sig[:])
 }
 
-func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
+func (u utilImpl) AddressFromPublicKey(pubKey []byte) (*cryptolib.Address, error) {
 	u.gas.Burn(gas.BurnCodeUtilsED25519AddrFromPubKey)
 	pk, err := cryptolib.PublicKeyFromBytes(pubKey)
 	if err != nil {
 		return nil, err
 	}
-	return pk.AsEd25519Address(), nil
+	return pk.AsAddress(), nil
 }
 
 // isc.BLS interface

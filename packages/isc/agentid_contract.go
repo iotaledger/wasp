@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -33,7 +33,7 @@ func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	return NewContractAgentID(chainID, h), nil
 }
 
-func (a *ContractAgentID) Address() iotago.Address {
+func (a *ContractAgentID) Address() *cryptolib.Address {
 	return a.chainID.AsAddress()
 }
 

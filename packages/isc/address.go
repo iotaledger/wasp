@@ -1,15 +1,12 @@
 package isc
 
 import (
-	"math"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const addressIsNil rwutil.Kind = 0x80
 
-func AddressFromReader(rr *rwutil.Reader) (address iotago.Address) {
+/*func AddressFromReader(rr *rwutil.Reader) (address iotago.Address) {
 	kind := rr.ReadKind()
 	if kind == addressIsNil {
 		return nil
@@ -46,3 +43,4 @@ func AddressToBytes(address iotago.Address) []byte {
 	AddressToWriter(ww, address)
 	return ww.Bytes()
 }
+*/

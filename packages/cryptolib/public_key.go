@@ -22,6 +22,11 @@ type PublicKeyKey [PublicKeySize]byte
 
 const PublicKeySize = ed25519.PublicKeySize
 
+var (
+	_ rwutil.IoReader = &PublicKey{}
+	_ rwutil.IoWriter = &PublicKey{}
+)
+
 func publicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
 	return &PublicKey{cryptoPublicKey}
 }
@@ -66,11 +71,11 @@ func (pkT *PublicKey) AsKey() PublicKeyKey {
 func (pkT *PublicKey) AsAddress() *Address {
 	typeKey := []byte{0}
 	typeKey = append(typeKey, pkT.key...)
-	return newAddressFromBytes(blake2b.Sum256(typeKey))
+	return newAddressFromArray(blake2b.Sum256(typeKey))
 }
 
 func (pkT *PublicKey) AsAddressLegacy() *Address {
-	return newAddressFromBytes(blake2b.Sum256(pkT.key))
+	return newAddressFromArray(blake2b.Sum256(pkT.key))
 }
 
 func (pkT *PublicKey) AsKyberPoint() (kyber.Point, error) {

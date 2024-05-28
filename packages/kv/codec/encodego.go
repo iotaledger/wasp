@@ -6,6 +6,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -44,7 +45,7 @@ func Encode(v interface{}) []byte {
 		return HashValue.Encode(*vt)
 	case hashing.HashValue:
 		return HashValue.Encode(vt)
-	case iotago.Address:
+	case *cryptolib.Address:
 		return Address.Encode(vt)
 	case *isc.ChainID:
 		return ChainID.Encode(*vt)

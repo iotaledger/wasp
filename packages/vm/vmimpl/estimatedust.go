@@ -3,6 +3,7 @@ package vmimpl
 import (
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -18,7 +19,7 @@ func (reqctx *requestContext) estimateRequiredStorageDeposit(par isc.RequestPara
 		contractIdentity = isc.ContractIdentityFromEVMAddress(common.Address{}) // use empty EVM address as STUB
 	}
 	out := transaction.BasicOutputFromPostData(
-		reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
+		cryptolib.NewAddressFromIotago(reqctx.vm.task.AnchorOutput.AliasID.ToAddress()),
 		contractIdentity,
 		par,
 	)

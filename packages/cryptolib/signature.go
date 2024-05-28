@@ -3,6 +3,7 @@ package cryptolib
 import (
 	"crypto/ed25519"
 	"crypto/sha512"
+	"io"
 
 	// We need to use this package to have access to low-level edwards25519 operations.
 	//
@@ -13,6 +14,8 @@ import (
 	// operations can use filippo.io/edwards25519,
 	// an extended version of this package repackaged as an importable module.
 	"filippo.io/edwards25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const SignatureSize = ed25519.SignatureSize
@@ -25,7 +28,20 @@ type Signature struct {
 	signature [SignatureSize]byte
 }
 
-func newSignature(publicKey *PublicKey, signature []byte) *Signature {
+var (
+	_ rwutil.IoReader = &Signature{}
+	_ rwutil.IoWriter = &Signature{}
+)
+
+func NewEmptySignature() *Signature {
+	return &Signature{}
+}
+
+func NewDummySignature(publicKey *PublicKey) *Signature {
+	return &Signature{publicKey: publicKey}
+}
+
+func NewSignature(publicKey *PublicKey, signature []byte) *Signature {
 	result := Signature{
 		publicKey: publicKey,
 	}
@@ -33,6 +49,16 @@ func newSignature(publicKey *PublicKey, signature []byte) *Signature {
 	copy(result.signature[:], signature)
 	return &result
 }
+
+/*// TODO: is it really needed?
+func (s *Signature) GetPublicKey() *PublicKey {
+	return s.publicKey
+}
+
+// TODO: is it really needed?
+func (s *Signature) GetSignature() [SignatureSize]byte {
+	return s.signature
+}*/
 
 // Validate reports whether sig is a valid signature of message by publicKey.
 // It uses precisely-specified validation criteria (ZIP 215) suitable for use in consensus-critical contexts.
@@ -83,4 +109,29 @@ func (s *Signature) Validate(message []byte) bool {
 	p.Add(p, p)                                          // p = [4]p
 	p.Add(p, p)                                          // p = [8]p
 	return p.Equal(edwards25519.NewIdentityPoint()) == 1 // p == 0
+}
+
+func (s *Signature) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	s.publicKey = NewEmptyPublicKey()
+	rr.Read(s.publicKey)
+	signature := rr.ReadBytes()
+	copy(s.signature[:], signature)
+	return rr.Err
+}
+
+func (s *Signature) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(s.publicKey)
+	ww.WriteBytes(s.signature[:])
+	return ww.Err
+}
+
+// TODO: remove, when it is not needed
+func (s *Signature) AsIotagoSignature() iotago.Signature {
+	result := &iotago.Ed25519Signature{
+		Signature: s.signature,
+	}
+	copy(result.PublicKey[:], s.publicKey.AsBytes())
+	return result
 }

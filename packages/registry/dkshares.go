@@ -19,7 +19,7 @@ import (
 )
 
 type DKSharesRegistry struct {
-	onChangeMap *onchangemap.OnChangeMap[string, *util.ComparableAddress, tcrypto.DKShare]
+	onChangeMap *onchangemap.OnChangeMap[cryptolib.AddressKey, *util.ComparableAddress, tcrypto.DKShare]
 
 	folderPath    string
 	networkPrefix iotago.NetworkPrefix
@@ -40,9 +40,9 @@ func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey, n
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
-		onchangemap.WithItemAddedCallback[string, *util.ComparableAddress](registry.writeDKShareJSONToFolder),
-		onchangemap.WithItemModifiedCallback[string, *util.ComparableAddress](registry.writeDKShareJSONToFolder),
-		onchangemap.WithItemDeletedCallback[string, *util.ComparableAddress](registry.deleteDKShareJSON),
+		onchangemap.WithItemAddedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.writeDKShareJSONToFolder),
+		onchangemap.WithItemModifiedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.writeDKShareJSONToFolder),
+		onchangemap.WithItemDeletedCallback[cryptolib.AddressKey, *util.ComparableAddress](registry.deleteDKShareJSON),
 	)
 
 	// load DKShares on startup
@@ -86,7 +86,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 		}
 
 		sharedAddressBech32 := filesRegex.FindStringSubmatch(file.Name())[1]
-		_, sharedAddress, err := iotago.ParseBech32(sharedAddressBech32)
+		_, sharedAddress, err := cryptolib.NewAddressFromBech32(sharedAddressBech32)
 		if err != nil {
 			return fmt.Errorf("unable to parse shared bech32 address (%s), error: %w", sharedAddressBech32, err)
 		}
@@ -97,7 +97,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			return fmt.Errorf("unable to unmarshal json file (%s): %w", dkShareFilePath, err)
 		}
 
-		if !dkShare.GetAddress().Equal(sharedAddress) {
+		if !dkShare.GetAddress().Equals(sharedAddress) {
 			return errors.New("unable to add DKShare to registry: sharedAddress in the file not equal to sharedAddress in folder name")
 		}
 
@@ -164,7 +164,7 @@ func (p *DKSharesRegistry) SaveDKShare(dkShare tcrypto.DKShare) error {
 	return p.onChangeMap.Add(dkShare)
 }
 
-func (p *DKSharesRegistry) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
+func (p *DKSharesRegistry) LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error) {
 	dkShare, err := p.onChangeMap.Get(util.NewComparableAddress(sharedAddress))
 	if err != nil {
 		return dkShare, tcrypto.ErrDKShareNotFound

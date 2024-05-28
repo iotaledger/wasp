@@ -17,18 +17,13 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type offLedgerSignature struct {
-	publicKey *cryptolib.PublicKey
-	signature []byte
-}
-
 type OffLedgerRequestData struct {
 	allowance *Assets
 	chainID   ChainID
 	msg       Message
 	gasBudget uint64
 	nonce     uint64
-	signature offLedgerSignature
+	signature *cryptolib.Signature
 }
 
 var (
@@ -41,16 +36,12 @@ var (
 
 type ImpersonatedOffLedgerRequestData struct {
 	OffLedgerRequestData
-	address *iotago.Ed25519Address
+	address *cryptolib.Address
 }
 
 func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) ImpersonatedOffLedgerRequest {
 	copyReq := *request
-	copyReq.signature = offLedgerSignature{
-		signature: make([]byte, 0),
-		publicKey: cryptolib.NewEmptyPublicKey(),
-	}
-
+	copyReq.signature = nil
 	return &ImpersonatedOffLedgerRequestData{
 		OffLedgerRequestData: copyReq,
 		address:              nil,
@@ -58,7 +49,8 @@ func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) Impersonated
 }
 
 func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *iotago.Ed25519Address) OffLedgerRequest {
-	r.address = address
+	addressBytes, _ := address.Serialize(0, nil)
+	copy(r.address[:], addressBytes)
 	return r
 }
 
@@ -84,9 +76,8 @@ func NewOffLedgerRequest(
 func (req *OffLedgerRequestData) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	req.readEssence(rr)
-	req.signature.publicKey = cryptolib.NewEmptyPublicKey()
-	rr.Read(req.signature.publicKey)
-	req.signature.signature = rr.ReadBytes()
+	req.signature = cryptolib.NewEmptySignature()
+	rr.Read(req.signature)
 	return rr.Err
 }
 
@@ -97,8 +88,7 @@ func (req *OffLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 func (req *OffLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	req.writeEssence(ww)
-	ww.Write(req.signature.publicKey)
-	ww.WriteBytes(req.signature.signature)
+	ww.Write(req.signature)
 	return ww.Err
 }
 
@@ -159,7 +149,7 @@ func (req *OffLedgerRequestData) messageToSign() []byte {
 	return ret[:]
 }
 
-func (req *OffLedgerRequestData) Expiry() (time.Time, iotago.Address) {
+func (req *OffLedgerRequestData) Expiry() (time.Time, *cryptolib.Address) {
 	return time.Time{}, nil
 }
 
@@ -198,11 +188,9 @@ func (req *OffLedgerRequestData) SenderAccount() AgentID {
 }
 
 // Sign signs the essence
-func (req *OffLedgerRequestData) Sign(key cryptolib.VariantKeyPair) OffLedgerRequest {
-	req.signature = offLedgerSignature{
-		publicKey: key.GetPublicKey(),
-		signature: key.SignBytes(req.messageToSign()),
-	}
+func (req *OffLedgerRequestData) Sign(signer cryptolib.Signer) OffLedgerRequest {
+	signature, _ := signer.Sign(req.messageToSign())
+	req.signature = signature
 	return req
 }
 
@@ -217,7 +205,7 @@ func (req *OffLedgerRequestData) String() string {
 	)
 }
 
-func (req *OffLedgerRequestData) TargetAddress() iotago.Address {
+func (req *OffLedgerRequestData) TargetAddress() *cryptolib.Address {
 	return req.chainID.AsAddress()
 }
 
@@ -232,7 +220,7 @@ func (req *OffLedgerRequestData) Timestamp() time.Time {
 
 // VerifySignature verifies essence signature
 func (req *OffLedgerRequestData) VerifySignature() error {
-	if !req.signature.publicKey.Verify(req.messageToSign(), req.signature.signature) {
+	if !req.signature.Validate(req.messageToSign()) {
 		return errors.New("invalid signature")
 	}
 	return nil
@@ -255,10 +243,7 @@ func (req *OffLedgerRequestData) WithNonce(nonce uint64) UnsignedOffLedgerReques
 
 // WithSender can be used to estimate gas, without a signature
 func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest {
-	req.signature = offLedgerSignature{
-		publicKey: sender,
-		signature: []byte{},
-	}
+	req.signature = cryptolib.NewDummySignature(sender)
 	return req
 }
 

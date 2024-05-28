@@ -12,7 +12,6 @@ import (
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/tcrypto/bls"
@@ -34,9 +33,9 @@ type DKShare interface {
 	json.Marshaler
 	json.Unmarshaler
 	ID() *util.ComparableAddress
-	Clone() onchangemap.Item[string, *util.ComparableAddress]
+	Clone() onchangemap.Item[cryptolib.AddressKey, *util.ComparableAddress]
 	Bytes() []byte
-	GetAddress() iotago.Address
+	GetAddress() *cryptolib.Address
 	GetIndex() *uint16
 	GetN() uint16
 	GetT() uint16

@@ -18,7 +18,7 @@ func IsRotateStateControllerRequest(req isc.Calldata) bool {
 	return target.Contract == coreutil.CoreContractGovernanceHname && target.EntryPoint == coreutil.CoreEPRotateStateControllerHname
 }
 
-func NewRotateRequestOffLedger(chainID isc.ChainID, newStateAddress iotago.Address, keyPair *cryptolib.KeyPair, gasBudget uint64) isc.Request {
+func NewRotateRequestOffLedger(chainID isc.ChainID, newStateAddress *cryptolib.Address, keyPair *cryptolib.KeyPair, gasBudget uint64) isc.Request {
 	args := dict.New()
 	args.Set(coreutil.ParamStateControllerAddress, codec.Address.Encode(newStateAddress))
 	nonce := uint64(time.Now().UnixNano())
@@ -27,18 +27,18 @@ func NewRotateRequestOffLedger(chainID isc.ChainID, newStateAddress iotago.Addre
 }
 
 func MakeRotateStateControllerTransaction(
-	nextAddr iotago.Address,
+	nextAddr *cryptolib.Address,
 	chainInput *isc.AliasOutputWithID,
 	ts time.Time,
 ) (*iotago.TransactionEssence, error) {
 	output := chainInput.GetAliasOutput().Clone().(*iotago.AliasOutput)
 	for i := range output.Conditions {
 		if _, ok := output.Conditions[i].(*iotago.StateControllerAddressUnlockCondition); ok {
-			output.Conditions[i] = &iotago.StateControllerAddressUnlockCondition{Address: nextAddr}
+			output.Conditions[i] = &iotago.StateControllerAddressUnlockCondition{Address: nextAddr.AsIotagoAddress()}
 		}
 		// TODO: it is probably not the correct way to do the governance transition
 		if _, ok := output.Conditions[i].(*iotago.GovernorAddressUnlockCondition); ok {
-			output.Conditions[i] = &iotago.GovernorAddressUnlockCondition{Address: nextAddr}
+			output.Conditions[i] = &iotago.GovernorAddressUnlockCondition{Address: nextAddr.AsIotagoAddress()}
 		}
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -128,7 +129,7 @@ func (_ InputRegisterERC20NativeToken) Decode(d dict.Dict) (ERC20NativeTokenPara
 }
 
 type RegisterERC20NativeTokenOnRemoteChainRequest struct {
-	TargetChain iotago.Address
+	TargetChain *cryptolib.Address
 	Token       ERC20NativeTokenParams
 }
 
@@ -150,7 +151,7 @@ func (_ InputRegisterERC20NativeTokenOnRemoteChain) Decode(d dict.Dict) (ret Reg
 }
 
 type RegisterERC20ExternalNativeTokenRequest struct {
-	SourceChain        iotago.Address
+	SourceChain        *cryptolib.Address
 	FoundryTokenScheme iotago.TokenScheme
 	Token              ERC20NativeTokenParams
 }

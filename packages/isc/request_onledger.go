@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -135,13 +136,13 @@ func (req *onLedgerRequestData) Clone() OnLedgerRequest {
 	return ret
 }
 
-func (req *onLedgerRequestData) Expiry() (time.Time, iotago.Address) {
+func (req *onLedgerRequestData) Expiry() (time.Time, *cryptolib.Address) {
 	expiration := req.unlockConditions.Expiration()
 	if expiration == nil {
 		return time.Time{}, nil
 	}
 
-	return time.Unix(int64(expiration.UnixTime), 0), expiration.ReturnAddress
+	return time.Unix(int64(expiration.UnixTime), 0), cryptolib.NewAddressFromIotago(expiration.ReturnAddress)
 }
 
 func (req *onLedgerRequestData) Features() Features {
@@ -167,7 +168,7 @@ func (req *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
 	if req.senderAddress() == nil {
 		return false
 	}
-	if !req.senderAddress().Equal(chainID.AsAddress()) {
+	if !req.senderAddress().Equals(chainID.AsAddress()) {
 		return false
 	}
 	if req.requestMetadata != nil {
@@ -192,7 +193,7 @@ func (req *onLedgerRequestData) NFT() *NFT {
 
 	for _, featureBlock := range nftOutput.ImmutableFeatures {
 		if block, ok := featureBlock.(*iotago.IssuerFeature); ok {
-			ret.Issuer = block.Address
+			ret.Issuer = cryptolib.NewAddressFromIotago(block.Address)
 		}
 		if block, ok := featureBlock.(*iotago.MetadataFeature); ok {
 			ret.Metadata = block.Data
@@ -224,20 +225,20 @@ func (req *onLedgerRequestData) SenderAccount() AgentID {
 		return nil
 	}
 	if req.requestMetadata != nil && !req.requestMetadata.SenderContract.Empty() {
-		if sender.Type() == iotago.AddressAlias {
-			chainID := ChainIDFromAddress(sender.(*iotago.AliasAddress))
-			return req.requestMetadata.SenderContract.AgentID(chainID)
-		}
+		//if sender.Type() == iotago.AddressAlias {	// TODO: is it needed?
+		chainID := ChainIDFromAddress(sender)
+		return req.requestMetadata.SenderContract.AgentID(chainID)
+		//}
 	}
 	return NewAgentID(sender)
 }
 
-func (req *onLedgerRequestData) senderAddress() iotago.Address {
+func (req *onLedgerRequestData) senderAddress() *cryptolib.Address {
 	senderBlock := req.featureBlocks.SenderFeature()
 	if senderBlock == nil {
 		return nil
 	}
-	return senderBlock.Address
+	return cryptolib.NewAddressFromIotago(senderBlock.Address)
 }
 
 func (req *onLedgerRequestData) String() string {
@@ -255,16 +256,16 @@ func (req *onLedgerRequestData) String() string {
 	)
 }
 
-func (req *onLedgerRequestData) TargetAddress() iotago.Address {
+func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
 	switch out := req.output.(type) {
 	case *iotago.BasicOutput:
-		return out.Ident()
+		return cryptolib.NewAddressFromIotago(out.Ident())
 	case *iotago.FoundryOutput:
-		return out.Ident()
+		return cryptolib.NewAddressFromIotago(out.Ident())
 	case *iotago.NFTOutput:
-		return out.Ident()
+		return cryptolib.NewAddressFromIotago(out.Ident())
 	case *iotago.AliasOutput:
-		return out.AliasID.ToAddress()
+		return cryptolib.NewAddressFromIotago(out.AliasID.ToAddress())
 	default:
 		panic("onLedgerRequestData:TargetAddress implement me")
 	}

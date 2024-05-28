@@ -80,22 +80,17 @@ func (c *consensusState) Address() *cryptolib.Address {
 }
 
 type jsonConsensusState struct {
-	ChainID          string           `json:"chainId"`
-	CommitteeAddress *json.RawMessage `json:"committeeAddress"`
-	LogIndex         uint32           `json:"logIndex"`
+	ChainID          string `json:"chainId"`
+	CommitteeAddress string `json:"committeeAddress"`
+	LogIndex         uint32 `json:"logIndex"`
 }
 
 func (c *consensusState) MarshalJSON() ([]byte, error) {
 	chainIDBech32 := c.identifier.chainID.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 
-	jAddressRaw, err := iotago.AddressToJSONRawMsg(c.identifier.address)
-	if err != nil {
-		return nil, err
-	}
-
 	return json.Marshal(&jsonConsensusState{
 		ChainID:          chainIDBech32,
-		CommitteeAddress: jAddressRaw,
+		CommitteeAddress: c.identifier.address.String(),
 		LogIndex:         c.LogIndex.AsUint32(),
 	})
 }
@@ -111,7 +106,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	committeeAddress, err := iotago.AddressFromJSONRawMsg(j.CommitteeAddress)
+	committeeAddress, err := cryptolib.NewAddressFromString(j.CommitteeAddress)
 	if err != nil {
 		return err
 	}
@@ -186,7 +181,7 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 		}
 
 		committeeAddressBech32 := filesRegex.FindStringSubmatch(subFolderFile.Name())[1]
-		_, committeeAddress, err := iotago.ParseBech32(committeeAddressBech32)
+		_, committeeAddress, err := cryptolib.NewAddressFromBech32(committeeAddressBech32)
 		if err != nil {
 			return fmt.Errorf("unable to parse committee bech32 address (%s), error: %w", committeeAddressBech32, err)
 		}
@@ -206,7 +201,7 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 			return errors.New("unable to add consensus state to registry: chainID in the file not equal to chainID in folder name")
 		}
 
-		if !state.identifier.address.Equal(committeeAddress) {
+		if !state.identifier.address.Equals(committeeAddress) {
 			return errors.New("unable to add consensus state to registry: committeeAddress in the file not equal to committeeAddress in folder name")
 		}
 
@@ -239,16 +234,16 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 		}
 
 		chainAddressBech32 := foldersRegex.FindStringSubmatch(rootFolderFile.Name())[0]
-		_, chainAddress, err := iotago.ParseBech32(chainAddressBech32)
+		_, chainAddress, err := cryptolib.NewAddressFromBech32(chainAddressBech32)
 		if err != nil {
 			return fmt.Errorf("unable to parse consensus state bech32 address (%s), error: %w", chainAddressBech32, err)
 		}
 
-		if chainAddress.Type() != iotago.AddressAlias {
+		/*if chainAddress.Type() != iotago.AddressAlias {
 			return fmt.Errorf("chainID bech32 address is not an alias address (%s), error: %w", chainAddressBech32, err)
-		}
+		}*/ // TODO: is it needed?
 
-		chainID := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
+		chainID := isc.ChainIDFromAddress(chainAddress)
 
 		subFolderPath := path.Join(p.folderPath, rootFolderFile.Name())
 
@@ -351,7 +346,7 @@ func (p *ConsensusStateRegistry) add(state *consensusState) error {
 	return nil
 }
 
-func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress iotago.Address, state *cmt_log.State) error {
+func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *cmt_log.State) error {
 	return p.add(&consensusState{
 		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 		LogIndex:   state.LogIndex,

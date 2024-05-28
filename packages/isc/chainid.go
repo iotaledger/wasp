@@ -4,10 +4,10 @@
 package isc
 
 import (
-	"fmt"
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -29,8 +29,8 @@ func EmptyChainID() ChainID {
 	return emptyChainID
 }
 
-func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
-	return ChainIDFromAliasID(addr.AliasID())
+func ChainIDFromAddress(addr *cryptolib.Address) ChainID {
+	return ChainID(addr[:])
 }
 
 // ChainIDFromAliasID creates new chain ID from alias address
@@ -45,14 +45,14 @@ func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 }
 
 func ChainIDFromString(bech32 string) (ChainID, error) {
-	_, addr, err := iotago.ParseBech32(bech32)
+	_, addr, err := cryptolib.NewAddressFromBech32(bech32)
 	if err != nil {
 		return ChainID{}, err
 	}
-	if addr.Type() != iotago.AddressAlias {
+	/*if addr.Type() != iotago.AddressAlias {
 		return ChainID{}, fmt.Errorf("chainID must be an alias address (%s)", bech32)
-	}
-	return ChainIDFromAddress(addr.(*iotago.AliasAddress)), nil
+	}*/ //TODO: is it needed?
+	return ChainIDFromAddress(addr), nil
 }
 
 func ChainIDFromKey(key ChainIDKey) ChainID {
@@ -78,8 +78,8 @@ func RandomChainID(seed ...[]byte) ChainID {
 	return chainID
 }
 
-func (id ChainID) AsAddress() iotago.Address {
-	addr := iotago.AliasAddress(id)
+func (id ChainID) AsAddress() *cryptolib.Address {
+	addr := cryptolib.Address(id)
 	return &addr
 }
 

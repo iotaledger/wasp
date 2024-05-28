@@ -49,13 +49,13 @@ type Calldata interface {
 	ID() RequestID
 	NFT() *NFT // Not nil if the request is an NFT request
 	SenderAccount() AgentID
-	TargetAddress() iotago.Address // TODO implement properly. Target depends on time assumptions and UTXO type
+	TargetAddress() *cryptolib.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	EVMCallMsg() *ethereum.CallMsg
 }
 
 type Features interface {
 	// Expiry returns the expiry time and sender address, or a zero time if not present
-	Expiry() (time.Time, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
+	Expiry() (time.Time, *cryptolib.Address) // return expiry time data and sender address or nil, nil if does not exist
 	ReturnAmount() (uint64, bool)
 	// TimeLock returns the timelock feature, or a zero time if not present
 	TimeLock() time.Time
@@ -67,7 +67,7 @@ type UnsignedOffLedgerRequest interface {
 	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
 	WithAllowance(allowance *Assets) UnsignedOffLedgerRequest
 	WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest
-	Sign(key cryptolib.VariantKeyPair) OffLedgerRequest
+	Sign(signer cryptolib.Signer) OffLedgerRequest
 }
 
 type ImpersonatedOffLedgerRequest interface {
@@ -135,11 +135,11 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 		}
 
 		addr := odata.TargetAddress()
-		if addr.Type() != iotago.AddressAlias {
+		/*if addr.Type() != iotago.AddressAlias {
 			continue
-		}
+		}*/ // TODO: is it needed?
 
-		chainID := ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
+		chainID := ChainIDFromAddress(addr)
 
 		if odata.IsInternalUTXO(chainID) {
 			continue

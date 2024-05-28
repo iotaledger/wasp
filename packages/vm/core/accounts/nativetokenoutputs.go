@@ -61,11 +61,11 @@ func (s *StateReader) GetNativeTokenOutput(nativeTokenID iotago.NativeTokenID, c
 			Amount: tokenRec.Amount,
 		}},
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: chainID.AsAddress()},
+			&iotago.AddressUnlockCondition{Address: chainID.AsAddress().AsIotagoAddress()},
 		},
 		Features: iotago.Features{
 			&iotago.SenderFeature{
-				Address: chainID.AsAddress(),
+				Address: chainID.AsAddress().AsIotagoAddress(),
 			},
 		},
 	}

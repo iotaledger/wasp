@@ -10,6 +10,7 @@ import (
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/util"
@@ -147,7 +148,7 @@ func OutputSetToOutputIDs(outputSet iotago.OutputSet) iotago.OutputIDs {
 	return outputIDs
 }
 
-func AliasOutputWithIDFromTx(tx *iotago.Transaction, aliasAddr iotago.Address) (*AliasOutputWithID, error) {
+func AliasOutputWithIDFromTx(tx *iotago.Transaction, aliasAddr *cryptolib.Address) (*AliasOutputWithID, error) {
 	txID, err := tx.ID()
 	if err != nil {
 		return nil, err
@@ -162,7 +163,7 @@ func AliasOutputWithIDFromTx(tx *iotago.Transaction, aliasAddr iotago.Address) (
 				aliasID = iotago.AliasIDFromOutputID(outputID)
 			}
 
-			if aliasID.ToAddress().Equal(aliasAddr) {
+			if cryptolib.NewAddressFromIotago(aliasID.ToAddress()).Equals(aliasAddr) {
 				// output found
 				return NewAliasOutputWithID(aliasOutput, outputID), nil
 			}

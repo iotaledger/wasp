@@ -77,7 +77,7 @@ func (s *StateReader) GetFoundryOutput(sn uint32, chainID isc.ChainID) (*iotago.
 		SerialNumber: sn,
 		TokenScheme:  rec.TokenScheme,
 		Conditions: iotago.UnlockConditions{
-			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().(*iotago.AliasAddress)},
+			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().AsIotagoAddress().(*iotago.AliasAddress)},
 		},
 		Features: nil,
 	}

@@ -4,7 +4,6 @@
 package governance
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -16,10 +15,10 @@ import (
 // It is implemented as a signature over the node pub key concatenated with the owner address.
 type NodeOwnershipCertificate []byte
 
-func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) NodeOwnershipCertificate {
+func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) NodeOwnershipCertificate {
 	ww := rwutil.NewBytesWriter()
 	ww.Write(nodeKeyPair.GetPublicKey())
-	isc.AddressToWriter(ww, ownerAddress)
+	ww.Write(ownerAddress)
 	return nodeKeyPair.GetPrivateKey().Sign(ww.Bytes())
 }
 
@@ -27,10 +26,10 @@ func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
 	return data
 }
 
-func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) bool {
+func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress *cryptolib.Address) bool {
 	ww := rwutil.NewBytesWriter()
 	ww.Write(nodePubKey)
-	isc.AddressToWriter(ww, ownerAddress)
+	ww.Write(ownerAddress)
 	return nodePubKey.Verify(ww.Bytes(), c.Bytes())
 }
 
@@ -85,7 +84,7 @@ func (a *AccessNodeInfo) Bytes() []byte {
 	return ww.Bytes()
 }
 
-func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) *AccessNodeInfo {
+func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) *AccessNodeInfo {
 	a.Certificate = NewNodeOwnershipCertificate(nodeKeyPair, ownerAddress).Bytes()
 	return a
 }
@@ -95,10 +94,10 @@ func (a *AccessNodeInfo) ValidateCertificate() bool {
 	if err != nil {
 		return false
 	}
-	validatorAddr, err := isc.AddressFromBytes(a.validatorAddr)
-	if err != nil {
+	validatorAddr := cryptolib.NewAddressFromBytes(a.validatorAddr)
+	/*if err != nil {
 		return false
-	}
+	}*/
 	cert := NodeOwnershipCertificateFromBytes(a.Certificate)
 	return cert.Verify(nodePubKey, validatorAddr)
 }

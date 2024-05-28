@@ -217,7 +217,7 @@ func (n *Node) GenerateDistributedKey(
 	blsSharedPublic := pubShareResponses[0].blsSharedPublic
 	blsPublicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if !sharedAddress.Equal(pubShareResponses[i].sharedAddress) {
+		if !sharedAddress.Equals(pubShareResponses[i].sharedAddress) {
 			return nil, errors.New("nodes generated different addresses")
 		}
 		if !edSharedPublic.Equal(pubShareResponses[i].edSharedPublic) {

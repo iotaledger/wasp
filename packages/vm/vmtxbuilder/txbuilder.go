@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -428,6 +429,6 @@ func retryOutputFromOnLedgerRequest(req isc.OnLedgerRequest, chainAliasID iotago
 	return out
 }
 
-func (txb *AnchorTransactionBuilder) chainAddress() iotago.Address {
-	return txb.anchorOutput.AliasID.ToAddress()
+func (txb *AnchorTransactionBuilder) chainAddress() *cryptolib.Address {
+	return cryptolib.NewAddressFromIotago(txb.anchorOutput.AliasID.ToAddress())
 }

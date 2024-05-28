@@ -4,12 +4,13 @@ import (
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type NFT struct {
 	ID       iotago.NFTID
-	Issuer   iotago.Address
+	Issuer   *cryptolib.Address
 	Metadata []byte  // (ImmutableMetadata)
 	Owner    AgentID // can be nil
 }
@@ -31,7 +32,8 @@ func (nft *NFT) Bytes() []byte {
 func (nft *NFT) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadN(nft.ID[:])
-	nft.Issuer = AddressFromReader(rr)
+	nft.Issuer = cryptolib.NewEmptyAddress()
+	rr.Read(nft.Issuer)
 	nft.Metadata = rr.ReadBytes()
 	nft.Owner = AgentIDFromReader(rr)
 	return rr.Err
@@ -40,7 +42,7 @@ func (nft *NFT) Read(r io.Reader) error {
 func (nft *NFT) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteN(nft.ID[:])
-	AddressToWriter(ww, nft.Issuer)
+	ww.Write(nft.Issuer)
 	ww.WriteBytes(nft.Metadata)
 	AgentIDToWriter(ww, nft.Owner)
 	return ww.Err

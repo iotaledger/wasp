@@ -19,6 +19,11 @@ type PrivateKey struct {
 
 const PrivateKeySize = ed25519.PrivateKeySize
 
+var (
+	_ rwutil.IoReader = &PrivateKey{}
+	_ rwutil.IoWriter = &PrivateKey{}
+)
+
 func NewPrivateKey() *PrivateKey {
 	return PrivateKeyFromSeed(NewSeed())
 }

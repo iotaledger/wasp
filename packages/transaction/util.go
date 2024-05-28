@@ -50,7 +50,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago
 // Consumes only what is needed to cover output balances
 // Returned reminder is nil if not needed
 func ComputeInputsAndRemainder(
-	senderAddress iotago.Address,
+	senderAddress *cryptolib.Address,
 	baseTokenOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
 	nftsOut map[iotago.NFTID]bool,
@@ -131,7 +131,7 @@ func ComputeInputsAndRemainder(
 //
 
 //nolint:gocyclo
-func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
+func computeRemainderOutput(senderAddress *cryptolib.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
 	if inBaseTokens < outBaseTokens {
 		return nil, ErrNotEnoughBaseTokens
 	}
@@ -185,8 +185,8 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 	ret := &iotago.BasicOutput{
 		Amount:       remBaseTokens,
 		NativeTokens: iotago.NativeTokens{},
-		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: senderAddress},
+		Conditions:   iotago.UnlockConditions{
+			//&iotago.AddressUnlockCondition{Address: senderAddress}, // TODO: not needed?
 		},
 	}
 	for nativeTokenID, b := range remTokens {
@@ -202,11 +202,11 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 	return ret, nil
 }
 
-func MakeSignatureAndReferenceUnlocks(totalInputs int, sig iotago.Signature) iotago.Unlocks {
+func MakeSignatureAndReferenceUnlocks(totalInputs int, sig *cryptolib.Signature) iotago.Unlocks {
 	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlock{Signature: sig}
+			ret[0] = &iotago.SignatureUnlock{Signature: sig.AsIotagoSignature()} // TODO: move SignatureUnlock to isc-private?
 			continue
 		}
 		ret[i] = &iotago.ReferenceUnlock{Reference: 0}
@@ -214,11 +214,11 @@ func MakeSignatureAndReferenceUnlocks(totalInputs int, sig iotago.Signature) iot
 	return ret
 }
 
-func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig iotago.Signature) iotago.Unlocks {
+func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig *cryptolib.Signature) iotago.Unlocks {
 	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlock{Signature: sig}
+			ret[0] = &iotago.SignatureUnlock{Signature: sig.AsIotagoSignature()} // TODO: move SignatureUnlock to isc-private?
 			continue
 		}
 		ret[i] = &iotago.AliasUnlock{Reference: 0}
@@ -226,14 +226,14 @@ func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig iotago.Signature) 
 	return ret
 }
 
-func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig iotago.Signature) *iotago.Transaction {
+func MakeAnchorTransaction(essence *iotago.TransactionEssence, sig *cryptolib.Signature) *iotago.Transaction {
 	return &iotago.Transaction{
 		Essence: essence,
 		Unlocks: MakeSignatureAndAliasUnlockFeatures(len(essence.Inputs), sig),
 	}
 }
 
-func CreateAndSignTx(inputs iotago.Inputs, inputsCommitment []byte, outputs iotago.Outputs, wallet cryptolib.VariantKeyPair, networkID uint64) (*iotago.Transaction, error) {
+func CreateAndSignTx(inputs iotago.Inputs, inputsCommitment []byte, outputs iotago.Outputs, wallet cryptolib.Signer, networkID uint64) (*iotago.Transaction, error) {
 	unorderedEssence := &iotago.TransactionEssence{
 		NetworkID: networkID,
 		Inputs:    inputs,

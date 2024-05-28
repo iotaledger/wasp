@@ -10,7 +10,6 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -211,11 +210,11 @@ const (
 
 type OutputAddressList struct{}
 
-func (e OutputAddressList) Encode(addrs []iotago.Address) dict.Dict {
+func (e OutputAddressList) Encode(addrs []*cryptolib.Address) dict.Dict {
 	return codec.SliceToArray(codec.Address, addrs, ParamAllowedStateControllerAddresses)
 }
 
-func (e OutputAddressList) Decode(r dict.Dict) ([]iotago.Address, error) {
+func (e OutputAddressList) Decode(r dict.Dict) ([]*cryptolib.Address, error) {
 	return codec.SliceFromArray(codec.Address, r, ParamAllowedStateControllerAddresses)
 }
 
