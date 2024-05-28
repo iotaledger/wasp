@@ -186,6 +186,14 @@ func TestGetObject(t *testing.T) {
 	}
 }
 
+func TestGetProtocolConfig(t *testing.T) {
+	api := sui.NewSuiClient(conn.DevnetEndpointUrl)
+	version := models.NewSafeSuiBigInt(uint64(47))
+	protocolConfig, err := api.GetProtocolConfig(context.Background(), &version)
+	require.NoError(t, err)
+	require.Equal(t, uint64(47), protocolConfig.ProtocolVersion.Uint64())
+}
+
 func TestGetTotalTransactionBlocks(t *testing.T) {
 	api := sui.NewSuiClient(conn.DevnetEndpointUrl)
 	res, err := api.GetTotalTransactionBlocks(context.Background())
