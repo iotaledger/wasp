@@ -17,14 +17,14 @@ func Nonce(evmPartition kv.KVStoreReader, addr common.Address) uint64 {
 	return emulator.GetNonce(stateDBStore, addr)
 }
 
-func RegisterERC721NFTCollectionByNFTId(store kv.KVStore, nft *isc.NFT) {
+func RegisterERC721NFTCollectionByNFTId(evmState kv.KVStore, nft *isc.NFT) {
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	if err != nil {
 		panic(errEVMCanNotDecodeERC27Metadata)
 	}
 
 	addr := iscmagic.ERC721NFTCollectionAddress(nft.ID)
-	state := emulator.NewStateDBFromKVStore(emulator.StateDBSubrealm(store))
+	state := emulator.NewStateDBFromKVStore(evm.EmulatorStateSubrealm(evmState))
 
 	if state.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
@@ -38,5 +38,5 @@ func RegisterERC721NFTCollectionByNFTId(store kv.KVStore, nft *isc.NFT) {
 		state.SetState(addr, k, v)
 	}
 
-	addToPrivileged(store, addr)
+	addToPrivileged(evmState, addr)
 }
