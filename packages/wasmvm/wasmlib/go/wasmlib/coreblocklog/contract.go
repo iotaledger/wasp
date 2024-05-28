@@ -19,12 +19,6 @@ type GetEventsForBlockCall struct {
 	Results ImmutableGetEventsForBlockResults
 }
 
-type GetEventsForContractCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableGetEventsForContractParams
-	Results ImmutableGetEventsForContractResults
-}
-
 type GetEventsForRequestCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetEventsForRequestParams
@@ -75,15 +69,6 @@ func (sc Funcs) GetEventsForBlock(ctx wasmlib.ScViewClientContext) *GetEventsFor
 	return f
 }
 
-// Returns the list of events triggered by the given contract
-// during the execution of the given block range.
-func (sc Funcs) GetEventsForContract(ctx wasmlib.ScViewClientContext) *GetEventsForContractCall {
-	f := &GetEventsForContractCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEventsForContract)}
-	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 // Returns the list of events triggered during the execution of the given request.
 func (sc Funcs) GetEventsForRequest(ctx wasmlib.ScViewClientContext) *GetEventsForRequestCall {
 	f := &GetEventsForRequestCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEventsForRequest)}
@@ -128,7 +113,6 @@ var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		ViewGetBlockInfo,
 		ViewGetEventsForBlock,
-		ViewGetEventsForContract,
 		ViewGetEventsForRequest,
 		ViewGetRequestIDsForBlock,
 		ViewGetRequestReceipt,
@@ -138,7 +122,6 @@ var exportMap = wasmlib.ScExportMap{
 	Funcs: []wasmlib.ScFuncContextFunction{
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

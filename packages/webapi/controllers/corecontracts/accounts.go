@@ -14,28 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
-func (c *Controller) getAccounts(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-
-	accounts, err := corecontracts.GetAccounts(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-
-	accountsResponse := &models.AccountListResponse{
-		Accounts: make([]string, len(accounts)),
-	}
-
-	for k, v := range accounts {
-		accountsResponse.Accounts[k] = v.String()
-	}
-
-	return e.JSON(http.StatusOK, accountsResponse)
-}
-
 func (c *Controller) getTotalAssets(e echo.Context) error {
 	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {

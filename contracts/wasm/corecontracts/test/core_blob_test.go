@@ -71,21 +71,3 @@ func TestGetBlobField(t *testing.T) {
 	stored := fList.Results.Bytes().Value()
 	require.Equal(t, []byte("val0"), stored)
 }
-
-func TestListBlobs(t *testing.T) {
-	ctx := setupBlob(t)
-	require.NoError(t, ctx.Err)
-
-	fStore := coreblob.ScFuncs.StoreBlob(ctx)
-	fStore.Params.Blobs().GetBytes("key0").SetValue([]byte("val0"))
-	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("val1"))
-	fStore.Func.Post()
-	require.NoError(t, ctx.Err)
-	require.Equal(t, expectedBlobHash, fStore.Results.Hash().Value().String())
-
-	fList := coreblob.ScFuncs.ListBlobs(ctx)
-	fList.Func.Call()
-	size := fList.Results.BlobSizes().GetInt32(wasmtypes.HashFromString(expectedBlobHash)).Value()
-	// The sum of the size of the value of `key0` and `key1` is len("val0")+len("val1") = 8
-	require.Equal(t, int32(8), size)
-}

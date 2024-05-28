@@ -157,8 +157,6 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	originatorSigScheme := chain.OriginatorKeyPair
 	originatorAddress := chain.OriginatorAddress()
 
-	env.checkLedger()
-
 	myWallet, myAddress, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
@@ -171,7 +169,6 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
-	env.checkLedger()
 
 	for _, i := range chain.CommitteeNodes {
 		counterValue, err2 := chain.GetCounterValue(hname, i)
@@ -181,8 +178,6 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
-
-	env.printAccounts("withdraw before")
 
 	// withdraw back 500 base tokens to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(parameters.L1().Protocol.Bech32HRP))
@@ -198,10 +193,6 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 
 	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), true, 30*time.Second)
 	require.NoError(t, err)
-
-	env.checkLedger()
-
-	env.printAccounts("withdraw after")
 
 	require.Equal(t, env.Clu.AddressBalances(originatorAddress).BaseTokens, origL1Balance+allowanceBaseTokens)
 }

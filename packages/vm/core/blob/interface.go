@@ -13,7 +13,6 @@ var (
 
 	ViewGetBlobInfo  = coreutil.ViewFunc("getBlobInfo")
 	ViewGetBlobField = coreutil.ViewFunc("getBlobField")
-	ViewListBlobs    = coreutil.ViewFunc("listBlobs")
 )
 
 // state variables

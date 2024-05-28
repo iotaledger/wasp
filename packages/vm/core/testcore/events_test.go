@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -176,14 +177,10 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...int32) (e
 	return events
 }
 
-func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) (events []*isc.Event) {
-	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
-		blocklog.ParamContractHname, inccounter.Contract.Hname(),
-		blocklog.ParamFromBlock, fromBlock,
-		blocklog.ParamToBlock, toBlock,
-	)
-	require.NoError(t, err)
-	events, err = blocklog.EventsFromViewResult(res)
+func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock uint32) (events []*isc.Event) {
+	ret := blocklog.NewStateAccess(lo.Must(chain.Store().LatestState())).
+		GetSmartContractEvents(inccounter.Contract.Hname(), fromBlock, toBlock)
+	events, err := blocklog.EventsFromViewResult(ret)
 	require.NoError(t, err)
 	return events
 }

@@ -65,35 +65,3 @@ export class MutableGetBlobInfoResults extends wasmtypes.ScProxy {
         return new sc.MapStringToMutableInt32(this.proxy);
     }
 }
-
-export class MapHashToImmutableInt32 extends wasmtypes.ScProxy {
-
-    getInt32(key: wasmtypes.ScHash): wasmtypes.ScImmutableInt32 {
-        return new wasmtypes.ScImmutableInt32(this.proxy.key(wasmtypes.hashToBytes(key)));
-    }
-}
-
-export class ImmutableListBlobsResults extends wasmtypes.ScProxy {
-    // sizes for each blob hash
-    blobSizes(): sc.MapHashToImmutableInt32 {
-        return new sc.MapHashToImmutableInt32(this.proxy);
-    }
-}
-
-export class MapHashToMutableInt32 extends wasmtypes.ScProxy {
-
-    clear(): void {
-        this.proxy.clearMap();
-    }
-
-    getInt32(key: wasmtypes.ScHash): wasmtypes.ScMutableInt32 {
-        return new wasmtypes.ScMutableInt32(this.proxy.key(wasmtypes.hashToBytes(key)));
-    }
-}
-
-export class MutableListBlobsResults extends wasmtypes.ScProxy {
-    // sizes for each blob hash
-    blobSizes(): sc.MapHashToMutableInt32 {
-        return new sc.MapHashToMutableInt32(this.proxy);
-    }
-}

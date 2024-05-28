@@ -49,12 +49,3 @@ func GetBlobValue(ch chain.Chain, blobHash hashing.HashValue, key string, blockI
 
 	return ret[blob.ParamBytes], nil
 }
-
-func ListBlobs(ch chain.Chain, blockIndexOrTrieRoot string) (map[hashing.HashValue]uint32, error) {
-	ret, err := common.CallView(ch, blob.Contract.Hname(), blob.ViewListBlobs.Hname(), nil, blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-
-	return blob.DecodeDirectory(ret)
-}

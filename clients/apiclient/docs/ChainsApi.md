@@ -8,6 +8,7 @@ Method | HTTP request | Description
 [**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
 [**CallView**](ChainsApi.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
 [**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
+[**DumpAccounts**](ChainsApi.md#DumpAccounts) | **Post** /v1/chains/{chainID}/dump-accounts | dump accounts information into a humanly-readable format
 [**EstimateGasOffledger**](ChainsApi.md#EstimateGasOffledger) | **Post** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**EstimateGasOnledger**](ChainsApi.md#EstimateGasOnledger) | **Post** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
 [**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
@@ -274,6 +275,72 @@ Name | Type | Description  | Notes
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiDeactivateChainRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+ (empty response body)
+
+### Authorization
+
+[Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## DumpAccounts
+
+> DumpAccounts(ctx, chainID).Execute()
+
+dump accounts information into a humanly-readable format
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    chainID := "chainID_example" // string | ChainID (Bech32)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ChainsApi.DumpAccounts(context.Background(), chainID).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.DumpAccounts``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Bech32) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiDumpAccountsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes

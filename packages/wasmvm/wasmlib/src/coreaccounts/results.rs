@@ -254,62 +254,6 @@ impl MutableAccountNFTsInCollectionResults {
 }
 
 #[derive(Clone)]
-pub struct MapAgentIDToImmutableBool {
-    pub(crate) proxy: Proxy,
-}
-
-impl MapAgentIDToImmutableBool {
-    pub fn get_bool(&self, key: &ScAgentID) -> ScImmutableBool {
-        ScImmutableBool::new(self.proxy.key(&agent_id_to_bytes(key)))
-    }
-}
-
-#[derive(Clone)]
-pub struct ImmutableAccountsResults {
-    pub proxy: Proxy,
-}
-
-impl ImmutableAccountsResults {
-    // agent IDs
-    pub fn all_accounts(&self) -> MapAgentIDToImmutableBool {
-        MapAgentIDToImmutableBool { proxy: self.proxy.clone() }
-    }
-}
-
-#[derive(Clone)]
-pub struct MapAgentIDToMutableBool {
-    pub(crate) proxy: Proxy,
-}
-
-impl MapAgentIDToMutableBool {
-    pub fn clear(&self) {
-        self.proxy.clear_map();
-    }
-
-    pub fn get_bool(&self, key: &ScAgentID) -> ScMutableBool {
-        ScMutableBool::new(self.proxy.key(&agent_id_to_bytes(key)))
-    }
-}
-
-#[derive(Clone)]
-pub struct MutableAccountsResults {
-    pub proxy: Proxy,
-}
-
-impl MutableAccountsResults {
-    pub fn new() -> MutableAccountsResults {
-        MutableAccountsResults {
-            proxy: results_proxy(),
-        }
-    }
-
-    // agent IDs
-    pub fn all_accounts(&self) -> MapAgentIDToMutableBool {
-        MapAgentIDToMutableBool { proxy: self.proxy.clone() }
-    }
-}
-
-#[derive(Clone)]
 pub struct MapTokenIDToImmutableBigInt {
     pub(crate) proxy: Proxy,
 }

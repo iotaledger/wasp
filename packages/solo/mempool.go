@@ -8,6 +8,7 @@ package solo
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -86,6 +87,21 @@ func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
 			panic(fmt.Errorf("unexpected request type %T: %+v", request, request))
 		}
 	}
+	// order the batch by nonce (to get a roughly similar result as the real execution)
+	slices.SortFunc(batch, func(a, b isc.Request) int {
+		if !a.IsOffLedger() || !b.IsOffLedger() {
+			return 0
+		}
+		aNonce := a.(isc.OffLedgerRequest).Nonce()
+		bNonce := b.(isc.OffLedgerRequest).Nonce()
+		if aNonce > bNonce {
+			return 1
+		}
+		if aNonce == bNonce {
+			return 0
+		}
+		return -1
+	})
 	return batch
 }
 

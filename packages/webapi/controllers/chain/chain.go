@@ -1,12 +1,21 @@
 package chain
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"sync"
 
 	"github.com/labstack/echo/v4"
+	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
@@ -139,4 +148,74 @@ func (c *Controller) getState(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, response)
+}
+
+var dumpAccountsMutex = sync.Mutex{}
+
+func (c *Controller) dumpAccounts(e echo.Context) error {
+	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	if err != nil {
+		return err
+	}
+	ch := lo.Must(c.chainService.GetChainByID(chainID))
+
+	if !dumpAccountsMutex.TryLock() {
+		return e.String(http.StatusLocked, "account dump in progress")
+	}
+
+	go func() {
+		defer dumpAccountsMutex.Unlock()
+		chainState := lo.Must(ch.LatestState(chain.ActiveOrCommittedState))
+		blockIndex := chainState.BlockIndex()
+		stateRoot := chainState.TrieRoot()
+		filename := fmt.Sprintf("block_%d_stateroot_%s.json", blockIndex, stateRoot.String())
+
+		err := os.MkdirAll(filepath.Join(c.accountDumpsPath, chainID.String()), os.ModePerm)
+		if err != nil {
+			c.log.Errorf("dumpAccounts - Creating dir failed: %s", err.Error())
+			return
+		}
+		f, err := os.Create(filepath.Join(c.accountDumpsPath, chainID.String(), filename))
+		if err != nil {
+			c.log.Errorf("dumpAccounts - Creating account dump file failed: %s", err.Error())
+			return
+		}
+		_, err = f.WriteString("{")
+		if err != nil {
+			c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
+			return
+		}
+		sa := accounts.NewStateAccess(chainState)
+
+		// because we don't know when the last account will be, we save each account string and write it in the next iteration
+		// this way we can remove the trailing comma, thus getting a valid JSON
+		prevString := ""
+		sa.IterateAccounts()(func(key []byte) bool {
+			if prevString != "" {
+				_, err2 := f.WriteString(prevString)
+				if err2 != nil {
+					c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err2.Error())
+					return false
+				}
+			}
+			accKey := kv.Key(key)
+			agentID := lo.Must(accounts.AgentIDFromKey(accKey, ch.ID()))
+			accountAssets := sa.AssetsOwnedBy(accKey, agentID)
+			assetsJSON, err2 := json.Marshal(accountAssets)
+			if err2 != nil {
+				c.log.Errorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
+				return false
+			}
+			prevString = fmt.Sprintf("%q:%s,", agentID.String(), string(assetsJSON))
+			return true
+		})
+		// delete last ',' for a valid json
+		prevString = prevString[:len(prevString)-1]
+		_, err = f.WriteString(fmt.Sprintf("%s}\n", prevString))
+		if err != nil {
+			c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
+		}
+	}()
+
+	return e.NoContent(http.StatusAccepted)
 }

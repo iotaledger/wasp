@@ -31,7 +31,6 @@ var (
 	ViewAccountNFTs                  = coreutil.ViewFunc("accountNFTs")
 	ViewAccountNFTsInCollection      = coreutil.ViewFunc("accountNFTsInCollection")
 	ViewNFTIDbyMintID                = coreutil.ViewFunc("NFTIDbyMintID")
-	ViewAccounts                     = coreutil.ViewFunc("accounts")
 	ViewBalance                      = coreutil.ViewFunc("balance")
 	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
 	ViewBalanceBaseTokenEVM          = coreutil.ViewFunc("balanceBaseTokenEVM")

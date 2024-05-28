@@ -76,11 +76,6 @@ type AccountNFTsInCollectionCall struct {
 	Results ImmutableAccountNFTsInCollectionResults
 }
 
-type AccountsCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableAccountsResults
-}
-
 type BalanceCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableBalanceParams
@@ -228,13 +223,6 @@ func (sc Funcs) AccountNFTsInCollection(ctx wasmlib.ScViewClientContext) *Accoun
 	return f
 }
 
-// Returns a set of all agent IDs that own assets on the chain.
-func (sc Funcs) Accounts(ctx wasmlib.ScViewClientContext) *AccountsCall {
-	f := &AccountsCall{Func: wasmlib.NewScView(ctx, HScName, HViewAccounts)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
-	return f
-}
-
 // Returns the fungible tokens owned by the given Agent ID on the chain.
 func (sc Funcs) Balance(ctx wasmlib.ScViewClientContext) *BalanceCall {
 	f := &BalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalance)}
@@ -313,7 +301,6 @@ var exportMap = wasmlib.ScExportMap{
 		ViewAccountNFTAmountInCollection,
 		ViewAccountNFTs,
 		ViewAccountNFTsInCollection,
-		ViewAccounts,
 		ViewBalance,
 		ViewBalanceBaseToken,
 		ViewBalanceNativeToken,
@@ -334,7 +321,6 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

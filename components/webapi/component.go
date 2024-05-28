@@ -211,6 +211,7 @@ func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	return echoSwagger
 }
 
+//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
@@ -291,6 +292,7 @@ func provide(c *dig.Container) error {
 			deps.APICacheTTL,
 			websocketService,
 			ParamsWebAPI.IndexDbPath,
+			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,

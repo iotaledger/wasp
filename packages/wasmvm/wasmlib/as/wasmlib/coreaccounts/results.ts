@@ -138,38 +138,6 @@ export class MutableAccountNFTsInCollectionResults extends wasmtypes.ScProxy {
     }
 }
 
-export class MapAgentIDToImmutableBool extends wasmtypes.ScProxy {
-
-    getBool(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBool {
-        return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
-}
-
-export class ImmutableAccountsResults extends wasmtypes.ScProxy {
-    // agent IDs
-    allAccounts(): sc.MapAgentIDToImmutableBool {
-        return new sc.MapAgentIDToImmutableBool(this.proxy);
-    }
-}
-
-export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
-
-    clear(): void {
-        this.proxy.clearMap();
-    }
-
-    getBool(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBool {
-        return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
-    }
-}
-
-export class MutableAccountsResults extends wasmtypes.ScProxy {
-    // agent IDs
-    allAccounts(): sc.MapAgentIDToMutableBool {
-        return new sc.MapAgentIDToMutableBool(this.proxy);
-    }
-}
-
 export class MapTokenIDToImmutableBigInt extends wasmtypes.ScProxy {
 
     getBigInt(key: wasmtypes.ScTokenID): wasmtypes.ScImmutableBigInt {

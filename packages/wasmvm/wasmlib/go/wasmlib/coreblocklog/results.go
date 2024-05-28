@@ -96,28 +96,6 @@ func (s MutableGetEventsForBlockResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
 }
 
-type ImmutableGetEventsForContractResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-// Array of serialized events
-func (s ImmutableGetEventsForContractResults) Event() ArrayOfImmutableBytes {
-	return ArrayOfImmutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
-}
-
-type MutableGetEventsForContractResults struct {
-	Proxy wasmtypes.Proxy
-}
-
-func NewMutableGetEventsForContractResults() MutableGetEventsForContractResults {
-	return MutableGetEventsForContractResults{Proxy: wasmlib.NewResultsProxy()}
-}
-
-// Array of serialized events
-func (s MutableGetEventsForContractResults) Event() ArrayOfMutableBytes {
-	return ArrayOfMutableBytes{Proxy: s.Proxy.Root(ResultEvent)}
-}
-
 type ImmutableGetEventsForRequestResults struct {
 	Proxy wasmtypes.Proxy
 }

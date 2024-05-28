@@ -72,11 +72,6 @@ func viewTotalAssets(ctx isc.SandboxView) dict.Dict {
 	return getAccountBalanceDict(ctx.SchemaVersion(), ctx.StateR(), L2TotalsAccount)
 }
 
-// viewAccounts returns list of all accounts
-func viewAccounts(ctx isc.SandboxView) dict.Dict {
-	return AllAccountsAsDict(ctx.StateR())
-}
-
 // nonces are only sent with off-ledger requests
 func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID, ctx.Caller())

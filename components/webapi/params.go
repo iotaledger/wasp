@@ -12,6 +12,7 @@ type ParametersWebAPI struct {
 	BindAddress               string                           `default:"0.0.0.0:9090" usage:"the bind address for the node web api"`
 	Auth                      authentication.AuthConfiguration `usage:"configures the authentication for the API service"`
 	IndexDbPath               string                           `default:"waspdb/chains/index" usage:"directory for storing indexes of historical data (only archive nodes will create/use them)"`
+	AccountDumpsPath          string                           `default:"waspdb/account_dumps" usage:"directory where account dumps will be stored"`
 	Limits                    ParametersWebAPILimits
 	DebugRequestLoggerEnabled bool `default:"false" usage:"whether the debug logging for requests should be enabled"`
 }

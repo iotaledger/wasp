@@ -191,18 +191,3 @@ func GetEventsForBlock(ch chain.Chain, blockIndex uint32, blockIndexOrTrieRoot s
 
 	return blocklog.EventsFromViewResult(ret)
 }
-
-func GetEventsForContract(ch chain.Chain, contractHname isc.Hname, blockIndexOrTrieRoot string) ([]*isc.Event, error) {
-	ret, err := common.CallView(
-		ch,
-		blocklog.Contract.Hname(),
-		blocklog.ViewGetEventsForContract.Hname(),
-		codec.MakeDict(map[string]interface{}{blocklog.ParamContractHname: contractHname}),
-		blockIndexOrTrieRoot,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return blocklog.EventsFromViewResult(ret)
-}

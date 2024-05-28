@@ -24,6 +24,8 @@ type Controller struct {
 	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
+
+	accountDumpsPath string
 }
 
 func NewChainController(log *loggerpkg.Logger,
@@ -33,6 +35,7 @@ func NewChainController(log *loggerpkg.Logger,
 	nodeService interfaces.NodeService,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
+	accountDumpsPath string,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
@@ -42,6 +45,7 @@ func NewChainController(log *loggerpkg.Logger,
 		nodeService:      nodeService,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
+		accountDumpsPath: accountDumpsPath,
 	}
 }
 
@@ -185,4 +189,10 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusOK, "stream of JSON representation of the requests in the mempool", []byte{}, nil).
 		SetSummary("Get the contents of the mempool.").
 		SetOperationId("getMempoolContents")
+
+	adminAPI.POST("chains/:chainID/dump-accounts", c.dumpAccounts, authentication.ValidatePermissions([]string{permissions.Write})).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddResponse(http.StatusOK, "Accounts dump will be produced", nil, nil).
+		SetOperationId("dump-accounts").
+		SetSummary("dump accounts information into a humanly-readable format")
 }

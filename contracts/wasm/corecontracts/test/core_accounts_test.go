@@ -598,30 +598,6 @@ func TestTotalAssets(t *testing.T) {
 	require.Equal(t, mintAmount1, val1)
 }
 
-func TestAccounts(t *testing.T) {
-	ctx := setupAccounts(t)
-	user0 := ctx.NewSoloAgent("user0")
-	user1 := ctx.NewSoloAgent("user1")
-
-	var mintAmount0, mintAmount1 uint64 = 101, 202
-	foundry0, err := ctx.NewSoloFoundry(mintAmount0, user0)
-	require.NoError(t, err)
-	err = foundry0.Mint(mintAmount0)
-	require.NoError(t, err)
-	foundry1, err := ctx.NewSoloFoundry(mintAmount1, user1)
-	require.NoError(t, err)
-	err = foundry1.Mint(mintAmount1)
-	require.NoError(t, err)
-
-	f := coreaccounts.ScFuncs.Accounts(ctx)
-	f.Func.Call()
-	require.NoError(t, ctx.Err)
-	allAccounts := f.Results.AllAccounts()
-	require.True(t, allAccounts.GetBool(user0.ScAgentID()).Value())
-	require.True(t, allAccounts.GetBool(user1.ScAgentID()).Value())
-	require.False(t, allAccounts.GetBool(ctx.NewSoloAgent("dummy").ScAgentID()).Value())
-}
-
 func TestGetAccountNonce(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent("user0")

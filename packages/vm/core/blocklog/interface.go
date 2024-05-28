@@ -20,7 +20,6 @@ var (
 	ViewIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
 	ViewGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
 	ViewGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
-	ViewGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
 	ViewHasUnprocessable           = coreutil.ViewFunc("hasUnprocessable")
 )
 

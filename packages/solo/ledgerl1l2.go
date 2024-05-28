@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -22,8 +23,7 @@ import (
 
 // L2Accounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) L2Accounts() []isc.AgentID {
-	d, err := ch.CallView(accounts.Contract.Name, accounts.ViewAccounts.Name)
-	require.NoError(ch.Env.T, err)
+	d := accounts.NewStateAccess(lo.Must(ch.Store().LatestState())).AllAccounts()
 	keys := d.KeysSorted()
 	ret := make([]isc.AgentID, 0, len(keys)-1)
 	for _, key := range keys {

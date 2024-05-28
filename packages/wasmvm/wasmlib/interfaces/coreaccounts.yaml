@@ -73,11 +73,6 @@ funcs:
 
 views:
 
-  # Returns a set of all agent IDs that own assets on the chain.
-  accounts:
-    results:
-      allAccounts=this: map[AgentID]Bool # agent IDs
-
   # Returns a set of all foundries owned by the given account.
   accountFoundries:
     params:

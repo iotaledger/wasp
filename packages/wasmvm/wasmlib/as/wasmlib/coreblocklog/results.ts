@@ -74,20 +74,6 @@ export class MutableGetEventsForBlockResults extends wasmtypes.ScProxy {
     }
 }
 
-export class ImmutableGetEventsForContractResults extends wasmtypes.ScProxy {
-    // Array of serialized events
-    event(): sc.ArrayOfImmutableBytes {
-        return new sc.ArrayOfImmutableBytes(this.proxy.root(sc.ResultEvent));
-    }
-}
-
-export class MutableGetEventsForContractResults extends wasmtypes.ScProxy {
-    // Array of serialized events
-    event(): sc.ArrayOfMutableBytes {
-        return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
-    }
-}
-
 export class ImmutableGetEventsForRequestResults extends wasmtypes.ScProxy {
     // Array of serialized events
     event(): sc.ArrayOfImmutableBytes {

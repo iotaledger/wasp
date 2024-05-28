@@ -34,14 +34,6 @@ func (c *Controller) handleViewCallError(err error, chainID isc.ChainID) error {
 }
 
 func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	api.GET("chains/:chainID/core/accounts", c.getAccounts).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "A list of all accounts", mocker.Get(models.AccountListResponse{}), nil).
-		SetOperationId("accountsGetAccounts").
-		SetSummary("Get a list of all accounts")
-
 	api.GET("chains/:chainID/core/accounts/account/:agentID/balance", c.getAccountBalance).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamAgentID, params.DescriptionAgentID).
@@ -119,14 +111,6 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 }
 
 func (c *Controller) addBlobContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	api.GET("chains/:chainID/core/blobs", c.listBlobs).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All stored blobs", mocker.Get(BlobListResponse{}), nil).
-		SetOperationId("blobsGetAllBlobs").
-		SetSummary("Get all stored blobs")
-
 	api.GET("chains/:chainID/core/blobs/:blobHash/data/:fieldKey", c.getBlobValue).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamBlobHash, params.DescriptionBlobHash).
@@ -299,15 +283,6 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfRequest").
 		SetSummary("Get events of a request")
-
-	api.GET("chains/:chainID/core/blocklog/events/contract/:contractHname", c.getContractEvents).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamPath("", params.ParamContractHName, params.DescriptionContractHName).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
-		SetOperationId("blocklogGetEventsOfContract").
-		SetSummary("Get events of a contract")
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

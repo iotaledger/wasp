@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -73,6 +74,16 @@ func GetBlobSizes(state kv.KVStore, blobHash hashing.HashValue) *collections.Map
 // GetBlobSizesR retrieves the blob field-size map from the read-only state
 func GetBlobSizesR(state kv.KVStoreReader, blobHash hashing.HashValue) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, sizesMapName(blobHash))
+}
+
+func ListBlobs(state kv.KVStoreReader) dict.Dict {
+	partition := subrealm.NewReadOnly(state, kv.Key(Contract.Hname().Bytes()))
+	ret := dict.New()
+	GetDirectoryR(partition).Iterate(func(hash []byte, totalSize []byte) bool {
+		ret.Set(kv.Key(hash), totalSize)
+		return true
+	})
+	return ret
 }
 
 func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (string, []byte, error) {

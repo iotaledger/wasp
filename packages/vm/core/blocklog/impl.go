@@ -1,7 +1,6 @@
 package blocklog
 
 import (
-	"math"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,7 +14,6 @@ import (
 var Processor = Contract.Processor(nil,
 	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
 	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
-	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
 	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
@@ -159,19 +157,4 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	ret := eventsToDict(events)
 	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
-}
-
-// viewGetEventsForContract returns a list of events for a given smart contract.
-// params:
-// ParamContractHname - hname of the contract
-// ParamFromBlock - defaults to 0
-// ParamToBlock - defaults to latest block
-func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
-	params := ctx.Params()
-	contract := params.MustGetHname(ParamContractHname)
-	fromBlock := params.MustGetUint32(ParamFromBlock, 0)
-	toBlock := params.MustGetUint32(ParamToBlock, math.MaxUint32)
-	events := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
-
-	return eventsToDict(events)
 }

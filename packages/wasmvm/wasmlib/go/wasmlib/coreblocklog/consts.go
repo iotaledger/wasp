@@ -14,11 +14,8 @@ const (
 )
 
 const (
-	ParamBlockIndex    = "n"
-	ParamContractHname = "h"
-	ParamFromBlock     = "f"
-	ParamRequestID     = "u"
-	ParamToBlock       = "t"
+	ParamBlockIndex = "n"
+	ParamRequestID  = "u"
 )
 
 const (
@@ -35,7 +32,6 @@ const (
 const (
 	ViewGetBlockInfo               = "getBlockInfo"
 	ViewGetEventsForBlock          = "getEventsForBlock"
-	ViewGetEventsForContract       = "getEventsForContract"
 	ViewGetEventsForRequest        = "getEventsForRequest"
 	ViewGetRequestIDsForBlock      = "getRequestIDsForBlock"
 	ViewGetRequestReceipt          = "getRequestReceipt"
@@ -46,7 +42,6 @@ const (
 const (
 	HViewGetBlockInfo               = wasmtypes.ScHname(0xbe89f9b3)
 	HViewGetEventsForBlock          = wasmtypes.ScHname(0x36232798)
-	HViewGetEventsForContract       = wasmtypes.ScHname(0x682a1922)
 	HViewGetEventsForRequest        = wasmtypes.ScHname(0x4f8d68e4)
 	HViewGetRequestIDsForBlock      = wasmtypes.ScHname(0x5a20327a)
 	HViewGetRequestReceipt          = wasmtypes.ScHname(0xb7f9534f)
