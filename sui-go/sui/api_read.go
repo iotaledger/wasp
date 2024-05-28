@@ -43,7 +43,13 @@ func (s *ImplSuiAPI) GetObject(
 	return &resp, s.http.CallContext(ctx, &resp, getObject, objID, options)
 }
 
-// TODO getProtocolConfig
+func (s *ImplSuiAPI) GetProtocolConfig(
+	ctx context.Context,
+	version *models.SafeSuiBigInt[uint64],
+) (*models.ProtocolConfig, error) {
+	var resp models.ProtocolConfig
+	return &resp, s.http.CallContext(ctx, &resp, getProtocolConfig, version)
+}
 
 func (s *ImplSuiAPI) GetTotalTransactionBlocks(ctx context.Context) (string, error) {
 	var resp string
