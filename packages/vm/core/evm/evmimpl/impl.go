@@ -481,9 +481,6 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 		logs = append(logs, makeTransferEvent(erc20Address, addr, nt.Amount))
 	}
 	for _, nftID := range assets.NFTs {
-		// emit a Transfer event from the ERC721NFTs contract
-		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
-
 		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
 		if nft := ctx.GetNFTData(nftID); nft != nil {
 			if collectionNFTAddress, ok := nft.Issuer.(*iotago.NFTAddress); ok {
@@ -492,9 +489,12 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
 				if stateDB.Exist(erc721CollectionContractAddress) {
 					logs = append(logs, makeTransferEvent(erc721CollectionContractAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+					continue
 				}
 			}
 		}
+		// otherwise, emit a Transfer event from the ERC721NFTs contract
+		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
 	}
 
 	receipt := &types.Receipt{

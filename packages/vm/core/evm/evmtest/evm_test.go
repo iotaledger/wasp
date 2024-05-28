@@ -1047,24 +1047,16 @@ func TestERC721NFTCollection(t *testing.T) {
 			env.Chain.MustDepositNFT(nft, ethAgentID, collectionOwner)
 			nfts = append(nfts, nft)
 
-			// there must be two Transfer events: from the ERC721NFTs and
-			// ERC721NFTCollection contracts
+			// there must be a Transfer event emitted from the ERC721NFTCollection contract
 			{
 				blockTxs := env.latestEVMTxs()
 				require.Len(t, blockTxs, 1)
 				tx := blockTxs[0]
 				receipt := env.evmChain.TransactionReceipt(tx.Hash())
-				require.Len(t, receipt.Logs, 2)
+				require.Len(t, receipt.Logs, 1)
 				checkTransferEvent(
 					t,
 					receipt.Logs[0],
-					iscmagic.ERC721NFTsAddress,
-					ethAddr,
-					iscmagic.WrapNFTID(nft.ID).TokenID(),
-				)
-				checkTransferEvent(
-					t,
-					receipt.Logs[1],
 					iscmagic.ERC721NFTCollectionAddress(collection.ID),
 					ethAddr,
 					iscmagic.WrapNFTID(nft.ID).TokenID(),
