@@ -13,7 +13,7 @@ You can find a comprehensive overview of design decisions for _IOTA Smart Contra
 
 ## Documentation
 
-You can find Wasp and IOTA Smart Contracts documentation in the [IOTA Wiki](https://wiki.iota.org/wasp-evm/introduction).
+You can find Wasp and IOTA Smart Contracts documentation in the [IOTA Wiki](https://wiki.iota.org/isc/introduction/).
 
 ## Contributing
 
