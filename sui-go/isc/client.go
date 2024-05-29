@@ -29,6 +29,7 @@ func (c *Client) StartNewChain(
 	ctx context.Context,
 	signer *sui_signer.Signer,
 	packageID *sui_types.PackageID,
+	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -57,8 +58,7 @@ func (c *Client) StartNewChain(
 	)
 	pt := ptb.Finish()
 
-	// FIXME set the proper gas price
-	coins, err := c.GetCoinObjectForGasFee(ctx, signer.Address, 10000, gasBudget)
+	coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address, gasBudget)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 	}
@@ -68,7 +68,7 @@ func (c *Client) StartNewChain(
 		pt,
 		coins.CoinRefs(),
 		gasBudget,
-		1000, // TODO we may need to pass gas price
+		gasPrice,
 	)
 	txnBytes, err := bcs.Marshal(tx)
 	if err != nil {
@@ -90,6 +90,7 @@ func (c *Client) SendCoin(
 	anchorAddress *sui_types.ObjectID,
 	coinType string,
 	coinObject *sui_types.ObjectID,
+	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -122,7 +123,8 @@ func (c *Client) ReceiveCoin(
 	anchorPackageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	coinType string,
-	coinObject *sui_types.ObjectID,
+	receivingCoinObject *sui_types.ObjectID,
+	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -133,7 +135,7 @@ func (c *Client) ReceiveCoin(
 		"anchor",
 		"receive_coin",
 		[]string{coinType},
-		[]any{anchorAddress.String(), coinObject.String()},
+		[]any{anchorAddress.String(), receivingCoinObject.String()},
 		nil,
 		models.NewSafeSuiBigInt(gasBudget),
 	)
@@ -223,6 +225,7 @@ func (c *Client) CreateRequest(
 	iscContractName string,
 	iscFunctionName string,
 	args [][]byte,
+	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -255,8 +258,7 @@ func (c *Client) CreateRequest(
 	)
 	pt := ptb.Finish()
 
-	// FIXME set the proper gas price
-	coins, err := c.GetCoinObjectForGasFee(ctx, signer.Address, 10000, gasBudget)
+	coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address, gasBudget)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 	}
@@ -266,7 +268,7 @@ func (c *Client) CreateRequest(
 		pt,
 		coins.CoinRefs(),
 		gasBudget,
-		1000, // TODO we may need to pass gas price
+		gasPrice,
 	)
 	txnBytes, err := bcs.Marshal(tx)
 	if err != nil {
@@ -287,6 +289,7 @@ func (c *Client) SendRequest(
 	packageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	reqObjID *sui_types.ObjectID,
+	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
