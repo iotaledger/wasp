@@ -28,7 +28,8 @@ var (
 	FuncGetERC20ExternalNativeTokenAddress    = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
 	FuncRegisterERC721NFTCollection           = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
 
-	FuncNewL1Deposit = coreutil.Func(evmnames.FuncNewL1Deposit)
+	FuncNewL1Deposit    = coreutil.Func(evmnames.FuncNewL1Deposit)
+	FuncNewL1Withdrawal = coreutil.Func(evmnames.FuncNewL1Withdrawal)
 )
 
 const (
@@ -57,6 +58,7 @@ const (
 	FieldTargetAddress      = evmnames.FieldTargetAddress
 
 	FieldAgentIDDepositOriginator = evmnames.FieldAgentIDDepositOriginator
+	FieldAgentIDWithdrawalTarget  = evmnames.FieldAgentIDWithdrawalTarget
 )
 
 const (

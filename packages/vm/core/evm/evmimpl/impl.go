@@ -45,6 +45,7 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
 
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
+	evm.FuncNewL1Withdrawal.WithHandler(newL1Withdrawal),
 
 	// views
 	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
@@ -441,7 +442,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
 	params := ctx.Params()
 	agentIDBytes := params.MustGetBytes(evm.FieldAgentIDDepositOriginator)
-	addr := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
+	targetAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
 	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
 	ctx.RequireNoError(err, "unable to parse assets from params")
 
@@ -449,7 +450,8 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	// discard remainder in decimals conversion
 	wei := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
-	// encode the txdata as <AgentID sender>+<Assets>+[blockIndex + reqIndex] // the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
+	// encode the txdata as <AgentID sender>+<Assets>+[blockIndex + reqIndex]
+	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData := []byte{}
 	txData = append(txData, agentIDBytes...)
 	txData = append(txData, assets.Bytes()...)
@@ -460,7 +462,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	tx := types.NewTx(
 		&types.LegacyTx{
 			Nonce:    nonce,
-			To:       &addr,
+			To:       &targetAddress,
 			Value:    wei,
 			Gas:      0,
 			GasPrice: gasPrice,
@@ -468,6 +470,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 		},
 	)
 
+	fromAddress := common.Address{}
 	logs := make([]*types.Log, 0)
 	for _, nt := range assets.NativeTokens {
 		if nt.Amount.Sign() == 0 {
@@ -478,7 +481,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 		if !ok {
 			continue
 		}
-		logs = append(logs, makeTransferEventERC20(erc20Address, addr, nt.Amount))
+		logs = append(logs, makeTransferEventERC20(erc20Address, fromAddress, targetAddress, nt.Amount))
 	}
 	for _, nftID := range assets.NFTs {
 		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
@@ -488,13 +491,13 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
 				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
 				if stateDB.Exist(erc721CollectionContractAddress) {
-					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, fromAddress, targetAddress, iscmagic.WrapNFTID(nftID).TokenID()))
 					continue
 				}
 			}
 		}
 		// otherwise, emit a Transfer event from the ERC721NFTs contract
-		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, targetAddress, iscmagic.WrapNFTID(nftID).TokenID()))
 	}
 
 	receipt := &types.Receipt{
@@ -513,26 +516,103 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
+func newL1Withdrawal(ctx isc.Sandbox) dict.Dict {
+	// can only be called from the accounts contract
+	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
+	params := ctx.Params()
+	targetAddressBytes := params.MustGetBytes(evm.FieldAgentIDWithdrawalTarget)
+	senderAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
+	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
+	ctx.RequireNoError(err, "unable to parse assets from params")
+
+	// create a fake tx so that the withdrawal is visible by the EVM
+	zeroWei := big.NewInt(0)
+	nonce := uint64(0)
+	// encode the txdata as <target>+<Assets>+[blockIndex + reqIndex]
+	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
+	txData := []byte{}
+	txData = append(txData, targetAddressBytes...)
+	txData = append(txData, assets.Bytes()...)
+	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
+	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
+	chainInfo := ctx.ChainInfo()
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	toAddress := common.Address{}
+	tx := types.NewTx(
+		&types.LegacyTx{
+			Nonce:    nonce,
+			To:       &toAddress,
+			Value:    zeroWei,
+			Gas:      0,
+			GasPrice: gasPrice,
+			Data:     txData,
+		},
+	)
+
+	logs := make([]*types.Log, 0)
+	for _, nt := range assets.NativeTokens {
+		if nt.Amount.Sign() == 0 {
+			continue
+		}
+		// emit a Transfer event from the ERC20NativeTokens / ERC20ExternalNativeTokens contract
+		erc20Address, ok := findERC20NativeTokenContractAddress(ctx, nt.ID)
+		if !ok {
+			continue
+		}
+		logs = append(logs, makeTransferEvent(erc20Address, senderAddress, toAddress, nt.Amount))
+	}
+	for _, nftID := range assets.NFTs {
+		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
+		if nft := ctx.GetNFTData(nftID); nft != nil {
+			if collectionNFTAddress, ok := nft.Issuer.(*iotago.NFTAddress); ok {
+				collectionID := collectionNFTAddress.NFTID()
+				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
+				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
+				if stateDB.Exist(erc721CollectionContractAddress) {
+					logs = append(logs, makeTransferEvent(erc721CollectionContractAddress, senderAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
+					continue
+				}
+			}
+		}
+		// otherwise, emit a Transfer event from the ERC721NFTs contract
+		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, senderAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
+	}
+
+	if len(logs) == 0 {
+		// no need for the fake tx with wei == 0 and no events
+		return nil
+	}
+
+	receipt := &types.Receipt{
+		Type:   types.LegacyTxType,
+		Logs:   logs,
+		Status: types.ReceiptStatusSuccessful,
+	}
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
+		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
+		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
+		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
+	})
+	return nil
+}
+
 var transferEventTopic = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 
-func makeTransferEventERC20(contractAddress, to common.Address, uint256Data *big.Int) *types.Log {
-	var addrTopic common.Hash
-	copy(addrTopic[len(addrTopic)-len(to):], to[:])
+func makeTransferEventERC20(contractAddress, from, to common.Address, uint256Data *big.Int) *types.Log {
 	return &types.Log{
 		Address: contractAddress,
 		Topics: []common.Hash{
-			transferEventTopic, // event topic
-			{},                 // indexed `from` address
-			addrTopic,          // indexed `to` address
+			transferEventTopic,
+			evmutil.AddressToIndexedTopic(from),
+			evmutil.AddressToIndexedTopic(to),
 		},
 		Data: lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Pack(uint256Data)),
 	}
 }
 
-func makeTransferEventERC721(contractAddress, to common.Address, uint256Data *big.Int) *types.Log {
-	var addrToTopic common.Hash
-	copy(addrToTopic[len(addrToTopic)-len(to):], to[:])
-
+func makeTransferEventERC721(contractAddress, from, to common.Address, uint256Data *big.Int) *types.Log {
 	tokenIDPacked := lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Pack(uint256Data))
 	var tokenIDTopic common.Hash
 	copy(tokenIDTopic[:], tokenIDPacked) // same len

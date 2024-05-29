@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
@@ -104,6 +105,18 @@ func (h *magicContractHandler) Send(
 
 	h.moveAssetsToCommonAccount(req.Assets)
 
+	// emit ERC20 / ERC721 events for native tokens & NFTs
+	h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewContractAgentID(h.ctx.ChainID(), accounts.Contract.Hname()),
+		evm.Contract.Hname(),
+		evm.FuncNewL1Withdrawal.Hname(),
+		dict.Dict{
+			evm.FieldAgentIDWithdrawalTarget: isc.AddressToBytes(req.TargetAddress),
+			evm.FieldAddress:                 h.caller.Address().Bytes(),
+			evm.FieldAssets:                  req.Assets.Bytes(),
+		},
+		nil,
+	)
 	h.ctx.Privileged().SendOnBehalfOf(
 		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
 		req,
