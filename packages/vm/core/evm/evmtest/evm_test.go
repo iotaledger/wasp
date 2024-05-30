@@ -909,7 +909,7 @@ func TestSendNFT(t *testing.T) {
 			tx1 := blockTxs[0]
 			receipt1 := env.evmChain.TransactionReceipt(tx1.Hash())
 			require.Len(t, receipt1.Logs, 1)
-			checkTransferEvent(
+			checkTransferEventERC721(
 				t,
 				receipt1.Logs[0],
 				iscmagic.ERC721NFTsAddress,
@@ -922,7 +922,7 @@ func TestSendNFT(t *testing.T) {
 			tx2 := blockTxs[1]
 			receipt2 := env.evmChain.TransactionReceipt(tx2.Hash())
 			require.Len(t, receipt2.Logs, 1)
-			checkTransferEvent(
+			checkTransferEventERC721(
 				t,
 				receipt2.Logs[0],
 				iscmagic.ERC721NFTsAddress,
@@ -1410,21 +1410,14 @@ func checkTransferEventERC721(
 	t *testing.T,
 	log *types.Log,
 	contractAddress, from, to common.Address,
-	uint256Data *big.Int,
+	tokenID *big.Int,
 ) {
 	require.Equal(t, contractAddress, log.Address)
-
 	require.Len(t, log.Topics, 4)
 	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
 	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
 	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
-
-	tokenIDTopicBytes := make([]byte, common.HashLength)
-	copy(tokenIDTopicBytes, log.Topics[3][:])
-
-	tokenID := lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Unpack(tokenIDTopicBytes))[0].(*big.Int)
-	require.Zero(t, uint256Data.Cmp(tokenID))
-
+	require.Equal(t, evmutil.ERC721TokenIDToIndexedTopic(tokenID), log.Topics[3])
 	require.Empty(t, log.Data)
 }
 
@@ -1504,19 +1497,16 @@ func TestERC20NativeTokens(t *testing.T) {
 func checkTransferEventERC20(
 	t *testing.T,
 	log *types.Log,
-	contractAddress, to common.Address,
-	uint256Data *big.Int,
+	contractAddress, from, to common.Address,
+	amount *big.Int,
 ) {
 	require.Equal(t, contractAddress, log.Address)
 
 	require.Len(t, log.Topics, 3)
 	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
-	var addrTopic common.Hash
-	copy(addrTopic[len(addrTopic)-len(to):], to[:])
-	require.Equal(t, addrTopic, log.Topics[2])
-
-	data := lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Unpack(log.Data))[0].(*big.Int)
-	require.Zero(t, uint256Data.Cmp(data))
+	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
+	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
+	require.Equal(t, evmutil.PackUint256(amount), log.Data)
 }
 
 // helper to make sandbox calls via EVM in a more readable way
@@ -1690,7 +1680,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		tx := blockTxs[0]
 		receipt := foundryChain.EVM().TransactionReceipt(tx.Hash())
 		require.Len(t, receipt.Logs, 1)
-		checkTransferEvent(
+		checkTransferEventERC20(
 			t,
 			receipt.Logs[0],
 			iscmagic.ERC20NativeTokensAddress(foundrySN),
