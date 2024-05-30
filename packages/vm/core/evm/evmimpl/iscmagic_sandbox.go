@@ -54,6 +54,18 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		assets,
 	)
+	// emit ERC20 / ERC721 events for native tokens & NFTs
+	h.ctx.Privileged().CallOnBehalfOf(
+		isc.NewContractAgentID(h.ctx.ChainID(), accounts.Contract.Hname()),
+		evm.Contract.Hname(),
+		evm.FuncNewTransferBetweenL2Accounts.Hname(),
+		dict.Dict{
+			evm.FieldFromAddress: addr.Bytes(),
+			evm.FieldToAddress:   h.caller.Address().Bytes(),
+			evm.FieldAssets:      assets.Bytes(),
+		},
+		nil,
+	)
 }
 
 var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()

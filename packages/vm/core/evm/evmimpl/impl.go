@@ -46,6 +46,7 @@ var Processor = evm.Contract.Processor(nil,
 
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
 	evm.FuncNewL1Withdrawal.WithHandler(newL1Withdrawal),
+	evm.FuncNewTransferBetweenL2Accounts.WithHandler(newTransferBetweenL2Accounts),
 
 	// views
 	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
@@ -526,7 +527,7 @@ func newL1Withdrawal(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "unable to parse assets from params")
 
 	// create a fake tx so that the withdrawal is visible by the EVM
-	zeroWei := big.NewInt(0)
+	wei := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	nonce := uint64(0)
 	// encode the txdata as <target>+<Assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
@@ -542,7 +543,7 @@ func newL1Withdrawal(ctx isc.Sandbox) dict.Dict {
 		&types.LegacyTx{
 			Nonce:    nonce,
 			To:       &toAddress,
-			Value:    zeroWei,
+			Value:    wei,
 			Gas:      0,
 			GasPrice: gasPrice,
 			Data:     txData,
@@ -576,6 +577,87 @@ func newL1Withdrawal(ctx isc.Sandbox) dict.Dict {
 		}
 		// otherwise, emit a Transfer event from the ERC721NFTs contract
 		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, senderAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
+	}
+
+	if len(logs) == 0 {
+		// no need for the fake tx with wei == 0 and no events
+		return nil
+	}
+
+	receipt := &types.Receipt{
+		Type:   types.LegacyTxType,
+		Logs:   logs,
+		Status: types.ReceiptStatusSuccessful,
+	}
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
+		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
+		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
+		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
+	})
+	return nil
+}
+
+func newTransferBetweenL2Accounts(ctx isc.Sandbox) dict.Dict {
+	// can only be called from the accounts contract
+	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
+	params := ctx.Params()
+	fromAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldFromAddress))
+	toAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldToAddress))
+	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
+	ctx.RequireNoError(err, "unable to parse assets from params")
+
+	// create a fake tx so that the operation is visible by the EVM
+	wei := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	nonce := uint64(0)
+	// encode the txdata as <from>+<Assets>+[blockIndex + reqIndex]
+	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
+	txData := []byte{}
+	txData = append(txData, fromAddress.Bytes()...)
+	txData = append(txData, assets.Bytes()...)
+	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
+	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
+	chainInfo := ctx.ChainInfo()
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	tx := types.NewTx(
+		&types.LegacyTx{
+			Nonce:    nonce,
+			To:       &toAddress,
+			Value:    wei,
+			Gas:      0,
+			GasPrice: gasPrice,
+			Data:     txData,
+		},
+	)
+
+	logs := make([]*types.Log, 0)
+	for _, nt := range assets.NativeTokens {
+		if nt.Amount.Sign() == 0 {
+			continue
+		}
+		// emit a Transfer event from the ERC20NativeTokens / ERC20ExternalNativeTokens contract
+		erc20Address, ok := findERC20NativeTokenContractAddress(ctx, nt.ID)
+		if !ok {
+			continue
+		}
+		logs = append(logs, makeTransferEvent(erc20Address, fromAddress, toAddress, nt.Amount))
+	}
+	for _, nftID := range assets.NFTs {
+		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
+		if nft := ctx.GetNFTData(nftID); nft != nil {
+			if collectionNFTAddress, ok := nft.Issuer.(*iotago.NFTAddress); ok {
+				collectionID := collectionNFTAddress.NFTID()
+				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
+				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
+				if stateDB.Exist(erc721CollectionContractAddress) {
+					logs = append(logs, makeTransferEvent(erc721CollectionContractAddress, fromAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
+					continue
+				}
+			}
+		}
+		// otherwise, emit a Transfer event from the ERC721NFTs contract
+		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
 	}
 
 	if len(logs) == 0 {

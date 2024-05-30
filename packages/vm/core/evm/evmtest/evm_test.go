@@ -899,21 +899,38 @@ func TestSendNFT(t *testing.T) {
 			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
 		),
 	)
-	// there must be a Transfer event emitted from the ERC721NFTs contract
+	// there must be 2 Transfer events emitted from the ERC721NFTs contract:
+	// 1. Transfer NFT ethAddress -> ISCTest
+	// 2. Transfer NFT ISCTest -> 0x0 (send to L1)
 	{
 		blockTxs := lo.Must(env.evmChain.BlockByNumber(nil)).Transactions()
-		require.Len(t, blockTxs, 2)
-		tx := blockTxs[0]
-		receipt := env.evmChain.TransactionReceipt(tx.Hash())
-		require.Len(t, receipt.Logs, 1)
-		checkTransferEvent(
-			t,
-			receipt.Logs[0],
-			iscmagic.ERC721NFTsAddress,
-			iscTest.address,
-			common.Address{},
-			iscmagic.WrapNFTID(nft.ID).TokenID(),
-		)
+		require.Len(t, blockTxs, 3)
+		{
+			tx1 := blockTxs[0]
+			receipt1 := env.evmChain.TransactionReceipt(tx1.Hash())
+			require.Len(t, receipt1.Logs, 1)
+			checkTransferEvent(
+				t,
+				receipt1.Logs[0],
+				iscmagic.ERC721NFTsAddress,
+				ethAddr,
+				iscTest.address,
+				iscmagic.WrapNFTID(nft.ID).TokenID(),
+			)
+		}
+		{
+			tx2 := blockTxs[1]
+			receipt2 := env.evmChain.TransactionReceipt(tx2.Hash())
+			require.Len(t, receipt2.Logs, 1)
+			checkTransferEvent(
+				t,
+				receipt2.Logs[0],
+				iscmagic.ERC721NFTsAddress,
+				iscTest.address,
+				common.Address{},
+				iscmagic.WrapNFTID(nft.ID).TokenID(),
+			)
+		}
 	}
 }
 
