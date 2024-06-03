@@ -1,19 +1,17 @@
 package cryptolib
 
 import (
-	"errors"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, err error) {
+/*func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, err error) {
 	if len(bytes) < SignatureSize {
 		err = errors.New("bytes too short")
 		return
 	}
 	copy(result[:], bytes)
 	return
-}
+}*/
 
 /*func IsVariantKeyPairValid(variantKeyPair VariantKeyPair) bool {
 	if variantKeyPair == nil {
