@@ -54,6 +54,11 @@ func NewAddressFromBech32(s string) (iotago.NetworkPrefix, *Address, error) {
 	return iotago.NetworkPrefix(hrp), NewAddressFromBytes(addrData), nil
 }
 
+func NewAddressFromKey(key AddressKey) *Address {
+	result := Address(key)
+	return &result
+}
+
 // TODO: remove when not needed
 func NewAddressFromIotago(addr iotago.Address) *Address {
 	addrBytes, _ := addr.Serialize(0, nil)

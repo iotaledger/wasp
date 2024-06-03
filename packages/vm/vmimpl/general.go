@@ -4,6 +4,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -130,16 +131,16 @@ func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
 	var nilAliasID iotago.AliasID
 	blockset := vmctx.task.AnchorOutput.FeatureSet()
 	senderBlock := blockset.SenderFeature()
-	var sender iotago.Address
+	var sender *cryptolib.Address
 	if senderBlock != nil {
-		sender = senderBlock.Address
+		sender = cryptolib.NewAddressFromIotago(senderBlock.Address)
 	}
 	return &isc.StateAnchor{
 		ChainID:              vmctx.ChainID(),
 		Sender:               sender,
 		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
-		StateController:      vmctx.task.AnchorOutput.StateController(),
-		GovernanceController: vmctx.task.AnchorOutput.GovernorAddress(),
+		StateController:      cryptolib.NewAddressFromIotago(vmctx.task.AnchorOutput.StateController()),
+		GovernanceController: cryptolib.NewAddressFromIotago(vmctx.task.AnchorOutput.GovernorAddress()),
 		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
 		OutputID:             vmctx.task.AnchorOutputID,
 		StateData:            vmctx.task.AnchorOutput.StateMetadata,

@@ -222,11 +222,11 @@ type Gas interface {
 // StateAnchor contains properties of the anchor output/transaction in the current context
 type StateAnchor struct {
 	ChainID              ChainID
-	Sender               iotago.Address
+	Sender               *cryptolib.Address
 	OutputID             iotago.OutputID
 	IsOrigin             bool
-	StateController      iotago.Address
-	GovernanceController iotago.Address
+	StateController      *cryptolib.Address
+	GovernanceController *cryptolib.Address
 	StateIndex           uint32
 	StateData            []byte
 	Deposit              uint64

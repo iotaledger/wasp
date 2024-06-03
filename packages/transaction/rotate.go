@@ -12,7 +12,7 @@ import (
 
 func NewRotateChainStateControllerTx(
 	aliasID iotago.AliasID,
-	newStateController iotago.Address,
+	newStateController *cryptolib.Address,
 	chainOutputID iotago.OutputID,
 	chainOutput iotago.Output,
 	kp cryptolib.Signer,
@@ -50,7 +50,7 @@ func NewRotateChainStateControllerTx(
 			if !ok {
 				return nil, errors.New("unexpected error trying to get StateControllerAddressUnlockCondition")
 			}
-			c.Address = newStateController
+			c.Address = newStateController.AsIotagoAddress()
 			newChainOutput.Conditions[i] = c.Clone()
 		}
 		i++

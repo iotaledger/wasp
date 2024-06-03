@@ -161,10 +161,10 @@ func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 	return !expiry.IsZero() && currentTime.After(expiry.Add(-RequestConsideredExpiredWindow))
 }
 
-func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, currentTime time.Time) bool {
+func RequestIsUnlockable(req OnLedgerRequest, chainAddress *cryptolib.Address, currentTime time.Time) bool {
 	output, _ := req.Output().(iotago.TransIndepIdentOutput)
 
-	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{
+	return output.UnlockableBy(chainAddress.AsIotagoAddress(), &iotago.ExternalUnlockParameters{
 		ConfUnix: uint32(currentTime.Unix()),
 	})
 }

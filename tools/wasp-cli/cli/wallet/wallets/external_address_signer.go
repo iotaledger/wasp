@@ -1,14 +1,14 @@
 package wallets
 
-import (
-	iotago "github.com/iotaledger/iota.go/v3"
+// TODO: remove it
+/*import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 type ExternalAddressSigner struct {
-	keyPair cryptolib.VariantKeyPair
+	signer cryptolib.Signer
 }
 
-func (r *ExternalAddressSigner) Sign(addr iotago.Address, msg []byte) (signature iotago.Signature, err error) {
-	return r.keyPair.Sign(addr, msg)
-}
+func (r *ExternalAddressSigner) Sign(addr *cryptolib.Address, msg []byte) (signature *cryptolib.Signature, err error) {
+	return r.signer.Sign(msg)
+}*/

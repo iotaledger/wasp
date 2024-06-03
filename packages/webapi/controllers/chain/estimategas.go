@@ -43,7 +43,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.InvalidPropertyError("Output", err)
 	}
-	if !req.TargetAddress().Equal(chainID.AsAddress()) {
+	if !req.TargetAddress().Equals(chainID.AsAddress()) {
 		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
 	}
 
@@ -88,7 +88,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	impRequest := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestData)).
 		WithSenderAddress(requestFrom)
 
-	if !impRequest.TargetAddress().Equal(chainID.AsAddress()) {
+	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {
 		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
 	}
 

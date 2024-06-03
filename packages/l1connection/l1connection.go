@@ -37,11 +37,11 @@ type Config struct {
 
 type Client interface {
 	// requests funds from faucet, waits for confirmation
-	RequestFunds(addr iotago.Address, timeout ...time.Duration) error
+	RequestFunds(addr *cryptolib.Address, timeout ...time.Duration) error
 	// sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
 	PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (iotago.BlockID, error)
 	// returns the outputs owned by a given address
-	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error)
+	OutputMap(myAddress *cryptolib.Address, timeout ...time.Duration) (iotago.OutputSet, error)
 	// output
 	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.OutputID, iotago.Output, error)
 	// used to query the health endpoint of the node
@@ -87,7 +87,7 @@ func NewClient(config Config, log *logger.Logger, timeout ...time.Duration) Clie
 }
 
 // OutputMap implements L1Connection
-func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error) {
+func (c *l1client) OutputMap(myAddress *cryptolib.Address, timeout ...time.Duration) (iotago.OutputSet, error) {
 	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
 	defer cancelContext()
 
@@ -310,7 +310,7 @@ func (c *l1client) GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Durati
 }
 
 // RequestFunds implements L1Connection
-func (c *l1client) RequestFunds(addr iotago.Address, timeout ...time.Duration) error {
+func (c *l1client) RequestFunds(addr *cryptolib.Address, timeout ...time.Duration) error {
 	if c.config.FaucetKey == nil {
 		return c.FaucetRequestHTTP(addr, timeout...)
 	}
@@ -319,7 +319,7 @@ func (c *l1client) RequestFunds(addr iotago.Address, timeout ...time.Duration) e
 
 // PostFaucetRequest makes a faucet request.
 // Simple value TX is processed faster, and should be used in cases where we are using a private testnet and have the genesis key available.
-func (c *l1client) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Duration) error {
+func (c *l1client) FaucetRequestHTTP(addr *cryptolib.Address, timeout ...time.Duration) error {
 	initialAddrOutputs, err := c.OutputMap(addr)
 	if err != nil {
 		return err
@@ -367,7 +367,7 @@ func (c *l1client) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durati
 // Can be used instead of the faucet API if the genesis key is known.
 func (c *l1client) PostSimpleValueTX(
 	sender *cryptolib.KeyPair,
-	recipientAddr iotago.Address,
+	recipientAddr *cryptolib.Address,
 	amount uint64,
 ) error {
 	tx, err := MakeSimpleValueTX(c, sender, recipientAddr, amount)
@@ -382,10 +382,10 @@ func (c *l1client) PostSimpleValueTX(
 func MakeSimpleValueTX(
 	client Client,
 	sender *cryptolib.KeyPair,
-	recipientAddr iotago.Address,
+	recipientAddr *cryptolib.Address,
 	amount uint64,
 ) (*iotago.Transaction, error) {
-	senderAddr := sender.GetPublicKey().AsEd25519Address()
+	senderAddr := sender.GetPublicKey().AsAddress()
 	senderOuts, err := client.OutputMap(senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get address outputs: %w", err)
@@ -399,7 +399,7 @@ func MakeSimpleValueTX(
 		oid := i
 		out := o
 		txBuilder = txBuilder.AddInput(&builder.TxInput{
-			UnlockTarget: senderAddr,
+			UnlockTarget: senderAddr.AsIotagoAddress(),
 			InputID:      oid,
 			Input:        out,
 		})
@@ -410,17 +410,17 @@ func MakeSimpleValueTX(
 	}
 	txBuilder = txBuilder.AddOutput(&iotago.BasicOutput{
 		Amount:     amount,
-		Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: recipientAddr}},
+		Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: recipientAddr.AsIotagoAddress()}},
 	})
 	if inputSum > amount {
 		txBuilder = txBuilder.AddOutput(&iotago.BasicOutput{
 			Amount:     inputSum - amount,
-			Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: senderAddr}},
+			Conditions: iotago.UnlockConditions{&iotago.AddressUnlockCondition{Address: senderAddr.AsIotagoAddress()}},
 		})
 	}
 	tx, err := txBuilder.Build(
 		parameters.L1().Protocol,
-		sender.AsAddressSigner(),
+		cryptolib.SignerToIotago(sender),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build a tx: %w", err)

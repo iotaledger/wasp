@@ -56,7 +56,7 @@ func (d *DKGService) GenerateDistributedKey(peerPubKeysOrNames []string, thresho
 	return dkShareInfo, nil
 }
 
-func (d *DKGService) GetShares(sharedAddress iotago.Address) (*models.DKSharesInfo, error) {
+func (d *DKGService) GetShares(sharedAddress *cryptolib.Address) (*models.DKSharesInfo, error) {
 	dkShare, err := d.dkShareRegistryProvider.LoadDKShare(sharedAddress)
 	if err != nil {
 		return nil, err

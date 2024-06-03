@@ -25,7 +25,7 @@ func initAddressCmd() *cobra.Command {
 			if log.VerboseFlag {
 				verboseOutput := make(map[string]string)
 				// verboseOutput["Private key"] = myWallet.KeyPair.GetPrivateKey().String()
-				verboseOutput["Public key"] = myWallet.GetPublicKey().String()
+				// verboseOutput["Public key"] = myWallet.GetPublicKey().String() // TODO: is it needed?
 				model.VerboseOutput = verboseOutput
 			}
 			log.PrintCLIOutput(model)

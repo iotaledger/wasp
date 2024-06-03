@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -13,13 +13,13 @@ import (
 // gpa.Wrapper is not applicable here, because here the addressing
 // is by CommitteeID, not by integer index.
 type msgCmtLog struct {
-	committeeAddr iotago.Ed25519Address
+	committeeAddr cryptolib.Address
 	wrapped       gpa.Message
 }
 
 var _ gpa.Message = new(msgCmtLog)
 
-func NewMsgCmtLog(committeeAddr iotago.Ed25519Address, wrapped gpa.Message) gpa.Message {
+func NewMsgCmtLog(committeeAddr cryptolib.Address, wrapped gpa.Message) gpa.Message {
 	return &msgCmtLog{
 		committeeAddr: committeeAddr,
 		wrapped:       wrapped,
