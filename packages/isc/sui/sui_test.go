@@ -34,7 +34,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 
 	printCoinsForAddress(t, suiClient, *signer.Address)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/sources")
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/isc/sources")
 	require.NoError(t, err)
 
 	fmt.Printf("%s", signer.Address.String())
@@ -57,13 +57,10 @@ func setupAndDeploy(t *testing.T) testSetup {
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	t.Log("Before StartNewChain")
 	printCoinsForAddress(t, suiClient, *signer.Address)
 
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
-
-	t.Log("packageID: ", packageID)
 
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
@@ -122,13 +119,10 @@ func printGasCoinsForAddress(t *testing.T, suiClient *sui.ImplSuiAPI, address su
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
 	anchor, err := setup.suiClient.GetObject(context.Background(), &setup.chain.ObjectChanges[1].Data.Created.ObjectID, &models.SuiObjectDataOptions{
-		ShowType:                true,
-		ShowContent:             true,
-		ShowBcs:                 true,
-		ShowOwner:               true,
-		ShowPreviousTransaction: true,
-		ShowStorageRebate:       true,
-		ShowDisplay:             true,
+		ShowType:    true,
+		ShowContent: true,
+		ShowBcs:     true,
+		ShowDisplay: true,
 	})
 	require.NoError(t, err)
 
@@ -163,7 +157,7 @@ func TestMinimalClient(t *testing.T) {
 	contractCoins, err := setup.suiClient.GetSuiCoinsOwnedByAddress(context.Background(), setup.signer.Address)
 	require.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	_, err = setup.iscClient.ReceiveCoin(context.Background(), setup.signer, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, contractCoins[0].CoinObjectID, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
 	require.NoError(t, err)
