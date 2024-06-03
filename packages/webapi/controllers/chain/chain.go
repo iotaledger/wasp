@@ -14,6 +14,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -201,7 +202,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 			accKey := kv.Key(key)
 			agentID := lo.Must(accounts.AgentIDFromKey(accKey, ch.ID()))
 			accountAssets := sa.AssetsOwnedBy(accKey, agentID)
-			assetsJSON, err2 := json.Marshal(accountAssets)
+			assetsJSON, err2 := json.Marshal(isc.AssetsToJSONObject(accountAssets))
 			if err2 != nil {
 				c.log.Errorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
 				return false
