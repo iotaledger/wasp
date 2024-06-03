@@ -27,9 +27,9 @@ func RequestToJSONObject(request Request) RequestJSON {
 	gasBudget, isEVM := request.GasBudget()
 
 	return RequestJSON{
-		Allowance:     assetsToJSONObject(request.Allowance()),
+		Allowance:     AssetsToJSONObject(request.Allowance()),
 		CallTarget:    callTargetToJSONObject(request.CallTarget()),
-		Assets:        assetsToJSONObject(request.Assets()),
+		Assets:        AssetsToJSONObject(request.Assets()),
 		GasBudget:     strconv.FormatUint(gasBudget, 10),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),
@@ -53,7 +53,7 @@ type AssetsJSON struct {
 	NFTs         []string           `json:"nfts" swagger:"required"`
 }
 
-func assetsToJSONObject(assets *Assets) *AssetsJSON {
+func AssetsToJSONObject(assets *Assets) *AssetsJSON {
 	if assets == nil {
 		return nil
 	}
