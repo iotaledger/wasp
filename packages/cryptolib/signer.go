@@ -29,8 +29,5 @@ func (is *iotagoSigner) Sign(addr iotago.Address, msg []byte) (iotago.Signature,
 	if err != nil {
 		return nil, err
 	}
-	result := &iotago.Ed25519Signature{}
-	copy(result.PublicKey[:], signature.publicKey.key)
-	copy(result.Signature[:], signature.signature[:])
-	return result, nil
+	return signature.AsIotagoSignature(), nil
 }

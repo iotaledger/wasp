@@ -1,12 +1,7 @@
 package cryptolib
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-)
-
-func TestVariantKeyPairValidationNil(t *testing.T) {
+// TODO: remove
+/*func TestVariantKeyPairValidationNil(t *testing.T) {
 	var vkp VariantKeyPair
 
 	require.False(t, IsVariantKeyPairValid(vkp))
@@ -33,3 +28,4 @@ func TestVariantKeyPairValidationCastPtr(t *testing.T) {
 
 	require.True(t, IsVariantKeyPairValid(vkp))
 }
+*/

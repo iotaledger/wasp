@@ -92,7 +92,7 @@ func WrapL1Address(a *cryptolib.Address) L1Address {
 }
 
 func (a L1Address) Unwrap() (*cryptolib.Address, error) {
-	return cryptolib.NewAddressFromBytes(a.Data), nil
+	return cryptolib.NewAddressFromBytes(a.Data)
 }
 
 func (a L1Address) MustUnwrap() *cryptolib.Address {

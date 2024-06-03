@@ -25,19 +25,21 @@ func newAddressFromArray(addr [AddressSize]byte) *Address {
 	return &result
 }
 
-func NewAddressFromBytes(addr []byte) *Address {
-	// TODO: check slice length?
+func NewAddressFromBytes(addr []byte) (*Address, error) {
+	if len(addr) != AddressSize {
+		return nil, fmt.Errorf("Array of size %v expected, size %v received", AddressSize, len(addr))
+	}
 	result := &Address{}
 	copy(result[:], addr)
-	return result
+	return result, nil
 }
 
 func NewAddressFromString(addr string) (*Address, error) {
 	addrBytes, err := DecodeHex(addr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error decoding hex: %w", err)
 	}
-	return NewAddressFromBytes(addrBytes), nil
+	return NewAddressFromBytes(addrBytes)
 }
 
 // ParseBech32 decodes a bech32 encoded string.
@@ -51,7 +53,12 @@ func NewAddressFromBech32(s string) (iotago.NetworkPrefix, *Address, error) {
 		return "", nil, fmt.Errorf("address data is empty")
 	}
 
-	return iotago.NetworkPrefix(hrp), NewAddressFromBytes(addrData), nil
+	address, err := NewAddressFromBytes(addrData)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to obtain address from byte array: %w", err)
+	}
+
+	return iotago.NetworkPrefix(hrp), address, nil
 }
 
 func NewAddressFromKey(key AddressKey) *Address {
@@ -61,8 +68,15 @@ func NewAddressFromKey(key AddressKey) *Address {
 
 // TODO: remove when not needed
 func NewAddressFromIotago(addr iotago.Address) *Address {
-	addrBytes, _ := addr.Serialize(0, nil)
-	return NewAddressFromBytes(addrBytes)
+	addrBytes, err := addr.Serialize(0, nil)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to obtain byte array from iotago address: %s", err))
+	}
+	address, err := NewAddressFromBytes(addrBytes[1:])
+	if err != nil {
+		panic(fmt.Sprintf("Failed to obtain address from byte array: %s", err))
+	}
+	return address
 }
 
 // TODO: remove when not needed

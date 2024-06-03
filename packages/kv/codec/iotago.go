@@ -17,7 +17,7 @@ func decodeAddress(b []byte) (*cryptolib.Address, error) {
 	if len(b) == 0 {
 		return nil, errors.New("invalid Address size")
 	}
-	return cryptolib.NewAddressFromBytes(b), nil
+	return cryptolib.NewAddressFromBytes(b)
 }
 
 func encodeAddress(a *cryptolib.Address) []byte {

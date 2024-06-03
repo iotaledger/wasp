@@ -94,10 +94,10 @@ func (a *AccessNodeInfo) ValidateCertificate() bool {
 	if err != nil {
 		return false
 	}
-	validatorAddr := cryptolib.NewAddressFromBytes(a.validatorAddr)
-	/*if err != nil {
+	validatorAddr, err := cryptolib.NewAddressFromBytes(a.validatorAddr)
+	if err != nil {
 		return false
-	}*/
+	}
 	cert := NodeOwnershipCertificateFromBytes(a.Certificate)
 	return cert.Verify(nodePubKey, validatorAddr)
 }
