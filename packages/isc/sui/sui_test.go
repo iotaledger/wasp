@@ -34,7 +34,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 
 	printCoinsForAddress(t, suiClient, *signer.Address)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/sources")
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/sources")
 	require.NoError(t, err)
 
 	fmt.Printf("%s", signer.Address.String())
@@ -69,6 +69,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 		context.Background(),
 		signer,
 		packageID,
+		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
@@ -110,7 +111,7 @@ func printCoinsForAddress(t *testing.T, suiClient *sui.ImplSuiAPI, address sui_t
 }
 
 func printGasCoinsForAddress(t *testing.T, suiClient *sui.ImplSuiAPI, address sui_types.SuiAddress) {
-	coins, err := suiClient.GetCoinObjectForGasFee(context.Background(), &address, 10000, sui.DefaultGasBudget)
+	coins, err := suiClient.GetCoinObjsForTargetAmount(context.Background(), &address, 10000)
 	require.NoError(t, err)
 
 	t.Logf("Gas for address: %v", address.String())
