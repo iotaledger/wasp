@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
@@ -90,6 +91,7 @@ func (c *Client) SendCoin(
 	anchorAddress *sui_types.ObjectID,
 	coinType string,
 	coinObject *sui_types.ObjectID,
+	gasCoinID *sui_types.ObjectID,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -101,7 +103,7 @@ func (c *Client) SendCoin(
 		"send_coin",
 		[]string{coinType},
 		[]any{anchorAddress.String(), coinObject.String()},
-		nil,
+		gasCoinID,
 		models.NewSafeSuiBigInt(gasBudget),
 	)
 	if err != nil {
@@ -123,6 +125,7 @@ func (c *Client) ReceiveCoin(
 	anchorAddress *sui_types.ObjectID,
 	coinType string,
 	coinObject *sui_types.ObjectID,
+	gasCoinObject *sui_types.ObjectID,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -134,7 +137,7 @@ func (c *Client) ReceiveCoin(
 		"receive_coin",
 		[]string{coinType},
 		[]any{anchorAddress.String(), coinObject.String()},
-		nil,
+		gasCoinObject,
 		models.NewSafeSuiBigInt(gasBudget),
 	)
 	if err != nil {
