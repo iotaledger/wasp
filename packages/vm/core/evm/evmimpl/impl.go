@@ -478,7 +478,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 		if !ok {
 			continue
 		}
-		logs = append(logs, makeTransferEvent(erc20Address, addr, nt.Amount))
+		logs = append(logs, makeTransferEventERC20(erc20Address, addr, nt.Amount))
 	}
 	for _, nftID := range assets.NFTs {
 		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
@@ -488,13 +488,13 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
 				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
 				if stateDB.Exist(erc721CollectionContractAddress) {
-					logs = append(logs, makeTransferEvent(erc721CollectionContractAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
 					continue
 				}
 			}
 		}
 		// otherwise, emit a Transfer event from the ERC721NFTs contract
-		logs = append(logs, makeTransferEvent(iscmagic.ERC721NFTsAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
+		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, addr, iscmagic.WrapNFTID(nftID).TokenID()))
 	}
 
 	receipt := &types.Receipt{
@@ -515,7 +515,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 
 var transferEventTopic = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 
-func makeTransferEvent(contractAddress, to common.Address, uint256Data *big.Int) *types.Log {
+func makeTransferEventERC20(contractAddress, to common.Address, uint256Data *big.Int) *types.Log {
 	var addrTopic common.Hash
 	copy(addrTopic[len(addrTopic)-len(to):], to[:])
 	return &types.Log{
@@ -526,5 +526,24 @@ func makeTransferEvent(contractAddress, to common.Address, uint256Data *big.Int)
 			addrTopic,          // indexed `to` address
 		},
 		Data: lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Pack(uint256Data)),
+	}
+}
+
+func makeTransferEventERC721(contractAddress, to common.Address, uint256Data *big.Int) *types.Log {
+	var addrToTopic common.Hash
+	copy(addrToTopic[len(addrToTopic)-len(to):], to[:])
+
+	tokenIDPacked := lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Pack(uint256Data))
+	var tokenIDTopic common.Hash
+	copy(tokenIDTopic[:], tokenIDPacked) // same len
+
+	return &types.Log{
+		Address: contractAddress,
+		Topics: []common.Hash{
+			transferEventTopic, // event topic
+			{},                 // indexed `from` address
+			addrToTopic,        // indexed `to` address
+			tokenIDTopic,       // indexed `tokenId`
+		},
 	}
 }
