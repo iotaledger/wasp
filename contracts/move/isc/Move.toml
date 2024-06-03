@@ -1,0 +1,14 @@
+[package]
+name = "ISC"
+version = "0.0.1"
+edition = "2024.beta"
+
+[dependencies]
+MoveStdlib = {local = "../../crates/sui-framework/packages/move-stdlib"}
+Stardust = { local = "../../crates/sui-framework/packages/stardust" }
+Sui = { local = "../../crates/sui-framework/packages/sui-framework" }
+
+[addresses]
+isc = "0x0"
+std = "0x1"
+sui = "0x2"
