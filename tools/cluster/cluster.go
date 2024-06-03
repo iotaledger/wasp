@@ -94,13 +94,13 @@ func (clu *Cluster) Logf(format string, args ...any) {
 	clu.log.Infof(format, args...)
 }
 
-func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, iotago.Address, error) {
+func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Address, error) {
 	key, addr := testkey.GenKeyAddr()
 	err := clu.RequestFunds(addr)
 	return key, addr, err
 }
 
-func (clu *Cluster) RequestFunds(addr iotago.Address) error {
+func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
@@ -189,7 +189,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	return clu.DeployChainWithDKG(committee, committee, uint16(quorum))
 }
 
-func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
+func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, *cryptolib.Address, error) {
 	cmt := util.MakeRange(0, committeeNodeCount-1) // End is inclusive for some reason.
 	quorum := uint16((2*len(cmt))/3 + 1)
 
@@ -198,7 +198,7 @@ func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, erro
 	return cmt, address, err
 }
 
-func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (iotago.Address, error) {
+func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
 	if threshold == 0 {
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
@@ -229,7 +229,7 @@ func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum ui
 	return clu.DeployChain(allPeers, committeeNodes, quorum, stateAddr, blockKeepAmount...)
 }
 
-func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr iotago.Address, blockKeepAmount ...int32) (*Chain, error) {
+func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, stateAddr *cryptolib.Address, blockKeepAmount ...int32) (*Chain, error) {
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
@@ -833,7 +833,7 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	return err
 }
 
-func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.Assets {
+func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
@@ -846,27 +846,27 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.Assets {
 	}
 
 	// if the address is an alias output, we also need to fetch the output itself and add that balance
-	if aliasAddr, ok := addr.(*iotago.AliasAddress); ok {
-		_, aliasOutput, err := clu.l1.GetAliasOutput(aliasAddr.AliasID())
-		if err != nil {
-			fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
-			return nil
-		}
-		balance.Add(transaction.AssetsFromOutput(aliasOutput))
+	// if aliasAddr, ok := addr.(*iotago.AliasAddress); ok { // TODO: is it still needed?
+	_, aliasOutput, err := clu.l1.GetAliasOutput(iotago.AliasID(*addr))
+	if err != nil {
+		fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
+		return nil
 	}
+	balance.Add(transaction.AssetsFromOutput(aliasOutput))
+	//}
 	return balance
 }
 
-func (clu *Cluster) L1BaseTokens(addr iotago.Address) uint64 {
+func (clu *Cluster) L1BaseTokens(addr *cryptolib.Address) uint64 {
 	tokens := clu.AddressBalances(addr)
 	return tokens.BaseTokens
 }
 
-func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.Assets) bool {
+func (clu *Cluster) AssertAddressBalances(addr *cryptolib.Address, expected *isc.Assets) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
 
-func (clu *Cluster) GetOutputs(addr iotago.Address) (map[iotago.OutputID]iotago.Output, error) {
+func (clu *Cluster) GetOutputs(addr *cryptolib.Address) (map[iotago.OutputID]iotago.Output, error) {
 	return clu.l1.OutputMap(addr)
 }
 
