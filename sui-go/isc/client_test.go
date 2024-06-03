@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/utils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -32,30 +31,7 @@ func TestStartNewChain(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
-	require.NoError(t, err)
-
-	txnBytes, err := client.Publish(
-		context.Background(),
-		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
-		nil,
-		models.NewSafeSuiBigInt(uint64(100000000)),
-	)
-	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	iscPackageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
-	t.Log("packageID: ", iscPackageID)
+	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 	t.Log("anchorObjID: ", anchorObjID)
@@ -77,7 +53,7 @@ func TestSendCoin(t *testing.T) {
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
 
-	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
+	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
 	getObjectRes, err := client.GetObject(
 		context.Background(),
@@ -104,7 +80,7 @@ func TestReceiveCoin(t *testing.T) {
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
 
-	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
+	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
 	getObjectRes, err := client.GetObject(
 		context.Background(),
@@ -114,7 +90,7 @@ func TestReceiveCoin(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
-	receiveCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
+	receiveCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
 	assets, err := client.GetAssets(context.Background(), iscPackageID, anchorObjID)
 	require.NoError(t, err)
@@ -147,7 +123,7 @@ func TestSendReceiveCoin(t *testing.T) {
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
 
-	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins)
+	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
 	getObjectRes, err := client.GetObject(
 		context.Background(),
@@ -161,21 +137,23 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.Equal(t, signer.Address, sender)
 
 	coin := object.Data.Content.Data.MoveObject
-	const coinPrefix = "0x2::coin::Coin<"
-	const coinSuffix = ">"
-	require.True(t, strings.HasPrefix(coin.Type, coinPrefix) && strings.HasSuffix(coin.Type, coinSuffix))
+	resource, err := models.NewResourceType(coin.Type)
+	require.NoError(t, err)
+	require.Equal(t, "0x2", resource.Address.ShortString())
+	require.Equal(t, "coin", resource.ModuleName)
+	require.Equal(t, "Coin", resource.FuncName)
 	balance, err := strconv.ParseUint(coin.Fields.(map[string]interface{})["balance"].(string), 10, 64)
 	require.NoError(t, err)
 
 	// NOTE: this is the data that ISC should use to append the tokens to the account of the sender
-	receivedCoin := &ReceivedCoin{
-		objectID: object.Data.ObjectID,
-		sender:   sender,
-		coinType: coin.Type[len(coinPrefix) : len(coin.Type)-len(coinSuffix)],
-		balance:  balance,
-	}
+	// receivedCoin := &ReceivedCoin{
+	// 	objectID: object.Data.ObjectID,
+	// 	sender:   sender,
+	// 	coinType: resource.SubType.String(),
+	// 	balance:  balance,
+	// }
 
-	receiveCoin(t, client, chainSigner, iscPackageID, anchorObjID, receivedCoin.coinType, coins)
+	receiveCoin(t, client, chainSigner, iscPackageID, anchorObjID, resource.SubType.String(), coins.Data[0].CoinObjectID)
 
 	assets, err := client.GetAssets(context.Background(), iscPackageID, anchorObjID)
 	require.NoError(t, err)
@@ -193,6 +171,7 @@ func TestCreateRequest(t *testing.T) {
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
+	require.NoError(t, err)
 
 	_, _, err = sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
@@ -207,6 +186,7 @@ func TestSendRequest(t *testing.T) {
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
+	require.NoError(t, err)
 
 	reqObjID, _, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
@@ -230,6 +210,7 @@ func TestReceiveRequest(t *testing.T) {
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
+	require.NoError(t, err)
 
 	reqObjID, _, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
@@ -272,6 +253,7 @@ func TestSendReceiveRequest(t *testing.T) {
 	anchorObjID := startChainAnchor(t, client, chainSigner, iscPackageID)
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
+	require.NoError(t, err)
 
 	reqObjID, reqType, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
@@ -344,6 +326,7 @@ func startChainAnchor(
 		context.Background(),
 		signer,
 		iscPackageID,
+		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
@@ -400,7 +383,7 @@ func sendCoin(
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 	coinType string,
-	coins *models.CoinPage,
+	coin *sui_types.ObjectID,
 ) {
 	sendCoinRes, err := client.SendCoin(
 		context.Background(),
@@ -408,8 +391,10 @@ func sendCoin(
 		iscPackageID,
 		anchorObjID,
 		coinType,
-		coins.Data[0].CoinObjectID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+		coin,
+		sui.DefaultGasPrice,
+		sui.DefaultGasBudget,
+		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -425,7 +410,7 @@ func receiveCoin(
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 	coinType string,
-	coins *models.CoinPage,
+	receivingCoinObject *sui_types.ObjectID,
 ) {
 	receiveCoinRes, err := client.ReceiveCoin(
 		context.Background(),
@@ -433,8 +418,10 @@ func receiveCoin(
 		iscPackageID,
 		anchorObjID,
 		coinType,
-		coins.Data[0].CoinObjectID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+		receivingCoinObject,
+		sui.DefaultGasPrice,
+		sui.DefaultGasBudget,
+		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -458,7 +445,9 @@ func createRequest(
 		"isc_test_contract_name",
 		"isc_test_func_name",
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")}, // func input
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+		sui.DefaultGasPrice,
+		sui.DefaultGasBudget,
+		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -482,7 +471,9 @@ func sendRequest(
 		iscPackageID,
 		anchorObjID,
 		reqObjID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+		sui.DefaultGasPrice,
+		sui.DefaultGasBudget,
+		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

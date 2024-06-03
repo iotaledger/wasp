@@ -28,6 +28,7 @@ var (
 type Signer struct {
 	ed25519Keypair *KeypairEd25519
 	// secp256k1Keypair *KeypairSecp256k1
+
 	Address *sui_types.SuiAddress
 }
 
