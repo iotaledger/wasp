@@ -22,6 +22,46 @@ func TestAddressSerialization(t *testing.T) {
 	require.True(t, addr1.Equals(addr2))
 }
 
+func TestAddressToBech32(t *testing.T) {
+	data := make([]byte, AddressSize)
+	rand.Read(data)
+
+	addr1, err := NewAddressFromBytes(data)
+	require.NoError(t, err)
+
+	np1 := iotago.NetworkPrefix("abc")
+	bech32 := addr1.Bech32(np1)
+	np2, addr2, err := NewAddressFromBech32(bech32)
+	require.NoError(t, err)
+	require.Equal(t, np1, np2)
+	require.True(t, addr1.Equals(addr2))
+}
+
+func TestAddressToString(t *testing.T) {
+	data := make([]byte, AddressSize)
+	rand.Read(data)
+
+	addr1, err := NewAddressFromBytes(data)
+	require.NoError(t, err)
+
+	str := addr1.String()
+	addr2, err := NewAddressFromString(str)
+	require.NoError(t, err)
+	require.True(t, addr1.Equals(addr2))
+}
+
+func TestAddressToKey(t *testing.T) {
+	data := make([]byte, AddressSize)
+	rand.Read(data)
+
+	addr1, err := NewAddressFromBytes(data)
+	require.NoError(t, err)
+
+	key := addr1.Key()
+	addr2 := NewAddressFromKey(key)
+	require.True(t, addr1.Equals(addr2))
+}
+
 func TestAddressToIota(t *testing.T) {
 	data := make([]byte, AddressSize)
 	rand.Read(data)
