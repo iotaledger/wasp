@@ -103,7 +103,7 @@ func (c *Client) SendCoin(
 		"send_coin",
 		[]string{coinType},
 		[]any{anchorAddress.String(), coinObject.String()},
-		gasCoinID,
+		nil,
 		models.NewSafeSuiBigInt(gasBudget),
 	)
 	if err != nil {
