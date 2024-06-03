@@ -2,7 +2,7 @@
 
 [move]
 version = 1
-manifest_digest = "88A006EAE6B4BAE11C23EAFBBB78D40C19C774AF05C9E8A1630D55F98DA8E97D"
+manifest_digest = "E5EA3EEAAF9D683B2BB3568861A10871B4AFBB37EB2DF36D3DD272C656A496B5"
 deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
 dependencies = [
   { name = "MoveStdlib" },
@@ -12,11 +12,11 @@ dependencies = [
 
 [[move.package]]
 name = "MoveStdlib"
-source = { git = "https://github.com/iotaledger/iota.git", rev = "l1sc/isc-models", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "git@github.com:iotaledger/iota.git", rev = "l1sc/isc-models", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
 name = "Stardust"
-source = { git = "https://github.com/iotaledger/iota.git", rev = "l1sc/isc-models", subdir = "crates/sui-framework/packages/stardust" }
+source = { git = "git@github.com:iotaledger/iota.git", rev = "l1sc/isc-models", subdir = "crates/sui-framework/packages/stardust" }
 
 dependencies = [
   { name = "MoveStdlib" },
@@ -25,7 +25,7 @@ dependencies = [
 
 [[move.package]]
 name = "Sui"
-source = { git = "https://github.com/iotaledger/iota.git", rev = "l1sc/isc-models", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "git@github.com:iotaledger/iota.git", rev = "l1sc/isc-models", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { name = "MoveStdlib" },
