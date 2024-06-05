@@ -9,6 +9,7 @@ type StructTag struct {
 	TypeParams []TypeTag
 }
 
+// refer BCS doc https://github.com/diem/bcs/blob/master/README.md#externally-tagged-enumerations
 type TypeTag struct {
 	Bool    *serialization.EmptyEnum
 	U8      *serialization.EmptyEnum
