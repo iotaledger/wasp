@@ -904,33 +904,26 @@ func TestSendNFT(t *testing.T) {
 	// 2. Transfer NFT ISCTest -> 0x0 (send to L1)
 	{
 		blockTxs := lo.Must(env.evmChain.BlockByNumber(nil)).Transactions()
-		require.Len(t, blockTxs, 3)
-		{
-			tx1 := blockTxs[0]
-			receipt1 := env.evmChain.TransactionReceipt(tx1.Hash())
-			require.Len(t, receipt1.Logs, 1)
-			checkTransferEventERC721(
-				t,
-				receipt1.Logs[0],
-				iscmagic.ERC721NFTsAddress,
-				ethAddr,
-				iscTest.address,
-				iscmagic.WrapNFTID(nft.ID).TokenID(),
-			)
-		}
-		{
-			tx2 := blockTxs[1]
-			receipt2 := env.evmChain.TransactionReceipt(tx2.Hash())
-			require.Len(t, receipt2.Logs, 1)
-			checkTransferEventERC721(
-				t,
-				receipt2.Logs[0],
-				iscmagic.ERC721NFTsAddress,
-				iscTest.address,
-				common.Address{},
-				iscmagic.WrapNFTID(nft.ID).TokenID(),
-			)
-		}
+		require.Len(t, blockTxs, 1)
+		tx := blockTxs[0]
+		receipt := env.evmChain.TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 2)
+		checkTransferEventERC721(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC721NFTsAddress,
+			ethAddr,
+			iscTest.address,
+			iscmagic.WrapNFTID(nft.ID).TokenID(),
+		)
+		checkTransferEventERC721(
+			t,
+			receipt.Logs[1],
+			iscmagic.ERC721NFTsAddress,
+			iscTest.address,
+			common.Address{},
+			iscmagic.WrapNFTID(nft.ID).TokenID(),
+		)
 	}
 }
 
@@ -1676,7 +1669,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	// there must be a Transfer event emitted from the foundry chain's ERC20NativeTokens contract
 	{
 		blockTxs := lo.Must(foundryChain.EVM().BlockByNumber(nil)).Transactions()
-		require.Len(t, blockTxs, 2)
+		require.Len(t, blockTxs, 1)
 		tx := blockTxs[0]
 		receipt := foundryChain.EVM().TransactionReceipt(tx.Hash())
 		require.Len(t, receipt.Logs, 1)

@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
@@ -55,17 +54,9 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 		assets,
 	)
 	// emit ERC20 / ERC721 events for native tokens & NFTs
-	h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewContractAgentID(h.ctx.ChainID(), accounts.Contract.Hname()),
-		evm.Contract.Hname(),
-		evm.FuncNewTransferBetweenL2Accounts.Hname(),
-		dict.Dict{
-			evm.FieldFromAddress: addr.Bytes(),
-			evm.FieldToAddress:   h.caller.Address().Bytes(),
-			evm.FieldAssets:      assets.Bytes(),
-		},
-		nil,
-	)
+	for _, log := range makeTransferEvents(h.ctx, addr, h.caller.Address(), assets) {
+		h.evm.StateDB.AddLog(log)
+	}
 }
 
 var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
@@ -118,17 +109,9 @@ func (h *magicContractHandler) Send(
 	h.moveAssetsToCommonAccount(req.Assets)
 
 	// emit ERC20 / ERC721 events for native tokens & NFTs
-	h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewContractAgentID(h.ctx.ChainID(), accounts.Contract.Hname()),
-		evm.Contract.Hname(),
-		evm.FuncNewL1Withdrawal.Hname(),
-		dict.Dict{
-			evm.FieldAgentIDWithdrawalTarget: isc.AddressToBytes(req.TargetAddress),
-			evm.FieldAddress:                 h.caller.Address().Bytes(),
-			evm.FieldAssets:                  req.Assets.Bytes(),
-		},
-		nil,
-	)
+	for _, log := range makeTransferEvents(h.ctx, h.caller.Address(), common.Address{}, req.Assets) {
+		h.evm.StateDB.AddLog(log)
+	}
 	h.ctx.Privileged().SendOnBehalfOf(
 		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
 		req,

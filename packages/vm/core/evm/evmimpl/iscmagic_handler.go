@@ -23,15 +23,17 @@ import (
 // correspond to a call to [GetL2NFTs].
 type magicContractHandler struct {
 	ctx       isc.Sandbox
+	evm       *vm.EVM
 	caller    vm.ContractRef
 	callValue *uint256.Int
 }
 
 // callHandler finds the requested ISC magic method by reflection, and executes
 // it.
-func callHandler(ctx isc.Sandbox, caller vm.ContractRef, callValue *uint256.Int, method *abi.Method, args []any) []byte {
+func callHandler(ctx isc.Sandbox, evm *vm.EVM, caller vm.ContractRef, callValue *uint256.Int, method *abi.Method, args []any) []byte {
 	return reflectCall(&magicContractHandler{
 		ctx:       ctx,
+		evm:       evm,
 		caller:    caller,
 		callValue: callValue,
 	}, method, args)
