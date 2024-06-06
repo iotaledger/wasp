@@ -44,8 +44,6 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
 
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
-	evm.FuncNewL1Withdrawal.WithHandler(newL1Withdrawal),
-	evm.FuncNewTransferBetweenL2Accounts.WithHandler(newTransferBetweenL2Accounts),
 
 	// views
 	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
@@ -447,33 +445,7 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
 	ctx.RequireNoError(err, "unable to parse assets from params")
 	txData := l1DepositOriginatorBytes
-	addDummyTxWithTransferEvents(ctx, fromAddress, toAddress, assets, txData)
-	return nil
-}
-
-func newL1Withdrawal(ctx isc.Sandbox) dict.Dict {
-	// can only be called from the accounts contract
-	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
-	params := ctx.Params()
-	targetL1AddressBytes := params.MustGetBytes(evm.FieldAgentIDWithdrawalTarget)
-	fromAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
-	toAddress := common.Address{}
-	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
-	ctx.RequireNoError(err, "unable to parse assets from params")
-	txData := targetL1AddressBytes
-	addDummyTxWithTransferEvents(ctx, fromAddress, toAddress, assets, txData)
-	return nil
-}
-
-func newTransferBetweenL2Accounts(ctx isc.Sandbox) dict.Dict {
-	// can only be called from the accounts contract
-	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
-	params := ctx.Params()
-	fromAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldFromAddress))
-	toAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldToAddress))
-	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
-	ctx.RequireNoError(err, "unable to parse assets from params")
-	txData := fromAddress.Bytes()
+	// create a fake tx so that the operation is visible by the EVM
 	addDummyTxWithTransferEvents(ctx, fromAddress, toAddress, assets, txData)
 	return nil
 }
@@ -484,8 +456,13 @@ func addDummyTxWithTransferEvents(
 	assets *isc.Assets,
 	txData []byte,
 ) {
-	// create a fake tx so that the operation is visible by the EVM
+	logs := makeTransferEvents(ctx, fromAddress, toAddress, assets)
+
 	wei := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
+	if wei.Sign() == 0 && len(logs) == 0 {
+		return
+	}
+
 	nonce := uint64(0)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
@@ -507,6 +484,25 @@ func addDummyTxWithTransferEvents(
 		},
 	)
 
+	receipt := &types.Receipt{
+		Type:   types.LegacyTxType,
+		Logs:   logs,
+		Status: types.ReceiptStatusSuccessful,
+	}
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
+		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
+		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
+		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
+	})
+}
+
+func makeTransferEvents(
+	ctx isc.Sandbox,
+	fromAddress, toAddress common.Address,
+	assets *isc.Assets,
+) []*types.Log {
 	logs := make([]*types.Log, 0)
 	for _, nt := range assets.NativeTokens {
 		if nt.Amount.Sign() == 0 {
@@ -535,23 +531,7 @@ func addDummyTxWithTransferEvents(
 		// otherwise, emit a Transfer event from the ERC721NFTs contract
 		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
 	}
-
-	if wei.Sign() == 0 && len(logs) == 0 {
-		return
-	}
-
-	receipt := &types.Receipt{
-		Type:   types.LegacyTxType,
-		Logs:   logs,
-		Status: types.ReceiptStatusSuccessful,
-	}
-	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
-
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
-		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
-		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
-		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
-	})
+	return logs
 }
 
 var transferEventTopic = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))

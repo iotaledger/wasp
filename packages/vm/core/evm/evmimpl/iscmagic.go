@@ -84,7 +84,7 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, va
 		return nil, gas, ErrPayingUnpayableMethod.Create(method.Name)
 	}
 
-	ret = callHandler(c.ctx, caller, value, method, args)
+	ret = callHandler(c.ctx, evm, caller, value, method, args)
 	return ret, gas, nil
 }
 

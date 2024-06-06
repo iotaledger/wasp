@@ -17,9 +17,7 @@ const (
 	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
 	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
-	FuncNewL1Deposit                 = "newL1Deposit"
-	FuncNewL1Withdrawal              = "newL1Withdrawal"
-	FuncNewTransferBetweenL2Accounts = "newTransferBetweenL2Accounts"
+	FuncNewL1Deposit = "newL1Deposit"
 
 	FieldTransaction      = "t"
 	FieldCallMsg          = "c"
