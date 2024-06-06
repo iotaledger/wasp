@@ -899,6 +899,39 @@ func TestSendNFT(t *testing.T) {
 			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
 		),
 	)
+	// there must be 2 Transfer events emitted from the ERC721NFTs contract:
+	// 1. Transfer NFT ethAddress -> ISCTest
+	// 2. Transfer NFT ISCTest -> 0x0 (send to L1)
+	{
+		blockTxs := lo.Must(env.evmChain.BlockByNumber(nil)).Transactions()
+		require.Len(t, blockTxs, 3)
+		{
+			tx1 := blockTxs[0]
+			receipt1 := env.evmChain.TransactionReceipt(tx1.Hash())
+			require.Len(t, receipt1.Logs, 1)
+			checkTransferEventERC721(
+				t,
+				receipt1.Logs[0],
+				iscmagic.ERC721NFTsAddress,
+				ethAddr,
+				iscTest.address,
+				iscmagic.WrapNFTID(nft.ID).TokenID(),
+			)
+		}
+		{
+			tx2 := blockTxs[1]
+			receipt2 := env.evmChain.TransactionReceipt(tx2.Hash())
+			require.Len(t, receipt2.Logs, 1)
+			checkTransferEventERC721(
+				t,
+				receipt2.Logs[0],
+				iscmagic.ERC721NFTsAddress,
+				iscTest.address,
+				common.Address{},
+				iscmagic.WrapNFTID(nft.ID).TokenID(),
+			)
+		}
+	}
 }
 
 func TestERC721NFTs(t *testing.T) {
@@ -929,6 +962,7 @@ func TestERC721NFTs(t *testing.T) {
 			t,
 			receipt.Logs[0],
 			iscmagic.ERC721NFTsAddress,
+			common.Address{},
 			ethAddr,
 			iscmagic.WrapNFTID(nft.ID).TokenID(),
 		)
@@ -1058,6 +1092,7 @@ func TestERC721NFTCollection(t *testing.T) {
 					t,
 					receipt.Logs[0],
 					iscmagic.ERC721NFTCollectionAddress(collection.ID),
+					common.Address{},
 					ethAddr,
 					iscmagic.WrapNFTID(nft.ID).TokenID(),
 				)
@@ -1374,23 +1409,15 @@ func TestERC20BaseTokens(t *testing.T) {
 func checkTransferEventERC721(
 	t *testing.T,
 	log *types.Log,
-	contractAddress, to common.Address,
-	uint256Data *big.Int,
+	contractAddress, from, to common.Address,
+	tokenID *big.Int,
 ) {
 	require.Equal(t, contractAddress, log.Address)
-
 	require.Len(t, log.Topics, 4)
 	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
-	var addrTopic common.Hash
-	copy(addrTopic[len(addrTopic)-len(to):], to[:])
-	require.Equal(t, addrTopic, log.Topics[2])
-
-	tokenIDTopicBytes := make([]byte, common.HashLength)
-	copy(tokenIDTopicBytes, log.Topics[3][:])
-
-	tokenID := lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Unpack(tokenIDTopicBytes))[0].(*big.Int)
-	require.Zero(t, uint256Data.Cmp(tokenID))
-
+	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
+	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
+	require.Equal(t, evmutil.ERC721TokenIDToIndexedTopic(tokenID), log.Topics[3])
 	require.Empty(t, log.Data)
 }
 
@@ -1441,6 +1468,7 @@ func TestERC20NativeTokens(t *testing.T) {
 			t,
 			receipt.Logs[0],
 			iscmagic.ERC20NativeTokensAddress(foundrySN),
+			common.Address{},
 			ethAddr,
 			supply,
 		)
@@ -1469,19 +1497,16 @@ func TestERC20NativeTokens(t *testing.T) {
 func checkTransferEventERC20(
 	t *testing.T,
 	log *types.Log,
-	contractAddress, to common.Address,
-	uint256Data *big.Int,
+	contractAddress, from, to common.Address,
+	amount *big.Int,
 ) {
 	require.Equal(t, contractAddress, log.Address)
 
 	require.Len(t, log.Topics, 3)
 	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
-	var addrTopic common.Hash
-	copy(addrTopic[len(addrTopic)-len(to):], to[:])
-	require.Equal(t, addrTopic, log.Topics[2])
-
-	data := lo.Must((abi.Arguments{{Type: lo.Must(abi.NewType("uint256", "", nil))}}).Unpack(log.Data))[0].(*big.Int)
-	require.Zero(t, uint256Data.Cmp(data))
+	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
+	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
+	require.Equal(t, evmutil.PackUint256(amount), log.Data)
 }
 
 // helper to make sandbox calls via EVM in a more readable way
@@ -1525,7 +1550,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	// TODO could be improved, but we cannot just do env.ISCMagicSandbox to create a sandbox of the foundry chain. Will keep it this way to minimize conflicts with the 2.0 branch
 	parsedABI, err := abi.JSON(strings.NewReader(iscmagic.SandboxABI))
 	require.NoError(t, err)
-	sandbox := &IscContractInstance{
+	foundryChainISCMagic := &IscContractInstance{
 		EVMContractInstance: &EVMContractInstance{
 			chain: &SoloChainEnv{
 				t:          t,
@@ -1541,7 +1566,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	}
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	sandboxCall(t, ethKey, sandbox,
+	sandboxCall(t, ethKey, foundryChainISCMagic,
 		accounts.Contract.Hname(),
 		accounts.FuncNativeTokenCreate.Hname(),
 		dict.Dict{
@@ -1562,7 +1587,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	require.NoError(t, err)
 
 	// use the foundry owner ethereum account to mint tokens
-	sandboxCall(t, ethKey, sandbox,
+	sandboxCall(t, ethKey, foundryChainISCMagic,
 		accounts.Contract.Hname(),
 		accounts.FuncNativeTokenModifySupply.Hname(),
 		dict.Dict{
@@ -1574,7 +1599,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 
 	// foundryChain itself will create a request targeting the test chain
 	// this request must be done by the foundry owner (the foundry creator in this case)
-	sandboxCall(t, ethKey, sandbox,
+	sandboxCall(t, ethKey, foundryChainISCMagic,
 		evm.Contract.Hname(),
 		evm.FuncRegisterERC20NativeTokenOnRemoteChain.Hname(),
 		dict.Dict{
@@ -1630,7 +1655,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		},
 	)
 
-	_, err = sandbox.CallFn(
+	_, err = foundryChainISCMagic.CallFn(
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(env.Chain.ChainID.AsAddress()), // target of the "send" call is the test chain
@@ -1647,6 +1672,23 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		iscmagic.ISCSendOptions{},
 	)
 	require.NoError(t, err)
+
+	// there must be a Transfer event emitted from the foundry chain's ERC20NativeTokens contract
+	{
+		blockTxs := lo.Must(foundryChain.EVM().BlockByNumber(nil)).Transactions()
+		require.Len(t, blockTxs, 2)
+		tx := blockTxs[0]
+		receipt := foundryChain.EVM().TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 1)
+		checkTransferEventERC20(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC20NativeTokensAddress(foundrySN),
+			ethAddr,
+			common.Address{},
+			supply,
+		)
+	}
 
 	// wait until chainB handles the request, assert it was processed successfully
 	env.Chain.WaitUntil(func() bool {
