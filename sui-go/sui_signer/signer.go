@@ -5,9 +5,10 @@ import (
 	"encoding/hex"
 	math_rand "math/rand"
 
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/blake2b"
+
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 const (
@@ -22,6 +23,10 @@ const (
 var (
 	TEST_MNEMONIC = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
 	TEST_ADDRESS  = sui_types.MustSuiAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
+
+	// Generated with `sui client new-address ed25519`
+	TEST_CLIENT_MNEMONIC = "auto genius avoid bike correct satoshi ankle lake citizen simple grain adult"
+	TEST_CLIENT_ADDRESS  = sui_types.MustSuiAddressFromHex("0x9d1549a36f0d0f28b9bbc231b6229e4829c983ac6073b0e38fe4f2bd38e195a5")
 )
 
 // FIXME support more than ed25519
