@@ -28,8 +28,8 @@ const (
 
 var (
 	genesisKeyPair = cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("3.141592653589793238462643383279")))
-	genesisAddress = genesisKeyPair.GetPublicKey().AsEd25519Address()
-	genesisSigner  = iotago.NewInMemoryAddressSigner(genesisKeyPair.GetPrivateKey().AddressKeysForEd25519Address(genesisAddress))
+	genesisAddress = genesisKeyPair.GetPublicKey().AsAddress()
+	//genesisSigner  = iotago.NewInMemoryAddressSigner(genesisKeyPair.GetPrivateKey().AddressKeysForEd25519Address(genesisAddress))
 )
 
 type UnixSeconds uint64
@@ -98,21 +98,21 @@ func New(params ...*InitParams) *UtxoDB {
 func (u *UtxoDB) genesisInit() {
 	genesisTx, err := builder.NewTransactionBuilder(parameters.L1().Protocol.NetworkID()).
 		AddInput(&builder.TxInput{
-			UnlockTarget: genesisAddress,
+			UnlockTarget: genesisAddress.AsIotagoAddress(),
 			Input: &iotago.BasicOutput{
 				Amount: DefaultBaseTokenSupply,
 				Conditions: iotago.UnlockConditions{
-					&iotago.AddressUnlockCondition{Address: genesisAddress},
+					&iotago.AddressUnlockCondition{Address: genesisAddress.AsIotagoAddress()},
 				},
 			},
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: DefaultBaseTokenSupply,
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: genesisAddress},
+				&iotago.AddressUnlockCondition{Address: genesisAddress.AsIotagoAddress()},
 			},
 		}).
-		Build(parameters.L1().Protocol, genesisSigner)
+		Build(parameters.L1().Protocol, cryptolib.SignerToIotago(genesisKeyPair))
 	if err != nil {
 		panic(err)
 	}
@@ -171,11 +171,11 @@ func (u *UtxoDB) TimeStep() time.Duration {
 }
 
 // GenesisAddress returns the genesis address.
-func (u *UtxoDB) GenesisAddress() iotago.Address {
+func (u *UtxoDB) GenesisAddress() *cryptolib.Address {
 	return genesisAddress
 }
 
-func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint64) *iotago.Transaction {
+func (u *UtxoDB) mustGetFundsFromFaucetTx(target *cryptolib.Address, amount ...uint64) *iotago.Transaction {
 	unspentOutputs := u.getUnspentOutputs(genesisAddress)
 	if len(unspentOutputs) != 1 {
 		panic("number of genesis outputs must be 1")
@@ -194,23 +194,23 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 
 	tx, err := builder.NewTransactionBuilder(parameters.L1().Protocol.NetworkID()).
 		AddInput(&builder.TxInput{
-			UnlockTarget: genesisAddress,
+			UnlockTarget: genesisAddress.AsIotagoAddress(),
 			InputID:      inputOutputID,
 			Input:        inputOutput,
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: fundsAmount,
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: target},
+				&iotago.AddressUnlockCondition{Address: target.AsIotagoAddress()},
 			},
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: inputOutput.Amount - fundsAmount,
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: genesisAddress},
+				&iotago.AddressUnlockCondition{Address: genesisAddress.AsIotagoAddress()},
 			},
 		}).
-		Build(parameters.L1().Protocol, genesisSigner)
+		Build(parameters.L1().Protocol, cryptolib.SignerToIotago(genesisKeyPair))
 	if err != nil {
 		panic(err)
 	}
@@ -218,7 +218,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 }
 
 // GetFundsFromFaucet sends FundsFromFaucetAmount base tokens from the genesis address to the given address.
-func (u *UtxoDB) GetFundsFromFaucet(target iotago.Address, amount ...uint64) (*iotago.Transaction, error) {
+func (u *UtxoDB) GetFundsFromFaucet(target *cryptolib.Address, amount ...uint64) (*iotago.Transaction, error) {
 	tx := u.mustGetFundsFromFaucetTx(target, amount...)
 	return tx, u.AddToLedger(tx)
 }
@@ -323,7 +323,7 @@ func (u *UtxoDB) MustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 }
 
 // GetUnspentOutputs returns all unspent outputs locked by the address with its ids
-func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+func (u *UtxoDB) GetUnspentOutputs(addr *cryptolib.Address) (iotago.OutputSet, iotago.OutputIDs) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -343,7 +343,7 @@ func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotag
 }
 
 // GetAddressBalanceBaseTokens returns the total amount of base token owned by the address
-func (u *UtxoDB) GetAddressBalanceBaseTokens(addr iotago.Address) uint64 {
+func (u *UtxoDB) GetAddressBalanceBaseTokens(addr *cryptolib.Address) uint64 {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -355,7 +355,7 @@ func (u *UtxoDB) GetAddressBalanceBaseTokens(addr iotago.Address) uint64 {
 }
 
 // GetAddressBalances returns the total amount of base tokens and tokens owned by the address
-func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *isc.Assets {
+func (u *UtxoDB) GetAddressBalances(addr *cryptolib.Address) *isc.Assets {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -379,7 +379,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *isc.Assets {
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address
-func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) map[iotago.OutputID]*iotago.AliasOutput {
+func (u *UtxoDB) GetAliasOutputs(addr *cryptolib.Address) map[iotago.OutputID]*iotago.AliasOutput {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -393,7 +393,7 @@ func (u *UtxoDB) GetAliasOutputs(addr iotago.Address) map[iotago.OutputID]*iotag
 	return ret
 }
 
-func (u *UtxoDB) GetAddressNFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+func (u *UtxoDB) GetAddressNFTs(addr *cryptolib.Address) map[iotago.OutputID]*iotago.NFTOutput {
 	outs := u.getUnspentOutputs(addr)
 	ret := make(map[iotago.OutputID]*iotago.NFTOutput)
 	for oid, out := range outs {
@@ -420,26 +420,26 @@ func (u *UtxoDB) mustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 	return tx
 }
 
-func getOutputAddress(out iotago.Output, outputID iotago.OutputID) iotago.Address {
+func getOutputAddress(out iotago.Output, outputID iotago.OutputID) *cryptolib.Address {
 	switch output := out.(type) {
 	case iotago.TransIndepIdentOutput:
-		return output.Ident()
+		return cryptolib.NewAddressFromIotago(output.Ident())
 	case iotago.TransDepIdentOutput:
 		aliasID := output.Chain().(iotago.AliasID)
 		if aliasID.Empty() {
 			aliasID = iotago.AliasIDFromOutputID(outputID)
 		}
-		return aliasID.ToAddress()
+		return cryptolib.NewAddressFromIotago(aliasID.ToAddress())
 	default:
 		panic("unknown ident output type")
 	}
 }
 
-func (u *UtxoDB) getUnspentOutputs(addr iotago.Address) iotago.OutputSet {
+func (u *UtxoDB) getUnspentOutputs(addr *cryptolib.Address) iotago.OutputSet {
 	ret := make(iotago.OutputSet)
 	for outputID := range u.utxo {
 		output := u.getOutput(outputID)
-		if getOutputAddress(output, outputID).Equal(addr) {
+		if getOutputAddress(output, outputID).Equals(addr) {
 			ret[outputID] = output
 		}
 	}

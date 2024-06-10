@@ -1,6 +1,7 @@
 package cryptolib
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
 
@@ -18,6 +19,16 @@ type (
 
 func NewEmptyAddress() *Address {
 	return &Address{}
+}
+
+func NewRandomAddress() *Address {
+	data := make([]byte, AddressSize)
+	rand.Read(data)
+	address, err := NewAddressFromBytes(data)
+	if err != nil {
+		panic(fmt.Errorf("Failed to create random address, %s", err))
+	}
+	return address
 }
 
 func newAddressFromArray(addr [AddressSize]byte) *Address {

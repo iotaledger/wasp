@@ -133,7 +133,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		require.NoError(t, err)
 		// TODO: Commit a block to the store, if needed.
 		tc.WithInput(nid, chainmanager.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
-			*cmtAddrA.(*iotago.Ed25519Address),
+			*cmtAddrA,
 			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
 			&cons.Result{
 				Transaction:     step2TX,
@@ -154,7 +154,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
 			return tx.BaseAliasOutputID
 		}())
-		require.Equal(t, cmtAddrA, func() iotago.Address {
+		require.Equal(t, cmtAddrA, func() *cryptolib.Address {
 			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
 			return &tx.CommitteeAddr
 		}())

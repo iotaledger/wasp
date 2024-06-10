@@ -22,8 +22,8 @@ import (
 type cmtLogTestRapidSM struct {
 	aliasID         iotago.AliasID
 	chainID         isc.ChainID
-	governorAddress iotago.Address
-	stateAddress    iotago.Address
+	governorAddress *cryptolib.Address
+	stateAddress    *cryptolib.Address
 	tc              *gpa.TestContext
 	l1Chain         []*isc.AliasOutputWithID // The actual chain.
 	l1Delivered     map[gpa.NodeID]int       // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
@@ -88,8 +88,8 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.Alias
 		StateIndex:    stateIndex,
 		StateMetadata: []byte{},
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: sm.stateAddress},
-			&iotago.GovernorAddressUnlockCondition{Address: sm.governorAddress},
+			&iotago.StateControllerAddressUnlockCondition{Address: sm.stateAddress.AsIotagoAddress()},
+			&iotago.GovernorAddressUnlockCondition{Address: sm.governorAddress.AsIotagoAddress()},
 		},
 	}
 	return isc.NewAliasOutputWithID(aliasOutput, outputID)
