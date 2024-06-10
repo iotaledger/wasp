@@ -13,9 +13,7 @@ import (
 
 func TestConsumeRequest(t *testing.T) {
 	stateControllerKeyPair := cryptolib.NewKeyPair()
-	stateController := stateControllerKeyPair.GetPrivateKey()
-	stateControllerAddr := stateControllerKeyPair.GetPublicKey().AsEd25519Address()
-	addrKeys := stateController.AddressKeysForEd25519Address(stateControllerAddr)
+	stateControllerAddr := stateControllerKeyPair.GetPublicKey().AsAddress()
 
 	aliasOutput1ID := tpkg.RandOutputID(0)
 	aliasOutput1 := &iotago.AliasOutput{
@@ -24,8 +22,8 @@ func TestConsumeRequest(t *testing.T) {
 		StateIndex:    1,
 		StateMetadata: []byte{},
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
-			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},
+			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr.AsIotagoAddress()},
+			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr.AsIotagoAddress()},
 		},
 	}
 	aliasOutput1UTXOInput := tpkg.RandUTXOInput()
@@ -45,8 +43,8 @@ func TestConsumeRequest(t *testing.T) {
 		StateIndex:    2,
 		StateMetadata: []byte{},
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
-			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},
+			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr.AsIotagoAddress()},
+			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr.AsIotagoAddress()},
 		},
 	}
 	essence := &iotago.TransactionEssence{
@@ -54,18 +52,17 @@ func TestConsumeRequest(t *testing.T) {
 		Inputs:    iotago.Inputs{aliasOutput1UTXOInput, requestUTXOInput},
 		Outputs:   iotago.Outputs{aliasOut2},
 	}
-	sigs, err := essence.Sign(
+	sig, err := stateControllerKeyPair.Sign(
 		iotago.OutputIDs{aliasOutput1ID, reqID}.
 			OrderedSet(iotago.OutputSet{aliasOutput1ID: aliasOutput1, reqID: request}).
 			MustCommitment(),
-		addrKeys,
 	)
 	require.NoError(t, err)
 
 	tx := &iotago.Transaction{
 		Essence: essence,
 		Unlocks: iotago.Unlocks{
-			&iotago.SignatureUnlock{Signature: sigs[0]},
+			&iotago.SignatureUnlock{Signature: sig.AsIotagoSignature()},
 			&iotago.AliasUnlock{Reference: 0},
 		},
 	}

@@ -15,7 +15,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -742,7 +741,7 @@ type testEnv struct {
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
-	cmtAddress       iotago.Address
+	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
 	mempools         []mempool.Mempool
@@ -831,7 +830,7 @@ func (te *testEnv) close() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
+func getRequestsOnLedger(t *testing.T, chainAddress *cryptolib.Address, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
 	result := make([]isc.OnLedgerRequest, amount)
 	for i := range result {
 		requestParams := isc.RequestParameters{
@@ -852,7 +851,7 @@ func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, 
 			f[0](i, &requestParams)
 		}
 		output := transaction.BasicOutputFromPostData(
-			tpkg.RandEd25519Address(),
+			cryptolib.NewRandomAddress(),
 			isc.EmptyContractIdentity(),
 			requestParams,
 		)

@@ -26,8 +26,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -477,7 +477,7 @@ func TestISCNFTData(t *testing.T) {
 			AddBaseTokens(100000).
 			WithNFT(nft).
 			WithMaxAffordableGasBudget().
-			WithSender(nft.ID.ToAddress()),
+			WithSender(cryptolib.NewAddressFromIotago(nft.ID.ToAddress())),
 		issuerWallet,
 	)
 	require.NoError(t, err)
@@ -491,7 +491,7 @@ func TestISCNFTData(t *testing.T) {
 	)
 
 	require.EqualValues(t, nft.ID, ret.MustUnwrap().ID)
-	require.True(t, issuerAddress.Equal(ret.MustUnwrap().Issuer))
+	require.True(t, issuerAddress.Equals(ret.MustUnwrap().Issuer))
 	require.EqualValues(t, metadata, ret.MustUnwrap().Metadata)
 }
 
@@ -1144,7 +1144,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	env.Chain.GetL2FundsFromFaucet(contractAgentID)
 	initialContractBalance := env.Chain.L2BaseTokens(contractAgentID)
 
-	randAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
+	randAgentID := isc.NewAgentID(cryptolib.NewRandomAddress())
 
 	nBaseTokens := uint64(100)
 	allowance := isc.NewAssetsBaseTokens(nBaseTokens)

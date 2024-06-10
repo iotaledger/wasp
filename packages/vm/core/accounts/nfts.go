@@ -42,17 +42,17 @@ func (s *StateReader) nftToOwnerMapR() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, keyNFTOwner)
 }
 
-func nftCollectionKey(issuer *cryptolib.Address) kv.Key {
+func nftCollectionKey(issuer *cryptolib.Address) kv.Key { //nolint:unparam
 	if issuer == nil {
 		return noCollection
 	}
-	//TODO: is it needed?
-	//nftAddr, ok := issuer.(*iotago.NFTAddress)
-	//if !ok {
+	// TODO: is it needed?
+	// nftAddr, ok := issuer.(*iotago.NFTAddress)
+	// if !ok {
 	return noCollection
-	//}
-	//id := nftAddr.NFTID()
-	//return kv.Key(id[:])
+	// }
+	// id := nftAddr.NFTID()
+	// return kv.Key(id[:])
 }
 
 func (s *StateReader) nftsByCollectionMapR(agentID isc.AgentID, collectionKey kv.Key) *collections.ImmutableMap {

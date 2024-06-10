@@ -41,7 +41,7 @@ func alternateSignEssence(essence *iotago.TransactionEssence, inputsCommitment [
 }
 
 func SignEssence(essence *iotago.TransactionEssence, inputsCommitment []byte, signer cryptolib.Signer) ([]*cryptolib.Signature, error) {
-	//signer := keyPair.AsAddressSigner()
-	//addressKeys := keyPair.AddressKeysForEd25519Address(keyPair.Address())
+	// signer := keyPair.AsAddressSigner()
+	// addressKeys := keyPair.AddressKeysForEd25519Address(keyPair.Address())
 	return alternateSignEssence(essence, inputsCommitment, signer)
 }

@@ -48,8 +48,8 @@ func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) Impersonated
 	}
 }
 
-func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *iotago.Ed25519Address) OffLedgerRequest {
-	addressBytes, _ := address.Serialize(0, nil)
+func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *cryptolib.Address) OffLedgerRequest {
+	addressBytes := address.Bytes()
 	copy(r.address[:], addressBytes)
 	return r
 }
@@ -183,8 +183,7 @@ func (req *OffLedgerRequestData) ReturnAmount() (uint64, bool) {
 }
 
 func (req *OffLedgerRequestData) SenderAccount() AgentID {
-	//return NewAgentID(req.signature.publicKey.AsAddress())
-	return nil // TODO: use cryptolib.Address
+	return NewAgentID(req.signature.GetPublicKey().AsAddress())
 }
 
 // Sign signs the essence

@@ -45,17 +45,17 @@ func NewSignature(publicKey *PublicKey, signature []byte) *Signature {
 	result := Signature{
 		publicKey: publicKey,
 	}
-	//copy(result.publicKey[:], publicKey.AsBytes())
+	// copy(result.publicKey[:], publicKey.AsBytes())
 	copy(result.signature[:], signature)
 	return &result
 }
 
-/*// TODO: is it really needed?
+// TODO: is it really needed?
 func (s *Signature) GetPublicKey() *PublicKey {
 	return s.publicKey
 }
 
-// TODO: is it really needed?
+/*// TODO: is it really needed?
 func (s *Signature) GetSignature() [SignatureSize]byte {
 	return s.signature
 }*/
@@ -78,7 +78,7 @@ func (s *Signature) Validate(message []byte) bool {
 
 	h := sha512.New()
 	h.Write(s.signature[:32])
-	h.Write(publicKey[:])
+	h.Write(publicKey)
 	h.Write(message)
 	var digest [64]byte
 	h.Sum(digest[:0])

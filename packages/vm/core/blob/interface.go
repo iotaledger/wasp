@@ -53,24 +53,24 @@ func FieldValueKey(blobHash hashing.HashValue, fieldName string) []byte {
 
 type OutputFieldSizesMap struct{}
 
-func (_ OutputFieldSizesMap) Encode(sizes map[string]uint32) dict.Dict {
+func (OutputFieldSizesMap) Encode(sizes map[string]uint32) dict.Dict {
 	return lo.MapEntries(sizes, func(field string, size uint32) (kv.Key, []byte) {
 		return kv.Key(field), EncodeSize(size)
 	})
 }
 
-func (_ OutputFieldSizesMap) Decode(r dict.Dict) (map[string]uint32, error) {
+func (OutputFieldSizesMap) Decode(r dict.Dict) (map[string]uint32, error) {
 	return decodeSizesMap(r)
 }
 
 type OutputBlobDirectory struct{}
 
-func (_ OutputBlobDirectory) Encode(d map[hashing.HashValue]uint32) dict.Dict {
+func (OutputBlobDirectory) Encode(d map[hashing.HashValue]uint32) dict.Dict {
 	return lo.MapEntries(d, func(hash hashing.HashValue, size uint32) (kv.Key, []byte) {
 		return kv.Key(codec.HashValue.Encode(hash)), EncodeSize(size)
 	})
 }
 
-func (_ OutputBlobDirectory) Decode(r dict.Dict) (map[hashing.HashValue]uint32, error) {
+func (OutputBlobDirectory) Decode(r dict.Dict) (map[hashing.HashValue]uint32, error) {
 	return decodeDirectory(r)
 }

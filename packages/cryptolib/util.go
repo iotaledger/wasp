@@ -1,6 +1,8 @@
 package cryptolib
 
 import (
+	"errors"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
@@ -33,7 +35,7 @@ func EncodeHex(b []byte) string {
 func DecodeHex(s string) ([]byte, error) {
 	b, err := hexutil.Decode(s)
 	if err != nil {
-		if err == hexutil.ErrEmptyString {
+		if errors.Is(err, hexutil.ErrEmptyString) {
 			return []byte{}, nil
 		}
 		return nil, err

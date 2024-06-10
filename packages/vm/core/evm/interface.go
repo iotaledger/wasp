@@ -120,11 +120,11 @@ func ERC20NativeTokenParamsFromDict(d dict.Dict) (ret ERC20NativeTokenParams, er
 
 type InputRegisterERC20NativeToken struct{}
 
-func (_ InputRegisterERC20NativeToken) Encode(token ERC20NativeTokenParams) dict.Dict {
+func (InputRegisterERC20NativeToken) Encode(token ERC20NativeTokenParams) dict.Dict {
 	return token.ToDict()
 }
 
-func (_ InputRegisterERC20NativeToken) Decode(d dict.Dict) (ERC20NativeTokenParams, error) {
+func (InputRegisterERC20NativeToken) Decode(d dict.Dict) (ERC20NativeTokenParams, error) {
 	return ERC20NativeTokenParamsFromDict(d)
 }
 
@@ -135,13 +135,13 @@ type RegisterERC20NativeTokenOnRemoteChainRequest struct {
 
 type InputRegisterERC20NativeTokenOnRemoteChain struct{}
 
-func (_ InputRegisterERC20NativeTokenOnRemoteChain) Encode(p RegisterERC20NativeTokenOnRemoteChainRequest) dict.Dict {
+func (InputRegisterERC20NativeTokenOnRemoteChain) Encode(p RegisterERC20NativeTokenOnRemoteChainRequest) dict.Dict {
 	d := p.Token.ToDict()
 	d[FieldTargetAddress] = codec.Address.Encode(p.TargetChain)
 	return d
 }
 
-func (_ InputRegisterERC20NativeTokenOnRemoteChain) Decode(d dict.Dict) (ret RegisterERC20NativeTokenOnRemoteChainRequest, err error) {
+func (InputRegisterERC20NativeTokenOnRemoteChain) Decode(d dict.Dict) (ret RegisterERC20NativeTokenOnRemoteChainRequest, err error) {
 	ret.Token, err = ERC20NativeTokenParamsFromDict(d)
 	if err != nil {
 		return
@@ -158,14 +158,14 @@ type RegisterERC20ExternalNativeTokenRequest struct {
 
 type InputRegisterERC20ExteralNativeToken struct{}
 
-func (_ InputRegisterERC20ExteralNativeToken) Encode(p RegisterERC20ExternalNativeTokenRequest) dict.Dict {
+func (InputRegisterERC20ExteralNativeToken) Encode(p RegisterERC20ExternalNativeTokenRequest) dict.Dict {
 	d := p.Token.ToDict()
 	d[FieldTargetAddress] = codec.Address.Encode(p.SourceChain)
 	d[FieldFoundryTokenScheme] = codec.TokenScheme.Encode(p.FoundryTokenScheme)
 	return d
 }
 
-func (_ InputRegisterERC20ExteralNativeToken) Decode(d dict.Dict) (ret RegisterERC20ExternalNativeTokenRequest, err error) {
+func (InputRegisterERC20ExteralNativeToken) Decode(d dict.Dict) (ret RegisterERC20ExternalNativeTokenRequest, err error) {
 	ret.Token, err = ERC20NativeTokenParamsFromDict(d)
 	if err != nil {
 		return
@@ -189,7 +189,7 @@ type NewL1DepositRequest struct {
 
 type InputNewL1Deposit struct{}
 
-func (_ InputNewL1Deposit) Decode(d dict.Dict) (ret NewL1DepositRequest, err error) {
+func (InputNewL1Deposit) Decode(d dict.Dict) (ret NewL1DepositRequest, err error) {
 	ret.DepositOriginator, err = codec.AgentID.Decode(d[FieldAgentIDDepositOriginator])
 	if err != nil {
 		return
@@ -205,7 +205,7 @@ func (_ InputNewL1Deposit) Decode(d dict.Dict) (ret NewL1DepositRequest, err err
 	return
 }
 
-func (_ InputNewL1Deposit) Encode(r NewL1DepositRequest) dict.Dict {
+func (InputNewL1Deposit) Encode(r NewL1DepositRequest) dict.Dict {
 	return dict.Dict{
 		FieldAddress:                  codec.EthereumAddress.Encode(r.Receiver),
 		FieldAssets:                   codec.NewCodecEx(isc.AssetsFromBytes).Encode(r.Assets),

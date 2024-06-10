@@ -71,7 +71,7 @@ type UnsignedOffLedgerRequest interface {
 }
 
 type ImpersonatedOffLedgerRequest interface {
-	WithSenderAddress(senderAddress *iotago.Ed25519Address) OffLedgerRequest
+	WithSenderAddress(senderAddress *cryptolib.Address) OffLedgerRequest
 }
 
 type OffLedgerRequest interface {

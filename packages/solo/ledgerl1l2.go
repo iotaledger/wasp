@@ -219,7 +219,7 @@ func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, e
 	return retSN, nativeTokenID, err
 }
 
-func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.Signer) error {
 	req := NewCallParams(accounts.FuncNativeTokenDestroy.Message(sn)).
 		WithGasBudget(DestroyFoundryGasBudgetBaseTokens)
 	_, err := ch.PostRequestSync(req, user)
@@ -257,7 +257,7 @@ func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount *b
 }
 
 // DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
-func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount *big.Int, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount *big.Int, user cryptolib.Signer) error {
 	req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
 		WithMaxAffordableGasBudget().AddBaseTokens(1000)
 	req.AddNativeTokens(nativeTokenID, amount)
@@ -267,7 +267,7 @@ func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount *b
 }
 
 // DepositAssetsToL2 deposits ftokens on user's on-chain account, if user is nil, then chain owner is assigned
-func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user cryptolib.Signer) error {
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.FuncDeposit.Message()).
 			WithFungibleTokens(assets).
@@ -281,7 +281,7 @@ func (ch *Chain) DepositAssetsToL2(assets *isc.Assets, user cryptolib.VariantKey
 func (ch *Chain) TransferAllowanceTo(
 	allowance *isc.Assets,
 	targetAccount isc.AgentID,
-	wallet cryptolib.VariantKeyPair,
+	wallet cryptolib.Signer,
 	nft ...*isc.NFT,
 ) error {
 	callParams := NewCallParams(accounts.FuncTransferAllowanceTo.Message(targetAccount)).
@@ -297,16 +297,16 @@ func (ch *Chain) TransferAllowanceTo(
 }
 
 // DepositBaseTokensToL2 deposits ftokens on user's on-chain account
-func (ch *Chain) DepositBaseTokensToL2(amount uint64, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) DepositBaseTokensToL2(amount uint64, user cryptolib.Signer) error {
 	return ch.DepositAssetsToL2(isc.NewAssets(amount, nil), user)
 }
 
-func (ch *Chain) MustDepositBaseTokensToL2(amount uint64, user cryptolib.VariantKeyPair) {
+func (ch *Chain) MustDepositBaseTokensToL2(amount uint64, user cryptolib.Signer) {
 	err := ch.DepositBaseTokensToL2(amount, user)
 	require.NoError(ch.Env.T, err)
 }
 
-func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.VariantKeyPair) error {
+func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.Signer) error {
 	return ch.TransferAllowanceTo(
 		isc.NewEmptyAssets().AddNFTs(nft.ID),
 		to,
@@ -315,13 +315,13 @@ func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.Varian
 	)
 }
 
-func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.VariantKeyPair) {
+func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner cryptolib.Signer) {
 	err := ch.DepositNFT(nft, to, owner)
 	require.NoError(ch.Env.T, err)
 }
 
 // Withdraw sends assets from the L2 account to L1
-func (ch *Chain) Withdraw(assets *isc.Assets, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) Withdraw(assets *isc.Assets, user cryptolib.Signer) error {
 	req := NewCallParams(accounts.FuncWithdraw.Message()).
 		AddAllowance(assets).
 		WithGasBudget(math.MaxUint64)
@@ -334,7 +334,7 @@ func (ch *Chain) Withdraw(assets *isc.Assets, user cryptolib.VariantKeyPair) err
 
 // SendFromL1ToL2Account sends ftokens from L1 address to the target account on L2
 // Sender pays the gas fee
-func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Assets, target isc.AgentID, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Assets, target isc.AgentID, user cryptolib.Signer) error {
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddBaseTokens(totalBaseTokens)
 	_, err := ch.PostRequestSync(
@@ -347,12 +347,12 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Asset
 	return err
 }
 
-func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend uint64, target isc.AgentID, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend uint64, target isc.AgentID, user cryptolib.Signer) error {
 	return ch.SendFromL1ToL2Account(totalBaseTokens, isc.NewAssetsBaseTokens(baseTokensSend), target, user)
 }
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
-func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID, user cryptolib.Signer) error {
 	req := NewCallParams(accounts.FuncTransferAllowanceTo.Message(target)).
 		AddBaseTokens(SendToL2AccountGasBudgetBaseTokens).
 		AddAllowance(transfer).
@@ -361,11 +361,11 @@ func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID,
 	return err
 }
 
-func (ch *Chain) SendFromL2ToL2AccountBaseTokens(baseTokens uint64, target isc.AgentID, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) SendFromL2ToL2AccountBaseTokens(baseTokens uint64, target isc.AgentID, user cryptolib.Signer) error {
 	return ch.SendFromL2ToL2Account(isc.NewAssetsBaseTokens(baseTokens), target, user)
 }
 
-func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount *big.Int, user cryptolib.VariantKeyPair) error {
+func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount *big.Int, user cryptolib.Signer) error {
 	transfer := isc.NewEmptyAssets()
 	transfer.AddNativeTokens(id, amount)
 	return ch.SendFromL2ToL2Account(transfer, target, user)

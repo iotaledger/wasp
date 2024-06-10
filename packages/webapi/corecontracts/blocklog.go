@@ -2,6 +2,7 @@ package corecontracts
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/common"
@@ -14,8 +15,8 @@ func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
 	}
 	aliasOutput := aliasOutputID.GetAliasOutput()
 	return &isc.ControlAddresses{
-		StateAddress:     aliasOutputID.GetStateAddress(),
-		GoverningAddress: aliasOutput.GovernorAddress(),
+		StateAddress:     cryptolib.NewAddressFromIotago(aliasOutputID.GetStateAddress()),
+		GoverningAddress: cryptolib.NewAddressFromIotago(aliasOutput.GovernorAddress()),
 		SinceBlockIndex:  aliasOutput.StateIndex,
 	}, nil
 }

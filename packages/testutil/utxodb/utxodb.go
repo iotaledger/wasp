@@ -29,7 +29,7 @@ const (
 var (
 	genesisKeyPair = cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("3.141592653589793238462643383279")))
 	genesisAddress = genesisKeyPair.GetPublicKey().AsAddress()
-	//genesisSigner  = iotago.NewInMemoryAddressSigner(genesisKeyPair.GetPrivateKey().AddressKeysForEd25519Address(genesisAddress))
+	// genesisSigner  = iotago.NewInMemoryAddressSigner(genesisKeyPair.GetPrivateKey().AddressKeysForEd25519Address(genesisAddress))
 )
 
 type UnixSeconds uint64

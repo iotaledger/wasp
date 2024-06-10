@@ -37,7 +37,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago
 		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(txid, 0),
 		ChainID:              isc.ChainIDFromAliasID(aliasID),
 		StateController:      cryptolib.NewAddressFromIotago(anchorOutput.StateController()),
-		GovernanceController: cryptolib.NewAddressFromIotago(anchorOutput.GovernorAddress())	,
+		GovernanceController: cryptolib.NewAddressFromIotago(anchorOutput.GovernorAddress()),
 		StateIndex:           anchorOutput.StateIndex,
 		StateData:            anchorOutput.StateMetadata,
 		Deposit:              anchorOutput.Amount,
@@ -131,7 +131,7 @@ func ComputeInputsAndRemainder(
 //
 
 //nolint:gocyclo
-func computeRemainderOutput(senderAddress *cryptolib.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
+func computeRemainderOutput(_ *cryptolib.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
 	if inBaseTokens < outBaseTokens {
 		return nil, ErrNotEnoughBaseTokens
 	}

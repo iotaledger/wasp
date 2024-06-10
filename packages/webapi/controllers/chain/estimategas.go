@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -70,7 +71,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}
 
-	requestFrom, err := iotago.ParseEd25519AddressFromHexString(estimateGasRequest.FromAddress)
+	requestFrom, err := cryptolib.NewAddressFromString(estimateGasRequest.FromAddress)
 	if err != nil {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}

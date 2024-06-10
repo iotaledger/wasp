@@ -135,7 +135,7 @@ func NewDKShare(
 	if err != nil {
 		return nil, err
 	}
-	//sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
+	// sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
 	publicKey, _ := cryptolib.PublicKeyFromBytes(pubBytes)
 	sharedAddress := publicKey.AsAddress()
 	//

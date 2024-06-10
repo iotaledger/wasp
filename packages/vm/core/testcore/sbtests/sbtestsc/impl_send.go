@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -142,7 +142,7 @@ func claimAllowance(ctx isc.Sandbox) dict.Dict {
 
 func sendLargeRequest(ctx isc.Sandbox) dict.Dict {
 	req := isc.RequestParameters{
-		TargetAddress: tpkg.RandEd25519Address(),
+		TargetAddress: cryptolib.NewRandomAddress(),
 		Metadata: &isc.SendMetadata{
 			Message: isc.NewMessage(
 				isc.Hn("foo"),

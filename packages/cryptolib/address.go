@@ -23,7 +23,10 @@ func NewEmptyAddress() *Address {
 
 func NewRandomAddress() *Address {
 	data := make([]byte, AddressSize)
-	rand.Read(data)
+	_, err := rand.Read(data)
+	if err != nil {
+		panic(fmt.Errorf("Failed to read random data, %s", err))
+	}
 	address, err := NewAddressFromBytes(data)
 	if err != nil {
 		panic(fmt.Errorf("Failed to create random address, %s", err))

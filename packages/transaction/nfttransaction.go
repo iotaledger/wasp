@@ -10,7 +10,7 @@ import (
 type MintNFTsTransactionParams struct {
 	IssuerKeyPair      cryptolib.Signer
 	CollectionOutputID *iotago.OutputID
-	Target             iotago.Address
+	Target             *cryptolib.Address
 	ImmutableMetadata  [][]byte
 	UnspentOutputs     iotago.OutputSet
 	UnspentOutputIDs   iotago.OutputIDs
@@ -49,7 +49,7 @@ func NewMintNFTsTransaction(par MintNFTsTransactionParams) (*iotago.Transaction,
 		addOutput(&iotago.NFTOutput{
 			NFTID: iotago.NFTID{},
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: par.Target},
+				&iotago.AddressUnlockCondition{Address: par.Target.AsIotagoAddress()},
 			},
 			ImmutableFeatures: iotago.Features{
 				&iotago.IssuerFeature{Address: issuerAddress.AsIotagoAddress()},

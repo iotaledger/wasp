@@ -870,7 +870,7 @@ func (clu *Cluster) GetOutputs(addr *cryptolib.Address) (map[iotago.OutputID]iot
 	return clu.l1.OutputMap(addr)
 }
 
-func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target iotago.Address, issuerKeypair *cryptolib.KeyPair) (iotago.OutputID, *iotago.NFTOutput, error) {
+func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Address, issuerKeypair *cryptolib.KeyPair) (iotago.OutputID, *iotago.NFTOutput, error) {
 	outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
 	if err != nil {
 		return iotago.OutputID{}, nil, err

@@ -3,10 +3,10 @@
 
 package isc
 
-import iotago "github.com/iotaledger/iota.go/v3"
+import "github.com/iotaledger/wasp/packages/cryptolib"
 
 type ControlAddresses struct {
-	StateAddress     iotago.Address
-	GoverningAddress iotago.Address
+	StateAddress     *cryptolib.Address
+	GoverningAddress *cryptolib.Address
 	SinceBlockIndex  uint32
 }
