@@ -13,7 +13,7 @@ func TestTypeTagEncoding(t *testing.T) {
 	typeTagU64 := sui_types.TypeTag{U64: &serialization.EmptyEnum{}}
 	typeTagMarshaled, err := bcs.Marshal(typeTagU64)
 	require.NoError(t, err)
-	require.Equal(t, []byte{4}, typeTagMarshaled)
+	require.Equal(t, []byte{2}, typeTagMarshaled)
 
 	typeTagStruct := sui_types.TypeTag{Struct: &sui_types.StructTag{
 		Address: *sui_types.MustObjectIDFromHex("0x2eeb551107032ae860d76661f3f4573dd0f8c701116137e6525dcd95d4f8e58"),
