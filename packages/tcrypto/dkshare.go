@@ -19,9 +19,7 @@ import (
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"go.dedis.ch/kyber/v3/suites"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/tcrypto/bls"
 	"github.com/iotaledger/wasp/packages/util"
@@ -137,11 +135,13 @@ func NewDKShare(
 	if err != nil {
 		return nil, err
 	}
-	sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
+	// sharedAddress := iotago.Ed25519AddressFromPubKey(pubBytes)
+	publicKey, _ := cryptolib.PublicKeyFromBytes(pubBytes)
+	sharedAddress := publicKey.AsAddress()
 	//
 	// Construct the DKShare.
 	dkShare := dkShareImpl{
-		address:          util.NewComparableAddress(&sharedAddress),
+		address:          util.NewComparableAddress(sharedAddress),
 		index:            &index,
 		n:                n,
 		t:                t,
@@ -172,7 +172,7 @@ func NewEmptyDKShare(nodePrivKey *cryptolib.PrivateKey, edSuite suites.Suite, bl
 
 // NewDKSharePublic creates a DKShare containing only the publicly accessible information.
 func NewDKSharePublic(
-	sharedAddress iotago.Address,
+	sharedAddress *cryptolib.Address,
 	n uint16,
 	t uint16,
 	nodePrivKey *cryptolib.PrivateKey,
@@ -211,7 +211,7 @@ func (s *dkShareImpl) ID() *util.ComparableAddress {
 	return s.address
 }
 
-func (s *dkShareImpl) Clone() onchangemap.Item[string, *util.ComparableAddress] {
+func (s *dkShareImpl) Clone() onchangemap.Item[cryptolib.AddressKey, *util.ComparableAddress] {
 	index := *s.index
 
 	return &dkShareImpl{
@@ -248,7 +248,8 @@ func (s *dkShareImpl) Bytes() []byte {
 
 func (s *dkShareImpl) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	address := isc.AddressFromReader(rr)
+	address := cryptolib.NewEmptyAddress()
+	rr.Read(address)
 	if rr.Err == nil {
 		s.address = util.NewComparableAddress(address)
 	}
@@ -300,7 +301,7 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 
 func (s *dkShareImpl) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	isc.AddressToWriter(ww, s.address.Address())
+	ww.Write(s.address.Address())
 
 	ww.WriteUint16(*s.index)
 	ww.WriteUint16(s.n)
@@ -338,7 +339,7 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func (s *dkShareImpl) GetAddress() iotago.Address {
+func (s *dkShareImpl) GetAddress() *cryptolib.Address {
 	return s.address.Address()
 }
 
@@ -597,14 +598,14 @@ type jsonKeyShares struct {
 }
 
 type jsonDKShares struct {
-	Address      *json.RawMessage `json:"address"`
-	Index        uint16           `json:"index"`
-	N            uint16           `json:"n"`
-	T            uint16           `json:"t"`
-	NodePubKeys  []string         `json:"nodePubKeys"`
-	Ed25519      *jsonKeyShares   `json:"ed25519"`
-	BlsThreshold uint16           `json:"blsThreshold"`
-	BLS          *jsonKeyShares   `json:"bls"`
+	Address      string         `json:"address"`
+	Index        uint16         `json:"index"`
+	N            uint16         `json:"n"`
+	T            uint16         `json:"t"`
+	NodePubKeys  []string       `json:"nodePubKeys"`
+	Ed25519      *jsonKeyShares `json:"ed25519"`
+	BlsThreshold uint16         `json:"blsThreshold"`
+	BLS          *jsonKeyShares `json:"bls"`
 }
 
 func DecodeHexKyberPoint(group kyber.Group, dataHex string) (kyber.Point, error) {
@@ -640,10 +641,7 @@ func DecodeHexKyberPoints(group kyber.Group, dataHex []string) ([]kyber.Point, e
 }
 
 func (s *dkShareImpl) MarshalJSON() ([]byte, error) {
-	jAddressRaw, err := iotago.AddressToJSONRawMsg(s.address.Address())
-	if err != nil {
-		return nil, err
-	}
+	jAddress := s.address.Address().String()
 
 	nodePubKeys := make([]string, 0)
 	for _, nodePubKey := range s.nodePubKeys {
@@ -691,7 +689,7 @@ func (s *dkShareImpl) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(&jsonDKShares{
-		Address:     jAddressRaw,
+		Address:     jAddress,
 		Index:       *s.index,
 		N:           s.n,
 		T:           s.t,
@@ -720,7 +718,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	address, err := iotago.AddressFromJSONRawMsg(j.Address)
+	address, err := cryptolib.NewAddressFromString(j.Address)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 )
@@ -38,8 +39,8 @@ type KVDecoder interface {
 	MustGetHname(key kv.Key, def ...Hname) Hname
 	GetHashValue(key kv.Key, def ...hashing.HashValue) (hashing.HashValue, error)
 	MustGetHashValue(key kv.Key, def ...hashing.HashValue) hashing.HashValue
-	GetAddress(key kv.Key, def ...iotago.Address) (iotago.Address, error)
-	MustGetAddress(key kv.Key, def ...iotago.Address) iotago.Address
+	GetAddress(key kv.Key, def ...*cryptolib.Address) (*cryptolib.Address, error)
+	MustGetAddress(key kv.Key, def ...*cryptolib.Address) *cryptolib.Address
 	GetRequestID(key kv.Key, def ...RequestID) (RequestID, error)
 	MustGetRequestID(key kv.Key, def ...RequestID) RequestID
 	GetAgentID(key kv.Key, def ...AgentID) (AgentID, error)

@@ -220,9 +220,9 @@ var (
 func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.RegisterERC20NativeTokenOnRemoteChainRequest) dict.Dict {
 	cannotBeCalledFromContracts(ctx)
 
-	if r.TargetChain.Type() != iotago.AddressAlias {
+	/*if r.TargetChain.Type() != iotago.AddressAlias {
 		panic(errTargetMustBeAlias)
-	}
+	}*/ // TODO: is it needed?
 
 	requireCallerHasFoundry(ctx, r.Token.FoundrySN)
 

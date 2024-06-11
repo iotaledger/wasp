@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -41,16 +42,17 @@ func (s *StateReader) nftToOwnerMapR() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, keyNFTOwner)
 }
 
-func nftCollectionKey(issuer iotago.Address) kv.Key {
+func nftCollectionKey(issuer *cryptolib.Address) kv.Key { //nolint:unparam
 	if issuer == nil {
 		return noCollection
 	}
-	nftAddr, ok := issuer.(*iotago.NFTAddress)
-	if !ok {
-		return noCollection
-	}
-	id := nftAddr.NFTID()
-	return kv.Key(id[:])
+	// TODO: is it needed?
+	// nftAddr, ok := issuer.(*iotago.NFTAddress)
+	// if !ok {
+	return noCollection
+	// }
+	// id := nftAddr.NFTID()
+	// return kv.Key(id[:])
 }
 
 func (s *StateReader) nftsByCollectionMapR(agentID isc.AgentID, collectionKey kv.Key) *collections.ImmutableMap {
@@ -103,7 +105,7 @@ func (s *StateReader) GetNFTData(nftID iotago.NFTID) *isc.NFT {
 	}
 	return &isc.NFT{
 		ID:       util.NFTIDFromNFTOutput(o, oID),
-		Issuer:   o.ImmutableFeatureSet().IssuerFeature().Address,
+		Issuer:   cryptolib.NewAddressFromIotago(o.ImmutableFeatureSet().IssuerFeature().Address),
 		Metadata: o.ImmutableFeatureSet().MetadataFeature().Data,
 		Owner:    owner,
 	}
@@ -116,9 +118,9 @@ func (s *StateWriter) CreditNFTToAccount(agentID isc.AgentID, nftOutput *iotago.
 	}
 
 	issuerFeature := nftOutput.ImmutableFeatureSet().IssuerFeature()
-	var issuer iotago.Address
+	var issuer *cryptolib.Address
 	if issuerFeature != nil {
-		issuer = issuerFeature.Address
+		issuer = cryptolib.NewAddressFromIotago(issuerFeature.Address)
 	}
 	s.creditNFTToAccount(agentID, nftOutput.NFTID, issuer)
 	s.touchAccount(agentID, chainID)
@@ -127,7 +129,7 @@ func (s *StateWriter) CreditNFTToAccount(agentID isc.AgentID, nftOutput *iotago.
 	s.SaveNFTOutput(nftOutput, 0)
 }
 
-func (s *StateWriter) creditNFTToAccount(agentID isc.AgentID, nftID iotago.NFTID, issuer iotago.Address) {
+func (s *StateWriter) creditNFTToAccount(agentID isc.AgentID, nftID iotago.NFTID, issuer *cryptolib.Address) {
 	s.setNFTOwner(nftID, agentID)
 
 	collectionKey := nftCollectionKey(issuer)

@@ -10,14 +10,14 @@ import (
 )
 
 type UnsafeInMemoryTestingSeed struct {
-	cryptolib.VariantKeyPair
+	cryptolib.Signer
 	addressIndex uint32
 }
 
 func newUnsafeInMemoryTestingSeed(keyPair *cryptolib.KeyPair, addressIndex uint32) *UnsafeInMemoryTestingSeed {
 	return &UnsafeInMemoryTestingSeed{
-		VariantKeyPair: keyPair,
-		addressIndex:   addressIndex,
+		Signer:       keyPair,
+		addressIndex: addressIndex,
 	}
 }
 

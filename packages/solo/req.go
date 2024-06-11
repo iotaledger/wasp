@@ -33,7 +33,7 @@ type CallParams struct {
 	allowance *isc.Assets
 	gasBudget uint64
 	nonce     uint64 // ignored for on-ledger
-	sender    iotago.Address
+	sender    *cryptolib.Address
 }
 
 // NewCallParams creates a structure that wraps in one object call parameters,
@@ -150,13 +150,13 @@ func (r *CallParams) WithNonce(nonce uint64) *CallParams {
 	return r
 }
 
-func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
+func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 	r.sender = sender
 	return r
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair cryptolib.VariantKeyPair) isc.OffLedgerRequest {
+func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair cryptolib.Signer) isc.OffLedgerRequest {
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAgentID(keyPair.Address()))
 	}
@@ -165,7 +165,7 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair cryptolib.VariantKey
 	return ret.Sign(keyPair)
 }
 
-func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *iotago.Ed25519Address) isc.OffLedgerRequest {
+func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *cryptolib.Address) isc.OffLedgerRequest {
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAgentID(address))
 	}
@@ -175,10 +175,10 @@ func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *iotago.
 	return isc.NewImpersonatedOffLedgerRequest(ret.(*isc.OffLedgerRequestData)).WithSenderAddress(address)
 }
 
-func (ch *Chain) createRequestTx(req *CallParams, keyPair cryptolib.VariantKeyPair) (*iotago.Transaction, error) {
-	if !cryptolib.IsVariantKeyPairValid(keyPair) {
+func (ch *Chain) createRequestTx(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, error) {
+	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
-	}
+	}*/ // TODO: is it still needed
 	L1BaseTokens := ch.Env.L1BaseTokens(keyPair.Address())
 	if L1BaseTokens == 0 {
 		return nil, errors.New("PostRequestSync - Signer doesn't own any base tokens on L1")
@@ -195,10 +195,10 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair cryptolib.VariantKeyPa
 	return tx, err
 }
 
-func (ch *Chain) requestTransactionParams(req *CallParams, keyPair cryptolib.VariantKeyPair) transaction.NewRequestTransactionParams {
-	if !cryptolib.IsVariantKeyPairValid(keyPair) {
+func (ch *Chain) requestTransactionParams(req *CallParams, keyPair cryptolib.Signer) transaction.NewRequestTransactionParams {
+	/* if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
-	}
+	}*/ // TODO: is it still needed
 	sender := req.sender
 	if sender == nil {
 		sender = keyPair.Address()
@@ -229,7 +229,7 @@ func (ch *Chain) requestTransactionParams(req *CallParams, keyPair cryptolib.Var
 
 // requestFromParams creates an on-ledger request without posting the transaction. It is intended
 // mainly for estimating gas.
-func (ch *Chain) requestFromParams(req *CallParams, keyPair cryptolib.VariantKeyPair) (isc.Request, error) {
+func (ch *Chain) requestFromParams(req *CallParams, keyPair cryptolib.Signer) (isc.Request, error) {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
@@ -250,7 +250,7 @@ func (ch *Chain) requestFromParams(req *CallParams, keyPair cryptolib.VariantKey
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair cryptolib.VariantKeyPair) (*iotago.Transaction, isc.RequestID, error) {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, isc.RequestID, error) {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
@@ -283,20 +283,20 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair cryptolib.Va
 // Unlike the real Wasp environment, the 'solo' environment makes PostRequestSync a synchronous call.
 // It makes it possible step-by-step debug of the smart contract logic.
 // The call should be used only from the main thread (goroutine)
-func (ch *Chain) PostRequestSync(req *CallParams, keyPair cryptolib.VariantKeyPair) (dict.Dict, error) {
+func (ch *Chain) PostRequestSync(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, error) {
 	_, ret, err := ch.PostRequestSyncTx(req, keyPair)
 	return ret, err
 }
 
-func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair cryptolib.VariantKeyPair) (dict.Dict, error) {
-	if !cryptolib.IsVariantKeyPairValid(keyPair) {
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, error) {
+	/* if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
-	}
+	}*/ // TODO: is it still needed
 	r := req.NewRequestOffLedger(ch, keyPair)
 	return ch.RunOffLedgerRequest(r)
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair cryptolib.VariantKeyPair) (*iotago.Transaction, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, dict.Dict, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
 		return tx, res, err
@@ -314,7 +314,7 @@ func (ch *Chain) LastReceipt() *isc.Receipt {
 	return blocklogReceipt.ToISCReceipt(ch.ResolveVMError(blocklogReceipt.Error))
 }
 
-func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair cryptolib.VariantKeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
@@ -333,7 +333,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair cryptolib.VariantKe
 // any changes in the ledger. It returns the amount of gas consumed.
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 // TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.VariantKeyPair) (dict.Dict, *blocklog.RequestReceipt, error) {
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
 	r, err := ch.requestFromParams(&reqCopy, keyPair)
 	if err != nil {
@@ -348,11 +348,11 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.VariantK
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.VariantKeyPair) (dict.Dict, *blocklog.RequestReceipt, error) {
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
-	if !cryptolib.IsVariantKeyPairValid(keyPair) {
+	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
-	}
+	}*/ // TODO: is it still needed
 	r := reqCopy.NewRequestImpersonatedOffLedger(ch, keyPair.Address())
 	res := ch.estimateGas(r)
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
@@ -361,7 +361,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.Variant
 // EstimateNeededStorageDeposit estimates the amount of base tokens that will be
 // needed to add to the request (if any) in order to cover for the storage
 // deposit.
-func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair cryptolib.VariantKeyPair) uint64 {
+func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair cryptolib.Signer) uint64 {
 	out := transaction.MakeRequestTransactionOutput(ch.requestTransactionParams(req, keyPair))
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
 

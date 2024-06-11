@@ -41,19 +41,19 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	}
 	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
 	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
-	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
+	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
 	originCommitment := origin.L1Commitment(0, chainInitParams, 0)
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
 		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
 		StateMetadata: testutil.DummyStateMetadata(originCommitment).Bytes(),
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
-			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
+			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
+			&iotago.GovernorAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
 		},
 		Features: iotago.Features{
 			&iotago.SenderFeature{
-				Address: stateAddress,
+				Address: stateAddress.AsIotagoAddress(),
 			},
 		},
 	}

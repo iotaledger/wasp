@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -44,7 +45,7 @@ type VMTaskResult struct {
 	// StateDraft is the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
-	RotationAddress iotago.Address
+	RotationAddress *cryptolib.Address
 	// TransactionEssence is the transaction essence for the next block,
 	// or nil if the task does not produce a normal block
 	TransactionEssence *iotago.TransactionEssence

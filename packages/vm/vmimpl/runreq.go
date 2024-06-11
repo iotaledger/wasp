@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -487,7 +487,7 @@ func (vmctx *vmContext) loadChainConfig() {
 // checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *vmContext) checkTransactionSize() error {
 	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
-	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
+	tx := transaction.MakeAnchorTransaction(essence, cryptolib.NewEmptySignature())
 	if tx.Size() > parameters.L1().MaxPayloadSize {
 		return vmexceptions.ErrMaxTransactionSizeExceeded
 	}

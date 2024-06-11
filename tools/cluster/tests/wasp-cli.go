@@ -19,6 +19,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -29,7 +30,7 @@ type WaspCLITest struct {
 	T              *testing.T
 	Cluster        *cluster.Cluster
 	dir            string
-	WaspCliAddress iotago.Address
+	WaspCliAddress *cryptolib.Address
 }
 
 func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
@@ -61,7 +62,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*([a-z]{1,4}1[a-z0-9]{59}).*(?i:success)`)
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
 	require.Len(t, rs, 2)
-	_, addr, err := iotago.ParseBech32(rs[1])
+	_, addr, err := cryptolib.NewAddressFromBech32(rs[1])
 	require.NoError(t, err)
 	w.WaspCliAddress = addr
 	// requested funds will take some time to be available

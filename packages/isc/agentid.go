@@ -8,7 +8,7 @@ import (
 	"io"
 	"strings"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -41,11 +41,11 @@ type AgentID interface {
 // AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).
 type AgentIDWithL1Address interface {
 	AgentID
-	Address() iotago.Address
+	Address() *cryptolib.Address
 }
 
 // AddressFromAgentID returns the L1 address of the AgentID, if applicable.
-func AddressFromAgentID(a AgentID) (iotago.Address, bool) {
+func AddressFromAgentID(a AgentID) (*cryptolib.Address, bool) {
 	wa, ok := a.(AgentIDWithL1Address)
 	if !ok {
 		return nil, false
@@ -63,11 +63,11 @@ func HnameFromAgentID(a AgentID) Hname {
 
 // NewAgentID creates an AddressAgentID if the address is not an AliasAddress;
 // otherwise a ContractAgentID with hname = HnameNil.
-func NewAgentID(addr iotago.Address) AgentID {
-	if addr.Type() == iotago.AddressAlias {
+func NewAgentID(addr *cryptolib.Address) AgentID {
+	/*if addr.Type() == iotago.AddressAlias {
 		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
 		return NewContractAgentID(chainID, HnameNil)
-	}
+	}*/ // TODO: is it needed?
 	return NewAddressAgentID(addr)
 }
 

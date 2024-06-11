@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -113,7 +114,7 @@ func (req *evmOffLedgerCallRequest) String() string {
 	)
 }
 
-func (req *evmOffLedgerCallRequest) TargetAddress() iotago.Address {
+func (req *evmOffLedgerCallRequest) TargetAddress() *cryptolib.Address {
 	return req.chainID.AsAddress()
 }
 

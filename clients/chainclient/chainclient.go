@@ -21,7 +21,7 @@ type Client struct {
 	Layer1Client l1connection.Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
-	KeyPair      cryptolib.VariantKeyPair
+	KeyPair      cryptolib.Signer
 }
 
 // New creates a new chainclient.Client
@@ -29,7 +29,7 @@ func New(
 	layer1Client l1connection.Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
-	keyPair cryptolib.VariantKeyPair,
+	keyPair cryptolib.Signer,
 ) *Client {
 	return &Client{
 		Layer1Client: layer1Client,
@@ -99,7 +99,7 @@ func (c *Client) PostNRequests(
 		}
 		for index, output := range transactions[i].Essence.Outputs {
 			if basicOutput, ok := output.(*iotago.BasicOutput); ok {
-				if basicOutput.Ident().Equal(c.KeyPair.Address()) {
+				if cryptolib.NewAddressFromIotago(basicOutput.Ident()).Equals(c.KeyPair.Address()) {
 					outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
 					outputs[outputID] = transactions[i].Essence.Outputs[index]
 				}

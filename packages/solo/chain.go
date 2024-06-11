@@ -23,7 +23,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -428,15 +427,15 @@ func (ch *Chain) GetControlAddresses() *isc.ControlAddresses {
 	}
 	aliasOutput := aliasOutputID.GetAliasOutput()
 	controlAddr := &isc.ControlAddresses{
-		StateAddress:     aliasOutput.StateController(),
-		GoverningAddress: aliasOutput.GovernorAddress(),
+		StateAddress:     cryptolib.NewAddressFromIotago(aliasOutput.StateController()),
+		GoverningAddress: cryptolib.NewAddressFromIotago(aliasOutput.GovernorAddress()),
 		SinceBlockIndex:  aliasOutput.StateIndex,
 	}
 	return controlAddr
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
+func (ch *Chain) AddAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(governance.FuncAddAllowedStateControllerAddress.Message(addr)).
 		WithMaxAffordableGasBudget()
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -444,7 +443,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
+func (ch *Chain) RemoveAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(governance.FuncRemoveAllowedStateControllerAddress.Message(addr)).
 		WithMaxAffordableGasBudget()
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -452,7 +451,7 @@ func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryp
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
+func (ch *Chain) GetAllowedStateControllerAddresses() []*cryptolib.Address {
 	res, err := ch.CallView(governance.ViewGetAllowedStateControllerAddresses.Message())
 	require.NoError(ch.Env.T, err)
 	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.Output.Decode(res))
@@ -461,7 +460,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr *cryptolib.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(governance.FuncRotateStateController.Message(newStateAddr)).
 		WithMaxAffordableGasBudget()
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
@@ -482,7 +481,7 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.Ke
 }
 
 type L1L2AddressAssets struct {
-	Address  iotago.Address
+	Address  *cryptolib.Address
 	AssetsL1 *isc.Assets
 	AssetsL2 *isc.Assets
 }
@@ -491,7 +490,7 @@ func (a *L1L2AddressAssets) String() string {
 	return fmt.Sprintf("Address: %s\nL1 ftokens:\n  %s\nL2 ftokens:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
 }
 
-func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
+func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2AddressAssets {
 	return &L1L2AddressAssets{
 		Address:  addr,
 		AssetsL1: ch.Env.L1Assets(addr),
@@ -501,7 +500,7 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64) {
 	// find a deterministic L1 address that has 0 balance
-	walletKey, walletAddr := func() (*cryptolib.KeyPair, iotago.Address) {
+	walletKey, walletAddr := func() (*cryptolib.KeyPair, *cryptolib.Address) {
 		masterSeed := []byte("GetL2FundsFromFaucet")
 		i := uint32(0)
 		for {

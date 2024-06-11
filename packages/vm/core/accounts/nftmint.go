@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -74,8 +75,8 @@ var (
 
 type mintParameters struct {
 	immutableMetadata []byte
-	targetAddress     iotago.Address
-	issuerAddress     iotago.Address
+	targetAddress     *cryptolib.Address
+	issuerAddress     *cryptolib.Address
 	ownerAgentID      isc.AgentID
 	withdrawOnMint    bool
 }
@@ -102,7 +103,7 @@ func mintParams(
 		if !state.hasNFT(ctx.Caller(), collectionID) {
 			panic(errCollectionNotAllowed)
 		}
-		ret.issuerAddress = collectionID.ToAddress()
+		ret.issuerAddress = cryptolib.NewAddressFromIotago(collectionID.ToAddress())
 	}
 
 	switch targetAgentID.Kind() {
@@ -210,7 +211,7 @@ func (s *StateWriter) updateNewlyMintedNFTOutputIDs(anchorTxID iotago.Transactio
 			// save the updated data in the NFT map
 			nftMap.SetAt(nftID[:], outputRec.Bytes())
 			// credit the NFT to the target owner
-			s.creditNFTToAccount(mintedRec.owner, nftID, mintedRec.output.ImmutableFeatureSet().IssuerFeature().Address)
+			s.creditNFTToAccount(mintedRec.owner, nftID, cryptolib.NewAddressFromIotago(mintedRec.output.ImmutableFeatureSet().IssuerFeature().Address))
 		}
 		// save the mapping of [mintID => NFTID]
 		s.mintIDMap().SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])

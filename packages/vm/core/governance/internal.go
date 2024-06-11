@@ -8,7 +8,6 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -30,7 +29,7 @@ func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount in
 // GetRotationAddress tries to read the state of 'governance' and extract rotation address
 // If succeeds, it means this block is fake.
 // If fails, return nil
-func (s *StateReader) GetRotationAddress() iotago.Address {
+func (s *StateReader) GetRotationAddress() *cryptolib.Address {
 	ret, err := codec.Address.Decode(s.state.Get(varRotateToAddress), nil)
 	if err != nil {
 		return nil
@@ -38,7 +37,7 @@ func (s *StateReader) GetRotationAddress() iotago.Address {
 	return ret
 }
 
-func (s *StateWriter) SetRotationAddress(a iotago.Address) {
+func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
 	s.state.Set(varRotateToAddress, codec.Address.Encode(a))
 }
 

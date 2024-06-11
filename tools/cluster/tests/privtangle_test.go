@@ -33,7 +33,7 @@ func TestHornetStartup(t *testing.T) {
 	//
 	// Try call the faucet.
 	myKeyPair := cryptolib.NewKeyPair()
-	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
+	myAddress := myKeyPair.GetPublicKey().AsAddress()
 
 	nc := nodeclient.New(l1.Config.APIAddress)
 	_, err := nc.Info(ctx)
@@ -69,11 +69,11 @@ func TestHornetStartup(t *testing.T) {
 	}
 }
 
-func mustOutputCount(client l1connection.Client, myAddress *iotago.Ed25519Address) int {
+func mustOutputCount(client l1connection.Client, myAddress *cryptolib.Address) int {
 	return len(mustOutputMap(client, myAddress))
 }
 
-func mustOutputMap(client l1connection.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
+func mustOutputMap(client l1connection.Client, myAddress *cryptolib.Address) map[iotago.OutputID]iotago.Output {
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(fmt.Errorf("unable to get outputs as a map: %w", err))

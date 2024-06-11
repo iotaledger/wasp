@@ -19,9 +19,7 @@ import (
 	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
 	"go.dedis.ch/kyber/v3/suites"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -356,7 +354,7 @@ func (msg *initiatorDoneMsg) IsResponse() bool {
 // All the nodes must return the same public key.
 type initiatorPubShareMsg struct {
 	step            byte
-	sharedAddress   iotago.Address
+	sharedAddress   *cryptolib.Address
 	edSharedPublic  kyber.Point
 	edPublicShare   kyber.Point
 	edSignature     []byte
@@ -384,7 +382,8 @@ func (msg *initiatorPubShareMsg) SetStep(step byte) {
 func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msg.step = rr.ReadByte()
-	msg.sharedAddress = isc.AddressFromReader(rr)
+	msg.sharedAddress = cryptolib.NewEmptyAddress()
+	rr.Read(msg.sharedAddress)
 
 	msg.edSharedPublic = cryptolib.PointFromReader(rr, msg.edSuite)
 	msg.edPublicShare = cryptolib.PointFromReader(rr, msg.edSuite)
@@ -399,7 +398,7 @@ func (msg *initiatorPubShareMsg) Read(r io.Reader) error {
 func (msg *initiatorPubShareMsg) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteByte(msg.step)
-	isc.AddressToWriter(ww, msg.sharedAddress)
+	ww.Write(msg.sharedAddress)
 
 	cryptolib.PointToWriter(ww, msg.edSharedPublic)
 	cryptolib.PointToWriter(ww, msg.edPublicShare)

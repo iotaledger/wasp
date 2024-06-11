@@ -37,7 +37,7 @@ func TestCreateOrigin(t *testing.T) {
 	var u *utxodb.UtxoDB
 	var originTx *iotago.Transaction
 	var userKey *cryptolib.KeyPair
-	var userAddr, stateAddr *iotago.Ed25519Address
+	var userAddr, stateAddr *cryptolib.Address
 	var err error
 	var chainID isc.ChainID
 	var originTxID iotago.TransactionID
@@ -45,12 +45,12 @@ func TestCreateOrigin(t *testing.T) {
 	initTest := func() {
 		u = utxodb.New()
 		userKey = cryptolib.NewKeyPair()
-		userAddr = userKey.GetPublicKey().AsEd25519Address()
+		userAddr = userKey.GetPublicKey().AsAddress()
 		_, err2 := u.GetFundsFromFaucet(userAddr)
 		require.NoError(t, err2)
 
 		stateKey := cryptolib.NewKeyPair()
-		stateAddr = stateKey.GetPublicKey().AsEd25519Address()
+		stateAddr = stateKey.GetPublicKey().AsAddress()
 
 		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
@@ -94,8 +94,8 @@ func TestCreateOrigin(t *testing.T) {
 		require.True(t, anchor.IsOrigin)
 		require.EqualValues(t, chainID, anchor.ChainID)
 		require.EqualValues(t, 0, anchor.StateIndex)
-		require.True(t, stateAddr.Equal(anchor.StateController))
-		require.True(t, stateAddr.Equal(anchor.GovernanceController))
+		require.True(t, stateAddr.Equals(anchor.StateController))
+		require.True(t, stateAddr.Equals(anchor.GovernanceController))
 
 		originStateMetadata := transaction.NewStateMetadata(
 			origin.L1Commitment(

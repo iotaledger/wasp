@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -28,7 +28,7 @@ func (c *Controller) generateDKS(e echo.Context) error {
 }
 
 func (c *Controller) getDKSInfo(e echo.Context) error {
-	_, sharedAddress, err := iotago.ParseBech32(e.Param(params.ParamSharedAddress))
+	_, sharedAddress, err := cryptolib.NewAddressFromBech32(e.Param(params.ParamSharedAddress))
 	if err != nil {
 		return apierrors.InvalidPropertyError(params.ParamSharedAddress, err)
 	}

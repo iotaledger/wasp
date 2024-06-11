@@ -102,8 +102,8 @@ type chainData struct {
 type Chain struct {
 	chainData
 
-	StateControllerAddress iotago.Address
-	OriginatorAddress      iotago.Address
+	StateControllerAddress *cryptolib.Address
+	OriginatorAddress      *cryptolib.Address
 	OriginatorAgentID      isc.AgentID
 
 	// Env is a pointer to the global structure of the 'solo' test
@@ -284,7 +284,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 
 // WithVMProcessor registers a VM processor for binary contracts
 func (env *Solo) WithVMProcessor(vmType string, constructor processors.VMConstructor) *Solo {
-	env.processorConfig.RegisterVMType(vmType, constructor)
+	_ = env.processorConfig.RegisterVMType(vmType, constructor)
 	return env
 }
 
@@ -309,7 +309,7 @@ func (env *Solo) deployChain(
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
-		originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
+		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
 	}
@@ -326,9 +326,9 @@ func (env *Solo) deployChain(
 	}
 
 	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
-	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
+	stateControllerAddr := stateControllerKey.GetPublicKey().AsAddress()
 
-	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
+	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 	originatorAgentID := isc.NewAgentID(originatorAddr)
 
 	initialL1Balance := env.L1BaseTokens(originatorAddr)
@@ -414,9 +414,9 @@ func (env *Solo) NewChainExt(
 func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
 		chainData:              chData,
-		StateControllerAddress: chData.StateControllerKeyPair.GetPublicKey().AsEd25519Address(),
-		OriginatorAddress:      chData.OriginatorPrivateKey.GetPublicKey().AsEd25519Address(),
-		OriginatorAgentID:      isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsEd25519Address()),
+		StateControllerAddress: chData.StateControllerKeyPair.GetPublicKey().AsAddress(),
+		OriginatorAddress:      chData.OriginatorPrivateKey.GetPublicKey().AsAddress(),
+		OriginatorAgentID:      isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
 		Env:                    env,
 		store:                  indexedstore.New(state.NewStore(chData.db, chData.writeMutex)),
 		proc:                   processors.MustNew(env.processorConfig),
@@ -557,7 +557,7 @@ func (ch *Chain) EnqueueAliasOutput(_ *isc.AliasOutputWithID) {
 
 // ---------------------------------------------
 
-func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+func (env *Solo) UnspentOutputs(addr *cryptolib.Address) (iotago.OutputSet, iotago.OutputIDs) {
 	allOuts, _ := env.utxoDB.GetUnspentOutputs(addr)
 	ids := make(iotago.OutputIDs, len(allOuts))
 	i := 0
@@ -568,22 +568,22 @@ func (env *Solo) UnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.O
 	return allOuts, ids
 }
 
-func (env *Solo) L1NFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutput {
+func (env *Solo) L1NFTs(addr *cryptolib.Address) map[iotago.OutputID]*iotago.NFTOutput {
 	return env.utxoDB.GetAddressNFTs(addr)
 }
 
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
-func (env *Solo) L1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID) *big.Int {
+func (env *Solo) L1NativeTokens(addr *cryptolib.Address, nativeTokenID iotago.NativeTokenID) *big.Int {
 	assets := env.L1Assets(addr)
 	return assets.AmountNativeToken(nativeTokenID)
 }
 
-func (env *Solo) L1BaseTokens(addr iotago.Address) uint64 {
+func (env *Solo) L1BaseTokens(addr *cryptolib.Address) uint64 {
 	return env.utxoDB.GetAddressBalances(addr).BaseTokens
 }
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
-func (env *Solo) L1Assets(addr iotago.Address) *isc.Assets {
+func (env *Solo) L1Assets(addr *cryptolib.Address) *isc.Assets {
 	return env.utxoDB.GetAddressBalances(addr)
 }
 
@@ -599,7 +599,7 @@ type NFTMintedInfo struct {
 
 // MintNFTL1 mints a single NFT with the `issuer` account and sends it to a `target` account.
 // Base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
 	nfts, infos, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
 	if err != nil {
 		return nil, nil, err
@@ -615,7 +615,7 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 // See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
 //
 // Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
+func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
 	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTsTransactionParams{
@@ -651,7 +651,7 @@ func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, co
 			}
 			nft := &isc.NFT{
 				ID:       info.NFTID,
-				Issuer:   out.ImmutableFeatureSet().IssuerFeature().Address,
+				Issuer:   cryptolib.NewAddressFromIotago(out.ImmutableFeatureSet().IssuerFeature().Address),
 				Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
 			}
 			nfts = append(nfts, nft)
@@ -662,7 +662,7 @@ func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, co
 }
 
 // SendL1 sends base or native tokens to another L1 address
-func (env *Solo) SendL1(targetAddress iotago.Address, assets *isc.Assets, wallet *cryptolib.KeyPair) {
+func (env *Solo) SendL1(targetAddress *cryptolib.Address, assets *isc.Assets, wallet *cryptolib.KeyPair) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(wallet.Address())
 	tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
 		DisableAutoAdjustStorageDeposit: env.disableAutoAdjustStorageDeposit,

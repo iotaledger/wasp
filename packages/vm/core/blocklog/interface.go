@@ -112,17 +112,17 @@ const (
 
 type OutputRequestIDs struct{}
 
-func (_ OutputRequestIDs) Encode(reqIDs []isc.RequestID) dict.Dict {
+func (OutputRequestIDs) Encode(reqIDs []isc.RequestID) dict.Dict {
 	return codec.SliceToArray(codec.RequestID, reqIDs, ParamRequestID)
 }
 
-func (_ OutputRequestIDs) Decode(r dict.Dict) ([]isc.RequestID, error) {
+func (OutputRequestIDs) Decode(r dict.Dict) ([]isc.RequestID, error) {
 	return codec.SliceFromArray(codec.RequestID, r, ParamRequestID)
 }
 
 type OutputRequestReceipt struct{}
 
-func (_ OutputRequestReceipt) Encode(rec *RequestReceipt) dict.Dict {
+func (OutputRequestReceipt) Encode(rec *RequestReceipt) dict.Dict {
 	if rec == nil {
 		return nil
 	}
@@ -133,7 +133,7 @@ func (_ OutputRequestReceipt) Encode(rec *RequestReceipt) dict.Dict {
 	}
 }
 
-func (_ OutputRequestReceipt) Decode(r dict.Dict) (*RequestReceipt, error) {
+func (OutputRequestReceipt) Decode(r dict.Dict) (*RequestReceipt, error) {
 	if r.IsEmpty() {
 		return nil, nil
 	}
@@ -154,7 +154,7 @@ func (_ OutputRequestReceipt) Decode(r dict.Dict) (*RequestReceipt, error) {
 
 type OutputRequestReceipts struct{}
 
-func (_ OutputRequestReceipts) Encode(receipts []*RequestReceipt) dict.Dict {
+func (OutputRequestReceipts) Encode(receipts []*RequestReceipt) dict.Dict {
 	ret := dict.New()
 	requestReceipts := collections.NewArray(ret, ParamRequestRecord)
 	for _, receipt := range receipts {
@@ -163,7 +163,7 @@ func (_ OutputRequestReceipts) Encode(receipts []*RequestReceipt) dict.Dict {
 	return ret
 }
 
-func (_ OutputRequestReceipts) Decode(r dict.Dict) ([]*RequestReceipt, error) {
+func (OutputRequestReceipts) Decode(r dict.Dict) ([]*RequestReceipt, error) {
 	receipts := collections.NewArrayReadOnly(r, ParamRequestRecord)
 	ret := make([]*RequestReceipt, receipts.Len())
 	var err error
@@ -182,11 +182,11 @@ func (_ OutputRequestReceipts) Decode(r dict.Dict) ([]*RequestReceipt, error) {
 
 type OutputEvents struct{}
 
-func (_ OutputEvents) Encode(events []*isc.Event) dict.Dict {
+func (OutputEvents) Encode(events []*isc.Event) dict.Dict {
 	return codec.SliceToArray(codec.NewCodecEx(isc.EventFromBytes), events, ParamEvent)
 }
 
-func (_ OutputEvents) Decode(r dict.Dict) ([]*isc.Event, error) {
+func (OutputEvents) Decode(r dict.Dict) ([]*isc.Event, error) {
 	return codec.SliceFromArray(codec.NewCodecEx(isc.EventFromBytes), r, ParamEvent)
 }
 
@@ -202,7 +202,7 @@ type EventsForContractQuery struct {
 
 type InputEventsForContract struct{}
 
-func (_ InputEventsForContract) Encode(q EventsForContractQuery) dict.Dict {
+func (InputEventsForContract) Encode(q EventsForContractQuery) dict.Dict {
 	r := dict.Dict{
 		ParamContractHname: codec.Hname.Encode(q.Contract),
 	}
@@ -213,7 +213,7 @@ func (_ InputEventsForContract) Encode(q EventsForContractQuery) dict.Dict {
 	return r
 }
 
-func (_ InputEventsForContract) Decode(d dict.Dict) (ret EventsForContractQuery, err error) {
+func (InputEventsForContract) Decode(d dict.Dict) (ret EventsForContractQuery, err error) {
 	ret.Contract, err = codec.Hname.Decode(d[ParamContractHname])
 	if err != nil {
 		return

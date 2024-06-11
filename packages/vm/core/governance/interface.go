@@ -10,7 +10,6 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -211,11 +210,11 @@ const (
 
 type OutputAddressList struct{}
 
-func (e OutputAddressList) Encode(addrs []iotago.Address) dict.Dict {
+func (e OutputAddressList) Encode(addrs []*cryptolib.Address) dict.Dict {
 	return codec.SliceToArray(codec.Address, addrs, ParamAllowedStateControllerAddresses)
 }
 
-func (e OutputAddressList) Decode(r dict.Dict) ([]iotago.Address, error) {
+func (e OutputAddressList) Decode(r dict.Dict) ([]*cryptolib.Address, error) {
 	return codec.SliceFromArray(codec.Address, r, ParamAllowedStateControllerAddresses)
 }
 
@@ -245,7 +244,7 @@ func (o OutputChainInfo) Decode(r dict.Dict) (*isc.ChainInfo, error) {
 
 type InputAddCandidateNode struct{}
 
-func (_ InputAddCandidateNode) Encode(a *AccessNodeInfo) dict.Dict {
+func (InputAddCandidateNode) Encode(a *AccessNodeInfo) dict.Dict {
 	return dict.Dict{
 		ParamAccessNodeInfoForCommittee: codec.Bool.Encode(a.ForCommittee),
 		ParamAccessNodeInfoPubKey:       a.NodePubKey,
@@ -254,7 +253,7 @@ func (_ InputAddCandidateNode) Encode(a *AccessNodeInfo) dict.Dict {
 	}
 }
 
-func (_ InputAddCandidateNode) Decode(d dict.Dict) (*AccessNodeInfo, error) {
+func (InputAddCandidateNode) Decode(d dict.Dict) (*AccessNodeInfo, error) {
 	return &AccessNodeInfo{
 		NodePubKey:   d[ParamAccessNodeInfoPubKey],
 		Certificate:  d[ParamAccessNodeInfoCertificate],
@@ -272,7 +271,7 @@ func (e InputRevokeAccessNode) Encode(a *AccessNodeInfo) dict.Dict {
 	}
 }
 
-func (_ InputRevokeAccessNode) Decode(d dict.Dict) (*AccessNodeInfo, error) {
+func (InputRevokeAccessNode) Decode(d dict.Dict) (*AccessNodeInfo, error) {
 	return &AccessNodeInfo{
 		NodePubKey:  d[ParamAccessNodeInfoPubKey],
 		Certificate: d[ParamAccessNodeInfoCertificate],
@@ -281,7 +280,7 @@ func (_ InputRevokeAccessNode) Decode(d dict.Dict) (*AccessNodeInfo, error) {
 
 type InputChangeAccessNodes struct{}
 
-func (_ InputChangeAccessNodes) Encode(r ChangeAccessNodesRequest) dict.Dict {
+func (InputChangeAccessNodes) Encode(r ChangeAccessNodesRequest) dict.Dict {
 	d := dict.New()
 	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
 	for pubKey, action := range r {
@@ -292,7 +291,7 @@ func (_ InputChangeAccessNodes) Encode(r ChangeAccessNodesRequest) dict.Dict {
 
 var errInvalidAction = coreerrors.Register("invalid action").Create()
 
-func (_ InputChangeAccessNodes) Decode(d dict.Dict) (ChangeAccessNodesRequest, error) {
+func (InputChangeAccessNodes) Decode(d dict.Dict) (ChangeAccessNodesRequest, error) {
 	actions := NewChangeAccessNodesRequest()
 	m := collections.NewMapReadOnly(d, ParamChangeAccessNodesActions)
 	var err error
@@ -317,7 +316,7 @@ func (_ InputChangeAccessNodes) Decode(d dict.Dict) (ChangeAccessNodesRequest, e
 
 type OutputChainNodes struct{}
 
-func (_ OutputChainNodes) Encode(r *GetChainNodesResponse) dict.Dict {
+func (OutputChainNodes) Encode(r *GetChainNodesResponse) dict.Dict {
 	res := dict.New()
 	candidates := collections.NewMap(res, ParamGetChainNodesAccessNodeCandidates)
 	for pk, ani := range r.AccessNodeCandidates {
@@ -330,7 +329,7 @@ func (_ OutputChainNodes) Encode(r *GetChainNodesResponse) dict.Dict {
 	return res
 }
 
-func (_ OutputChainNodes) Decode(d dict.Dict) (*GetChainNodesResponse, error) {
+func (OutputChainNodes) Decode(d dict.Dict) (*GetChainNodesResponse, error) {
 	res := &GetChainNodesResponse{
 		AccessNodeCandidates: make(map[cryptolib.PublicKeyKey]*AccessNodeInfo),
 		AccessNodes:          make(map[cryptolib.PublicKeyKey]struct{}),

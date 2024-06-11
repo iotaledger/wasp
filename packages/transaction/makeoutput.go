@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
@@ -11,7 +12,7 @@ import (
 // BasicOutputFromPostData creates extended output object from parameters.
 // It automatically adjusts amount of base tokens required for the storage deposit
 func BasicOutputFromPostData(
-	senderAddress iotago.Address,
+	senderAddress *cryptolib.Address,
 	senderContract isc.ContractIdentity,
 	par isc.RequestParameters,
 ) *iotago.BasicOutput {
@@ -41,8 +42,8 @@ func BasicOutputFromPostData(
 
 // MakeBasicOutput creates new output from input parameters (ignoring storage deposit).
 func MakeBasicOutput(
-	targetAddress iotago.Address,
-	senderAddress iotago.Address,
+	targetAddress *cryptolib.Address,
+	senderAddress *cryptolib.Address,
 	assets *isc.Assets,
 	metadata *isc.RequestMetadata,
 	options isc.SendOptions,
@@ -54,12 +55,12 @@ func MakeBasicOutput(
 		Amount:       assets.BaseTokens,
 		NativeTokens: assets.NativeTokens,
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: targetAddress},
+			&iotago.AddressUnlockCondition{Address: targetAddress.AsIotagoAddress()},
 		},
 	}
 	if senderAddress != nil {
 		out.Features = append(out.Features, &iotago.SenderFeature{
-			Address: senderAddress,
+			Address: senderAddress.AsIotagoAddress(),
 		})
 	}
 	if metadata != nil {
@@ -75,7 +76,7 @@ func MakeBasicOutput(
 	}
 	if options.Expiration != nil {
 		cond := &iotago.ExpirationUnlockCondition{
-			ReturnAddress: options.Expiration.ReturnAddress,
+			ReturnAddress: options.Expiration.ReturnAddress.AsIotagoAddress(),
 		}
 		if !options.Expiration.Time.IsZero() {
 			cond.UnixTime = uint32(options.Expiration.Time.Unix())
@@ -86,7 +87,7 @@ func MakeBasicOutput(
 }
 
 func NFTOutputFromPostData(
-	senderAddress iotago.Address,
+	senderAddress *cryptolib.Address,
 	senderContract isc.ContractIdentity,
 	par isc.RequestParameters,
 	nft *isc.NFT,
@@ -113,7 +114,7 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *isc.NFT) *iotago.NFTOu
 		Conditions:   o.Conditions,
 		NFTID:        nft.ID,
 		ImmutableFeatures: iotago.Features{
-			&iotago.IssuerFeature{Address: nft.Issuer},
+			&iotago.IssuerFeature{Address: nft.Issuer.AsIotagoAddress()},
 			&iotago.MetadataFeature{Data: nft.Metadata},
 		},
 	}

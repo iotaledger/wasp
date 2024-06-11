@@ -3,7 +3,7 @@ package wallet
 import (
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -20,7 +20,7 @@ func initSendFundsCmd() *cobra.Command {
 		Short: "Transfer L1 tokens",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			_, targetAddress, err := iotago.ParseBech32(args[0])
+			_, targetAddress, err := cryptolib.NewAddressFromBech32(args[0])
 			log.Check(err)
 
 			tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))

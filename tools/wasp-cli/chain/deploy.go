@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -38,11 +38,11 @@ func GetAllWaspNodes() []int {
 	return ret
 }
 
-func controllerAddrDefaultFallback(addr string) iotago.Address {
+func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
 	if addr == "" {
 		return wallet.Load().Address()
 	}
-	prefix, govControllerAddr, err := iotago.ParseBech32(addr)
+	prefix, govControllerAddr, err := cryptolib.NewAddressFromBech32(addr)
 	log.Check(err)
 	if parameters.L1().Protocol.Bech32HRP != prefix {
 		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)

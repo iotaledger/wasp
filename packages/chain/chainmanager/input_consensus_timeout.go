@@ -6,17 +6,17 @@ package chainmanager
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusTimeout struct {
-	committeeAddr iotago.Ed25519Address
+	committeeAddr cryptolib.Address
 	logIndex      cmt_log.LogIndex
 }
 
-func NewInputConsensusTimeout(committeeAddr iotago.Ed25519Address, logIndex cmt_log.LogIndex) gpa.Input {
+func NewInputConsensusTimeout(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) gpa.Input {
 	return &inputConsensusTimeout{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

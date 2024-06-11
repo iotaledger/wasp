@@ -98,13 +98,10 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 		)
 		require.NoError(ch.Env.T, err)
 	}
-	sigs, err := essence.Sign(
-		essence.InputsCommitment[:],
-		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
-	)
+	sig, err := ch.StateControllerKeyPair.Sign(essence.InputsCommitment[:])
 	require.NoError(ch.Env.T, err)
 
-	tx := transaction.MakeAnchorTransaction(essence, sigs[0])
+	tx := transaction.MakeAnchorTransaction(essence, sig)
 
 	if res.RotationAddress == nil {
 		// normal state transition

@@ -95,7 +95,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -117,8 +116,8 @@ type State struct {
 // Interface used to store and recover the existing persistent state.
 // To be implemented by the registry.
 type ConsensusStateRegistry interface {
-	Get(chainID isc.ChainID, committeeAddress iotago.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
-	Set(chainID isc.ChainID, committeeAddress iotago.Address, state *State) error
+	Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
+	Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *State) error
 }
 
 var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
@@ -150,7 +149,7 @@ func (o *Output) String() string {
 // Protocol implementation.
 type cmtLogImpl struct {
 	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
-	cmtAddr                iotago.Address         // Address of the committee running this chain.
+	cmtAddr                *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
@@ -179,7 +178,7 @@ func New(
 	cclMetrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (CmtLog, error) {
-	cmtAddr := dkShare.GetSharedPublic().AsEd25519Address()
+	cmtAddr := dkShare.GetSharedPublic().AsAddress()
 	//
 	// Load the last LogIndex we were working on.
 	var prevLI LogIndex

@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -188,12 +189,12 @@ func (p *kvdecoder) MustGetHashValue(key kv.Key, def ...hashing.HashValue) hashi
 	return ret
 }
 
-func (p *kvdecoder) GetAddress(key kv.Key, def ...iotago.Address) (iotago.Address, error) {
+func (p *kvdecoder) GetAddress(key kv.Key, def ...*cryptolib.Address) (*cryptolib.Address, error) {
 	v, err := codec.Address.Decode(p.Get(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetAddress(key kv.Key, def ...iotago.Address) iotago.Address {
+func (p *kvdecoder) MustGetAddress(key kv.Key, def ...*cryptolib.Address) *cryptolib.Address {
 	ret, err := p.GetAddress(key, def...)
 	p.check(err)
 	return ret

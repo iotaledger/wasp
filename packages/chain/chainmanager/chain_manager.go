@@ -120,7 +120,7 @@ func (o *Output) String() string {
 }
 
 type NeedConsensus struct {
-	CommitteeAddr   iotago.Ed25519Address
+	CommitteeAddr   cryptolib.Address
 	LogIndex        cmt_log.LogIndex
 	DKShare         tcrypto.DKShare
 	BaseAliasOutput *isc.AliasOutputWithID
@@ -140,7 +140,7 @@ func (nc *NeedConsensus) String() string {
 }
 
 type NeedPublishTX struct {
-	CommitteeAddr     iotago.Ed25519Address
+	CommitteeAddr     cryptolib.Address
 	LogIndex          cmt_log.LogIndex
 	TxID              iotago.TransactionID
 	Tx                *iotago.Transaction
@@ -153,7 +153,7 @@ type ChainMgr interface {
 }
 
 type cmtLogInst struct {
-	committeeAddr iotago.Ed25519Address
+	committeeAddr cryptolib.Address
 	dkShare       tcrypto.DKShare
 	gpaInstance   gpa.GPA
 	pendingMsgs   []gpa.Message
@@ -162,9 +162,9 @@ type cmtLogInst struct {
 type chainMgrImpl struct {
 	chainID                    isc.ChainID                                                      // This instance is responsible for this chain.
 	chainStore                 state.Store                                                      // Store of the chain state.
-	cmtLogs                    map[iotago.Ed25519Address]*cmtLogInst                            // All the committee log instances for this chain.
+	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                             // All the committee log instances for this chain.
 	consensusStateRegistry     cmt_log.ConsensusStateRegistry                                   // Persistent store for log indexes.
-	latestActiveCmt            *iotago.Ed25519Address                                           // The latest active committee.
+	latestActiveCmt            *cryptolib.Address                                               // The latest active committee.
 	latestConfirmedAO          *isc.AliasOutputWithID                                           // The latest confirmed AO (follows Active AO).
 	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)          // All the nodes authorized for being access nodes (for the ActiveAO).
 	trackActiveStateCB         func(ao *isc.AliasOutputWithID)                                  // We will call this to set new AO for the active state.
@@ -210,7 +210,7 @@ func New(
 	cmi := &chainMgrImpl{
 		chainID:                    chainID,
 		chainStore:                 chainStore,
-		cmtLogs:                    map[iotago.Ed25519Address]*cmtLogInst{},
+		cmtLogs:                    map[cryptolib.AddressKey]*cmtLogInst{},
 		consensusStateRegistry:     consensusStateRegistry,
 		activeNodesCB:              activeNodesCB,
 		trackActiveStateCB:         trackActiveStateCB,
@@ -286,7 +286,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.aliasOutput)
 	cmi.latestConfirmedAO = input.aliasOutput
 	msgs := gpa.NoMessages()
-	committeeAddr := input.aliasOutput.GetAliasOutput().StateController().(*iotago.Ed25519Address)
+	committeeAddr := cryptolib.NewAddressFromIotago(input.aliasOutput.GetAliasOutput().StateController())
 	committeeLog, err := cmi.ensureCmtLog(*committeeAddr)
 	if errors.Is(err, ErrNotInCommittee) {
 		// >     IF this node is in the committee THEN ... ELSE
@@ -471,7 +471,7 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 	// >     IF cmt == LatestActiveCmt || LatestActiveCmt == NIL THEN
 	// >         Set LatestActiveCmt <- cmt
 	// >         Set NeedConsensus <- output.NeedConsensus // Can be nil
-	if cmi.latestActiveCmt == nil || cli.committeeAddr.Equal(cmi.latestActiveCmt) {
+	if cmi.latestActiveCmt == nil || cli.committeeAddr.Equals(cmi.latestActiveCmt) {
 		cmi.committeeUpdatedCB(cli.dkShare)
 		cmi.ensureNeedConsensus(cli, outputUntyped)
 		cmi.latestActiveCmt = &cli.committeeAddr
@@ -487,7 +487,7 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 	if outputUntyped == nil {
 		return msgs
 	}
-	if !cmi.latestActiveCmt.Equal(&cli.committeeAddr) {
+	if !cmi.latestActiveCmt.Equals(&cli.committeeAddr) {
 		msgs.AddAll(cmi.suspendCommittee(cmi.latestActiveCmt))
 		cmi.committeeUpdatedCB(cli.dkShare)
 		cmi.latestActiveCmt = &cli.committeeAddr
@@ -507,7 +507,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 		return
 	}
 	committeeAddress := output.GetBaseAliasOutput().GetStateAddress()
-	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(committeeAddress)
+	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(cryptolib.NewAddressFromIotago(committeeAddress))
 	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
 		// Rotated to other nodes, so we don't need to start the next consensus.
 		cmi.needConsensus = nil
@@ -548,9 +548,9 @@ func (cmi *chainMgrImpl) wrapCmtLogMsgs(cli *cmtLogInst, outMsgs gpa.OutMessages
 	return wrappedMsgs
 }
 
-func (cmi *chainMgrImpl) suspendCommittee(committeeAddr *iotago.Ed25519Address) gpa.OutMessages {
-	for ca, cli := range cmi.cmtLogs {
-		if !ca.Equal(committeeAddr) {
+func (cmi *chainMgrImpl) suspendCommittee(committeeAddr *cryptolib.Address) gpa.OutMessages {
+	for _, cli := range cmi.cmtLogs {
+		if !cli.committeeAddr.Equals(committeeAddr) {
 			continue
 		}
 		return cmi.wrapCmtLogMsgs(cli, cli.gpaInstance.Input(cmt_log.NewInputSuspend()))
@@ -558,7 +558,7 @@ func (cmi *chainMgrImpl) suspendCommittee(committeeAddr *iotago.Ed25519Address) 
 	return nil
 }
 
-func (cmi *chainMgrImpl) withCmtLog(committeeAddr iotago.Ed25519Address, handler func(cl gpa.GPA) gpa.OutMessages) gpa.OutMessages {
+func (cmi *chainMgrImpl) withCmtLog(committeeAddr cryptolib.Address, handler func(cl gpa.GPA) gpa.OutMessages) gpa.OutMessages {
 	cli, err := cmi.ensureCmtLog(committeeAddr)
 	if err != nil {
 		cmi.log.Warnf("cannot find committee: %v", committeeAddr)
@@ -576,8 +576,8 @@ func (cmi *chainMgrImpl) withAllCmtLogs(handler func(cl gpa.GPA) gpa.OutMessages
 }
 
 // NOTE: ErrNotInCommittee
-func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmtLogInst, error) {
-	if cli, ok := cmi.cmtLogs[committeeAddr]; ok {
+func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr cryptolib.Address) (*cmtLogInst, error) {
+	if cli, ok := cmi.cmtLogs[committeeAddr.Key()]; ok {
 		return cli, nil
 	}
 	//
@@ -600,7 +600,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		cmi.pipeliningLimit,
 		cmi.postponeRecoveryMilestones,
 		cmi.metrics,
-		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsEd25519Address().String()[:10])),
+		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsAddress().String()[:10])),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
@@ -612,6 +612,6 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		gpaInstance:   clGPA,
 		pendingMsgs:   []gpa.Message{},
 	}
-	cmi.cmtLogs[committeeAddr] = cli
+	cmi.cmtLogs[committeeAddr.Key()] = cli
 	return cli, nil
 }

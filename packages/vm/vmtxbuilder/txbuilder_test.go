@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
@@ -182,7 +183,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	// return deposit in BaseToken
 	consumeUTXO := func(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, mockedAccounts *mockAccountContractRead) {
 		out := transaction.MakeBasicOutput(
-			txb.anchorOutput.AliasID.ToAddress(),
+			cryptolib.NewAddressFromIotago(txb.anchorOutput.AliasID.ToAddress()),
 			nil,
 			&isc.Assets{
 				NativeTokens: iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
@@ -209,10 +210,10 @@ func TestTxBuilderConsistency(t *testing.T) {
 			}},
 		}
 		out := transaction.BasicOutputFromPostData(
-			txb.anchorOutput.AliasID.ToAddress(),
+			cryptolib.NewAddressFromIotago(txb.anchorOutput.AliasID.ToAddress()),
 			isc.ContractIdentityFromHname(isc.Hn("test")),
 			isc.RequestParameters{
-				TargetAddress:                 tpkg.RandEd25519Address(),
+				TargetAddress:                 cryptolib.NewRandomAddress(),
 				Assets:                        outAssets,
 				Metadata:                      &isc.SendMetadata{},
 				Options:                       isc.SendOptions{},
@@ -455,8 +456,8 @@ func TestSerDe(t *testing.T) {
 		}
 		assets := isc.NewEmptyAssets()
 		out := transaction.AdjustToMinimumStorageDeposit(transaction.MakeBasicOutput(
-			&iotago.Ed25519Address{},
-			&iotago.Ed25519Address{1, 2, 3},
+			cryptolib.NewEmptyAddress(),
+			cryptolib.NewRandomAddress(),
 			assets,
 			&reqMetadata,
 			isc.SendOptions{},

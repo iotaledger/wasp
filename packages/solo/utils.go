@@ -8,9 +8,9 @@ import (
 
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
 func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID isc.AgentID) error {
-	if !cryptolib.IsVariantKeyPairValid(keyPair) {
+	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
-	}
+	}*/ // TODO: is it still needed?
 
 	req := NewCallParams(root.FuncGrantDeployPermission.Message(deployerAgentID)).AddBaseTokens(1)
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -19,9 +19,9 @@ func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgent
 
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
 func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID isc.AgentID) error {
-	if !cryptolib.IsVariantKeyPairValid(keyPair) {
+	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
-	}
+	}*/ // TODO: is it still needed?
 
 	req := NewCallParams(root.FuncRevokeDeployPermission.Message(deployerAgentID)).AddBaseTokens(1)
 	_, err := ch.PostRequestSync(req, keyPair)

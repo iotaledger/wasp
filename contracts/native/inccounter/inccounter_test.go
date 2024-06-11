@@ -133,7 +133,7 @@ func TestSpawn(t *testing.T) {
 	res, err := chain.CallView(root.ViewGetContractRecords.Message())
 	require.NoError(t, err)
 	creg := lo.Must(root.ViewGetContractRecords.Output.Decode(res))
-	require.True(t, int(len(creg)) == len(corecontracts.All)+2)
+	require.True(t, len(creg) == len(corecontracts.All)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {

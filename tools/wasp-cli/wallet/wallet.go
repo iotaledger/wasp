@@ -11,7 +11,7 @@ import (
 )
 
 type WalletConfig struct {
-	KeyPair cryptolib.VariantKeyPair
+	KeyPair cryptolib.Signer
 }
 
 var initOverwrite bool

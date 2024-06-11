@@ -56,20 +56,20 @@ func TestGovernance1(t *testing.T) {
 		res = chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 2, len(res))
 
-		require.True(t, addr1.Equal(res[0]) || addr1.Equal(res[1]))
-		require.True(t, addr2.Equal(res[0]) || addr2.Equal(res[1]))
+		require.True(t, addr1.Equals(res[0]) || addr1.Equals(res[1]))
+		require.True(t, addr2.Equals(res[0]) || addr2.Equals(res[1]))
 
 		err = chain.RemoveAllowedStateController(addr1, nil)
 		require.NoError(t, err)
 		res = chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 1, len(res))
-		require.True(t, addr2.Equal(res[0]))
+		require.True(t, addr2.Equals(res[0]))
 
 		err = chain.RemoveAllowedStateController(addr1, nil)
 		require.NoError(t, err)
 		res = chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 1, len(res))
-		require.True(t, addr2.Equal(res[0]))
+		require.True(t, addr2.Equals(res[0]))
 
 		err = chain.RemoveAllowedStateController(addr2, nil)
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestRotate(t *testing.T) {
 		chain.WaitUntilMempoolIsEmpty()
 
 		ca := chain.GetControlAddresses()
-		require.True(t, ca.StateAddress.Equal(newAddr))
+		require.True(t, ca.StateAddress.Equals(newAddr))
 
 		req := solo.NewCallParamsEx("dummy", "dummy").WithMaxAffordableGasBudget()
 		_, err = chain.PostRequestSync(req, nil)
