@@ -8,6 +8,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -83,19 +84,18 @@ type L1Address struct {
 	Data []byte
 }
 
-func WrapL1Address(a iotago.Address) L1Address {
+func WrapL1Address(a *cryptolib.Address) L1Address {
 	if a == nil {
 		return L1Address{Data: []byte{}}
 	}
-	return L1Address{Data: isc.AddressToBytes(a)}
+	return L1Address{Data: a.Bytes()}
 }
 
-func (a L1Address) Unwrap() (iotago.Address, error) {
-	ret, err := isc.AddressFromBytes(a.Data)
-	return ret, err
+func (a L1Address) Unwrap() (*cryptolib.Address, error) {
+	return cryptolib.NewAddressFromBytes(a.Data)
 }
 
-func (a L1Address) MustUnwrap() iotago.Address {
+func (a L1Address) MustUnwrap() *cryptolib.Address {
 	ret, err := a.Unwrap()
 	if err != nil {
 		panic(err)

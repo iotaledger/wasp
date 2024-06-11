@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -14,12 +14,12 @@ func TestAgentIDSerialization(t *testing.T) {
 	rwutil.BytesTest(t, AgentID(n), AgentIDFromBytes)
 	rwutil.StringTest(t, AgentID(n), AgentIDFromString)
 
-	a := NewAddressAgentID(tpkg.RandEd25519Address())
+	a := NewAddressAgentID(cryptolib.NewRandomAddress())
 	rwutil.BytesTest(t, AgentID(a), AgentIDFromBytes)
 	rwutil.StringTest(t, AgentID(a), AgentIDFromString)
 	rwutil.StringTest(t, a, addressAgentIDFromString)
 
-	chainID := ChainIDFromAddress(tpkg.RandAliasAddress())
+	chainID := ChainIDFromAddress(cryptolib.NewRandomAddress())
 	c := NewContractAgentID(chainID, 42)
 	rwutil.BytesTest(t, AgentID(c), AgentIDFromBytes)
 	rwutil.StringTest(t, AgentID(c), AgentIDFromString)

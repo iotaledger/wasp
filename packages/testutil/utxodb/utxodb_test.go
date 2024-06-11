@@ -28,7 +28,7 @@ func TestBasic(t *testing.T) {
 
 func TestRequestFunds(t *testing.T) {
 	u := New()
-	addr := tpkg.RandEd25519Address()
+	addr := cryptolib.NewRandomAddress()
 	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
 	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(u.GenesisAddress()))
@@ -46,7 +46,7 @@ func TestRequestFunds(t *testing.T) {
 func TestAddTransactionFail(t *testing.T) {
 	u := New()
 
-	addr := tpkg.RandEd25519Address()
+	addr := cryptolib.NewRandomAddress()
 	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
 
@@ -57,8 +57,8 @@ func TestAddTransactionFail(t *testing.T) {
 func TestDoubleSpend(t *testing.T) {
 	keyPair1 := cryptolib.NewKeyPair()
 
-	addr1 := keyPair1.GetPublicKey().AsEd25519Address()
-	key1Signer := iotago.NewInMemoryAddressSigner(keyPair1.GetPrivateKey().AddressKeysForEd25519Address(addr1))
+	addr1 := keyPair1.GetPublicKey().AsAddress()
+	key1Signer := cryptolib.SignerToIotago(keyPair1)
 
 	addr2 := tpkg.RandEd25519Address()
 	addr3 := tpkg.RandEd25519Address()
@@ -72,7 +72,7 @@ func TestDoubleSpend(t *testing.T) {
 
 	spend2, err := builder.NewTransactionBuilder(tpkg.TestNetworkID).
 		AddInput(&builder.TxInput{
-			UnlockTarget: addr1,
+			UnlockTarget: addr1.AsIotagoAddress(),
 			Input:        tx1.Essence.Outputs[0],
 			InputID:      iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
 		}).
@@ -89,7 +89,7 @@ func TestDoubleSpend(t *testing.T) {
 
 	spend3, err := builder.NewTransactionBuilder(tpkg.TestNetworkID).
 		AddInput(&builder.TxInput{
-			UnlockTarget: addr1,
+			UnlockTarget: addr1.AsIotagoAddress(),
 			Input:        tx1.Essence.Outputs[0],
 			InputID:      iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
 		}).
@@ -107,7 +107,7 @@ func TestDoubleSpend(t *testing.T) {
 
 func TestGetOutput(t *testing.T) {
 	u := New()
-	addr := tpkg.RandEd25519Address()
+	addr := cryptolib.NewRandomAddress()
 	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
 

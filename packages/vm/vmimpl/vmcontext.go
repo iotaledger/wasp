@@ -3,7 +3,7 @@ package vmimpl
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -109,8 +109,8 @@ func (vmctx *vmContext) withStateUpdate(f func(chainState kv.KVStore)) {
 func (vmctx *vmContext) extractBlock(
 	numRequests, numSuccess, numOffLedger uint16,
 	unprocessable []isc.OnLedgerRequest,
-) (uint32, *state.L1Commitment, time.Time, iotago.Address) {
-	var rotationAddr iotago.Address
+) (uint32, *state.L1Commitment, time.Time, *cryptolib.Address) {
+	var rotationAddr *cryptolib.Address
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.TimeAssumption)
@@ -127,12 +127,12 @@ func (vmctx *vmContext) extractBlock(
 	return blockIndex, l1Commitment, timestamp, rotationAddr
 }
 
-func (vmctx *vmContext) checkRotationAddress() (ret iotago.Address) {
+func (vmctx *vmContext) checkRotationAddress() (ret *cryptolib.Address) {
 	return governance.NewStateReaderFromChainState(vmctx.stateDraft).GetRotationAddress()
 }
 
 // saveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
-func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) iotago.Address {
+func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) *cryptolib.Address {
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
 		// There was only on request in the block

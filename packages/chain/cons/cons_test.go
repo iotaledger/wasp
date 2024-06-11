@@ -457,7 +457,7 @@ type testConsInst struct {
 func newTestConsInst(
 	t *testing.T,
 	chainID isc.ChainID,
-	committeeAddress iotago.Address,
+	committeeAddress *cryptolib.Address,
 	stateIndex int,
 	procCache *processors.Cache,
 	nodeIDs []gpa.NodeID,

@@ -1,7 +1,7 @@
 package util
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -16,20 +16,20 @@ func (c ComparableString) String() string {
 }
 
 type ComparableAddress struct {
-	address iotago.Address
+	address *cryptolib.Address
 }
 
-func NewComparableAddress(address iotago.Address) *ComparableAddress {
+func NewComparableAddress(address *cryptolib.Address) *ComparableAddress {
 	return &ComparableAddress{
 		address: address,
 	}
 }
 
-func (c *ComparableAddress) Address() iotago.Address {
+func (c *ComparableAddress) Address() *cryptolib.Address {
 	return c.address
 }
 
-func (c *ComparableAddress) Key() string {
+func (c *ComparableAddress) Key() cryptolib.AddressKey {
 	return c.address.Key()
 }
 

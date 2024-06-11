@@ -52,7 +52,6 @@
 package cons
 
 import (
-	"crypto/ed25519"
 	"encoding/binary"
 	"fmt"
 	"time"
@@ -626,12 +625,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages {
 	resultTxEssence := vmResult.TransactionEssence
 	publicKey := c.dkShare.GetSharedPublic()
-	var signatureArray [ed25519.SignatureSize]byte
-	copy(signatureArray[:], signature)
-	signatureForUnlock := &iotago.Ed25519Signature{
-		PublicKey: publicKey.AsKey(),
-		Signature: signatureArray,
-	}
+	signatureForUnlock := cryptolib.NewSignature(publicKey, signature)
 	tx := &iotago.Transaction{
 		Essence: resultTxEssence,
 		Unlocks: transaction.MakeSignatureAndAliasUnlockFeatures(len(resultTxEssence.Inputs), signatureForUnlock),

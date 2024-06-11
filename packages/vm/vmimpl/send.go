@@ -2,6 +2,7 @@ package vmimpl
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -27,7 +28,7 @@ func (reqctx *requestContext) doSend(caller isc.ContractIdentity, par isc.Reques
 		// create NFT output
 		nft := reqctx.vm.getNFTData(reqctx.chainStateWithGasBurn(), par.Assets.NFTs[0])
 		out := transaction.NFTOutputFromPostData(
-			reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
+			cryptolib.NewAddressFromIotago(reqctx.vm.task.AnchorOutput.AliasID.ToAddress()),
 			caller,
 			par,
 			nft,
@@ -38,7 +39,7 @@ func (reqctx *requestContext) doSend(caller isc.ContractIdentity, par isc.Reques
 	}
 	// create extended output
 	out := transaction.BasicOutputFromPostData(
-		reqctx.vm.task.AnchorOutput.AliasID.ToAddress(),
+		cryptolib.NewAddressFromIotago(reqctx.vm.task.AnchorOutput.AliasID.ToAddress()),
 		caller,
 		par,
 	)

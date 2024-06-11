@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -43,7 +44,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.InvalidPropertyError("Output", err)
 	}
-	if !req.TargetAddress().Equal(chainID.AsAddress()) {
+	if !req.TargetAddress().Equals(chainID.AsAddress()) {
 		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
 	}
 
@@ -70,7 +71,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}
 
-	requestFrom, err := iotago.ParseEd25519AddressFromHexString(estimateGasRequest.FromAddress)
+	requestFrom, err := cryptolib.NewAddressFromString(estimateGasRequest.FromAddress)
 	if err != nil {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}
@@ -88,7 +89,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	impRequest := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestData)).
 		WithSenderAddress(requestFrom)
 
-	if !impRequest.TargetAddress().Equal(chainID.AsAddress()) {
+	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {
 		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
 	}
 

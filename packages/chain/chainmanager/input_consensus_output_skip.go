@@ -8,17 +8,18 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusOutputSkip struct {
-	committeeAddr  iotago.Ed25519Address
+	committeeAddr  cryptolib.Address
 	logIndex       cmt_log.LogIndex
 	proposedBaseAO iotago.OutputID
 }
 
 func NewInputConsensusOutputSkip(
-	committeeAddr iotago.Ed25519Address,
+	committeeAddr cryptolib.Address,
 	logIndex cmt_log.LogIndex,
 	proposedBaseAO iotago.OutputID,
 ) gpa.Input {

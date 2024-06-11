@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -92,7 +91,7 @@ type Chains struct {
 
 	chainMetricsProvider *metrics.ChainMetricsProvider
 
-	validatorFeeAddr iotago.Address
+	validatorFeeAddr *cryptolib.Address
 
 	mempoolSettings          mempool.Settings
 	mempoolBroadcastInterval time.Duration
@@ -144,9 +143,9 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	chainMetricsProvider *metrics.ChainMetricsProvider,
 ) *Chains {
-	var validatorFeeAddr iotago.Address
+	var validatorFeeAddr *cryptolib.Address
 	if validatorAddrStr != "" {
-		bechPrefix, addr, err := iotago.ParseBech32(validatorAddrStr)
+		bechPrefix, addr, err := cryptolib.NewAddressFromBech32(validatorAddrStr)
 		if err != nil {
 			panic(fmt.Errorf("error parsing validator.address: %s", err.Error()))
 		}
@@ -483,7 +482,7 @@ func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 	return ret.chain, nil
 }
 
-func (c *Chains) ValidatorAddress() iotago.Address {
+func (c *Chains) ValidatorAddress() *cryptolib.Address {
 	return c.validatorFeeAddr
 }
 

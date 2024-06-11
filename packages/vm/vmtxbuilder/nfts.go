@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
@@ -93,12 +94,12 @@ func (txb *AnchorTransactionBuilder) internalNFTOutputFromRequest(nftOutput *iot
 	out.NativeTokens = nil
 	out.Conditions = iotago.UnlockConditions{
 		&iotago.AddressUnlockCondition{
-			Address: chainAddr,
+			Address: chainAddr.AsIotagoAddress(),
 		},
 	}
 	out.Features = iotago.Features{
 		&iotago.SenderFeature{
-			Address: chainAddr,
+			Address: chainAddr.AsIotagoAddress(),
 		},
 	}
 
@@ -152,14 +153,14 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	return int64(in.Deposit())
 }
 
-func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput) {
+func (txb *AnchorTransactionBuilder) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput) {
 	chainAddr := txb.chainAddress()
-	if !issuer.Equal(chainAddr) {
+	if !issuer.Equals(chainAddr) {
 		// include collection issuer NFT output in the txbuilder
-		nftAddr, ok := issuer.(*iotago.NFTAddress)
-		if !ok {
-			panic("issuer must be an NFTID or the chain itself")
-		}
+		/*nftAddr, ok := issuer.(*iotago.NFTAddress)
+		if !ok {*/
+		panic("issuer must be an NFTID or the chain itself")
+		/*}
 		nftID := nftAddr.NFTID()
 		if txb.nftsIncluded[nftID] == nil {
 			if txb.InputsAreFull() {
@@ -181,7 +182,7 @@ func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetad
 				resultingOutput:   resultingOutput,
 				sentOutside:       false,
 			}
-		}
+		}*/ // TODO: is it still needed?
 	}
 
 	if txb.outputsAreFull() {
@@ -191,15 +192,15 @@ func (txb *AnchorTransactionBuilder) MintNFT(addr iotago.Address, immutableMetad
 	nftOutput := &iotago.NFTOutput{
 		NFTID: iotago.NFTID{},
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: addr},
+			&iotago.AddressUnlockCondition{Address: addr.AsIotagoAddress()},
 		},
 		Features: iotago.Features{
 			&iotago.SenderFeature{
-				Address: chainAddr, // must set the chainID as the sender (so its recognized as an internalUTXO)
+				Address: chainAddr.AsIotagoAddress(), // must set the chainID as the sender (so its recognized as an internalUTXO)
 			},
 		},
 		ImmutableFeatures: iotago.Features{
-			&iotago.IssuerFeature{Address: issuer},
+			&iotago.IssuerFeature{Address: issuer.AsIotagoAddress()},
 			&iotago.MetadataFeature{Data: immutableMetadata},
 		},
 	}

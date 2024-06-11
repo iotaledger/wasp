@@ -237,7 +237,7 @@ func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, io
 
 type OutputNFTIDs struct{}
 
-func (_ OutputNFTIDs) Encode(nftIDs []iotago.NFTID) dict.Dict {
+func (OutputNFTIDs) Encode(nftIDs []iotago.NFTID) dict.Dict {
 	// TODO: add pagination?
 	if len(nftIDs) > math.MaxUint16 {
 		panic("too many NFTs")
@@ -245,21 +245,21 @@ func (_ OutputNFTIDs) Encode(nftIDs []iotago.NFTID) dict.Dict {
 	return codec.SliceToArray(codec.NFTID, nftIDs, ParamNFTIDs)
 }
 
-func (_ OutputNFTIDs) Decode(r dict.Dict) ([]iotago.NFTID, error) {
+func (OutputNFTIDs) Decode(r dict.Dict) ([]iotago.NFTID, error) {
 	return codec.SliceFromArray(codec.NFTID, r, ParamNFTIDs)
 }
 
 type OutputSerialNumberSet struct{}
 
-func (_ OutputSerialNumberSet) Encode(sns map[uint32]struct{}) dict.Dict {
+func (OutputSerialNumberSet) Encode(sns map[uint32]struct{}) dict.Dict {
 	return codec.SliceToDictKeys(codec.Uint32, lo.Keys(sns))
 }
 
-func (_ OutputSerialNumberSet) Has(r dict.Dict, sn uint32) bool {
+func (OutputSerialNumberSet) Has(r dict.Dict, sn uint32) bool {
 	return r.Has(kv.Key(codec.Uint32.Encode(sn)))
 }
 
-func (_ OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
+func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
 	sns, err := codec.SliceFromDictKeys(codec.Uint32, r)
 	if err != nil {
 		return nil, err
@@ -269,27 +269,27 @@ func (_ OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) 
 
 type OutputNativeTokenIDs struct{}
 
-func (_ OutputNativeTokenIDs) Encode(ids []iotago.NativeTokenID) dict.Dict {
+func (OutputNativeTokenIDs) Encode(ids []iotago.NativeTokenID) dict.Dict {
 	return codec.SliceToDictKeys(codec.NativeTokenID, ids)
 }
 
-func (_ OutputNativeTokenIDs) Decode(r dict.Dict) ([]iotago.NativeTokenID, error) {
+func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]iotago.NativeTokenID, error) {
 	return codec.SliceFromDictKeys(codec.NativeTokenID, r)
 }
 
 type OutputFungibleTokens struct{}
 
-func (_ OutputFungibleTokens) Encode(fts *isc.Assets) dict.Dict {
+func (OutputFungibleTokens) Encode(fts *isc.Assets) dict.Dict {
 	return fts.ToDict()
 }
 
-func (_ OutputFungibleTokens) Decode(r dict.Dict) (*isc.Assets, error) {
+func (OutputFungibleTokens) Decode(r dict.Dict) (*isc.Assets, error) {
 	return isc.AssetsFromDict(r)
 }
 
 type OutputAccountList struct{ coreutil.RawDictCodec }
 
-func (_ OutputAccountList) DecodeAccounts(allAccounts dict.Dict, chainID isc.ChainID) ([]isc.AgentID, error) {
+func (OutputAccountList) DecodeAccounts(allAccounts dict.Dict, chainID isc.ChainID) ([]isc.AgentID, error) {
 	return codec.SliceFromDictKeys(
 		codec.NewCodecEx(func(b []byte) (isc.AgentID, error) { return agentIDFromKey(kv.Key(b), chainID) }),
 		allAccounts,

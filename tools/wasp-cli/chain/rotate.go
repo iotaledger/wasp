@@ -11,6 +11,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -30,7 +31,7 @@ func initRotateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chain = defaultChainFallback(chain)
 
-			prefix, newStateControllerAddr, err := iotago.ParseBech32(args[0])
+			prefix, newStateControllerAddr, err := cryptolib.NewAddressFromBech32(args[0])
 			log.Check(err)
 			if parameters.L1().Protocol.Bech32HRP != prefix {
 				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
@@ -82,7 +83,7 @@ func initRotateWithDKGCmd() *cobra.Command {
 	return cmd
 }
 
-func rotateTo(chain string, newStateControllerAddr iotago.Address) {
+func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
 	l1Client := cliclients.L1Client()
 
 	myWallet := wallet.Load()

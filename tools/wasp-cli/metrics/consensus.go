@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -25,10 +25,10 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
-			_, chainAddress, err := iotago.ParseBech32(chainAlias)
+			_, chainAddress, err := cryptolib.NewAddressFromBech32(chainAlias)
 			log.Check(err)
 
-			chainID := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
+			chainID := isc.ChainIDFromAddress(chainAddress)
 			workflowStatus, _, err := client.MetricsApi.
 				GetChainWorkflowMetrics(context.Background(), chainID.String()).
 				Execute()

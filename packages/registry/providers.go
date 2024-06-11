@@ -6,7 +6,6 @@ package registry
 import (
 	"context"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -20,7 +19,7 @@ type NodeIdentityProvider interface {
 
 type DKShareRegistryProvider interface {
 	SaveDKShare(dkShare tcrypto.DKShare) error
-	LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error)
+	LoadDKShare(sharedAddress *cryptolib.Address) (tcrypto.DKShare, error)
 }
 
 type ChainRecordRegistryProvider interface {

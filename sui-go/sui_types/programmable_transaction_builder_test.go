@@ -157,7 +157,7 @@ func TestPTBTransferSui(t *testing.T) {
 
 	// build with BCS
 	ptb := sui_types.NewProgrammableTransactionBuilder()
-	ptb.TransferSui(recipient.Address, &amount)
+	err = ptb.TransferSui(recipient.Address, &amount)
 	require.NoError(t, err)
 	pt := ptb.Finish()
 	tx := sui_types.NewProgrammable(
@@ -195,7 +195,7 @@ func TestPTBPayAllSui(t *testing.T) {
 
 	// build with BCS
 	ptb := sui_types.NewProgrammableTransactionBuilder()
-	ptb.PayAllSui(recipient.Address)
+	err = ptb.PayAllSui(recipient.Address)
 	require.NoError(t, err)
 	pt := ptb.Finish()
 	tx := sui_types.NewProgrammable(

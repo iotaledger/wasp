@@ -9,18 +9,19 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusOutputDone struct {
-	committeeAddr   iotago.Ed25519Address
+	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
 	proposedBaseAO  iotago.OutputID
 	consensusResult *cons.Result
 }
 
 func NewInputConsensusOutputDone(
-	committeeAddr iotago.Ed25519Address,
+	committeeAddr cryptolib.Address,
 	logIndex cmt_log.LogIndex,
 	proposedBaseAO iotago.OutputID,
 	consensusResult *cons.Result,

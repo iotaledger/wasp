@@ -129,9 +129,9 @@ func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaV
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
 // returns the transaction and newly minted chain ID
 func NewChainOriginTransaction(
-	keyPair cryptolib.VariantKeyPair,
-	stateControllerAddress iotago.Address,
-	governanceControllerAddress iotago.Address,
+	keyPair cryptolib.Signer,
+	stateControllerAddress *cryptolib.Address,
+	governanceControllerAddress *cryptolib.Address,
 	deposit uint64,
 	initParams dict.Dict,
 	unspentOutputs iotago.OutputSet,
@@ -156,8 +156,8 @@ func NewChainOriginTransaction(
 		Amount:        deposit,
 		StateMetadata: calcStateMetadata(initParams, deposit, schemaVersion), // NOTE: Updated below.
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress},
-			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress},
+			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress.AsIotagoAddress()},
+			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress.AsIotagoAddress()},
 		},
 		Features: iotago.Features{
 			&iotago.MetadataFeature{Data: initParams.Bytes()},

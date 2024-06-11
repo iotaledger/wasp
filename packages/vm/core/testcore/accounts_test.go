@@ -122,7 +122,7 @@ func TestFoundries(t *testing.T) {
 	var env *solo.Solo
 	var ch *solo.Chain
 	var senderKeyPair *cryptolib.KeyPair
-	var senderAddr iotago.Address
+	var senderAddr *cryptolib.Address
 	var senderAgentID isc.AgentID
 
 	initTest := func() {
@@ -495,7 +495,7 @@ func TestAccountBalances(t *testing.T) {
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := isc.NewAgentID(senderAddr)
 
-	l1BaseTokens := func(addr iotago.Address) uint64 { return env.L1Assets(addr).BaseTokens }
+	l1BaseTokens := func(addr *cryptolib.Address) uint64 { return env.L1Assets(addr).BaseTokens }
 	totalBaseTokens := l1BaseTokens(chainOwnerAddr) + l1BaseTokens(senderAddr)
 
 	ch, _ := env.NewChainExt(chainOwner, 0, "chain1")
@@ -550,10 +550,10 @@ func TestAccountBalances(t *testing.T) {
 type testParams struct {
 	env               *solo.Solo
 	chainOwner        *cryptolib.KeyPair
-	chainOwnerAddr    iotago.Address
+	chainOwnerAddr    *cryptolib.Address
 	chainOwnerAgentID isc.AgentID
 	user              *cryptolib.KeyPair
-	userAddr          iotago.Address
+	userAddr          *cryptolib.Address
 	userAgentID       isc.AgentID
 	ch                *solo.Chain
 	req               *solo.CallParams
@@ -1045,7 +1045,7 @@ func TestNFTAccount(t *testing.T) {
 
 	_, nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
 	require.NoError(t, err)
-	nftAddress := nftInfo.NFTID.ToAddress()
+	nftAddress := cryptolib.NewAddressFromIotago(nftInfo.NFTID.ToAddress())
 
 	// deposit funds on behalf of the NFT
 	const baseTokensToSend = 10 * isc.Million
@@ -1598,14 +1598,14 @@ func TestNFTMint(t *testing.T) {
 		ret, err = ch.CallView(accounts.ViewNFTData.Message(NFTIDInCollection))
 		require.NoError(t, err)
 		nftData := lo.Must(accounts.ViewNFTData.Output.Decode(ret))
-		require.True(t, nftData.Issuer.Equal(firstNFTID.ToAddress()))
+		require.True(t, nftData.Issuer.Equals(cryptolib.NewAddressFromIotago(firstNFTID.ToAddress())))
 		require.True(t, nftData.Owner.Equals(agentID))
 
 		// withdraw both NFTs
 		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(firstNFTID), wallet)
 		require.NoError(t, err)
 
-		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(iotago.NFTID(NFTIDInCollection)), wallet)
+		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(NFTIDInCollection), wallet)
 		require.NoError(t, err)
 
 		require.Len(t, env.L1NFTs(address), 2)

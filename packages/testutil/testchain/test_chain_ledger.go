@@ -30,7 +30,7 @@ type TestChainLedger struct {
 	utxoDB      *utxodb.UtxoDB
 	governor    *cryptolib.KeyPair
 	chainID     isc.ChainID
-	fetchedReqs map[iotago.Address]map[iotago.OutputID]bool
+	fetchedReqs map[cryptolib.AddressKey]map[iotago.OutputID]bool
 }
 
 func NewTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, originator *cryptolib.KeyPair) *TestChainLedger {
@@ -38,7 +38,7 @@ func NewTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, originator *cryptol
 		t:           t,
 		utxoDB:      utxoDB,
 		governor:    originator,
-		fetchedReqs: map[iotago.Address]map[iotago.OutputID]bool{},
+		fetchedReqs: map[cryptolib.AddressKey]map[iotago.OutputID]bool{},
 	}
 }
 
@@ -47,7 +47,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (*iotago.Transaction, *isc.AliasOutputWithID, isc.ChainID) {
+func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*iotago.Transaction, *isc.AliasOutputWithID, isc.ChainID) {
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.governor.Address())
 	originTX, _, chainID, err := origin.NewChainOriginTransaction(
 		tcl.governor,
@@ -136,19 +136,19 @@ func (tcl *TestChainLedger) FakeStateTransition(baseAO *isc.AliasOutputWithID, s
 		StateIndex:    baseAO.GetStateIndex() + 1,
 		StateMetadata: stateMetadata.Bytes(),
 		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: tcl.governor.Address()},
-			&iotago.GovernorAddressUnlockCondition{Address: tcl.governor.Address()},
+			&iotago.StateControllerAddressUnlockCondition{Address: tcl.governor.Address().AsIotagoAddress()},
+			&iotago.GovernorAddressUnlockCondition{Address: tcl.governor.Address().AsIotagoAddress()},
 		},
 		Features: iotago.Features{
 			&iotago.SenderFeature{
-				Address: tcl.chainID.AsAddress(),
+				Address: tcl.chainID.AsAddress().AsIotagoAddress(),
 			},
 		},
 	}
 	return isc.NewAliasOutputWithID(anchorOutput, iotago.OutputID{byte(anchorOutput.StateIndex)})
 }
 
-func (tcl *TestChainLedger) FakeRotationTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr iotago.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
+func (tcl *TestChainLedger) FakeRotationTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr *cryptolib.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
 	tx, err := transaction.NewRotateChainStateControllerTx(
 		tcl.chainID.AsAliasID(),
 		nextCommitteeAddr,
@@ -197,7 +197,7 @@ func (tcl *TestChainLedger) findChainRequests(tx *iotago.Transaction) []isc.Requ
 		if outAddr == nil {
 			continue
 		}
-		if !outAddr.Address.Equal(tcl.chainID.AsAddress()) {
+		if !cryptolib.NewAddressFromIotago(outAddr.Address).Equals(tcl.chainID.AsAddress()) {
 			continue
 		}
 		req, err := isc.OnLedgerFromUTXO(output, outputID)

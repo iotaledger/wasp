@@ -16,7 +16,7 @@ import (
 )
 
 // builds a normal tx to post a request to inccounter, optionally adds SDRC
-func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptolib.KeyPair, addSDRC bool) *iotago.Transaction {
+func buildTX(t *testing.T, env *ChainEnv, addr *cryptolib.Address, keyPair *cryptolib.KeyPair, addSDRC bool) *iotago.Transaction {
 	outputs, err := env.Clu.L1Client().OutputMap(addr)
 	require.NoError(t, err)
 
@@ -55,7 +55,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 		}
 		customOut := out.Clone().(*iotago.BasicOutput)
 		sendBackCondition := &iotago.StorageDepositReturnUnlockCondition{
-			ReturnAddress: addr,
+			ReturnAddress: addr.AsIotagoAddress(),
 			Amount:        1 * isc.Million,
 		}
 		customOut.Conditions = append(customOut.Conditions, sendBackCondition)

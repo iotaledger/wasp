@@ -29,7 +29,7 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 // and requests some tokens from the UTXODB faucet.
 // The amount of tokens is equal to utxodb.FundsFromFaucetAmount (=1000Mi) base tokens
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
+func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {
 	keyPair, addr := env.NewKeyPair(seed...)
 
 	env.ledgerMutex.Lock()
@@ -42,12 +42,12 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 	return keyPair, addr
 }
 
-func (env *Solo) GetFundsFromFaucet(target iotago.Address, amount ...uint64) (*iotago.Transaction, error) {
+func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address, amount ...uint64) (*iotago.Transaction, error) {
 	return env.utxoDB.GetFundsFromFaucet(target, amount...)
 }
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iotago.Address) {
+func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {
 	return testkey.GenKeyAddr(seedOpt...)
 }

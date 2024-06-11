@@ -222,7 +222,7 @@ func testEstimateMinimumStorageDeposit(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner iotago.Address) (*isc.NFT, *solo.NFTMintedInfo) {
+func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner *cryptolib.Address) (*isc.NFT, *solo.NFTMintedInfo) {
 	nftMetadata := []byte("foobar")
 	nft, nftInfo, err := ch.Env.MintNFTL1(issuer, owner, nftMetadata)
 	require.NoError(t, err)

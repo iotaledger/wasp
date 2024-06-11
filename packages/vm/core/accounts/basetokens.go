@@ -38,7 +38,7 @@ func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
 func (s *StateWriter) setBaseTokens(accountKey kv.Key, amount uint64) {
 	switch s.v {
 	case 0:
-		s.state.Set(BaseTokensKey(accountKey), codec.Uint64.Encode(uint64(amount)))
+		s.state.Set(BaseTokensKey(accountKey), codec.Uint64.Encode(amount))
 	default:
 		fullDecimals := util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.L1().BaseToken.Decimals)
 		s.setBaseTokensFullDecimals(accountKey, fullDecimals)

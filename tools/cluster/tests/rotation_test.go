@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -53,7 +53,7 @@ func TestBasicRotation(t *testing.T) {
 
 	stateController, err := env.callGetStateController(0)
 	require.NoError(t, err)
-	require.True(t, stateController.Equal(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
+	require.True(t, stateController.Equals(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
 
 	// check the chain still works
 	tx, err = myClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
@@ -201,7 +201,7 @@ func TestRotationFromSingle(t *testing.T) {
 type testRotationSingleRotation struct {
 	Committee []int
 	Quorum    uint16
-	Address   iotago.Address
+	Address   *cryptolib.Address
 }
 
 func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee []int, quorum uint16) testRotationSingleRotation {
@@ -275,7 +275,7 @@ func TestRotationMany(t *testing.T) {
 	}
 }
 
-func (e *ChainEnv) waitStateControllers(addr iotago.Address, timeout time.Duration) error {
+func (e *ChainEnv) waitStateControllers(addr *cryptolib.Address, timeout time.Duration) error {
 	for _, nodeIndex := range e.Clu.AllNodes() {
 		if err := e.waitStateController(nodeIndex, addr, timeout); err != nil {
 			return err
@@ -284,16 +284,16 @@ func (e *ChainEnv) waitStateControllers(addr iotago.Address, timeout time.Durati
 	return nil
 }
 
-func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeout time.Duration) error {
+func (e *ChainEnv) waitStateController(nodeIndex int, addr *cryptolib.Address, timeout time.Duration) error {
 	var err error
 	result := waitTrue(timeout, func() bool {
-		var a iotago.Address
+		var a *cryptolib.Address
 		a, err = e.callGetStateController(nodeIndex)
 		if err != nil {
 			e.t.Logf("Error received while waiting state controller change to %s in node %d", addr, nodeIndex)
 			return false
 		}
-		return a.Equal(addr)
+		return a.Equals(addr)
 	})
 	if err != nil {
 		return err
@@ -304,7 +304,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 	return nil
 }
 
-func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error) {
+func (e *ChainEnv) callGetStateController(nodeIndex int) (*cryptolib.Address, error) {
 	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
 		BlocklogGetControlAddresses(context.Background(), e.Chain.ChainID.String()).
 		Execute()
@@ -312,13 +312,13 @@ func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error)
 		return nil, err
 	}
 
-	_, address, err := iotago.ParseBech32(controlAddresses.StateAddress)
+	_, address, err := cryptolib.NewAddressFromBech32(controlAddresses.StateAddress)
 	require.NoError(e.t, err)
 
 	return address, nil
 }
 
-func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Address) error {
+func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr *cryptolib.Address) error {
 	for _, i := range e.Chain.AllPeers {
 		if !isAllowedStateControllerAddress(e.t, e.Chain, i, addr) {
 			return fmt.Errorf("state controller address %s is not allowed in node %d", addr, i)
@@ -327,7 +327,7 @@ func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Addr
 	return nil
 }
 
-func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr iotago.Address) bool {
+func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr *cryptolib.Address) bool {
 	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
 		GovernanceGetAllowedStateControllerAddresses(context.Background(), chain.ChainID.String()).
 		Execute()
@@ -338,10 +338,10 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 	}
 
 	for _, addressBech32 := range addresses.Addresses {
-		_, address, err := iotago.ParseBech32(addressBech32)
+		_, address, err := cryptolib.NewAddressFromBech32(addressBech32)
 		require.NoError(t, err)
 
-		if address.Equal(addr) {
+		if address.Equals(addr) {
 			return true
 		}
 	}

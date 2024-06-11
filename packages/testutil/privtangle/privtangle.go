@@ -119,7 +119,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	snapGenArgs := []string{
 		"tool", "snap-gen",
 		fmt.Sprintf("--protocolParametersPath=%s", jsonConfigPath),
-		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsEd25519Address().String()[2:]), // Dropping 0x from HEX.
+		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsAddress().String()[2:]), // Dropping 0x from HEX.
 		fmt.Sprintf("--outputPath=%s", snapshotPath),
 	}
 	snapGen := exec.CommandContext(pt.ctx, "hornet", snapGenArgs...)

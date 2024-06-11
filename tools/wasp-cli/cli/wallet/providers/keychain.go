@@ -12,14 +12,14 @@ import (
 )
 
 type KeyChainWallet struct {
-	cryptolib.VariantKeyPair
+	cryptolib.Signer
 	addressIndex uint32
 }
 
 func newInMemoryWallet(keyPair *cryptolib.KeyPair, addressIndex uint32) *KeyChainWallet {
 	return &KeyChainWallet{
-		VariantKeyPair: keyPair,
-		addressIndex:   addressIndex,
+		Signer:       keyPair,
+		addressIndex: addressIndex,
 	}
 }
 

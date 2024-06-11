@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -97,8 +98,8 @@ func (ch *Chain) AssertControlAddresses() {
 		h.Helper()
 	}
 	rec := ch.GetControlAddresses()
-	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
-	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))
+	require.True(ch.Env.T, rec.StateAddress.Equals(ch.StateControllerAddress))
+	require.True(ch.Env.T, rec.GoverningAddress.Equals(ch.StateControllerAddress))
 	require.EqualValues(ch.Env.T, ch.LatestBlock().StateIndex(), rec.SinceBlockIndex)
 }
 
@@ -112,21 +113,21 @@ func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID *iotago.NFTID) bool {
 	return false
 }
 
-func (env *Solo) AssertL1BaseTokens(addr iotago.Address, expected uint64) {
+func (env *Solo) AssertL1BaseTokens(addr *cryptolib.Address, expected uint64) {
 	if h, ok := env.T.(tHelper); ok {
 		h.Helper()
 	}
 	require.EqualValues(env.T, int(expected), int(env.L1BaseTokens(addr)))
 }
 
-func (env *Solo) AssertL1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID, expected *big.Int) {
+func (env *Solo) AssertL1NativeTokens(addr *cryptolib.Address, nativeTokenID iotago.NativeTokenID, expected *big.Int) {
 	if h, ok := env.T.(tHelper); ok {
 		h.Helper()
 	}
 	require.True(env.T, env.L1NativeTokens(addr, nativeTokenID).Cmp(expected) == 0)
 }
 
-func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {
+func (env *Solo) HasL1NFT(addr *cryptolib.Address, id *iotago.NFTID) bool {
 	accountNFTs := env.L1NFTs(addr)
 	for outputID, nftOutput := range accountNFTs {
 		nftID := nftOutput.NFTID
@@ -140,6 +141,6 @@ func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {
 	return false
 }
 
-func (env *Solo) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+func (env *Solo) GetUnspentOutputs(addr *cryptolib.Address) (iotago.OutputSet, iotago.OutputIDs) {
 	return env.utxoDB.GetUnspentOutputs(addr)
 }

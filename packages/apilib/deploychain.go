@@ -26,15 +26,15 @@ type CreateChainParams struct {
 	CommitteeAPIHosts    []string
 	N                    uint16
 	T                    uint16
-	OriginatorKeyPair    cryptolib.VariantKeyPair
+	OriginatorKeyPair    cryptolib.Signer
 	Textout              io.Writer
 	Prefix               string
 	InitParams           dict.Dict
-	GovernanceController iotago.Address
+	GovernanceController *cryptolib.Address
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -79,9 +79,9 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(
 	layer1Client l1connection.Client,
-	originator cryptolib.VariantKeyPair,
-	stateController iotago.Address,
-	governanceController iotago.Address,
+	originator cryptolib.Signer,
+	stateController *cryptolib.Address,
+	governanceController *cryptolib.Address,
 	initParams dict.Dict,
 ) (isc.ChainID, error) {
 	originatorAddr := originator.Address()

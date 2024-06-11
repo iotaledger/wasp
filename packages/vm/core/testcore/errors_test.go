@@ -133,7 +133,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 	_, d, err = chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 	message := lo.Must(errors.ViewGetErrorMessageFormat.Output.Decode(d))
-	require.Equal(t, string(message), errorMessageToTest)
+	require.Equal(t, message, errorMessageToTest)
 }
 
 func TestErrorRegistrationWithCustomContract(t *testing.T) {

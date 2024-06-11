@@ -15,7 +15,6 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -50,7 +49,7 @@ func SetupDkg(
 	peerIdentities []*cryptolib.KeyPair,
 	suite tcrypto.Suite,
 	log *logger.Logger,
-) (iotago.Address, []registry.DKShareRegistryProvider) {
+) (*cryptolib.Address, []registry.DKShareRegistryProvider) {
 	timeout := 300 * time.Second
 	networkProviders, networkCloser := SetupNet(peeringURLs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
@@ -87,7 +86,7 @@ func SetupDkgTrivial(
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
 	dkShareRegistryProviders []registry.DKShareRegistryProvider, // Will be used if not nil.
-) (iotago.Address, []registry.DKShareRegistryProvider) {
+) (*cryptolib.Address, []registry.DKShareRegistryProvider) {
 	nodePubKeys := PublicKeys(peerIdentities)
 	dssSuite := tcrypto.DefaultEd25519Suite()
 	blsSuite := tcrypto.DefaultBLSSuite()
@@ -113,7 +112,7 @@ func SetupDkgTrivial(
 		dkShareRegistryProviders = make([]registry.DKShareRegistryProvider, len(peerIdentities))
 	}
 	require.Equal(t, n, len(dkShareRegistryProviders))
-	var address iotago.Address
+	var address *cryptolib.Address
 	for i, identity := range peerIdentities {
 		nodeDKS, err := tcrypto.NewDKShare(
 			uint16(i),                // index

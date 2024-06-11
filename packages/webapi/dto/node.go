@@ -1,6 +1,6 @@
 package dto
 
-import iotago "github.com/iotaledger/iota.go/v3"
+import "github.com/iotaledger/wasp/packages/cryptolib"
 
 type ChainNodeStatus struct {
 	AccessAPI    string
@@ -10,7 +10,7 @@ type ChainNodeStatus struct {
 }
 
 type ChainNodeInfo struct {
-	Address        iotago.Address
+	Address        *cryptolib.Address
 	AccessNodes    []*ChainNodeStatus
 	CandidateNodes []*ChainNodeStatus
 	CommitteeNodes []*ChainNodeStatus

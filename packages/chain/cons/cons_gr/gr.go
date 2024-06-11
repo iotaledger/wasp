@@ -39,9 +39,9 @@ const (
 
 type ConsensusID [iotago.Ed25519AddressBytesLength + 4]byte
 
-func NewConsensusID(cmtAddr *iotago.Ed25519Address, logIndex *cmt_log.LogIndex) ConsensusID {
+func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) ConsensusID {
 	ret := ConsensusID{}
-	copy(ret[:], isc.AddressToBytes(cmtAddr)[1:]) // remove the byte kind prefix
+	copy(ret[:], cmtAddr.Bytes())
 	copy(ret[iotago.Ed25519AddressBytesLength:], codec.Uint32.Encode(logIndex.AsUint32()))
 	return ret
 }
@@ -177,7 +177,7 @@ func New(
 		netPeerPubs:       netPeerPubs,
 		netDisconnect:     nil, // Set bellow.
 		net:               net,
-		consensusID:       NewConsensusID(cmtPubKey.AsEd25519Address(), logIndex),
+		consensusID:       NewConsensusID(cmtPubKey.AsAddress(), logIndex),
 		ctx:               ctx,
 		pipeMetrics:       pipeMetrics,
 		log:               log,

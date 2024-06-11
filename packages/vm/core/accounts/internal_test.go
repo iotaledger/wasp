@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -321,7 +321,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	agentID1 := isc.NewRandomAgentID()
 	NFT1 := &isc.NFT{
 		ID:       iotago.NFTID{123},
-		Issuer:   tpkg.RandEd25519Address(),
+		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}
 	accounts.NewStateWriter(v, state).CreditNFTToAccount(agentID1, &iotago.NFTOutput{
@@ -329,7 +329,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 		NativeTokens: []*iotago.NativeToken{},
 		NFTID:        NFT1.ID,
 		ImmutableFeatures: []iotago.Feature{
-			&iotago.IssuerFeature{Address: NFT1.Issuer},
+			&iotago.IssuerFeature{Address: NFT1.Issuer.AsIotagoAddress()},
 			&iotago.MetadataFeature{Data: NFT1.Metadata},
 		},
 	}, isc.ChainID{})
@@ -344,7 +344,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 		NativeTokens: []*iotago.NativeToken{},
 		NFTID:        NFT1.ID,
 		ImmutableFeatures: []iotago.Feature{
-			&iotago.IssuerFeature{Address: NFT1.Issuer},
+			&iotago.IssuerFeature{Address: NFT1.Issuer.AsIotagoAddress()},
 			&iotago.MetadataFeature{Data: NFT1.Metadata},
 		},
 	}, 0)
@@ -382,7 +382,7 @@ func testCreditDebitNFT1(t *testing.T, v isc.SchemaVersion) {
 	agentID1 := knownAgentID(1, 2)
 	nft := isc.NFT{
 		ID:       iotago.NFTID{123},
-		Issuer:   tpkg.RandEd25519Address(),
+		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}
 	accounts.NewStateWriter(v, state).CreditNFTToAccount(agentID1, &iotago.NFTOutput{
@@ -390,7 +390,7 @@ func testCreditDebitNFT1(t *testing.T, v isc.SchemaVersion) {
 		NativeTokens: []*iotago.NativeToken{},
 		NFTID:        nft.ID,
 		ImmutableFeatures: []iotago.Feature{
-			&iotago.IssuerFeature{Address: nft.Issuer},
+			&iotago.IssuerFeature{Address: nft.Issuer.AsIotagoAddress()},
 			&iotago.MetadataFeature{Data: nft.Metadata},
 		},
 	}, isc.ChainID{})

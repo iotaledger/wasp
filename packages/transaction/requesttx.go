@@ -12,8 +12,8 @@ import (
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair                   cryptolib.VariantKeyPair
-	SenderAddress                   iotago.Address // might be different from the senderKP address (when sending as NFT or alias)
+	SenderKeyPair                   cryptolib.Signer
+	SenderAddress                   *cryptolib.Address // might be different from the senderKP address (when sending as NFT or alias)
 	UnspentOutputs                  iotago.OutputSet
 	UnspentOutputIDs                iotago.OutputIDs
 	Request                         *isc.RequestParameters
@@ -25,9 +25,9 @@ type NewTransferTransactionParams struct {
 	DisableAutoAdjustStorageDeposit bool // if true, the minimal storage deposit won't be adjusted automatically
 	FungibleTokens                  *isc.Assets
 	SendOptions                     isc.SendOptions
-	SenderAddress                   iotago.Address
-	SenderKeyPair                   cryptolib.VariantKeyPair
-	TargetAddress                   iotago.Address
+	SenderAddress                   *cryptolib.Address
+	SenderKeyPair                   cryptolib.Signer
+	TargetAddress                   *cryptolib.Address
 	UnspentOutputs                  iotago.OutputSet
 	UnspentOutputIDs                iotago.OutputIDs
 }
@@ -151,14 +151,14 @@ func MakeRequestTransactionOutput(par NewRequestTransactionParams) iotago.Output
 	return out
 }
 
-func outputMatchesSendAsAddress(output iotago.Output, outputID iotago.OutputID, address iotago.Address) bool {
+func outputMatchesSendAsAddress(output iotago.Output, outputID iotago.OutputID, address *cryptolib.Address) bool {
 	switch o := output.(type) {
 	case *iotago.NFTOutput:
-		if address.Equal(util.NFTIDFromNFTOutput(o, outputID).ToAddress()) {
+		if address.Equals(cryptolib.NewAddressFromIotago(util.NFTIDFromNFTOutput(o, outputID).ToAddress())) {
 			return true
 		}
 	case *iotago.AliasOutput:
-		if address.Equal(o.AliasID.ToAddress()) {
+		if address.Equals(cryptolib.NewAddressFromIotago(o.AliasID.ToAddress())) {
 			return true
 		}
 	}
@@ -189,7 +189,7 @@ func updateOutputsWhenSendingOnBehalfOf(
 	map[iotago.NativeTokenID]*big.Int,
 	map[iotago.NFTID]bool,
 ) {
-	if par.SenderAddress.Equal(par.SenderKeyPair.Address()) {
+	if par.SenderAddress.Equals(par.SenderKeyPair.Address()) {
 		return outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut
 	}
 	// sending request "on behalf of" (need NFT or alias output as input/output)

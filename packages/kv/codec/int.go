@@ -45,7 +45,7 @@ func newIntCodec[T constraints.Integer, U constraints.Unsigned](size int, dec fu
 		func(value T) []byte {
 			b := make([]byte, size)
 			enc(b, U(value))
-			return b[:]
+			return b
 		},
 	)
 }

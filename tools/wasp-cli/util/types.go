@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -24,13 +25,13 @@ import (
 func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	switch strings.ToLower(vtype) {
 	case "address":
-		prefix, addr, err := iotago.ParseBech32(s)
+		prefix, addr, err := cryptolib.NewAddressFromBech32(s)
 		log.Check(err)
 		l1Prefix := parameters.L1().Protocol.Bech32HRP
 		if prefix != l1Prefix {
 			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
 		}
-		return isc.AddressToBytes(addr)
+		return addr.Bytes()
 	case "agentid":
 		return AgentIDFromString(s, chainID).Bytes()
 	case "bigint":

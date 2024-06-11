@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -143,7 +144,7 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	MintNFT(addr iotago.Address, immutableMetadata []byte, issuer iotago.Address) (uint16, *iotago.NFTOutput)
+	MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
 	RetryUnprocessable(req Request, outputID iotago.OutputID)
@@ -198,7 +199,7 @@ type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
-	TargetAddress iotago.Address
+	TargetAddress *cryptolib.Address
 	// Assets attached to the output, always taken from the caller's account.
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
@@ -221,11 +222,11 @@ type Gas interface {
 // StateAnchor contains properties of the anchor output/transaction in the current context
 type StateAnchor struct {
 	ChainID              ChainID
-	Sender               iotago.Address
+	Sender               *cryptolib.Address
 	OutputID             iotago.OutputID
 	IsOrigin             bool
-	StateController      iotago.Address
-	GovernanceController iotago.Address
+	StateController      *cryptolib.Address
+	GovernanceController *cryptolib.Address
 	StateIndex           uint32
 	StateData            []byte
 	Deposit              uint64
@@ -239,7 +240,7 @@ type SendOptions struct {
 
 type Expiration struct {
 	Time          time.Time
-	ReturnAddress iotago.Address
+	ReturnAddress *cryptolib.Address
 }
 
 // SendMetadata represents content of the data payload of the output
@@ -265,8 +266,8 @@ type Hashing interface {
 }
 
 type ED25519 interface {
-	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
-	AddressFromPublicKey(pubKey []byte) (iotago.Address, error)
+	// ValidSignature(data []byte, pubKey []byte, signature []byte) bool	// TODO: is it needed?
+	AddressFromPublicKey(pubKey []byte) (*cryptolib.Address, error)
 }
 
 type BLS interface {

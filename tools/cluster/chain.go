@@ -27,14 +27,14 @@ type Chain struct {
 	AllPeers       []int
 	CommitteeNodes []int
 	Quorum         uint16
-	StateAddress   iotago.Address
+	StateAddress   *cryptolib.Address
 
 	ChainID isc.ChainID
 
 	Cluster *Cluster
 }
 
-func (ch *Chain) ChainAddress() iotago.Address {
+func (ch *Chain) ChainAddress() *cryptolib.Address {
 	return ch.ChainID.AsAddress()
 }
 
@@ -54,7 +54,7 @@ func (ch *Chain) AllAPIHosts() []string {
 	return ch.Cluster.Config.APIHosts(ch.AllPeers)
 }
 
-func (ch *Chain) OriginatorAddress() iotago.Address {
+func (ch *Chain) OriginatorAddress() *cryptolib.Address {
 	addr := ch.OriginatorKeyPair.Address()
 	return addr
 }

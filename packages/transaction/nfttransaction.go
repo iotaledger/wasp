@@ -8,9 +8,9 @@ import (
 )
 
 type MintNFTsTransactionParams struct {
-	IssuerKeyPair      cryptolib.VariantKeyPair
+	IssuerKeyPair      cryptolib.Signer
 	CollectionOutputID *iotago.OutputID
-	Target             iotago.Address
+	Target             *cryptolib.Address
 	ImmutableMetadata  [][]byte
 	UnspentOutputs     iotago.OutputSet
 	UnspentOutputIDs   iotago.OutputIDs
@@ -22,7 +22,7 @@ func NewMintNFTsTransaction(par MintNFTsTransactionParams) (*iotago.Transaction,
 	storageDeposit := uint64(0)
 	var outputs iotago.Outputs
 
-	var issuerAddress iotago.Address = senderAddress
+	var issuerAddress *cryptolib.Address = senderAddress
 	nftsOut := make(map[iotago.NFTID]bool)
 
 	addOutput := func(out *iotago.NFTOutput) {
@@ -37,7 +37,7 @@ func NewMintNFTsTransaction(par MintNFTsTransactionParams) (*iotago.Transaction,
 		collectionOutputID := *par.CollectionOutputID
 		collectionOutput := par.UnspentOutputs[*par.CollectionOutputID].(*iotago.NFTOutput)
 		collectionID := util.NFTIDFromNFTOutput(collectionOutput, collectionOutputID)
-		issuerAddress = collectionID.ToAddress()
+		issuerAddress = cryptolib.NewAddressFromIotago(collectionID.ToAddress())
 		nftsOut[collectionID] = true
 
 		out := collectionOutput.Clone().(*iotago.NFTOutput)
@@ -49,10 +49,10 @@ func NewMintNFTsTransaction(par MintNFTsTransactionParams) (*iotago.Transaction,
 		addOutput(&iotago.NFTOutput{
 			NFTID: iotago.NFTID{},
 			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: par.Target},
+				&iotago.AddressUnlockCondition{Address: par.Target.AsIotagoAddress()},
 			},
 			ImmutableFeatures: iotago.Features{
-				&iotago.IssuerFeature{Address: issuerAddress},
+				&iotago.IssuerFeature{Address: issuerAddress.AsIotagoAddress()},
 				&iotago.MetadataFeature{Data: immutableMetadata},
 			},
 		})

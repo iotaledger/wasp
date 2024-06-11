@@ -8,16 +8,20 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-var Address = NewCodec(decodeAddress, isc.AddressToBytes)
+var Address = NewCodec(decodeAddress, encodeAddress)
 
-func decodeAddress(b []byte) (iotago.Address, error) {
+func decodeAddress(b []byte) (*cryptolib.Address, error) {
 	if len(b) == 0 {
 		return nil, errors.New("invalid Address size")
 	}
-	return isc.AddressFromBytes(b)
+	return cryptolib.NewAddressFromBytes(b)
+}
+
+func encodeAddress(a *cryptolib.Address) []byte {
+	return a.Bytes()
 }
 
 var Output = NewCodec(decodeOutput, encodeOutput)
