@@ -38,7 +38,7 @@ type AssetBag struct {
 type Anchor struct {
 	ID        sui_types.ObjectID
 	Assets    Referent[AssetBag]
-	StateRoot []uint8
+	StateRoot sui_types.Bytes
 }
 
 type Receipt struct {

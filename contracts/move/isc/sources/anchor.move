@@ -9,11 +9,13 @@ module isc::anchor {
     }; 
        use sui::{
         table::{Self},
+        
         coin::{Self, Coin},
         sui::SUI,
-        url::{Self},
+        url::{Self, Url},
         vec_set::{Self},
     };
+    use std::string;
 
        use std::option;
     use sui::coin::{TreasuryCap};
@@ -42,13 +44,18 @@ module isc::anchor {
         request_id: ID,
     }
 
+    public struct TestnetNFT has key, store {
+    id: UID,
+    name: string::String,
+    description: string::String,
+    url: url::Url
+}
+
     // === Anchor packing and unpacking ===
     /// Module initializer is called once on module publish. A treasury
     /// cap is sent to the publisher, who then controls minting and burning
     fun init(witness: ANCHOR, ctx: &mut TxContext) {
         let (treasury, metadata) = coin::create_currency(witness, 6, b"MYCOIN", b"", b"", option::none(), ctx);
-        let (treasury2, metadata2) = coin::create_currency(witness, 6, b"MYCOIN2", b"", b"", option::none(), ctx);
-
         
         transfer::public_freeze_object(metadata);
         transfer::public_transfer(treasury, tx_context::sender(ctx));
@@ -61,8 +68,16 @@ module isc::anchor {
 
         let mut assetsBag = assets_bag::new(ctx);
        assetsBag.place_coin(coin);
-       assetsBag.place_coin(coin2);
+        assetsBag.place_coin(coin2);
 
+let nft = TestnetNFT {
+        id: object::new(ctx),
+        name: string::utf8(vector::empty()),
+        description: string::utf8(vector::empty()),
+        url: url::new_unsafe_from_bytes(vector::empty())
+    };
+
+               assetsBag.place_asset(nft);
 
         let k = Anchor{
             id: object::new(ctx),

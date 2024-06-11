@@ -3,6 +3,7 @@ package sui
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -130,10 +131,19 @@ func printGasCoinsForAddress(t *testing.T, suiClient *sui.ImplSuiAPI, address su
 	for _, v := range coins {
 		t.Logf("GAS -> %v: %v sui", v.CoinObjectID, v.Balance)
 	}
+
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	anchor, err := setup.suiClient.GetObject(context.Background(), &setup.chain.ObjectChanges[3].Data.Created.ObjectID, &models.SuiObjectDataOptions{
+	cap, _ := lo.Find(setup.chain.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+		if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
+			return true
+		}
+
+		return false
+	})
+
+	anchor, err := setup.suiClient.GetObject(context.Background(), &cap.Data.Created.ObjectID, &models.SuiObjectDataOptions{
 		ShowType:    true,
 		ShowContent: true,
 		ShowBcs:     true,
@@ -146,10 +156,22 @@ func GetAnchor(t *testing.T, setup testSetup) Anchor {
 	decodedAnchor := Anchor{}
 	_, err = bcs.Unmarshal(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data(), &decodedAnchor)
 
-	fmt.Printf("BCS Data Anchor: %v", anchor.Data.Bcs.Data.MoveObject.BcsBytes.String())
+	fmt.Printf("BCS Data Anchor: %v", hex.EncodeToString(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data()))
+	t.Logf("%# v\n", pretty.Formatter(decodedAnchor))
 	require.NoError(t, err)
 
 	return decodedAnchor
+}
+
+func TestAnchorDeserialization(t *testing.T) {
+	anchorBCSDataHex := "9722e2a90361273cac7b5c652b7e65a356ca53088e2da187cda8ec2732739a9da35a5f09f2a93b817c99afe64455babfb90e92774baa30db6e271691ddcf9d5e010f985f3bde360af527ff5caffd4103124f02f5a16ceb86d55bc7eb1369e32b8d020000000000000000"
+	anchorBCSBytes, err := hex.DecodeString(anchorBCSDataHex)
+	require.NoError(t, err)
+
+	decodedAnchor := Anchor{}
+	_, err = bcs.Unmarshal(anchorBCSBytes, &decodedAnchor)
+	t.Logf("%# v\n", pretty.Formatter(decodedAnchor))
+	require.NoError(t, err) // This will fail
 }
 
 func TestMinimalClient(t *testing.T) {
