@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/fardream/go-bcs/bcs"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPTBMoveCall(t *testing.T) {
@@ -32,21 +33,25 @@ func TestPTBMoveCall(t *testing.T) {
 	require.NoError(t, err)
 	// if sui is not enough, the transaction will fail
 	splitAmountArg := ptb1.MustPure(uint64(1e9))
-	arg1 := ptb1.Command(sui_types.Command{
-		SplitCoins: &sui_types.ProgrammableSplitCoins{
-			Coin:    sui_types.Argument{GasCoin: &serialization.EmptyEnum{}},
-			Amounts: []sui_types.Argument{splitAmountArg},
-		}},
+	arg1 := ptb1.Command(
+		sui_types.Command{
+			SplitCoins: &sui_types.ProgrammableSplitCoins{
+				Coin:    sui_types.Argument{GasCoin: &serialization.EmptyEnum{}},
+				Amounts: []sui_types.Argument{splitAmountArg},
+			},
+		},
 	)
 	arg2 := ptb1.MustPure(validatorAddress)
-	ptb1.Command(sui_types.Command{
-		MoveCall: &sui_types.ProgrammableMoveCall{
-			Package:       sui_types.SuiPackageIdSuiSystem,
-			Module:        sui_types.SuiSystemModuleName,
-			Function:      sui_types.AddStakeFunName,
-			TypeArguments: []sui_types.TypeTag{},
-			Arguments:     []sui_types.Argument{arg0, arg1, arg2},
-		}},
+	ptb1.Command(
+		sui_types.Command{
+			MoveCall: &sui_types.ProgrammableMoveCall{
+				Package:       sui_types.SuiPackageIdSuiSystem,
+				Module:        sui_types.SuiSystemModuleName,
+				Function:      sui_types.AddStakeFunName,
+				TypeArguments: []sui_types.TypeTag{},
+				Arguments:     []sui_types.Argument{arg0, arg1, arg2},
+			},
+		},
 	)
 	pt1 := ptb1.Finish()
 	tx1 := sui_types.NewProgrammable(
@@ -257,7 +262,11 @@ func TestPTBPaySui(t *testing.T) {
 		if change.Data.Mutated != nil {
 			require.Equal(t, coin.CoinObjectID, &change.Data.Mutated.ObjectID)
 		} else if change.Data.Created != nil {
-			require.Contains(t, []*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address}, change.Data.Created.Owner.AddressOwner)
+			require.Contains(
+				t,
+				[]*sui_types.SuiAddress{recipients[0].Address, recipients[1].Address},
+				change.Data.Created.Owner.AddressOwner,
+			)
 		}
 	}
 

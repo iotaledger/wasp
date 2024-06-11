@@ -33,18 +33,35 @@ func (c *Client) StartNewChain(
 	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
+	treasuryCapID *sui_types.ObjectID,
 ) (*models.SuiTransactionBlockResponse, error) {
-	ptb := sui_types.NewProgrammableTransactionBuilder()
+	txObj, err := c.GetObject(ctx, treasuryCapID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Treasury object: %w", err)
+	}
 
+	ref := txObj.Data.Ref()
+
+	fmt.Print(txObj)
+
+	ptb := sui_types.NewProgrammableTransactionBuilder()
 	// the return object is an Anchor object
+
+	f, _ := ptb.Obj(
+		sui_types.ObjectArg{
+			ImmOrOwnedObject: &ref,
+		},
+	)
+
 	arg1 := ptb.Command(
 		sui_types.Command{
+
 			MoveCall: &sui_types.ProgrammableMoveCall{
 				Package:       packageID,
 				Module:        "anchor",
 				Function:      "start_new_chain",
 				TypeArguments: []sui_types.TypeTag{},
-				Arguments:     []sui_types.Argument{},
+				Arguments:     []sui_types.Argument{f},
 			},
 		},
 	)

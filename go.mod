@@ -20,6 +20,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.2.4
+	github.com/iotaledger/wasp/sui-go v0.0.0
 	github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2
@@ -35,7 +36,6 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a
 	github.com/iotaledger/inx/go v1.0.0-rc.2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
-	github.com/iotaledger/wasp/sui-go v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0

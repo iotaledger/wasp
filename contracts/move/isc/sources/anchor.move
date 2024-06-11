@@ -7,7 +7,21 @@ module isc::anchor {
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
     }; 
+       use sui::{
+        table::{Self},
+        coin::{Self, Coin},
+        sui::SUI,
+        url::{Self},
+        vec_set::{Self},
+    };
 
+       use std::option;
+    use sui::coin::{TreasuryCap};
+    use sui::transfer;
+    use sui::tx_context::{Self, TxContext};
+
+    public struct TEST_A has drop {}
+    public struct TEST_B has drop {}
     // === Main structs ===
 
     /// An object which allows managing assets within the "ISC" ecosystem.
@@ -20,20 +34,43 @@ module isc::anchor {
         state_root: vector<u8>,
     }
 
+        /// Make sure that the name of the type matches the module's name.
+    public struct ANCHOR has drop {}
+
     public struct Receipt {
         /// ID of the request object
         request_id: ID,
     }
 
     // === Anchor packing and unpacking ===
+    /// Module initializer is called once on module publish. A treasury
+    /// cap is sent to the publisher, who then controls minting and burning
+    fun init(witness: ANCHOR, ctx: &mut TxContext) {
+        let (treasury, metadata) = coin::create_currency(witness, 6, b"MYCOIN", b"", b"", option::none(), ctx);
+        let (treasury2, metadata2) = coin::create_currency(witness, 6, b"MYCOIN2", b"", b"", option::none(), ctx);
+
+        
+        transfer::public_freeze_object(metadata);
+        transfer::public_transfer(treasury, tx_context::sender(ctx));
+    }
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(ctx: &mut TxContext): Anchor {
-        Anchor{
+    public fun start_new_chain(treasury_cap: &mut TreasuryCap<ANCHOR>,  ctx: &mut TxContext): Anchor {
+        let coin = coin::mint(treasury_cap, 2000, ctx);
+        let coin2 = coin::mint(treasury_cap, 2000, ctx);
+
+        let mut assetsBag = assets_bag::new(ctx);
+       assetsBag.place_coin(coin);
+       assetsBag.place_coin(coin2);
+
+
+        let k = Anchor{
             id: object::new(ctx),
-            assets: borrow::new(assets_bag::new(ctx), ctx),
+            assets: borrow::new(assetsBag, ctx),
             state_root: vector::empty(),
-         }
+         };
+
+        k
     }
 
     /// Destroys an Anchor object and returns its assets bag.   

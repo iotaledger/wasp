@@ -5,10 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/fardream/go-bcs/bcs"
+	"github.com/kr/pretty"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/sui-go/isc"
@@ -17,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 	"github.com/iotaledger/wasp/sui-go/utils"
 )
 
@@ -62,6 +66,16 @@ func setupAndDeploy(t *testing.T) testSetup {
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
+	t.Logf("PackageID: %s", packageID.String())
+
+	cap, _ := lo.Find(txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+		if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
+			return true
+		}
+
+		return false
+	})
+
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
 		signer,
@@ -72,6 +86,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
+		&cap.Data.Created.ObjectID,
 	)
 	require.NoError(t, err)
 	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
@@ -118,7 +133,7 @@ func printGasCoinsForAddress(t *testing.T, suiClient *sui.ImplSuiAPI, address su
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	anchor, err := setup.suiClient.GetObject(context.Background(), &setup.chain.ObjectChanges[1].Data.Created.ObjectID, &models.SuiObjectDataOptions{
+	anchor, err := setup.suiClient.GetObject(context.Background(), &setup.chain.ObjectChanges[3].Data.Created.ObjectID, &models.SuiObjectDataOptions{
 		ShowType:    true,
 		ShowContent: true,
 		ShowBcs:     true,
@@ -126,8 +141,12 @@ func GetAnchor(t *testing.T, setup testSetup) Anchor {
 	})
 	require.NoError(t, err)
 
+	t.Logf("%# v\n", pretty.Formatter(anchor.Data.Content.Data))
+
 	decodedAnchor := Anchor{}
 	_, err = bcs.Unmarshal(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data(), &decodedAnchor)
+
+	fmt.Printf("BCS Data Anchor: %v", anchor.Data.Bcs.Data.MoveObject.BcsBytes.String())
 	require.NoError(t, err)
 
 	return decodedAnchor
