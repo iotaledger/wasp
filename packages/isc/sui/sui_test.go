@@ -11,7 +11,7 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/sui-go/isc"
+	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
@@ -22,7 +22,7 @@ import (
 
 type testSetup struct {
 	suiClient *sui.ImplSuiAPI
-	iscClient *isc.Client
+	iscClient *iscmove.Client
 	signer    *sui_signer.Signer
 	packageID sui_types.PackageID
 	chain     *models.SuiTransactionBlockResponse
@@ -30,11 +30,11 @@ type testSetup struct {
 
 func setupAndDeploy(t *testing.T) testSetup {
 	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	client := iscmove.NewClient(suiClient)
 
 	printCoinsForAddress(t, suiClient, *signer.Address)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/isc/sources")
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/iscmove/sources")
 	require.NoError(t, err)
 
 	fmt.Printf("%s", signer.Address.String())
@@ -137,7 +137,7 @@ func TestMinimalClient(t *testing.T) {
 	setup := setupAndDeploy(t)
 
 	suiUserClient, userSigner := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_CLIENT_MNEMONIC)
-	iscUserClient := isc.NewIscClient(suiUserClient)
+	iscUserClient := iscmove.NewClient(suiUserClient)
 
 	printCoinsForAddress(t, setup.suiClient, *setup.signer.Address)
 	printCoinsForAddress(t, suiUserClient, *userSigner.Address)

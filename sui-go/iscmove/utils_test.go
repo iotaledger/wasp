@@ -1,19 +1,20 @@
-package isc
+package iscmove_test
 
 import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/iotaledger/wasp/sui-go/utils"
-	"github.com/stretchr/testify/require"
 )
 
-// test only
-func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer.Signer) *sui_types.PackageID {
+func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer *sui_signer.Signer) *sui_types.PackageID {
 	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/isc/")
 	require.NoError(t, err)
 
@@ -41,8 +42,7 @@ func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer
 	return packageID
 }
 
-// test only
-func BuildDeployMintTestcoin(t *testing.T, client *Client, signer *sui_signer.Signer) (
+func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_signer.Signer) (
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {

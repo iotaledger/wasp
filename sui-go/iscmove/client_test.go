@@ -1,4 +1,4 @@
-package isc_test
+package iscmove_test
 
 import (
 	"context"
@@ -7,31 +7,32 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/sui-go/isc"
+	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
-
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
-const SEEDFORUSER = "0x1234"
-const SEEDFORCHAIN = "0x5678"
+const (
+	SEEDFORUSER  = "0x1234"
+	SEEDFORCHAIN = "0x5678"
+)
 
-func newClient(t *testing.T) *isc.Client {
+func newClient(_ *testing.T) *iscmove.Client {
 	// NOTE: comment out the next line to run local tests against sui-test-validator
 	// t.Skip("only for localnet")
-	return isc.NewIscClient(sui.NewSuiClient(conn.LocalnetEndpointUrl))
+	return iscmove.NewClient(sui.NewSuiClient(conn.LocalnetEndpointUrl))
 }
 
 func TestStartNewChain(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 	t.Log("anchorObjID: ", anchorObjID)
@@ -41,17 +42,18 @@ func TestSendCoin(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
-	tokenPackageID, _ := isc.BuildDeployMintTestcoin(t, client, signer)
+	tokenPackageID, _ := buildDeployMintTestcoin(t, client, signer)
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
+	require.Len(t, coins, 1)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
@@ -68,11 +70,11 @@ func TestReceiveCoin(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
-	tokenPackageID, _ := isc.BuildDeployMintTestcoin(t, client, signer)
+	tokenPackageID, _ := buildDeployMintTestcoin(t, client, signer)
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
 	fmt.Printf("coin type: %s\n", coinType)
 
@@ -109,13 +111,13 @@ func TestSendReceiveCoin(t *testing.T) {
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 	chainSigner := newSignerWithFunds(t, SEEDFORCHAIN)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, chainSigner)
+	iscPackageID := buildAndDeployISCContracts(t, client, chainSigner)
 
 	eventCh := subscribeEvents(t, iscPackageID)
 
 	anchorObjID := startChainAnchor(t, client, chainSigner, iscPackageID)
 
-	tokenPackageID, _ := isc.BuildDeployMintTestcoin(t, client, signer)
+	tokenPackageID, _ := buildDeployMintTestcoin(t, client, signer)
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
 	fmt.Printf("coin type: %s\n", coinType)
 
@@ -166,7 +168,7 @@ func TestCreateRequest(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
@@ -181,7 +183,7 @@ func TestSendRequest(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
@@ -205,7 +207,7 @@ func TestReceiveRequest(t *testing.T) {
 	client := newClient(t)
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, signer)
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
 	anchorObjID := startChainAnchor(t, client, signer, iscPackageID)
 
@@ -246,7 +248,7 @@ func TestSendReceiveRequest(t *testing.T) {
 	signer := newSignerWithFunds(t, SEEDFORUSER)
 	chainSigner := newSignerWithFunds(t, SEEDFORCHAIN)
 
-	iscPackageID := isc.BuildAndDeployIscContracts(t, client, chainSigner)
+	iscPackageID := buildAndDeployISCContracts(t, client, chainSigner)
 
 	eventCh := subscribeEvents(t, iscPackageID)
 
@@ -317,7 +319,7 @@ func newSignerWithFunds(t *testing.T, seed string) *sui_signer.Signer {
 
 func startChainAnchor(
 	t *testing.T,
-	client *isc.Client,
+	client *iscmove.Client,
 	signer *sui_signer.Signer,
 	iscPackageID *sui_types.PackageID,
 ) *sui_types.ObjectID {
@@ -355,7 +357,7 @@ func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan model
 	return eventCh
 }
 
-func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent) (
+func receiveEvent(t *testing.T, client *iscmove.Client, eventCh chan models.SuiEvent) (
 	*sui_types.SuiAddress,
 	*models.SuiObjectResponse,
 ) {
@@ -378,7 +380,7 @@ func receiveEvent(t *testing.T, client *isc.Client, eventCh chan models.SuiEvent
 
 func sendCoin(
 	t *testing.T,
-	client *isc.Client,
+	client *iscmove.Client,
 	signer *sui_signer.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
@@ -405,7 +407,7 @@ func sendCoin(
 
 func receiveCoin(
 	t *testing.T,
-	client *isc.Client,
+	client *iscmove.Client,
 	signer *sui_signer.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
@@ -432,7 +434,7 @@ func receiveCoin(
 
 func createRequest(
 	t *testing.T,
-	client *isc.Client,
+	client *iscmove.Client,
 	signer *sui_signer.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
@@ -459,7 +461,7 @@ func createRequest(
 
 func sendRequest(
 	t *testing.T,
-	client *isc.Client,
+	client *iscmove.Client,
 	signer *sui_signer.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
@@ -484,7 +486,7 @@ func sendRequest(
 
 func receiveRequest(
 	t *testing.T,
-	client *isc.Client,
+	client *iscmove.Client,
 	signer *sui_signer.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
