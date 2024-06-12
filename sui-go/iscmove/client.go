@@ -61,7 +61,7 @@ func (c *Client) StartNewChain(
 	)
 	pt := ptb.Finish()
 
-	if gasPayments != nil {
+	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
@@ -274,7 +274,7 @@ func (c *Client) CreateRequest(
 	)
 	pt := ptb.Finish()
 
-	if gasPayments != nil {
+	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address, gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
