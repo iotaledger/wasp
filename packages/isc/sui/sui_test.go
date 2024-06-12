@@ -66,6 +66,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 		context.Background(),
 		signer,
 		packageID,
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -151,12 +152,12 @@ func TestMinimalClient(t *testing.T) {
 	coins, err := setup.suiClient.GetSuiCoinsOwnedByAddress(context.Background(), userSigner.Address)
 	require.NoError(t, err)
 
-	_, err = iscUserClient.SendCoin(context.Background(), userSigner, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
+	_, err = iscUserClient.SendCoin(context.Background(), userSigner, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, nil, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
 	require.NoError(t, err)
 
 	time.Sleep(3 * time.Second)
 
-	_, err = setup.iscClient.ReceiveCoin(context.Background(), setup.signer, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
+	_, err = setup.iscClient.ReceiveCoin(context.Background(), setup.signer, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, nil, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
 	require.NoError(t, err)
 
 	printCoinsForAddress(t, setup.suiClient, *setup.signer.Address)
