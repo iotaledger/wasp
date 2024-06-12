@@ -328,6 +328,7 @@ func startChainAnchor(
 		context.Background(),
 		signer,
 		iscPackageID,
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -394,6 +395,7 @@ func sendCoin(
 		anchorObjID,
 		coinType,
 		coin,
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -421,6 +423,7 @@ func receiveCoin(
 		anchorObjID,
 		coinType,
 		receivingCoinObject,
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -447,6 +450,7 @@ func createRequest(
 		"isc_test_contract_name",
 		"isc_test_func_name",
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")}, // func input
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -473,6 +477,7 @@ func sendRequest(
 		iscPackageID,
 		anchorObjID,
 		reqObjID,
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -498,7 +503,10 @@ func receiveRequest(
 		iscPackageID,
 		anchorObjID,
 		reqObjID,
-		sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{
+		nil,
+		sui.DefaultGasPrice,
+		sui.DefaultGasBudget,
+		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
