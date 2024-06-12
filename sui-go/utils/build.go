@@ -28,7 +28,7 @@ func MoveBuild(contractPath string) (*CompiledMoveModules, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to execute sui cli: %w, stderr: '%s'", err, stderr.String())
+		return nil, fmt.Errorf("failed to execute sui cli: %w: %s", err, stdout.String()+stderr.String())
 	}
 
 	var modules CompiledMoveModules
