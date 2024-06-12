@@ -9,6 +9,7 @@ replace (
 )
 
 require (
+	filippo.io/edwards25519 v1.0.0
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/Yiling-J/theine-go v0.3.1
 	github.com/bygui86/multi-profile/v2 v2.1.0
@@ -16,6 +17,7 @@ require (
 	github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e
 	github.com/dustin/go-humanize v1.0.1
 	github.com/ethereum/go-ethereum v1.13.13
+	github.com/fardream/go-bcs v0.4.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
@@ -65,7 +67,6 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
@@ -94,7 +95,6 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
-	github.com/fardream/go-bcs v0.4.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
