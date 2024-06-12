@@ -14,7 +14,7 @@ import (
 
 // test only
 func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer.Signer) *sui_types.PackageID {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
+	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/isc/")
 	require.NoError(t, err)
 
 	txnBytes, err := client.Publish(
