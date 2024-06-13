@@ -2,14 +2,19 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 
-	"github.com/iotaledger/wasp/sui-go/examples/swap/swap-go/pkg"
+	"github.com/iotaledger/wasp/sui-go/contracts"
+	"github.com/iotaledger/wasp/sui-go/examples/swap/pkg"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/utils"
 )
+
+//go:generate sh -c "cd ../swap && sui move build --dump-bytecode-as-base64 > bytecode.json"
+//go:embed swap/bytecode.json
+var swapBytecodeJSON []byte
 
 func main() {
 	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
@@ -17,8 +22,8 @@ func main() {
 	fmt.Println("signer: ", signer.Address)
 	fmt.Println("swapper: ", swapper.Address)
 
-	swapPackageID := pkg.BuildAndPublish(suiClient, signer, utils.GetGitRoot()+"/sui-go/examples/swap/swap")
-	testcoinID, _ := pkg.BuildDeployMintTestcoin(suiClient, signer)
+	swapPackageID := pkg.Publish(suiClient, signer, contracts.Load(swapBytecodeJSON))
+	testcoinID, _ := pkg.PublishMintTestcoin(suiClient, signer)
 	testcoinCoinType := fmt.Sprintf("%s::testcoin::TESTCOIN", testcoinID.String())
 
 	fmt.Println("swapPackageID: ", swapPackageID)
