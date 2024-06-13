@@ -300,16 +300,15 @@ contract ERC721NFTs {
         return size > 0;
     }
 
-    // IERC721Metadata
-
     function name() external view virtual returns (string memory) {
-        return "";
+        return "L1 NFTs";
     }
 
     function symbol() external pure returns (string memory) {
-        return ""; // not defined in IRC27
+        return "CollectionL1";
     }
 
+    // IERC721Metadata
     function tokenURI(uint256 tokenId) external view returns (string memory) {
         _requireNftExists(tokenId);
         IRC27NFT memory nft = __iscSandbox.getIRC27NFTData(tokenId.asNFTID());
