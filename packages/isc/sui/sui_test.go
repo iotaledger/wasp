@@ -11,13 +11,13 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/utils"
 )
 
 type testSetup struct {
@@ -34,16 +34,15 @@ func setupAndDeploy(t *testing.T) testSetup {
 
 	printCoinsForAddress(t, suiClient, *signer.Address)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/iscmove/sources")
-	require.NoError(t, err)
+	iscBytecode := contracts.ISC()
 
 	fmt.Printf("%s", signer.Address.String())
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		iscBytecode.Modules,
+		iscBytecode.Dependencies,
 		nil,
 		models.NewSafeSuiBigInt(uint64(100000000)),
 	)

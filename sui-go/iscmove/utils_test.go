@@ -6,25 +6,24 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/utils"
 )
 
 func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer *sui_signer.Signer) *sui_types.PackageID {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/isc/")
-	require.NoError(t, err)
+	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		iscBytecode.Modules,
+		iscBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget*10),
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -46,16 +45,15 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_s
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/testcoin/")
-	require.NoError(t, err)
+	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		testcoinBytecode.Modules,
+		testcoinBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewSafeSuiBigInt(sui.DefaultGasBudget*10),
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(

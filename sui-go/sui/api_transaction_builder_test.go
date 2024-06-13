@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"math/big"
-	"os"
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/utils"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBatchTransaction(t *testing.T) {
@@ -53,21 +53,13 @@ func TestMergeCoins(t *testing.T) {
 func TestMoveCall(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 
-	// directly build (need sui toolchain)
-	// modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/sdk_verify/")
-	// require.NoError(t, err)
-	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/sui-go/contracts/sdk_verify/contract_base64.json")
-	require.NoError(t, err)
-
-	var modules utils.CompiledMoveModules
-	err = json.Unmarshal(jsonData, &modules)
-	require.NoError(t, err)
+	sdkVerifyBytecode := contracts.SDKVerify()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		sdkVerifyBytecode.Modules,
+		sdkVerifyBytecode.Dependencies,
 		nil,
 		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
 	)
@@ -301,22 +293,13 @@ func TestPaySui(t *testing.T) {
 func TestPublish(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 
-	// If local side has installed Sui-cli then the user can use the following func to build move contracts
-	// modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/testcoin")
-	// require.NoError(t, err)
-
-	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/sui-go/contracts/testcoin/contract_base64.json")
-	require.NoError(t, err)
-
-	var modules utils.CompiledMoveModules
-	err = json.Unmarshal(jsonData, &modules)
-	require.NoError(t, err)
+	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		testcoinBytecode.Modules,
+		testcoinBytecode.Dependencies,
 		nil, // 'unsafe_publish' API can automatically assign gas object
 		models.NewSafeSuiBigInt(sui.DefaultGasBudget*5),
 	)
