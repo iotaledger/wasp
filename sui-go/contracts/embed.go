@@ -22,7 +22,7 @@ type MoveBytecode struct {
 var iscBytecodeJSON []byte
 
 func ISC() MoveBytecode {
-	return loadContract(iscBytecodeJSON)
+	return Load(iscBytecodeJSON)
 }
 
 //go:generate sh -c "cd ./sdk_verify && sui move build --dump-bytecode-as-base64 > bytecode.json"
@@ -30,7 +30,7 @@ func ISC() MoveBytecode {
 var sdkVerifyBytecodeJSON []byte
 
 func SDKVerify() MoveBytecode {
-	return loadContract(sdkVerifyBytecodeJSON)
+	return Load(sdkVerifyBytecodeJSON)
 }
 
 //go:generate sh -c "cd ./testcoin && sui move build --dump-bytecode-as-base64 > bytecode.json"
@@ -38,10 +38,10 @@ func SDKVerify() MoveBytecode {
 var testcoinBytecodeJSON []byte
 
 func Testcoin() MoveBytecode {
-	return loadContract(testcoinBytecodeJSON)
+	return Load(testcoinBytecodeJSON)
 }
 
-func loadContract(bytecodeJSON []byte) (ret MoveBytecode) {
+func Load(bytecodeJSON []byte) (ret MoveBytecode) {
 	err := json.Unmarshal(bytecodeJSON, &ret)
 	if err != nil {
 		panic(err)

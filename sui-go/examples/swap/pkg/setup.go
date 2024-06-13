@@ -3,23 +3,19 @@ package pkg
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/utils"
 )
 
-func BuildAndPublish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, path string) *sui_types.PackageID {
-	modules, err := utils.MoveBuild(path)
-	if err != nil {
-		panic(err)
-	}
+func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode contracts.MoveBytecode) *sui_types.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		bytecode.Modules,
+		bytecode.Dependencies,
 		nil,
 		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
 	)
@@ -42,20 +38,17 @@ func BuildAndPublish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, path str
 	return packageID
 }
 
-func BuildDeployMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
+func PublishMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/testcoin/")
-	if err != nil {
-		panic(err)
-	}
+	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		testcoinBytecode.Modules,
+		testcoinBytecode.Dependencies,
 		nil,
 		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
 	)
