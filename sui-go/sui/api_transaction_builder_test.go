@@ -28,9 +28,9 @@ func TestBatchTransaction(t *testing.T) {
 
 func TestMergeCoins(t *testing.T) {
 	t.Skip("FIXME create an account has at least two coin objects on chain")
-	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
+	client := sui.NewSuiClient(conn.TestnetEndpointUrl)
 	signer := sui_signer.TEST_ADDRESS
-	coins, err := api.GetCoins(context.Background(), signer, nil, nil, 10)
+	coins, err := client.GetCoins(context.Background(), signer, nil, nil, 10)
 	require.NoError(t, err)
 	require.True(t, len(coins.Data) >= 3)
 
@@ -38,14 +38,16 @@ func TestMergeCoins(t *testing.T) {
 	coin2 := coins.Data[1]
 	coin3 := coins.Data[2] // gas coin
 
-	txn, err := api.MergeCoins(
+	txn, err := client.MergeCoins(
 		context.Background(), signer,
 		coin1.CoinObjectID, coin2.CoinObjectID,
 		coin3.CoinObjectID, coin3.Balance,
 	)
 	require.NoError(t, err)
 
-	dryRunTxn(t, api, txn.TxBytes, true)
+	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
+	require.NoError(t, err)
+	require.True(t, simulate.Effects.Data.IsSuccess())
 }
 
 func TestMoveCall(t *testing.T) {

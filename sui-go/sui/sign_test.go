@@ -31,6 +31,22 @@ func TestAccountSignAndSend(t *testing.T) {
 	txn, err := api.PayAllSui(context.Background(), signer.Address, signer.Address, coinIDs, gasBudget)
 	require.NoError(t, err)
 
-	resp := executeTxn(t, api, txn.TxBytes, signer)
-	t.Log("txn digest: ", resp.Digest)
+	simulate, err := api.DryRunTransaction(context.Background(), txn.TxBytes)
+	require.NoError(t, err)
+	require.True(t, simulate.Effects.Data.IsSuccess())
+
+	signature, err := signer.SignTransactionBlock(txn.TxBytes, sui_signer.DefaultIntent())
+	require.NoError(t, err)
+	options := models.SuiTransactionBlockResponseOptions{
+		ShowEffects: true,
+	}
+	resp, err := api.ExecuteTransactionBlock(
+		context.Background(),
+		txn.TxBytes,
+		[]*sui_signer.Signature{&signature},
+		&options,
+		models.TxnRequestTypeWaitForLocalExecution,
+	)
+	require.NoError(t, err)
+	require.True(t, resp.Effects.Data.IsSuccess())
 }
