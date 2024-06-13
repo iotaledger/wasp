@@ -29,7 +29,7 @@ type testSetup struct {
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 	client := iscmove.NewClient(suiClient)
 
 	printCoinsForAddress(t, suiClient, *signer.Address)
@@ -137,7 +137,7 @@ func GetAnchor(t *testing.T, setup testSetup) Anchor {
 func TestMinimalClient(t *testing.T) {
 	setup := setupAndDeploy(t)
 
-	suiUserClient, userSigner := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_CLIENT_MNEMONIC)
+	suiUserClient, userSigner := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
 	iscUserClient := iscmove.NewClient(suiUserClient)
 
 	printCoinsForAddress(t, setup.suiClient, *setup.signer.Address)

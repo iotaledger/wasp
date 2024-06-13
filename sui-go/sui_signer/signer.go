@@ -3,7 +3,6 @@ package sui_signer
 import (
 	"crypto/ed25519"
 	"encoding/hex"
-	math_rand "math/rand"
 
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/blake2b"
@@ -22,11 +21,8 @@ const (
 
 var (
 	TEST_MNEMONIC = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
+	TEST_SEED     = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116, 90, 172, 148, 59, 33, 88, 252, 134, 42, 231, 198, 208, 141, 209, 116, 78, 21, 216, 24}
 	TEST_ADDRESS  = sui_types.MustSuiAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
-
-	// Generated with `sui client new-address ed25519`
-	TEST_CLIENT_MNEMONIC = "auto genius avoid bike correct satoshi ankle lake citizen simple grain adult"
-	TEST_CLIENT_ADDRESS  = sui_types.MustSuiAddressFromHex("0x9d1549a36f0d0f28b9bbc231b6229e4829c983ac6073b0e38fe4f2bd38e195a5")
 )
 
 // FIXME support more than ed25519
@@ -64,21 +60,6 @@ func NewSigner(seed []byte, flag KeySchemeFlag) *Signer {
 		},
 		Address: sui_types.MustSuiAddressFromHex(addr),
 	}
-}
-
-// test only function. It will always generate the same sequence of rand singers,
-// because it is using a local random generator with a unchanged seed
-func NewRandomSigners(flag KeySchemeFlag, genNum int) []*Signer {
-	returnSigners := make([]*Signer, genNum)
-	r := math_rand.New(math_rand.NewSource(0))
-	seed := make([]byte, 32)
-	for i := 0; i < genNum; i++ {
-		for i := 0; i < 32; i++ {
-			seed[i] = byte(r.Intn(256))
-		}
-		returnSigners[i] = NewSigner(seed, flag)
-	}
-	return returnSigners
 }
 
 // generate keypair (signer) with mnemonic which is referring the Sui monorepo in the following code
