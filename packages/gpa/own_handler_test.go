@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestRound uses OwnHandler, so we use it for this test.
+// TestOwnHandler uses OwnHandler, so we use it for this test.
 func TestOwnHandler(t *testing.T) {
 	t.Parallel()
 	n := 10
