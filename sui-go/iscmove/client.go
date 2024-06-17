@@ -43,13 +43,14 @@ func (c *Client) StartNewChain(
 	arguments := []sui_types.Argument{}
 	if treasuryCap != nil {
 		ref := treasuryCap.Data.Ref()
-		f, _ := ptb.Obj(
-			sui_types.ObjectArg{
-				ImmOrOwnedObject: &ref,
-			},
-		)
 
-		arguments = []sui_types.Argument{f}
+		arguments = []sui_types.Argument{
+			ptb.MustObj(
+				sui_types.ObjectArg{
+					ImmOrOwnedObject: &ref,
+				},
+			),
+		}
 	}
 
 	arg1 := ptb.Command(
