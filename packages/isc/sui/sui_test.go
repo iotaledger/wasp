@@ -34,7 +34,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 	client := iscmove.NewClient(suiClient)
 
-	iscBytecode := mock_contract.ISC()
+	iscBytecode := mock_contract.MockISCContract()
 
 	fmt.Printf("%s", signer.Address.String())
 	txnBytes, err := client.Publish(

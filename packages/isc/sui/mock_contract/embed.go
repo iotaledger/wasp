@@ -21,7 +21,7 @@ type MoveBytecode struct {
 //go:embed bytecode.json
 var iscBytecodeJSON []byte
 
-func ISC() MoveBytecode {
+func MockISCContract() MoveBytecode {
 	return Load(iscBytecodeJSON)
 }
 
