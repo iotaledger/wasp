@@ -298,6 +298,8 @@ func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldVa
 
 // GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue includes the requested fields of the GraphQL type MoveValue.
 type GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue struct {
+	// The value's Move type.
+	Type GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType `json:"type"`
 	// Representation of a Move value in JSON, where:
 	//
 	// - Addresses, IDs, and UIDs are represented in canonical form, as JSON strings.
@@ -310,12 +312,31 @@ type GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueM
 	//
 	// This form is offered as a less verbose convenience in cases where the layout of the type is
 	// known by the client.
-	Json any `json:"json"`
+	Nft any `json:"nft"`
 }
 
-// GetJson returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue.Json, and is useful for accessing the field via an interface.
-func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue) GetJson() any {
-	return v.Json
+// GetType returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue.Type, and is useful for accessing the field via an interface.
+func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue) GetType() GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType {
+	return v.Type
+}
+
+// GetNft returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue.Nft, and is useful for accessing the field via an interface.
+func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValue) GetNft() any {
+	return v.Nft
+}
+
+// GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
+// The GraphQL type's documentation follows.
+//
+// Represents concrete types (no type parameters, no references).
+type GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType struct {
+	// Flat representation of the type signature, as a displayable string.
+	Repr string `json:"repr"`
+}
+
+// GetRepr returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType.Repr, and is useful for accessing the field via an interface.
+func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveObjectContentsMoveValueTypeMoveType) GetRepr() string {
+	return v.Repr
 }
 
 // GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue includes the requested fields of the GraphQL type MoveValue.
@@ -335,7 +356,7 @@ type GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueM
 	//
 	// This form is offered as a less verbose convenience in cases where the layout of the type is
 	// known by the client.
-	Json any `json:"json"`
+	Coin any `json:"coin"`
 }
 
 // GetTypename returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue.Typename, and is useful for accessing the field via an interface.
@@ -348,9 +369,9 @@ func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldVa
 	return v.Type
 }
 
-// GetJson returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue.Json, and is useful for accessing the field via an interface.
-func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue) GetJson() any {
-	return v.Json
+// GetCoin returns GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue.Coin, and is useful for accessing the field via an interface.
+func (v *GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValue) GetCoin() any {
+	return v.Coin
 }
 
 // GetAssetsBagOwnerDynamicFieldsDynamicFieldConnectionNodesDynamicFieldValueMoveValueTypeMoveType includes the requested fields of the GraphQL type MoveType.
@@ -435,11 +456,14 @@ query GetAssetsBag ($bagId: SuiAddress!) {
 						type {
 							repr
 						}
-						json
+						coin: json
 					}
 					... on MoveObject {
 						contents {
-							json
+							type {
+								repr
+							}
+							nft: json
 						}
 					}
 				}

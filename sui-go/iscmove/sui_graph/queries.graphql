@@ -3,18 +3,21 @@ query GetAssetsBag($bagId: SuiAddress!) {
     dynamicFields {
       nodes {
         name { ...Value }
+
         value {
           __typename
           ... on MoveValue {
             type {
           repr
             }
-            json
+            coin:  json
           }
           ... on MoveObject {
             contents {
-              json
-              
+              type {
+                repr
+              }
+          nft:    json
             }
           }
         }

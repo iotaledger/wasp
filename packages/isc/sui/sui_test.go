@@ -118,7 +118,6 @@ func GetAnchor(t *testing.T, setup testSetup) Anchor {
 
 	fmt.Printf("BCS Data Anchor: %v", hex.EncodeToString(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data()))
 	t.Logf("%# v\n", pretty.Formatter(decodedAnchor))
-	require.NoError(t, err)
 
 	return decodedAnchor
 }
@@ -131,6 +130,7 @@ func TestMinimalClient(t *testing.T) {
 
 	graph := iscmove.NewGraph(setup.suiClient, "http://localhost:9001")
 	ret, err := graph.GetAssetBag(context.Background(), anchor.Assets.Value.ID)
+
 	require.NoError(t, err)
 	require.NotNil(t, ret)
 }
