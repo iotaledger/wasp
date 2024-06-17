@@ -18,6 +18,7 @@ module isc::anchor {
         assets: Referent<AssetsBag>,
         /// Anchor assets.
         state_root: vector<u8>,
+        state_index: u32,
     }
 
     public struct Receipt {
@@ -33,12 +34,13 @@ module isc::anchor {
             id: object::new(ctx),
             assets: borrow::new(assets_bag::new(ctx), ctx),
             state_root: vector::empty(),
+            state_index: 0,
          }
     }
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor { id, assets, state_root: _ } = self;
+        let Anchor { id, assets, state_root: _, state_index: _ } = self;
         id.delete();
 
         assets.destroy()

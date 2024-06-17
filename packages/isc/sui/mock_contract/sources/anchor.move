@@ -34,6 +34,7 @@ module isc::anchor {
         assets: Referent<AssetsBag>,
         /// Anchor assets.
         state_root: vector<u8>,
+        state_index: u32,
     }
 
         /// Make sure that the name of the type matches the module's name.
@@ -83,6 +84,7 @@ let nft = TestnetNFT {
             id: object::new(ctx),
             assets: borrow::new(assetsBag, ctx),
             state_root: vector::empty(),
+            state_index: 0,
          };
 
         k
@@ -90,9 +92,9 @@ let nft = TestnetNFT {
 
     /// Destroys an Anchor object and returns its assets bag.   
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor { id, assets, state_root: _ } = self;
+        let Anchor { id, assets, state_root: _, state_index: _ } = self;
         id.delete();
-        
+
         assets.destroy()
     }
     
