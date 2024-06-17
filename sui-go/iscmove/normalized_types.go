@@ -1,4 +1,4 @@
-package isc
+package iscmove
 
 import "github.com/iotaledger/wasp/sui-go/models"
 

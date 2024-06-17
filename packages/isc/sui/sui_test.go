@@ -15,7 +15,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/sui-go/isc"
+	"github.com/iotaledger/wasp/sui-go/contracts"
+	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
@@ -27,28 +28,27 @@ import (
 
 type testSetup struct {
 	suiClient *sui.ImplSuiAPI
-	iscClient *isc.Client
+	iscClient *iscmove.Client
 	signer    *sui_signer.Signer
 	packageID sui_types.PackageID
 	chain     *models.SuiTransactionBlockResponse
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
-	suiClient, signer := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_MNEMONIC)
-	client := isc.NewIscClient(suiClient)
+	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
+	client := iscmove.NewClient(suiClient)
 
 	printCoinsForAddress(t, suiClient, *signer.Address)
 
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/contracts/move/isc/sources")
-	require.NoError(t, err)
+	iscBytecode := contracts.ISC()
 
 	fmt.Printf("%s", signer.Address.String())
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		iscBytecode.Modules,
+		iscBytecode.Dependencies,
 		nil,
 		models.NewSafeSuiBigInt(uint64(100000000)),
 	)
@@ -81,6 +81,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 		context.Background(),
 		signer,
 		packageID,
+		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
 		&models.SuiTransactionBlockResponseOptions{
@@ -177,8 +178,8 @@ func TestAnchorDeserialization(t *testing.T) {
 func TestMinimalClient(t *testing.T) {
 	setup := setupAndDeploy(t)
 
-	suiUserClient, userSigner := sui.NewTestSuiClientWithSignerAndFund(conn.LocalnetEndpointUrl, sui_signer.TEST_CLIENT_MNEMONIC)
-	iscUserClient := isc.NewIscClient(suiUserClient)
+	suiUserClient, userSigner := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
+	iscUserClient := iscmove.NewClient(suiUserClient)
 
 	printCoinsForAddress(t, setup.suiClient, *setup.signer.Address)
 	printCoinsForAddress(t, suiUserClient, *userSigner.Address)
@@ -192,12 +193,12 @@ func TestMinimalClient(t *testing.T) {
 	coins, err := setup.suiClient.GetSuiCoinsOwnedByAddress(context.Background(), userSigner.Address)
 	require.NoError(t, err)
 
-	_, err = iscUserClient.SendCoin(context.Background(), userSigner, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
+	_, err = iscUserClient.SendCoin(context.Background(), userSigner, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, nil, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
 	require.NoError(t, err)
 
 	time.Sleep(3 * time.Second)
 
-	_, err = setup.iscClient.ReceiveCoin(context.Background(), setup.signer, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
+	_, err = setup.iscClient.ReceiveCoin(context.Background(), setup.signer, &setup.packageID, &anchor.ID, coins[0].CoinType, coins[0].CoinObjectID, nil, sui.DefaultGasPrice, sui.DefaultGasBudget, &models.SuiTransactionBlockResponseOptions{})
 	require.NoError(t, err)
 
 	printCoinsForAddress(t, setup.suiClient, *setup.signer.Address)

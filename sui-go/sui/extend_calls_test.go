@@ -2,23 +2,21 @@ package sui_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/utils"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestMintToken(t *testing.T) {
-	client, signer := sui.NewTestSuiClientWithSignerAndFund(conn.TestnetEndpointUrl, sui_signer.TEST_MNEMONIC)
+	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 
 	// module name is 'testcoin'
 	tokenPackageID, treasuryCap := deployTestcoin(t, client, signer)
@@ -43,25 +41,19 @@ func TestMintToken(t *testing.T) {
 	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
 	require.NoError(t, err)
 	require.Equal(t, mintAmount, coins.Data[0].Balance.Uint64())
-
 }
 
 func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {
-	jsonData, err := os.ReadFile(utils.GetGitRoot() + "/sui-go/contracts/testcoin/contract_base64.json")
-	require.NoError(t, err)
-
-	var modules utils.CompiledMoveModules
-	err = json.Unmarshal(jsonData, &modules)
-	require.NoError(t, err)
+	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		testcoinBytecode.Modules,
+		testcoinBytecode.Dependencies,
 		nil,
 		models.NewSafeSuiBigInt(sui.DefaultGasBudget*10),
 	)

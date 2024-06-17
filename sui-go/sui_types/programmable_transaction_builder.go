@@ -73,11 +73,7 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 				return Argument{}, errors.New("invariant violation! object has id does not match call arg")
 			}
 			oj = ObjectArg{
-				SharedObject: &struct {
-					Id                   *ObjectID
-					InitialSharedVersion SequenceNumber
-					Mutable              bool
-				}{
+				SharedObject: &SharedObjectArg{
 					Id:                   id,
 					InitialSharedVersion: objArg.SharedObject.InitialSharedVersion,
 					Mutable:              oldObjArg.SharedObject.Mutable || objArg.SharedObject.Mutable,
@@ -438,10 +434,7 @@ func (p *ProgrammableTransactionBuilder) payImpl(
 		for _, j := range recipientMap[v] {
 			// the portions of the coins that slipt from the given coin, which are going to pay for recipients
 			coinTransfer := Argument{
-				NestedResult: &struct {
-					Result1 uint16
-					Result2 uint16
-				}{Result1: *splitCoinResult.Result, Result2: uint16(j)},
+				NestedResult: &NestedResult{Cmd: *splitCoinResult.Result, Result: uint16(j)},
 			}
 			coins = append(coins, coinTransfer)
 		}

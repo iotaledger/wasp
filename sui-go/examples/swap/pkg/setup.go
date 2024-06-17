@@ -1,80 +1,82 @@
-package isc
+package pkg
 
 import (
 	"context"
-	"testing"
 
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/utils"
-	"github.com/stretchr/testify/require"
 )
 
-// test only
-func BuildAndDeployIscContracts(t *testing.T, client *Client, signer *sui_signer.Signer) *sui_types.PackageID {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/isc/contracts/isc/")
-	require.NoError(t, err)
-
+func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode contracts.MoveBytecode) *sui_types.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		bytecode.Modules,
+		bytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
 	)
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
 	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
+	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
+		panic(err)
+	}
 	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
-
+	if err != nil {
+		panic(err)
+	}
 	return packageID
 }
 
-// test only
-func BuildDeployMintTestcoin(t *testing.T, client *Client, signer *sui_signer.Signer) (
+func PublishMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {
-	modules, err := utils.MoveBuild(utils.GetGitRoot() + "/sui-go/contracts/testcoin/")
-	require.NoError(t, err)
+	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
-		modules.Modules,
-		modules.Dependencies,
+		testcoinBytecode.Modules,
+		testcoinBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
 	)
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
 	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
+		panic(err)
+	}
 
 	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
-	require.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	mintAmount := uint64(1000000)
-	txnRes, err := client.MintToken(
+	txnResponse, err = client.MintToken(
 		context.Background(),
 		signer,
 		packageID,
@@ -86,8 +88,9 @@ func BuildDeployMintTestcoin(t *testing.T, client *Client, signer *sui_signer.Si
 			ShowObjectChanges: true,
 		},
 	)
-	require.NoError(t, err)
-	require.True(t, txnRes.Effects.Data.IsSuccess())
+	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
+		panic(err)
+	}
 
 	return packageID, treasuryCap
 }

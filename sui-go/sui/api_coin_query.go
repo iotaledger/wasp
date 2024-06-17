@@ -46,7 +46,7 @@ func (s *ImplSuiAPI) GetCoinMetadata(ctx context.Context, coinType string) (*mod
 func (s *ImplSuiAPI) GetCoins(
 	ctx context.Context,
 	owner *sui_types.SuiAddress,
-	coinType *string,
+	coinType *string, // default to 0x2::sui::SUI if not specified
 	cursor *sui_types.ObjectID,
 	limit uint, // TODO set it into ptr
 ) (*models.CoinPage, error) {
