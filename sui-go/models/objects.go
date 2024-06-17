@@ -12,7 +12,7 @@ type SuiObjectRef struct {
 	/** Base64 string representing the object digest */
 	Digest sui_types.TransactionDigest `json:"digest"`
 	/** Hex code as string representing the object id */
-	ObjectID string `json:"objectId"` // TODO refactor datatype to ObjectID
+	ObjectID *sui_types.ObjectID `json:"objectId"`
 	/** Object version */
 	Version sui_types.SequenceNumber `json:"version"`
 }
