@@ -75,15 +75,20 @@ func (c *HttpClient) CallContext(ctx context.Context, result interface{}, method
 	if err != nil {
 		return err
 	}
-	respBody, err := c.doRequest(ctx, msg)
+	resp, err := c.doRequest(ctx, msg)
 	if err != nil {
 		return err
 	}
-	defer respBody.Close()
+	defer resp.Body.Close()
 
+	resBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("could not read response body: %w", err)
+	}
 	var respmsg jsonrpcMessage
-	if err := json.NewDecoder(respBody).Decode(&respmsg); err != nil {
-		return err
+	err = json.Unmarshal(resBody, &respmsg)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response body: %w", err)
 	}
 	if respmsg.Error != nil {
 		return respmsg.Error
@@ -116,16 +121,22 @@ func (c *HttpClient) BatchCallContext(ctx context.Context, b []BatchElem) error 
 		msgs[i] = msg
 		byID[string(msg.ID)] = i
 	}
-	respBody, err := c.doRequest(ctx, msgs)
+	resp, err := c.doRequest(ctx, msgs)
 	if err != nil {
 		return err
 	}
-	defer respBody.Close()
+	defer resp.Body.Close()
 
-	var respmsgs []jsonrpcMessage
-	if err := json.NewDecoder(respBody).Decode(&respmsgs); err != nil {
-		return err
+	resBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("could not read response body: %w", err)
 	}
+	var respmsgs []jsonrpcMessage
+	err = json.Unmarshal(resBody, &respmsgs)
+	if err != nil {
+		return fmt.Errorf("could not unmarshal response body: %w", err)
+	}
+
 	for idx, resp := range respmsgs {
 		elem := &b[idx]
 		if resp.Error != nil {
@@ -161,7 +172,7 @@ func (c *HttpClient) newMessage(method string, paramsIn ...interface{}) (*jsonrp
 	return msg, nil
 }
 
-func (c *HttpClient) doRequest(ctx context.Context, msg interface{}) (io.ReadCloser, error) {
+func (c *HttpClient) doRequest(ctx context.Context, msg interface{}) (*http.Response, error) {
 	body, err := json.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -193,5 +204,5 @@ func (c *HttpClient) doRequest(ctx context.Context, msg interface{}) (io.ReadClo
 			Body:       body,
 		}
 	}
-	return resp.Body, nil
+	return resp, nil
 }

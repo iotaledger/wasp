@@ -8,7 +8,8 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
-// the txKindBytes is TransactionKind in base64
+// The txKindBytes is `TransactionKind` in base64.
+// When a `TransactionData` is given, error `Deserialization error: malformed utf8` will be returned.
 // which is different from `DryRunTransaction` and `ExecuteTransactionBlock`
 // `DryRunTransaction` and `ExecuteTransactionBlock` takes `TransactionData` in base64
 func (s *ImplSuiAPI) DevInspectTransactionBlock(
