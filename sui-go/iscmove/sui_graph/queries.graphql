@@ -1,0 +1,31 @@
+query GetAssetsBag($bagId: SuiAddress!) {
+  owner(address: $bagId) {
+    dynamicFields {
+      nodes {
+        name { ...Value }
+        value {
+          __typename
+          ... on MoveValue {
+            type {
+          repr
+            }
+            json
+          }
+          ... on MoveObject {
+            contents {
+              json
+              
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment Value on MoveValue {
+  type {
+    repr
+  }
+  json
+}

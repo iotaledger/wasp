@@ -35,35 +35,31 @@ func (c *Client) StartNewChain(
 	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
-	treasuryCapID *sui_types.ObjectID,
+	treasuryCap *models.SuiObjectResponse,
 ) (*models.SuiTransactionBlockResponse, error) {
-	txObj, err := c.GetObject(ctx, treasuryCapID, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch Treasury object: %w", err)
-	}
-
-	ref := txObj.Data.Ref()
-
-	fmt.Print(txObj)
-
 	ptb := sui_types.NewProgrammableTransactionBuilder()
 	// the return object is an Anchor object
 
-	f, _ := ptb.Obj(
-		sui_types.ObjectArg{
-			ImmOrOwnedObject: &ref,
-		},
-	)
+	arguments := []sui_types.Argument{}
+	if treasuryCap != nil {
+		ref := treasuryCap.Data.Ref()
+		f, _ := ptb.Obj(
+			sui_types.ObjectArg{
+				ImmOrOwnedObject: &ref,
+			},
+		)
+
+		arguments = []sui_types.Argument{f}
+	}
 
 	arg1 := ptb.Command(
 		sui_types.Command{
-
 			MoveCall: &sui_types.ProgrammableMoveCall{
 				Package:       packageID,
 				Module:        "anchor",
 				Function:      "start_new_chain",
 				TypeArguments: []sui_types.TypeTag{},
-				Arguments:     []sui_types.Argument{f},
+				Arguments:     arguments,
 			},
 		},
 	)
@@ -388,4 +384,8 @@ func (c *Client) ReceiveRequest(
 	}
 
 	return txnResponse, nil
+}
+
+func (c *Client) GetAssetBag(ctx context.Context, assetBagId *sui_types.ObjectID) {
+	c.ImplSuiAPI.GetDynamicFields(ctx, assetBagId, nil, nil)
 }

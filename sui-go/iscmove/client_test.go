@@ -155,7 +155,15 @@ func TestSendReceiveCoin(t *testing.T) {
 	// 	balance:  balance,
 	// }
 
-	receiveCoin(t, client, chainSigner, iscPackageID, anchorObjID, resource.SubType.String(), coins.Data[0].CoinObjectID)
+	receiveCoin(
+		t,
+		client,
+		chainSigner,
+		iscPackageID,
+		anchorObjID,
+		resource.SubType.String(),
+		coins.Data[0].CoinObjectID,
+	)
 
 	assets, err := client.GetAssets(context.Background(), iscPackageID, anchorObjID)
 	require.NoError(t, err)
@@ -335,6 +343,7 @@ func startChainAnchor(
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
