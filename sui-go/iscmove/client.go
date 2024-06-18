@@ -386,7 +386,3 @@ func (c *Client) ReceiveRequest(
 
 	return txnResponse, nil
 }
-
-func (c *Client) GetAssetBag(ctx context.Context, assetBagId *sui_types.ObjectID) {
-	c.ImplSuiAPI.GetDynamicFields(ctx, assetBagId, nil, nil)
-}
