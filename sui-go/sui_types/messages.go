@@ -24,7 +24,7 @@ func (t TransactionExpiration) IsBcsEnum() {}
 
 type GasData struct {
 	Payment []*ObjectRef
-	Owner   SuiAddress
+	Owner   *SuiAddress
 	Price   uint64
 	Budget  uint64
 }
