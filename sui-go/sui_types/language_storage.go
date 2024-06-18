@@ -4,8 +4,8 @@ import "github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 type StructTag struct {
 	Address    SuiAddress
-	Module     string
-	Name       string
+	Module     Identifier
+	Name       Identifier
 	TypeParams []TypeTag
 }
 
