@@ -36,9 +36,10 @@ type AssetBag struct {
 }
 
 type Anchor struct {
-	ID        sui_types.ObjectID
-	Assets    AssetBag
-	StateRoot []uint8
+	ID         sui_types.ObjectID
+	Assets     Referent[AssetBag]
+	StateRoot  sui_types.Bytes
+	StateIndex uint32
 }
 
 type Receipt struct {

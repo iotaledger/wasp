@@ -35,10 +35,24 @@ func (c *Client) StartNewChain(
 	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
+	treasuryCap *models.SuiObjectResponse,
 ) (*models.SuiTransactionBlockResponse, error) {
 	ptb := sui_types.NewProgrammableTransactionBuilder()
-
 	// the return object is an Anchor object
+
+	arguments := []sui_types.Argument{}
+	if treasuryCap != nil {
+		ref := treasuryCap.Data.Ref()
+
+		arguments = []sui_types.Argument{
+			ptb.MustObj(
+				sui_types.ObjectArg{
+					ImmOrOwnedObject: &ref,
+				},
+			),
+		}
+	}
+
 	arg1 := ptb.Command(
 		sui_types.Command{
 			MoveCall: &sui_types.ProgrammableMoveCall{
@@ -46,7 +60,7 @@ func (c *Client) StartNewChain(
 				Module:        "anchor",
 				Function:      "start_new_chain",
 				TypeArguments: []sui_types.TypeTag{},
-				Arguments:     []sui_types.Argument{},
+				Arguments:     arguments,
 			},
 		},
 	)
