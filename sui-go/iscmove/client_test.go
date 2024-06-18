@@ -376,7 +376,7 @@ func receiveEvent(t *testing.T, client *iscmove.Client, eventCh chan models.SuiE
 	require.NoError(t, err)
 	require.Equal(t, eventId, object.Data.ObjectID)
 	fmt.Println("object: ", object.Data.Content.Data.MoveObject)
-	return &event.Sender, object
+	return event.Sender, object
 }
 
 func sendCoin(
