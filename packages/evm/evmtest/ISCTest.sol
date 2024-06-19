@@ -232,4 +232,28 @@ contract ISCTest {
        emit nftMint(ret.items[0].value); 
     }
 
+
+   function mintNFTToL1(bytes memory l1addr ) public payable {
+        ISCAssets memory allowance;
+        allowance.baseTokens = 100000;
+
+        // TODO why does this not work correctly (importing via ISCTypes)
+        ISCAgentID memory agentID = ISCTypes.newL1AgentID(l1addr);
+
+        ISCDict memory params = ISCDict(new ISCDictItem[](3));
+        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}");
+        params.items[1] = ISCDictItem("a", agentID.data);
+        bytes memory withdrawParam = new bytes(1);
+        withdrawParam[0] = 0x01;
+        params.items[2] = ISCDictItem("w", withdrawParam);
+
+        ISCDict memory ret = ISC.sandbox.call(
+            ISC.util.hn("accounts"),
+            ISC.util.hn("mintNFT"),
+            params,
+            allowance
+        );
+       emit nftMint(ret.items[0].value); 
+    }
+
 }

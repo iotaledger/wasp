@@ -545,6 +545,22 @@ func TestISCNFTMint(t *testing.T) {
 	require.Equal(t, irc27MetaData.Name, retIRC27.Metadata.Name)
 }
 
+func TestEVMMintNFTToL1(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	someL1Addr := tpkg.RandEd25519Address()
+
+	_, err := iscTest.CallFn([]ethCallOptions{{
+		value: big.NewInt(int64(5000000000000 * isc.Million)),
+	}}, "mintNFTToL1", someL1Addr[:])
+
+	require.NoError(t, err)
+
+	require.Len(t, env.solo.L1NFTs(someL1Addr), 1)
+}
+
 func TestISCTriggerEvent(t *testing.T) {
 	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
@@ -1025,6 +1041,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		"text/html",
 		"https://my-awesome-nft-project.com",
 		"a string that is longer than 32 bytes",
+		`[{"trait_type": "collection", "value": "super"}]`,
 	)
 
 	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
@@ -1035,11 +1052,13 @@ func TestERC721NFTCollection(t *testing.T) {
 			"application/json",
 			"https://my-awesome-nft-project.com/1.json",
 			"nft1",
+			`[{"trait_type": "Foo", "value": "Bar"}]`,
 		),
 		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/2.json",
 			"nft2",
+			`[{"trait_type": "Bar", "value": "Baz"}]`,
 		),
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
@@ -1168,6 +1187,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		require.EqualValues(t, nftMetadatas[0].URI, p.Image)
 		require.EqualValues(t, nftMetadatas[0].Name, p.Name)
 		require.EqualValues(t, nftMetadatas[0].Description, p.Description)
+		require.EqualValues(t, nftMetadatas[0].Attributes, p.Attributes)
 	}
 }
 
@@ -2454,8 +2474,8 @@ func TestTraceTransaction(t *testing.T) {
 		_, err := storage.store(43)
 		require.NoError(t, err)
 		trace := traceLatestTx()
-		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
-		require.EqualValues(t, storage.address, common.HexToAddress(trace.To))
+		require.EqualValues(t, ethAddr, trace.From)
+		require.EqualValues(t, storage.address, trace.To)
 		require.Empty(t, trace.Calls)
 	}
 	{
@@ -2463,8 +2483,8 @@ func TestTraceTransaction(t *testing.T) {
 		_, err := iscTest.triggerEvent("Hi from EVM!")
 		require.NoError(t, err)
 		trace := traceLatestTx()
-		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
-		require.EqualValues(t, iscTest.address, common.HexToAddress(trace.To))
+		require.EqualValues(t, ethAddr, trace.From)
+		require.EqualValues(t, iscTest.address, trace.To)
 		require.NotEmpty(t, trace.Calls)
 	}
 }
