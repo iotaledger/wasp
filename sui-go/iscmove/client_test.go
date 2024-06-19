@@ -144,7 +144,7 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.Equal(t, "0x2", resource.Address.ShortString())
 	require.Equal(t, "coin", resource.ModuleName)
 	require.Equal(t, "Coin", resource.FuncName)
-	balance, err := strconv.ParseUint(coin.Fields.(map[string]interface{})["balance"].(string), 10, 64)
+	balance, err := strconv.ParseUint(coin.Fields["balance"].(string), 10, 64)
 	require.NoError(t, err)
 
 	// NOTE: this is the data that ISC should use to append the tokens to the account of the sender
@@ -276,7 +276,7 @@ func TestSendReceiveRequest(t *testing.T) {
 	require.True(t, strings.HasSuffix(req.Type, "::request::Request"))
 	require.Equal(t, reqType, req.Type)
 
-	reqData := req.Fields.(map[string]interface{})["data"].(map[string]interface{})
+	reqData := req.Fields["data"].(map[string]interface{})
 	reqFields := reqData["fields"].(map[string]interface{})
 	argFields := reqFields["args"].([]interface{})
 	args := make([][]byte, len(argFields))

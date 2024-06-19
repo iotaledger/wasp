@@ -181,7 +181,7 @@ func (c *Client) GetAssets(
 		return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 	}
 
-	b, err := json.Marshal(resGetObject.Data.Content.Data.MoveObject.Fields.(map[string]interface{})["assets"])
+	b, err := json.Marshal(resGetObject.Data.Content.Data.MoveObject.Fields["assets"])
 	if err != nil {
 		return nil, fmt.Errorf("failed to access 'assets' fields: %w", err)
 	}
@@ -223,8 +223,7 @@ func (c *Client) GetAssets(
 		if err != nil {
 			return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 		}
-		fieldsMap := res.Data.Content.Data.MoveObject.Fields.((map[string]interface{}))
-		bal, _ := strconv.ParseUint(fieldsMap["value"].(string), 10, 64)
+		bal, _ := strconv.ParseUint(res.Data.Content.Data.MoveObject.Fields["value"].(string), 10, 64)
 		coin.Balance = models.NewSafeSuiBigInt(bal)
 	}
 	return &assets, nil

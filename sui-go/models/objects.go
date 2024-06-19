@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -44,9 +43,9 @@ type SuiMovePackage struct {
 }
 
 type SuiParsedMoveObject struct {
-	Type              string          `json:"type"`
-	HasPublicTransfer bool            `json:"hasPublicTransfer"`
-	Fields            json.RawMessage `json:"fields"`
+	Type              string                 `json:"type"`
+	HasPublicTransfer bool                   `json:"hasPublicTransfer"`
+	Fields            map[string]interface{} `json:"fields"`
 }
 
 type SuiRawData struct {
