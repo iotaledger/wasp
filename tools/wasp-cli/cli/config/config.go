@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp-wallet-sdk/types"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
@@ -252,16 +251,3 @@ func GetAuthTokenForImport() map[string]string {
 
 func GetTestingSeed() string     { return viper.GetString("wallet.testing_seed") }
 func SetTestingSeed(seed string) { viper.Set("wallet.testing_seed", seed) }
-
-func GetWalletLogLevel() types.ILoggerConfigLevelFilter {
-	logLevel := viper.GetString("wallet.loglevel")
-	if logLevel == "" {
-		return types.LevelFilterOff
-	}
-
-	return types.ILoggerConfigLevelFilter(logLevel)
-}
-
-func SetWalletLogLevel(filter types.ILoggerConfigLevelFilter) {
-	viper.Set("wallet.loglevel", string(filter))
-}
