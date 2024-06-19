@@ -167,6 +167,16 @@ contract ISCTest {
         selfdestruct(beneficiary);
     }
 
+    event TestSelfDestruct6780ContractCreated(address);
+
+    function testSelfDestruct6780() public{
+        // deploy a new contract instance
+        SelfDestruct6780 c = new SelfDestruct6780();
+        emit TestSelfDestruct6780ContractCreated(address(c)); 
+        // call selfdestruct in the same tx
+        c.testSelfDestruct(payable(msg.sender));
+    } 
+
     event LoopEvent();
 
     function loopWithGasLeft() public {
@@ -256,4 +266,10 @@ contract ISCTest {
        emit nftMint(ret.items[0].value); 
     }
 
+}
+
+contract SelfDestruct6780{
+    function testSelfDestruct(address payable beneficiary) public {
+        selfdestruct(beneficiary);
+    }
 }

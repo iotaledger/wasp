@@ -241,6 +241,6 @@ type BLS interface {
 }
 
 type EVMTracer struct {
-	Tracer  tracers.Tracer
+	Tracer  *tracers.Tracer
 	TxIndex uint64
 }

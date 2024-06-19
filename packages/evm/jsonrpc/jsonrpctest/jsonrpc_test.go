@@ -579,7 +579,7 @@ func TestRPCTraceTx(t *testing.T) {
 		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
 	)
 	require.NoError(t, err)
-	lastCallRegExp := regexp.MustCompile(`.*{"type":"CALL",.+"to":"0x([a-zA-Z0-9_.-]+)".*}`)
+	lastCallRegExp := regexp.MustCompile(`{.+"to":"0x([a-zA-Z0-9_.-]+)".*}`)
 	match1 := lastCallRegExp.Find(res1)
 	match2 := lastCallRegExp.Find(res2)
 	require.NotEqual(t, match1, match2)

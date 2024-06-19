@@ -648,12 +648,8 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 	if config.Tracer != nil {
 		tracerType = *config.Tracer
 	}
-	tracer, err := newTracer(tracerType, config.TracerConfig)
-	if err != nil {
-		return nil, err
-	}
 
-	_, _, blockNumber, txIndex, err := e.TransactionByHash(txHash)
+	_, blockHash, blockNumber, txIndex, err := e.TransactionByHash(txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -662,6 +658,16 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 	}
 
 	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	tracer, err := newTracer(tracerType, &tracers.Context{
+		BlockHash:   blockHash,
+		BlockNumber: new(big.Int).SetUint64(blockNumber),
+		TxIndex:     int(txIndex),
+		TxHash:      txHash,
+	}, config.TracerConfig)
 	if err != nil {
 		return nil, err
 	}

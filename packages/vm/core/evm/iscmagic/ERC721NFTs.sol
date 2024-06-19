@@ -311,9 +311,8 @@ contract ERC721NFTs {
     // IERC721Metadata
     function tokenURI(uint256 tokenId) external view returns (string memory) {
         _requireNftExists(tokenId);
-        IRC27NFT memory nft = __iscSandbox.getIRC27NFTData(tokenId.asNFTID());
-        require(_isManagedByThisContract(nft.nft));
-        return nft.metadata.uri;
+        string memory uri = __iscSandbox.getIRC27TokenURI(tokenId.asNFTID());
+        return uri;
     }
 }
 

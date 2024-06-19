@@ -27,26 +27,26 @@ interface ISCSandbox {
 
     // Take some funds from the given address, which must have authorized first with `allow`.
     // If `allowance` is empty, all allowed funds are taken.
-    function takeAllowedFunds(address addr, ISCAssets memory allowance)
-        external;
+    function takeAllowedFunds(
+        address addr,
+        ISCAssets memory allowance
+    ) external;
 
     // Get the amount of funds currently allowed by the given address to the caller
-    function getAllowanceFrom(address addr)
-        external
-        view
-        returns (ISCAssets memory);
+    function getAllowanceFrom(
+        address addr
+    ) external view returns (ISCAssets memory);
 
     // Get the amount of funds currently allowed by the caller to the given address
-    function getAllowanceTo(address target)
-        external
-        view
-        returns (ISCAssets memory);
+    function getAllowanceTo(
+        address target
+    ) external view returns (ISCAssets memory);
 
     // Get the amount of funds currently allowed between the given addresses
-    function getAllowance(address from, address to)
-        external
-        view
-        returns (ISCAssets memory);
+    function getAllowance(
+        address from,
+        address to
+    ) external view returns (ISCAssets memory);
 
     // Send an on-ledger request (or a regular transaction to any L1 address).
     // The specified `assets` are transferred from the caller's
@@ -94,16 +94,14 @@ interface ISCSandbox {
         returns (ISCTokenProperties memory);
 
     // Get the ID of a L2-controlled native token, given its foundry serial number
-    function getNativeTokenID(uint32 foundrySN)
-        external
-        view
-        returns (NativeTokenID memory);
+    function getNativeTokenID(
+        uint32 foundrySN
+    ) external view returns (NativeTokenID memory);
 
     // Get the token scheme of a L2-controlled native token, given its foundry serial number
-    function getNativeTokenScheme(uint32 foundrySN)
-        external
-        view
-        returns (NativeTokenScheme memory);
+    function getNativeTokenScheme(
+        uint32 foundrySN
+    ) external view returns (NativeTokenScheme memory);
 
     // Get information about an on-chain NFT
     function getNFTData(NFTID id) external view returns (ISCNFT memory);
@@ -117,26 +115,38 @@ interface ISCSandbox {
     // }))
     function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
 
+    // Get information about an on-chain IRC27 NFT
+    // returns a JSON file encoded with the following format:
+    // base64(jsonEncode({
+    //   "name": NFT.name,
+    //   "description": NFT.description,
+    //   "image": NFT.URI
+    // }))
+    function getIRC27TokenURI(NFTID id) external view returns (string memory);
+
     // Get the address of an ERC20NativeTokens contract for the given foundry serial number
-    function erc20NativeTokensAddress(uint32 foundrySN)
-        external
-        view
-        returns (address);
+    function erc20NativeTokensAddress(
+        uint32 foundrySN
+    ) external view returns (address);
 
     // Get the address of an ERC721NFTCollection contract for the given collection ID
-    function erc721NFTCollectionAddress(NFTID collectionID)
-        external
-        view
-        returns (address);
+    function erc721NFTCollectionAddress(
+        NFTID collectionID
+    ) external view returns (address);
 
     // Extract the foundry serial number from an ERC20NativeTokens contract's address
-    function erc20NativeTokensFoundrySerialNumber(address addr)
-        external
-        view
-        returns (uint32);
+    function erc20NativeTokensFoundrySerialNumber(
+        address addr
+    ) external view returns (uint32);
 
     // Creates an ERC20NativeTokens contract instance and register it with the foundry as a native token. Only the foundry owner can call this function.
-    function registerERC20NativeToken(uint32 foundrySN, string memory name, string memory symbol, uint8 decimals, ISCAssets memory allowance) external;
+    function registerERC20NativeToken(
+        uint32 foundrySN,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        ISCAssets memory allowance
+    ) external;
 }
 
 ISCSandbox constant __iscSandbox = ISCSandbox(ISC_MAGIC_ADDRESS);

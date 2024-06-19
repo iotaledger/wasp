@@ -534,10 +534,11 @@ func TestISCNFTMint(t *testing.T) {
 
 	retIRC27 := new(iscmagic.IRC27NFT)
 
-	env.ISCMagicSandbox(ethKey).callView(
+	err = env.ISCMagicSandbox(ethKey).callView(
 		"getIRC27NFTData",
 		[]interface{}{iscmagic.WrapNFTID(nftID)},
 		&retIRC27)
+	require.NoError(t, err)
 
 	irc27MetaData, err := isc.IRC27NFTMetadataFromBytes(ret.Metadata)
 	require.NoError(t, err)
@@ -1951,8 +1952,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    nil,
 			expectedError: "insufficient gas price: got 0, minimum is 10000000000",
-			gasBurned:     168154,
-			feeCharged:    1682,
+			gasBurned:     168098,
+			feeCharged:    1681,
 		},
 		{
 			name:          "default policy, gas price too low",
@@ -1960,8 +1961,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    big.NewInt(9999999999),
 			expectedError: "insufficient gas price: got 9999999999, minimum is 10000000000",
-			gasBurned:     168154,
-			feeCharged:    1682,
+			gasBurned:     168098,
+			feeCharged:    1681,
 		},
 		{
 			name:        "default policy, gas price just enough",
@@ -1993,8 +1994,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:    big.NewInt(19999999999),
 			expectedError: "insufficient gas price: got 19999999999, minimum is 20000000000",
-			gasBurned:     168154,
-			feeCharged:    2 * 1682,
+			gasBurned:     168098,
+			feeCharged:    2 * 1681,
 		},
 		{
 			name:        "gas more expensive, gas price just enough",
@@ -2287,6 +2288,7 @@ func TestStaticCall(t *testing.T) {
 }
 
 func TestSelfDestruct(t *testing.T) {
+	// NOTE: since EIP-6780 self-destruct was deprecated
 	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
@@ -2309,11 +2311,23 @@ func TestSelfDestruct(t *testing.T) {
 	_, err := iscTest.CallFn([]ethCallOptions{{sender: ethKey}}, "testSelfDestruct", beneficiary)
 	require.NoError(t, err)
 
-	require.Empty(t, env.getCode(iscTest.address))
+	// (EIP-6780) SELFDESTRUCT will recover all funds to the target but not delete the account,
+	// except when called in the same transaction as creation
+	require.NotEmpty(t, env.getCode(iscTest.address))
 	require.Zero(t, env.Chain.L2BaseTokens(iscTestAgentID))
 	require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, beneficiary)))
 
 	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
+}
+
+func TestSelfDestruct6780(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
+	iscTest := env.deployISCTestContract(ethKey)
+
+	var createContractAddr common.Address
+	iscTest.CallFnExpectEvent(nil, "TestSelfDestruct6780ContractCreated", &createContractAddr, "testSelfDestruct6780")
+	require.Empty(t, env.getCode(createContractAddr))
 }
 
 func TestChangeGasLimit(t *testing.T) {
@@ -2475,7 +2489,7 @@ func TestTraceTransaction(t *testing.T) {
 		require.NoError(t, err)
 		trace := traceLatestTx()
 		require.EqualValues(t, ethAddr, trace.From)
-		require.EqualValues(t, storage.address, trace.To)
+		require.EqualValues(t, storage.address, *trace.To)
 		require.Empty(t, trace.Calls)
 	}
 	{
@@ -2484,7 +2498,7 @@ func TestTraceTransaction(t *testing.T) {
 		require.NoError(t, err)
 		trace := traceLatestTx()
 		require.EqualValues(t, ethAddr, trace.From)
-		require.EqualValues(t, iscTest.address, trace.To)
+		require.EqualValues(t, iscTest.address, *trace.To)
 		require.NotEmpty(t, trace.Calls)
 	}
 }
