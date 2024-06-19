@@ -1,4 +1,4 @@
-package sui
+package types
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc/sui/mock_contract"
 	"github.com/iotaledger/wasp/sui-go/iscmove"
+	"github.com/iotaledger/wasp/sui-go/iscmove/types/mock_contract"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
