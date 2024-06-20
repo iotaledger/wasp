@@ -30,7 +30,7 @@ func CreatePool(
 			Module:   "swap",
 			Function: "create_pool",
 			TypeArguments: []sui_types.TypeTag{{Struct: &sui_types.StructTag{
-				Address: *testcoinID,
+				Address: testcoinID,
 				Module:  "testcoin",
 				Name:    "TESTCOIN",
 			}}},

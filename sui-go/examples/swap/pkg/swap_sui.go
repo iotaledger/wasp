@@ -43,7 +43,7 @@ func SwapSui(
 			Module:   "swap",
 			Function: "swap_sui",
 			TypeArguments: []sui_types.TypeTag{{Struct: &sui_types.StructTag{
-				Address: *testcoinID,
+				Address: testcoinID,
 				Module:  "testcoin",
 				Name:    "TESTCOIN",
 			}}},
