@@ -2,8 +2,8 @@ package iscmove_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -144,7 +144,8 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.Equal(t, "0x2", resource.Address.ShortString())
 	require.Equal(t, "coin", resource.ModuleName)
 	require.Equal(t, "Coin", resource.FuncName)
-	balance, err := strconv.ParseUint(coin.Fields["balance"].(string), 10, 64)
+	var fields models.CoinFields
+	err = json.Unmarshal(coin.Fields, &fields)
 	require.NoError(t, err)
 
 	// NOTE: this is the data that ISC should use to append the tokens to the account of the sender
@@ -169,7 +170,7 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, assets.Coins, 1)
 	require.Equal(t, coinType, "0x"+assets.Coins[0].CoinType)
-	require.Equal(t, balance, assets.Coins[0].Balance.Uint64())
+	require.Equal(t, fields.Balance.BigInt().Uint64(), assets.Coins[0].Balance.Uint64())
 }
 
 func TestCreateRequest(t *testing.T) {
@@ -264,31 +265,36 @@ func TestSendReceiveRequest(t *testing.T) {
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
-
 	reqObjID, reqType, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
-
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
-
 	sender, object := receiveEvent(t, client, eventCh)
 	require.Equal(t, signer.Address, sender)
-
 	req := object.Data.Content.Data.MoveObject
 	require.True(t, strings.HasSuffix(req.Type, "::request::Request"))
 	require.Equal(t, reqType, req.Type)
 
-	reqData := req.Fields["data"].(map[string]interface{})
-	reqFields := reqData["fields"].(map[string]interface{})
-	argFields := reqFields["args"].([]interface{})
-	args := make([][]byte, len(argFields))
-	for i, argField := range argFields {
+	type Fields struct {
+		Data struct {
+			Fields struct {
+				Contract string
+				Function string
+				Args     []interface{}
+			}
+		}
+	}
+	var fields Fields
+	err = json.Unmarshal(req.Fields, &fields)
+	require.NoError(t, err)
+	args := make([][]byte, len(fields.Data.Fields.Args))
+	for i, argField := range fields.Data.Fields.Args {
 		argFieldBytes := argField.([]interface{})
 		arg := make([]byte, len(argFieldBytes))
 		for j, argFieldByte := range argFieldBytes {
@@ -302,8 +308,8 @@ func TestSendReceiveRequest(t *testing.T) {
 		objectID:  object.Data.ObjectID,
 		sender:    sender,
 		anchorID:  anchorObjID,
-		contract:  reqFields["contract"].(string),
-		function:  reqFields["function"].(string),
+		contract:  fields.Data.Fields.Contract,
+		function:  fields.Data.Fields.Function,
 		args:      args,
 		allowance: nil,
 	}
