@@ -1,13 +1,19 @@
 package iscmove
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
@@ -15,14 +21,64 @@ import (
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
-type Client struct {
-	*sui.ImplSuiAPI
+type Config struct {
+	APIURL       string
+	FaucetURL    string
+	GraphURL     string
+	WebsocketURL string
 }
 
-func NewClient(api *sui.ImplSuiAPI) *Client {
+type Client struct {
+	*sui.ImplSuiAPI
+	*SuiGraph
+
+	config Config
+}
+
+func NewClient(config Config) *Client {
 	return &Client{
-		api,
+		sui.NewSuiClient(config.APIURL),
+		NewGraph(config.GraphURL),
+		config,
 	}
+}
+
+func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address, faucetURL string) error {
+	paramJSON := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, faucetURL, bytes.NewBuffer([]byte(paramJSON)))
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	client := http.Client{}
+	res, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("post %v response code: %v", faucetURL, res.Status)
+	}
+	defer res.Body.Close()
+
+	resByte, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	//
+	var response struct {
+		Task  string `json:"task,omitempty"`
+		Error string `json:"error,omitempty"`
+	}
+	err = json.Unmarshal(resByte, &response)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(response.Error) != "" {
+		return errors.New(response.Error)
+	}
+
+	return nil
 }
 
 // StartNewChain calls <packageID>::anchor::start_new_chain(), and then transfers the created
@@ -185,7 +241,7 @@ func (c *Client) GetAssets(
 	// object 'Assets' is owned by the Anchor object, and an 'Assets' object doesn't have ID, because it is a
 	// dynamic-field of Anchor object.
 	resGetObject, err := c.GetObject(
-		context.Background(),
+		ctx,
 		anchorAddress,
 		&models.SuiObjectDataOptions{
 			ShowContent: true,

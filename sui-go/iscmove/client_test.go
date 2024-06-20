@@ -25,7 +25,13 @@ const (
 func newClient(_ *testing.T) *iscmove.Client {
 	// NOTE: comment out the next line to run local tests against sui-test-validator
 	// t.Skip("only for localnet")
-	return iscmove.NewClient(sui.NewSuiClient(conn.LocalnetEndpointUrl))
+	return iscmove.NewClient(
+		iscmove.Config{
+			APIURL:       conn.LocalnetEndpointUrl,
+			FaucetURL:    conn.LocalnetFaucetUrl,
+			WebsocketURL: conn.LocalnetWebsocketEndpointUrl,
+		},
+	)
 }
 
 func TestStartNewChain(t *testing.T) {

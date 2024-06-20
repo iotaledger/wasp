@@ -7,25 +7,24 @@ import (
 	"github.com/Khan/genqlient/graphql"
 
 	"github.com/iotaledger/wasp/sui-go/iscmove/sui_graph"
-	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type SuiGraph struct {
-	graphqlUrl string
+	graphqlURL string
 }
 
-func NewGraph(api *sui.ImplSuiAPI, graphqlUrl string) *SuiGraph {
+func NewGraph(graphqlURL string) *SuiGraph {
 	return &SuiGraph{
-		graphqlUrl,
+		graphqlURL,
 	}
 }
 
-func (g *SuiGraph) GetAssetBag(ctx context.Context, assetBagId sui_types.ObjectID) (
+func (g *SuiGraph) GetAssetBag(ctx context.Context, assetBagID sui_types.ObjectID) (
 	*sui_graph.GetAssetsBagResponse,
 	error,
 ) {
 	httpClient := http.Client{}
-	graphqlClient := graphql.NewClient(g.graphqlUrl, &httpClient)
-	return sui_graph.GetAssetsBag(ctx, graphqlClient, assetBagId.String())
+	graphqlClient := graphql.NewClient(g.graphqlURL, &httpClient)
+	return sui_graph.GetAssetsBag(ctx, graphqlClient, assetBagID.String())
 }

@@ -17,6 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/sui-go/iscmove"
+	"github.com/iotaledger/wasp/sui-go/iscmove/types"
 )
 
 const (
@@ -35,6 +37,12 @@ type Config struct {
 	UseRemotePoW  bool
 }
 
+type Client2 interface {
+	RequestFunds(ctx context.Context, address cryptolib.Address, faucetURL string) error
+	Health(ctx context.Context, timeout time.Duration) error
+	GetAnchor(ctx context.Context, anchorId cryptolib.Address) (types.Anchor, error)
+}
+
 type Client interface {
 	// requests funds from faucet, waits for confirmation
 	RequestFunds(addr *cryptolib.Address, timeout ...time.Duration) error
@@ -48,7 +56,7 @@ type Client interface {
 	Health(timeout ...time.Duration) (bool, error)
 }
 
-var _ Client = &l1client{}
+var _ Client = &iscmove.Client{}
 
 type l1client struct {
 	ctx           context.Context

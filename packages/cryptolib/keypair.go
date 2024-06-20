@@ -48,11 +48,6 @@ func (k *KeyPair) Verify(message, sig []byte) bool {
 	return k.publicKey.Verify(message, sig)
 }
 
-/*func (k *KeyPair) AsAddressSigner() iotago.AddressSigner {
-	addrKeys := k.privateKey.AddressKeysForEd25519Address(k.publicKey.AsEd25519Address())
-	return iotago.NewInMemoryAddressSigner(addrKeys)
-}*/
-
 func (k *KeyPair) GetPrivateKey() *PrivateKey {
 	return k.privateKey
 }
@@ -72,10 +67,6 @@ func (k *KeyPair) SignBytes(data []byte) []byte {
 func (k *KeyPair) Sign(payload []byte) (*Signature, error) {
 	return NewSignature(k.GetPublicKey(), k.SignBytes(payload)), nil
 }
-
-/*func (k *KeyPair) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
-	return k.GetPrivateKey().AddressKeysForEd25519Address(addr)
-}*/
 
 func (k *KeyPair) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)

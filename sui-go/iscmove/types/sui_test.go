@@ -23,7 +23,6 @@ import (
 )
 
 type testSetup struct {
-	suiClient *sui.ImplSuiAPI
 	iscClient *iscmove.Client
 	signer    *sui_signer.Signer
 	packageID sui_types.PackageID
@@ -31,8 +30,15 @@ type testSetup struct {
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
-	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	client := iscmove.NewClient(suiClient)
+	client := iscmove.NewClient(
+		iscmove.Config{
+			APIURL:       conn.LocalnetEndpointUrl,
+			FaucetURL:    conn.LocalnetFaucetUrl,
+			WebsocketURL: conn.LocalnetWebsocketEndpointUrl,
+		},
+	)
+
+	_, signer := client.WithSignerAndFund(sui_signer.TEST_SEED, 0)
 
 	iscBytecode := mock_contract.MockISCContract()
 
@@ -58,13 +64,15 @@ func setupAndDeploy(t *testing.T) testSetup {
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	cap, _ := lo.Find(txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
-		if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
-			return true
-		}
+	cap, _ := lo.Find(
+		txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
+				return true
+			}
 
-		return false
-	})
+			return false
+		},
+	)
 
 	capObj, err := client.GetObject(context.Background(), &cap.Data.Created.ObjectID, nil)
 	require.NoError(t, err)
@@ -86,7 +94,6 @@ func setupAndDeploy(t *testing.T) testSetup {
 	t.Logf("StartNewChain response: %#v\n", startNewChainRes)
 
 	return testSetup{
-		suiClient: suiClient,
 		signer:    signer,
 		chain:     startNewChainRes,
 		iscClient: client,
@@ -95,20 +102,24 @@ func setupAndDeploy(t *testing.T) testSetup {
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	cap, _ := lo.Find(setup.chain.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
-		if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
-			return true
-		}
+	cap, _ := lo.Find(
+		setup.chain.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
+				return true
+			}
 
-		return false
-	})
+			return false
+		},
+	)
 
-	anchor, err := setup.suiClient.GetObject(context.Background(), &cap.Data.Created.ObjectID, &models.SuiObjectDataOptions{
-		ShowType:    true,
-		ShowContent: true,
-		ShowBcs:     true,
-		ShowDisplay: true,
-	})
+	anchor, err := setup.iscClient.GetObject(
+		context.Background(), &cap.Data.Created.ObjectID, &models.SuiObjectDataOptions{
+			ShowType:    true,
+			ShowContent: true,
+			ShowBcs:     true,
+			ShowDisplay: true,
+		},
+	)
 	require.NoError(t, err)
 
 	t.Logf("%# v\n", pretty.Formatter(anchor.Data.Content.Data))
@@ -128,7 +139,7 @@ func TestMinimalClient(t *testing.T) {
 	anchor := GetAnchor(t, setup)
 	t.Log(anchor)
 
-	graph := iscmove.NewGraph(setup.suiClient, "http://localhost:9001")
+	graph := iscmove.NewGraph("http://localhost:9001")
 	ret, err := graph.GetAssetBag(context.Background(), anchor.Assets.Value.ID)
 
 	require.NoError(t, err)

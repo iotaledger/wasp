@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 const SuiAddressLen = 32
 
-type SuiAddress [SuiAddressLen]uint8
+type SuiAddress cryptolib.Address
 
 func SuiAddressFromHex(str string) (*SuiAddress, error) {
 	if strings.HasPrefix(str, "0x") || strings.HasPrefix(str, "0X") {
