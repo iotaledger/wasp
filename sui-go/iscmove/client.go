@@ -194,13 +194,16 @@ func (c *Client) GetAssets(
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 	}
-
-	b, err := json.Marshal(resGetObject.Data.Content.Data.MoveObject.Fields["assets"])
+	type ResGetObjectFields struct {
+		Assets json.RawMessage
+	}
+	var resGetObjectFields ResGetObjectFields
+	err = json.Unmarshal(resGetObject.Data.Content.Data.MoveObject.Fields, &resGetObjectFields)
 	if err != nil {
-		return nil, fmt.Errorf("failed to access 'assets' fields: %w", err)
+		return nil, fmt.Errorf("failed to get Assets fields %w", err)
 	}
 	var normalizedAssets NormalizedAssets
-	err = json.Unmarshal(b, &normalizedAssets)
+	err = json.Unmarshal(resGetObjectFields.Assets, &normalizedAssets)
 	if err != nil {
 		return nil, fmt.Errorf("failed to cast to 'NormalizedAssets' type: %w", err)
 	}
@@ -237,7 +240,15 @@ func (c *Client) GetAssets(
 		if err != nil {
 			return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 		}
-		bal, _ := strconv.ParseUint(res.Data.Content.Data.MoveObject.Fields["value"].(string), 10, 64)
+		type ResFields struct {
+			Value string
+		}
+		var resFields ResFields
+		err = json.Unmarshal(res.Data.Content.Data.MoveObject.Fields, &resFields)
+		if err != nil {
+			panic(err)
+		}
+		bal, _ := strconv.ParseUint(resFields.Value, 10, 64)
 		coin.Balance = models.NewSafeSuiBigInt(bal)
 	}
 	return &assets, nil

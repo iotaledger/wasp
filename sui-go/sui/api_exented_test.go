@@ -2,6 +2,7 @@ package sui_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -120,7 +121,10 @@ func TestGetOwnedObjects(t *testing.T) {
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(objs.Data), int(limit))
 	require.NoError(t, err)
-	require.Equal(t, "1000000000", objs.Data[1].Data.Content.Data.MoveObject.Fields["balance"])
+	var fields models.CoinFields
+	err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
+	require.NoError(t, err)
+	require.Equal(t, "1000000000", fields.Balance.String())
 }
 
 func TestQueryEvents(t *testing.T) {
