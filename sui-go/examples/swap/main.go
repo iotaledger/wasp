@@ -5,8 +5,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/examples/swap/pkg"
+	"github.com/iotaledger/wasp/sui-go/move"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
@@ -22,7 +22,7 @@ func main() {
 	fmt.Println("signer: ", signer.Address)
 	fmt.Println("swapper: ", swapper.Address)
 
-	swapPackageID := pkg.Publish(suiClient, signer, contracts.Load(swapBytecodeJSON))
+	swapPackageID := pkg.Publish(suiClient, signer, move.DecodePackageBytecode(swapBytecodeJSON))
 	testcoinID, _ := pkg.PublishMintTestcoin(suiClient, signer)
 	testcoinCoinType := fmt.Sprintf("%s::testcoin::TESTCOIN", testcoinID.String())
 
