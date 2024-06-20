@@ -5,12 +5,13 @@ import (
 
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/move"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
-func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode contracts.MoveBytecode) *sui_types.PackageID {
+func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode move.PackageBytecode) *sui_types.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
 		signer.Address,
