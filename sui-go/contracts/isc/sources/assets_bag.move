@@ -1,15 +1,14 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-
 module isc::assets_bag {
-    use std::ascii::{String};
+    use std::ascii::String;
     use std::type_name;
     use sui::{
         coin::{Self, Coin},
-        balance::{Balance},
+        balance::Balance,
         dynamic_object_field as dof,
         dynamic_field as df,
-    };   
+    };
 
     // Attempted to destroy a non-empty assets bag
     const EBagNotEmpty: u64 = 0;
@@ -27,7 +26,9 @@ module isc::assets_bag {
     // === Dynamic Field keys ===
 
     /// Dynamic field key for an asset placed into the AssetsBag.
-    public struct Asset has store, copy, drop { id: ID }
+    public struct Asset has store, copy, drop {
+        id: ID,
+    }
 
     // === AssetsBag packing and unpacking ===
 
@@ -39,16 +40,16 @@ module isc::assets_bag {
          }
     }
 
-    /// Destroys an empty AssetsBag object and returns its balance.    
+    /// Destroys an empty AssetsBag object and returns its balance.
     public fun destroy_empty(self: AssetsBag) {
         let AssetsBag { id, size } = self;
         assert!(size == 0, EBagNotEmpty);
-        id.delete();    
+        id.delete();
     }
-    
+
     // === Place into the AssetsBag ===
 
-    /// Adds a the balance of a Coin as a dinamyc field of the AssetsBag where the key is 
+    /// Adds a the balance of a Coin as a dinamyc field of the AssetsBag where the key is
     /// the type of the Coin (OTW).
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     public fun place_coin<T>(self: &mut AssetsBag, coin: Coin<T>) {
@@ -56,14 +57,14 @@ module isc::assets_bag {
         place_coin_balance_internal(self, balance)
     }
 
-    /// Adds a the balance as a dinamyc field of the AssetsBag where the key is 
+    /// Adds a the balance as a dinamyc field of the AssetsBag where the key is
     /// the type of the Coin (OTW).
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     public fun place_coin_balance<T>(self: &mut AssetsBag, balance: Balance<T>) {
         place_coin_balance_internal(self, balance)
     }
- 
-    /// Adds an asset as a dinamyc field of the AssetsBag where the key is 
+
+    /// Adds an asset as a dinamyc field of the AssetsBag where the key is
     /// of type Asset (indexed by object id).
     public fun place_asset<T: key + store>(self: &mut AssetsBag, asset: T) {
         place_asset_internal(self, asset)
@@ -96,7 +97,6 @@ module isc::assets_bag {
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     fun place_coin_balance_internal<T>(self: &mut AssetsBag, balance: Balance<T>) {
         let coin_type = type_name::get<T>().into_string();
-
         if(df::exists_(&self.id, coin_type)) {
             let placed_balance = df::borrow_mut<String, Balance<T>>(&mut self.id, coin_type);
             placed_balance.join(balance);
@@ -116,7 +116,6 @@ module isc::assets_bag {
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     fun take_coin_balance_internal<T>(self: &mut AssetsBag, amount: u64): Balance<T> {
         let coin_type = type_name::get<T>().into_string();
-
         let placed_balance = df::borrow_mut<String, Balance<T>>(&mut self.id, coin_type);
         let taken_balance = placed_balance.split(amount);
         if (placed_balance.value() == 0) {
@@ -124,10 +123,9 @@ module isc::assets_bag {
             zero_balance.destroy_zero();
             self.size = self.size - 1;
         };
-        
         taken_balance
     }
-        
+
     /// Internal: "take" an asset from the AssetsBag.
     fun take_asset_internal<T: key + store>(self: &mut AssetsBag, id: ID): T {
         self.size = self.size - 1;
