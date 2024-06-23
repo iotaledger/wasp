@@ -6,6 +6,29 @@ type NormalizedID struct {
 	ID string `json:"id"`
 }
 
+type AnchorFieldsRaw struct {
+	Assets struct {
+		Type   string `json:"type"`
+		Fields struct {
+			ID    string `json:"id"`
+			Value struct {
+				Type   string `json:"type"`
+				Fields struct {
+					ID struct {
+						ID string `json:"id"`
+					} `json:"id"`
+					Size string `json:"size"`
+				} `json:"fields"`
+			} `json:"value"`
+		} `json:"fields"`
+	} `json:"assets"`
+	ID struct {
+		ID string `json:"id"`
+	} `json:"id"`
+	StateIndex int           `json:"state_index"`
+	StateRoot  []interface{} `json:"state_root"`
+}
+
 type NormalizedAssets struct {
 	Type   string `json:"type"`
 	Fields struct {

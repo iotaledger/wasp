@@ -1,0 +1,32 @@
+---
+compiled_package_info:
+  package_name: ISC
+  address_alias_instantiation:
+    isc: "0000000000000000000000000000000000000000000000000000000000000000"
+    stardust: 000000000000000000000000000000000000000000000000000000000000107a
+    std: "0000000000000000000000000000000000000000000000000000000000000001"
+    sui: "0000000000000000000000000000000000000000000000000000000000000002"
+  source_digest: FC4D7A3FFD51DF773FF7D422325AE4A3E2C49269D4913D9C3C22053D5E0D5CE7
+  build_flags:
+    dev_mode: false
+    test_mode: false
+    generate_docs: false
+    install_dir: ~
+    force_recompilation: false
+    lock_file: "./Move.lock"
+    fetch_deps_only: false
+    skip_fetch_latest_git_deps: false
+    default_flavor: sui
+    default_edition: ~
+    deps_as_root: false
+    silence_warnings: false
+    warnings_are_errors: false
+    json_errors: false
+    additional_named_addresses: {}
+    lint_flag:
+      no_lint: false
+      lint: false
+dependencies:
+  - MoveStdlib
+  - Stardust
+  - Sui

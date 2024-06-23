@@ -163,75 +163,6 @@ func (c *Client) StartNewChain(
 	return GetAnchorFromSuiTransactionBlockResponse(ctx, c, txnResponse)
 }
 
-// SendCoin calls <packageID>::anchor::send_coin(), which sends the given coin to the
-// anchor's address.
-func (c *Client) SendCoin(
-	ctx context.Context,
-	signer cryptolib.Signer,
-	anchorPackageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
-	coinType string,
-	coinObject *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
-	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
-	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
-		Signer:    signer.Address().AsSuiAddress(),
-		PackageID: anchorPackageID,
-		Module:    "anchor",
-		Function:  "send_coin",
-		TypeArgs:  []string{coinType},
-		Arguments: []any{anchorAddress.String(), coinObject.String()},
-		GasBudget: models.NewBigInt(gasBudget),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to call send_coin() move call: %w", err)
-	}
-
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-
-	return txnResponse, nil
-}
-
-// ReceiveCoin calls <packageID>::anchor::receive_coin(), which adds the coin to the anchor's assets.
-func (c *Client) ReceiveCoin(
-	ctx context.Context,
-	signer cryptolib.Signer,
-	anchorPackageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
-	coinType string,
-	receivingCoinObject *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
-	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
-	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
-		Signer:    signer.Address().AsSuiAddress(),
-		PackageID: anchorPackageID,
-		Module:    "anchor",
-		Function:  "receive_coin",
-		TypeArgs:  []string{coinType},
-		Arguments: []any{anchorAddress.String(), receivingCoinObject.String()},
-		GasBudget: models.NewBigInt(gasBudget),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to call receive_coin() move call: %w", err)
-	}
-
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-
-	return txnResponse, nil
-}
-
 // GetAssets fetches the assets stored in the anchor object.
 func (c *Client) GetAssets(
 	ctx context.Context,
@@ -305,13 +236,14 @@ func (c *Client) GetAssets(
 	return &assets, nil
 }
 
-// CreateRequest calls <packageID>::request::create_request() and transfers the created
+// CreateAndSendRequest calls <packageID>::request::create_and_send_request() and transfers the created
 // Request to the signer.
-func (c *Client) CreateRequest(
+func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	signer cryptolib.Signer,
 	packageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
+	assetsBagRef *sui_types.ObjectRef,
 	iscContractName string,
 	iscFunctionName string,
 	args [][]byte,
@@ -323,14 +255,16 @@ func (c *Client) CreateRequest(
 	ptb := sui_types.NewProgrammableTransactionBuilder()
 
 	// the return object is an Anchor object
-	arg1 := ptb.Command(
+	ptb.Command(
 		sui_types.Command{
 			MoveCall: &sui_types.ProgrammableMoveCall{
 				Package:       packageID,
 				Module:        "request",
-				Function:      "create_request",
+				Function:      "create_and_send_request",
 				TypeArguments: []sui_types.TypeTag{},
 				Arguments: []sui_types.Argument{
+					ptb.MustPure(anchorAddress),
+					ptb.MustObj(sui_types.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 					ptb.MustPure(iscContractName),
 					ptb.MustPure(iscFunctionName),
 					ptb.MustPure(args),
@@ -339,14 +273,6 @@ func (c *Client) CreateRequest(
 		},
 	)
 
-	ptb.Command(
-		sui_types.Command{
-			TransferObjects: &sui_types.ProgrammableTransferObjects{
-				Objects: []sui_types.Argument{arg1},
-				Address: ptb.MustPure(signer.Address),
-			},
-		},
-	)
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
@@ -364,50 +290,27 @@ func (c *Client) CreateRequest(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
+	// txnBytes, err := bcs.Marshal(tx)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	// }
+
+	// txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	// }
+
+	txnBytes, err := bcs.Marshal(tx.V1.Kind)
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes, execOptions)
+	txnResponse, err := c.DevInspectTransactionBlock(ctx, signer.Address, txnBytes, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
-
-	return txnResponse, nil
-}
-
-// SendRequest calls <packageID>::anchor::send_request(), which sends the request to the anchor.
-func (c *Client) SendRequest(
-	ctx context.Context,
-	signer cryptolib.Signer,
-	packageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
-	reqObjID *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
-	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
-	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
-		Signer:    signer.Address().AsSuiAddress(),
-		PackageID: packageID,
-		Module:    "anchor",
-		Function:  "send_request",
-		TypeArgs:  []string{},
-		Arguments: []any{anchorAddress.String(), reqObjID.String()},
-		GasBudget: models.NewBigInt(gasBudget),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to call send_request() move call: %w", err)
-	}
-
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-
-	return txnResponse, nil
+	fmt.Println("txnResponse: ", txnResponse.Effects.Data.V1)
+	return nil, nil
 }
 
 // ReceiveRequest calls <packageID>::anchor::receive_request(), which receives and consumes

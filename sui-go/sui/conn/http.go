@@ -85,6 +85,7 @@ func (c *HttpClient) CallContext(ctx context.Context, result interface{}, method
 	if err != nil {
 		return fmt.Errorf("could not read response body: %w", err)
 	}
+	fmt.Println("resBody: ", string(resBody))
 	var respmsg jsonrpcMessage
 	err = json.Unmarshal(resBody, &respmsg)
 	if err != nil {
