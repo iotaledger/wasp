@@ -1,8 +1,8 @@
 package models
 
 type Balance struct {
-	CoinType        string                              `json:"coinType"`
-	CoinObjectCount uint64                              `json:"coinObjectCount"`
-	TotalBalance    SuiBigInt                           `json:"totalBalance"`
-	LockedBalance   map[SafeSuiBigInt[uint64]]SuiBigInt `json:"lockedBalance"`
+	CoinType        string            `json:"coinType"`
+	CoinObjectCount uint64            `json:"coinObjectCount"`
+	TotalBalance    *BigInt           `json:"totalBalance"`
+	LockedBalance   map[BigInt]BigInt `json:"lockedBalance"` // FIXME the type may not be wrong
 }

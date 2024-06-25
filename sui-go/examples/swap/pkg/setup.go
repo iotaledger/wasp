@@ -18,7 +18,7 @@ func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode move.Pa
 		bytecode.Modules,
 		bytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
+		models.NewBigInt(10*sui.DefaultGasBudget),
 	)
 	if err != nil {
 		panic(err)
@@ -51,7 +51,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
 		testcoinBytecode.Modules,
 		testcoinBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
+		models.NewBigInt(10*sui.DefaultGasBudget),
 	)
 	if err != nil {
 		panic(err)
