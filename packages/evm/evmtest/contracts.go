@@ -54,6 +54,15 @@ var (
 	ISCTestContractBytecode    = common.FromHex(strings.TrimSpace(iscTestContractBytecodeHex))
 )
 
+//go:generate sh -c "solc --abi --bin --overwrite @iscmagic=`realpath ../../vm/core/evm/iscmagic` GetBalance.sol -o ."
+var (
+	//go:embed GetBalance.abi
+	GetBalanceContractABI string
+	//go:embed GetBalance.bin
+	GetBalanceContractBytecodeHex string
+	GetBalanceContractBytecode    = common.FromHex(strings.TrimSpace(GetBalanceContractBytecodeHex))
+)
+
 //go:generate solc --abi --bin --overwrite Fibonacci.sol -o .
 var (
 	//go:embed Fibonacci.abi
