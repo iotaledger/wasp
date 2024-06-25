@@ -7,15 +7,15 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/sui"
 )
 
 type inputConsensusOutputRejected struct {
-	aliasOutput *isc.AliasOutputWithID
+	aliasOutput *sui.Anchor
 	logIndex    LogIndex
 }
 
-func NewInputConsensusOutputRejected(aliasOutput *isc.AliasOutputWithID, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputRejected(aliasOutput *sui.Anchor, logIndex LogIndex) gpa.Input {
 	return &inputConsensusOutputRejected{
 		aliasOutput: aliasOutput,
 		logIndex:    logIndex,

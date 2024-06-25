@@ -42,6 +42,14 @@ type Anchor struct {
 	StateIndex uint32
 }
 
+func (a *Anchor) GetStateIndex() uint32 {
+	return a.StateIndex
+}
+
+func (a *Anchor) Equals(b *Anchor) bool {
+	return a.ID == b.ID
+}
+
 type Receipt struct {
 	RequestID sui_types.ObjectID
 }

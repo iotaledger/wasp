@@ -72,6 +72,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/rotate"
+	"github.com/iotaledger/wasp/packages/isc/sui"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -79,6 +80,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type Cons interface {
@@ -124,10 +126,10 @@ type Output struct {
 }
 
 type Result struct {
-	Transaction     *iotago.Transaction    // The TX for committing the block.
-	BaseAliasOutput iotago.OutputID        // AO consumed in the TX.
-	NextAliasOutput *isc.AliasOutputWithID // AO produced in the TX.
-	Block           state.Block            // The state diff produced.
+	Transaction     *sui_types.ProgrammableTransaction // The TX for committing the block.
+	BaseAliasOutput sui_types.ObjectID                 // AO consumed in the TX.
+	NextAliasOutput *sui.Anchor                        // AO produced in the TX.
+	Block           state.Block                        // The state diff produced.
 }
 
 func (r *Result) String() string {
