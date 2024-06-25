@@ -2,6 +2,7 @@ package iscmove_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -33,14 +34,15 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cry
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := txnResponse.GetPublishedPackageRef()
 	require.NoError(t, err)
 
-	return packageID
+	return packageRef.ObjectID
 }
 
-func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (
-	*sui_types.PackageID,
+func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_signer.Signer) (
+	*sui_types.ObjectRef,
+	*sui_types.ObjectRef,
 	*sui_types.ObjectID,
 ) {
 	testcoinBytecode := contracts.Testcoin()
@@ -53,28 +55,42 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 		GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
+<<<<<<< HEAD:clients/iscmove/utils_test.go
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(), suiSigner, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+=======
+	deployTxnRes, err := client.SignAndExecuteTransaction(
+		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+>>>>>>> b796b4b5b (wip):sui-go/iscmove/utils_test.go
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
+	require.True(t, deployTxnRes.Effects.Data.IsSuccess())
 
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := deployTxnRes.GetPublishedPackageRef()
 	require.NoError(t, err)
 
+<<<<<<< HEAD:clients/iscmove/utils_test.go
 	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
+=======
+	treasuryCap, _, err := sui.GetCreatedObjectRefAndType(deployTxnRes, "coin", "TreasuryCap")
+>>>>>>> b796b4b5b (wip):sui-go/iscmove/utils_test.go
 	require.NoError(t, err)
 
 	mintAmount := uint64(1000000)
-	txnRes, err := client.MintToken(
+	mintTxnRes, err := client.MintToken(
 		context.Background(),
+<<<<<<< HEAD:clients/iscmove/utils_test.go
 		suiSigner,
 		packageID,
+=======
+		signer,
+		packageRef.ObjectID,
+>>>>>>> b796b4b5b (wip):sui-go/iscmove/utils_test.go
 		"testcoin",
-		treasuryCap,
+		treasuryCap.ObjectID,
 		mintAmount,
 		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
@@ -82,7 +98,10 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, txnRes.Effects.Data.IsSuccess())
+	require.True(t, mintTxnRes.Effects.Data.IsSuccess())
+	fmt.Println("mintTxnRes")
+	testcoinRef, _, err := sui.GetCreatedObjectRefAndType(mintTxnRes, "testcoin", "TESTCOIN")
+	require.NoError(t, err)
 
-	return packageID, treasuryCap
+	return packageRef, testcoinRef, treasuryCap.ObjectID
 }

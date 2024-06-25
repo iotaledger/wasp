@@ -59,7 +59,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := txnResponse.GetPublishedPackageRef()
 	require.NoError(t, err)
 
 	createdCap, _ := lo.Find(
@@ -78,8 +78,8 @@ func setupAndDeploy(t *testing.T) testSetup {
 	require.NoError(t, err)
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
-		kp,
-		packageID,
+		signer,
+		packageRef.ObjectID,
 		nil,
 		sui.DefaultGasPrice,
 		sui.DefaultGasBudget,
@@ -96,7 +96,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 		signer:    kp,
 		chain:     startNewChainRes,
 		iscClient: client,
-		packageID: *packageID,
+		packageID: *packageRef.ObjectID,
 	}
 }
 

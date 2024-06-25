@@ -82,7 +82,7 @@ func TestMoveCall(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := txnResponse.GetPublishedPackageRef()
 	require.NoError(t, err)
 
 	// test MoveCall with byte array input
@@ -91,7 +91,7 @@ func TestMoveCall(t *testing.T) {
 		context.Background(),
 		&models.MoveCallRequest{
 			Signer:    signer.Address(),
-			PackageID: packageID,
+			PackageID: packageRef.ObjectID,
 			Module:    "sdk_verify",
 			Function:  "read_input_bytes_array",
 			TypeArgs:  []string{},

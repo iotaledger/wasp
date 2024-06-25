@@ -37,11 +37,11 @@ func Publish(
 	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
 		panic(err)
 	}
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := txnResponse.GetPublishedPackageRef()
 	if err != nil {
 		panic(err)
 	}
-	return packageID
+	return packageRef.ObjectID
 }
 
 func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
@@ -72,7 +72,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		panic(err)
 	}
 
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := txnResponse.GetPublishedPackageRef()
 	if err != nil {
 		panic(err)
 	}
@@ -86,7 +86,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 	txnResponse, err = client.MintToken(
 		context.Background(),
 		signer,
-		packageID,
+		packageRef.ObjectID,
 		"testcoin",
 		treasuryCap.ObjectID,
 		mintAmount,
@@ -99,5 +99,5 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		panic(err)
 	}
 
-	return packageID, treasuryCap.ObjectID
+	return packageRef.ObjectID, treasuryCap.ObjectID
 }

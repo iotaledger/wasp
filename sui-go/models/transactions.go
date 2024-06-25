@@ -293,16 +293,19 @@ type SuiTransactionBlockResponse struct {
 	RawEffects []string `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
-// requires to set 'SuiTransactionBlockResponseOptions.ShowObjectChanges' to true
-func (r *SuiTransactionBlockResponse) GetPublishedPackageID() (*sui_types.PackageID, error) {
+// requires to set 'models.SuiTransactionBlockResponseOptions.ShowObjectChanges' to true
+func (r *SuiTransactionBlockResponse) GetPublishedPackageRef() (*sui_types.ObjectRef, error) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("no 'SuiTransactionBlockResponse.ObjectChanges' object")
 	}
-	var packageID sui_types.PackageID
 	for _, change := range r.ObjectChanges {
 		if change.Data.Published != nil {
-			packageID = change.Data.Published.PackageId
-			return &packageID, nil
+			ref := sui_types.ObjectRef{
+				ObjectID: &change.Data.Published.PackageId,
+				Version:  change.Data.Published.Version.Uint64(),
+				Digest:   &change.Data.Published.Digest,
+			}
+			return &ref, nil
 		}
 	}
 	return nil, fmt.Errorf("not found")

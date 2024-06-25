@@ -86,11 +86,11 @@ func (s *ImplSuiAPI) PublishContract(
 		return nil, nil, fmt.Errorf("failed to sign move contract tx: %w", err)
 	}
 
-	packageID, err := txnResponse.GetPublishedPackageID()
+	packageRef, err := txnResponse.GetPublishedPackageRef()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get move contract package ID: %w", err)
 	}
-	return txnResponse, packageID, nil
+	return txnResponse, packageRef.ObjectID, nil
 }
 
 func (s *ImplSuiAPI) MintToken(

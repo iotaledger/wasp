@@ -50,9 +50,9 @@ func TestStartNewChain(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
 
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
+	anchorRef, _, err := sui.GetCreatedObjectRefAndType(startNewChainRes, "anchor", "Anchor")
 	require.NoError(t, err)
-	t.Log("anchorObjID: ", anchorObjID)
+	t.Log("anchorObjID: ", anchorRef.ObjectID)
 
 	// resAnchor, err := client.GetObject(context.Background(), anchorObjID, &models.SuiObjectDataOptions{ShowContent: true})
 	// require.NoError(t, err)
@@ -94,8 +94,8 @@ func TestSendReceiveRequest(t *testing.T) {
 	var anchorFieldsRaw iscmove.AnchorFieldsRaw
 	err = json.Unmarshal(resAnchor.Data.Content.Data.MoveObject.Fields, &anchorFieldsRaw)
 	require.NoError(t, err)
-
-	resAssets, err := client.GetObject(context.Background(), sui_types.MustObjectIDFromHex(anchorFieldsRaw.ID.ID), &models.SuiObjectDataOptions{ShowContent: true})
+	fmt.Printf("anchorFieldsRaw: %v\n", anchorFieldsRaw)
+	resAssets, err := client.GetDynamicFieldObject(context.Background(), sui_types.MustObjectIDFromHex(anchorFieldsRaw.ID.ID), nil)
 	require.NoError(t, err)
 	assetsRef := &sui_types.ObjectRef{
 		ObjectID: resAssets.Data.ObjectID,
@@ -120,10 +120,10 @@ func TestSendReceiveRequest(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	fmt.Println("", sendReqRes)
-	// require.True(t, sendReqRes.Effects.Data.IsSuccess())
+	fmt.Println("sendReqRes.Effects.Data.V1.Status.Error: ", sendReqRes)
+	require.True(t, sendReqRes.Effects.Data.IsSuccess())
 	// require.NoError(t, err)
-	// reqObjID, reqType, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
+	// reqObjID, reqType, err := sui.GetCreatedObjectRefAndType(createReqRes, "request", "Request")
 	// require.NoError(t, err)
 	// getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	// require.NoError(t, err)
@@ -211,7 +211,14 @@ func startChainAnchor(
 	)
 	require.NoError(t, err)
 
-	return &startNewChainRes.ID
+	// 	for _, change:= {
+	// 		startNewChainRes
+	// 	}
+	// fmt.Println("")
+
+	anchorRef, _, err := sui.GetCreatedObjectRefAndType(startNewChainRes, "anchor", "Anchor")
+	require.NoError(t, err)
+	return anchorRef.ObjectID
 }
 
 func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan models.SuiEvent {
