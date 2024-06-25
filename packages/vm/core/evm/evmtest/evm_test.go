@@ -2692,25 +2692,24 @@ func TestDisableMagicWrap(t *testing.T) {
 	require.NotNil(t, envWithMagicWrap.getCode(envWithMagicWrap.ERC20BaseTokens(nil).address))
 }
 
-func TestGetBalancea(t *testing.T) {
-
+func TestGetBalance(t *testing.T) {
 	env := InitEVMWithSolo(t, solo.New(t), true)
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, evmtest.GetBalanceContractABI, evmtest.GetBalanceContractBytecode)
 
 	// create a new native token on L1
-	foundry, tokenId, err := env.Chain.NewNativeTokenParams(100000000000000).CreateFoundry()
+	foundry, tokenID, err := env.Chain.NewNativeTokenParams(100000000000000).CreateFoundry()
 	require.NoError(t, err)
 	// the token id in bytes, used to call the contract
-	nativeTokenIdBytes := isc.NativeTokenIDToBytes(tokenId)
+	nativeTokenIDBytes := isc.NativeTokenIDToBytes(tokenID)
 
 	// mint some native tokens to the chain originator
 	err = env.Chain.MintTokens(foundry, 10000000, env.Chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 
 	// get the agentId of the contract deployer
-	senderAgentId := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
+	senderAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
 
 	// test 1
 	// get the actual base balance of the contract deployer
@@ -2718,30 +2717,30 @@ func TestGetBalancea(t *testing.T) {
 	balance, _ := env.Chain.EVM().Balance(deployer, nil)
 	decimals := env.Chain.EVM().BaseToken().Decimals
 	var value uint64
-	instance.CallFnExpectMultipleEvents(nil, "GotBaseBalance", &value, "getBalance", nativeTokenIdBytes)
-	real := util.BaseTokensDecimalsToEthereumDecimals(value, decimals)
-	assert.Equal(t, balance, real)
+	instance.CallFnExpectMultipleEvents(nil, "GotBaseBalance", &value, "getBalance", nativeTokenIDBytes)
+	realBalance := util.BaseTokensDecimalsToEthereumDecimals(value, decimals)
+	assert.Equal(t, balance, realBalance)
 
 	// test 2
 	// get the agnetId of the contract deployer
 	// and compare it with the agentId returned by the contract
-	var agent_id []byte
-	instance.CallFnExpectMultipleEvents(nil, "GotAgentID", &agent_id, "getBalance", nativeTokenIdBytes)
-	assert.Equal(t, senderAgentId.Bytes(), agent_id)
+	var adgntID []byte
+	instance.CallFnExpectMultipleEvents(nil, "GotAgentID", &adgntID, "getBalance", nativeTokenIDBytes)
+	assert.Equal(t, senderAgentID.Bytes(), adgntID)
 
 	// test 3
 	// get the native token balance of the contract deployer
 	// It should be 0, because the contract deployer has not received any native tokens yet
 	nativeBalance := new(big.Int)
-	instance.CallFnExpectMultipleEvents(nil, "GotNativeTokenBalance", &nativeBalance, "getBalance", nativeTokenIdBytes)
+	instance.CallFnExpectMultipleEvents(nil, "GotNativeTokenBalance", &nativeBalance, "getBalance", nativeTokenIDBytes)
 	assert.Equal(t, int64(0), nativeBalance.Int64())
 
 	// test 4
 	// send some native tokens to the contract deployer
 	// and check if the balance returned by the contract is correct
-	err = env.Chain.SendFromL2ToL2AccountNativeTokens(tokenId, senderAgentId, 100000, env.Chain.OriginatorPrivateKey)
+	err = env.Chain.SendFromL2ToL2AccountNativeTokens(tokenID, senderAgentID, 100000, env.Chain.OriginatorPrivateKey)
 	require.NoError(t, err)
-	instance.CallFnExpectMultipleEvents(nil, "GotNativeTokenBalance", &nativeBalance, "getBalance", nativeTokenIdBytes)
+	instance.CallFnExpectMultipleEvents(nil, "GotNativeTokenBalance", &nativeBalance, "getBalance", nativeTokenIDBytes)
 	assert.Equal(t, int64(100000), nativeBalance.Int64())
 
 	// test 5
@@ -2756,12 +2755,11 @@ func TestGetBalancea(t *testing.T) {
 	transfer.AddNFTs(info.NFTID)
 
 	// send the NFT to the contract deployer
-	err = env.Chain.SendFromL2ToL2Account(transfer, senderAgentId, env.Chain.OriginatorPrivateKey)
+	err = env.Chain.SendFromL2ToL2Account(transfer, senderAgentID, env.Chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 
 	// get the NFT balance of the contract deployer
 	nftBalance := new(big.Int)
-	instance.CallFnExpectMultipleEvents(nil, "GotNFTIDs", &nftBalance, "getBalance", nativeTokenIdBytes)
+	instance.CallFnExpectMultipleEvents(nil, "GotNFTIDs", &nftBalance, "getBalance", nativeTokenIDBytes)
 	assert.Equal(t, int64(1), nftBalance.Int64())
-
 }

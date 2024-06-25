@@ -158,7 +158,6 @@ func (e *EVMContractInstance) CallFnExpectMultipleEvents(opts []ethCallOptions, 
 	res, err := e.CallFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
 	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
-	//require.Len(e.chain.t, res.EVMReceipt.Logs, len(eventNames))
 	topic := e.abi.Events[eventName].ID
 	for _, log := range res.EVMReceipt.Logs {
 		if slices.Contains(log.Topics, topic) {
