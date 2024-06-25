@@ -142,8 +142,8 @@ func TestSendReceiveCoin(t *testing.T) {
 	resource, err := models.NewResourceType(coin.Type)
 	require.NoError(t, err)
 	require.Equal(t, "0x2", resource.Address.ShortString())
-	require.Equal(t, "coin", resource.ModuleName)
-	require.Equal(t, "Coin", resource.FuncName)
+	require.Equal(t, "coin", resource.Module)
+	require.Equal(t, "Coin", resource.ObjectName)
 	var fields models.CoinFields
 	err = json.Unmarshal(coin.Fields, &fields)
 	require.NoError(t, err)
@@ -184,7 +184,7 @@ func TestCreateRequest(t *testing.T) {
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
 
-	_, _, err = sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
+	_, _, err = createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 }
 
@@ -199,7 +199,7 @@ func TestSendRequest(t *testing.T) {
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
 
-	reqObjID, _, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
+	reqObjID, _, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
@@ -223,7 +223,7 @@ func TestReceiveRequest(t *testing.T) {
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
 
-	reqObjID, _, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
+	reqObjID, _, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
@@ -265,7 +265,7 @@ func TestSendReceiveRequest(t *testing.T) {
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
-	reqObjID, reqType, err := sui.GetCreatedObjectIdAndType(createReqRes, "request", "Request")
+	reqObjID, reqType, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
@@ -354,7 +354,7 @@ func startChainAnchor(
 	require.NoError(t, err)
 	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
 
-	anchorObjID, _, err := sui.GetCreatedObjectIdAndType(startNewChainRes, "anchor", "Anchor")
+	anchorObjID, _, err := startNewChainRes.GetCreatedObjectInfo("anchor", "Anchor")
 	require.NoError(t, err)
 	return anchorObjID
 }

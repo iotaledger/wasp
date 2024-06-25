@@ -71,7 +71,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
 		panic(err)
 	}
 
-	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
+	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	if err != nil {
 		panic(err)
 	}

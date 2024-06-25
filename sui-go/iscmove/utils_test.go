@@ -68,7 +68,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_s
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
+	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	require.NoError(t, err)
 
 	mintAmount := uint64(1000000)
