@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
@@ -100,12 +99,12 @@ func (s *ImplSuiAPI) SubscribeEvent(
 		for messageData := range resp {
 			var result models.SuiEvent
 			if gjson.ParseBytes(messageData).Get("error").Exists() {
-				log.Fatal(gjson.ParseBytes(messageData).Get("error").String())
+				panic(gjson.ParseBytes(messageData).Get("error").String())
 			}
 
 			err := json.Unmarshal([]byte(gjson.ParseBytes(messageData).Get("params.result").String()), &result)
 			if err != nil {
-				log.Fatal(err)
+				panic(err)
 			}
 
 			resultCh <- result

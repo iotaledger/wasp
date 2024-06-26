@@ -27,10 +27,12 @@ func TestBatchTransaction(t *testing.T) {
 }
 
 func TestMergeCoins(t *testing.T) {
-	t.Skip("FIXME create an account has at least two coin objects on chain")
-	client := sui.NewSuiClient(conn.TestnetEndpointUrl)
-	signer := sui_signer.TEST_ADDRESS
-	coins, err := client.GetCoins(context.Background(), signer, nil, nil, 10)
+	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
+	err := sui.RequestFundFromFaucet(signer.Address, conn.TestnetFaucetUrl)
+	require.NoError(t, err)
+	err = sui.RequestFundFromFaucet(signer.Address, conn.TestnetFaucetUrl)
+	require.NoError(t, err)
+	coins, err := client.GetCoins(context.Background(), signer.Address, nil, nil, 10)
 	require.NoError(t, err)
 	require.True(t, len(coins.Data) >= 3)
 
@@ -39,9 +41,12 @@ func TestMergeCoins(t *testing.T) {
 	coin3 := coins.Data[2] // gas coin
 
 	txn, err := client.MergeCoins(
-		context.Background(), signer,
-		coin1.CoinObjectID, coin2.CoinObjectID,
-		coin3.CoinObjectID, coin3.Balance,
+		context.Background(),
+		signer.Address,
+		coin1.CoinObjectID,
+		coin2.CoinObjectID,
+		coin3.CoinObjectID,
+		coin3.Balance,
 	)
 	require.NoError(t, err)
 

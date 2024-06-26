@@ -265,9 +265,7 @@ func TestResolveNameServiceNames(t *testing.T) {
 }
 
 func TestSubscribeEvent(t *testing.T) {
-	// FIXME make it pass
-	t.Skip("passed at local side, but returned error on GitHub")
-	api := sui.NewSuiWebsocketClient(conn.MainnetWebsocketEndpointUrl)
+	client := sui.NewSuiWebsocketClient(conn.MainnetWebsocketEndpointUrl)
 
 	type args struct {
 		ctx      context.Context
@@ -294,7 +292,7 @@ func TestSubscribeEvent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				err := api.SubscribeEvent(
+				err := client.SubscribeEvent(
 					tt.args.ctx,
 					tt.args.filter,
 					tt.args.resultCh,
