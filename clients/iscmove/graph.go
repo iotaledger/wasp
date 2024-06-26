@@ -6,7 +6,7 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 
-	"github.com/iotaledger/wasp/sui-go/iscmove/sui_graph"
+	"github.com/iotaledger/wasp/clients/iscmove/sui_graph"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 

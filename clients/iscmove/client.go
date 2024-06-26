@@ -13,7 +13,6 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
-	"github.com/iotaledger/wasp/clients/iscmove/types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -97,7 +96,7 @@ func (c *Client) StartNewChain(
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 	treasuryCap *models.SuiObjectResponse,
-) (*types.Anchor, error) {
+) (*Anchor, error) {
 	ptb := sui_types.NewProgrammableTransactionBuilder()
 	// the return object is an Anchor object
 
@@ -161,7 +160,7 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
 
-	return types.GetAnchorFromSuiTransactionBlockResponse(ctx, c, txnResponse)
+	return GetAnchorFromSuiTransactionBlockResponse(ctx, c, txnResponse)
 }
 
 // SendCoin calls <packageID>::anchor::send_coin(), which sends the given coin to the
