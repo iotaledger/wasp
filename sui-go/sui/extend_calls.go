@@ -71,7 +71,7 @@ func (s *ImplSuiAPI) PublishContract(
 		modules,
 		dependencies,
 		nil,
-		models.NewSafeSuiBigInt(gasBudget),
+		models.NewBigInt(gasBudget),
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to publish move contract: %w", err)
@@ -106,7 +106,7 @@ func (s *ImplSuiAPI) MintToken(
 		[]string{},
 		[]any{treasuryCap.String(), fmt.Sprintf("%d", mintAmount), signer.Address.String()},
 		nil,
-		models.NewSafeSuiBigInt(DefaultGasBudget),
+		models.NewBigInt(DefaultGasBudget),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call mint() move call: %w", err)
@@ -185,7 +185,7 @@ func (s *ImplSuiAPI) BatchGetFilteredObjectsOwnedByAddress(
 func BCS_RequestAddStake(
 	signer *sui_types.SuiAddress,
 	coins []*sui_types.ObjectRef,
-	amount models.SafeSuiBigInt[uint64],
+	amount *models.BigInt,
 	validator *sui_types.SuiAddress,
 	gasBudget, gasPrice uint64,
 ) ([]byte, error) {

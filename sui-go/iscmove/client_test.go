@@ -170,7 +170,7 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, assets.Coins, 1)
 	require.Equal(t, coinType, "0x"+assets.Coins[0].CoinType)
-	require.Equal(t, fields.Balance.BigInt().Uint64(), assets.Coins[0].Balance.Uint64())
+	require.Equal(t, fields.Balance.Uint64(), assets.Coins[0].Balance.Uint64())
 }
 
 func TestCreateRequest(t *testing.T) {
