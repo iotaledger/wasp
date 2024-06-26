@@ -62,7 +62,7 @@ func TestConsumeRequest(t *testing.T) {
 	tx := &iotago.Transaction{
 		Essence: essence,
 		Unlocks: iotago.Unlocks{
-			&iotago.SignatureUnlock{Signature: sig.AsIotagoSignature()},
+			&iotago.SignatureUnlock{Signature: sig.AsSuiSignature()},
 			&iotago.AliasUnlock{Reference: 0},
 		},
 	}

@@ -14,11 +14,13 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/sui-go/iscmove"
-	"github.com/iotaledger/wasp/sui-go/iscmove/types"
+	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 const (
@@ -37,13 +39,23 @@ type Config struct {
 	UseRemotePoW  bool
 }
 
-type Client2 interface {
-	RequestFunds(ctx context.Context, address cryptolib.Address, faucetURL string) error
-	Health(ctx context.Context, timeout time.Duration) error
-	GetAnchor(ctx context.Context, anchorId cryptolib.Address) (types.Anchor, error)
+type Client interface {
+	RequestFunds(ctx context.Context, address cryptolib.Address) error
+	Health(ctx context.Context) error
+
+	StartNewChain(
+		ctx context.Context,
+		signer cryptolib.Signer,
+		packageID *sui_types.PackageID,
+		gasPayments []*sui_types.ObjectRef, // optional
+		gasPrice uint64,
+		gasBudget uint64,
+		execOptions *models.SuiTransactionBlockResponseOptions,
+		treasuryCap *models.SuiObjectResponse,
+	) (*types.Anchor, error)
 }
 
-type Client interface {
+type Client2 interface {
 	// requests funds from faucet, waits for confirmation
 	RequestFunds(addr *cryptolib.Address, timeout ...time.Duration) error
 	// sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
@@ -428,7 +440,7 @@ func MakeSimpleValueTX(
 	}
 	tx, err := txBuilder.Build(
 		parameters.L1().Protocol,
-		cryptolib.SignerToIotago(sender),
+		cryptolib.SignerToSuiSigner(sender),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build a tx: %w", err)

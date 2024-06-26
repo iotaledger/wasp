@@ -112,7 +112,7 @@ func (u *UtxoDB) genesisInit() {
 				&iotago.AddressUnlockCondition{Address: genesisAddress.AsIotagoAddress()},
 			},
 		}).
-		Build(parameters.L1().Protocol, cryptolib.SignerToIotago(genesisKeyPair))
+		Build(parameters.L1().Protocol, cryptolib.SignerToSuiSigner(genesisKeyPair))
 	if err != nil {
 		panic(err)
 	}
@@ -210,7 +210,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target *cryptolib.Address, amount ...u
 				&iotago.AddressUnlockCondition{Address: genesisAddress.AsIotagoAddress()},
 			},
 		}).
-		Build(parameters.L1().Protocol, cryptolib.SignerToIotago(genesisKeyPair))
+		Build(parameters.L1().Protocol, cryptolib.SignerToSuiSigner(genesisKeyPair))
 	if err != nil {
 		panic(err)
 	}

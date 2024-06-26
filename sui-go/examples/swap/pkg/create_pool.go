@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
@@ -12,7 +13,7 @@ import (
 
 func CreatePool(
 	suiClient *sui.ImplSuiAPI,
-	signer *sui_signer.Signer,
+	signer sui_signer.Signer,
 	swapPackageID *sui_types.PackageID,
 	testcoinID *sui_types.ObjectID,
 	testCoin *models.Coin,
@@ -24,28 +25,36 @@ func CreatePool(
 	arg1 := ptb.MustObj(sui_types.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
 	arg2 := ptb.MustPure(uint64(3))
 
-	lspArg := ptb.Command(sui_types.Command{
-		MoveCall: &sui_types.ProgrammableMoveCall{
-			Package:  swapPackageID,
-			Module:   "swap",
-			Function: "create_pool",
-			TypeArguments: []sui_types.TypeTag{{Struct: &sui_types.StructTag{
-				Address: *testcoinID,
-				Module:  "testcoin",
-				Name:    "TESTCOIN",
-			}}},
-			Arguments: []sui_types.Argument{arg0, arg1, arg2},
-		}},
-	)
-	ptb.Command(sui_types.Command{
-		TransferObjects: &sui_types.ProgrammableTransferObjects{
-			Objects: []sui_types.Argument{lspArg},
-			Address: ptb.MustPure(signer.Address),
+	lspArg := ptb.Command(
+		sui_types.Command{
+			MoveCall: &sui_types.ProgrammableMoveCall{
+				Package:  swapPackageID,
+				Module:   "swap",
+				Function: "create_pool",
+				TypeArguments: []sui_types.TypeTag{
+					{
+						Struct: &sui_types.StructTag{
+							Address: *testcoinID,
+							Module:  "testcoin",
+							Name:    "TESTCOIN",
+						},
+					},
+				},
+				Arguments: []sui_types.Argument{arg0, arg1, arg2},
+			},
 		},
-	})
+	)
+	ptb.Command(
+		sui_types.Command{
+			TransferObjects: &sui_types.ProgrammableTransferObjects{
+				Objects: []sui_types.Argument{lspArg},
+				Address: ptb.MustPure(signer.Address()),
+			},
+		},
+	)
 	pt := ptb.Finish()
 	txData := sui_types.NewProgrammable(
-		signer.Address,
+		signer.Address(),
 		pt,
 		[]*sui_types.ObjectRef{suiCoins[1].Ref()},
 		sui.DefaultGasBudget,

@@ -5,12 +5,13 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 func TestRequestAddDelegation(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 
-	coins, err := client.GetCoins(context.Background(), signer.Address, nil, nil, 10)
+	coins, err := client.GetCoins(context.Background(), signer.Address(), nil, nil, 10)
 	require.NoError(t, err)
 
 	amount := sui_types.SUI(1).Uint64()
@@ -33,7 +34,7 @@ func TestRequestAddDelegation(t *testing.T) {
 	require.NoError(t, err)
 
 	txBytes, err := sui.BCS_RequestAddStake(
-		signer.Address,
+		signer.Address(),
 		pickedCoins.CoinRefs(),
 		models.NewSafeSuiBigInt(amount),
 		validator,

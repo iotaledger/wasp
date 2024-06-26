@@ -14,14 +14,18 @@ import (
 	// operations can use filippo.io/edwards25519,
 	// an extended version of this package repackaged as an importable module.
 	"filippo.io/edwards25519"
-	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui_signer"
 )
 
 const SignatureSize = ed25519.SignatureSize
 
 // Signature defines an Ed25519 signature.
 type Signature struct {
+	// The signature schema (0 == ED25519)
+	signatureScheme byte
+
 	// The public key used to verify the given signature.
 	publicKey *PublicKey
 	// The signature.
@@ -113,6 +117,7 @@ func (s *Signature) Validate(message []byte) bool {
 
 func (s *Signature) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
+	s.signatureScheme = rr.ReadByte()
 	s.publicKey = NewEmptyPublicKey()
 	rr.Read(s.publicKey)
 	signature := rr.ReadBytes()
@@ -122,16 +127,15 @@ func (s *Signature) Read(r io.Reader) error {
 
 func (s *Signature) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
+	ww.WriteByte(s.signatureScheme)
 	ww.Write(s.publicKey)
 	ww.WriteBytes(s.signature[:])
 	return ww.Err
 }
 
-// TODO: remove, when it is not needed
-func (s *Signature) AsIotagoSignature() iotago.Signature {
-	result := &iotago.Ed25519Signature{
-		Signature: s.signature,
+func (s *Signature) AsSuiSignature() *sui_signer.Signature {
+	result := &sui_signer.Signature{
+		Ed25519SuiSignature: sui_signer.NewEd25519SuiSignature(s.publicKey.AsBytes(), s.signature[:]),
 	}
-	copy(result.PublicKey[:], s.publicKey.AsBytes())
 	return result
 }

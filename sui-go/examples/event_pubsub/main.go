@@ -24,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	err = sui.RequestFundFromFaucet(sender.Address, conn.TestnetFaucetUrl)
+	err = sui.RequestFundFromFaucet(sender.Address(), conn.TestnetFaucetUrl)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -34,7 +34,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	log.Println("sender: ", sender.Address)
+	log.Println("sender: ", sender.Address())
 	publisher := serialization.NewPublisher(api, sender)
 	subscriber := serialization.NewSubscriber(api)
 

@@ -18,10 +18,10 @@ func TestNewSigner(t *testing.T) {
 	testEd25519Address := sui_types.MustSuiAddressFromHex("0xe54d993cf56be93ba0764c7ee2c817085b70f0e6d3ad1a71c3335ee3529b4a48")
 	signer, err := sui_signer.NewSignerWithMnemonic(testMnemonic, sui_signer.KeySchemeFlagIotaEd25519)
 	require.NoError(t, err)
-	require.Equal(t, testIotaAddress, signer.Address)
+	require.Equal(t, testIotaAddress, signer.Address())
 	signer, err = sui_signer.NewSignerWithMnemonic(testMnemonic, sui_signer.KeySchemeFlagEd25519)
 	require.NoError(t, err)
-	require.Equal(t, testEd25519Address, signer.Address)
+	require.Equal(t, testEd25519Address, signer.Address())
 }
 
 func TestSignatureMarshalUnmarshal(t *testing.T) {
@@ -45,19 +45,19 @@ func TestSignatureMarshalUnmarshal(t *testing.T) {
 }
 
 func ExampleSigner() {
-	// Create a sui_signer.Signer with mnemonic
+	// Create a sui_signer.SuiInMemorySigner with mnemonic
 	mnemonic := "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
 	signer1, _ := sui_signer.NewSignerWithMnemonic(mnemonic, sui_signer.KeySchemeFlagDefault)
-	fmt.Printf("address   : %v\n", signer1.Address)
+	fmt.Printf("address   : %v\n", signer1.Address())
 
-	// Create sui_signer.Signer with private key
+	// Create sui_signer.SuiInMemorySigner with private key
 	privKey, _ := hex.DecodeString("4ec5a9eefc0bb86027a6f3ba718793c813505acc25ed09447caf6a069accdd4b")
 	signer2 := sui_signer.NewSigner(privKey, sui_signer.KeySchemeFlagDefault)
 
 	// Get private key, public key, address
 	fmt.Printf("privateKey: %x\n", signer2.PrivateKey()[:32])
 	fmt.Printf("publicKey : %x\n", signer2.PublicKey())
-	fmt.Printf("address   : %v\n", signer2.Address)
+	fmt.Printf("address   : %v\n", signer2.Address())
 
 	// Output:
 	// address   : 0xe54d993cf56be93ba0764c7ee2c817085b70f0e6d3ad1a71c3335ee3529b4a48

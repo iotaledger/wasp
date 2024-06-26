@@ -58,7 +58,7 @@ func TestDoubleSpend(t *testing.T) {
 	keyPair1 := cryptolib.NewKeyPair()
 
 	addr1 := keyPair1.GetPublicKey().AsAddress()
-	key1Signer := cryptolib.SignerToIotago(keyPair1)
+	key1Signer := cryptolib.SignerToSuiSigner(keyPair1)
 
 	addr2 := tpkg.RandEd25519Address()
 	addr3 := tpkg.RandEd25519Address()

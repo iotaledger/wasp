@@ -1,7 +1,16 @@
 package types
 
 import (
+	"context"
+	"strings"
+
+	"github.com/fardream/go-bcs/bcs"
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/sui-go/iscmove"
+	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -40,6 +49,34 @@ type Anchor struct {
 	Assets     Referent[AssetBag]
 	StateRoot  sui_types.Bytes
 	StateIndex uint32
+}
+
+func GetAnchorFromSuiTransactionBlockResponse(
+	ctx context.Context, client *iscmove.Client,
+	response *models.SuiTransactionBlockResponse,
+) (
+	*Anchor,
+	error,
+) {
+	anchorObj, _ := lo.Find(
+		response.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
+				return true
+			}
+
+			return false
+		},
+	)
+
+	anchor, err := client.GetObject(
+		ctx, &anchorObj.Data.Created.ObjectID, &models.SuiObjectDataOptions{
+			ShowBcs: true,
+		},
+	)
+	decodedAnchor := Anchor{}
+	_, err = bcs.Unmarshal(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data(), &decodedAnchor)
+
+	return &decodedAnchor, err
 }
 
 type Receipt struct {

@@ -6,27 +6,28 @@ import (
 	"testing"
 
 	"github.com/fardream/go-bcs/bcs"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
 	client, sender := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 	coinType := models.SuiCoinType
 	limit := uint(3)
-	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address(), &coinType, nil, limit)
 	require.NoError(t, err)
 	coins := models.Coins(coinPages.Data)
 
 	ptb := sui_types.NewProgrammableTransactionBuilder()
-	ptb.PayAllSui(sender.Address)
+	ptb.PayAllSui(sender.Address())
 	pt := ptb.Finish()
 	tx := sui_types.NewProgrammable(
-		sender.Address,
+		sender.Address(),
 		pt,
 		coins.CoinRefs(),
 		sui.DefaultGasBudget,
@@ -37,7 +38,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 
 	resp, err := client.DevInspectTransactionBlock(
 		context.Background(),
-		sender.Address,
+		sender.Address(),
 		txBytes,
 		nil,
 		nil,

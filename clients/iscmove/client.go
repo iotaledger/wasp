@@ -13,10 +13,10 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
+	"github.com/iotaledger/wasp/clients/iscmove/types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
@@ -43,9 +43,9 @@ func NewClient(config Config) *Client {
 	}
 }
 
-func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address, faucetURL string) error {
+func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
 	paramJSON := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, faucetURL, bytes.NewBuffer([]byte(paramJSON)))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.config.FaucetURL, bytes.NewBuffer([]byte(paramJSON)))
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address, fa
 		return err
 	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("post %v response code: %v", faucetURL, res.Status)
+		return fmt.Errorf("post %v response code: %v", c.config.FaucetURL, res.Status)
 	}
 	defer res.Body.Close()
 
@@ -81,18 +81,23 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address, fa
 	return nil
 }
 
+func (c *Client) Health(ctx context.Context) error {
+	_, err := c.GetLatestSuiSystemState(ctx)
+	return err
+}
+
 // StartNewChain calls <packageID>::anchor::start_new_chain(), and then transfers the created
 // Anchor to the signer.
 func (c *Client) StartNewChain(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	packageID *sui_types.PackageID,
 	gasPayments []*sui_types.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 	treasuryCap *models.SuiObjectResponse,
-) (*models.SuiTransactionBlockResponse, error) {
+) (*types.Anchor, error) {
 	ptb := sui_types.NewProgrammableTransactionBuilder()
 	// the return object is an Anchor object
 
@@ -132,7 +137,7 @@ func (c *Client) StartNewChain(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address, gasBudget)
+		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address().AsSuiAddress(), gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -140,7 +145,7 @@ func (c *Client) StartNewChain(
 	}
 
 	tx := sui_types.NewProgrammable(
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		pt,
 		gasPayments,
 		gasBudget,
@@ -151,19 +156,19 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes, execOptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
 
-	return txnResponse, nil
+	return types.GetAnchorFromSuiTransactionBlockResponse(ctx, c, txnResponse)
 }
 
 // SendCoin calls <packageID>::anchor::send_coin(), which sends the given coin to the
 // anchor's address.
 func (c *Client) SendCoin(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	anchorPackageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	coinType string,
@@ -175,7 +180,7 @@ func (c *Client) SendCoin(
 ) (*models.SuiTransactionBlockResponse, error) {
 	txnBytes, err := c.MoveCall(
 		ctx,
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		anchorPackageID,
 		"anchor",
 		"send_coin",
@@ -188,7 +193,7 @@ func (c *Client) SendCoin(
 		return nil, fmt.Errorf("failed to call send_coin() move call: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, execOptions)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
@@ -199,7 +204,7 @@ func (c *Client) SendCoin(
 // ReceiveCoin calls <packageID>::anchor::receive_coin(), which adds the coin to the anchor's assets.
 func (c *Client) ReceiveCoin(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	anchorPackageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	coinType string,
@@ -211,7 +216,7 @@ func (c *Client) ReceiveCoin(
 ) (*models.SuiTransactionBlockResponse, error) {
 	txnBytes, err := c.MoveCall(
 		ctx,
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		anchorPackageID,
 		"anchor",
 		"receive_coin",
@@ -224,7 +229,7 @@ func (c *Client) ReceiveCoin(
 		return nil, fmt.Errorf("failed to call receive_coin() move call: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, execOptions)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
@@ -303,7 +308,7 @@ func (c *Client) GetAssets(
 // Request to the signer.
 func (c *Client) CreateRequest(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	packageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	iscContractName string,
@@ -344,7 +349,7 @@ func (c *Client) CreateRequest(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address, gasBudget)
+		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address().AsSuiAddress(), gasBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -352,7 +357,7 @@ func (c *Client) CreateRequest(
 	}
 
 	tx := sui_types.NewProgrammable(
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		pt,
 		gasPayments,
 		gasBudget,
@@ -363,7 +368,7 @@ func (c *Client) CreateRequest(
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes, execOptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
@@ -374,7 +379,7 @@ func (c *Client) CreateRequest(
 // SendRequest calls <packageID>::anchor::send_request(), which sends the request to the anchor.
 func (c *Client) SendRequest(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	packageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	reqObjID *sui_types.ObjectID,
@@ -385,7 +390,7 @@ func (c *Client) SendRequest(
 ) (*models.SuiTransactionBlockResponse, error) {
 	txnBytes, err := c.MoveCall(
 		ctx,
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		packageID,
 		"anchor",
 		"send_request",
@@ -398,7 +403,7 @@ func (c *Client) SendRequest(
 		return nil, fmt.Errorf("failed to call send_request() move call: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, execOptions)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
@@ -410,7 +415,7 @@ func (c *Client) SendRequest(
 // the request object.
 func (c *Client) ReceiveRequest(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	packageID *sui_types.PackageID,
 	anchorAddress *sui_types.ObjectID,
 	reqObjID *sui_types.ObjectID,
@@ -421,7 +426,7 @@ func (c *Client) ReceiveRequest(
 ) (*models.SuiTransactionBlockResponse, error) {
 	txnBytes, err := c.MoveCall(
 		ctx,
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		packageID,
 		"anchor",
 		"receive_request",
@@ -434,7 +439,7 @@ func (c *Client) ReceiveRequest(
 		return nil, fmt.Errorf("failed to call receive_request() move call: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, execOptions)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, execOptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}

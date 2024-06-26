@@ -206,7 +206,7 @@ func MakeSignatureAndReferenceUnlocks(totalInputs int, sig *cryptolib.Signature)
 	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlock{Signature: sig.AsIotagoSignature()} // TODO: move SignatureUnlock to isc-private?
+			ret[0] = &iotago.SignatureUnlock{Signature: sig.AsSuiSignature()} // TODO: move SignatureUnlock to isc-private?
 			continue
 		}
 		ret[i] = &iotago.ReferenceUnlock{Reference: 0}
@@ -218,7 +218,7 @@ func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig *cryptolib.Signatu
 	ret := make(iotago.Unlocks, totalInputs)
 	for i := range ret {
 		if i == 0 {
-			ret[0] = &iotago.SignatureUnlock{Signature: sig.AsIotagoSignature()} // TODO: move SignatureUnlock to isc-private?
+			ret[0] = &iotago.SignatureUnlock{Signature: sig.AsSuiSignature()} // TODO: move SignatureUnlock to isc-private?
 			continue
 		}
 		ret[i] = &iotago.AliasUnlock{Reference: 0}

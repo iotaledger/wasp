@@ -12,8 +12,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/sui-go/iscmove"
-	"github.com/iotaledger/wasp/sui-go/iscmove/types/mock_contract"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/types/mock_contract"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
@@ -24,9 +25,9 @@ import (
 
 type testSetup struct {
 	iscClient *iscmove.Client
-	signer    *sui_signer.Signer
+	signer    cryptolib.Signer
 	packageID sui_types.PackageID
-	chain     *models.SuiTransactionBlockResponse
+	chain     *Anchor
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
@@ -38,14 +39,14 @@ func setupAndDeploy(t *testing.T) testSetup {
 		},
 	)
 
-	_, signer := client.WithSignerAndFund(sui_signer.TEST_SEED, 0)
+	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(sui_signer.TEST_SEED, 0))
 
 	iscBytecode := mock_contract.MockISCContract()
 
-	fmt.Printf("%s", signer.Address.String())
+	fmt.Printf("%s", kp.Address().String())
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address,
+		kp.Address().AsSuiAddress(),
 		iscBytecode.Modules,
 		iscBytecode.Dependencies,
 		nil,
@@ -53,7 +54,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), cryptolib.SignerToSuiSigner(kp), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -78,7 +79,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	require.NoError(t, err)
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
-		signer,
+		kp,
 		packageID,
 		nil,
 		sui.DefaultGasPrice,
@@ -90,11 +91,10 @@ func setupAndDeploy(t *testing.T) testSetup {
 		capObj,
 	)
 	require.NoError(t, err)
-	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
 	t.Logf("StartNewChain response: %#v\n", startNewChainRes)
 
 	return testSetup{
-		signer:    signer,
+		signer:    kp,
 		chain:     startNewChainRes,
 		iscClient: client,
 		packageID: *packageID,
@@ -102,18 +102,8 @@ func setupAndDeploy(t *testing.T) testSetup {
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	cap, _ := lo.Find(
-		setup.chain.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
-			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
-				return true
-			}
-
-			return false
-		},
-	)
-
 	anchor, err := setup.iscClient.GetObject(
-		context.Background(), &cap.Data.Created.ObjectID, &models.SuiObjectDataOptions{
+		context.Background(), &setup.chain.ID, &models.SuiObjectDataOptions{
 			ShowType:    true,
 			ShowContent: true,
 			ShowBcs:     true,
