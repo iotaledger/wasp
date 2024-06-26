@@ -8,6 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/bech32"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 const AddressSize = 32
@@ -94,8 +95,8 @@ func NewAddressFromIotago(addr iotago.Address) *Address {
 }
 
 // TODO: remove when not needed
-func (a *Address) AsIotagoAddress() iotago.Address {
-	result := iotago.Ed25519Address(a[:])
+func (a *Address) AsSuiAddress() *sui_types.SuiAddress {
+	result := sui_types.SuiAddress(a[:])
 	return &result
 }
 

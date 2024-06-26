@@ -16,10 +16,10 @@ import (
 func TestAccountSignAndSend(t *testing.T) {
 	signer, err := sui_signer.NewSignerWithMnemonic(sui_signer.TEST_MNEMONIC, sui_signer.KeySchemeFlagDefault)
 	require.NoError(t, err)
-	t.Log(signer.Address)
+	t.Log(signer.Address())
 
 	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-	coins, err := api.GetSuiCoinsOwnedByAddress(context.Background(), signer.Address)
+	coins, err := api.GetSuiCoinsOwnedByAddress(context.Background(), signer.Address())
 	require.NoError(t, err)
 	require.Greater(t, coins.TotalBalance().Int64(), int64(sui.DefaultGasBudget/10), "insufficient balance")
 
@@ -28,7 +28,7 @@ func TestAccountSignAndSend(t *testing.T) {
 		coinIDs[i] = c.CoinObjectID
 	}
 	gasBudget := models.NewBigInt(10000000)
-	txn, err := api.PayAllSui(context.Background(), signer.Address, signer.Address, coinIDs, gasBudget)
+	txn, err := api.PayAllSui(context.Background(), signer.Address(), signer.Address(), coinIDs, gasBudget)
 	require.NoError(t, err)
 
 	simulate, err := api.DryRunTransaction(context.Background(), txn.TxBytes)

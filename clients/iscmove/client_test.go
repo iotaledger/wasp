@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/sui-go/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
@@ -25,7 +25,13 @@ const (
 func newClient(_ *testing.T) *iscmove.Client {
 	// NOTE: comment out the next line to run local tests against sui-test-validator
 	// t.Skip("only for localnet")
-	return iscmove.NewClient(sui.NewSuiClient(conn.LocalnetEndpointUrl))
+	return iscmove.NewClient(
+		iscmove.Config{
+			APIURL:       conn.LocalnetEndpointUrl,
+			FaucetURL:    conn.LocalnetFaucetUrl,
+			WebsocketURL: conn.LocalnetWebsocketEndpointUrl,
+		},
+	)
 }
 
 func TestStartNewChain(t *testing.T) {
@@ -51,7 +57,7 @@ func TestSendCoin(t *testing.T) {
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
-	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), signer.Address().AsSuiAddress(), &coinType, nil, 10)
 	require.NoError(t, err)
 	require.Len(t, coins, 1)
 
@@ -79,7 +85,7 @@ func TestReceiveCoin(t *testing.T) {
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
-	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), signer.Address().AsSuiAddress(), &coinType, nil, 10)
 	require.NoError(t, err)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
@@ -122,7 +128,7 @@ func TestSendReceiveCoin(t *testing.T) {
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
-	coins, err := client.GetCoins(context.Background(), signer.Address, &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), signer.Address().AsSuiAddress(), &coinType, nil, 10)
 	require.NoError(t, err)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
@@ -136,7 +142,7 @@ func TestSendReceiveCoin(t *testing.T) {
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
 	sender, object := receiveEvent(t, client, eventCh)
-	require.Equal(t, signer.Address, sender)
+	require.Equal(t, signer.Address(), sender)
 
 	coin := object.Data.Content.Data.MoveObject
 	resource, err := models.NewResourceType(coin.Type)
@@ -203,7 +209,7 @@ func TestSendRequest(t *testing.T) {
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
-	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
+	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
@@ -227,7 +233,7 @@ func TestReceiveRequest(t *testing.T) {
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
-	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
+	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
@@ -269,14 +275,16 @@ func TestSendReceiveRequest(t *testing.T) {
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
-	require.Equal(t, signer.Address, getObjectRes.Data.Owner.AddressOwner)
+	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
+
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
 	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
 	sender, object := receiveEvent(t, client, eventCh)
-	require.Equal(t, signer.Address, sender)
+	require.Equal(t, signer.Address(), sender)
+
 	req := object.Data.Content.Data.MoveObject
 	require.True(t, strings.HasSuffix(req.Type, "::request::Request"))
 	require.Equal(t, reqType, req.Type)
@@ -324,17 +332,17 @@ func TestSendReceiveRequest(t *testing.T) {
 	receiveRequest(t, client, chainSigner, iscPackageID, anchorObjID, reqObjID)
 }
 
-func newSignerWithFunds(t *testing.T, seed string) *sui_signer.Signer {
-	signer := sui_signer.NewSigner(sui_types.MustSuiAddressFromHex(seed)[:], sui_signer.KeySchemeFlagIotaEd25519)
-	err := sui.RequestFundFromFaucet(signer.Address, conn.LocalnetFaucetUrl)
+func newSignerWithFunds(t *testing.T, seed string) cryptolib.Signer {
+	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(sui_types.MustSuiAddressFromHex(seed)[:], 0))
+	err := sui.RequestFundFromFaucet(kp.Address().AsSuiAddress(), conn.LocalnetFaucetUrl)
 	require.NoError(t, err)
-	return signer
+	return kp
 }
 
 func startChainAnchor(
 	t *testing.T,
 	client *iscmove.Client,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	iscPackageID *sui_types.PackageID,
 ) *sui_types.ObjectID {
 	// start a new chain
@@ -352,11 +360,8 @@ func startChainAnchor(
 		nil,
 	)
 	require.NoError(t, err)
-	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
 
-	anchorObjID, _, err := startNewChainRes.GetCreatedObjectInfo("anchor", "Anchor")
-	require.NoError(t, err)
-	return anchorObjID
+	return &startNewChainRes.ID
 }
 
 func subscribeEvents(t *testing.T, iscPackageID *sui_types.PackageID) chan models.SuiEvent {
@@ -397,7 +402,7 @@ func receiveEvent(t *testing.T, client *iscmove.Client, eventCh chan models.SuiE
 func sendCoin(
 	t *testing.T,
 	client *iscmove.Client,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 	coinType string,
@@ -425,7 +430,7 @@ func sendCoin(
 func receiveCoin(
 	t *testing.T,
 	client *iscmove.Client,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 	coinType string,
@@ -453,7 +458,7 @@ func receiveCoin(
 func createRequest(
 	t *testing.T,
 	client *iscmove.Client,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -481,7 +486,7 @@ func createRequest(
 func sendRequest(
 	t *testing.T,
 	client *iscmove.Client,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 	reqObjID *sui_types.ObjectID,
@@ -507,7 +512,7 @@ func sendRequest(
 func receiveRequest(
 	t *testing.T,
 	client *iscmove.Client,
-	signer *sui_signer.Signer,
+	signer cryptolib.Signer,
 	iscPackageID *sui_types.PackageID,
 	anchorObjID *sui_types.ObjectID,
 	reqObjID *sui_types.ObjectID,

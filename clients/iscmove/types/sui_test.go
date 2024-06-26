@@ -1,4 +1,4 @@
-package sui
+package types
 
 import (
 	"context"
@@ -12,8 +12,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc/sui/mock_contract"
-	"github.com/iotaledger/wasp/sui-go/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/types/mock_contract"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
@@ -23,23 +24,29 @@ import (
 )
 
 type testSetup struct {
-	suiClient *sui.ImplSuiAPI
 	iscClient *iscmove.Client
-	signer    *sui_signer.Signer
+	signer    cryptolib.Signer
 	packageID sui_types.PackageID
-	chain     *models.SuiTransactionBlockResponse
+	chain     *Anchor
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
-	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	client := iscmove.NewClient(suiClient)
+	client := iscmove.NewClient(
+		iscmove.Config{
+			APIURL:       conn.LocalnetEndpointUrl,
+			FaucetURL:    conn.LocalnetFaucetUrl,
+			WebsocketURL: conn.LocalnetWebsocketEndpointUrl,
+		},
+	)
+
+	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(sui_signer.TEST_SEED, 0))
 
 	iscBytecode := mock_contract.MockISCContract()
 
-	fmt.Printf("%s", signer.Address.String())
+	fmt.Printf("%s", kp.Address().String())
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address,
+		kp.Address().AsSuiAddress(),
 		iscBytecode.Modules,
 		iscBytecode.Dependencies,
 		nil,
@@ -47,7 +54,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), cryptolib.SignerToSuiSigner(kp), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -58,19 +65,21 @@ func setupAndDeploy(t *testing.T) testSetup {
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	cap, _ := lo.Find(txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
-		if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
-			return true
-		}
+	cap, _ := lo.Find(
+		txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
+				return true
+			}
 
-		return false
-	})
+			return false
+		},
+	)
 
 	capObj, err := client.GetObject(context.Background(), &cap.Data.Created.ObjectID, nil)
 	require.NoError(t, err)
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
-		signer,
+		kp,
 		packageID,
 		nil,
 		sui.DefaultGasPrice,
@@ -82,12 +91,10 @@ func setupAndDeploy(t *testing.T) testSetup {
 		capObj,
 	)
 	require.NoError(t, err)
-	require.True(t, startNewChainRes.Effects.Data.IsSuccess())
 	t.Logf("StartNewChain response: %#v\n", startNewChainRes)
 
 	return testSetup{
-		suiClient: suiClient,
-		signer:    signer,
+		signer:    kp,
 		chain:     startNewChainRes,
 		iscClient: client,
 		packageID: *packageID,
@@ -95,20 +102,14 @@ func setupAndDeploy(t *testing.T) testSetup {
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	cap, _ := lo.Find(setup.chain.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
-		if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
-			return true
-		}
-
-		return false
-	})
-
-	anchor, err := setup.suiClient.GetObject(context.Background(), &cap.Data.Created.ObjectID, &models.SuiObjectDataOptions{
-		ShowType:    true,
-		ShowContent: true,
-		ShowBcs:     true,
-		ShowDisplay: true,
-	})
+	anchor, err := setup.iscClient.GetObject(
+		context.Background(), &setup.chain.ID, &models.SuiObjectDataOptions{
+			ShowType:    true,
+			ShowContent: true,
+			ShowBcs:     true,
+			ShowDisplay: true,
+		},
+	)
 	require.NoError(t, err)
 
 	t.Logf("%# v\n", pretty.Formatter(anchor.Data.Content.Data))
@@ -128,7 +129,7 @@ func TestMinimalClient(t *testing.T) {
 	anchor := GetAnchor(t, setup)
 	t.Log(anchor)
 
-	graph := iscmove.NewGraph(setup.suiClient, "http://localhost:9001")
+	graph := iscmove.NewGraph("http://localhost:9001")
 	ret, err := graph.GetAssetBag(context.Background(), anchor.Assets.Value.ID)
 
 	require.NoError(t, err)

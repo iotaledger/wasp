@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
@@ -32,7 +33,7 @@ func (s *ImplSuiAPI) GetCoinObjsForTargetAmount(
 
 func (s *ImplSuiAPI) SignAndExecuteTransaction(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer sui_signer.Signer,
 	txBytes sui_types.Base64Data,
 	options *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
@@ -59,7 +60,7 @@ func (s *ImplSuiAPI) SignAndExecuteTransaction(
 
 func (s *ImplSuiAPI) PublishContract(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer sui_signer.Signer,
 	modules []*sui_types.Base64Data,
 	dependencies []*sui_types.SuiAddress,
 	gasBudget uint64,
@@ -67,7 +68,7 @@ func (s *ImplSuiAPI) PublishContract(
 ) (*models.SuiTransactionBlockResponse, *sui_types.PackageID, error) {
 	txnBytes, err := s.Publish(
 		context.Background(),
-		signer.Address,
+		signer.Address(),
 		modules,
 		dependencies,
 		nil,
@@ -90,7 +91,7 @@ func (s *ImplSuiAPI) PublishContract(
 
 func (s *ImplSuiAPI) MintToken(
 	ctx context.Context,
-	signer *sui_signer.Signer,
+	signer sui_signer.Signer,
 	packageID *sui_types.PackageID,
 	tokenName string,
 	treasuryCap *sui_types.ObjectID,
@@ -99,12 +100,12 @@ func (s *ImplSuiAPI) MintToken(
 ) (*models.SuiTransactionBlockResponse, error) {
 	txnBytes, err := s.MoveCall(
 		ctx,
-		signer.Address,
+		signer.Address(),
 		packageID,
 		tokenName,
 		"mint",
 		[]string{},
-		[]any{treasuryCap.String(), fmt.Sprintf("%d", mintAmount), signer.Address.String()},
+		[]any{treasuryCap.String(), fmt.Sprintf("%d", mintAmount), signer.Address().String()},
 		nil,
 		models.NewBigInt(DefaultGasBudget),
 	)

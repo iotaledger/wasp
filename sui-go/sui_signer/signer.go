@@ -21,19 +21,58 @@ const (
 
 var (
 	TEST_MNEMONIC = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
-	TEST_SEED     = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116, 90, 172, 148, 59, 33, 88, 252, 134, 42, 231, 198, 208, 141, 209, 116, 78, 21, 216, 24}
-	TEST_ADDRESS  = sui_types.MustSuiAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
+	TEST_SEED     = []byte{
+		50,
+		230,
+		119,
+		9,
+		86,
+		155,
+		106,
+		30,
+		245,
+		81,
+		234,
+		122,
+		116,
+		90,
+		172,
+		148,
+		59,
+		33,
+		88,
+		252,
+		134,
+		42,
+		231,
+		198,
+		208,
+		141,
+		209,
+		116,
+		78,
+		21,
+		216,
+		24,
+	}
+	TEST_ADDRESS = sui_types.MustSuiAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
 )
 
+type Signer interface {
+	Address() *sui_types.SuiAddress
+	Sign(msg []byte) (signature *Signature, err error)
+	SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error)
+}
+
 // FIXME support more than ed25519
-type Signer struct {
+type SuiInMemorySigner struct {
 	ed25519Keypair *KeypairEd25519
 	// secp256k1Keypair *KeypairSecp256k1
 
-	Address *sui_types.SuiAddress
+	address *sui_types.SuiAddress
 }
 
-func NewSigner(seed []byte, flag KeySchemeFlag) *Signer {
+func NewSigner(seed []byte, flag KeySchemeFlag) *SuiInMemorySigner {
 	prikey := ed25519.NewKeyFromSeed(seed[:])
 	pubkey := prikey.Public().(ed25519.PublicKey)
 
@@ -53,17 +92,17 @@ func NewSigner(seed []byte, flag KeySchemeFlag) *Signer {
 	addrBytes := blake2b.Sum256(buf)
 	addr := "0x" + hex.EncodeToString(addrBytes[:])
 
-	return &Signer{
+	return &SuiInMemorySigner{
 		ed25519Keypair: &KeypairEd25519{
 			PriKey: prikey,
 			PubKey: pubkey,
 		},
-		Address: sui_types.MustSuiAddressFromHex(addr),
+		address: sui_types.MustSuiAddressFromHex(addr),
 	}
 }
 
 // there are only 256 different signers can be generated
-func NewSignerByIndex(seed []byte, flag KeySchemeFlag, index int) *Signer {
+func NewSignerByIndex(seed []byte, flag KeySchemeFlag, index int) Signer {
 	seed[0] = seed[0] + byte(index)
 	return NewSigner(seed, flag)
 }
@@ -73,7 +112,7 @@ func NewSignerByIndex(seed []byte, flag KeySchemeFlag, index int) *Signer {
 // let phrase = "asset pink record dawn hundred sure various crime client enforce carbon blossom";
 // let mut keystore = Keystore::from(InMemKeystore::new_insecure_for_tests(0));
 // let generated_address = keystore.import_from_mnemonic(&phrase, SignatureScheme::ED25519, None, None).unwrap();
-func NewSignerWithMnemonic(mnemonic string, flag KeySchemeFlag) (*Signer, error) {
+func NewSignerWithMnemonic(mnemonic string, flag KeySchemeFlag) (Signer, error) {
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
 	if err != nil {
 		return nil, err
@@ -85,7 +124,7 @@ func NewSignerWithMnemonic(mnemonic string, flag KeySchemeFlag) (*Signer, error)
 	return NewSigner(key.Key, flag), nil
 }
 
-func (s *Signer) PrivateKey() []byte {
+func (s *SuiInMemorySigner) PrivateKey() []byte {
 	switch {
 	case s.ed25519Keypair != nil:
 		return s.ed25519Keypair.PriKey
@@ -94,7 +133,7 @@ func (s *Signer) PrivateKey() []byte {
 	}
 }
 
-func (s *Signer) PublicKey() []byte {
+func (s *SuiInMemorySigner) PublicKey() []byte {
 	switch {
 	case s.ed25519Keypair != nil:
 		return s.ed25519Keypair.PubKey
@@ -103,18 +142,24 @@ func (s *Signer) PublicKey() []byte {
 	}
 }
 
-func (s *Signer) Sign(data []byte) Signature {
+func (s *SuiInMemorySigner) Sign(msg []byte) (signature *Signature, err error) {
 	// FIXME support more than ed25519
-	return Signature{
-		Ed25519SuiSignature: NewEd25519SuiSignature(s, data),
-	}
+	sig := ed25519.Sign(s.ed25519Keypair.PriKey, msg)
+
+	return &Signature{
+		Ed25519SuiSignature: NewEd25519SuiSignature(s.ed25519Keypair.PubKey, sig),
+	}, nil
+}
+
+func (a *SuiInMemorySigner) Address() *sui_types.SuiAddress {
+	return a.address
 }
 
 // FIXME support more than ed25519
-func (a *Signer) SignTransactionBlock(txnBytes []byte, intent Intent) (Signature, error) {
+func (a *SuiInMemorySigner) SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error) {
 	data := MessageWithIntent(intent, bcsBytes(txnBytes))
 	hash := blake2b.Sum256(data)
-	return a.Sign(hash[:]), nil
+	return a.Sign(hash[:])
 }
 
 type bcsBytes []byte

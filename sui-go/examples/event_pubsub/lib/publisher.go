@@ -12,10 +12,10 @@ import (
 
 type Publisher struct {
 	client *sui.ImplSuiAPI
-	signer *sui_signer.Signer
+	signer sui_signer.Signer
 }
 
-func NewPublisher(client *sui.ImplSuiAPI, signer *sui_signer.Signer) *Publisher {
+func NewPublisher(client *sui.ImplSuiAPI, signer sui_signer.Signer) *Publisher {
 	return &Publisher{
 		client: client,
 		signer: signer,
@@ -25,7 +25,7 @@ func NewPublisher(client *sui.ImplSuiAPI, signer *sui_signer.Signer) *Publisher 
 func (p *Publisher) PublishEvents(ctx context.Context, packageID *sui_types.PackageID) {
 	txnBytes, err := p.client.MoveCall(
 		ctx,
-		p.signer.Address,
+		p.signer.Address(),
 		packageID,
 		"eventpub",
 		"emit_clock",

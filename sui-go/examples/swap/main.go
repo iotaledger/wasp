@@ -19,8 +19,8 @@ var swapBytecodeJSON []byte
 func main() {
 	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 	_, swapper := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
-	fmt.Println("signer: ", signer.Address)
-	fmt.Println("swapper: ", swapper.Address)
+	fmt.Println("signer: ", signer.Address())
+	fmt.Println("swapper: ", swapper.Address())
 
 	swapPackageID := pkg.Publish(suiClient, signer, move.DecodePackageBytecode(swapBytecodeJSON))
 	testcoinID, _ := pkg.PublishMintTestcoin(suiClient, signer)
@@ -31,7 +31,7 @@ func main() {
 
 	testcoinCoins, err := suiClient.GetCoins(
 		context.Background(),
-		signer.Address,
+		signer.Address(),
 		&testcoinCoinType,
 		nil,
 		0,
@@ -42,7 +42,7 @@ func main() {
 
 	signerSuiCoinPage, err := suiClient.GetCoins(
 		context.Background(),
-		signer.Address,
+		signer.Address(),
 		nil,
 		nil,
 		0,
@@ -51,11 +51,18 @@ func main() {
 		panic(err)
 	}
 
-	poolObjectID := pkg.CreatePool(suiClient, signer, swapPackageID, testcoinID, testcoinCoins.Data[0], signerSuiCoinPage.Data)
+	poolObjectID := pkg.CreatePool(
+		suiClient,
+		signer,
+		swapPackageID,
+		testcoinID,
+		testcoinCoins.Data[0],
+		signerSuiCoinPage.Data,
+	)
 
 	swapperSuiCoinPage1, err := suiClient.GetAllCoins(
 		context.Background(),
-		swapper.Address,
+		swapper.Address(),
 		nil,
 		0,
 	)
@@ -67,7 +74,7 @@ func main() {
 
 	swapperSuiCoinPage2, err := suiClient.GetAllCoins(
 		context.Background(),
-		swapper.Address,
+		swapper.Address(),
 		nil,
 		0,
 	)

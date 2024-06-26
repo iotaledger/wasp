@@ -11,10 +11,14 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
-func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode move.PackageBytecode) *sui_types.PackageID {
+func Publish(
+	client *sui.ImplSuiAPI,
+	signer sui_signer.Signer,
+	bytecode contracts.MoveBytecode,
+) *sui_types.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address,
+		signer.Address(),
 		bytecode.Modules,
 		bytecode.Dependencies,
 		nil,
@@ -39,7 +43,7 @@ func Publish(client *sui.ImplSuiAPI, signer *sui_signer.Signer, bytecode move.Pa
 	return packageID
 }
 
-func PublishMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
+func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {
@@ -47,7 +51,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer *sui_signer.Signer) (
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address,
+		signer.Address(),
 		testcoinBytecode.Modules,
 		testcoinBytecode.Dependencies,
 		nil,

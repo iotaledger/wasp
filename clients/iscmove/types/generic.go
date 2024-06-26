@@ -1,4 +1,4 @@
-package sui
+package types
 
 type Bag = map[any]any
 

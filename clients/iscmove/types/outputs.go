@@ -1,4 +1,4 @@
-package sui
+package types
 
 import (
 	"github.com/iotaledger/wasp/sui-go/models"

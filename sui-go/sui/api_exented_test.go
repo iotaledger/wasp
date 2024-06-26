@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetDynamicFieldObject(t *testing.T) {
@@ -114,10 +115,11 @@ func TestGetOwnedObjects(t *testing.T) {
 	limit := uint(2)
 	objs, err := api.GetOwnedObjects(
 		context.Background(),
-		signer.Address,
+		signer.Address(),
 		&query,
 		nil,
-		&limit)
+		&limit,
+	)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(objs.Data), int(limit))
 	require.NoError(t, err)

@@ -19,15 +19,15 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 	client, sender := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
 	coinType := models.SuiCoinType
 	limit := uint(3)
-	coinPages, err := client.GetCoins(context.Background(), sender.Address, &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), sender.Address(), &coinType, nil, limit)
 	require.NoError(t, err)
 	coins := models.Coins(coinPages.Data)
 
 	ptb := sui_types.NewProgrammableTransactionBuilder()
-	ptb.PayAllSui(sender.Address)
+	ptb.PayAllSui(sender.Address())
 	pt := ptb.Finish()
 	tx := sui_types.NewProgrammable(
-		sender.Address,
+		sender.Address(),
 		pt,
 		coins.CoinRefs(),
 		sui.DefaultGasBudget,
@@ -38,7 +38,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 
 	resp, err := client.DevInspectTransactionBlock(
 		context.Background(),
-		sender.Address,
+		sender.Address(),
 		txBytes,
 		nil,
 		nil,

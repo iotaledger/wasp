@@ -6,20 +6,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/iscmove"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
-func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer *sui_signer.Signer) *sui_types.PackageID {
+func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) *sui_types.PackageID {
 	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		iscBytecode.Modules,
 		iscBytecode.Dependencies,
 		nil,
@@ -27,7 +27,7 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer *su
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -41,15 +41,16 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer *su
 	return packageID
 }
 
-func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_signer.Signer) (
+func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (
 	*sui_types.PackageID,
 	*sui_types.ObjectID,
 ) {
 	testcoinBytecode := contracts.Testcoin()
+	suiSigner := cryptolib.SignerToSuiSigner(signer)
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address,
+		signer.Address().AsSuiAddress(),
 		testcoinBytecode.Modules,
 		testcoinBytecode.Dependencies,
 		nil,
@@ -57,7 +58,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_s
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), suiSigner, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -74,7 +75,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer *sui_s
 	mintAmount := uint64(1000000)
 	txnRes, err := client.MintToken(
 		context.Background(),
-		signer,
+		suiSigner,
 		packageID,
 		"testcoin",
 		treasuryCap,

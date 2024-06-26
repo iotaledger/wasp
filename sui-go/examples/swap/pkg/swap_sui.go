@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
@@ -13,16 +14,18 @@ import (
 
 func SwapSui(
 	suiClient *sui.ImplSuiAPI,
-	swapper *sui_signer.Signer,
+	swapper sui_signer.Signer,
 	swapPackageID *sui_types.PackageID,
 	testcoinID *sui_types.ObjectID,
 	poolObjectID *sui_types.ObjectID,
 	suiCoins []*models.Coin,
 ) {
-	poolGetObjectRes, err := suiClient.GetObject(context.Background(), poolObjectID, &models.SuiObjectDataOptions{
-		ShowType:    true,
-		ShowContent: true,
-	})
+	poolGetObjectRes, err := suiClient.GetObject(
+		context.Background(), poolObjectID, &models.SuiObjectDataOptions{
+			ShowType:    true,
+			ShowContent: true,
+		},
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -30,11 +33,15 @@ func SwapSui(
 	// swap sui to testcoin
 	ptb := sui_types.NewProgrammableTransactionBuilder()
 
-	arg0 := ptb.MustObj(sui_types.ObjectArg{SharedObject: &sui_types.SharedObjectArg{
-		Id:                   poolObjectID,
-		InitialSharedVersion: poolGetObjectRes.Data.Ref().Version,
-		Mutable:              true,
-	}})
+	arg0 := ptb.MustObj(
+		sui_types.ObjectArg{
+			SharedObject: &sui_types.SharedObjectArg{
+				Id:                   poolObjectID,
+				InitialSharedVersion: poolGetObjectRes.Data.Ref().Version,
+				Mutable:              true,
+			},
+		},
+	)
 	arg1 := ptb.MustObj(sui_types.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
 
 	retCoinArg := ptb.Command(sui_types.Command{
@@ -50,15 +57,17 @@ func SwapSui(
 			Arguments: []sui_types.Argument{arg0, arg1},
 		}},
 	)
-	ptb.Command(sui_types.Command{
-		TransferObjects: &sui_types.ProgrammableTransferObjects{
-			Objects: []sui_types.Argument{retCoinArg},
-			Address: ptb.MustPure(swapper.Address),
+	ptb.Command(
+		sui_types.Command{
+			TransferObjects: &sui_types.ProgrammableTransferObjects{
+				Objects: []sui_types.Argument{retCoinArg},
+				Address: ptb.MustPure(swapper.Address()),
+			},
 		},
-	})
+	)
 	pt := ptb.Finish()
 	txData := sui_types.NewProgrammable(
-		swapper.Address,
+		swapper.Address(),
 		pt,
 		[]*sui_types.ObjectRef{suiCoins[1].Ref()},
 		sui.DefaultGasBudget,

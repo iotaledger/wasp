@@ -17,7 +17,7 @@ func NewSuiClient(url string) *ImplSuiAPI {
 }
 
 // test only. If localnet is used then iota network will be connect
-func (i *ImplSuiAPI) WithSignerAndFund(seed []byte, index int) (*ImplSuiAPI, *sui_signer.Signer) {
+func (i *ImplSuiAPI) WithSignerAndFund(seed []byte, index int) (*ImplSuiAPI, sui_signer.Signer) {
 	keySchemeFlag := sui_signer.KeySchemeFlagEd25519
 	// special case if localnet is used, then
 	if i.http.Url() == conn.LocalnetEndpointUrl {
@@ -36,7 +36,7 @@ func (i *ImplSuiAPI) WithSignerAndFund(seed []byte, index int) (*ImplSuiAPI, *su
 	default:
 		panic("not supported network")
 	}
-	err := RequestFundFromFaucet(signer.Address, faucetUrl)
+	err := RequestFundFromFaucet(signer.Address(), faucetUrl)
 	if err != nil {
 		panic(err)
 	}
