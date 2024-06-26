@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/move"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
@@ -21,7 +22,7 @@ func Publish(
 		bytecode.Modules,
 		bytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
+		models.NewBigInt(10*sui.DefaultGasBudget),
 	)
 	if err != nil {
 		panic(err)
@@ -54,7 +55,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		testcoinBytecode.Modules,
 		testcoinBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(10*sui.DefaultGasBudget),
+		models.NewBigInt(10*sui.DefaultGasBudget),
 	)
 	if err != nil {
 		panic(err)
@@ -74,7 +75,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		panic(err)
 	}
 
-	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
+	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	if err != nil {
 		panic(err)
 	}

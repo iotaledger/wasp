@@ -23,7 +23,7 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cry
 		iscBytecode.Modules,
 		iscBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget*10),
+		models.NewBigInt(sui.DefaultGasBudget*10),
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -54,7 +54,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 		testcoinBytecode.Modules,
 		testcoinBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget*10),
+		models.NewBigInt(sui.DefaultGasBudget*10),
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -69,7 +69,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
+	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	require.NoError(t, err)
 
 	mintAmount := uint64(1000000)

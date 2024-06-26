@@ -55,7 +55,7 @@ func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer sui_signer.Sign
 		testcoinBytecode.Modules,
 		testcoinBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget*10),
+		models.NewBigInt(sui.DefaultGasBudget*10),
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -70,7 +70,7 @@ func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer sui_signer.Sign
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	treasuryCap, _, err := sui.GetCreatedObjectIdAndType(txnResponse, "coin", "TreasuryCap")
+	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	require.NoError(t, err)
 
 	return packageID, treasuryCap

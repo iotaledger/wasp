@@ -44,24 +44,18 @@ func SwapSui(
 	)
 	arg1 := ptb.MustObj(sui_types.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
 
-	retCoinArg := ptb.Command(
-		sui_types.Command{
-			MoveCall: &sui_types.ProgrammableMoveCall{
-				Package:  swapPackageID,
-				Module:   "swap",
-				Function: "swap_sui",
-				TypeArguments: []sui_types.TypeTag{
-					{
-						Struct: &sui_types.StructTag{
-							Address: *testcoinID,
-							Module:  "testcoin",
-							Name:    "TESTCOIN",
-						},
-					},
-				},
-				Arguments: []sui_types.Argument{arg0, arg1},
-			},
-		},
+	retCoinArg := ptb.Command(sui_types.Command{
+		MoveCall: &sui_types.ProgrammableMoveCall{
+			Package:  swapPackageID,
+			Module:   "swap",
+			Function: "swap_sui",
+			TypeArguments: []sui_types.TypeTag{{Struct: &sui_types.StructTag{
+				Address: testcoinID,
+				Module:  "testcoin",
+				Name:    "TESTCOIN",
+			}}},
+			Arguments: []sui_types.Argument{arg0, arg1},
+		}},
 	)
 	ptb.Command(
 		sui_types.Command{

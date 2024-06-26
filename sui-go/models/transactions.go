@@ -18,10 +18,10 @@ const (
 type EpochId = uint64
 
 type GasCostSummary struct {
-	ComputationCost         SafeSuiBigInt[uint64] `json:"computationCost"`
-	StorageCost             SafeSuiBigInt[uint64] `json:"storageCost"`
-	StorageRebate           SafeSuiBigInt[uint64] `json:"storageRebate"`
-	NonRefundableStorageFee SafeSuiBigInt[uint64] `json:"nonRefundableStorageFee"`
+	ComputationCost         *BigInt `json:"computationCost"`
+	StorageCost             *BigInt `json:"storageCost"`
+	StorageRebate           *BigInt `json:"storageRebate"`
+	NonRefundableStorageFee *BigInt `json:"nonRefundableStorageFee"`
 }
 
 const (
@@ -40,16 +40,16 @@ type OwnedObjectRef struct {
 }
 
 type SuiTransactionBlockEffectsModifiedAtVersions struct {
-	ObjectID       sui_types.ObjectID                      `json:"objectId"`
-	SequenceNumber SafeSuiBigInt[sui_types.SequenceNumber] `json:"sequenceNumber"`
+	ObjectID       sui_types.ObjectID `json:"objectId"`
+	SequenceNumber *BigInt            `json:"sequenceNumber"`
 }
 
 type SuiTransactionBlockEffectsV1 struct {
 	/** The status of the execution */
 	Status ExecutionStatus `json:"status"`
 	/** The epoch when this transaction was executed */
-	ExecutedEpoch SafeSuiBigInt[EpochId] `json:"executedEpoch"`
-	GasUsed       GasCostSummary         `json:"gasUsed"`
+	ExecutedEpoch *BigInt        `json:"executedEpoch"`
+	GasUsed       GasCostSummary `json:"gasUsed"`
 	/** The version that every modified (mutated or deleted) object had before it was modified by this transaction. **/
 	ModifiedAtVersions []SuiTransactionBlockEffectsModifiedAtVersions `json:"modifiedAtVersions,omitempty"`
 	/** The object references of the shared objects used in this transaction. Empty if no shared objects were used. */
@@ -141,11 +141,11 @@ func (t TransactionBlockKind) Content() string {
 }
 
 type SuiChangeEpoch struct {
-	Epoch                 SafeSuiBigInt[EpochId] `json:"epoch"`
-	StorageCharge         uint64                 `json:"storage_charge"`
-	ComputationCharge     uint64                 `json:"computation_charge"`
-	StorageRebate         uint64                 `json:"storage_rebate"`
-	EpochStartTimestampMs uint64                 `json:"epoch_start_timestamp_ms"`
+	Epoch                 *BigInt `json:"epoch"`
+	StorageCharge         uint64  `json:"storage_charge"`
+	ComputationCharge     uint64  `json:"computation_charge"`
+	StorageRebate         uint64  `json:"storage_rebate"`
+	EpochStartTimestampMs uint64  `json:"epoch_start_timestamp_ms"`
 }
 
 type SuiGenesisTransaction struct {
@@ -190,52 +190,52 @@ type SuiTransactionBlock struct {
 
 type ObjectChange struct {
 	Published *struct {
-		PackageId sui_types.ObjectID                      `json:"packageId"`
-		Version   SafeSuiBigInt[sui_types.SequenceNumber] `json:"version"`
-		Digest    sui_types.ObjectDigest                  `json:"digest"`
-		Nodules   []string                                `json:"nodules"`
+		PackageId sui_types.ObjectID     `json:"packageId"`
+		Version   *BigInt                `json:"version"`
+		Digest    sui_types.ObjectDigest `json:"digest"`
+		Nodules   []string               `json:"nodules"`
 	} `json:"published,omitempty"`
 	// Transfer objects to new address / wrap in another object
 	Transferred *struct {
-		Sender     sui_types.SuiAddress                    `json:"sender"`
-		Recipient  ObjectOwner                             `json:"recipient"`
-		ObjectType string                                  `json:"objectType"`
-		ObjectID   sui_types.ObjectID                      `json:"objectId"`
-		Version    SafeSuiBigInt[sui_types.SequenceNumber] `json:"version"`
-		Digest     sui_types.ObjectDigest                  `json:"digest"`
+		Sender     sui_types.SuiAddress   `json:"sender"`
+		Recipient  ObjectOwner            `json:"recipient"`
+		ObjectType string                 `json:"objectType"`
+		ObjectID   sui_types.ObjectID     `json:"objectId"`
+		Version    *BigInt                `json:"version"`
+		Digest     sui_types.ObjectDigest `json:"digest"`
 	} `json:"transferred,omitempty"`
 	// Object mutated.
 	Mutated *struct {
-		Sender          sui_types.SuiAddress                    `json:"sender"`
-		Owner           ObjectOwner                             `json:"owner"`
-		ObjectType      string                                  `json:"objectType"`
-		ObjectID        sui_types.ObjectID                      `json:"objectId"`
-		Version         SafeSuiBigInt[sui_types.SequenceNumber] `json:"version"`
-		PreviousVersion SafeSuiBigInt[sui_types.SequenceNumber] `json:"previousVersion"`
-		Digest          sui_types.ObjectDigest                  `json:"digest"`
+		Sender          sui_types.SuiAddress   `json:"sender"`
+		Owner           ObjectOwner            `json:"owner"`
+		ObjectType      string                 `json:"objectType"`
+		ObjectID        sui_types.ObjectID     `json:"objectId"`
+		Version         *BigInt                `json:"version"`
+		PreviousVersion *BigInt                `json:"previousVersion"`
+		Digest          sui_types.ObjectDigest `json:"digest"`
 	} `json:"mutated,omitempty"`
 	// Delete object j
 	Deleted *struct {
-		Sender     sui_types.SuiAddress                    `json:"sender"`
-		ObjectType string                                  `json:"objectType"`
-		ObjectID   sui_types.ObjectID                      `json:"objectId"`
-		Version    SafeSuiBigInt[sui_types.SequenceNumber] `json:"version"`
+		Sender     sui_types.SuiAddress `json:"sender"`
+		ObjectType string               `json:"objectType"`
+		ObjectID   sui_types.ObjectID   `json:"objectId"`
+		Version    *BigInt              `json:"version"`
 	} `json:"deleted,omitempty"`
 	// Wrapped object
 	Wrapped *struct {
-		Sender     sui_types.SuiAddress                    `json:"sender"`
-		ObjectType string                                  `json:"objectType"`
-		ObjectID   sui_types.ObjectID                      `json:"objectId"`
-		Version    SafeSuiBigInt[sui_types.SequenceNumber] `json:"version"`
+		Sender     sui_types.SuiAddress `json:"sender"`
+		ObjectType string               `json:"objectType"`
+		ObjectID   sui_types.ObjectID   `json:"objectId"`
+		Version    *BigInt              `json:"version"`
 	} `json:"wrapped,omitempty"`
 	// New object creation
 	Created *struct {
-		Sender     sui_types.SuiAddress                    `json:"sender"`
-		Owner      ObjectOwner                             `json:"owner"`
-		ObjectType string                                  `json:"objectType"`
-		ObjectID   sui_types.ObjectID                      `json:"objectId"`
-		Version    SafeSuiBigInt[sui_types.SequenceNumber] `json:"version"`
-		Digest     sui_types.ObjectDigest                  `json:"digest"`
+		Sender     sui_types.SuiAddress   `json:"sender"`
+		Owner      ObjectOwner            `json:"owner"`
+		ObjectType string                 `json:"objectType"`
+		ObjectID   sui_types.ObjectID     `json:"objectId"`
+		Version    *BigInt                `json:"version"`
+		Digest     sui_types.ObjectDigest `json:"digest"`
 	} `json:"created,omitempty"`
 }
 
@@ -245,6 +245,29 @@ func (o ObjectChange) Tag() string {
 
 func (o ObjectChange) Content() string {
 	return ""
+}
+
+func (o ObjectChange) String() string {
+	s := ""
+	if o.Published != nil {
+		s = fmt.Sprintf("Published: %v", o.Published)
+	}
+	if o.Transferred != nil {
+		s = fmt.Sprintf("Transferred: %v", o.Transferred)
+	}
+	if o.Mutated != nil {
+		s = fmt.Sprintf("Mutated: %v", o.Mutated)
+	}
+	if o.Deleted != nil {
+		s = fmt.Sprintf("Deleted: %v", o.Deleted)
+	}
+	if o.Wrapped != nil {
+		s = fmt.Sprintf("Wrapped: %v", o.Wrapped)
+	}
+	if o.Created != nil {
+		s = fmt.Sprintf("Created: %v", o.Created)
+	}
+	return s
 }
 
 type BalanceChange struct {
@@ -260,8 +283,8 @@ type SuiTransactionBlockResponse struct {
 	RawTransaction          sui_types.Base64Data                               `json:"rawTransaction,omitempty"` // enable by show_raw_input
 	Effects                 *serialization.TagJson[SuiTransactionBlockEffects] `json:"effects,omitempty"`
 	Events                  []*SuiEvent                                        `json:"events,omitempty"`
-	TimestampMs             *SafeSuiBigInt[uint64]                             `json:"timestampMs,omitempty"`
-	Checkpoint              *SafeSuiBigInt[CheckpointSequenceNumber]           `json:"checkpoint,omitempty"`
+	TimestampMs             *BigInt                                            `json:"timestampMs,omitempty"`
+	Checkpoint              *BigInt                                            `json:"checkpoint,omitempty"`
 	ConfirmedLocalExecution *bool                                              `json:"confirmedLocalExecution,omitempty"`
 	ObjectChanges           []serialization.TagJson[ObjectChange]              `json:"objectChanges,omitempty"`
 	BalanceChanges          []BalanceChange                                    `json:"balanceChanges,omitempty"`
@@ -270,7 +293,7 @@ type SuiTransactionBlockResponse struct {
 	RawEffects []string `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
-// requires to set 'models.SuiTransactionBlockResponseOptions.ShowObjectChanges' to true
+// requires to set 'SuiTransactionBlockResponseOptions.ShowObjectChanges' to true
 func (r *SuiTransactionBlockResponse) GetPublishedPackageID() (*sui_types.PackageID, error) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("no 'SuiTransactionBlockResponse.ObjectChanges' object")
@@ -283,6 +306,33 @@ func (r *SuiTransactionBlockResponse) GetPublishedPackageID() (*sui_types.Packag
 		}
 	}
 	return nil, fmt.Errorf("not found")
+}
+
+// requires `ShowObjectChanges: true`
+func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (*sui_types.ObjectID, string, error) {
+	if r.ObjectChanges == nil {
+		return nil, "", fmt.Errorf("no ObjectChanges")
+	}
+	for _, change := range r.ObjectChanges {
+		if change.Data.Created != nil {
+			// some possible examples
+			// * 0x2::coin::TreasuryCap<0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::testcoin::TESTCOIN>
+			// * 0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::anchor::Anchor
+			resource, err := NewResourceType(change.Data.Created.ObjectType)
+			if err != nil {
+				return nil, "", fmt.Errorf("invalid resource string")
+			}
+			if resource.Module == module && resource.ObjectName == objectName {
+				return &change.Data.Created.ObjectID, change.Data.Created.ObjectType, nil
+			}
+			for ; resource.SubType != nil; resource = resource.SubType {
+				if resource.Module == module && resource.ObjectName == objectName {
+					return &change.Data.Created.ObjectID, change.Data.Created.ObjectType, nil
+				}
+			}
+		}
+	}
+	return nil, "", fmt.Errorf("not found")
 }
 
 type ReturnValueType interface{}

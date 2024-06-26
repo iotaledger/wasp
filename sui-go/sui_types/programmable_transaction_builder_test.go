@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/fardream/go-bcs/bcs"
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+
+	"github.com/fardream/go-bcs/bcs"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPTBMoveCall(t *testing.T) {
@@ -115,7 +115,7 @@ func TestPTBTransferObject(t *testing.T) {
 		recipient.Address(),
 		transferCoin.CoinObjectID,
 		gasCoin.CoinObjectID,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 	txBytesRemote := txn.TxBytes.Data()
@@ -153,8 +153,8 @@ func TestPTBTransferSui(t *testing.T) {
 		sender.Address(),
 		recipient.Address(),
 		coin.CoinObjectID,
-		models.NewSafeSuiBigInt(amount),
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewBigInt(amount),
+		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 	txBytesRemote := txn.TxBytes.Data()
@@ -191,7 +191,7 @@ func TestPTBPayAllSui(t *testing.T) {
 		sender.Address(),
 		recipient.Address(),
 		coins.ObjectIDs(),
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 	txBytesRemote := txn.TxBytes.Data()
@@ -254,11 +254,11 @@ func TestPTBPaySui(t *testing.T) {
 		sender.Address(),
 		[]*sui_types.ObjectID{coin.CoinObjectID},
 		[]*sui_types.SuiAddress{recipient1.Address(), recipient2.Address()},
-		[]models.SafeSuiBigInt[uint64]{
-			models.NewSafeSuiBigInt(uint64(123)),
-			models.NewSafeSuiBigInt(uint64(456)),
+		[]*models.BigInt{
+			models.NewBigInt(123),
+			models.NewBigInt(456),
 		},
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 	txBytesRemote := txn.TxBytes.Data()
@@ -335,12 +335,12 @@ func TestPTBPay(t *testing.T) {
 		sender.Address(),
 		transferCoins.ObjectIDs(),
 		[]*sui_types.SuiAddress{recipient1.Address(), recipient2.Address()},
-		[]models.SafeSuiBigInt[uint64]{
-			models.NewSafeSuiBigInt(amounts[0]),
-			models.NewSafeSuiBigInt(amounts[1]),
+		[]*models.BigInt{
+			models.NewBigInt(amounts[0]),
+			models.NewBigInt(amounts[1]),
 		},
 		gasCoin.CoinObjectID,
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 	txBytesRemote := txn.TxBytes.Data()

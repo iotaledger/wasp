@@ -5,14 +5,14 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/fardream/go-bcs/bcs"
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+
+	"github.com/fardream/go-bcs/bcs"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
@@ -59,7 +59,7 @@ func TestDryRunTransaction(t *testing.T) {
 		signer,
 		signer,
 		pickedCoins.CoinIds(),
-		models.NewSafeSuiBigInt(sui.DefaultGasBudget),
+		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 

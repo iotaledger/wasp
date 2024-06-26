@@ -25,24 +25,18 @@ func CreatePool(
 	arg1 := ptb.MustObj(sui_types.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
 	arg2 := ptb.MustPure(uint64(3))
 
-	lspArg := ptb.Command(
-		sui_types.Command{
-			MoveCall: &sui_types.ProgrammableMoveCall{
-				Package:  swapPackageID,
-				Module:   "swap",
-				Function: "create_pool",
-				TypeArguments: []sui_types.TypeTag{
-					{
-						Struct: &sui_types.StructTag{
-							Address: *testcoinID,
-							Module:  "testcoin",
-							Name:    "TESTCOIN",
-						},
-					},
-				},
-				Arguments: []sui_types.Argument{arg0, arg1, arg2},
-			},
-		},
+	lspArg := ptb.Command(sui_types.Command{
+		MoveCall: &sui_types.ProgrammableMoveCall{
+			Package:  swapPackageID,
+			Module:   "swap",
+			Function: "create_pool",
+			TypeArguments: []sui_types.TypeTag{{Struct: &sui_types.StructTag{
+				Address: testcoinID,
+				Module:  "testcoin",
+				Name:    "TESTCOIN",
+			}}},
+			Arguments: []sui_types.Argument{arg0, arg1, arg2},
+		}},
 	)
 	ptb.Command(
 		sui_types.Command{

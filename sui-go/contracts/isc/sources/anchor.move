@@ -42,7 +42,6 @@ module isc::anchor {
     public fun destroy(self: Anchor): AssetsBag {
         let Anchor { id, assets, state_root: _, state_index: _ } = self;
         id.delete();
-
         assets.destroy()
     }
 
@@ -54,11 +53,7 @@ module isc::anchor {
     }
 
     /// Finishes the simulation of a borrow mutable putting back the HotPotato.
-    public fun return_assets_from_borrow(
-        self: &mut Anchor,
-        assets: AssetsBag,
-        b: Borrow
-    ) {
+    public fun return_assets_from_borrow(self: &mut Anchor, assets: AssetsBag, b: Borrow) {
         borrow::put_back(&mut self.assets, assets, b)
     }
 
@@ -77,7 +72,7 @@ module isc::anchor {
         while (i < receipts_len) {
             let Receipt {
                 request_id: _
-            } = receipts.pop_back();
+            } = receipts.pop_back(); // TODO it seems we don't need to use mut for `receipts`
             // here performs some cryptographic proof of inclusion with request_id and the new state root??
             i = i + 1;
         };
@@ -85,13 +80,11 @@ module isc::anchor {
         self.state_root = new_state_root
     }
 
-
     // === Test Functions ===
 
-    // test only function to create a receipt
+    /// test only function to create a receipt
     #[test_only]
     public fun create_receipt_for_testing(request_id: ID): Receipt {
         Receipt { request_id }
     }
-
 }

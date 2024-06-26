@@ -2,6 +2,7 @@ package sui_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -122,7 +123,10 @@ func TestGetOwnedObjects(t *testing.T) {
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(objs.Data), int(limit))
 	require.NoError(t, err)
-	require.Equal(t, "1000000000", objs.Data[1].Data.Content.Data.MoveObject.Fields["balance"])
+	var fields models.CoinFields
+	err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
+	require.NoError(t, err)
+	require.Equal(t, "1000000000", fields.Balance.String())
 }
 
 func TestQueryEvents(t *testing.T) {
@@ -173,10 +177,10 @@ func TestQueryEvents(t *testing.T) {
 					require.Equal(
 						t,
 						sui_types.MustPackageIDFromHex("0x000000000000000000000000000000000000000000000000000000000000dee9"),
-						&event.PackageId,
+						event.PackageId,
 					)
 					require.Equal(t, "clob_v2", event.TransactionModule)
-					require.Equal(t, tt.args.query.Sender, &event.Sender)
+					require.Equal(t, tt.args.query.Sender, event.Sender)
 				}
 			},
 		)
@@ -263,6 +267,7 @@ func TestResolveNameServiceNames(t *testing.T) {
 }
 
 func TestSubscribeEvent(t *testing.T) {
+	// FIXME make it pass
 	t.Skip("passed at local side, but returned error on GitHub")
 	api := sui.NewSuiWebsocketClient(conn.MainnetWebsocketEndpointUrl)
 

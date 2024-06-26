@@ -5,11 +5,9 @@ module isc::request {
     use std::string::String;
     use sui::{
         borrow::{Self, Referent},
-        event::{Self},
+        event::Self,
     };
-    use isc::{
-        assets_bag::{AssetsBag},
-    }; 
+    use isc::assets_bag::AssetsBag;
 
     // === Main structs ===
 
@@ -35,7 +33,7 @@ module isc::request {
     }
 
     // === Events ===
-    
+
     /// Emitted when a request is sent to an address.
     public struct RequestEvent has copy, drop {
         /// ID of the request object
@@ -43,17 +41,17 @@ module isc::request {
         /// Anchor receiving the request
         anchor: address,
     }
-    
+
     // === Request packing and unpacking ===
 
     /// Creates a request to call a specific SC function.
     public fun create_and_send_request(
         anchor: address,
         assets_bag: AssetsBag,
-        contract: Option<String>, 
-        function: Option<String>, 
-        args: Option<vector<vector<u8>>>, 
-        ctx: &mut TxContext
+        contract: Option<String>,
+        function: Option<String>,
+        args: Option<vector<vector<u8>>>,
+        ctx: &mut TxContext,
     ) {
         let id = object::new(ctx);
         let data = if (option::is_some(&contract) 
@@ -85,7 +83,6 @@ module isc::request {
         } = self;
         let inner_id = id.uid_to_inner();
         id.delete();
-        
         (inner_id, assets_bag.destroy())
     }
 
@@ -99,20 +96,20 @@ module isc::request {
 
     /// Utility function to receive a `Request` object in other ISC modules.
     /// Other modules in the ISC package can call this function to receive an `Request` object.
-    public(package) fun receive(parent: &mut UID, self: transfer::Receiving<Request>) : Request {
+    public(package) fun receive(parent: &mut UID, self: transfer::Receiving<Request>): Request {
         transfer::receive(parent, self)
     }
 
     // === Test Functions ===
 
-    // test only function to create a request
+    /// test only function to create a request
     #[test_only]
     public fun create_for_testing(
         assets_bag: AssetsBag,
-        contract: Option<String>, 
-        function: Option<String>, 
-        args: Option<vector<vector<u8>>>, 
-        ctx: &mut TxContext
+        contract: Option<String>,
+        function: Option<String>,
+        args: Option<vector<vector<u8>>>,
+        ctx: &mut TxContext,
     ): Request {
         let id = object::new(ctx);
         let data = if (option::is_some(&contract) 
