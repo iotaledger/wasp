@@ -2,6 +2,7 @@ package iscmove
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
@@ -57,24 +58,32 @@ func GetAnchorFromSuiTransactionBlockResponse(
 	error,
 ) {
 	anchorObj, _ := lo.Find(
-		response.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
-			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor") {
-				return true
-			}
-
-			return false
+		response.ObjectChanges,
+		func(item serialization.TagJson[models.ObjectChange]) bool {
+			return item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor")
 		},
 	)
 
-	anchor, err := client.GetObject(
-		ctx, &anchorObj.Data.Created.ObjectID, &models.SuiObjectDataOptions{
-			ShowBcs: true,
+	getObjectResponse, err := client.GetObject(
+		ctx, &models.GetObjectRequest{
+			ObjectID: &anchorObj.Data.Created.ObjectID,
+			Options:  &models.SuiObjectDataOptions{ShowBcs: true},
 		},
 	)
-	decodedAnchor := Anchor{}
-	_, err = bcs.Unmarshal(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data(), &decodedAnchor)
+	if err != nil {
+		return nil, err
+	}
+	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
 
-	return &decodedAnchor, err
+	anchor := Anchor{}
+	n, err := bcs.Unmarshal(anchorBCS, &anchor)
+	if err != nil {
+		return nil, err
+	}
+	if n != len(anchorBCS) {
+		return nil, errors.New("cannot decode anchor: excess bytes")
+	}
+	return &anchor, nil
 }
 
 type Receipt struct {
