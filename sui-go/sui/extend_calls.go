@@ -45,7 +45,7 @@ func (s *ImplSuiAPI) SignAndExecuteTransaction(
 	resp, err := s.ExecuteTransactionBlock(
 		ctx,
 		txBytes,
-		[]*sui_signer.Signature{&signature},
+		[]*sui_signer.Signature{signature},
 		options,
 		models.TxnRequestTypeWaitForLocalExecution,
 	)

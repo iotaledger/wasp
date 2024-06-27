@@ -14,7 +14,7 @@ import (
 func Publish(
 	client *sui.ImplSuiAPI,
 	signer sui_signer.Signer,
-	bytecode contracts.MoveBytecode,
+	bytecode move.PackageBytecode,
 ) *sui_types.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),

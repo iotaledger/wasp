@@ -44,7 +44,7 @@ func (p *Publisher) PublishEvents(ctx context.Context, packageID *sui_types.Pack
 	}
 
 	txnResponse, err := p.client.ExecuteTransactionBlock(
-		ctx, txnBytes.TxBytes.Data(), []*sui_signer.Signature{&signature}, &models.SuiTransactionBlockResponseOptions{
+		ctx, txnBytes.TxBytes.Data(), []*sui_signer.Signature{signature}, &models.SuiTransactionBlockResponseOptions{
 			ShowInput:          true,
 			ShowEffects:        true,
 			ShowEvents:         true,

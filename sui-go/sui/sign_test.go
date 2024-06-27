@@ -43,7 +43,7 @@ func TestAccountSignAndSend(t *testing.T) {
 	resp, err := api.ExecuteTransactionBlock(
 		context.Background(),
 		txn.TxBytes,
-		[]*sui_signer.Signature{&signature},
+		[]*sui_signer.Signature{signature},
 		&options,
 		models.TxnRequestTypeWaitForLocalExecution,
 	)
