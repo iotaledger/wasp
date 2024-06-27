@@ -1,4 +1,4 @@
-package types
+package iscmove
 
 import (
 	"context"
@@ -7,12 +7,10 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/sui-go/iscmove"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
-
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 /*
@@ -52,7 +50,7 @@ type Anchor struct {
 }
 
 func GetAnchorFromSuiTransactionBlockResponse(
-	ctx context.Context, client *iscmove.Client,
+	ctx context.Context, client *Client,
 	response *models.SuiTransactionBlockResponse,
 ) (
 	*Anchor,

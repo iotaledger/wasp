@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -52,7 +51,7 @@ type Client interface {
 		gasBudget uint64,
 		execOptions *models.SuiTransactionBlockResponseOptions,
 		treasuryCap *models.SuiObjectResponse,
-	) (*types.Anchor, error)
+	) (*iscmove.Anchor, error)
 }
 
 type Client2 interface {

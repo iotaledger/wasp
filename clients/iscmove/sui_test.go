@@ -1,4 +1,4 @@
-package types
+package iscmove
 
 import (
 	"context"
@@ -12,8 +12,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/types/mock_contract"
+	"github.com/iotaledger/wasp/clients/iscmove/mock_contract"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -24,15 +23,15 @@ import (
 )
 
 type testSetup struct {
-	iscClient *iscmove.Client
+	iscClient *Client
 	signer    cryptolib.Signer
 	packageID sui_types.PackageID
 	chain     *Anchor
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
-	client := iscmove.NewClient(
-		iscmove.Config{
+	client := NewClient(
+		Config{
 			APIURL:       conn.LocalnetEndpointUrl,
 			FaucetURL:    conn.LocalnetFaucetUrl,
 			WebsocketURL: conn.LocalnetWebsocketEndpointUrl,
@@ -50,7 +49,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 		iscBytecode.Modules,
 		iscBytecode.Dependencies,
 		nil,
-		models.NewSafeSuiBigInt(uint64(100000000)),
+		models.NewBigInt(uint64(100000000)),
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -129,7 +128,7 @@ func TestMinimalClient(t *testing.T) {
 	anchor := GetAnchor(t, setup)
 	t.Log(anchor)
 
-	graph := iscmove.NewGraph("http://localhost:9001")
+	graph := NewGraph("http://localhost:9001")
 	ret, err := graph.GetAssetBag(context.Background(), anchor.Assets.Value.ID)
 
 	require.NoError(t, err)
