@@ -21,9 +21,12 @@ func SwapSui(
 	suiCoins []*models.Coin,
 ) {
 	poolGetObjectRes, err := suiClient.GetObject(
-		context.Background(), poolObjectID, &models.SuiObjectDataOptions{
-			ShowType:    true,
-			ShowContent: true,
+		context.Background(), &models.GetObjectRequest{
+			ObjectID: poolObjectID,
+			Options: &models.SuiObjectDataOptions{
+				ShowType:    true,
+				ShowContent: true,
+			},
 		},
 	)
 	if err != nil {

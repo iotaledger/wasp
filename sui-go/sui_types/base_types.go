@@ -6,6 +6,7 @@ type PackageID = SuiAddress
 type ObjectID = SuiAddress
 type SequenceNumber = uint64
 type Identifier = string
+type ObjectType = string
 
 func PackageIDFromHex(str string) (*PackageID, error) {
 	return SuiAddressFromHex(str)

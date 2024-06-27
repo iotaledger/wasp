@@ -18,11 +18,12 @@ func Publish(
 ) *sui_types.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address(),
-		bytecode.Modules,
-		bytecode.Dependencies,
-		nil,
-		models.NewBigInt(10*sui.DefaultGasBudget),
+		&models.PublishRequest{
+			Sender:          signer.Address(),
+			CompiledModules: bytecode.Modules,
+			Dependencies:    bytecode.Dependencies,
+			GasBudget:       models.NewBigInt(10 * sui.DefaultGasBudget),
+		},
 	)
 	if err != nil {
 		panic(err)
@@ -51,11 +52,12 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address(),
-		testcoinBytecode.Modules,
-		testcoinBytecode.Dependencies,
-		nil,
-		models.NewBigInt(10*sui.DefaultGasBudget),
+		&models.PublishRequest{
+			Sender:          signer.Address(),
+			CompiledModules: testcoinBytecode.Modules,
+			Dependencies:    testcoinBytecode.Dependencies,
+			GasBudget:       models.NewBigInt(10 * sui.DefaultGasBudget),
+		},
 	)
 	if err != nil {
 		panic(err)

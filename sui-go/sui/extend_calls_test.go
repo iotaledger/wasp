@@ -38,7 +38,11 @@ func TestMintToken(t *testing.T) {
 	coinType := fmt.Sprintf("%s::testcoin::TESTCOIN", tokenPackageID.String())
 
 	// all the minted tokens were sent to the signer, so we should find a single object contains all the minted token
-	coins, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner:    signer.Address(),
+		CoinType: &coinType,
+		Limit:    10,
+	})
 	require.NoError(t, err)
 	require.Equal(t, mintAmount, coins.Data[0].Balance.Uint64())
 }
@@ -51,11 +55,12 @@ func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer sui_signer.Sign
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address(),
-		testcoinBytecode.Modules,
-		testcoinBytecode.Dependencies,
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget*10),
+		&models.PublishRequest{
+			Sender:          signer.Address(),
+			CompiledModules: testcoinBytecode.Modules,
+			Dependencies:    testcoinBytecode.Dependencies,
+			GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 10),
+		},
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
