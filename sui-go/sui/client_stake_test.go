@@ -5,13 +5,12 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -20,8 +19,10 @@ const (
 
 func TestRequestAddDelegation(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-
-	coins, err := client.GetCoins(context.Background(), signer.Address(), nil, nil, 10)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: 10,
+	})
 	require.NoError(t, err)
 
 	amount := uint64(sui_types.UnitSui)
@@ -38,12 +39,13 @@ func TestRequestAddDelegation(t *testing.T) {
 		models.NewBigInt(amount),
 		validator,
 		sui.DefaultGasBudget,
-		1000,
+		sui.DefaultGasPrice,
 	)
 	require.NoError(t, err)
 
 	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
 	require.NoError(t, err)
+	require.Equal(t, "", simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
 }
 
@@ -57,18 +59,23 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 	require.True(t, len(stakes) > 0)
 	require.True(t, len(stakes[0].Stakes) > 0)
 
-	coins, err := client.GetCoins(context.Background(), signer, nil, nil, 10)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer,
+		Limit: 10,
+	})
 	require.NoError(t, err)
 	pickedCoins, err := models.PickupCoins(coins, new(big.Int), sui.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
 
-	stakeId := stakes[0].Stakes[0].Data.StakedSuiId
-	detail, err := client.GetObject(context.Background(), &stakeId, nil)
+	detail, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: &stakes[0].Stakes[0].Data.StakedSuiId,
+	})
 	require.NoError(t, err)
 	txBytes, err := sui.BCS_RequestWithdrawStake(signer, detail.Data.Ref(), pickedCoins.CoinRefs(), sui.DefaultGasBudget, 1000)
 	require.NoError(t, err)
 
 	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
 	require.NoError(t, err)
+	require.Equal(t, "", simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
 }

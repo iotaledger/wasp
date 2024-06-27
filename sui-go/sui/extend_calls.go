@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
-
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
@@ -19,8 +18,10 @@ func (s *ImplSuiAPI) GetCoinObjsForTargetAmount(
 	address *sui_types.SuiAddress,
 	targetAmount uint64,
 ) (models.Coins, error) {
-	coinType := models.SuiCoinType
-	coins, err := s.GetCoins(ctx, address, &coinType, nil, 200)
+	coins, err := s.GetCoins(ctx, &models.GetCoinsRequest{
+		Owner: address,
+		Limit: 200,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetCoins(): %w", err)
 	}
@@ -44,10 +45,12 @@ func (s *ImplSuiAPI) SignAndExecuteTransaction(
 	}
 	resp, err := s.ExecuteTransactionBlock(
 		ctx,
-		txBytes,
-		[]*sui_signer.Signature{signature},
-		options,
-		models.TxnRequestTypeWaitForLocalExecution,
+		&models.ExecuteTransactionBlockRequest{
+			TxDataBytes: txBytes,
+			Signatures:  []*sui_signer.Signature{signature},
+			Options:     options,
+			RequestType: models.TxnRequestTypeWaitForLocalExecution,
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
@@ -68,11 +71,12 @@ func (s *ImplSuiAPI) PublishContract(
 ) (*models.SuiTransactionBlockResponse, *sui_types.PackageID, error) {
 	txnBytes, err := s.Publish(
 		context.Background(),
-		signer.Address(),
-		modules,
-		dependencies,
-		nil,
-		models.NewBigInt(gasBudget),
+		&models.PublishRequest{
+			Sender:          signer.Address(),
+			CompiledModules: modules,
+			Dependencies:    dependencies,
+			GasBudget:       models.NewBigInt(gasBudget),
+		},
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to publish move contract: %w", err)
@@ -100,14 +104,15 @@ func (s *ImplSuiAPI) MintToken(
 ) (*models.SuiTransactionBlockResponse, error) {
 	txnBytes, err := s.MoveCall(
 		ctx,
-		signer.Address(),
-		packageID,
-		tokenName,
-		"mint",
-		[]string{},
-		[]any{treasuryCap.String(), fmt.Sprintf("%d", mintAmount), signer.Address().String()},
-		nil,
-		models.NewBigInt(DefaultGasBudget),
+		&models.MoveCallRequest{
+			Signer:    signer.Address(),
+			PackageID: packageID,
+			Module:    tokenName,
+			Function:  "mint",
+			TypeArgs:  []string{},
+			Arguments: []any{treasuryCap.String(), fmt.Sprintf("%d", mintAmount), signer.Address().String()},
+			GasBudget: models.NewBigInt(DefaultGasBudget),
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call mint() move call: %w", err)
@@ -125,12 +130,11 @@ func (s *ImplSuiAPI) MintToken(
 const QUERY_MAX_RESULT_LIMIT = 50
 
 // GetSuiCoinsOwnedByAddress This function will retrieve a maximum of 200 coins.
-func (s *ImplSuiAPI) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui_types.SuiAddress) (
-	models.Coins,
-	error,
-) {
-	coinType := models.SuiCoinType
-	page, err := s.GetCoins(ctx, address, &coinType, nil, 200)
+func (s *ImplSuiAPI) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui_types.SuiAddress) (models.Coins, error) {
+	page, err := s.GetCoins(ctx, &models.GetCoinsRequest{
+		Owner: address,
+		Limit: 200,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +162,14 @@ func (s *ImplSuiAPI) BatchGetFilteredObjectsOwnedByAddress(
 	options *models.SuiObjectDataOptions,
 	filter func(*models.SuiObjectData) bool,
 ) ([]models.SuiObjectResponse, error) {
-	query := models.SuiObjectResponseQuery{
-		Options: &models.SuiObjectDataOptions{
-			ShowType: true,
+	filteringObjs, err := s.GetOwnedObjects(ctx, &models.GetOwnedObjectsRequest{
+		Address: address,
+		Query: &models.SuiObjectResponseQuery{
+			Options: &models.SuiObjectDataOptions{
+				ShowType: true,
+			},
 		},
-	}
-	filteringObjs, err := s.GetOwnedObjects(ctx, address, &query, nil, nil)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +184,10 @@ func (s *ImplSuiAPI) BatchGetFilteredObjectsOwnedByAddress(
 		objIds = append(objIds, obj.Data.ObjectID)
 	}
 
-	return s.MultiGetObjects(ctx, objIds, options)
+	return s.MultiGetObjects(ctx, &models.MultiGetObjectsRequest{
+		ObjectIDs: objIds,
+		Options:   options,
+	})
 }
 
 ////// PTB impl

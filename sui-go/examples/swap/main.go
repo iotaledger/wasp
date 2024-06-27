@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/sui-go/examples/swap/pkg"
+	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/move"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
@@ -31,10 +32,10 @@ func main() {
 
 	testcoinCoins, err := suiClient.GetCoins(
 		context.Background(),
-		signer.Address(),
-		&testcoinCoinType,
-		nil,
-		0,
+		&models.GetCoinsRequest{
+			Owner:    signer.Address(),
+			CoinType: &testcoinCoinType,
+		},
 	)
 	if err != nil {
 		panic(err)
@@ -42,10 +43,7 @@ func main() {
 
 	signerSuiCoinPage, err := suiClient.GetCoins(
 		context.Background(),
-		signer.Address(),
-		nil,
-		nil,
-		0,
+		&models.GetCoinsRequest{Owner: signer.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -62,9 +60,7 @@ func main() {
 
 	swapperSuiCoinPage1, err := suiClient.GetAllCoins(
 		context.Background(),
-		swapper.Address(),
-		nil,
-		0,
+		&models.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -74,9 +70,7 @@ func main() {
 
 	swapperSuiCoinPage2, err := suiClient.GetAllCoins(
 		context.Background(),
-		swapper.Address(),
-		nil,
-		0,
+		&models.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)

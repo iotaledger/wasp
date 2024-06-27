@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBatchTransaction(t *testing.T) {
@@ -28,26 +27,32 @@ func TestBatchTransaction(t *testing.T) {
 
 func TestMergeCoins(t *testing.T) {
 	t.Skip("FIXME create an account has at least two coin objects on chain")
-	client := sui.NewSuiClient(conn.TestnetEndpointUrl)
-	signer := sui_signer.TEST_ADDRESS
-	coins, err := client.GetCoins(context.Background(), signer, nil, nil, 10)
-	require.NoError(t, err)
-	require.True(t, len(coins.Data) >= 3)
+	// api := sui.NewSuiClient(conn.TestnetEndpointUrl)
+	// signer := sui_signer.TEST_ADDRESS
+	// coins, err := api.GetCoins(context.Background(), &models.GetCoinsRequest{
+	// 	Owner: signer,
+	// 	Limit: 10,
+	// })
+	// require.NoError(t, err)
+	// require.True(t, len(coins.Data) >= 3)
 
-	coin1 := coins.Data[0]
-	coin2 := coins.Data[1]
-	coin3 := coins.Data[2] // gas coin
+	// coin1 := coins.Data[0]
+	// coin2 := coins.Data[1]
+	// coin3 := coins.Data[2] // gas coin
 
-	txn, err := client.MergeCoins(
-		context.Background(), signer,
-		coin1.CoinObjectID, coin2.CoinObjectID,
-		coin3.CoinObjectID, coin3.Balance,
-	)
-	require.NoError(t, err)
+	// txn, err := api.MergeCoins(
+	// 	context.Background(),
+	// 	&models.MergeCoinsRequest{
+	// 		Signer:      signer,
+	// 		PrimaryCoin: coin1.CoinObjectID,
+	// 		CoinToMerge: coin2.CoinObjectID,
+	// 		Gas:         coin3.CoinObjectID,
+	// 		GasBudget:   coin3.Balance,
+	// 	},
+	// )
+	// require.NoError(t, err)
 
-	simulate, err := client.DryRunTransaction(context.Background(), txn.TxBytes)
-	require.NoError(t, err)
-	require.True(t, simulate.Effects.Data.IsSuccess())
+	// dryRunTxn(t, api, txn.TxBytes, true)
 }
 
 func TestMoveCall(t *testing.T) {
@@ -57,11 +62,12 @@ func TestMoveCall(t *testing.T) {
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address(),
-		sdkVerifyBytecode.Modules,
-		sdkVerifyBytecode.Dependencies,
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget),
+		&models.PublishRequest{
+			Sender:          signer.Address(),
+			CompiledModules: sdkVerifyBytecode.Modules,
+			Dependencies:    sdkVerifyBytecode.Dependencies,
+			GasBudget:       models.NewBigInt(sui.DefaultGasBudget),
+		},
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -83,17 +89,17 @@ func TestMoveCall(t *testing.T) {
 	input := []string{"haha", "gogo"}
 	txnBytes, err = client.MoveCall(
 		context.Background(),
-		signer.Address(),
-		packageID,
-		"sdk_verify",
-		"read_input_bytes_array",
-		[]string{},
-		[]any{input},
-		nil,
-		models.NewBigInt(uint64(sui.DefaultGasBudget)),
+		&models.MoveCallRequest{
+			Signer:    signer.Address(),
+			PackageID: packageID,
+			Module:    "sdk_verify",
+			Function:  "read_input_bytes_array",
+			TypeArgs:  []string{},
+			Arguments: []any{input},
+			GasBudget: models.NewBigInt((sui.DefaultGasBudget)),
+		},
 	)
 	require.NoError(t, err)
-
 	txnResponse, err = client.SignAndExecuteTransaction(
 		context.Background(),
 		signer,
@@ -108,12 +114,9 @@ func TestMoveCall(t *testing.T) {
 
 	queryEventsRes, err := client.QueryEvents(
 		context.Background(),
-		&models.EventFilter{
-			Transaction: &txnResponse.Digest,
+		&models.QueryEventsRequest{
+			Query: &models.EventFilter{Transaction: &txnResponse.Digest},
 		},
-		nil,
-		nil,
-		false,
 	)
 	require.NoError(t, err)
 	queryEventsResMap := queryEventsRes.Data[0].ParsedJson.(map[string]interface{})
@@ -129,9 +132,11 @@ func TestMoveCall(t *testing.T) {
 
 func TestPay(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	_, recipient := client.WithSignerAndFund(sui_signer.TEST_SEED, 1)
-	coinType := models.SuiCoinType
-	coins, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, 10)
+	_, recipient := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: 10,
+	})
 	require.NoError(t, err)
 	limit := len(coins.Data) - 1 // need reserve a coin for gas
 	totalBal := models.Coins(coins.Data).TotalBalance().Uint64()
@@ -142,14 +147,13 @@ func TestPay(t *testing.T) {
 
 	txn, err := client.Pay(
 		context.Background(),
-		signer.Address(),
-		pickedCoins.CoinIds(),
-		[]*sui_types.SuiAddress{recipient.Address()},
-		[]*models.BigInt{
-			models.NewBigInt(amount),
+		&models.PayRequest{
+			Signer:     signer.Address(),
+			InputCoins: pickedCoins.CoinIds(),
+			Recipients: []*sui_types.SuiAddress{recipient.Address()},
+			Amount:     []*models.BigInt{models.NewBigInt(amount)},
+			GasBudget:  models.NewBigInt(sui.DefaultGasBudget),
 		},
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 
@@ -170,10 +174,12 @@ func TestPay(t *testing.T) {
 
 func TestPayAllSui(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	_, recipient := client.WithSignerAndFund(sui_signer.TEST_SEED, 1)
-	coinType := models.SuiCoinType
+	_, recipient := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
 	limit := uint(3)
-	coinPages, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: limit,
+	})
 	require.NoError(t, err)
 	coins := models.Coins(coinPages.Data)
 	// assume the account holds more than 'limit' amount Sui token objects
@@ -182,10 +188,12 @@ func TestPayAllSui(t *testing.T) {
 
 	txn, err := client.PayAllSui(
 		context.Background(),
-		signer.Address(),
-		recipient.Address(),
-		coins.ObjectIDs(),
-		models.NewBigInt(sui.DefaultGasBudget),
+		&models.PayAllSuiRequest{
+			Signer:     signer.Address(),
+			Recipient:  recipient.Address(),
+			InputCoins: coins.ObjectIDs(),
+			GasBudget:  models.NewBigInt(sui.DefaultGasBudget),
+		},
 	)
 	require.NoError(t, err)
 
@@ -221,31 +229,34 @@ func TestPayAllSui(t *testing.T) {
 
 func TestPaySui(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	_, recipient1 := client.WithSignerAndFund(sui_signer.TEST_SEED, 1)
-	_, recipient2 := client.WithSignerAndFund(sui_signer.TEST_SEED, 2)
-
-	coinType := models.SuiCoinType
+	_, recipient1 := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
+	_, recipient2 := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 2)
 	limit := uint(4)
-	coinPages, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: limit,
+	})
 	require.NoError(t, err)
 	coins := models.Coins(coinPages.Data)
 
 	sentAmounts := []uint64{123, 456, 789}
 	txn, err := client.PaySui(
 		context.Background(),
-		signer.Address(),
-		coins.ObjectIDs(),
-		[]*sui_types.SuiAddress{
-			recipient1.Address(),
-			recipient2.Address(),
-			recipient2.Address(),
+		&models.PaySuiRequest{
+			Signer:     signer.Address(),
+			InputCoins: coins.ObjectIDs(),
+			Recipients: []*sui_types.SuiAddress{
+				recipient1.Address(),
+				recipient2.Address(),
+				recipient2.Address(),
+			},
+			Amount: []*models.BigInt{
+				models.NewBigInt(sentAmounts[0]), // to recipient1
+				models.NewBigInt(sentAmounts[1]), // to recipient2
+				models.NewBigInt(sentAmounts[2]), // to recipient2
+			},
+			GasBudget: models.NewBigInt(sui.DefaultGasBudget),
 		},
-		[]*models.BigInt{
-			models.NewBigInt(sentAmounts[0]), // to recipient1
-			models.NewBigInt(sentAmounts[1]), // to recipient2
-			models.NewBigInt(sentAmounts[2]), // to recipient2
-		},
-		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 
@@ -274,10 +285,10 @@ func TestPaySui(t *testing.T) {
 	// all the input objects are merged into the first input object
 	// except the first input object, all the other input objects are deleted
 	require.Equal(t, limit-1, delObjNum)
-	// 1 for recipient2, and 2 for recipient2
+	// 1 for recipient1, and 2 for recipient2
 	require.Equal(t, amountNum, createdObjNum)
 
-	// one output balance and one input balance for recipient2 and one input balance for recipient2
+	// one output balance and one input balance for recipient1 and one input balance for recipient2
 	require.Len(t, simulate.BalanceChanges, 3)
 	for _, balChange := range simulate.BalanceChanges {
 		if balChange.Owner.AddressOwner == signer.Address() {
@@ -297,11 +308,12 @@ func TestPublish(t *testing.T) {
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		signer.Address(),
-		testcoinBytecode.Modules,
-		testcoinBytecode.Dependencies,
-		nil, // 'unsafe_publish' API can automatically assign gas object
-		models.NewBigInt(sui.DefaultGasBudget*5),
+		&models.PublishRequest{
+			Sender:          signer.Address(),
+			CompiledModules: testcoinBytecode.Modules,
+			Dependencies:    testcoinBytecode.Dependencies,
+			GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 5),
+		},
 	)
 	require.NoError(t, err)
 
@@ -319,23 +331,26 @@ func TestPublish(t *testing.T) {
 
 func TestSplitCoin(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	coinType := models.SuiCoinType
 	limit := uint(4)
-	coinPages, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: limit,
+	})
 	require.NoError(t, err)
 	coins := models.Coins(coinPages.Data)
 
 	txn, err := client.SplitCoin(
 		context.Background(),
-		signer.Address(),
-		coins[1].CoinObjectID,
-		[]*models.BigInt{
-			// assume coins[0] has more than the sum of the following splitAmounts
-			models.NewBigInt(2222),
-			models.NewBigInt(1111),
+		&models.SplitCoinRequest{
+			Signer: signer.Address(),
+			Coin:   coins[1].CoinObjectID,
+			SplitAmounts: []*models.BigInt{
+				// assume coins[0] has more than the sum of the following splitAmounts
+				models.NewBigInt(2222),
+				models.NewBigInt(1111),
+			},
+			GasBudget: models.NewBigInt(sui.DefaultGasBudget),
 		},
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget),
 	)
 	require.NoError(t, err)
 
@@ -354,20 +369,23 @@ func TestSplitCoin(t *testing.T) {
 
 func TestSplitCoinEqual(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	coinType := models.SuiCoinType
 	limit := uint(4)
-	coinPages, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: limit,
+	})
 	require.NoError(t, err)
 	coins := models.Coins(coinPages.Data)
 
 	splitShares := uint64(3)
 	txn, err := client.SplitCoinEqual(
 		context.Background(),
-		signer.Address(),
-		coins[0].CoinObjectID,
-		models.NewBigInt(splitShares),
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget),
+		&models.SplitCoinEqualRequest{
+			Signer:     signer.Address(),
+			Coin:       coins[0].CoinObjectID,
+			SplitCount: models.NewBigInt(splitShares),
+			GasBudget:  models.NewBigInt(sui.DefaultGasBudget),
+		},
 	)
 	require.NoError(t, err)
 
@@ -386,20 +404,23 @@ func TestSplitCoinEqual(t *testing.T) {
 
 func TestTransferObject(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	_, recipient := client.WithSignerAndFund(sui_signer.TEST_SEED, 1)
-	coinType := models.SuiCoinType
+	_, recipient := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
 	limit := uint(3)
-	coinPages, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: limit,
+	})
 	require.NoError(t, err)
 	transferCoin := coinPages.Data[0]
 
 	txn, err := client.TransferObject(
 		context.Background(),
-		signer.Address(),
-		recipient.Address(),
-		transferCoin.CoinObjectID,
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget),
+		&models.TransferObjectRequest{
+			Signer:    signer.Address(),
+			Recipient: recipient.Address(),
+			ObjectID:  transferCoin.CoinObjectID,
+			GasBudget: models.NewBigInt(sui.DefaultGasBudget),
+		},
 	)
 	require.NoError(t, err)
 
@@ -416,20 +437,24 @@ func TestTransferObject(t *testing.T) {
 
 func TestTransferSui(t *testing.T) {
 	client, signer := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	_, recipient := client.WithSignerAndFund(sui_signer.TEST_SEED, 1)
-	coinType := models.SuiCoinType
+	_, recipient := sui.NewSuiClient(conn.TestnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
 	limit := uint(3)
-	coinPages, err := client.GetCoins(context.Background(), signer.Address(), &coinType, nil, limit)
+	coinPages, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner: signer.Address(),
+		Limit: limit,
+	})
 	require.NoError(t, err)
 	transferCoin := coinPages.Data[0]
 
 	txn, err := client.TransferSui(
 		context.Background(),
-		signer.Address(),
-		recipient.Address(),
-		transferCoin.CoinObjectID,
-		models.NewBigInt(3),
-		models.NewBigInt(sui.DefaultGasBudget),
+		&models.TransferSuiRequest{
+			Signer:    signer.Address(),
+			Recipient: recipient.Address(),
+			ObjectID:  transferCoin.CoinObjectID,
+			Amount:    models.NewBigInt(3),
+			GasBudget: models.NewBigInt(sui.DefaultGasBudget),
+		},
 	)
 	require.NoError(t, err)
 
@@ -443,10 +468,10 @@ func TestTransferSui(t *testing.T) {
 	for _, change := range simulate.ObjectChanges {
 		if change.Data.Mutated != nil {
 			require.Equal(t, *transferCoin.CoinObjectID, change.Data.Mutated.ObjectID)
-			require.Equal(t, signer.Address, change.Data.Mutated.Owner.AddressOwner)
+			require.Equal(t, signer.Address(), change.Data.Mutated.Owner.AddressOwner)
 
 		} else if change.Data.Created != nil {
-			require.Equal(t, recipient.Address, change.Data.Created.Owner.AddressOwner)
+			require.Equal(t, recipient.Address(), change.Data.Created.Owner.AddressOwner)
 		}
 	}
 

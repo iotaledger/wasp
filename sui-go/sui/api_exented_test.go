@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_signer"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetDynamicFieldObject(t *testing.T) {
@@ -46,7 +45,10 @@ func TestGetDynamicFieldObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := api.GetDynamicFieldObject(tt.args.ctx, tt.args.parentObjectID, tt.args.name)
+				got, err := api.GetDynamicFieldObject(tt.args.ctx, &models.GetDynamicFieldObjectRequest{
+					ParentObjectID: tt.args.parentObjectID,
+					Name:           tt.args.name,
+				})
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GetDynamicFieldObject() error: %v, wantErr %v", err, tt.wantErr)
 					return
@@ -86,7 +88,11 @@ func TestGetDynamicFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := client.GetDynamicFields(tt.args.ctx, tt.args.parentObjectID, tt.args.cursor, tt.args.limit)
+				got, err := client.GetDynamicFields(tt.args.ctx, &models.GetDynamicFieldsRequest{
+					ParentObjectID: tt.args.parentObjectID,
+					Cursor:         tt.args.cursor,
+					Limit:          tt.args.limit,
+				})
 				require.ErrorIs(t, err, tt.wantErr)
 				// object ID is '0x4405b50d791fd3346754e8171aaab6bc2ed26c2c46efdd033c14b30ae507ac33'
 				// it has 'internal_nodes' field in type '0x2::table::Table<u64, 0xdee9::critbit::InternalNode'
@@ -113,13 +119,12 @@ func TestGetOwnedObjects(t *testing.T) {
 		},
 	}
 	limit := uint(2)
-	objs, err := api.GetOwnedObjects(
-		context.Background(),
-		signer.Address(),
-		&query,
-		nil,
-		&limit,
-	)
+	objs, err := api.GetOwnedObjects(context.Background(), &models.GetOwnedObjectsRequest{
+		Address: signer.Address(),
+		Query:   &query,
+		Cursor:  nil,
+		Limit:   &limit,
+	})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(objs.Data), int(limit))
 	require.NoError(t, err)
@@ -164,10 +169,12 @@ func TestQueryEvents(t *testing.T) {
 			tt.name, func(t *testing.T) {
 				got, err := api.QueryEvents(
 					tt.args.ctx,
-					tt.args.query,
-					tt.args.cursor,
-					tt.args.limit,
-					tt.args.descendingOrder,
+					&models.QueryEventsRequest{
+						Query:           tt.args.query,
+						Cursor:          tt.args.cursor,
+						Limit:           tt.args.limit,
+						DescendingOrder: tt.args.descendingOrder,
+					},
 				)
 				require.ErrorIs(t, err, tt.wantErr)
 				require.Len(t, got.Data, int(limit))
@@ -227,10 +234,12 @@ func TestQueryTransactionBlocks(t *testing.T) {
 			tt.name, func(t *testing.T) {
 				got, err := api.QueryTransactionBlocks(
 					tt.args.ctx,
-					tt.args.query,
-					tt.args.cursor,
-					tt.args.limit,
-					tt.args.descendingOrder,
+					&models.QueryTransactionBlocksRequest{
+						Query:           tt.args.query,
+						Cursor:          tt.args.cursor,
+						Limit:           tt.args.limit,
+						DescendingOrder: tt.args.descendingOrder,
+					},
 				)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("QueryTransactionBlocks() error: %v, wantErr %v", err, tt.wantErr)
@@ -255,19 +264,22 @@ func TestResolveNameServiceAddress(t *testing.T) {
 func TestResolveNameServiceNames(t *testing.T) {
 	api := sui.NewSuiClient(conn.MainnetEndpointUrl)
 	owner := sui_types.MustSuiAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
-	namePage, err := api.ResolveNameServiceNames(context.Background(), owner, nil, nil)
+	namePage, err := api.ResolveNameServiceNames(context.Background(), &models.ResolveNameServiceNamesRequest{
+		Owner: owner,
+	})
 	require.NoError(t, err)
 	require.NotEmpty(t, namePage.Data)
 	t.Log(namePage.Data)
 
 	owner = sui_types.MustSuiAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f681")
-	namePage, err = api.ResolveNameServiceNames(context.Background(), owner, nil, nil)
+	namePage, err = api.ResolveNameServiceNames(context.Background(), &models.ResolveNameServiceNamesRequest{
+		Owner: owner,
+	})
 	require.NoError(t, err)
 	require.Empty(t, namePage.Data)
 }
 
 func TestSubscribeEvent(t *testing.T) {
-	// FIXME make it pass
 	t.Skip("passed at local side, but returned error on GitHub")
 	api := sui.NewSuiWebsocketClient(conn.MainnetWebsocketEndpointUrl)
 
