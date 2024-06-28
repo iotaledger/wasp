@@ -43,14 +43,12 @@ func setupAndDeploy(t *testing.T) testSetup {
 	iscBytecode := mock_contract.MockISCContract()
 
 	fmt.Printf("%s", kp.Address().String())
-	txnBytes, err := client.Publish(
-		context.Background(),
-		kp.Address().AsSuiAddress(),
-		iscBytecode.Modules,
-		iscBytecode.Dependencies,
-		nil,
-		models.NewBigInt(uint64(100000000)),
-	)
+	txnBytes, err := client.Publish(context.Background(), &models.PublishRequest{
+		Sender:          kp.Address().AsSuiAddress(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       models.NewBigInt(uint64(100000000)),
+	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(), cryptolib.SignerToSuiSigner(kp), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
@@ -64,7 +62,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	cap, _ := lo.Find(
+	createdCap, _ := lo.Find(
 		txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
 			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
 				return true
@@ -74,7 +72,9 @@ func setupAndDeploy(t *testing.T) testSetup {
 		},
 	)
 
-	capObj, err := client.GetObject(context.Background(), &cap.Data.Created.ObjectID, nil)
+	capObj, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: &createdCap.Data.Created.ObjectID,
+	})
 	require.NoError(t, err)
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
@@ -101,14 +101,15 @@ func setupAndDeploy(t *testing.T) testSetup {
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	anchor, err := setup.iscClient.GetObject(
-		context.Background(), &setup.chain.ID, &models.SuiObjectDataOptions{
+	anchor, err := setup.iscClient.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: &setup.chain.ID,
+		Options: &models.SuiObjectDataOptions{
 			ShowType:    true,
 			ShowContent: true,
 			ShowBcs:     true,
 			ShowDisplay: true,
 		},
-	)
+	})
 	require.NoError(t, err)
 
 	t.Logf("%# v\n", pretty.Formatter(anchor.Data.Content.Data))

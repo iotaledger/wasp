@@ -57,17 +57,20 @@ func TestSendCoin(t *testing.T) {
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
-	coins, err := client.GetCoins(context.Background(), signer.Address().AsSuiAddress(), &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner:    signer.Address().AsSuiAddress(),
+		CoinType: &coinType,
+		Limit:    10,
+	})
 	require.NoError(t, err)
 	require.Len(t, coins, 1)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
-	getObjectRes, err := client.GetObject(
-		context.Background(),
-		coins.Data[0].CoinObjectID,
-		&models.SuiObjectDataOptions{ShowOwner: true},
-	)
+	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: coins.Data[0].CoinObjectID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 }
@@ -85,16 +88,19 @@ func TestReceiveCoin(t *testing.T) {
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
-	coins, err := client.GetCoins(context.Background(), signer.Address().AsSuiAddress(), &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner:    signer.Address().AsSuiAddress(),
+		CoinType: &coinType,
+		Limit:    10,
+	})
 	require.NoError(t, err)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
-	getObjectRes, err := client.GetObject(
-		context.Background(),
-		coins.Data[0].CoinObjectID,
-		&models.SuiObjectDataOptions{ShowOwner: true},
-	)
+	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: coins.Data[0].CoinObjectID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
@@ -128,16 +134,19 @@ func TestSendReceiveCoin(t *testing.T) {
 	fmt.Printf("coin type: %s\n", coinType)
 
 	// the signer should have only one coin object which belongs to testcoin type
-	coins, err := client.GetCoins(context.Background(), signer.Address().AsSuiAddress(), &coinType, nil, 10)
+	coins, err := client.GetCoins(context.Background(), &models.GetCoinsRequest{
+		Owner:    signer.Address().AsSuiAddress(),
+		CoinType: &coinType,
+		Limit:    10,
+	})
 	require.NoError(t, err)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 
-	getObjectRes, err := client.GetObject(
-		context.Background(),
-		coins.Data[0].CoinObjectID,
-		&models.SuiObjectDataOptions{ShowOwner: true},
-	)
+	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: coins.Data[0].CoinObjectID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID.String(), getObjectRes.Data.Owner.ObjectOwnerInternal.AddressOwner.String())
 
@@ -207,13 +216,19 @@ func TestSendRequest(t *testing.T) {
 
 	reqObjID, _, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
-	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
-	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
 }
@@ -231,19 +246,28 @@ func TestReceiveRequest(t *testing.T) {
 
 	reqObjID, _, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
-	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
-	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
 
 	receiveRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
-	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.NotNil(t, getObjectRes.Error.Data.Deleted)
 }
@@ -273,13 +297,19 @@ func TestSendReceiveRequest(t *testing.T) {
 	require.NoError(t, err)
 	reqObjID, reqType, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
-	getObjectRes, err := client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
 	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
 
-	getObjectRes, err = client.GetObject(context.Background(), reqObjID, &models.SuiObjectDataOptions{ShowOwner: true})
+	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: reqObjID,
+		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
 	sender, object := receiveEvent(t, client, eventCh)
@@ -388,11 +418,10 @@ func receiveEvent(t *testing.T, client *iscmove.Client, eventCh chan models.SuiE
 
 	eventId := sui_types.MustSuiAddressFromHex(event.ParsedJson.(map[string]interface{})["id"].(string))
 
-	object, err := client.GetObject(
-		context.Background(),
-		eventId,
-		&models.SuiObjectDataOptions{ShowContent: true},
-	)
+	object, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+		ObjectID: eventId,
+		Options:  &models.SuiObjectDataOptions{ShowContent: true},
+	})
 	require.NoError(t, err)
 	require.Equal(t, eventId, object.Data.ObjectID)
 	fmt.Println("object: ", object.Data.Content.Data.MoveObject)

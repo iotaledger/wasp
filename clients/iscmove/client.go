@@ -177,17 +177,15 @@ func (c *Client) SendCoin(
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(
-		ctx,
-		signer.Address().AsSuiAddress(),
-		anchorPackageID,
-		"anchor",
-		"send_coin",
-		[]string{coinType},
-		[]any{anchorAddress.String(), coinObject.String()},
-		nil,
-		models.NewBigInt(gasBudget),
-	)
+	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+		Signer:    signer.Address().AsSuiAddress(),
+		PackageID: anchorPackageID,
+		Module:    "anchor",
+		Function:  "send_coin",
+		TypeArgs:  []string{coinType},
+		Arguments: []any{anchorAddress.String(), coinObject.String()},
+		GasBudget: models.NewBigInt(gasBudget),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call send_coin() move call: %w", err)
 	}
@@ -213,17 +211,15 @@ func (c *Client) ReceiveCoin(
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(
-		ctx,
-		signer.Address().AsSuiAddress(),
-		anchorPackageID,
-		"anchor",
-		"receive_coin",
-		[]string{coinType},
-		[]any{anchorAddress.String(), receivingCoinObject.String()},
-		nil,
-		models.NewBigInt(gasBudget),
-	)
+	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+		Signer:    signer.Address().AsSuiAddress(),
+		PackageID: anchorPackageID,
+		Module:    "anchor",
+		Function:  "receive_coin",
+		TypeArgs:  []string{coinType},
+		Arguments: []any{anchorAddress.String(), receivingCoinObject.String()},
+		GasBudget: models.NewBigInt(gasBudget),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call receive_coin() move call: %w", err)
 	}
@@ -244,13 +240,12 @@ func (c *Client) GetAssets(
 ) (*Assets, error) {
 	// object 'Assets' is owned by the Anchor object, and an 'Assets' object doesn't have ID, because it is a
 	// dynamic-field of Anchor object.
-	resGetObject, err := c.GetObject(
-		ctx,
-		anchorAddress,
-		&models.SuiObjectDataOptions{
+	resGetObject, err := c.GetObject(ctx, &models.GetObjectRequest{
+		ObjectID: anchorAddress,
+		Options: &models.SuiObjectDataOptions{
 			ShowContent: true,
 		},
-	)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 	}
@@ -269,12 +264,9 @@ func (c *Client) GetAssets(
 	}
 
 	CoinsID := normalizedAssets.Fields.Coins.Fields.ID.ID
-	resDynamicFields, err := c.GetDynamicFields(
-		context.Background(),
-		sui_types.MustObjectIDFromHex(CoinsID),
-		nil,
-		nil,
-	)
+	resDynamicFields, err := c.GetDynamicFields(context.Background(), &models.GetDynamicFieldsRequest{
+		ParentObjectID: sui_types.MustObjectIDFromHex(CoinsID),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetDynamicFields(): %w", err)
 	}
@@ -290,13 +282,12 @@ func (c *Client) GetAssets(
 	}
 
 	for _, coin := range assets.Coins {
-		res, err := c.GetObject(
-			context.Background(),
-			coin.CoinObjectID,
-			&models.SuiObjectDataOptions{
+		res, err := c.GetObject(context.Background(), &models.GetObjectRequest{
+			ObjectID: coin.CoinObjectID,
+			Options: &models.SuiObjectDataOptions{
 				ShowContent: true,
 			},
-		)
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to call GetObject(): %w", err)
 		}
@@ -398,17 +389,15 @@ func (c *Client) SendRequest(
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(
-		ctx,
-		signer.Address().AsSuiAddress(),
-		packageID,
-		"anchor",
-		"send_request",
-		[]string{},
-		[]any{anchorAddress.String(), reqObjID.String()},
-		nil,
-		models.NewBigInt(gasBudget),
-	)
+	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+		Signer:    signer.Address().AsSuiAddress(),
+		PackageID: packageID,
+		Module:    "anchor",
+		Function:  "send_request",
+		TypeArgs:  []string{},
+		Arguments: []any{anchorAddress.String(), reqObjID.String()},
+		GasBudget: models.NewBigInt(gasBudget),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call send_request() move call: %w", err)
 	}
@@ -434,17 +423,15 @@ func (c *Client) ReceiveRequest(
 	gasBudget uint64,
 	execOptions *models.SuiTransactionBlockResponseOptions,
 ) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(
-		ctx,
-		signer.Address().AsSuiAddress(),
-		packageID,
-		"anchor",
-		"receive_request",
-		[]string{},
-		[]any{anchorAddress.String(), reqObjID.String()},
-		nil,
-		models.NewBigInt(gasBudget),
-	)
+	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+		Signer:    signer.Address().AsSuiAddress(),
+		PackageID: packageID,
+		Module:    "anchor",
+		Function:  "receive_request",
+		TypeArgs:  []string{},
+		Arguments: []any{anchorAddress.String(), reqObjID.String()},
+		GasBudget: models.NewBigInt(gasBudget),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call receive_request() move call: %w", err)
 	}

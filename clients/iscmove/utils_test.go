@@ -17,14 +17,12 @@ import (
 func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) *sui_types.PackageID {
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(
-		context.Background(),
-		signer.Address().AsSuiAddress(),
-		iscBytecode.Modules,
-		iscBytecode.Dependencies,
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget*10),
-	)
+	txnBytes, err := client.Publish(context.Background(), &models.PublishRequest{
+		Sender:          signer.Address().AsSuiAddress(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 10),
+	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(), cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
@@ -48,14 +46,12 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 
-	txnBytes, err := client.Publish(
-		context.Background(),
-		signer.Address().AsSuiAddress(),
-		testcoinBytecode.Modules,
-		testcoinBytecode.Dependencies,
-		nil,
-		models.NewBigInt(sui.DefaultGasBudget*10),
-	)
+	txnBytes, err := client.Publish(context.Background(), &models.PublishRequest{
+		Sender:          signer.Address().AsSuiAddress(),
+		CompiledModules: testcoinBytecode.Modules,
+		Dependencies:    testcoinBytecode.Dependencies,
+		GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 10),
+	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(), suiSigner, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
