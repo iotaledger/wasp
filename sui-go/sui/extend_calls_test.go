@@ -75,10 +75,10 @@ func deployTestcoin(t *testing.T, client *sui.ImplSuiAPI, signer sui_signer.Sign
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
+	treasuryCap, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	require.NoError(t, err)
 
-	return packageID, treasuryCap
+	return packageID, treasuryCap.ObjectID
 }
 
 func TestBatchGetObjectsOwnedByAddress(t *testing.T) {

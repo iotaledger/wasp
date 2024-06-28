@@ -77,7 +77,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		panic(err)
 	}
 
-	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
+	treasuryCap, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +88,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		signer,
 		packageID,
 		"testcoin",
-		treasuryCap,
+		treasuryCap.ObjectID,
 		mintAmount,
 		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
@@ -99,5 +99,5 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		panic(err)
 	}
 
-	return packageID, treasuryCap
+	return packageID, treasuryCap.ObjectID
 }

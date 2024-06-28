@@ -309,9 +309,9 @@ func (r *SuiTransactionBlockResponse) GetPublishedPackageID() (*sui_types.Packag
 }
 
 // requires `ShowObjectChanges: true`
-func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (*sui_types.ObjectID, string, error) {
+func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (*sui_types.ObjectRef, error) {
 	if r.ObjectChanges == nil {
-		return nil, "", fmt.Errorf("no ObjectChanges")
+		return nil, fmt.Errorf("no ObjectChanges")
 	}
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
@@ -320,19 +320,29 @@ func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, object
 			// * 0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::anchor::Anchor
 			resource, err := NewResourceType(change.Data.Created.ObjectType)
 			if err != nil {
-				return nil, "", fmt.Errorf("invalid resource string")
+				return nil, fmt.Errorf("invalid resource string")
 			}
 			if resource.Module == module && resource.ObjectName == objectName {
-				return &change.Data.Created.ObjectID, change.Data.Created.ObjectType, nil
+				ref := sui_types.ObjectRef{
+					ObjectID: &change.Data.Published.PackageId,
+					Version:  change.Data.Published.Version.Uint64(),
+					Digest:   &change.Data.Published.Digest,
+				}
+				return &ref, nil
 			}
 			for ; resource.SubType != nil; resource = resource.SubType {
 				if resource.Module == module && resource.ObjectName == objectName {
-					return &change.Data.Created.ObjectID, change.Data.Created.ObjectType, nil
+					ref := sui_types.ObjectRef{
+						ObjectID: &change.Data.Published.PackageId,
+						Version:  change.Data.Published.Version.Uint64(),
+						Digest:   &change.Data.Published.Digest,
+					}
+					return &ref, nil
 				}
 			}
 		}
 	}
-	return nil, "", fmt.Errorf("not found")
+	return nil, fmt.Errorf("not found")
 }
 
 type ReturnValueType interface{}
