@@ -42,7 +42,7 @@ func NewClient(config Config) *Client {
 	}
 }
 
-func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
+func (c *Client) RequestFunds(ctx context.Context, address *cryptolib.Address) error {
 	paramJSON := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.config.FaucetURL, bytes.NewBuffer([]byte(paramJSON)))
 	if err != nil {
@@ -160,7 +160,38 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
 
-	return GetAnchorFromSuiTransactionBlockResponse(ctx, c, txnResponse)
+	return c.getAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
+}
+
+func (c *Client) getAnchorFromSuiTransactionBlockResponse(
+	ctx context.Context,
+	response *models.SuiTransactionBlockResponse,
+) (*Anchor, error) {
+	anchorObjRef, err := response.GetCreatedObjectInfo("anchor", "Anchor")
+	if err != nil {
+		return nil, err
+	}
+
+	getObjectResponse, err := c.GetObject(
+		ctx, &models.GetObjectRequest{
+			ObjectID: anchorObjRef.ObjectID,
+			Options:  &models.SuiObjectDataOptions{ShowBcs: true},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
+
+	anchor := Anchor{}
+	n, err := bcs.Unmarshal(anchorBCS, &anchor)
+	if err != nil {
+		return nil, err
+	}
+	if n != len(anchorBCS) {
+		return nil, errors.New("cannot decode anchor: excess bytes")
+	}
+	return &anchor, nil
 }
 
 // SendCoin calls <packageID>::anchor::send_coin(), which sends the given coin to the

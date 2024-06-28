@@ -162,11 +162,13 @@ func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 }
 
 func RequestIsUnlockable(req OnLedgerRequest, chainAddress *cryptolib.Address, currentTime time.Time) bool {
-	output, _ := req.Output().(iotago.TransIndepIdentOutput)
-
-	return output.UnlockableBy(chainAddress.AsIotagoAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix: uint32(currentTime.Unix()),
-	})
+	panic("TODO")
+	/*
+		output, _ := req.Output().(iotago.TransIndepIdentOutput)
+		return output.UnlockableBy(chainAddress.AsSuiAddress(), &iotago.ExternalUnlockParameters{
+			ConfUnix: uint32(currentTime.Unix()),
+		})
+	*/
 }
 
 func RequestHash(req Request) hashing.HashValue {

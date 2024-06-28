@@ -199,7 +199,7 @@ func TestCreateRequest(t *testing.T) {
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
 
-	_, _, err = createReqRes.GetCreatedObjectInfo("request", "Request")
+	_, err = createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 }
 
@@ -214,19 +214,19 @@ func TestSendRequest(t *testing.T) {
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
 
-	reqObjID, _, err := createReqRes.GetCreatedObjectInfo("request", "Request")
+	reqObjRef, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
-	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
+	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjRef.ObjectID)
 
 	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
@@ -244,28 +244,28 @@ func TestReceiveRequest(t *testing.T) {
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
 
-	reqObjID, _, err := createReqRes.GetCreatedObjectInfo("request", "Request")
+	reqObjRef, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
-	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
+	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjRef.ObjectID)
 
 	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, anchorObjID, getObjectRes.Data.Owner.AddressOwner)
 
-	receiveRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
+	receiveRequest(t, client, signer, iscPackageID, anchorObjID, reqObjRef.ObjectID)
 
 	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
@@ -295,19 +295,19 @@ func TestSendReceiveRequest(t *testing.T) {
 
 	createReqRes, err := createRequest(t, client, signer, iscPackageID, anchorObjID)
 	require.NoError(t, err)
-	reqObjID, reqType, err := createReqRes.GetCreatedObjectInfo("request", "Request")
+	reqObjRef, err := createReqRes.GetCreatedObjectInfo("request", "Request")
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
 	require.Equal(t, signer.Address(), getObjectRes.Data.Owner.AddressOwner)
 
-	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjID)
+	sendRequest(t, client, signer, iscPackageID, anchorObjID, reqObjRef.ObjectID)
 
 	getObjectRes, err = client.GetObject(context.Background(), &models.GetObjectRequest{
-		ObjectID: reqObjID,
+		ObjectID: reqObjRef.ObjectID,
 		Options:  &models.SuiObjectDataOptions{ShowOwner: true},
 	})
 	require.NoError(t, err)
@@ -317,7 +317,6 @@ func TestSendReceiveRequest(t *testing.T) {
 
 	req := object.Data.Content.Data.MoveObject
 	require.True(t, strings.HasSuffix(req.Type, "::request::Request"))
-	require.Equal(t, reqType, req.Type)
 
 	type Fields struct {
 		Data struct {
@@ -359,7 +358,7 @@ func TestSendReceiveRequest(t *testing.T) {
 	require.Equal(t, "three", string(receivedRequest.args[2]))
 	require.Nil(t, receivedRequest.allowance)
 
-	receiveRequest(t, client, chainSigner, iscPackageID, anchorObjID, reqObjID)
+	receiveRequest(t, client, chainSigner, iscPackageID, anchorObjID, reqObjRef.ObjectID)
 }
 
 func newSignerWithFunds(t *testing.T, seed string) cryptolib.Signer {
