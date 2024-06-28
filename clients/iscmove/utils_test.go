@@ -65,7 +65,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	treasuryCap, _, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
+	treasuryCapRef, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
 	require.NoError(t, err)
 
 	mintAmount := uint64(1000000)
@@ -74,7 +74,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 		suiSigner,
 		packageID,
 		"testcoin",
-		treasuryCap,
+		treasuryCapRef.ObjectID,
 		mintAmount,
 		&models.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
@@ -84,5 +84,5 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 	require.NoError(t, err)
 	require.True(t, txnRes.Effects.Data.IsSuccess())
 
-	return packageID, treasuryCap
+	return packageID, treasuryCapRef.ObjectID
 }

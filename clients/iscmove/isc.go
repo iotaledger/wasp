@@ -1,17 +1,8 @@
 package iscmove
 
 import (
-	"context"
-	"errors"
-	"strings"
-
-	"github.com/fardream/go-bcs/bcs"
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
 )
 
 /*
@@ -48,42 +39,6 @@ type Anchor struct {
 	Assets     Referent[AssetBag]
 	StateRoot  sui_types.Bytes
 	StateIndex uint32
-}
-
-func GetAnchorFromSuiTransactionBlockResponse(
-	ctx context.Context, client *Client,
-	response *models.SuiTransactionBlockResponse,
-) (
-	*Anchor,
-	error,
-) {
-	anchorObj, _ := lo.Find(
-		response.ObjectChanges,
-		func(item serialization.TagJson[models.ObjectChange]) bool {
-			return item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "Anchor")
-		},
-	)
-
-	getObjectResponse, err := client.GetObject(
-		ctx, &models.GetObjectRequest{
-			ObjectID: &anchorObj.Data.Created.ObjectID,
-			Options:  &models.SuiObjectDataOptions{ShowBcs: true},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
-
-	anchor := Anchor{}
-	n, err := bcs.Unmarshal(anchorBCS, &anchor)
-	if err != nil {
-		return nil, err
-	}
-	if n != len(anchorBCS) {
-		return nil, errors.New("cannot decode anchor: excess bytes")
-	}
-	return &anchor, nil
 }
 
 type Receipt struct {

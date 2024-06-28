@@ -1,21 +1,18 @@
 package iscmove
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/fardream/go-bcs/bcs"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/conn"
 	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
@@ -42,42 +39,21 @@ func NewClient(config Config) *Client {
 	}
 }
 
-func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	paramJSON := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.config.FaucetURL, bytes.NewBuffer([]byte(paramJSON)))
-	if err != nil {
-		return err
+func (c *Client) RequestFunds(ctx context.Context, address *cryptolib.Address) error {
+	var faucetURL string = c.config.FaucetURL
+	if faucetURL == "" {
+		switch c.config.APIURL {
+		case conn.TestnetEndpointUrl:
+			faucetURL = conn.TestnetFaucetUrl
+		case conn.DevnetEndpointUrl:
+			faucetURL = conn.DevnetFaucetUrl
+		case conn.LocalnetEndpointUrl:
+			faucetURL = conn.LocalnetFaucetUrl
+		default:
+			panic("unspecified FaucetURL")
+		}
 	}
-	request.Header.Set("Content-Type", "application/json")
-	client := http.Client{}
-	res, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("post %v response code: %v", c.config.FaucetURL, res.Status)
-	}
-	defer res.Body.Close()
-
-	resByte, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
-
-	//
-	var response struct {
-		Task  string `json:"task,omitempty"`
-		Error string `json:"error,omitempty"`
-	}
-	err = json.Unmarshal(resByte, &response)
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(response.Error) != "" {
-		return errors.New(response.Error)
-	}
-
-	return nil
+	return sui.RequestFundFromFaucet(address.AsSuiAddress(), faucetURL)
 }
 
 func (c *Client) Health(ctx context.Context) error {
@@ -160,7 +136,38 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
 
-	return GetAnchorFromSuiTransactionBlockResponse(ctx, c, txnResponse)
+	return c.getAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
+}
+
+func (c *Client) getAnchorFromSuiTransactionBlockResponse(
+	ctx context.Context,
+	response *models.SuiTransactionBlockResponse,
+) (*Anchor, error) {
+	anchorObjRef, err := response.GetCreatedObjectInfo("anchor", "Anchor")
+	if err != nil {
+		return nil, err
+	}
+
+	getObjectResponse, err := c.GetObject(
+		ctx, &models.GetObjectRequest{
+			ObjectID: anchorObjRef.ObjectID,
+			Options:  &models.SuiObjectDataOptions{ShowBcs: true},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
+
+	anchor := Anchor{}
+	n, err := bcs.Unmarshal(anchorBCS, &anchor)
+	if err != nil {
+		return nil, err
+	}
+	if n != len(anchorBCS) {
+		return nil, errors.New("cannot decode anchor: excess bytes")
+	}
+	return &anchor, nil
 }
 
 // SendCoin calls <packageID>::anchor::send_coin(), which sends the given coin to the

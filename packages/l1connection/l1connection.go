@@ -54,19 +54,6 @@ type Client interface {
 	) (*iscmove.Anchor, error)
 }
 
-type Client2 interface {
-	// requests funds from faucet, waits for confirmation
-	RequestFunds(addr *cryptolib.Address, timeout ...time.Duration) error
-	// sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
-	PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (iotago.BlockID, error)
-	// returns the outputs owned by a given address
-	OutputMap(myAddress *cryptolib.Address, timeout ...time.Duration) (iotago.OutputSet, error)
-	// output
-	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.OutputID, iotago.Output, error)
-	// used to query the health endpoint of the node
-	Health(timeout ...time.Duration) (bool, error)
-}
-
 var _ Client = &iscmove.Client{}
 
 type l1client struct {
