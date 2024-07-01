@@ -24,7 +24,7 @@ func NewIRC27NFTMetadata(mimeType, uri, name, attributes string) *IRC27NFTMetada
 		MIMEType:   mimeType,
 		URI:        uri,
 		Name:       name,
-		Attributes: attributes, // TODO validate that attributes are a valid JSON?
+		Attributes: attributes,
 	}
 }
 

@@ -54,10 +54,10 @@ var Processor = evm.Contract.Processor(nil,
 // block on a newly created ISC chain.
 func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseTokenMagicWrap bool) {
 	// Ethereum genesis block configuration
-	genesisAlloc := core.GenesisAlloc{}
+	genesisAlloc := types.GenesisAlloc{}
 
 	// add the ISC magic contract at address 0x10740000...00
-	genesisAlloc[iscmagic.Address] = core.GenesisAccount{
+	genesisAlloc[iscmagic.Address] = types.Account{
 		// Dummy code, because some contracts check the code size before calling
 		// the contract.
 		// The EVM code itself will never get executed; see type [magicContract].
@@ -68,7 +68,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseToken
 
 	if createBaseTokenMagicWrap {
 		// add the ERC20BaseTokens contract at address 0x10740100...00
-		genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
+		genesisAlloc[iscmagic.ERC20BaseTokensAddress] = types.Account{
 			Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
 			Storage: map[common.Hash]common.Hash{},
 			Balance: nil,
@@ -77,7 +77,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseToken
 	}
 
 	// add the ERC721NFTs contract at address 0x10740300...00
-	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
+	genesisAlloc[iscmagic.ERC721NFTsAddress] = types.Account{
 		Code:    iscmagic.ERC721NFTsRuntimeBytecode,
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
@@ -440,23 +440,23 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
 	params := ctx.Params()
 	l1DepositOriginatorBytes := params.MustGetBytes(evm.FieldAgentIDDepositOriginator)
-	fromAddress := common.Address{}
 	toAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
 	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
 	ctx.RequireNoError(err, "unable to parse assets from params")
 	txData := l1DepositOriginatorBytes
 	// create a fake tx so that the operation is visible by the EVM
-	addDummyTxWithTransferEvents(ctx, fromAddress, toAddress, assets, txData)
+	addDummyTxWithTransferEvents(ctx, toAddress, assets, txData)
 	return nil
 }
 
 func addDummyTxWithTransferEvents(
 	ctx isc.Sandbox,
-	fromAddress, toAddress common.Address,
+	toAddress common.Address,
 	assets *isc.Assets,
 	txData []byte,
 ) {
-	logs := makeTransferEvents(ctx, fromAddress, toAddress, assets)
+	zeroAddress := common.Address{}
+	logs := makeTransferEvents(ctx, zeroAddress, toAddress, assets)
 
 	wei := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, newEmulatorContext(ctx).BaseTokensDecimals())
 	if wei.Sign() == 0 && len(logs) == 0 {

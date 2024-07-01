@@ -122,7 +122,7 @@ func Init(
 	chainID uint16,
 	gasLimits GasLimits,
 	timestamp uint64,
-	alloc core.GenesisAlloc,
+	alloc types.GenesisAlloc,
 ) {
 	bdb := NewBlockchainDB(emulatorState, gasLimits.Block, BlockKeepAll)
 	if bdb.Initialized() {

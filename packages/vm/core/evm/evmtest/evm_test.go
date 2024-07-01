@@ -500,14 +500,19 @@ func TestISCNFTMint(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	_, err := iscTest.CallFn([]ethCallOptions{{
-		value: big.NewInt(int64(5000000000000 * isc.Million)),
-	}}, "mintNFT")
-
-	require.NoError(t, err)
+	var mintID []byte
+	iscTest.CallFnExpectEvent(
+		[]ethCallOptions{{
+			value: big.NewInt(int64(5000000000000 * isc.Million)),
+		}},
+		"nftMint",
+		&mintID,
+		"mintNFT",
+	)
+	require.NotEmpty(t, mintID)
 
 	/// produce a block (so the minted nft gets accounted for)
-	_, err = iscTest.triggerEvent("Hi from EVM!")
+	_, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	///
 

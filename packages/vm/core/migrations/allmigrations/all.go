@@ -3,6 +3,7 @@ package allmigrations
 import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/m001"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/m002"
 )
 
 var DefaultScheme = &migrations.MigrationScheme{
@@ -17,5 +18,6 @@ var DefaultScheme = &migrations.MigrationScheme{
 	// BaseSchemaVersion by one.
 	Migrations: []migrations.Migration{
 		m001.AccountDecimals,
+		m002.UpdateEVMISCMagic,
 	},
 }
