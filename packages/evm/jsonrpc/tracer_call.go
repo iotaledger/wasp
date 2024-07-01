@@ -54,7 +54,7 @@ func (f CallFrame) TypeString() string {
 }
 
 func (f CallFrame) failed() bool {
-	return len(f.Error) > 0 && f.revertedSnapshot
+	return f.Error != "" && f.revertedSnapshot
 }
 
 func (f *CallFrame) processOutput(output []byte, err error, reverted bool) {
@@ -83,15 +83,6 @@ func (f *CallFrame) processOutput(output []byte, err error, reverted bool) {
 	if unpacked, err := abi.UnpackRevert(output); err == nil {
 		f.RevertReason = unpacked
 	}
-}
-
-type callFrameMarshaling struct {
-	TypeString string `json:"type"`
-	Gas        hexutil.Uint64
-	GasUsed    hexutil.Uint64
-	Value      *hexutil.Big
-	Input      hexutil.Bytes
-	Output     hexutil.Bytes
 }
 
 type callTracer struct {
@@ -128,7 +119,7 @@ func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*tracers.Tracer, 
 	}, nil
 }
 
-func newCallTracerObject(ctx *tracers.Context, cfg json.RawMessage) (*callTracer, error) {
+func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage) (*callTracer, error) {
 	var config callTracerConfig
 	if cfg != nil {
 		if err := json.Unmarshal(cfg, &config); err != nil {
@@ -186,7 +177,7 @@ func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error,
 	// Pop call.
 	call := t.callstack[size-1]
 	t.callstack = t.callstack[:size-1]
-	size -= 1
+	size--
 
 	call.GasUsed = gasUsed
 	call.processOutput(output, err, reverted)
@@ -194,7 +185,7 @@ func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error,
 	t.callstack[size-1].Calls = append(t.callstack[size-1].Calls, call)
 }
 
-func (t *callTracer) captureEnd(output []byte, gasUsed uint64, err error, reverted bool) {
+func (t *callTracer) captureEnd(output []byte, _ uint64, err error, reverted bool) {
 	if len(t.callstack) != 1 {
 		return
 	}
