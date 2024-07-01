@@ -9,23 +9,23 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
-func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) *sui_types.PackageID {
+func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) *sui.PackageID {
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(context.Background(), &models.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
 		Sender:          signer.Address().AsSuiAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 10),
+		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), cryptolib.SignerToSuiSigner(signer), txnBytes.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -40,21 +40,21 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cry
 }
 
 func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (
-	*sui_types.PackageID,
-	*sui_types.ObjectID,
+	*sui.PackageID,
+	*sui.ObjectID,
 ) {
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 
-	txnBytes, err := client.Publish(context.Background(), &models.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
 		Sender:          signer.Address().AsSuiAddress(),
 		CompiledModules: testcoinBytecode.Modules,
 		Dependencies:    testcoinBytecode.Dependencies,
-		GasBudget:       models.NewBigInt(sui.DefaultGasBudget * 10),
+		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), suiSigner, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), suiSigner, txnBytes.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -76,7 +76,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 		"testcoin",
 		treasuryCapRef.ObjectID,
 		mintAmount,
-		&models.SuiTransactionBlockResponseOptions{
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

@@ -1,8 +1,8 @@
 package iscmove
 
-import "github.com/iotaledger/wasp/sui-go/sui_types"
+import "github.com/iotaledger/wasp/sui-go/sui"
 
 type RequestEvent struct {
-	RequestID sui_types.ObjectID
-	Anchor    sui_types.SuiAddress
+	RequestID sui.ObjectID
+	Anchor    sui.Address
 }

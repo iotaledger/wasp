@@ -8,9 +8,9 @@ import (
 	"syscall"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/conn"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suiconn"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 
 	serialization "github.com/iotaledger/wasp/sui-go/examples/event_pubsub/lib"
 )
@@ -19,17 +19,17 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
-	api := sui.NewSuiClient(conn.TestnetEndpointUrl)
-	sender, err := sui_signer.NewSignerWithMnemonic(sui_signer.TEST_MNEMONIC, sui_signer.KeySchemeFlagDefault)
+	api := suiclient.New(suiconn.TestnetEndpointURL)
+	sender, err := suisigner.NewSignerWithMnemonic(suisigner.TestMnemonic, suisigner.KeySchemeFlagDefault)
 	if err != nil {
 		log.Panic(err)
 	}
-	err = sui.RequestFundFromFaucet(sender.Address(), conn.TestnetFaucetUrl)
+	err = suiclient.RequestFundsFromFaucet(sender.Address(), suiconn.TestnetFaucetURL)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	packageID, err := sui_types.PackageIDFromHex("")
+	packageID, err := sui.PackageIDFromHex("")
 	if err != nil {
 		log.Panic(err)
 	}

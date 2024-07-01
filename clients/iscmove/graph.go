@@ -7,7 +7,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 
 	"github.com/iotaledger/wasp/clients/iscmove/sui_graph"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type SuiGraph struct {
@@ -20,7 +20,7 @@ func NewGraph(graphqlURL string) *SuiGraph {
 	}
 }
 
-func (g *SuiGraph) GetAssetBag(ctx context.Context, assetBagID sui_types.ObjectID) (
+func (g *SuiGraph) GetAssetBag(ctx context.Context, assetBagID sui.ObjectID) (
 	*sui_graph.GetAssetsBagResponse,
 	error,
 ) {

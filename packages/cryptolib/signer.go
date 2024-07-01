@@ -1,8 +1,8 @@
 package cryptolib
 
 import (
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // VariantKeyPair originates from KeyPair
@@ -12,7 +12,7 @@ type Signer interface {
 
 	Address() *Address
 	Sign(msg []byte) (signature *Signature, err error)
-	SignTransactionBlock(txnBytes []byte, intent sui_signer.Intent) (Signature, error)
+	SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (Signature, error)
 }
 
 type suiSigner struct {
@@ -20,15 +20,15 @@ type suiSigner struct {
 }
 
 // TODO: remove, when it is not needed
-func SignerToSuiSigner(s Signer) sui_signer.Signer {
+func SignerToSuiSigner(s Signer) suisigner.Signer {
 	return &suiSigner{s}
 }
 
-func (is *suiSigner) Address() *sui_types.SuiAddress {
+func (is *suiSigner) Address() *sui.Address {
 	return is.s.Address().AsSuiAddress()
 }
 
-func (is *suiSigner) Sign(msg []byte) (signature *sui_signer.Signature, err error) {
+func (is *suiSigner) Sign(msg []byte) (signature *suisigner.Signature, err error) {
 	b, err := is.s.Sign(msg)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (is *suiSigner) Sign(msg []byte) (signature *sui_signer.Signature, err erro
 	return b.AsSuiSignature(), err
 }
 
-func (is *suiSigner) SignTransactionBlock(txnBytes []byte, intent sui_signer.Intent) (*sui_signer.Signature, error) {
+func (is *suiSigner) SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (*suisigner.Signature, error) {
 	signature, err := is.s.SignTransactionBlock(txnBytes, intent)
 	if err != nil {
 		return nil, err

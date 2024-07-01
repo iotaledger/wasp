@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type Subscriber struct {
-	client *sui.ImplSuiAPI
+	client *suiclient.Client
 	// *account.Account
 }
 
-func NewSubscriber(client *sui.ImplSuiAPI) *Subscriber {
+func NewSubscriber(client *suiclient.Client) *Subscriber {
 	return &Subscriber{client: client}
 }
 
-func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *sui_types.PackageID) {
-	resultCh := make(chan models.SuiEvent)
-	err := s.client.SubscribeEvent(context.Background(), &models.EventFilter{Package: packageID}, resultCh)
+func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *sui.PackageID) {
+	resultCh := make(chan suijsonrpc.SuiEvent)
+	err := s.client.SubscribeEvent(context.Background(), &suijsonrpc.EventFilter{Package: packageID}, resultCh)
 	if err != nil {
 		log.Fatal(err)
 	}

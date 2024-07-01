@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/sui-go/models"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 const (
@@ -45,8 +45,8 @@ type Client interface {
 	StartNewChain(
 		ctx context.Context,
 		signer cryptolib.Signer,
-		packageID *sui_types.PackageID,
-		gasPayments []*sui_types.ObjectRef, // optional
+		packageID *sui.PackageID,
+		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
 		execOptions *models.SuiTransactionBlockResponseOptions,

@@ -3,13 +3,13 @@ package move
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // PackageBytecode is the decoded information produced by the command `sui move build --dump-bytecode-as-base64`
 type PackageBytecode struct {
-	Modules      []*sui_types.Base64Data `json:"modules"`
-	Dependencies []*sui_types.SuiAddress `json:"dependencies"`
+	Modules      []*sui.Base64Data `json:"modules"`
+	Dependencies []*sui.Address `json:"dependencies"`
 	Digest       []int                   `json:"digest"`
 }
 
