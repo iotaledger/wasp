@@ -212,20 +212,24 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 
 // IRC27NFTMetadata matches the struct definition in ISCTypes.sol
 type IRC27NFTMetadata struct {
-	Standard string
-	Version  string
-	MimeType string
-	Uri      string //nolint:revive // false positive
-	Name     string
+	Standard    string
+	Version     string
+	MimeType    string
+	Uri         string //nolint:revive // false positive
+	Name        string
+	Description string
+	Attributes  string
 }
 
 func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
 	return IRC27NFTMetadata{
-		Standard: m.Standard,
-		Version:  m.Version,
-		MimeType: m.MIMEType,
-		Uri:      m.URI,
-		Name:     m.Name,
+		Standard:    m.Standard,
+		Version:     m.Version,
+		MimeType:    m.MIMEType,
+		Uri:         m.URI,
+		Name:        m.Name,
+		Description: m.Description,
+		Attributes:  m.Attributes,
 	}
 }
 

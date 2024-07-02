@@ -40,14 +40,19 @@ func (h *magicContractHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT 
 func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
-	// This hack is so that the ERC721 tokenURI view function returns the NFT name and description
-	// for explorers
-	metadata.URI = evm.EncodePackedNFTURI(metadata)
 	h.ctx.RequireNoError(err)
 	return iscmagic.IRC27NFT{
 		Nft:      iscmagic.WrapISCNFT(nft),
 		Metadata: iscmagic.WrapIRC27NFTMetadata(metadata),
 	}
+}
+
+// handler for ISCSandbox::getIRC27TokenURI
+func (h *magicContractHandler) GetIRC27TokenURI(nftID iscmagic.NFTID) string {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
+	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
+	h.ctx.RequireNoError(err)
+	return evm.EncodePackedNFTURI(metadata)
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds

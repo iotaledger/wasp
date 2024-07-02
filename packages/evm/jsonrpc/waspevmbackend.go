@@ -89,7 +89,7 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
-	tracer tracers.Tracer,
+	tracer *tracers.Tracer,
 ) error {
 	return chainutil.EVMTraceTransaction(
 		b.chain,

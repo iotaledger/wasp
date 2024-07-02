@@ -14,16 +14,17 @@ type IRC27NFTMetadata struct {
 	Royalties      map[string]float32 `json:"royalties,omitempty"`
 	IssuerName     string             `json:"issuerName,omitempty"`
 	Description    string             `json:"description,omitempty"`
-	Attributes     *json.RawMessage   `json:"attributes,omitempty"`
+	Attributes     string             `json:"attributes,omitempty"`
 }
 
-func NewIRC27NFTMetadata(mimeType, uri, name string) *IRC27NFTMetadata {
+func NewIRC27NFTMetadata(mimeType, uri, name, attributes string) *IRC27NFTMetadata {
 	return &IRC27NFTMetadata{
-		Standard: "IRC27",
-		Version:  "v1.0",
-		MIMEType: mimeType,
-		URI:      uri,
-		Name:     name,
+		Standard:   "IRC27",
+		Version:    "v1.0",
+		MIMEType:   mimeType,
+		URI:        uri,
+		Name:       name,
+		Attributes: attributes,
 	}
 }
 
