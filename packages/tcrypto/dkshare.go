@@ -517,7 +517,7 @@ func (s *dkShareImpl) BLSVerifySigShare(data []byte, sigshare tbls.SigShare) err
 	return bdn.Verify(s.blsSuite, s.blsPublicShares[idx], data, sigshare.Value())
 }
 
-// BLSRecoverFullSignature generates (recovers) master signature from partial sigshares.
+// BLSRecoverMasterSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
 func (s *dkShareImpl) BLSRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var err error
