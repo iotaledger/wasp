@@ -128,7 +128,7 @@ jobs:
           password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
 
       - name: Build and push WASP to Dockerhub
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -140,7 +140,7 @@ jobs:
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
 
       - name: Build and push WASP CLI to Dockerhub
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./tools/wasp-cli/Dockerfile
