@@ -6,24 +6,24 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
-	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 func SwapSui(
-	suiClient *sui.ImplSuiAPI,
-	swapper sui_signer.Signer,
-	swapPackageID *sui_types.PackageID,
-	testcoinID *sui_types.ObjectID,
-	poolObjectID *sui_types.ObjectID,
-	suiCoins []*models.Coin,
+	suiClient *suiclient.Client,
+	swapper suisigner.Signer,
+	swapPackageID *sui.PackageID,
+	testcoinID *sui.ObjectID,
+	poolObjectID *sui.ObjectID,
+	suiCoins []*suijsonrpc.Coin,
 ) {
 	poolGetObjectRes, err := suiClient.GetObject(
-		context.Background(), &models.GetObjectRequest{
+		context.Background(), suiclient.GetObjectRequest{
 			ObjectID: poolObjectID,
-			Options: &models.SuiObjectDataOptions{
+			Options: &suijsonrpc.SuiObjectDataOptions{
 				ShowType:    true,
 				ShowContent: true,
 			},
@@ -34,47 +34,47 @@ func SwapSui(
 	}
 
 	// swap sui to testcoin
-	ptb := sui_types.NewProgrammableTransactionBuilder()
+	ptb := sui.NewProgrammableTransactionBuilder()
 
 	arg0 := ptb.MustObj(
-		sui_types.ObjectArg{
-			SharedObject: &sui_types.SharedObjectArg{
+		sui.ObjectArg{
+			SharedObject: &sui.SharedObjectArg{
 				Id:                   poolObjectID,
 				InitialSharedVersion: poolGetObjectRes.Data.Ref().Version,
 				Mutable:              true,
 			},
 		},
 	)
-	arg1 := ptb.MustObj(sui_types.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
+	arg1 := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
 
-	retCoinArg := ptb.Command(sui_types.Command{
-		MoveCall: &sui_types.ProgrammableMoveCall{
+	retCoinArg := ptb.Command(sui.Command{
+		MoveCall: &sui.ProgrammableMoveCall{
 			Package:  swapPackageID,
 			Module:   "swap",
 			Function: "swap_sui",
-			TypeArguments: []sui_types.TypeTag{{Struct: &sui_types.StructTag{
+			TypeArguments: []sui.TypeTag{{Struct: &sui.StructTag{
 				Address: testcoinID,
 				Module:  "testcoin",
 				Name:    "TESTCOIN",
 			}}},
-			Arguments: []sui_types.Argument{arg0, arg1},
+			Arguments: []sui.Argument{arg0, arg1},
 		}},
 	)
 	ptb.Command(
-		sui_types.Command{
-			TransferObjects: &sui_types.ProgrammableTransferObjects{
-				Objects: []sui_types.Argument{retCoinArg},
+		sui.Command{
+			TransferObjects: &sui.ProgrammableTransferObjects{
+				Objects: []sui.Argument{retCoinArg},
 				Address: ptb.MustPure(swapper.Address()),
 			},
 		},
 	)
 	pt := ptb.Finish()
-	txData := sui_types.NewProgrammable(
+	txData := sui.NewProgrammable(
 		swapper.Address(),
 		pt,
-		[]*sui_types.ObjectRef{suiCoins[1].Ref()},
-		sui.DefaultGasBudget,
-		sui.DefaultGasPrice,
+		[]*sui.ObjectRef{suiCoins[1].Ref()},
+		suiclient.DefaultGasBudget,
+		suiclient.DefaultGasPrice,
 	)
 	txBytes, err := bcs.Marshal(txData)
 	if err != nil {
@@ -85,7 +85,7 @@ func SwapSui(
 		context.Background(),
 		swapper,
 		txBytes,
-		&models.SuiTransactionBlockResponseOptions{
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 			ShowEffects:       true,
 		},

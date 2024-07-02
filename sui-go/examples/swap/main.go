@@ -6,11 +6,10 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/sui-go/examples/swap/pkg"
-	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/move"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/conn"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suiconn"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 //go:generate sh -c "cd ../swap && sui move build --dump-bytecode-as-base64 > bytecode.json"
@@ -18,8 +17,8 @@ import (
 var swapBytecodeJSON []byte
 
 func main() {
-	suiClient, signer := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 0)
-	_, swapper := sui.NewSuiClient(conn.LocalnetEndpointUrl).WithSignerAndFund(sui_signer.TEST_SEED, 1)
+	suiClient, signer := suiclient.New(suiconn.LocalnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	_, swapper := suiclient.New(suiconn.LocalnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
 	fmt.Println("signer: ", signer.Address())
 	fmt.Println("swapper: ", swapper.Address())
 
@@ -32,7 +31,7 @@ func main() {
 
 	testcoinCoins, err := suiClient.GetCoins(
 		context.Background(),
-		&models.GetCoinsRequest{
+		suiclient.GetCoinsRequest{
 			Owner:    signer.Address(),
 			CoinType: &testcoinCoinType,
 		},
@@ -43,7 +42,7 @@ func main() {
 
 	signerSuiCoinPage, err := suiClient.GetCoins(
 		context.Background(),
-		&models.GetCoinsRequest{Owner: signer.Address()},
+		suiclient.GetCoinsRequest{Owner: signer.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -60,7 +59,7 @@ func main() {
 
 	swapperSuiCoinPage1, err := suiClient.GetAllCoins(
 		context.Background(),
-		&models.GetAllCoinsRequest{Owner: swapper.Address()},
+		suiclient.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -70,7 +69,7 @@ func main() {
 
 	swapperSuiCoinPage2, err := suiClient.GetAllCoins(
 		context.Background(),
-		&models.GetAllCoinsRequest{Owner: swapper.Address()},
+		suiclient.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)

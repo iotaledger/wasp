@@ -1,13 +1,13 @@
 package iscmove
 
 import (
-	"github.com/iotaledger/wasp/sui-go/models"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // Related to: https://github.com/iotaledger/kinesis/blob/develop/crates/sui-framework/packages/stardust/sources/unlock_condition/storage_deposit_return_unlock_condition.move
 type StorageDepositReturnUnlockCondition struct {
-	ReturnAddress sui_types.SuiAddress
+	ReturnAddress sui.Address
 	ReturnAmount  uint64
 }
 
@@ -18,15 +18,15 @@ type TimelockUnlockCondition struct {
 
 // Related to: https://github.com/iotaledger/kinesis/blob/develop/crates/sui-framework/packages/stardust/sources/unlock_condition/expiration_unlock_condition.move
 type ExpirationUnlockCondition struct {
-	Owner         sui_types.SuiAddress
-	ReturnAddress sui_types.SuiAddress
+	Owner         sui.Address
+	ReturnAddress sui.Address
 	UnixTime      uint32
 }
 
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-models/crates/sui-framework/packages/stardust/sources/basic/basic_output.move
+// Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/basic/basic_output.move
 type BasicOutput struct {
-	ID   sui_types.ObjectID
-	IOTA models.Balance
+	ID   sui.ObjectID
+	IOTA suijsonrpc.Balance
 	// Does the "Balance" model really fit here, or should it rather be SafeSuiBigInt[uint64]?
 	NativeTokens           Bag
 	StorageDepositReturnUC *StorageDepositReturnUnlockCondition
@@ -34,5 +34,5 @@ type BasicOutput struct {
 	ExpirationUC           *ExpirationUnlockCondition
 	Metadata               *[]uint8
 	Tag                    *[]uint8
-	Sender                 *sui_types.SuiAddress
+	Sender                 *sui.Address
 }

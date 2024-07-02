@@ -16,7 +16,7 @@ import (
 	"filippo.io/edwards25519"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 const SignatureSize = ed25519.SignatureSize
@@ -133,9 +133,9 @@ func (s *Signature) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func (s *Signature) AsSuiSignature() *sui_signer.Signature {
-	result := &sui_signer.Signature{
-		Ed25519SuiSignature: sui_signer.NewEd25519SuiSignature(s.publicKey.AsBytes(), s.signature[:]),
+func (s *Signature) AsSuiSignature() *suisigner.Signature {
+	result := &suisigner.Signature{
+		Ed25519Signature: suisigner.NewEd25519Signature(s.publicKey.AsBytes(), s.signature[:]),
 	}
 	return result
 }

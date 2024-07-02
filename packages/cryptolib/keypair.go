@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type KeyPair struct {
@@ -69,7 +69,7 @@ func (k *KeyPair) Sign(payload []byte) (*Signature, error) {
 	return NewSignature(k.GetPublicKey(), k.SignBytes(payload)), nil
 }
 
-func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent sui_signer.Intent) (Signature, error) {
+func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (Signature, error) {
 	//TODO implement me
 	panic("implement me")
 }

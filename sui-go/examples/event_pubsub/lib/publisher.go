@@ -4,58 +4,58 @@ import (
 	"context"
 	"log"
 
-	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type Publisher struct {
-	client *sui.ImplSuiAPI
-	signer sui_signer.Signer
+	client *suiclient.Client
+	signer suisigner.Signer
 }
 
-func NewPublisher(client *sui.ImplSuiAPI, signer sui_signer.Signer) *Publisher {
+func NewPublisher(client *suiclient.Client, signer suisigner.Signer) *Publisher {
 	return &Publisher{
 		client: client,
 		signer: signer,
 	}
 }
 
-func (p *Publisher) PublishEvents(ctx context.Context, packageID *sui_types.PackageID) {
+func (p *Publisher) PublishEvents(ctx context.Context, packageID *sui.PackageID) {
 	txnBytes, err := p.client.MoveCall(
 		ctx,
-		&models.MoveCallRequest{
+		suiclient.MoveCallRequest{
 			Signer:    p.signer.Address(),
 			PackageID: packageID,
 			Module:    "eventpub",
 			Function:  "emit_clock",
 			TypeArgs:  []string{},
 			Arguments: []any{},
-			GasBudget: models.NewBigInt(100000),
+			GasBudget: suijsonrpc.NewBigInt(100000),
 		},
 	)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	signature, err := p.signer.SignTransactionBlock(txnBytes.TxBytes.Data(), sui_signer.DefaultIntent())
+	signature, err := p.signer.SignTransactionBlock(txnBytes.TxBytes.Data(), suisigner.DefaultIntent())
 	if err != nil {
 		log.Panic(err)
 	}
 
 	txnResponse, err := p.client.ExecuteTransactionBlock(
-		ctx, &models.ExecuteTransactionBlockRequest{
+		ctx, suiclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txnBytes.TxBytes.Data(),
-			Signatures:  []*sui_signer.Signature{signature},
-			Options: &models.SuiTransactionBlockResponseOptions{
+			Signatures:  []*suisigner.Signature{signature},
+			Options: &suijsonrpc.SuiTransactionBlockResponseOptions{
 				ShowInput:          true,
 				ShowEffects:        true,
 				ShowEvents:         true,
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
 			},
-			RequestType: models.TxnRequestTypeWaitForLocalExecution,
+			RequestType: suijsonrpc.TxnRequestTypeWaitForLocalExecution,
 		},
 	)
 	if err != nil {

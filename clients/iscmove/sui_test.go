@@ -14,44 +14,44 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove/mock_contract"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/conn"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
-	"github.com/iotaledger/wasp/sui-go/sui_types/serialization"
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
+	"github.com/iotaledger/wasp/sui-go/suiconn"
 )
 
 type testSetup struct {
 	iscClient *Client
 	signer    cryptolib.Signer
-	packageID sui_types.PackageID
+	packageID sui.PackageID
 	chain     *Anchor
 }
 
 func setupAndDeploy(t *testing.T) testSetup {
 	client := NewClient(
 		Config{
-			APIURL:       conn.LocalnetEndpointUrl,
-			FaucetURL:    conn.LocalnetFaucetUrl,
-			WebsocketURL: conn.LocalnetWebsocketEndpointUrl,
+			APIURL:       suiconn.LocalnetEndpointURL,
+			FaucetURL:    suiconn.LocalnetFaucetURL,
+			WebsocketURL: suiconn.LocalnetWebsocketEndpointURL,
 		},
 	)
 
-	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(sui_signer.TEST_SEED, 0))
+	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(suisigner.TestSeed, 0))
 
 	iscBytecode := mock_contract.MockISCContract()
 
 	fmt.Printf("%s", kp.Address().String())
-	txnBytes, err := client.Publish(context.Background(), &models.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
 		Sender:          kp.Address().AsSuiAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       models.NewBigInt(uint64(100000000)),
+		GasBudget:       suijsonrpc.NewBigInt(uint64(100000000)),
 	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), cryptolib.SignerToSuiSigner(kp), txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), cryptolib.SignerToSuiSigner(kp), txnBytes.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -63,7 +63,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 	require.NoError(t, err)
 
 	createdCap, _ := lo.Find(
-		txnResponse.ObjectChanges, func(item serialization.TagJson[models.ObjectChange]) bool {
+		txnResponse.ObjectChanges, func(item serialization.TagJson[suijsonrpc.ObjectChange]) bool {
 			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
 				return true
 			}
@@ -72,7 +72,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 		},
 	)
 
-	capObj, err := client.GetObject(context.Background(), &models.GetObjectRequest{
+	capObj, err := client.GetObject(context.Background(), suiclient.GetObjectRequest{
 		ObjectID: &createdCap.Data.Created.ObjectID,
 	})
 	require.NoError(t, err)
@@ -81,9 +81,9 @@ func setupAndDeploy(t *testing.T) testSetup {
 		kp,
 		packageID,
 		nil,
-		sui.DefaultGasPrice,
-		sui.DefaultGasBudget,
-		&models.SuiTransactionBlockResponseOptions{
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -101,9 +101,9 @@ func setupAndDeploy(t *testing.T) testSetup {
 }
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
-	anchor, err := setup.iscClient.GetObject(context.Background(), &models.GetObjectRequest{
+	anchor, err := setup.iscClient.GetObject(context.Background(), suiclient.GetObjectRequest{
 		ObjectID: &setup.chain.ID,
-		Options: &models.SuiObjectDataOptions{
+		Options: &suijsonrpc.SuiObjectDataOptions{
 			ShowType:    true,
 			ShowContent: true,
 			ShowBcs:     true,

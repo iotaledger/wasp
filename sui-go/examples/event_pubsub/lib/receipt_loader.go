@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type PublishReceipt struct {
@@ -115,7 +115,7 @@ type PublishReceipt struct {
 	ConfirmedLocalExecution bool `json:"confirmedLocalExecution"`
 }
 
-func GetPublishedPackageID(receiptJson string) *sui_types.PackageID {
+func GetPublishedPackageID(receiptJson string) *sui.PackageID {
 	filePath := "path/to/your/file.json" + getGitRoot()
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
@@ -133,7 +133,7 @@ func GetPublishedPackageID(receiptJson string) *sui_types.PackageID {
 			packageID = change.PackageID
 		}
 	}
-	suiPackageID, err := sui_types.PackageIDFromHex(packageID)
+	suiPackageID, err := sui.PackageIDFromHex(packageID)
 	if err != nil {
 		log.Fatalf("failed to decode hex package ID: %v", err)
 	}

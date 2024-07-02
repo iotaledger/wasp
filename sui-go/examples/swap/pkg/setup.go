@@ -4,32 +4,32 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/models"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/move"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui_signer"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 func Publish(
-	client *sui.ImplSuiAPI,
-	signer sui_signer.Signer,
+	client *suiclient.Client,
+	signer suisigner.Signer,
 	bytecode move.PackageBytecode,
-) *sui_types.PackageID {
+) *sui.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
-		&models.PublishRequest{
+		suiclient.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: bytecode.Modules,
 			Dependencies:    bytecode.Dependencies,
-			GasBudget:       models.NewBigInt(10 * sui.DefaultGasBudget),
+			GasBudget:       suijsonrpc.NewBigInt(10 * suiclient.DefaultGasBudget),
 		},
 	)
 	if err != nil {
 		panic(err)
 	}
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), signer, txnBytes.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -44,26 +44,26 @@ func Publish(
 	return packageID
 }
 
-func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
-	*sui_types.PackageID,
-	*sui_types.ObjectID,
+func PublishMintTestcoin(client *suiclient.Client, signer suisigner.Signer) (
+	*sui.PackageID,
+	*sui.ObjectID,
 ) {
 	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		&models.PublishRequest{
+		suiclient.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: testcoinBytecode.Modules,
 			Dependencies:    testcoinBytecode.Dependencies,
-			GasBudget:       models.NewBigInt(10 * sui.DefaultGasBudget),
+			GasBudget:       suijsonrpc.NewBigInt(10 * suiclient.DefaultGasBudget),
 		},
 	)
 	if err != nil {
 		panic(err)
 	}
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &models.SuiTransactionBlockResponseOptions{
+		context.Background(), signer, txnBytes.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -90,7 +90,7 @@ func PublishMintTestcoin(client *sui.ImplSuiAPI, signer sui_signer.Signer) (
 		"testcoin",
 		treasuryCap.ObjectID,
 		mintAmount,
-		&models.SuiTransactionBlockResponseOptions{
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

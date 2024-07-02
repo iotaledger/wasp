@@ -2,7 +2,7 @@ package iscmove
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 /*
@@ -16,33 +16,33 @@ import (
   * Type "Table" is a typed map: map[K]V
 */
 
-// Related to: https://github.com/iotaledger/kinesis/tree/isc-models/dapps/isc/sources
+// Related to: https://github.com/iotaledger/kinesis/tree/isc-suijsonrpc/dapps/isc/sources
 // Might change completely: https://github.com/iotaledger/iota/pull/370#discussion_r1617682560
 type Allowance struct {
 	CoinAmounts []uint64
 	CoinTypes   []string
-	NFTs        []sui_types.ObjectID
+	NFTs        []sui.ObjectID
 }
 
 type Referent[T any] struct {
-	ID    sui_types.ObjectID
+	ID    sui.ObjectID
 	Value *T `bcs:"optional"`
 }
 
 type AssetBag struct {
-	ID   sui_types.ObjectID
+	ID   sui.ObjectID
 	Size uint64
 }
 
 type Anchor struct {
-	ID         sui_types.ObjectID
+	ID         sui.ObjectID
 	Assets     Referent[AssetBag]
-	StateRoot  sui_types.Bytes
+	StateRoot  sui.Bytes
 	StateIndex uint32
 }
 
 type Receipt struct {
-	RequestID sui_types.ObjectID
+	RequestID sui.ObjectID
 }
 
 type RequestData struct {
@@ -52,33 +52,33 @@ type RequestData struct {
 }
 
 type Request struct {
-	ID        sui_types.ObjectID
-	Sender    sui_types.SuiAddress
+	ID        sui.ObjectID
+	Sender    sui.Address
 	AssetsBag Referent[AssetBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
 	Data      *RequestData       `bcs:"optional"`
 }
 
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-models/crates/sui-framework/packages/stardust/sources/nft/irc27.move
+// Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
 type IRC27MetaData struct {
 	Version           string
 	MediaType         string
 	URI               string // Actually of type "Url" in SUI -> Create proper type?
 	Name              string
 	CollectionName    *string `bcs:"optional"`
-	Royalties         Table[sui_types.SuiAddress, uint32]
+	Royalties         Table[sui.Address, uint32]
 	IssuerName        *string  `bcs:"optional"`
 	Description       *string  `bcs:"optional"`
 	Attributes        []string // This is actually of Type VecSet which guarantees no duplicates. Not sure if we want to create a separate type for it. But we need to filter it to ensure no duplicates eventually.
 	NonStandardFields Table[string, string]
 }
 
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-models/crates/sui-framework/packages/stardust/sources/nft/nft.move
+// Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/nft.move
 
 type NFT struct {
-	ID                sui_types.ObjectID
-	LegacySender      *sui_types.SuiAddress `bcs:"optional"`
-	Metadata          *[]uint8              `bcs:"optional"`
-	Tag               *[]uint8              `bcs:"optional"`
-	ImmutableIssuer   *sui_types.SuiAddress `bcs:"optional"`
+	ID                sui.ObjectID
+	LegacySender      *sui.Address `bcs:"optional"`
+	Metadata          *[]uint8     `bcs:"optional"`
+	Tag               *[]uint8     `bcs:"optional"`
+	ImmutableIssuer   *sui.Address `bcs:"optional"`
 	ImmutableMetadata IRC27MetaData
 }

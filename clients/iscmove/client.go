@@ -10,10 +10,10 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/models"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/conn"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suiconn"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
@@ -25,7 +25,7 @@ type Config struct {
 }
 
 type Client struct {
-	*sui.ImplSuiAPI
+	*suiclient.Client
 	*SuiGraph
 
 	config Config
@@ -33,7 +33,7 @@ type Client struct {
 
 func NewClient(config Config) *Client {
 	return &Client{
-		sui.NewSuiClient(config.APIURL),
+		suiclient.New(config.APIURL),
 		NewGraph(config.GraphURL),
 		config,
 	}
@@ -43,17 +43,17 @@ func (c *Client) RequestFunds(ctx context.Context, address *cryptolib.Address) e
 	var faucetURL string = c.config.FaucetURL
 	if faucetURL == "" {
 		switch c.config.APIURL {
-		case conn.TestnetEndpointUrl:
-			faucetURL = conn.TestnetFaucetUrl
-		case conn.DevnetEndpointUrl:
-			faucetURL = conn.DevnetFaucetUrl
-		case conn.LocalnetEndpointUrl:
-			faucetURL = conn.LocalnetFaucetUrl
+		case suiconn.TestnetEndpointURL:
+			faucetURL = suiconn.TestnetFaucetURL
+		case suiconn.DevnetEndpointURL:
+			faucetURL = suiconn.DevnetFaucetURL
+		case suiconn.LocalnetEndpointURL:
+			faucetURL = suiconn.LocalnetFaucetURL
 		default:
 			panic("unspecified FaucetURL")
 		}
 	}
-	return sui.RequestFundFromFaucet(address.AsSuiAddress(), faucetURL)
+	return suiclient.RequestFundsFromFaucet(address.AsSuiAddress(), faucetURL)
 }
 
 func (c *Client) Health(ctx context.Context) error {
@@ -66,23 +66,23 @@ func (c *Client) Health(ctx context.Context) error {
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	signer cryptolib.Signer,
-	packageID *sui_types.PackageID,
-	gasPayments []*sui_types.ObjectRef, // optional
+	packageID *sui.PackageID,
+	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-	treasuryCap *models.SuiObjectResponse,
+	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+	treasuryCap *suijsonrpc.SuiObjectResponse,
 ) (*Anchor, error) {
-	ptb := sui_types.NewProgrammableTransactionBuilder()
+	ptb := sui.NewProgrammableTransactionBuilder()
 	// the return object is an Anchor object
 
-	arguments := []sui_types.Argument{}
+	arguments := []sui.Argument{}
 	if treasuryCap != nil {
 		ref := treasuryCap.Data.Ref()
 
-		arguments = []sui_types.Argument{
+		arguments = []sui.Argument{
 			ptb.MustObj(
-				sui_types.ObjectArg{
+				sui.ObjectArg{
 					ImmOrOwnedObject: &ref,
 				},
 			),
@@ -90,21 +90,21 @@ func (c *Client) StartNewChain(
 	}
 
 	arg1 := ptb.Command(
-		sui_types.Command{
-			MoveCall: &sui_types.ProgrammableMoveCall{
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
 				Module:        "anchor",
 				Function:      "start_new_chain",
-				TypeArguments: []sui_types.TypeTag{},
+				TypeArguments: []sui.TypeTag{},
 				Arguments:     arguments,
 			},
 		},
 	)
 
 	ptb.Command(
-		sui_types.Command{
-			TransferObjects: &sui_types.ProgrammableTransferObjects{
-				Objects: []sui_types.Argument{arg1},
+		sui.Command{
+			TransferObjects: &sui.ProgrammableTransferObjects{
+				Objects: []sui.Argument{arg1},
 				Address: ptb.MustPure(signer.Address),
 			},
 		},
@@ -119,7 +119,7 @@ func (c *Client) StartNewChain(
 		gasPayments = coins.CoinRefs()
 	}
 
-	tx := sui_types.NewProgrammable(
+	tx := sui.NewProgrammable(
 		signer.Address().AsSuiAddress(),
 		pt,
 		gasPayments,
@@ -141,7 +141,7 @@ func (c *Client) StartNewChain(
 
 func (c *Client) getAnchorFromSuiTransactionBlockResponse(
 	ctx context.Context,
-	response *models.SuiTransactionBlockResponse,
+	response *suijsonrpc.SuiTransactionBlockResponse,
 ) (*Anchor, error) {
 	anchorObjRef, err := response.GetCreatedObjectInfo("anchor", "Anchor")
 	if err != nil {
@@ -149,9 +149,9 @@ func (c *Client) getAnchorFromSuiTransactionBlockResponse(
 	}
 
 	getObjectResponse, err := c.GetObject(
-		ctx, &models.GetObjectRequest{
+		ctx, suiclient.GetObjectRequest{
 			ObjectID: anchorObjRef.ObjectID,
-			Options:  &models.SuiObjectDataOptions{ShowBcs: true},
+			Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
 		},
 	)
 	if err != nil {
@@ -175,23 +175,23 @@ func (c *Client) getAnchorFromSuiTransactionBlockResponse(
 func (c *Client) SendCoin(
 	ctx context.Context,
 	signer cryptolib.Signer,
-	anchorPackageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
+	anchorPackageID *sui.PackageID,
+	anchorAddress *sui.ObjectID,
 	coinType string,
-	coinObject *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
+	coinObject *sui.ObjectID,
+	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	txnBytes, err := c.MoveCall(ctx, suiclient.MoveCallRequest{
 		Signer:    signer.Address().AsSuiAddress(),
 		PackageID: anchorPackageID,
 		Module:    "anchor",
 		Function:  "send_coin",
 		TypeArgs:  []string{coinType},
 		Arguments: []any{anchorAddress.String(), coinObject.String()},
-		GasBudget: models.NewBigInt(gasBudget),
+		GasBudget: suijsonrpc.NewBigInt(gasBudget),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call send_coin() move call: %w", err)
@@ -209,23 +209,23 @@ func (c *Client) SendCoin(
 func (c *Client) ReceiveCoin(
 	ctx context.Context,
 	signer cryptolib.Signer,
-	anchorPackageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
+	anchorPackageID *sui.PackageID,
+	anchorAddress *sui.ObjectID,
 	coinType string,
-	receivingCoinObject *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
+	receivingCoinObject *sui.ObjectID,
+	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	txnBytes, err := c.MoveCall(ctx, suiclient.MoveCallRequest{
 		Signer:    signer.Address().AsSuiAddress(),
 		PackageID: anchorPackageID,
 		Module:    "anchor",
 		Function:  "receive_coin",
 		TypeArgs:  []string{coinType},
 		Arguments: []any{anchorAddress.String(), receivingCoinObject.String()},
-		GasBudget: models.NewBigInt(gasBudget),
+		GasBudget: suijsonrpc.NewBigInt(gasBudget),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call receive_coin() move call: %w", err)
@@ -242,14 +242,14 @@ func (c *Client) ReceiveCoin(
 // GetAssets fetches the assets stored in the anchor object.
 func (c *Client) GetAssets(
 	ctx context.Context,
-	anchorPackageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
+	anchorPackageID *sui.PackageID,
+	anchorAddress *sui.ObjectID,
 ) (*Assets, error) {
 	// object 'Assets' is owned by the Anchor object, and an 'Assets' object doesn't have ID, because it is a
 	// dynamic-field of Anchor object.
-	resGetObject, err := c.GetObject(ctx, &models.GetObjectRequest{
+	resGetObject, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorAddress,
-		Options: &models.SuiObjectDataOptions{
+		Options: &suijsonrpc.SuiObjectDataOptions{
 			ShowContent: true,
 		},
 	})
@@ -271,17 +271,17 @@ func (c *Client) GetAssets(
 	}
 
 	CoinsID := normalizedAssets.Fields.Coins.Fields.ID.ID
-	resDynamicFields, err := c.GetDynamicFields(context.Background(), &models.GetDynamicFieldsRequest{
-		ParentObjectID: sui_types.MustObjectIDFromHex(CoinsID),
+	resDynamicFields, err := c.GetDynamicFields(context.Background(), suiclient.GetDynamicFieldsRequest{
+		ParentObjectID: sui.MustObjectIDFromHex(CoinsID),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetDynamicFields(): %w", err)
 	}
 
 	var assets Assets
-	assets.Coins = make([]*models.Coin, len(resDynamicFields.Data))
+	assets.Coins = make([]*suijsonrpc.Coin, len(resDynamicFields.Data))
 	for i, coin := range resDynamicFields.Data {
-		assets.Coins[i] = &models.Coin{
+		assets.Coins[i] = &suijsonrpc.Coin{
 			CoinType:     coin.Name.Value.(string),
 			CoinObjectID: &coin.ObjectID,
 			Digest:       &coin.Digest,
@@ -289,9 +289,9 @@ func (c *Client) GetAssets(
 	}
 
 	for _, coin := range assets.Coins {
-		res, err := c.GetObject(context.Background(), &models.GetObjectRequest{
+		res, err := c.GetObject(context.Background(), suiclient.GetObjectRequest{
 			ObjectID: coin.CoinObjectID,
-			Options: &models.SuiObjectDataOptions{
+			Options: &suijsonrpc.SuiObjectDataOptions{
 				ShowContent: true,
 			},
 		})
@@ -307,7 +307,7 @@ func (c *Client) GetAssets(
 			panic(err)
 		}
 		bal, _ := strconv.ParseUint(resFields.Value, 10, 64)
-		coin.Balance = models.NewBigInt(bal)
+		coin.Balance = suijsonrpc.NewBigInt(bal)
 	}
 	return &assets, nil
 }
@@ -317,27 +317,27 @@ func (c *Client) GetAssets(
 func (c *Client) CreateRequest(
 	ctx context.Context,
 	signer cryptolib.Signer,
-	packageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
+	packageID *sui.PackageID,
+	anchorAddress *sui.ObjectID,
 	iscContractName string,
 	iscFunctionName string,
 	args [][]byte,
-	gasPayments []*sui_types.ObjectRef, // optional
+	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	ptb := sui_types.NewProgrammableTransactionBuilder()
+	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	ptb := sui.NewProgrammableTransactionBuilder()
 
 	// the return object is an Anchor object
 	arg1 := ptb.Command(
-		sui_types.Command{
-			MoveCall: &sui_types.ProgrammableMoveCall{
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
 				Module:        "request",
 				Function:      "create_request",
-				TypeArguments: []sui_types.TypeTag{},
-				Arguments: []sui_types.Argument{
+				TypeArguments: []sui.TypeTag{},
+				Arguments: []sui.Argument{
 					ptb.MustPure(iscContractName),
 					ptb.MustPure(iscFunctionName),
 					ptb.MustPure(args),
@@ -347,9 +347,9 @@ func (c *Client) CreateRequest(
 	)
 
 	ptb.Command(
-		sui_types.Command{
-			TransferObjects: &sui_types.ProgrammableTransferObjects{
-				Objects: []sui_types.Argument{arg1},
+		sui.Command{
+			TransferObjects: &sui.ProgrammableTransferObjects{
+				Objects: []sui.Argument{arg1},
 				Address: ptb.MustPure(signer.Address),
 			},
 		},
@@ -364,7 +364,7 @@ func (c *Client) CreateRequest(
 		gasPayments = coins.CoinRefs()
 	}
 
-	tx := sui_types.NewProgrammable(
+	tx := sui.NewProgrammable(
 		signer.Address().AsSuiAddress(),
 		pt,
 		gasPayments,
@@ -388,22 +388,22 @@ func (c *Client) CreateRequest(
 func (c *Client) SendRequest(
 	ctx context.Context,
 	signer cryptolib.Signer,
-	packageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
-	reqObjID *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
+	packageID *sui.PackageID,
+	anchorAddress *sui.ObjectID,
+	reqObjID *sui.ObjectID,
+	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	txnBytes, err := c.MoveCall(ctx, suiclient.MoveCallRequest{
 		Signer:    signer.Address().AsSuiAddress(),
 		PackageID: packageID,
 		Module:    "anchor",
 		Function:  "send_request",
 		TypeArgs:  []string{},
 		Arguments: []any{anchorAddress.String(), reqObjID.String()},
-		GasBudget: models.NewBigInt(gasBudget),
+		GasBudget: suijsonrpc.NewBigInt(gasBudget),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call send_request() move call: %w", err)
@@ -422,22 +422,22 @@ func (c *Client) SendRequest(
 func (c *Client) ReceiveRequest(
 	ctx context.Context,
 	signer cryptolib.Signer,
-	packageID *sui_types.PackageID,
-	anchorAddress *sui_types.ObjectID,
-	reqObjID *sui_types.ObjectID,
-	gasPayments []*sui_types.ObjectRef, // optional
+	packageID *sui.PackageID,
+	anchorAddress *sui.ObjectID,
+	reqObjID *sui.ObjectID,
+	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
 	gasBudget uint64,
-	execOptions *models.SuiTransactionBlockResponseOptions,
-) (*models.SuiTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(ctx, &models.MoveCallRequest{
+	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	txnBytes, err := c.MoveCall(ctx, suiclient.MoveCallRequest{
 		Signer:    signer.Address().AsSuiAddress(),
 		PackageID: packageID,
 		Module:    "anchor",
 		Function:  "receive_request",
 		TypeArgs:  []string{},
 		Arguments: []any{anchorAddress.String(), reqObjID.String()},
-		GasBudget: models.NewBigInt(gasBudget),
+		GasBudget: suijsonrpc.NewBigInt(gasBudget),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call receive_request() move call: %w", err)
