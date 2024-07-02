@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"slices"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -150,21 +149,6 @@ func (e *EVMContractInstance) CallFnExpectEvent(opts []ethCallOptions, eventName
 		err = e.abi.UnpackIntoInterface(v, eventName, res.EVMReceipt.Logs[0].Data)
 	}
 	require.NoError(e.chain.t, err)
-	return res
-}
-
-// If a Solidity function emits multiple events, this function will return the first event that matches the given eventName
-func (e *EVMContractInstance) CallFnExpectMultipleEvents(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) CallFnResult {
-	res, err := e.CallFn(opts, fnName, args...)
-	require.NoError(e.chain.t, err)
-	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.EVMReceipt.Status)
-	topic := e.abi.Events[eventName].ID
-	for _, log := range res.EVMReceipt.Logs {
-		if slices.Contains(log.Topics, topic) {
-			err = e.abi.UnpackIntoInterface(v, eventName, log.Data)
-		}
-		require.NoError(e.chain.t, err)
-	}
 	return res
 }
 

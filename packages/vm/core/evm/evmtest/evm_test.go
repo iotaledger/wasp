@@ -2815,6 +2815,6 @@ func TestAgentID(t *testing.T) {
 	// get the agnetId of the contract deployer
 	// and compare it with the agentId returned by the contract
 	var agentID []byte
-	instance.CallFnExpectMultipleEvents(nil, "GotAgentID", &agentID, "getAgentID")
+	instance.CallFnExpectEvent(nil, "GotAgentID", &agentID, "getAgentID")
 	assert.Equal(t, senderAgentID.Bytes(), agentID)
 }
