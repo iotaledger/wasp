@@ -11,6 +11,6 @@ func TestIRC27NFTSerialization(t *testing.T) {
 	testMIME := "fakeMIME"
 	testURL := "http://no.org"
 	testName := "hi-name"
-	metadata := isc.NewIRC27NFTMetadata(testMIME, testURL, testName)
+	metadata := isc.NewIRC27NFTMetadata(testMIME, testURL, testName, `[{"trait_type": "Foo", "value": "Bar"}]`)
 	rwutil.BytesTest(t, metadata, isc.IRC27NFTMetadataFromBytes)
 }

@@ -500,14 +500,19 @@ func TestISCNFTMint(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	_, err := iscTest.CallFn([]ethCallOptions{{
-		value: big.NewInt(int64(5000000000000 * isc.Million)),
-	}}, "mintNFT")
-
-	require.NoError(t, err)
+	var mintID []byte
+	iscTest.CallFnExpectEvent(
+		[]ethCallOptions{{
+			value: big.NewInt(int64(5000000000000 * isc.Million)),
+		}},
+		"nftMint",
+		&mintID,
+		"mintNFT",
+	)
+	require.NotEmpty(t, mintID)
 
 	/// produce a block (so the minted nft gets accounted for)
-	_, err = iscTest.triggerEvent("Hi from EVM!")
+	_, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	///
 
@@ -534,15 +539,32 @@ func TestISCNFTMint(t *testing.T) {
 
 	retIRC27 := new(iscmagic.IRC27NFT)
 
-	env.ISCMagicSandbox(ethKey).callView(
+	err = env.ISCMagicSandbox(ethKey).callView(
 		"getIRC27NFTData",
 		[]interface{}{iscmagic.WrapNFTID(nftID)},
 		&retIRC27)
+	require.NoError(t, err)
 
 	irc27MetaData, err := isc.IRC27NFTMetadataFromBytes(ret.Metadata)
 	require.NoError(t, err)
 
 	require.Equal(t, irc27MetaData.Name, retIRC27.Metadata.Name)
+}
+
+func TestEVMMintNFTToL1(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	someL1Addr := tpkg.RandEd25519Address()
+
+	_, err := iscTest.CallFn([]ethCallOptions{{
+		value: big.NewInt(int64(5000000000000 * isc.Million)),
+	}}, "mintNFTToL1", someL1Addr[:])
+
+	require.NoError(t, err)
+
+	require.Len(t, env.solo.L1NFTs(someL1Addr), 1)
 }
 
 func TestISCTriggerEvent(t *testing.T) {
@@ -1025,6 +1047,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		"text/html",
 		"https://my-awesome-nft-project.com",
 		"a string that is longer than 32 bytes",
+		`[{"trait_type": "collection", "value": "super"}]`,
 	)
 
 	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
@@ -1035,11 +1058,13 @@ func TestERC721NFTCollection(t *testing.T) {
 			"application/json",
 			"https://my-awesome-nft-project.com/1.json",
 			"nft1",
+			`[{"trait_type": "Foo", "value": "Bar"}]`,
 		),
 		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/2.json",
 			"nft2",
+			`[{"trait_type": "Bar", "value": "Baz"}]`,
 		),
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
@@ -1168,6 +1193,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		require.EqualValues(t, nftMetadatas[0].URI, p.Image)
 		require.EqualValues(t, nftMetadatas[0].Name, p.Name)
 		require.EqualValues(t, nftMetadatas[0].Description, p.Description)
+		require.EqualValues(t, nftMetadatas[0].Attributes, p.Attributes)
 	}
 }
 
@@ -1931,8 +1957,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    nil,
 			expectedError: "insufficient gas price: got 0, minimum is 10000000000",
-			gasBurned:     168154,
-			feeCharged:    1682,
+			gasBurned:     168098,
+			feeCharged:    1681,
 		},
 		{
 			name:          "default policy, gas price too low",
@@ -1940,8 +1966,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    big.NewInt(9999999999),
 			expectedError: "insufficient gas price: got 9999999999, minimum is 10000000000",
-			gasBurned:     168154,
-			feeCharged:    1682,
+			gasBurned:     168098,
+			feeCharged:    1681,
 		},
 		{
 			name:        "default policy, gas price just enough",
@@ -1973,8 +1999,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:    big.NewInt(19999999999),
 			expectedError: "insufficient gas price: got 19999999999, minimum is 20000000000",
-			gasBurned:     168154,
-			feeCharged:    2 * 1682,
+			gasBurned:     168098,
+			feeCharged:    2 * 1681,
 		},
 		{
 			name:        "gas more expensive, gas price just enough",
@@ -2267,6 +2293,7 @@ func TestStaticCall(t *testing.T) {
 }
 
 func TestSelfDestruct(t *testing.T) {
+	// NOTE: since EIP-6780 self-destruct was deprecated
 	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
@@ -2289,11 +2316,23 @@ func TestSelfDestruct(t *testing.T) {
 	_, err := iscTest.CallFn([]ethCallOptions{{sender: ethKey}}, "testSelfDestruct", beneficiary)
 	require.NoError(t, err)
 
-	require.Empty(t, env.getCode(iscTest.address))
+	// (EIP-6780) SELFDESTRUCT will recover all funds to the target but not delete the account,
+	// except when called in the same transaction as creation
+	require.NotEmpty(t, env.getCode(iscTest.address))
 	require.Zero(t, env.Chain.L2BaseTokens(iscTestAgentID))
 	require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, beneficiary)))
 
 	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
+}
+
+func TestSelfDestruct6780(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
+	iscTest := env.deployISCTestContract(ethKey)
+
+	var createContractAddr common.Address
+	iscTest.CallFnExpectEvent(nil, "TestSelfDestruct6780ContractCreated", &createContractAddr, "testSelfDestruct6780")
+	require.Empty(t, env.getCode(createContractAddr))
 }
 
 func TestChangeGasLimit(t *testing.T) {
@@ -2454,8 +2493,8 @@ func TestTraceTransaction(t *testing.T) {
 		_, err := storage.store(43)
 		require.NoError(t, err)
 		trace := traceLatestTx()
-		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
-		require.EqualValues(t, storage.address, common.HexToAddress(trace.To))
+		require.EqualValues(t, ethAddr, trace.From)
+		require.EqualValues(t, storage.address, *trace.To)
 		require.Empty(t, trace.Calls)
 	}
 	{
@@ -2463,8 +2502,8 @@ func TestTraceTransaction(t *testing.T) {
 		_, err := iscTest.triggerEvent("Hi from EVM!")
 		require.NoError(t, err)
 		trace := traceLatestTx()
-		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
-		require.EqualValues(t, iscTest.address, common.HexToAddress(trace.To))
+		require.EqualValues(t, ethAddr, trace.From)
+		require.EqualValues(t, iscTest.address, *trace.To)
 		require.NotEmpty(t, trace.Calls)
 	}
 }

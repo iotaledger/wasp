@@ -167,6 +167,16 @@ contract ISCTest {
         selfdestruct(beneficiary);
     }
 
+    event TestSelfDestruct6780ContractCreated(address);
+
+    function testSelfDestruct6780() public{
+        // deploy a new contract instance
+        SelfDestruct6780 c = new SelfDestruct6780();
+        emit TestSelfDestruct6780ContractCreated(address(c)); 
+        // call selfdestruct in the same tx
+        c.testSelfDestruct(payable(msg.sender));
+    } 
+
     event LoopEvent();
 
     function loopWithGasLeft() public {
@@ -232,4 +242,33 @@ contract ISCTest {
        emit nftMint(ret.items[0].value); 
     }
 
+
+   function mintNFTToL1(bytes memory l1addr ) public payable {
+        ISCAssets memory allowance;
+        allowance.baseTokens = 100000;
+
+        ISCAgentID memory agentID = ISCTypes.newL1AgentID(l1addr);
+
+        ISCDict memory params = ISCDict(new ISCDictItem[](3));
+        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}");
+        params.items[1] = ISCDictItem("a", agentID.data);
+        bytes memory withdrawParam = new bytes(1);
+        withdrawParam[0] = 0x01;
+        params.items[2] = ISCDictItem("w", withdrawParam);
+
+        ISCDict memory ret = ISC.sandbox.call(
+            ISC.util.hn("accounts"),
+            ISC.util.hn("mintNFT"),
+            params,
+            allowance
+        );
+       emit nftMint(ret.items[0].value); 
+    }
+
+}
+
+contract SelfDestruct6780{
+    function testSelfDestruct(address payable beneficiary) public {
+        selfdestruct(beneficiary);
+    }
 }

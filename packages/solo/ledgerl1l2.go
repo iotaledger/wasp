@@ -162,7 +162,7 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 	return o.MustNativeTokenID(), nil
 }
 
-type newNativeTokenParams struct {
+type NewNativeTokenParams struct {
 	ch            *Chain
 	user          *cryptolib.KeyPair
 	sch           iotago.TokenScheme
@@ -179,8 +179,8 @@ const (
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
-func (ch *Chain) NewNativeTokenParams(maxSupply interface{}) *newNativeTokenParams { //nolint:revive
-	ret := &newNativeTokenParams{
+func (ch *Chain) NewNativeTokenParams(maxSupply interface{}) *NewNativeTokenParams {
+	ret := &NewNativeTokenParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{
 			MaximumSupply: util.ToBigInt(maxSupply),
@@ -194,27 +194,27 @@ func (ch *Chain) NewNativeTokenParams(maxSupply interface{}) *newNativeTokenPara
 	return ret
 }
 
-func (fp *newNativeTokenParams) WithUser(user *cryptolib.KeyPair) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithUser(user *cryptolib.KeyPair) *NewNativeTokenParams {
 	fp.user = user
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenScheme(sch iotago.TokenScheme) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenScheme(sch iotago.TokenScheme) *NewNativeTokenParams {
 	fp.sch = sch
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenName(tokenName string) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenName(tokenName string) *NewNativeTokenParams {
 	fp.tokenName = tokenName
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenSymbol(tokenSymbol string) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenSymbol(tokenSymbol string) *NewNativeTokenParams {
 	fp.tokenSymbol = tokenSymbol
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *NewNativeTokenParams {
 	fp.tokenDecimals = tokenDecimals
 	return fp
 }
@@ -224,7 +224,7 @@ const (
 	allowanceForModifySupply          = 1 * isc.Million
 )
 
-func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
+func (fp *NewNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	par := dict.New()
 	if fp.sch != nil {
 		par.Set(accounts.ParamTokenScheme, codec.EncodeTokenScheme(fp.sch))

@@ -518,8 +518,9 @@ func (bc *BlockchainDB) makeBlock(header *types.Header) *types.Block {
 	blockNumber := header.Number.Uint64()
 	return types.NewBlock(
 		header,
-		bc.GetTransactionsByBlockNumber(blockNumber),
-		[]*types.Header{},
+		&types.Body{
+			Transactions: bc.GetTransactionsByBlockNumber(blockNumber),
+		},
 		bc.GetReceiptsByBlockNumber(blockNumber),
 		&fakeHasher{},
 	)

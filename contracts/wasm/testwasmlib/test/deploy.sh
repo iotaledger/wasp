@@ -9,5 +9,4 @@ wasp-cli chain deploy-contract wasmtime testwasmlib "Test WasmLib" ../rs/testwas
 wasp-cli chain post-request -s testwasmlib random
 wasp-cli chain call-view testwasmlib getRandom | wasp-cli decode string random uint64
 wasp-cli chain balance
-wasp-cli chain list-accounts
 wasp-cli check-versions

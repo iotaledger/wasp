@@ -17,6 +17,7 @@ import (
 type PackedNFTURI struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
+	Attributes  string `json:"attributes,omitempty"`
 	Image       string `json:"image"`
 }
 
@@ -27,6 +28,7 @@ func EncodePackedNFTURI(metadata *isc.IRC27NFTMetadata) string {
 		Name:        metadata.Name,
 		Description: metadata.Description,
 		Image:       metadata.URI,
+		Attributes:  metadata.Attributes,
 	})))
 }
 
