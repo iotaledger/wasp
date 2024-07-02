@@ -11,7 +11,7 @@ replace (
 
 require (
 	github.com/iotaledger/wasp/tools/wasp-cli v1.0.0-00010101000000-000000000000
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	gonum.org/v1/plot v0.14.0
 )
 
