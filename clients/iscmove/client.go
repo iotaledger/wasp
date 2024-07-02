@@ -39,7 +39,7 @@ func NewClient(config Config) *Client {
 	}
 }
 
-func (c *Client) RequestFunds(ctx context.Context, address *cryptolib.Address) error {
+func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
 	var faucetURL string = c.config.FaucetURL
 	if faucetURL == "" {
 		switch c.config.APIURL {

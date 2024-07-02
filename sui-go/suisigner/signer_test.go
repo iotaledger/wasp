@@ -37,7 +37,7 @@ func TestSignatureMarshalUnmarshal(t *testing.T) {
 	marshaledData, err := json.Marshal(signature1)
 	require.NoError(t, err)
 
-	var signature2 suisigner.Signature
+	var signature2 *suisigner.Signature
 	err = json.Unmarshal(marshaledData, &signature2)
 	require.NoError(t, err)
 

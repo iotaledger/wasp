@@ -46,10 +46,12 @@ func TestGetDynamicFieldObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := api.GetDynamicFieldObject(tt.args.ctx, suiclient.GetDynamicFieldObjectRequest{
-					ParentObjectID: tt.args.parentObjectID,
-					Name:           tt.args.name,
-				})
+				got, err := api.GetDynamicFieldObject(
+					tt.args.ctx, suiclient.GetDynamicFieldObjectRequest{
+						ParentObjectID: tt.args.parentObjectID,
+						Name:           tt.args.name,
+					},
+				)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GetDynamicFieldObject() error: %v, wantErr %v", err, tt.wantErr)
 					return
@@ -89,11 +91,13 @@ func TestGetDynamicFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, err := client.GetDynamicFields(tt.args.ctx, suiclient.GetDynamicFieldsRequest{
-					ParentObjectID: tt.args.parentObjectID,
-					Cursor:         tt.args.cursor,
-					Limit:          tt.args.limit,
-				})
+				got, err := client.GetDynamicFields(
+					tt.args.ctx, suiclient.GetDynamicFieldsRequest{
+						ParentObjectID: tt.args.parentObjectID,
+						Cursor:         tt.args.cursor,
+						Limit:          tt.args.limit,
+					},
+				)
 				require.ErrorIs(t, err, tt.wantErr)
 				// object ID is '0x4405b50d791fd3346754e8171aaab6bc2ed26c2c46efdd033c14b30ae507ac33'
 				// it has 'internal_nodes' field in type '0x2::table::Table<u64, 0xdee9::critbit::InternalNode'
@@ -120,17 +124,20 @@ func TestGetOwnedObjects(t *testing.T) {
 		},
 	}
 	limit := uint(2)
-	objs, err := api.GetOwnedObjects(context.Background(), suiclient.GetOwnedObjectsRequest{
-		Address: signer.Address(),
-		Query:   &query,
-		Cursor:  nil,
-		Limit:   &limit,
-	})
+	objs, err := api.GetOwnedObjects(
+		context.Background(), suiclient.GetOwnedObjectsRequest{
+			Address: signer.Address(),
+			Query:   &query,
+			Cursor:  nil,
+			Limit:   &limit,
+		},
+	)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(objs.Data), int(limit))
 	require.NoError(t, err)
 	var fields suijsonrpc.CoinFields
 	err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
+
 	require.NoError(t, err)
 	require.Equal(t, "1000000000", fields.Balance.String())
 }
@@ -265,17 +272,21 @@ func TestResolveNameServiceAddress(t *testing.T) {
 func TestResolveNameServiceNames(t *testing.T) {
 	api := suiclient.New(suiconn.MainnetEndpointURL)
 	owner := sui.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
-	namePage, err := api.ResolveNameServiceNames(context.Background(), suiclient.ResolveNameServiceNamesRequest{
-		Owner: owner,
-	})
+	namePage, err := api.ResolveNameServiceNames(
+		context.Background(), suiclient.ResolveNameServiceNamesRequest{
+			Owner: owner,
+		},
+	)
 	require.NoError(t, err)
 	require.NotEmpty(t, namePage.Data)
 	t.Log(namePage.Data)
 
 	owner = sui.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f681")
-	namePage, err = api.ResolveNameServiceNames(context.Background(), suiclient.ResolveNameServiceNamesRequest{
-		Owner: owner,
-	})
+	namePage, err = api.ResolveNameServiceNames(
+		context.Background(), suiclient.ResolveNameServiceNamesRequest{
+			Owner: owner,
+		},
+	)
 	require.NoError(t, err)
 	require.Empty(t, namePage.Data)
 }
