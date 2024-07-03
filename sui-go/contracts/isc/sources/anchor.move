@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::anchor {
-    use sui::borrow::{Self, Referent, Borrow};
+    use sui::{
+        borrow::{Self, Referent, Borrow},
+    };
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
@@ -35,7 +37,7 @@ module isc::anchor {
             assets: borrow::new(assets_bag::new(ctx), ctx),
             state_root: vector::empty(),
             state_index: 0,
-         }
+        }
     }
 
     /// Destroys an Anchor object and returns its assets bag.

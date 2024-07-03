@@ -1,6 +1,8 @@
 package serialization
 
-import "io"
+import (
+	"io"
+)
 
 type EmptyEnum struct{}
 

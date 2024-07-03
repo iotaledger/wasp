@@ -62,6 +62,7 @@ func TestStructTagEncoding(t *testing.T) {
 		require.Equal(t, sui.MustObjectIDFromHex("0x2"), structTag.Address)
 		require.Equal(t, sui.Identifier("coin"), structTag.Module)
 		require.Equal(t, sui.Identifier("Coin"), structTag.Name)
+
 		typeParam0 := structTag.TypeParams[0].Struct
 		require.Equal(t, sui.MustObjectIDFromHex("0x2e1df076b986a33cc40a809c44c96e35b48d0ab36da48e23c26ec776e6be3c4b"), typeParam0.Address)
 		require.Equal(t, sui.Identifier("testcoin"), typeParam0.Module)

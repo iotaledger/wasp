@@ -14,12 +14,12 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove/mock_contract"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type testSetup struct {
@@ -32,9 +32,7 @@ type testSetup struct {
 func setupAndDeploy(t *testing.T) testSetup {
 	client := NewClient(
 		Config{
-			APIURL:       suiconn.LocalnetEndpointURL,
-			FaucetURL:    suiconn.LocalnetFaucetURL,
-			WebsocketURL: suiconn.LocalnetWebsocketEndpointURL,
+			APIURL: suiconn.LocalnetEndpointURL,
 		},
 	)
 
@@ -102,7 +100,7 @@ func setupAndDeploy(t *testing.T) testSetup {
 
 func GetAnchor(t *testing.T, setup testSetup) Anchor {
 	anchor, err := setup.iscClient.GetObject(context.Background(), suiclient.GetObjectRequest{
-		ObjectID: &setup.chain.ID,
+		ObjectID: setup.chain.ID,
 		Options: &suijsonrpc.SuiObjectDataOptions{
 			ShowType:    true,
 			ShowContent: true,
@@ -116,6 +114,7 @@ func GetAnchor(t *testing.T, setup testSetup) Anchor {
 
 	decodedAnchor := Anchor{}
 	_, err = bcs.Unmarshal(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data(), &decodedAnchor)
+	require.NoError(t, err)
 
 	fmt.Printf("BCS Data Anchor: %v", hex.EncodeToString(anchor.Data.Bcs.Data.MoveObject.BcsBytes.Data()))
 	t.Logf("%# v\n", pretty.Formatter(decodedAnchor))
