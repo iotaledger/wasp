@@ -58,7 +58,7 @@ func (a *AddressAgentID) Kind() AgentIDKind {
 }
 
 func (a *AddressAgentID) String() string {
-	return a.a.Bech32(parameters.L1().Protocol.Bech32HRP)
+	return a.a.Bech32(parameters.Bech32Hrp)
 }
 
 func (a *AddressAgentID) Read(r io.Reader) error {

@@ -56,7 +56,7 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
 
 func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) uint64 {
-	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.L1().BaseToken.Decimals)
+	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.Decimals)
 
 	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
 	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address())

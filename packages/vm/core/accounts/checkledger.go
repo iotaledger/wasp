@@ -44,6 +44,6 @@ func (s *StateReader) calcL2TotalFungibleTokens() *isc.Assets {
 	})
 
 	// convert from 18 decimals, remainder must be 0
-	ret.BaseTokens = util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalBaseTokens, parameters.L1().BaseToken.Decimals)
+	ret.BaseTokens = util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalBaseTokens, parameters.Decimals)
 	return ret
 }

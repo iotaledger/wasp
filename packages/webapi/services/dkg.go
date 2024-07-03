@@ -94,7 +94,7 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 	}
 
 	dkShareInfo := &models.DKSharesInfo{
-		Address:         dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+		Address:         dkShare.GetAddress().Bech32(parameters.Bech32Hrp),
 		PeerIdentities:  peerIdentitiesHex,
 		PeerIndex:       dkShare.GetIndex(),
 		PublicKey:       iotago.EncodeHex(publicKey),

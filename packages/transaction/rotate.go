@@ -24,8 +24,8 @@ func NewRotateChainStateControllerTx(
 	resolvedAliasID := util.AliasIDFromAliasOutput(o, chainOutputID)
 	if resolvedAliasID != aliasID {
 		return nil, fmt.Errorf("provided output is not the correct one. Expected ChainID: %s, got: %s",
-			aliasID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
-			chainOutput.(*iotago.AliasOutput).AliasID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+			aliasID.ToAddress().Bech32(iotago.NetworkPrefix(parameters.Bech32Hrp)),
+			chainOutput.(*iotago.AliasOutput).AliasID.ToAddress().Bech32(iotago.NetworkPrefix(parameters.Bech32Hrp)),
 		)
 	}
 

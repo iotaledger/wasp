@@ -21,7 +21,7 @@ func initAddressCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP), Index: int(myWallet.AddressIndex())}
+			model := &AddressModel{Address: address.Bech32(parameters.Bech32Hrp), Index: int(myWallet.AddressIndex())}
 
 			if log.VerboseFlag {
 				verboseOutput := make(map[string]string)

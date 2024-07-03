@@ -107,7 +107,7 @@ func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
 
 	fmt.Fprintf(os.Stdout,
 		"DKG successful\nAddress: %s\n* committee size = %v\n* quorum = %v\n* members: %s\n",
-		stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP),
+		stateControllerAddr.Bech32(parameters.Bech32Hrp),
 		len(committeePubKeys),
 		quorum,
 		committeeMembersStr,

@@ -44,8 +44,8 @@ func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
 	}
 	prefix, govControllerAddr, err := cryptolib.NewAddressFromBech32(addr)
 	log.Check(err)
-	if parameters.L1().Protocol.Bech32HRP != prefix {
-		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
+	if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
+		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
 	}
 	return govControllerAddr
 }

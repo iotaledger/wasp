@@ -208,7 +208,7 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 		effectiveGasPrice := tx.GasPrice()
 		if effectiveGasPrice.Sign() == 0 && !feePolicy.GasPerToken.IsEmpty() {
 			// tx sent before gasPrice was mandatory
-			effectiveGasPrice = feePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+			effectiveGasPrice = feePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 		}
 		return RPCMarshalReceipt(r, tx, effectiveGasPrice), nil
 	})

@@ -34,5 +34,5 @@ func (c *ComparableAddress) Key() cryptolib.AddressKey {
 }
 
 func (c *ComparableAddress) String() string {
-	return c.address.Bech32(parameters.L1().Protocol.Bech32HRP)
+	return c.address.Bech32(parameters.Bech32Hrp)
 }

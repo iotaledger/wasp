@@ -51,7 +51,7 @@ func (c *comparableChainCommitteeID) Key() comparableChainCommitteeIDKey {
 }
 
 func (c *comparableChainCommitteeID) String() string {
-	return fmt.Sprintf("%s-%s", c.chainID, c.address.Bech32(parameters.L1().Protocol.Bech32HRP))
+	return fmt.Sprintf("%s-%s", c.chainID, c.address.Bech32(parameters.Bech32Hrp))
 }
 
 type consensusState struct {
@@ -86,7 +86,7 @@ type jsonConsensusState struct {
 }
 
 func (c *consensusState) MarshalJSON() ([]byte, error) {
-	chainIDBech32 := c.identifier.chainID.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
+	chainIDBech32 := c.identifier.chainID.AsAddress().Bech32(parameters.Bech32Hrp)
 
 	return json.Marshal(&jsonConsensusState{
 		ChainID:          chainIDBech32,
@@ -264,8 +264,8 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 }
 
 func (p *ConsensusStateRegistry) getConsensusStateFilePath(state *consensusState) string {
-	chainAddressBech32 := state.ChainID().AsAddress().Bech32(p.networkPrefix)
-	committeeAddressBech32 := state.Address().Bech32(p.networkPrefix)
+	chainAddressBech32 := state.ChainID().AsAddress().Bech32(parameters.NetworkPrefix(p.networkPrefix))
+	committeeAddressBech32 := state.Address().Bech32(parameters.NetworkPrefix(p.networkPrefix))
 
 	return path.Join(p.folderPath, chainAddressBech32, fmt.Sprintf("%s.json", committeeAddressBech32))
 }

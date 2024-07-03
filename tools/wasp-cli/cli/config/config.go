@@ -195,7 +195,7 @@ func GetChain(name string) isc.ChainID {
 	networkPrefix, _, err := iotago.ParseBech32(configChainID)
 	log.Check(err)
 
-	if networkPrefix != parameters.L1().Protocol.Bech32HRP {
+	if parameters.NetworkPrefix(networkPrefix) != parameters.Bech32Hrp {
 		err = fmt.Errorf("target network of the L1 node does not match the wasp-cli config")
 	}
 	log.Check(err)

@@ -7,6 +7,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/bech32"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -108,7 +109,7 @@ func (a *Address) Bytes() []byte {
 	return a[:]
 }
 
-func (a *Address) Bech32(hrp iotago.NetworkPrefix) string {
+func (a *Address) Bech32(hrp parameters.NetworkPrefix) string {
 	s, err := bech32.Encode(string(hrp), a.Bytes())
 	if err != nil {
 		panic(err)

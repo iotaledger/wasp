@@ -27,8 +27,8 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "address":
 		prefix, addr, err := cryptolib.NewAddressFromBech32(s)
 		log.Check(err)
-		l1Prefix := parameters.L1().Protocol.Bech32HRP
-		if prefix != l1Prefix {
+		l1Prefix := parameters.Bech32Hrp
+		if parameters.NetworkPrefix(prefix) != l1Prefix {
 			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
 		}
 		return addr.Bytes()
@@ -130,7 +130,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.Address.Decode(v)
 		log.Check(err)
-		return addr.Bech32(parameters.L1().Protocol.Bech32HRP)
+		return addr.Bech32(parameters.Bech32Hrp)
 	case "agentid":
 		aid, err := codec.AgentID.Decode(v)
 		log.Check(err)
