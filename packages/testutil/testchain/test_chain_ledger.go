@@ -4,6 +4,7 @@
 package testchain
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,12 +13,10 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -49,16 +48,14 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 
 func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*iotago.Transaction, *isc.AliasOutputWithID, isc.ChainID) {
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.governor.Address())
-	originTX, _, chainID, err := origin.NewChainOriginTransaction(
-		tcl.governor,
-		committeeAddress,
-		tcl.governor.Address(),
-		100*isc.Million,
-		nil,
-		outs,
-		outIDs,
-		allmigrations.DefaultScheme.LatestSchemaVersion(),
-	)
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var originTX *iotago.Transaction
+	var chainID isc.ChainID
+
+	err := errors.New("refactor me: deployChain")
+	_ = outs
+	_ = outIDs
+
 	require.NoError(tcl.t, err)
 	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
 	require.NoError(tcl.t, err)

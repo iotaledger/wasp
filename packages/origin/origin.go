@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -24,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // L1Commitment calculates the L1 commitment for the origin state
@@ -114,98 +111,4 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 		)
 	}
 	return originBlock, nil
-}
-
-func calcStateMetadata(initParams dict.Dict, commonAccountAmount uint64, schemaVersion isc.SchemaVersion) []byte {
-	s := transaction.NewStateMetadata(
-		L1Commitment(schemaVersion, initParams, commonAccountAmount),
-		gas.DefaultFeePolicy(),
-		schemaVersion,
-		"",
-	)
-	return s.Bytes()
-}
-
-// NewChainOriginTransaction creates new origin transaction for the self-governed chain
-// returns the transaction and newly minted chain ID
-func NewChainOriginTransaction(
-	keyPair cryptolib.Signer,
-	stateControllerAddress *cryptolib.Address,
-	governanceControllerAddress *cryptolib.Address,
-	deposit uint64,
-	initParams dict.Dict,
-	unspentOutputs iotago.OutputSet,
-	unspentOutputIDs iotago.OutputIDs,
-	schemaVersion isc.SchemaVersion,
-) (*iotago.Transaction, *iotago.AliasOutput, isc.ChainID, error) {
-	if len(unspentOutputs) != len(unspentOutputIDs) {
-		panic("mismatched lengths of outputs and inputs slices")
-	}
-
-	walletAddr := keyPair.Address()
-
-	if initParams == nil {
-		initParams = dict.New()
-	}
-	if initParams.Get(ParamChainOwner) == nil {
-		// default chain owner to the gov address
-		initParams.Set(ParamChainOwner, isc.NewAgentID(governanceControllerAddress).Bytes())
-	}
-
-	aliasOutput := &iotago.AliasOutput{
-		Amount:        deposit,
-		StateMetadata: calcStateMetadata(initParams, deposit, schemaVersion), // NOTE: Updated below.
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddress.AsIotagoAddress()},
-			&iotago.GovernorAddressUnlockCondition{Address: governanceControllerAddress.AsIotagoAddress()},
-		},
-		Features: iotago.Features{
-			&iotago.MetadataFeature{Data: initParams.Bytes()},
-		},
-	}
-
-	minSD := parameters.L1().Protocol.RentStructure.MinRent(aliasOutput)
-	minAmount := minSD + governance.DefaultMinBaseTokensOnCommonAccount
-	if aliasOutput.Amount < minAmount {
-		aliasOutput.Amount = minAmount
-	}
-	// update the L1 commitment to not include the minimumSD
-	aliasOutput.StateMetadata = calcStateMetadata(initParams, aliasOutput.Amount-minSD, schemaVersion)
-
-	txInputs, remainderOutput, err := transaction.ComputeInputsAndRemainder(
-		walletAddr,
-		aliasOutput.Amount,
-		nil,
-		nil,
-		unspentOutputs,
-		unspentOutputIDs,
-	)
-	if err != nil {
-		return nil, aliasOutput, isc.ChainID{}, err
-	}
-	outputs := iotago.Outputs{aliasOutput}
-	if remainderOutput != nil {
-		outputs = append(outputs, remainderOutput)
-	}
-	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.L1().Protocol.NetworkID(),
-		Inputs:    txInputs.UTXOInputs(),
-		Outputs:   outputs,
-	}
-
-	sigs, err := transaction.SignEssence(essence, txInputs.OrderedSet(unspentOutputs).MustCommitment(), keyPair)
-	if err != nil {
-		return nil, aliasOutput, isc.ChainID{}, err
-	}
-
-	tx := &iotago.Transaction{
-		Essence: essence,
-		Unlocks: transaction.MakeSignatureAndReferenceUnlocks(len(txInputs), sigs[0]),
-	}
-	txid, err := tx.ID()
-	if err != nil {
-		return nil, aliasOutput, isc.ChainID{}, err
-	}
-	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0)))
-	return tx, aliasOutput, chainID, nil
 }

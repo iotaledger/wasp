@@ -335,16 +335,15 @@ func (env *Solo) deployChain(
 	initialL1Balance := env.L1BaseTokens(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
-	originTx, originAO, chainID, err := origin.NewChainOriginTransaction(
-		chainOriginator,
-		stateControllerAddr,
-		stateControllerAddr,
-		initBaseTokens, // will be adjusted to min storage deposit + DefaultMinBaseTokensOnCommonAccount
-		initParams,
-		outs,
-		outIDs,
-		0,
-	)
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var originTx *iotago.Transaction
+	var chainID isc.ChainID
+	var originAO *iotago.AliasOutput
+
+	err := errors.New("refactor me: deployChain")
+	_ = outs
+	_ = outIDs
+
 	require.NoError(env.T, err)
 
 	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)

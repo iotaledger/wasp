@@ -1,24 +1,24 @@
 package bp_test
 
 import (
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -33,16 +33,15 @@ func TestOffLedgerOrdering(t *testing.T) {
 	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
 	require.NoError(t, err)
 	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
-	originTX, _, chainID, err := origin.NewChainOriginTransaction(
-		originator,
-		cmtKP.Address(),
-		originator.Address(),
-		0,
-		nil,
-		outputs,
-		outIDs,
-		allmigrations.DefaultScheme.LatestSchemaVersion(),
-	)
+
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var originTX *iotago.Transaction
+	var chainID isc.ChainID
+	err = errors.New("refactor me: testConsBasic")
+	_ = cmtKP
+	_ = outputs
+	_ = outIDs
+
 	require.NoError(t, err)
 	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
 	require.NoError(t, err)
