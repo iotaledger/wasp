@@ -1,11 +1,12 @@
 package wallet
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -61,25 +62,17 @@ func initBalanceCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			outs, err := cliclients.L2Client().OutputMap(address)
+			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsSuiAddress())
 			log.Check(err)
-
-			balance := isc.AssetsFromOutputMap(outs)
 
 			model := &BalanceModel{
 				Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
 				AddressIndex: myWallet.AddressIndex(),
-				NativeTokens: balance.NativeTokens,
-				BaseTokens:   balance.BaseTokens,
-				OutputMap:    outs,
+				Tokens:       balance,
 			}
-			if log.VerboseFlag {
-				model.VerboseOutputs = map[uint16]string{}
 
-				for i, out := range outs {
-					tokens := isc.AssetsFromOutput(out)
-					model.VerboseOutputs[i.Index()] = tokens.String()
-				}
+			if log.VerboseFlag {
+
 			}
 
 			log.PrintCLIOutput(model)
@@ -90,13 +83,9 @@ func initBalanceCmd() *cobra.Command {
 var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
-	AddressIndex uint32              `json:"AddressIndex"`
-	Address      string              `json:"Address"`
-	BaseTokens   uint64              `json:"BaseTokens"`
-	NativeTokens iotago.NativeTokens `json:"NativeTokens"`
-
-	OutputMap      iotago.OutputSet `json:"-"`
-	VerboseOutputs map[uint16]string
+	AddressIndex uint32                `json:"AddressIndex"`
+	Address      string                `json:"Address"`
+	Tokens       []*suijsonrpc.Balance `json:"BaseTokens"`
 }
 
 func (b *BalanceModel) AsText() (string, error) {
@@ -105,8 +94,8 @@ Address: {{.Address}}
 
 Native Assets:
 
- - base: {{.BaseTokens}}{{range $i, $out := .NativeTokens}}
- - {{$out.ID}}: {{$out.Amount}}
+ {{range $i, $out := .Tokens}}
+ - {{$out.CoinType}}: {{$out.TotalBalance}}
 {{end}}`
 
 	return log.ParseCLIOutputTemplate(b, balanceTemplate)

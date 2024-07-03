@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -84,12 +84,15 @@ func initRotateWithDKGCmd() *cobra.Command {
 }
 
 func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
-	l1Client := cliclients.L2Client()
 
 	myWallet := wallet.Load()
 	aliasID := config.GetChain(chain).AsAliasID()
 
-	chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
+	panic("refactor me: l1Client.GetAliasOutput")
+	var chainOutputID iotago.OutputID
+	var chainOutput iotago.Output
+	err := errors.New("refactor me: rotateTo")
+	// chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
 	log.Check(err)
 
 	tx, err := transaction.NewRotateChainStateControllerTx(
@@ -120,10 +123,8 @@ func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
 		log.Printf("rotation tx: %s", string(json))
 	}
 
-	_, err = l1Client.PostTxAndWaitUntilConfirmation(tx)
-	if err != nil {
-		panic(err)
-	}
+	panic("refactor me: l1Client.PostTxAndWaitUntilConfirmation")
+
 	log.Check(err)
 
 	txID, err := tx.ID()
@@ -152,9 +153,12 @@ func initChangeGovControllerCmd() *cobra.Command {
 			_, newGovController, err := iotago.ParseBech32(args[0])
 			log.Check(err)
 
-			client := cliclients.L2Client()
 			myWallet := wallet.Load()
-			outputSet, err := client.OutputMap(myWallet.Address())
+
+			panic("refactor me: l1connection.OutputMap")
+			//outputSet, err := client.OutputMap(myWallet.Address())
+			var outputSet iotago.OutputSet
+			err = errors.New("refactor me: initChangeGovControllerCmd")
 			log.Check(err)
 
 			tx, err := transaction.NewChangeGovControllerTx(
@@ -163,9 +167,11 @@ func initChangeGovControllerCmd() *cobra.Command {
 				outputSet,
 				myWallet,
 			)
+			_ = tx
 			log.Check(err)
 
-			_, err = client.PostTxAndWaitUntilConfirmation(tx)
+			panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
+
 			log.Check(err)
 		},
 	}

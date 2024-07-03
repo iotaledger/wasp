@@ -1,12 +1,14 @@
 package wallet
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -31,37 +33,41 @@ func initSendFundsCmd() *cobra.Command {
 
 			myWallet := wallet.Load()
 			senderAddress := myWallet.Address()
-			client := cliclients.L2Client()
 
-			outputSet, err := client.OutputMap(senderAddress)
-			log.Check(err)
+			client := cliclients.L1Client()
 
-			if !adjustStorageDeposit {
-				// check if the resulting output needs to be adjusted for Storage Deposit
-				panic("refactor me: transaction.MakeBasicOutput")
-				var output iotago.Output
-				util.SDAdjustmentPrompt(output)
-			}
-
-			tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
-				DisableAutoAdjustStorageDeposit: false,
-				FungibleTokens:                  tokens,
-				SendOptions:                     isc.SendOptions{},
-				SenderAddress:                   senderAddress,
-				SenderKeyPair:                   myWallet,
-				TargetAddress:                   targetAddress,
-				UnspentOutputs:                  outputSet,
-				UnspentOutputIDs:                isc.OutputSetToOutputIDs(outputSet),
+			tx, err := client.TransferSui(context.Background(), suiclient.TransferSuiRequest{
+				Signer:    senderAddress.AsSuiAddress(),
+				Amount:    suijsonrpc.NewBigInt(1337),
+				Recipient: targetAddress.AsSuiAddress(),
 			})
 			log.Check(err)
 
-			txID, err := tx.ID()
-			log.Check(err)
+			res, err := client.SignAndExecuteTransaction(context.Background(), cryptolib.SignerToSuiSigner(myWallet), tx.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
+				ShowObjectChanges: true,
+				ShowEvents:        true,
+			})
 
-			_, err = client.PostTxAndWaitUntilConfirmation(tx)
 			log.Check(err)
+			fmt.Printf("%v", res)
 
-			log.Printf("Transaction [%v] sent successfully.\n", txID.ToHex())
+			/*
+				tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
+					DisableAutoAdjustStorageDeposit: false,
+					FungibleTokens:                  tokens,
+					SendOptions:                     isc.SendOptions{},
+					SenderAddress:                   senderAddress,
+					SenderKeyPair:                   myWallet,
+					TargetAddress:                   targetAddress,
+					UnspentOutputs:                  outputSet,
+					UnspentOutputIDs:                isc.OutputSetToOutputIDs(outputSet),
+				})
+				log.Check(err)
+
+				txID, err := tx.ID()
+				log.Check(err)
+
+				log.Printf("Transaction [%v] sent successfully.\n", txID.ToHex())*/
 		},
 	}
 
