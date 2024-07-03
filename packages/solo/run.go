@@ -5,7 +5,6 @@ package solo
 
 import (
 	"errors"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -14,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -90,12 +88,8 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 		essence = res.TransactionEssence
 		copy(essence.InputsCommitment[:], res.InputsCommitment)
 	} else {
-		var err error
-		essence, err = rotate.MakeRotateStateControllerTransaction(
-			res.RotationAddress,
-			isc.NewAliasOutputWithID(res.Task.AnchorOutput, res.Task.AnchorOutputID),
-			res.Task.TimeAssumption.Add(2*time.Nanosecond),
-		)
+		var err error = errors.New("refactor me: runRequestsNolock")
+		panic("refactor me: rotate.MakeRotateStateControllerTransaction")
 		require.NoError(ch.Env.T, err)
 	}
 	sig, err := ch.StateControllerKeyPair.Sign(essence.InputsCommitment[:])

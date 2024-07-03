@@ -73,14 +73,14 @@ func initDeployCmd() *cobra.Command {
 				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
 			}
 
-			l1Client := cliclients.L1Client()
+			l1Client := cliclients.L2Client()
 
 			govController := controllerAddrDefaultFallback(govControllerStr)
 
 			stateController := doDKG(node, peers, quorum)
 
 			par := apilib.CreateChainParams{
-				Layer1Client:         l1Client,
+				Layer2Client:         l1Client,
 				CommitteeAPIHosts:    config.NodeAPIURLs([]string{node}),
 				N:                    uint16(len(node)),
 				T:                    uint16(quorum),

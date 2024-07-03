@@ -53,6 +53,7 @@ package cons
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 
@@ -71,7 +72,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa/cc/semi"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/rotate"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -583,11 +583,9 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		essence, err := rotate.MakeRotateStateControllerTransaction(
-			vmResult.RotationAddress,
-			isc.NewAliasOutputWithID(vmResult.Task.AnchorOutput, vmResult.Task.AnchorOutputID),
-			vmResult.Task.TimeAssumption,
-		)
+		panic("refactor me: rotate.MakeRotateStateControllerTransaction")
+		var essence *iotago.TransactionEssence
+		err := errors.New("refactor me: uponVMOutputReceived")
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped

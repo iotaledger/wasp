@@ -1,5 +1,5 @@
 // to be used by utilities like: cluster-tool, wasp-cli, apilib, etc
-package l1connection
+package l2connection
 
 import (
 	"context"

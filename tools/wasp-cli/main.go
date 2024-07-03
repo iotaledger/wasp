@@ -71,7 +71,7 @@ func init() {
 	}
 
 	if waspVersion == "" {
-		panic("unable to initialize app: no version given")
+		// panic("unable to initialize app: no version given")
 	}
 
 	rootCmd = initRootCmd(waspVersion)

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -334,16 +335,15 @@ func (env *Solo) deployChain(
 	initialL1Balance := env.L1BaseTokens(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
-	originTx, originAO, chainID, err := origin.NewChainOriginTransaction(
-		chainOriginator,
-		stateControllerAddr,
-		stateControllerAddr,
-		initBaseTokens, // will be adjusted to min storage deposit + DefaultMinBaseTokensOnCommonAccount
-		initParams,
-		outs,
-		outIDs,
-		0,
-	)
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var originTx *iotago.Transaction
+	var chainID isc.ChainID
+	var originAO *iotago.AliasOutput
+
+	err := errors.New("refactor me: deployChain")
+	_ = outs
+	_ = outIDs
+
 	require.NoError(env.T, err)
 
 	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
@@ -618,14 +618,12 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address,
 func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
-	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTsTransactionParams{
-		IssuerKeyPair:      issuer,
-		CollectionOutputID: collectionOutputID,
-		Target:             target,
-		ImmutableMetadata:  immutableMetadata,
-		UnspentOutputs:     allOuts,
-		UnspentOutputIDs:   allOutIDs,
-	})
+	panic("refactor me: transaction.NewMintNFTsTransaction")
+	var tx *iotago.Transaction
+	_ = allOuts
+	_ = allOutIDs
+	err := errors.New("refactor me: MintNFTsL1")
+
 	if err != nil {
 		return nil, nil, err
 	}

@@ -10,11 +10,9 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -182,17 +180,15 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	// return deposit in BaseToken
 	consumeUTXO := func(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, mockedAccounts *mockAccountContractRead) {
-		out := transaction.MakeBasicOutput(
-			cryptolib.NewAddressFromIotago(txb.anchorOutput.AliasID.ToAddress()),
-			nil,
-			&isc.Assets{
-				NativeTokens: iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
-			},
-			nil,
-			isc.SendOptions{},
-		)
+
+		panic("refactor me: transaction.MakeBasicOutput")
+		var out iotago.Output
+
+		panic("refactor me: transaction.AdjustToMinimumStorageDeposit")
+		// out = transaction.AdjustToMinimumStorageDeposit(out)
 		req, err := isc.OnLedgerFromUTXO(
-			transaction.AdjustToMinimumStorageDeposit(out), iotago.OutputID{})
+			out, iotago.OutputID{})
+
 		require.NoError(t, err)
 		sdCost := txb.Consume(req)
 		mockedAccounts.assets.Add(req.Assets())
@@ -209,17 +205,10 @@ func TestTxBuilderConsistency(t *testing.T) {
 				Amount: new(big.Int).SetUint64(amount),
 			}},
 		}
-		out := transaction.BasicOutputFromPostData(
-			cryptolib.NewAddressFromIotago(txb.anchorOutput.AliasID.ToAddress()),
-			isc.ContractIdentityFromHname(isc.Hn("test")),
-			isc.RequestParameters{
-				TargetAddress:                 cryptolib.NewRandomAddress(),
-				Assets:                        outAssets,
-				Metadata:                      &isc.SendMetadata{},
-				Options:                       isc.SendOptions{},
-				AdjustToMinimumStorageDeposit: true,
-			},
-		)
+
+		panic("refactor me: transaction.BasicOutputFromPostData")
+		var out iotago.Output
+
 		sdAdjust := txb.AddOutput(out)
 		if !mockedAccounts.assets.Spend(outAssets) {
 			panic("out of balance in chain output")
@@ -455,13 +444,12 @@ func TestSerDe(t *testing.T) {
 			GasBudget:      0,
 		}
 		assets := isc.NewEmptyAssets()
-		out := transaction.AdjustToMinimumStorageDeposit(transaction.MakeBasicOutput(
-			cryptolib.NewEmptyAddress(),
-			cryptolib.NewRandomAddress(),
-			assets,
-			&reqMetadata,
-			isc.SendOptions{},
-		))
+
+		panic("refactor me: transaction.MakeBasicOutput")
+		var out iotago.BasicOutput
+		_ = assets
+		_ = reqMetadata
+
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)
 		outBack := &iotago.BasicOutput{}

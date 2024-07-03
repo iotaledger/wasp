@@ -121,8 +121,9 @@ func (txb *AnchorTransactionBuilder) splitAssetsIntoInternalOutputs(req isc.OnLe
 
 	if req.NFT() != nil {
 		// create new output
-		nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.OutputID())
-		requiredSD += nftIncl.resultingOutput.Amount
+		panic("refactor me: vmtxbuilder.internalNFTOutputFromRequest")
+		// nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.OutputID())
+		// requiredSD += nftIncl.resultingOutput.Amount
 	}
 
 	txb.consumed = append(txb.consumed, req)
@@ -171,7 +172,10 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 		panic(fmt.Errorf("%v: available %d < required %d base tokens",
 			transaction.ErrNotEnoughBaseTokensForStorageDeposit, o.Deposit(), storageDeposit))
 	}
-	assets := transaction.AssetsFromOutput(o)
+
+	panic("refactor me: transaction.AssetsFromOutput")
+	//assets := transaction.AssetsFromOutput(o)
+	var assets *isc.Assets
 
 	sdAdjustment := int64(0)
 	for _, nativeToken := range assets.NativeTokens {

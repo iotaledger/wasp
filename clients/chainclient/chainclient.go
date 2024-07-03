@@ -2,6 +2,7 @@ package chainclient
 
 import (
 	"context"
+	"errors"
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -11,14 +12,14 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/l2connection"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	Layer1Client l1connection.Client
+	Layer2Client l2connection.Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
 	KeyPair      cryptolib.Signer
@@ -26,13 +27,13 @@ type Client struct {
 
 // New creates a new chainclient.Client
 func New(
-	layer1Client l1connection.Client,
+	layer2Client l2connection.Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
 	keyPair cryptolib.Signer,
 ) *Client {
 	return &Client{
-		Layer1Client: layer1Client,
+		Layer2Client: layer2Client,
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,
@@ -64,11 +65,8 @@ func defaultParams(params ...PostRequestParams) PostRequestParams {
 
 // PostRequest sends an on-ledger transaction with one request on it to the chain
 func (c *Client) PostRequest(msg isc.Message, params ...PostRequestParams) (*iotago.Transaction, error) {
-	outputsSet, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
-	if err != nil {
-		return nil, err
-	}
-	return c.post1RequestWithOutputs(msg, outputsSet, params...)
+	panic("refactor me: l1connection.OutputMap")
+	return c.post1RequestWithOutputs(msg, nil, params...)
 }
 
 // PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
@@ -77,11 +75,10 @@ func (c *Client) PostNRequests(
 	requestsCount int,
 	params ...PostRequestParams,
 ) ([]*iotago.Transaction, error) {
-	var err error
-	outputs, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
-	if err != nil {
-		return nil, err
-	}
+	panic("refactor me: l1connection.OutputMap")
+	err := errors.New("refactor me: PostNRequests")
+	var outputs iotago.OutputSet
+
 	transactions := make([]*iotago.Transaction, requestsCount)
 	for i := 0; i < requestsCount; i++ {
 		transactions[i], err = c.post1RequestWithOutputs(msg, outputs, params...)
@@ -137,7 +134,10 @@ func (c *Client) post1RequestWithOutputs(
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.Layer1Client.PostTxAndWaitUntilConfirmation(tx)
+
+	panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
+	err = errors.New("refactor me: post1RequestWithOutputs")
+
 	return tx, err
 }
 

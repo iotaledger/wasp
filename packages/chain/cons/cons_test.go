@@ -5,6 +5,7 @@ package cons_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -32,7 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
@@ -84,16 +84,11 @@ func testConsBasic(t *testing.T, n, f int) {
 	//
 	// Construct the chain on L1: Create the origin TX.
 	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
-	originTX, _, chainID, err := origin.NewChainOriginTransaction(
-		originator,
-		committeeAddress,
-		originator.Address(),
-		0,
-		nil,
-		outputs,
-		outIDs,
-		allmigrations.DefaultScheme.LatestSchemaVersion(),
-	)
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var originTX *iotago.Transaction
+	var chainID isc.ChainID
+	err = errors.New("refactor me: testConsBasic")
+
 	require.NoError(t, err)
 	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
 	require.NoError(t, err)

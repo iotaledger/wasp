@@ -8,7 +8,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -30,18 +29,8 @@ func postRequest(nodeName, chain string, msg isc.Message, params chainclient.Pos
 
 	if !adjustStorageDeposit {
 		// check if there are enough funds for SD
-		output := transaction.MakeBasicOutput(
-			chainID.AsAddress(),
-			chainClient.KeyPair.Address(),
-			params.Transfer,
-			&isc.RequestMetadata{
-				SenderContract: isc.EmptyContractIdentity(),
-				Message:        msg,
-				Allowance:      params.Allowance,
-				GasBudget:      params.GasBudget(),
-			},
-			isc.SendOptions{},
-		)
+		panic("refactor me: transaction.MakeBasicOutput")
+		var output iotago.Output
 		util.SDAdjustmentPrompt(output)
 	}
 

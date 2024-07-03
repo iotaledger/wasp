@@ -2,6 +2,7 @@ package origin_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -58,16 +59,13 @@ func TestCreateOrigin(t *testing.T) {
 	createOrigin := func() {
 		allOutputs, ids := u.GetUnspentOutputs(userAddr)
 
-		originTx, _, chainID, err = origin.NewChainOriginTransaction(
-			userKey,
-			stateAddr,
-			stateAddr,
-			1000,
-			nil,
-			allOutputs,
-			ids,
-			allmigrations.DefaultScheme.LatestSchemaVersion(),
-		)
+		panic("refactor me: origin.NewChainOriginTransaction")
+		var originTx *iotago.Transaction
+		var chainID isc.ChainID
+		err = errors.New("refactor me: testConsBasic")
+		_ = allOutputs
+		_ = ids
+
 		require.NoError(t, err)
 
 		err = u.AddToLedger(originTx)

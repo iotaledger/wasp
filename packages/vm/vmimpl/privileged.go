@@ -53,7 +53,8 @@ func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int
 
 func (reqctx *requestContext) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput) {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
+	panic("refactor me: vmtxbuilder.MintNFT")
+	//return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
 }
 
 func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID iotago.OutputID) {

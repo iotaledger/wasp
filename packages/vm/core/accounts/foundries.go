@@ -71,13 +71,14 @@ func (s *StateReader) GetFoundryOutput(sn uint32, chainID isc.ChainID) (*iotago.
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
 
+	panic("refactor me: AsIotagoAddress")
 	ret := &iotago.FoundryOutput{
 		Amount:       rec.Amount,
 		NativeTokens: nil,
 		SerialNumber: sn,
 		TokenScheme:  rec.TokenScheme,
-		Conditions: iotago.UnlockConditions{
-			&iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().AsIotagoAddress().(*iotago.AliasAddress)},
+		Conditions:   iotago.UnlockConditions{
+			// &iotago.ImmutableAliasUnlockCondition{Address: chainID.AsAddress().AsIotagoAddress().(*iotago.AliasAddress)},
 		},
 		Features: nil,
 	}

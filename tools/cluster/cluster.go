@@ -36,11 +36,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -52,7 +50,7 @@ type Cluster struct {
 	Started           bool
 	DataPath          string
 	OriginatorKeyPair *cryptolib.KeyPair
-	l1                l1connection.Client
+	l1                l2connection.Client
 	waspCmds          []*waspCmd
 	t                 *testing.T
 	log               *logger.Logger
@@ -81,7 +79,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                l1connection.NewClient(config.L1, log),
+		l1:                l2connection.NewClient(config.L1, log),
 		DataPath:          dataPath,
 	}
 }
@@ -104,7 +102,7 @@ func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() l1connection.Client {
+func (clu *Cluster) L1Client() l2connection.Client {
 	return clu.l1
 }
 
@@ -270,7 +268,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 
 	chainID, err := apilib.DeployChain(
 		apilib.CreateChainParams{
-			Layer1Client:      clu.L1Client(),
+			Layer2Client:      clu.L1Client(),
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 			N:                 uint16(len(committeeNodes)),
 			T:                 quorum,
@@ -842,7 +840,9 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	}
 	balance := isc.NewEmptyAssets()
 	for _, out := range outputMap {
-		balance.Add(transaction.AssetsFromOutput(out))
+		panic("refactor me: transaction.AssetsFromOutput")
+		_ = out
+		//balance.Add(transaction.AssetsFromOutput(out))
 	}
 
 	// if the address is an alias output, we also need to fetch the output itself and add that balance
@@ -852,7 +852,10 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 		fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
 		return nil
 	}
-	balance.Add(transaction.AssetsFromOutput(aliasOutput))
+
+	panic("refactor me: transaction.AssetsFromOutput")
+	_ = aliasOutput
+	//balance.Add(transaction.AssetsFromOutput(aliasOutput))
 	//}
 	return balance
 }
@@ -875,14 +878,11 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Addres
 	if err != nil {
 		return iotago.OutputID{}, nil, err
 	}
-	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTsTransactionParams{
-		IssuerKeyPair:      issuerKeypair,
-		CollectionOutputID: nil,
-		Target:             target,
-		ImmutableMetadata:  [][]byte{immutableMetadata},
-		UnspentOutputs:     outputsSet,
-		UnspentOutputIDs:   isc.OutputSetToOutputIDs(outputsSet),
-	})
+	panic("refactor me: transaction.NewMintNFTsTransaction")
+	var tx *iotago.Transaction
+	_ = outputsSet
+	err = errors.New("refactor me: MintL1NFT")
+
 	if err != nil {
 		return iotago.OutputID{}, nil, err
 	}

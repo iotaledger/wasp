@@ -54,6 +54,9 @@ func (s *StateReader) GetNativeTokenOutput(nativeTokenID iotago.NativeTokenID, c
 		return nil, iotago.OutputID{}
 	}
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
+
+	panic("refactor me: AsIotagoAddress")
+	
 	ret := &iotago.BasicOutput{
 		Amount: tokenRec.StorageBaseTokens,
 		NativeTokens: iotago.NativeTokens{{
@@ -61,11 +64,11 @@ func (s *StateReader) GetNativeTokenOutput(nativeTokenID iotago.NativeTokenID, c
 			Amount: tokenRec.Amount,
 		}},
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: chainID.AsAddress().AsIotagoAddress()},
+			//&iotago.AddressUnlockCondition{Address: chainID.AsAddress().AsIotagoAddress()},
 		},
 		Features: iotago.Features{
 			&iotago.SenderFeature{
-				Address: chainID.AsAddress().AsIotagoAddress(),
+				//	Address: chainID.AsAddress().AsIotagoAddress(),
 			},
 		},
 	}

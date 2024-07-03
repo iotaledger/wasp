@@ -4,6 +4,7 @@
 package apilib
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -12,17 +13,15 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/l1connection"
-	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/l2connection"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer1Client         l1connection.Client
+	Layer2Client         l2connection.Client
 	CommitteeAPIHosts    []string
 	N                    uint16
 	T                    uint16
@@ -48,7 +47,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *
 	fmt.Fprint(textout, par.Prefix)
 
 	chainID, err := CreateChainOrigin(
-		par.Layer1Client,
+		par.Layer2Client,
 		par.OriginatorKeyPair,
 		stateControllerAddr,
 		govControllerAddr,
@@ -78,39 +77,35 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(
-	layer1Client l1connection.Client,
+	layer2Client l2connection.Client,
 	originator cryptolib.Signer,
 	stateController *cryptolib.Address,
 	governanceController *cryptolib.Address,
 	initParams dict.Dict,
 ) (isc.ChainID, error) {
-	originatorAddr := originator.Address()
+	// originatorAddr := originator.Address()
 	// ----------- request owner address' outputs from the ledger
-	utxoMap, err := layer1Client.OutputMap(originatorAddr)
-	if err != nil {
-		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}
+	/*
+		utxoMap, err := layer2Client.OutputMap(originatorAddr)
+		if err != nil {
+			return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
+		}
+	*/
 
 	// ----------- create origin transaction
-	originTx, _, chainID, err := origin.NewChainOriginTransaction(
-		originator,
-		stateController,
-		governanceController,
-		10*isc.Million,
-		initParams,
-		utxoMap,
-		utxoIDsFromUtxoMap(utxoMap),
-		allmigrations.DefaultScheme.LatestSchemaVersion(),
-	)
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var chainID isc.ChainID
+	err := errors.New("refactor me: CreateChainOrigin")
+
 	if err != nil {
 		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ------------- post origin transaction and wait for confirmation
-	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
+	/*_, err = layer2Client.PostTxAndWaitUntilConfirmation(originTx)
 	if err != nil {
 		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}
+	}*/
 
 	return chainID, nil
 }
