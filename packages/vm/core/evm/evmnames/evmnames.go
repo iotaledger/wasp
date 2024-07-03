@@ -15,6 +15,7 @@ const (
 	FuncRegisterERC20NativeTokenOnRemoteChain = "registerERC20NativeTokenOnRemoteChain"
 	FuncRegisterERC20ExternalNativeToken      = "registerERC20ExternalNativeToken"
 	FuncGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
+	FuncGetERC721CollectionAddress            = "getERC721CollectionAddress"
 	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
 	FuncNewL1Deposit = "newL1Deposit"

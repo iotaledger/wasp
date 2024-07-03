@@ -267,7 +267,13 @@ func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
 // Exist reports whether the given account exists in state.
 // Notably this should also return true for self-destructed accounts.
 func (s *StateDB) Exist(addr common.Address) bool {
-	return s.kv.Has(accountNonceKey(addr))
+	return Exist(addr, s.kv)
+}
+
+// Exist reports whether the given account exists in state.
+// expects s to be the stateDB state partition
+func Exist(addr common.Address, s kv.KVStoreReader) bool {
+	return s.Has(accountNonceKey(addr))
 }
 
 // Empty returns whether the given account is empty. Empty

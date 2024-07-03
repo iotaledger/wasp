@@ -17,7 +17,7 @@ func Nonce(evmPartition kv.KVStoreReader, addr common.Address) uint64 {
 	return emulator.GetNonce(stateDBStore, addr)
 }
 
-func RegisterERC721NFTCollectionByNFTId(evmState kv.KVStore, nft *isc.NFT) {
+func registerERC721NFTCollectionByNFTId(evmState kv.KVStore, nft *isc.NFT) {
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	if err != nil {
 		panic(errEVMCanNotDecodeERC27Metadata)

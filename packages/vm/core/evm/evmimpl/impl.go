@@ -40,13 +40,15 @@ var Processor = evm.Contract.Processor(nil,
 
 	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
 	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
+
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
-	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
+	evm.FuncRegisterERC721NFTCollection.WithHandler(registerERC721NFTCollection),
 
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
 
 	// views
 	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
+	evm.FuncGetERC721CollectionAddress.WithHandler(viewERC721CollectionAddress),
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
@@ -353,6 +355,22 @@ func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView) dict.Dict {
 	return result(addr[:])
 }
 
+func viewERC721CollectionAddress(ctx isc.SandboxView) dict.Dict {
+	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(evm.FieldNFTCollectionID))
+
+	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
+
+	exists := emulator.Exist(
+		addr,
+		emulator.StateDBSubrealmR(evm.EmulatorStateSubrealmR(ctx.StateR())),
+	)
+
+	return dict.Dict{
+		evm.FieldResult:  codec.Encode(exists),
+		evm.FieldAddress: codec.Encode(addr),
+	}
+}
+
 func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(evm.FieldNFTCollectionID))
 
@@ -367,7 +385,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 		return collection
 	}()
 
-	RegisterERC721NFTCollectionByNFTId(ctx.State(), collection)
+	registerERC721NFTCollectionByNFTId(ctx.State(), collection)
 
 	return nil
 }
