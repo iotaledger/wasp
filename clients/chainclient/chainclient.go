@@ -2,6 +2,7 @@ package chainclient
 
 import (
 	"context"
+	"errors"
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -64,11 +65,8 @@ func defaultParams(params ...PostRequestParams) PostRequestParams {
 
 // PostRequest sends an on-ledger transaction with one request on it to the chain
 func (c *Client) PostRequest(msg isc.Message, params ...PostRequestParams) (*iotago.Transaction, error) {
-	outputsSet, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
-	if err != nil {
-		return nil, err
-	}
-	return c.post1RequestWithOutputs(msg, outputsSet, params...)
+	panic("refactor me: l1connection.OutputMap")
+	return c.post1RequestWithOutputs(msg, nil, params...)
 }
 
 // PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
@@ -77,11 +75,10 @@ func (c *Client) PostNRequests(
 	requestsCount int,
 	params ...PostRequestParams,
 ) ([]*iotago.Transaction, error) {
-	var err error
-	outputs, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
-	if err != nil {
-		return nil, err
-	}
+	panic("refactor me: l1connection.OutputMap")
+	err := errors.New("refactor me: PostNRequests")
+	var outputs iotago.OutputSet
+
 	transactions := make([]*iotago.Transaction, requestsCount)
 	for i := 0; i < requestsCount; i++ {
 		transactions[i], err = c.post1RequestWithOutputs(msg, outputs, params...)
@@ -137,7 +134,10 @@ func (c *Client) post1RequestWithOutputs(
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.Layer1Client.PostTxAndWaitUntilConfirmation(tx)
+
+	panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
+	err = errors.New("refactor me: post1RequestWithOutputs")
+
 	return tx, err
 }
 

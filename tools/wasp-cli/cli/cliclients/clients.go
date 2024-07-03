@@ -6,9 +6,11 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -53,12 +55,12 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 func L1Client() l1connection.Client {
 	log.Verbosef("using L1 API %s\n", config.L1APIAddress())
 
-	return l1connection.NewClient(
-		l1connection.Config{
-			APIAddress:    config.L1APIAddress(),
-			FaucetAddress: config.L1FaucetAddress(),
+	return iscmove.NewClient(
+		iscmove.Config{
+			APIURL:       suiconn.LocalnetEndpointURL,
+			FaucetURL:    suiconn.LocalnetFaucetURL,
+			WebsocketURL: suiconn.LocalnetWebsocketEndpointURL,
 		},
-		log.HiveLogger(),
 	)
 }
 

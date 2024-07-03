@@ -4,6 +4,7 @@
 package apilib
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -13,10 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -84,33 +83,29 @@ func CreateChainOrigin(
 	governanceController *cryptolib.Address,
 	initParams dict.Dict,
 ) (isc.ChainID, error) {
-	originatorAddr := originator.Address()
+	// originatorAddr := originator.Address()
 	// ----------- request owner address' outputs from the ledger
-	utxoMap, err := layer1Client.OutputMap(originatorAddr)
-	if err != nil {
-		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}
+	/*
+		utxoMap, err := layer1Client.OutputMap(originatorAddr)
+		if err != nil {
+			return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
+		}
+	*/
 
 	// ----------- create origin transaction
-	originTx, _, chainID, err := origin.NewChainOriginTransaction(
-		originator,
-		stateController,
-		governanceController,
-		10*isc.Million,
-		initParams,
-		utxoMap,
-		utxoIDsFromUtxoMap(utxoMap),
-		allmigrations.DefaultScheme.LatestSchemaVersion(),
-	)
+	panic("refactor me: origin.NewChainOriginTransaction")
+	var chainID isc.ChainID
+	err := errors.New("refactor me: CreateChainOrigin")
+
 	if err != nil {
 		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ------------- post origin transaction and wait for confirmation
-	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
+	/*_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
 	if err != nil {
 		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}
+	}*/
 
 	return chainID, nil
 }
