@@ -15,25 +15,13 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	// estimate on-ledger request, then send the same request, assert the gas used/fees match
-	output := transaction.BasicOutputFromPostData(
-		cryptolib.NewRandomAddress(),
-		isc.EmptyContractIdentity(),
-		isc.RequestParameters{
-			TargetAddress: env.Chain.ChainAddress(),
-			Assets:        isc.NewAssetsBaseTokens(1 * isc.Million),
-			Metadata: &isc.SendMetadata{
-				Message:   accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(cryptolib.NewEmptyAddress())),
-				Allowance: isc.NewAssetsBaseTokens(5000),
-				GasBudget: 1 * isc.Million,
-			},
-		},
-	)
+	panic("refactor me: transaction.BasicOutputFromPostData")
+	var output iotago.Output
 
 	outputBytes, err := output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
 	require.NoError(t, err)

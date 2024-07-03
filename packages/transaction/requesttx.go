@@ -34,15 +34,12 @@ type NewTransferTransactionParams struct {
 
 // NewTransferTransaction creates a basic output transaction that sends L1 Token to another L1 address
 func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transaction, error) {
-	output := MakeBasicOutput(
-		params.TargetAddress,
-		params.SenderAddress,
-		params.FungibleTokens,
-		nil,
-		params.SendOptions,
-	)
+	panic("refactor me: transaction.MakeBasicOutput")
+	var output iotago.Output
+
 	if !params.DisableAutoAdjustStorageDeposit {
-		output = AdjustToMinimumStorageDeposit(output)
+		panic("refactor me: transaction.AdjustToMinimumStorageDeposit")
+		// output = AdjustToMinimumStorageDeposit(output)
 	}
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(output)
@@ -94,7 +91,8 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	out := MakeRequestTransactionOutput(par)
 	if !par.DisableAutoAdjustStorageDeposit {
-		out = AdjustToMinimumStorageDeposit(out)
+		panic("refactor me: transaction.AdjustToMinimumStorageDeposit")
+		// out = AdjustToMinimumStorageDeposit(out)
 	}
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
@@ -132,21 +130,13 @@ func MakeRequestTransactionOutput(par NewRequestTransactionParams) iotago.Output
 		assets = isc.NewEmptyAssets()
 	}
 
+	panic("refactor me: transaction.MakeBasicOutput")
 	var out iotago.Output
-	out = MakeBasicOutput(
-		req.TargetAddress,
-		par.SenderAddress,
-		assets,
-		&isc.RequestMetadata{
-			SenderContract: isc.EmptyContractIdentity(),
-			Message:        req.Metadata.Message,
-			Allowance:      req.Metadata.Allowance,
-			GasBudget:      req.Metadata.GasBudget,
-		},
-		req.Options,
-	)
+
 	if par.NFT != nil {
-		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
+		panic("refactor me: transaction.NftOutputFromBasicOutput")
+		var output iotago.Output
+		out = output
 	}
 	return out
 }

@@ -7,7 +7,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -118,7 +117,11 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		totals.TokenCirculatingSupplies[id].Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 	}
 	for _, o := range txb.postedOutputs {
-		assets := transaction.AssetsFromOutput(o)
+		panic("refactor me: transaction.AssetsFromOutput")
+		// assets := AssetsFromOutput(output)
+		_ = o
+		var assets *isc.Assets
+
 		totals.SentOutBaseTokens += assets.BaseTokens
 		for _, nativeToken := range assets.NativeTokens {
 			s, ok := totals.SentOutTokenBalances[nativeToken.ID]

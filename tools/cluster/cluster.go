@@ -842,7 +842,9 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	}
 	balance := isc.NewEmptyAssets()
 	for _, out := range outputMap {
-		balance.Add(transaction.AssetsFromOutput(out))
+		panic("refactor me: transaction.AssetsFromOutput")
+		_ = out
+		//balance.Add(transaction.AssetsFromOutput(out))
 	}
 
 	// if the address is an alias output, we also need to fetch the output itself and add that balance
@@ -852,7 +854,10 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 		fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
 		return nil
 	}
-	balance.Add(transaction.AssetsFromOutput(aliasOutput))
+
+	panic("refactor me: transaction.AssetsFromOutput")
+	_ = aliasOutput
+	//balance.Add(transaction.AssetsFromOutput(aliasOutput))
 	//}
 	return balance
 }

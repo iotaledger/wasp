@@ -100,7 +100,11 @@ func ComputeInputsAndRemainder(
 			continue
 		}
 		inputIDs = append(inputIDs, outputID)
-		a := AssetsFromOutput(output)
+
+		panic("refactor me: transaction.AssetsFromOutput")
+		// a := AssetsFromOutput(output)
+
+		var a *isc.Assets
 		baseTokensIn += a.BaseTokens
 		for _, nativeToken := range a.NativeTokens {
 			nativeTokenAmountSum, ok := tokensIn[nativeToken.ID]

@@ -171,8 +171,11 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 		panic(fmt.Errorf("%v: available %d < required %d base tokens",
 			transaction.ErrNotEnoughBaseTokensForStorageDeposit, o.Deposit(), storageDeposit))
 	}
-	assets := transaction.AssetsFromOutput(o)
 
+	panic("refactor me: transaction.AssetsFromOutput")
+	//assets := transaction.AssetsFromOutput(o)
+	var assets *isc.Assets
+	
 	sdAdjustment := int64(0)
 	for _, nativeToken := range assets.NativeTokens {
 		sdAdjustment += txb.addNativeTokenBalanceDelta(nativeToken.ID, new(big.Int).Neg(nativeToken.Amount))

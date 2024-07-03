@@ -15,6 +15,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -106,14 +107,9 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	output := transaction.BasicOutputFromPostData(
-		te.governor.Address(),
-		isc.EmptyContractIdentity(),
-		isc.RequestParameters{
-			TargetAddress: te.chainID.AsAddress(),
-			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
-		},
-	)
+	panic("refactor me: transaction.BasicOutputFromPostData")
+	var output iotago.Output
+
 	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
 	require.NoError(t, err)
 	for _, node := range te.mempools {
@@ -468,14 +464,9 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	output := transaction.BasicOutputFromPostData(
-		te.governor.Address(),
-		isc.EmptyContractIdentity(),
-		isc.RequestParameters{
-			TargetAddress: te.chainID.AsAddress(),
-			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
-		},
-	)
+	panic("refactor me: transaction.BasicOutputFromPostData")
+	var output iotago.Output
+
 	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
 	require.NoError(t, err)
 	for _, node := range te.mempools {
@@ -614,14 +605,9 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	output := transaction.BasicOutputFromPostData(
-		te.governor.Address(),
-		isc.EmptyContractIdentity(),
-		isc.RequestParameters{
-			TargetAddress: te.chainID.AsAddress(),
-			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
-		},
-	)
+	panic("refactor me: transaction.BasicOutputFromPostData")
+	var output iotago.Output
+
 	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
 	require.NoError(t, err)
 	for _, node := range te.mempools {
@@ -687,14 +673,9 @@ func TestTTL(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	<-mp.TrackNewChainHead(te.stateForAO(0, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 
-	output := transaction.BasicOutputFromPostData(
-		te.governor.Address(),
-		isc.EmptyContractIdentity(),
-		isc.RequestParameters{
-			TargetAddress: te.chainID.AsAddress(),
-			Assets:        isc.NewAssetsBaseTokens(10 * isc.Million),
-		},
-	)
+	panic("refactor me: transaction.BasicOutputFromPostData")
+	var output iotago.Output
+
 	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
 	require.NoError(t, err)
 	for _, node := range te.mempools {
@@ -850,11 +831,10 @@ func getRequestsOnLedger(t *testing.T, chainAddress *cryptolib.Address, amount i
 		if len(f) == 1 {
 			f[0](i, &requestParams)
 		}
-		output := transaction.BasicOutputFromPostData(
-			cryptolib.NewRandomAddress(),
-			isc.EmptyContractIdentity(),
-			requestParams,
-		)
+
+		panic("refactor me: transaction.BasicOutputFromPostData")
+		var output iotago.Output
+
 		outputID := tpkg.RandOutputID(uint16(i))
 		var err error
 		result[i], err = isc.OnLedgerFromUTXO(output, outputID)

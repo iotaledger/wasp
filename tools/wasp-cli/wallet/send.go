@@ -3,6 +3,7 @@ package wallet
 import (
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -37,13 +38,8 @@ func initSendFundsCmd() *cobra.Command {
 
 			if !adjustStorageDeposit {
 				// check if the resulting output needs to be adjusted for Storage Deposit
-				output := transaction.MakeBasicOutput(
-					targetAddress,
-					senderAddress,
-					tokens,
-					nil,
-					isc.SendOptions{},
-				)
+				panic("refactor me: transaction.MakeBasicOutput")
+				var output iotago.Output
 				util.SDAdjustmentPrompt(output)
 			}
 
