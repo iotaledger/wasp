@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
@@ -32,6 +33,30 @@ func newClient(_ *testing.T) *iscmove.Client {
 			WebsocketURL: suiconn.LocalnetWebsocketEndpointURL,
 		},
 	)
+}
+
+func TestKeys(t *testing.T) {
+	client := newClient(t)
+	iscBytecode := contracts.ISC()
+
+	cryptoLibKP := newSignerWithFunds(t, SEEDFORUSER)
+
+	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
+		Sender:          cryptoLibKP.Address().AsSuiAddress(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
+	})
+
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(), cryptolib.SignerToSuiSigner(cryptoLibKP), txnBytes.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+
+	require.NoError(t, err)
+	fmt.Println(txnResponse)
 }
 
 func TestStartNewChain(t *testing.T) {
@@ -63,7 +88,7 @@ func TestSendCoin(t *testing.T) {
 		Limit:    10,
 	})
 	require.NoError(t, err)
-	require.Len(t, coins, 1)
+	require.Len(t, coins.Data, 1)
 
 	sendCoin(t, client, signer, iscPackageID, anchorObjID, coinType, coins.Data[0].CoinObjectID)
 

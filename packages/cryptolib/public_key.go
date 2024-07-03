@@ -9,9 +9,10 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 
+	"github.com/minio/blake2b-simd"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/minio/blake2b-simd"
 )
 
 type PublicKey struct {
@@ -69,7 +70,8 @@ func (pkT *PublicKey) AsKey() PublicKeyKey {
 }
 
 func (pkT *PublicKey) AsAddress() *Address {
-	typeKey := []byte{0}
+	// TODO: Clarify the typeKey here. The SUI/IOTA Scheme does not have a typeKey, previously it was {0}
+	typeKey := []byte{}
 	typeKey = append(typeKey, pkT.key...)
 	return newAddressFromArray(blake2b.Sum256(typeKey))
 }

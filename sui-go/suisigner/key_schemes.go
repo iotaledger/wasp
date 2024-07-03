@@ -7,7 +7,7 @@ import (
 
 type KeySchemeFlag byte
 
-var KeySchemeFlagDefault = KeySchemeFlagEd25519
+var KeySchemeFlagDefault = KeySchemeFlagIotaEd25519
 
 const (
 	KeySchemeFlagEd25519 KeySchemeFlag = iota
