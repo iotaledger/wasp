@@ -40,7 +40,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -880,14 +879,11 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Addres
 	if err != nil {
 		return iotago.OutputID{}, nil, err
 	}
-	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTsTransactionParams{
-		IssuerKeyPair:      issuerKeypair,
-		CollectionOutputID: nil,
-		Target:             target,
-		ImmutableMetadata:  [][]byte{immutableMetadata},
-		UnspentOutputs:     outputsSet,
-		UnspentOutputIDs:   isc.OutputSetToOutputIDs(outputsSet),
-	})
+	panic("refactor me: transaction.NewMintNFTsTransaction")
+	var tx *iotago.Transaction
+	_ = outputsSet
+	err = errors.New("refactor me: MintL1NFT")
+
 	if err != nil {
 		return iotago.OutputID{}, nil, err
 	}
