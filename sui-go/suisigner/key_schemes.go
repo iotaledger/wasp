@@ -17,8 +17,8 @@ const (
 	KeySchemeFlagBLS12381
 	KeySchemeFlagZkLoginAuthenticator
 
-	KeySchemeFlagIotaEd25519 = math.MaxUint8 - 1 // special case for iota ed25519
-	KeySchemeFlagError       = math.MaxUint8
+	KeySchemeFlagIotaEd25519 KeySchemeFlag = math.MaxUint8 - 1 // special case for iota ed25519
+	KeySchemeFlagError                     = math.MaxUint8
 )
 
 func (k KeySchemeFlag) Byte() byte {

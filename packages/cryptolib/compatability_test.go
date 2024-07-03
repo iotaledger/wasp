@@ -1,25 +1,24 @@
 package cryptolib
 
 import (
+	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
-)
-
-const (
-	SEEDFORUSER = "0x1234"
 )
 
 func TestCompatability(t *testing.T) {
 	seedIndex := uint32(1)
-	seed := SEEDFORUSER
+	seed := make([]byte, 32)
+	n, err := rand.Read(seed)
+	require.NoError(t, err)
+	require.Equal(t, len(seed), n)
 
-	kp := KeyPairFromSeed(SubSeed(sui.MustAddressFromHex(seed)[:], seedIndex))
-	subseed := SubSeed(sui.MustAddressFromHex(seed)[:], seedIndex)
-	suikp := suisigner.NewSigner(subseed[:], suisigner.KeySchemeFlagEd25519)
+	kp := KeyPairFromSeed(SubSeed(seed, seedIndex))
+	subseed := SubSeed(seed, seedIndex)
+	suikp := suisigner.NewSigner(subseed[:], suisigner.KeySchemeFlagIotaEd25519)
 
 	require.Equal(t, kp.Address().AsSuiAddress().Data(), suikp.Address().Data())
 
