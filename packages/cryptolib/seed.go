@@ -12,7 +12,6 @@ import (
 
 	hivecrypto "github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // testnet/alphanet uses COIN_TYPE = 1
@@ -32,15 +31,7 @@ func SubSeed(walletSeed []byte, accountIndex uint32, useLegacyDerivation ...bool
 		return legacyDerivation(&seed, accountIndex)
 	}
 
-	coinType := TestnetCoinType // default to the testnet
-	switch parameters.L1().Protocol.Bech32HRP {
-	case "iota":
-		coinType = IotaCoinType
-	case "smr":
-		coinType = ShimmerCoinType
-	}
-
-	bip32Path := fmt.Sprintf("m/44'/%d'/%d'/0'/0'", coinType, accountIndex) // this is the same as FF does it (only the account index changes, the ADDRESS_INDEX stays 0)
+	bip32Path := fmt.Sprintf("m/44'/%d'/%d'/0'/0'", IotaCoinType, accountIndex) // this is the same as FF does it (only the account index changes, the ADDRESS_INDEX stays 0)
 	path, err := bip32path.ParsePath(bip32Path)
 	if err != nil {
 		panic(err)

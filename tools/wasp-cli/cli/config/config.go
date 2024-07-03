@@ -39,20 +39,11 @@ func L1ParamsExpired() bool {
 }
 
 func RefreshL1ParamsFromNode() {
-	if log.VerboseFlag {
-		log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
-	}
 
-	Set(l1ParamsKey, parameters.L1NoLock())
-	Set(l1ParamsTimestampKey, time.Now())
 }
 
 func LoadL1ParamsFromConfig() {
-	// read L1 params from config file
-	var params *parameters.L1Params
-	err := viper.UnmarshalKey("l1.params", &params)
-	log.Check(err)
-	parameters.InitL1(params)
+
 }
 
 func locateBaseDir() string {
