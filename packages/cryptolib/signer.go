@@ -1,8 +1,8 @@
 package cryptolib
 
 import (
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 // VariantKeyPair originates from KeyPair
@@ -12,7 +12,7 @@ type Signer interface {
 
 	Address() *Address
 	Sign(msg []byte) (signature *Signature, err error)
-	SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (Signature, error)
+	SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (*Signature, error)
 }
 
 type suiSigner struct {

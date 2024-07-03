@@ -324,18 +324,18 @@ func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, object
 			}
 			if resource.Module == module && resource.ObjectName == objectName {
 				ref := sui.ObjectRef{
-					ObjectID: &change.Data.Published.PackageId,
-					Version:  change.Data.Published.Version.Uint64(),
-					Digest:   &change.Data.Published.Digest,
+					ObjectID: &change.Data.Created.ObjectID,
+					Version:  change.Data.Created.Version.Uint64(),
+					Digest:   &change.Data.Created.Digest,
 				}
 				return &ref, nil
 			}
 			for ; resource.SubType != nil; resource = resource.SubType {
 				if resource.Module == module && resource.ObjectName == objectName {
 					ref := sui.ObjectRef{
-						ObjectID: &change.Data.Published.PackageId,
-						Version:  change.Data.Published.Version.Uint64(),
-						Digest:   &change.Data.Published.Digest,
+						ObjectID: &change.Data.Created.ObjectID,
+						Version:  change.Data.Created.Version.Uint64(),
+						Digest:   &change.Data.Created.Digest,
 					}
 					return &ref, nil
 				}

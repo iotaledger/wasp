@@ -19,10 +19,12 @@ func (s *Client) GetCoinObjsForTargetAmount(
 	address *sui.Address,
 	targetAmount uint64,
 ) (suijsonrpc.Coins, error) {
-	coins, err := s.GetCoins(ctx, GetCoinsRequest{
-		Owner: address,
-		Limit: 200,
-	})
+	coins, err := s.GetCoins(
+		ctx, GetCoinsRequest{
+			Owner: address,
+			Limit: 200,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetCoins(): %w", err)
 	}
@@ -82,7 +84,7 @@ func (s *Client) PublishContract(
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to publish move contract: %w", err)
 	}
-	txnResponse, err := s.SignAndExecuteTransaction(context.Background(), signer, txnBytes.TxBytes, options)
+	txnResponse, err := s.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
 	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
 		return nil, nil, fmt.Errorf("failed to sign move contract tx: %w", err)
 	}
@@ -132,10 +134,12 @@ const QUERY_MAX_RESULT_LIMIT = 50
 
 // GetSuiCoinsOwnedByAddress This function will retrieve a maximum of 200 coins.
 func (s *Client) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui.Address) (suijsonrpc.Coins, error) {
-	page, err := s.GetCoins(ctx, GetCoinsRequest{
-		Owner: address,
-		Limit: 200,
-	})
+	page, err := s.GetCoins(
+		ctx, GetCoinsRequest{
+			Owner: address,
+			Limit: 200,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -163,14 +167,16 @@ func (s *Client) BatchGetFilteredObjectsOwnedByAddress(
 	options *suijsonrpc.SuiObjectDataOptions,
 	filter func(*suijsonrpc.SuiObjectData) bool,
 ) ([]suijsonrpc.SuiObjectResponse, error) {
-	filteringObjs, err := s.GetOwnedObjects(ctx, GetOwnedObjectsRequest{
-		Address: address,
-		Query: &suijsonrpc.SuiObjectResponseQuery{
-			Options: &suijsonrpc.SuiObjectDataOptions{
-				ShowType: true,
+	filteringObjs, err := s.GetOwnedObjects(
+		ctx, GetOwnedObjectsRequest{
+			Address: address,
+			Query: &suijsonrpc.SuiObjectResponseQuery{
+				Options: &suijsonrpc.SuiObjectDataOptions{
+					ShowType: true,
+				},
 			},
 		},
-	})
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -185,10 +191,12 @@ func (s *Client) BatchGetFilteredObjectsOwnedByAddress(
 		objIds = append(objIds, obj.Data.ObjectID)
 	}
 
-	return s.MultiGetObjects(ctx, MultiGetObjectsRequest{
-		ObjectIDs: objIds,
-		Options:   options,
-	})
+	return s.MultiGetObjects(
+		ctx, MultiGetObjectsRequest{
+			ObjectIDs: objIds,
+			Options:   options,
+		},
+	)
 }
 
 ////// PTB impl

@@ -1,7 +1,10 @@
 package cryptolib
 
 import (
+	"crypto/ed25519"
 	"io"
+
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
@@ -69,9 +72,12 @@ func (k *KeyPair) Sign(payload []byte) (*Signature, error) {
 	return NewSignature(k.GetPublicKey(), k.SignBytes(payload)), nil
 }
 
-func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (Signature, error) {
-	//TODO implement me
-	panic("implement me")
+func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (*Signature, error) {
+	data := suisigner.MessageWithIntent(intent, txnBytes)
+	hash := blake2b.Sum256(data)
+	sig := ed25519.Sign(k.privateKey.key, hash[:])
+
+	return NewSignature(k.GetPublicKey(), sig), nil
 }
 
 func (k *KeyPair) Read(r io.Reader) error {

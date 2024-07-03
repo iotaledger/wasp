@@ -105,7 +105,7 @@ func (c *Client) StartNewChain(
 		sui.Command{
 			TransferObjects: &sui.ProgrammableTransferObjects{
 				Objects: []sui.Argument{arg1},
-				Address: ptb.MustPure(signer.Address),
+				Address: ptb.MustPure(signer.Address()),
 			},
 		},
 	)
@@ -350,7 +350,7 @@ func (c *Client) CreateRequest(
 		sui.Command{
 			TransferObjects: &sui.ProgrammableTransferObjects{
 				Objects: []sui.Argument{arg1},
-				Address: ptb.MustPure(signer.Address),
+				Address: ptb.MustPure(signer.Address()),
 			},
 		},
 	)
