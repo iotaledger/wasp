@@ -60,8 +60,8 @@ func ExampleSigner() {
 	fmt.Printf("address   : %v\n", signer2.Address())
 
 	// Output:
-	// address   : 0xe54d993cf56be93ba0764c7ee2c817085b70f0e6d3ad1a71c3335ee3529b4a48
+	// address   : 0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50
 	// privateKey: 4ec5a9eefc0bb86027a6f3ba718793c813505acc25ed09447caf6a069accdd4b
 	// publicKey : 9342fa65507f5cf61f1b8fb3b94a5aa80fa9b2e2c68963e30d68a2660a50c57e
-	// address   : 0x579a9ef1ca86431df106abb86f1f129806cd336b28f5bc17d16ce247aa3a0623
+	// address   : 0x07e542f628f0e48950578aaff3e0c0566b6dccfc7cc248d9941308b47e934e6a
 }
