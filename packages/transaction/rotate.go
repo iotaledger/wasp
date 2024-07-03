@@ -50,7 +50,10 @@ func NewRotateChainStateControllerTx(
 			if !ok {
 				return nil, errors.New("unexpected error trying to get StateControllerAddressUnlockCondition")
 			}
-			c.Address = newStateController.AsIotagoAddress()
+
+			panic("refactor me: AsIotagoAddress")
+			// c.Address = newStateController.AsIotagoAddress()
+
 			newChainOutput.Conditions[i] = c.Clone()
 		}
 		i++

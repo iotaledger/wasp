@@ -5,8 +5,6 @@ import (
 	"slices"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
@@ -87,41 +85,6 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 	return toBeAdded, toBeRemoved, txb.nftsMinted
 }
 
-func (txb *AnchorTransactionBuilder) internalNFTOutputFromRequest(nftOutput *iotago.NFTOutput, outputID iotago.OutputID) *nftIncluded {
-	out := nftOutput.Clone().(*iotago.NFTOutput)
-	out.Amount = 0
-	chainAddr := txb.chainAddress()
-	out.NativeTokens = nil
-	out.Conditions = iotago.UnlockConditions{
-		&iotago.AddressUnlockCondition{
-			Address: chainAddr.AsIotagoAddress(),
-		},
-	}
-	out.Features = iotago.Features{
-		&iotago.SenderFeature{
-			Address: chainAddr.AsIotagoAddress(),
-		},
-	}
-
-	if out.NFTID.Empty() {
-		// nft was just minted to the chain
-		out.NFTID = iotago.NFTIDFromOutputID(outputID)
-	}
-
-	// set amount to the min SD
-	out.Amount = parameters.L1().Protocol.RentStructure.MinRent(out)
-
-	ret := &nftIncluded{
-		ID:              out.NFTID,
-		accountingInput: nil,
-		resultingOutput: out,
-		sentOutside:     false,
-	}
-
-	txb.nftsIncluded[out.NFTID] = ret
-	return ret
-}
-
 func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	if txb.outputsAreFull() {
 		panic(vmexceptions.ErrOutputLimitExceeded)
@@ -151,60 +114,4 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 	txb.nftsIncluded[o.NFTID] = toInclude
 
 	return int64(in.Deposit())
-}
-
-func (txb *AnchorTransactionBuilder) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput) {
-	chainAddr := txb.chainAddress()
-	if !issuer.Equals(chainAddr) {
-		// include collection issuer NFT output in the txbuilder
-		/*nftAddr, ok := issuer.(*iotago.NFTAddress)
-		if !ok {*/
-		panic("issuer must be an NFTID or the chain itself")
-		/*}
-		nftID := nftAddr.NFTID()
-		if txb.nftsIncluded[nftID] == nil {
-			if txb.InputsAreFull() {
-				panic(vmexceptions.ErrInputLimitExceeded)
-			}
-			if txb.outputsAreFull() {
-				panic(vmexceptions.ErrOutputLimitExceeded)
-			}
-			o, oID := txb.accountsView.NFTOutput(nftAddr.NFTID())
-			clonedOutput := o.Clone()
-			resultingOutput := clonedOutput.(*iotago.NFTOutput)
-			if o.NFTID.Empty() {
-				resultingOutput.NFTID = nftID
-			}
-			txb.nftsIncluded[nftID] = &nftIncluded{
-				ID:                nftID,
-				accountingInputID: oID,
-				accountingInput:   o,
-				resultingOutput:   resultingOutput,
-				sentOutside:       false,
-			}
-		}*/ // TODO: is it still needed?
-	}
-
-	if txb.outputsAreFull() {
-		panic(vmexceptions.ErrOutputLimitExceeded)
-	}
-
-	nftOutput := &iotago.NFTOutput{
-		NFTID: iotago.NFTID{},
-		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: addr.AsIotagoAddress()},
-		},
-		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: chainAddr.AsIotagoAddress(), // must set the chainID as the sender (so its recognized as an internalUTXO)
-			},
-		},
-		ImmutableFeatures: iotago.Features{
-			&iotago.IssuerFeature{Address: issuer.AsIotagoAddress()},
-			&iotago.MetadataFeature{Data: immutableMetadata},
-		},
-	}
-	nftOutput.Amount = parameters.L1().Protocol.RentStructure.MinRent(nftOutput)
-	txb.nftsMinted = append(txb.nftsMinted, nftOutput)
-	return uint16(len(txb.nftsMinted) - 1), nftOutput
 }
