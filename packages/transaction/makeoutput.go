@@ -86,26 +86,6 @@ func MakeBasicOutput(
 	return out
 }
 
-func NFTOutputFromPostData(
-	senderAddress *cryptolib.Address,
-	senderContract isc.ContractIdentity,
-	par isc.RequestParameters,
-	nft *isc.NFT,
-) *iotago.NFTOutput {
-	basicOutput := BasicOutputFromPostData(senderAddress, senderContract, par)
-	out := NftOutputFromBasicOutput(basicOutput, nft)
-
-	if !par.AdjustToMinimumStorageDeposit {
-		return out
-	}
-	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
-	if out.Deposit() < storageDeposit {
-		// adjust the amount to the minimum required
-		out.Amount = storageDeposit
-	}
-	return out
-}
-
 func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *isc.NFT) *iotago.NFTOutput {
 	return &iotago.NFTOutput{
 		Amount:       o.Amount,

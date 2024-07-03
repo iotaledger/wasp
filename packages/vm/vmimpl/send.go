@@ -27,12 +27,10 @@ func (reqctx *requestContext) doSend(caller isc.ContractIdentity, par isc.Reques
 	if len(par.Assets.NFTs) == 1 {
 		// create NFT output
 		nft := reqctx.vm.getNFTData(reqctx.chainStateWithGasBurn(), par.Assets.NFTs[0])
-		out := transaction.NFTOutputFromPostData(
-			cryptolib.NewAddressFromIotago(reqctx.vm.task.AnchorOutput.AliasID.ToAddress()),
-			caller,
-			par,
-			nft,
-		)
+
+		panic("refactor me: transaction.NFTOutputFromPostData")
+
+		var out *iotago.NFTOutput
 		reqctx.debitNFTFromAccount(reqctx.CurrentContractAccountID(), nft.ID, true)
 		reqctx.sendOutput(out)
 		return
