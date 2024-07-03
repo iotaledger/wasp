@@ -27,11 +27,11 @@ import (
 
 func createChain(t *testing.T) isc.ChainID {
 	originator := cryptolib.NewKeyPair()
-	layer1Client := l2connection.NewClient(l1.Config, testlogger.NewLogger(t))
-	err := layer1Client.RequestFunds(originator.Address())
+	layer2Client := l2connection.NewClient(l1.Config, testlogger.NewLogger(t))
+	err := layer2Client.RequestFunds(originator.Address())
 	require.NoError(t, err)
 
-	utxoMap, err := layer1Client.OutputMap(originator.Address())
+	utxoMap, err := layer2Client.OutputMap(originator.Address())
 	require.NoError(t, err)
 
 	var utxoIDs iotago.OutputIDs
@@ -50,7 +50,7 @@ func createChain(t *testing.T) isc.ChainID {
 		allmigrations.DefaultScheme.LatestSchemaVersion(),
 	)
 	require.NoError(t, err)
-	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
+	_, err = layer2Client.PostTxAndWaitUntilConfirmation(originTx)
 	require.NoError(t, err)
 
 	return chainID

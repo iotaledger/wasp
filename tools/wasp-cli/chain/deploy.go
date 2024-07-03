@@ -80,7 +80,7 @@ func initDeployCmd() *cobra.Command {
 			stateController := doDKG(node, peers, quorum)
 
 			par := apilib.CreateChainParams{
-				Layer1Client:         l1Client,
+				Layer2Client:         l1Client,
 				CommitteeAPIHosts:    config.NodeAPIURLs([]string{node}),
 				N:                    uint16(len(node)),
 				T:                    uint16(quorum),

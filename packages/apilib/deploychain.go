@@ -21,7 +21,7 @@ import (
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer1Client         l2connection.Client
+	Layer2Client         l2connection.Client
 	CommitteeAPIHosts    []string
 	N                    uint16
 	T                    uint16
@@ -47,7 +47,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *
 	fmt.Fprint(textout, par.Prefix)
 
 	chainID, err := CreateChainOrigin(
-		par.Layer1Client,
+		par.Layer2Client,
 		par.OriginatorKeyPair,
 		stateControllerAddr,
 		govControllerAddr,
@@ -77,7 +77,7 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(
-	layer1Client l2connection.Client,
+	layer2Client l2connection.Client,
 	originator cryptolib.Signer,
 	stateController *cryptolib.Address,
 	governanceController *cryptolib.Address,
@@ -86,7 +86,7 @@ func CreateChainOrigin(
 	// originatorAddr := originator.Address()
 	// ----------- request owner address' outputs from the ledger
 	/*
-		utxoMap, err := layer1Client.OutputMap(originatorAddr)
+		utxoMap, err := layer2Client.OutputMap(originatorAddr)
 		if err != nil {
 			return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
 		}
@@ -102,7 +102,7 @@ func CreateChainOrigin(
 	}
 
 	// ------------- post origin transaction and wait for confirmation
-	/*_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
+	/*_, err = layer2Client.PostTxAndWaitUntilConfirmation(originTx)
 	if err != nil {
 		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
 	}*/
