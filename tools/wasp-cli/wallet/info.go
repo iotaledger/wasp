@@ -61,7 +61,7 @@ func initBalanceCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			outs, err := cliclients.L1Client().OutputMap(address)
+			outs, err := cliclients.L2Client().OutputMap(address)
 			log.Check(err)
 
 			balance := isc.AssetsFromOutputMap(outs)

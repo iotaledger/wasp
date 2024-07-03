@@ -36,7 +36,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -51,7 +50,7 @@ type Cluster struct {
 	Started           bool
 	DataPath          string
 	OriginatorKeyPair *cryptolib.KeyPair
-	l1                l1connection.Client
+	l1                l2connection.Client
 	waspCmds          []*waspCmd
 	t                 *testing.T
 	log               *logger.Logger
@@ -80,7 +79,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                l1connection.NewClient(config.L1, log),
+		l1:                l2connection.NewClient(config.L1, log),
 		DataPath:          dataPath,
 	}
 }
@@ -103,7 +102,7 @@ func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() l1connection.Client {
+func (clu *Cluster) L1Client() l2connection.Client {
 	return clu.l1
 }
 

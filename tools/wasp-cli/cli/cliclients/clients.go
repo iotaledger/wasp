@@ -9,7 +9,8 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/l2connection"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -20,7 +21,7 @@ var SkipCheckVersions bool
 
 func WaspClientForHostName(name string) *apiclient.APIClient {
 	apiAddress := config.MustWaspAPIURL(name)
-	L1Client() // this will fill parameters.L1() with data from the L1 node
+	L2Client() // this will fill parameters.L1() with data from the L1 node
 	log.Verbosef("using Wasp host %s\n", apiAddress)
 
 	client, err := apiextensions.WaspAPIClientByHostName(apiAddress)
@@ -52,7 +53,7 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 	}
 }
 
-func L1Client() l1connection.Client {
+func L2Client() l2connection.Client {
 	log.Verbosef("using L1 API %s\n", config.L1APIAddress())
 
 	return iscmove.NewClient(
@@ -64,9 +65,13 @@ func L1Client() l1connection.Client {
 	)
 }
 
+func L1Client() *suiclient.Client {
+	return suiclient.New(suiconn.LocalnetEndpointURL)
+}
+
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
 	return chainclient.New(
-		L1Client(),
+		L2Client(),
 		waspClient,
 		chainID,
 		wallet.Load(),

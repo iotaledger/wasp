@@ -14,7 +14,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
@@ -40,7 +39,7 @@ func TestHornetStartup(t *testing.T) {
 	require.NoError(t, err)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
-	client := l1connection.NewClient(l1.Config, log)
+	client := l2connection.NewClient(l1.Config, log)
 
 	initialOutputCount := mustOutputCount(client, myAddress)
 	//
@@ -56,7 +55,7 @@ func TestHornetStartup(t *testing.T) {
 
 	//
 	// Check if the TX post works.
-	tx, err := l1connection.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
+	tx, err := l2connection.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
 	require.NoError(t, err)
 	_, err = client.PostTxAndWaitUntilConfirmation(tx)
 	require.NoError(t, err)
@@ -69,11 +68,11 @@ func TestHornetStartup(t *testing.T) {
 	}
 }
 
-func mustOutputCount(client l1connection.Client, myAddress *cryptolib.Address) int {
+func mustOutputCount(client l2connection.Client, myAddress *cryptolib.Address) int {
 	return len(mustOutputMap(client, myAddress))
 }
 
-func mustOutputMap(client l1connection.Client, myAddress *cryptolib.Address) map[iotago.OutputID]iotago.Output {
+func mustOutputMap(client l2connection.Client, myAddress *cryptolib.Address) map[iotago.OutputID]iotago.Output {
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(fmt.Errorf("unable to get outputs as a map: %w", err))

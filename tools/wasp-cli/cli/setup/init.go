@@ -29,7 +29,7 @@ func Init(rootCmd *cobra.Command) {
 
 	// The first time parameters.L1() is called, it will be initialized with this function
 	parameters.InitL1Lazy(func() {
-		cliclients.L1Client()
+		cliclients.L2Client()
 
 		if config.L1ParamsExpired() {
 			config.RefreshL1ParamsFromNode()

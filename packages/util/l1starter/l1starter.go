@@ -6,13 +6,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 )
 
 type L1Starter struct {
-	Config             l1connection.Config
+	Config             l2connection.Config
 	privtangleNumNodes int
 	Privtangle         *privtangle.PrivTangle
 }

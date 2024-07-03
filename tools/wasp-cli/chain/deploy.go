@@ -73,7 +73,7 @@ func initDeployCmd() *cobra.Command {
 				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
 			}
 
-			l1Client := cliclients.L1Client()
+			l1Client := cliclients.L2Client()
 
 			govController := controllerAddrDefaultFallback(govControllerStr)
 

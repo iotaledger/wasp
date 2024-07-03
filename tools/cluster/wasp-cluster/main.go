@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/app/configuration"
 	appLogger "github.com/iotaledger/hive.go/app/logger"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -99,7 +98,7 @@ func main() {
 			l1.Config,
 		)
 		clusterLogger := logger.NewLogger(cmdName)
-		l1connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		l2connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
 		err := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger).InitDataPath(*templatesPath, *forceRemove)
 		check(err)
 
@@ -157,7 +156,7 @@ func main() {
 		}
 
 		clusterLogger := logger.NewLogger(cmdName)
-		l1connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		l2connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
 		clu := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger)
 
 		if *disposable {

@@ -31,7 +31,7 @@ func initSendFundsCmd() *cobra.Command {
 
 			myWallet := wallet.Load()
 			senderAddress := myWallet.Address()
-			client := cliclients.L1Client()
+			client := cliclients.L2Client()
 
 			outputSet, err := client.OutputMap(senderAddress)
 			log.Check(err)

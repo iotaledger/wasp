@@ -84,7 +84,7 @@ func initRotateWithDKGCmd() *cobra.Command {
 }
 
 func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
-	l1Client := cliclients.L1Client()
+	l1Client := cliclients.L2Client()
 
 	myWallet := wallet.Load()
 	aliasID := config.GetChain(chain).AsAliasID()
@@ -152,7 +152,7 @@ func initChangeGovControllerCmd() *cobra.Command {
 			_, newGovController, err := iotago.ParseBech32(args[0])
 			log.Check(err)
 
-			client := cliclients.L1Client()
+			client := cliclients.L2Client()
 			myWallet := wallet.Load()
 			outputSet, err := client.OutputMap(myWallet.Address())
 			log.Check(err)
