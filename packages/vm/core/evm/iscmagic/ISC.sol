@@ -26,14 +26,22 @@ library ISC {
 
     ERC20BaseTokens constant baseTokens = __erc20BaseTokens;
 
-    // Get the ERC20NativeTokens contract for the given foundry serial number
+    /**
+     * @notice Get the ERC20NativeTokens contract for the given foundry serial number
+     * @param foundrySN The serial number of the foundry
+     * @return The ERC20NativeTokens contract corresponding to the given foundry serial number
+     */
     function nativeTokens(uint32 foundrySN) internal view returns (ERC20NativeTokens) {
         return ERC20NativeTokens(sandbox.erc20NativeTokensAddress(foundrySN));
     }
 
     ERC721NFTs constant nfts = __erc721NFTs;
 
-    // Get the ERC721NFTCollection contract for the given collection
+    /**
+     * @notice Get the ERC721NFTCollection contract for the given collection
+     * @param collectionID The ID of the NFT collection
+     * @return The ERC721NFTCollection contract corresponding to the given collection ID
+     */
     function erc721NFTCollection(NFTID collectionID) internal view returns (ERC721NFTCollection) {
         return ERC721NFTCollection(sandbox.erc721NFTCollectionAddress(collectionID));
     }
