@@ -12,7 +12,6 @@ import "./ISCTypes.sol";
  */
 interface ISCPrivileged {
     /**
-     * @notice Move assets between accounts
      * @dev This function allows privileged contracts to move assets between accounts.
      * @param sender The address of the sender account
      * @param receiver The address of the receiver account
@@ -25,7 +24,6 @@ interface ISCPrivileged {
     ) external;
 
     /**
-     * @notice Set allowance of base tokens
      * @dev This function allows privileged contracts to set the allowance of base tokens from one account to another.
      * @param from The address of the account from which tokens are allowed
      * @param to The address of the account to which tokens are allowed
@@ -38,7 +36,6 @@ interface ISCPrivileged {
     ) external;
 
     /**
-     * @notice Set allowance of native tokens
      * @dev This function allows privileged contracts to set the allowance of native tokens from one account to another.
      * @param from The address of the account from which tokens are allowed
      * @param to The address of the account to which tokens are allowed
@@ -53,7 +50,6 @@ interface ISCPrivileged {
     ) external;
 
     /**
-     * @notice Move allowed funds between accounts
      * @dev This function allows privileged contracts to move allowed funds from one account to another.
      * @param from The address of the account from which funds are allowed
      * @param to The address of the account to which funds are allowed
