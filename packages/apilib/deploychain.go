@@ -21,7 +21,7 @@ import (
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer2Client         clients.L2Client
+	Layer1Client         clients.L1Client
 	CommitteeAPIHosts    []string
 	N                    uint16
 	T                    uint16
@@ -47,7 +47,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *
 	fmt.Fprint(textout, par.Prefix)
 
 	chainID, err := CreateChainOrigin(
-		par.Layer2Client,
+		par.Layer1Client,
 		par.OriginatorKeyPair,
 		stateControllerAddr,
 		govControllerAddr,
@@ -77,7 +77,7 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(
-	layer2Client clients.L2Client,
+	layer1Client clients.L1Client,
 	originator cryptolib.Signer,
 	stateController *cryptolib.Address,
 	governanceController *cryptolib.Address,

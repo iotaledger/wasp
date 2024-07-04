@@ -19,7 +19,7 @@ import (
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	Layer2Client clients.L2Client
+	Layer1Client clients.L1Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
 	KeyPair      cryptolib.Signer
@@ -27,13 +27,13 @@ type Client struct {
 
 // New creates a new chainclient.Client
 func New(
-	layer2Client clients.L2Client,
+	layer1Client clients.L1Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
 	keyPair cryptolib.Signer,
 ) *Client {
 	return &Client{
-		Layer2Client: layer2Client,
+		Layer1Client: layer1Client,
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		KeyPair:      keyPair,

@@ -248,14 +248,15 @@ func waitForL1ToBeSynced(ctx context.Context, log *logger.Logger, nodeBridge *no
 }
 
 func (nc *nodeConnection) setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
-	nc.l1Params = &parameters.L1Params{
+	panic("refactor me: L1Params")
+	/*nc.l1Params = &parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be,
 		// so it is just derived from 32KB - Block fields without payload = max size of the payload
 		MaxPayloadSize: parameters.MaxPayloadSize,
 		Protocol:       protocolParameters,
 		BaseToken:      (*parameters.BaseToken)(baseToken),
 	}
-	parameters.InitL1(nc.l1Params)
+	parameters.InitL1(nc.l1Params)*/
 }
 
 func (nc *nodeConnection) Run(ctx context.Context) error {

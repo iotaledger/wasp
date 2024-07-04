@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // L1Params describes parameters coming from the L1Params node
@@ -17,13 +18,16 @@ type L1Params struct {
 	BaseToken      *BaseToken                 `json:"baseToken" swagger:"required"`
 }
 
+const CoinTypeBaseToken suijsonrpc.CoinType = "0x2::sui::SUI"
+
 type BaseToken struct {
-	Name            string `json:"name" swagger:"desc(The base token name),required"`
-	TickerSymbol    string `json:"tickerSymbol" swagger:"desc(The ticker symbol),required"`
-	Unit            string `json:"unit" swagger:"desc(The token unit),required"`
-	Subunit         string `json:"subunit" swagger:"desc(The token subunit),required"`
-	Decimals        uint32 `json:"decimals" swagger:"desc(The token decimals),required"`
-	UseMetricPrefix bool   `json:"useMetricPrefix" swagger:"desc(Whether or not the token uses a metric prefix),required"`
+	Name            string              `json:"name" swagger:"desc(The base token name),required"`
+	TickerSymbol    string              `json:"tickerSymbol" swagger:"desc(The ticker symbol),required"`
+	Unit            string              `json:"unit" swagger:"desc(The token unit),required"`
+	Subunit         string              `json:"subunit" swagger:"desc(The token subunit),required"`
+	Decimals        uint32              `json:"decimals" swagger:"desc(The token decimals),required"`
+	UseMetricPrefix bool                `json:"useMetricPrefix" swagger:"desc(Whether or not the token uses a metric prefix),required"`
+	CoinType        suijsonrpc.CoinType `json:"coinType"`
 }
 
 // NetworkPrefix denotes the different network prefixes.
@@ -32,9 +36,6 @@ type NetworkPrefix string
 // Network prefixes.
 const (
 	PrefixMainnet NetworkPrefix = "iota"
-	PrefixDevnet  NetworkPrefix = "atoi"
-	PrefixShimmer NetworkPrefix = "smr"
-	PrefixTestnet NetworkPrefix = "rms"
 )
 
 const Bech32Hrp = PrefixMainnet
@@ -48,6 +49,7 @@ var Token = &BaseToken{
 	Subunit:         "IOTA",
 	Decimals:        6,
 	UseMetricPrefix: false,
+	CoinType:        CoinTypeBaseToken,
 }
 
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax

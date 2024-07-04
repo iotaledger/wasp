@@ -69,7 +69,7 @@ func L1Client() clients.L1Client {
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
 	return chainclient.New(
-		L2Client(),
+		L1Client(),
 		waspClient,
 		chainID,
 		wallet.Load(),
