@@ -187,7 +187,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 	w.MustRun("send-funds", "-s", alternativeAddress, "base:10000000")
 
-	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.L1().BaseToken.Decimals)
+	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.Decimals)
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
@@ -730,7 +730,7 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 }
 
 func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *types.Transaction {
-	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
 	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
 	tx, err := types.SignTx(
 		types.NewTransaction(0, common.Address{}, big.NewInt(123), 100000, gasPrice, []byte{}),

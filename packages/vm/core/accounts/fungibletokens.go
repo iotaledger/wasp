@@ -29,7 +29,7 @@ func (s *StateWriter) creditToAccount(accountKey kv.Key, assets *isc.Assets) {
 	}
 
 	if assets.BaseTokens > 0 {
-		incomingTokensFullDecimals := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
+		incomingTokensFullDecimals := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.Decimals)
 		s.creditToAccountFullDecimals(accountKey, incomingTokensFullDecimals)
 	}
 	for _, nt := range assets.NativeTokens {
@@ -87,7 +87,7 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, assets *isc.Assets) bo
 	// first check, then mutate
 	mutateBaseTokens := false
 
-	baseTokensToDebit := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.L1().BaseToken.Decimals)
+	baseTokensToDebit := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.Decimals)
 	var baseTokensToSet *big.Int
 	if assets.BaseTokens > 0 {
 		balance := s.getBaseTokensFullDecimals(accountKey)

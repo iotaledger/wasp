@@ -26,6 +26,20 @@ type BaseToken struct {
 	UseMetricPrefix bool   `json:"useMetricPrefix" swagger:"desc(Whether or not the token uses a metric prefix),required"`
 }
 
+// NetworkPrefix denotes the different network prefixes.
+type NetworkPrefix string
+
+// Network prefixes.
+const (
+	PrefixMainnet NetworkPrefix = "iota"
+	PrefixDevnet  NetworkPrefix = "atoi"
+	PrefixShimmer NetworkPrefix = "smr"
+	PrefixTestnet NetworkPrefix = "rms"
+)
+
+const Bech32Hrp = PrefixMainnet
+const Decimals = 6
+
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
 	serializer.OneByte - // ProtocolVersion
 	serializer.OneByte - // ParentCount

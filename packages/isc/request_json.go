@@ -37,7 +37,7 @@ func RequestToJSONObject(request Request) RequestJSON {
 		Params:        msg.Params.JSONDict(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
-		TargetAddress: request.TargetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+		TargetAddress: request.TargetAddress().Bech32(parameters.Bech32Hrp),
 	}
 }
 

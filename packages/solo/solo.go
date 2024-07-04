@@ -354,9 +354,9 @@ func (env *Solo) deployChain(
 	env.AssertL1BaseTokens(originatorAddr, initialL1Balance-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
+		name, chainID.String(), stateControllerAddr.Bech32(parameters.Bech32Hrp))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.Bech32Hrp))
+	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.Bech32Hrp))
 
 	db, writeMutex, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)

@@ -78,7 +78,7 @@ func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
 	encodedAddresses := make([]string, len(addresses))
 
 	for k, v := range addresses {
-		encodedAddresses[k] = v.Bech32(parameters.L1().Protocol.Bech32HRP)
+		encodedAddresses[k] = v.Bech32(parameters.Bech32Hrp)
 	}
 
 	addressesResponse := models.GovAllowedStateControllerAddressesResponse{

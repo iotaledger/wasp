@@ -174,7 +174,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	env.printAccounts("withdraw before")
 
 	// withdraw back 500 base tokens to originator address
-	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(parameters.L1().Protocol.Bech32HRP))
+	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(parameters.Bech32Hrp))
 	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens
 	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	allowanceBaseTokens := uint64(800_000)

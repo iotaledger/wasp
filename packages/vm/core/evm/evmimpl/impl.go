@@ -426,7 +426,7 @@ func newL1Deposit(ctx isc.Sandbox, r evm.NewL1DepositRequest) dict.Dict {
 	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 	chainInfo := ctx.ChainInfo()
-	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 	tx := types.NewTx(
 		&types.LegacyTx{
 			Nonce:    nonce,

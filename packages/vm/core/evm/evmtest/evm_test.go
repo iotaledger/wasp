@@ -658,7 +658,7 @@ func TestSendNonPayableValueTX(t *testing.T) {
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress))
 
 	// call any function including some value
-	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
+	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.Decimals)
 
 	sandbox := env.ISCMagicSandbox(ethKey)
 
@@ -687,7 +687,7 @@ func TestSendPayableValueTX(t *testing.T) {
 	require.Zero(t, env.solo.L1BaseTokens(receiver))
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress))
 
-	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
+	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.Decimals)
 
 	res, err := env.ISCMagicSandbox(ethKey).CallFn(
 		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
@@ -703,7 +703,7 @@ func TestSendPayableValueTX(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	decimals := parameters.L1().BaseToken.Decimals
+	decimals := parameters.Decimals
 	valueInBaseTokens, bigRemainder := util.EthereumDecimalsToBaseTokenDecimals(
 		value,
 		decimals,
@@ -1249,7 +1249,7 @@ func TestERC20BaseTokens(t *testing.T) {
 	{
 		var dec uint8
 		require.NoError(t, erc20.callView("decimals", nil, &dec))
-		require.EqualValues(t, parameters.L1().BaseToken.Decimals, dec)
+		require.EqualValues(t, parameters.Decimals, dec)
 	}
 	{
 		var supply *big.Int
@@ -2480,7 +2480,7 @@ func TestL1DepositEVM(t *testing.T) {
 	require.NoError(t, rr.Err)
 
 	require.EqualValues(t,
-		util.MustEthereumDecimalsToBaseTokenDecimalsExact(bal, parameters.L1().BaseToken.Decimals),
+		util.MustEthereumDecimalsToBaseTokenDecimalsExact(bal, parameters.Decimals),
 		assets.BaseTokens)
 
 	evmRec := env.Chain.EVM().TransactionReceipt(tx.Hash())
@@ -2518,7 +2518,7 @@ func TestDecimalsConversion(t *testing.T) {
 	lessThanOneGlow := new(big.Int).SetUint64(999999999999)
 	valueInBaseTokens, remainder := util.EthereumDecimalsToBaseTokenDecimals(
 		lessThanOneGlow,
-		parameters.L1().BaseToken.Decimals,
+		parameters.Decimals,
 	)
 	t.Log(valueInBaseTokens)
 	require.Zero(t, valueInBaseTokens)

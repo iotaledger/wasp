@@ -9,7 +9,7 @@ import (
 )
 
 func CheckGasPrice(gasPrice *big.Int, gasFeePolicy *gas.FeePolicy) error {
-	minimumGasPrice := gasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	minimumGasPrice := gasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 	if gasPrice.Cmp(minimumGasPrice) < 0 {
 		return fmt.Errorf(
 			"insufficient gas price: got %s, minimum is %s",

@@ -133,7 +133,7 @@ func AgentIDFromString(s string) (AgentID, error) {
 		}
 		return contractAgentIDFromString(contractPart, addrPart)
 	}
-	if strings.HasPrefix(addrPart, string(parameters.L1().Protocol.Bech32HRP)) {
+	if strings.HasPrefix(addrPart, string(parameters.Bech32Hrp)) {
 		return addressAgentIDFromString(s)
 	}
 	return nil, errors.New("invalid AgentID string")

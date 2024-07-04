@@ -14,6 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/onchangemap"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -110,7 +111,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 }
 
 func (p *DKSharesRegistry) getDKShareFilePath(dkShare tcrypto.DKShare) string {
-	sharedAddressBech32 := dkShare.GetAddress().Bech32(p.networkPrefix)
+	sharedAddressBech32 := dkShare.GetAddress().Bech32(parameters.NetworkPrefix(p.networkPrefix))
 
 	return path.Join(p.folderPath, fmt.Sprintf("%s.json", sharedAddressBech32))
 }

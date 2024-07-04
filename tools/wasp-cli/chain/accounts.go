@@ -149,7 +149,7 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) uint64 {
 	log.Check(err)
 
 	// assumes deposit fee == minGasPerRequest fee
-	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest, nil, parameters.L1().BaseToken.Decimals)
+	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest, nil, parameters.Decimals)
 }
 
 func initDepositCmd() *cobra.Command {

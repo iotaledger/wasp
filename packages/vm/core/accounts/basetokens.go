@@ -19,7 +19,7 @@ func (s *StateReader) getBaseTokens(accountKey kv.Key) (tokens uint64, remainder
 	default:
 		amount := s.getBaseTokensFullDecimals(accountKey)
 		// convert from 18 decimals, discard the remainder
-		return util.EthereumDecimalsToBaseTokenDecimals(amount, parameters.L1().BaseToken.Decimals)
+		return util.EthereumDecimalsToBaseTokenDecimals(amount, parameters.Decimals)
 	}
 }
 
@@ -40,7 +40,7 @@ func (s *StateWriter) setBaseTokens(accountKey kv.Key, amount uint64) {
 	case 0:
 		s.state.Set(BaseTokensKey(accountKey), codec.Uint64.Encode(amount))
 	default:
-		fullDecimals := util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.L1().BaseToken.Decimals)
+		fullDecimals := util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.Decimals)
 		s.setBaseTokensFullDecimals(accountKey, fullDecimals)
 	}
 }

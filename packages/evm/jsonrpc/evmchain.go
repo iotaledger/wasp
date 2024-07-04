@@ -200,7 +200,7 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, tx *typ
 	gasLimits := e.gasLimits()
 
 	iscGasBudgetAffordable := min(
-		gasFeePolicy.GasBudgetFromTokens(balance.Uint64(), tx.GasPrice(), parameters.L1().BaseToken.Decimals),
+		gasFeePolicy.GasBudgetFromTokens(balance.Uint64(), tx.GasPrice(), parameters.Decimals),
 		gasLimits.MaxGasPerRequest,
 	)
 
@@ -214,7 +214,7 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, tx *typ
 		return fmt.Errorf(
 			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %v, expected: %d",
 			balance.String(),
-			gasFeePolicy.FeeFromGas(iscGasBudgetTx, tx.GasPrice(), parameters.L1().BaseToken.Decimals),
+			gasFeePolicy.FeeFromGas(iscGasBudgetTx, tx.GasPrice(), parameters.Decimals),
 		)
 	}
 	return nil
@@ -468,7 +468,7 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 
 func (e *EVMChain) GasPrice() *big.Int {
 	e.log.Debugf("GasPrice()")
-	return e.GasFeePolicy().DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	return e.GasFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (common.Hash, error) {
