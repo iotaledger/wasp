@@ -1,5 +1,5 @@
 // to be used by utilities like: cluster-tool, wasp-cli, apilib, etc
-package l2connection
+package clients
 
 import (
 	"context"
@@ -10,18 +10,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-type Config struct {
-	APIAddress    string
-	INXAddress    string
-	FaucetAddress string
-	FaucetKey     *cryptolib.KeyPair
-	UseRemotePoW  bool
-}
-
-type Client interface {
-	RequestFunds(ctx context.Context, address cryptolib.Address) error
-	Health(ctx context.Context) error
-
+type L2Client interface {
 	StartNewChain(
 		ctx context.Context,
 		signer cryptolib.Signer,
@@ -34,4 +23,8 @@ type Client interface {
 	) (*iscmove.Anchor, error)
 }
 
-var _ Client = &iscmove.Client{}
+var _ L2Client = &iscmove.Client{}
+
+func NewL2Client(config iscmove.Config) L2Client {
+	return iscmove.NewClient(config)
+}

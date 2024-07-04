@@ -12,16 +12,13 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Config struct {
-	APIURL       string
-	FaucetURL    string
-	GraphURL     string
-	WebsocketURL string
+	APIURL   string
+	GraphURL string
 }
 
 type Client struct {
@@ -37,28 +34,6 @@ func NewClient(config Config) *Client {
 		NewGraph(config.GraphURL),
 		config,
 	}
-}
-
-func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	var faucetURL string = c.config.FaucetURL
-	if faucetURL == "" {
-		switch c.config.APIURL {
-		case suiconn.TestnetEndpointURL:
-			faucetURL = suiconn.TestnetFaucetURL
-		case suiconn.DevnetEndpointURL:
-			faucetURL = suiconn.DevnetFaucetURL
-		case suiconn.LocalnetEndpointURL:
-			faucetURL = suiconn.LocalnetFaucetURL
-		default:
-			panic("unspecified FaucetURL")
-		}
-	}
-	return suiclient.RequestFundsFromFaucet(address.AsSuiAddress(), faucetURL)
-}
-
-func (c *Client) Health(ctx context.Context) error {
-	_, err := c.GetLatestSuiSystemState(ctx)
-	return err
 }
 
 // StartNewChain calls <packageID>::anchor::start_new_chain(), and then transfers the created
