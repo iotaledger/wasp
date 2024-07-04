@@ -293,17 +293,21 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	}()
 
 	checkTransactionIncludedAndSetConfirmed := func(pendingTx *pendingTransaction) bool {
-		ctxWithTimeout, ctxCancel := context.WithTimeout(nodeConn.ctx, inxTimeoutBlockMetadata)
-		defer ctxCancel()
+		panic("refactor me: parameters.L1()")
+		/*
+				ctxWithTimeout, ctxCancel := context.WithTimeout(nodeConn.ctx, inxTimeoutBlockMetadata)
+				defer ctxCancel()
 
-		// check if the transaction was already included (race condition with other validators)
-		if _, err := ncc.nodeConn.nodeClient.TransactionIncludedBlock(ctxWithTimeout, pendingTx.ID(), parameters.L1().Protocol); err == nil {
-			// transaction was already included
-			pendingTx.SetConfirmed()
-			return true
-		}
+				// check if the transaction was already included (race condition with other validators)
+				if _, err := ncc.nodeConn.nodeClient.TransactionIncludedBlock(ctxWithTimeout, pendingTx.ID(), parameters.L1().Protocol); err == nil {
+					// transaction was already included
+					pendingTx.SetConfirmed()
+					return true
+				}
 
-		return false
+			return false
+		
+		*/
 	}
 
 	checkIsPending := func(pendingTx *pendingTransaction) bool {

@@ -1,7 +1,6 @@
 package origin
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,9 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -85,9 +82,13 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 			return nil, fmt.Errorf("invalid parameters on origin AO, %w", err)
 		}
 	}
-	l1params := parameters.L1()
-	aoMinSD := l1params.Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
-	commonAccountAmount := aliasOutput.GetAliasOutput().Amount - aoMinSD
+
+	panic("refactor me: parameters.L1() / RentStructure")
+	_ = initParams
+	// l1params := parameters.L1()
+	//aoMinSD := l1params.Protocol.RentStructure.MinRent(aliasOutput.GetAliasOutput())
+
+	/* commonAccountAmount := aliasOutput.GetAliasOutput().Amount - aoMinSD
 	originAOStateMetadata, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
 	originBlock := InitChain(originAOStateMetadata.SchemaVersion, chainStore, initParams, commonAccountAmount)
 
@@ -110,5 +111,7 @@ func InitChainByAliasOutput(chainStore state.Store, aliasOutput *isc.AliasOutput
 			string(l1paramsJSON),
 		)
 	}
-	return originBlock, nil
+	return originBlock, nil */
+
+	return nil, nil
 }

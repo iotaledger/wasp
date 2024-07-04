@@ -360,7 +360,11 @@ func (env *Solo) deployChain(
 
 	db, writeMutex, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
-	originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
+
+	panic("refactor me: parameters.L1() / RentStructure")
+	originAOMinSD := uint64(0)
+	//originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
+
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 	origin.InitChain(0, store, initParams, originAO.Amount-originAOMinSD)
 

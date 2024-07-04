@@ -24,7 +24,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	err = suiclient.RequestFundsFromFaucet(sender.Address(), suiconn.TestnetFaucetURL)
+	err = suiclient.RequestFundsFromFaucet(context.Background(), sender.Address(), suiconn.TestnetFaucetURL)
 	if err != nil {
 		log.Panic(err)
 	}

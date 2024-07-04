@@ -39,6 +39,16 @@ const (
 
 const Bech32Hrp = PrefixMainnet
 const Decimals = 6
+const NetworkName = "testnet"
+
+var Token = &BaseToken{
+	Name:            "Iota",
+	TickerSymbol:    "MIOTA",
+	Unit:            "MIOTA",
+	Subunit:         "IOTA",
+	Decimals:        6,
+	UseMetricPrefix: false,
+}
 
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
 	serializer.OneByte - // ProtocolVersion

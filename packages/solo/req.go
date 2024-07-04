@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -362,18 +361,21 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.Signer)
 // needed to add to the request (if any) in order to cover for the storage
 // deposit.
 func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair cryptolib.Signer) uint64 {
-	out := transaction.MakeRequestTransactionOutput(ch.requestTransactionParams(req, keyPair))
-	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
+	panic("refactor me: parameters.L1() / RentStructure")
+	/*
+		out := transaction.MakeRequestTransactionOutput(ch.requestTransactionParams(req, keyPair))
 
-	reqDeposit := uint64(0)
-	if req.ftokens != nil {
-		reqDeposit = req.ftokens.BaseTokens
-	}
+		storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
 
-	if reqDeposit >= storageDeposit {
-		return 0
-	}
-	return storageDeposit - reqDeposit
+		reqDeposit := uint64(0)
+		if req.ftokens != nil {
+			reqDeposit = req.ftokens.BaseTokens
+		}
+
+		if reqDeposit >= storageDeposit {
+			return 0
+		}
+		return storageDeposit - reqDeposit*/
 }
 
 func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {

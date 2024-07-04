@@ -2,6 +2,7 @@ package suiclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,9 +15,9 @@ import (
 
 // refer the implementation of `request_tokens_from_faucet()` in
 // https://github.com/MystenLabs/sui/blob/main/crates/sui-sdk/examples/utils.rs#L91
-func RequestFundsFromFaucet(address *sui.Address, faucetUrl string) error {
+func RequestFundsFromFaucet(ctx context.Context, address *sui.Address, faucetUrl string) error {
 	paramJson := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
-	request, err := http.NewRequest(http.MethodPost, faucetUrl, bytes.NewBuffer([]byte(paramJson)))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, faucetUrl, bytes.NewBuffer([]byte(paramJson)))
 	if err != nil {
 		return err
 	}

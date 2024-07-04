@@ -1,6 +1,8 @@
 package suiclient
 
 import (
+	"context"
+
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
@@ -36,7 +38,7 @@ func (i *Client) WithSignerAndFund(seed []byte, index int) (*Client, suisigner.S
 	default:
 		panic("not supported network")
 	}
-	err := RequestFundsFromFaucet(signer.Address(), faucetURL)
+	err := RequestFundsFromFaucet(context.Background(), signer.Address(), faucetURL)
 	if err != nil {
 		panic(err)
 	}

@@ -127,7 +127,7 @@ func (b *jsonRPCSoloBackend) TakeSnapshot() (int, error) {
 
 func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	return jsonrpc.NewEVMChain(
-		newJSONRPCSoloBackend(ch, parameters.L1().BaseToken),
+		newJSONRPCSoloBackend(ch, parameters.Token),
 		ch.Env.publisher,
 		true,
 		hivedb.EngineMapDB,
