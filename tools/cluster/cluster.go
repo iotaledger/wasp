@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -834,7 +833,7 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsSuiAddress())
 	if err != nil {
-		log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.Bech32(parameters.Bech32Hrp))
+		clu.log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.Bech32(parameters.Bech32Hrp))
 		return nil
 	}
 

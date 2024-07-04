@@ -18,8 +18,6 @@ type L1Params struct {
 	BaseToken      *BaseToken                 `json:"baseToken" swagger:"required"`
 }
 
-const CoinTypeBaseToken suijsonrpc.CoinType = "0x2::sui::SUI"
-
 type BaseToken struct {
 	Name            string              `json:"name" swagger:"desc(The base token name),required"`
 	TickerSymbol    string              `json:"tickerSymbol" swagger:"desc(The ticker symbol),required"`
@@ -49,7 +47,7 @@ var Token = &BaseToken{
 	Subunit:         "IOTA",
 	Decimals:        6,
 	UseMetricPrefix: false,
-	CoinType:        CoinTypeBaseToken,
+	CoinType:        suijsonrpc.SuiCoinType,
 }
 
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
