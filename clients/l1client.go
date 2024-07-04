@@ -16,42 +16,6 @@ type L1Config struct {
 	APIURL    string
 }
 
-type L1ClientExt struct {
-	*suiclient.Client
-
-	Config L1Config
-}
-
-func (c *L1ClientExt) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	var faucetURL string = c.Config.FaucetURL
-	if faucetURL == "" {
-		switch c.Config.APIURL {
-		case suiconn.TestnetEndpointURL:
-			faucetURL = suiconn.TestnetFaucetURL
-		case suiconn.DevnetEndpointURL:
-			faucetURL = suiconn.DevnetFaucetURL
-		case suiconn.LocalnetEndpointURL:
-			faucetURL = suiconn.LocalnetFaucetURL
-		default:
-			panic("unspecified FaucetURL")
-		}
-	}
-
-	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
-}
-
-func (c *L1ClientExt) Health(ctx context.Context) error {
-	_, err := c.Client.GetLatestSuiSystemState(ctx)
-	return err
-}
-
-func NewL1Client(l1Config L1Config) L1Client {
-	return &L1ClientExt{
-		suiclient.New(l1Config.APIURL),
-		l1Config,
-	}
-}
-
 type L1Client interface {
 	GetDynamicFieldObject(
 		ctx context.Context,
@@ -233,4 +197,43 @@ type L1Client interface {
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	WithWebsocket(url string)
+}
+
+var _ L1Client = &L1ClientExt{}
+
+type L1ClientExt struct {
+	*suiclient.Client
+
+	Config L1Config
+}
+
+func (c *L1ClientExt) RequestFunds(ctx context.Context, address cryptolib.Address) error {
+	faucetURL := c.Config.FaucetURL
+
+	if faucetURL == "" {
+		switch c.Config.APIURL {
+		case suiconn.TestnetEndpointURL:
+			faucetURL = suiconn.TestnetFaucetURL
+		case suiconn.DevnetEndpointURL:
+			faucetURL = suiconn.DevnetFaucetURL
+		case suiconn.LocalnetEndpointURL:
+			faucetURL = suiconn.LocalnetFaucetURL
+		default:
+			panic("unspecified FaucetURL")
+		}
+	}
+
+	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
+}
+
+func (c *L1ClientExt) Health(ctx context.Context) error {
+	_, err := c.Client.GetLatestSuiSystemState(ctx)
+	return err
+}
+
+func NewL1Client(l1Config L1Config) L1Client {
+	return &L1ClientExt{
+		suiclient.New(l1Config.APIURL),
+		l1Config,
+	}
 }
