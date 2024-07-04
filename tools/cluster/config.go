@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -33,7 +34,7 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 
 type ClusterConfig struct {
 	Wasp []templates.WaspConfigParams
-	L1   l2connection.Config
+	L1   clients.L1Config
 }
 
 func DefaultWaspConfig() WaspConfig {
@@ -50,13 +51,12 @@ func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
 }
 
-func NewConfig(waspConfig WaspConfig, l1Config l2connection.Config, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
+func NewConfig(waspConfig WaspConfig, l1Config clients.L1Config, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
 	nodesConfigs := make([]templates.WaspConfigParams, waspConfig.NumNodes)
 	for i := 0; i < waspConfig.NumNodes; i++ {
 		// generate template from waspconfigs
 		nodesConfigs[i] = waspConfig.WaspConfigTemplateParams(i)
 		// set L1 part of the template
-		nodesConfigs[i].L1INXAddress = l1Config.INXAddress
 		// modify the template if needed
 		if len(modifyConfig) > 0 && modifyConfig[0] != nil {
 			nodesConfigs[i] = modifyConfig[0](i, nodesConfigs[i])
@@ -161,7 +161,7 @@ func (c *ClusterConfig) PeeringPort(nodeIndex int) int {
 }
 
 func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
-	return c.L1.APIAddress
+	return c.L1.APIURL
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {

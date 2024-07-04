@@ -388,7 +388,7 @@ func TestSendReceiveRequest(t *testing.T) {
 
 func newSignerWithFunds(t *testing.T, seed string) cryptolib.Signer {
 	kp := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(sui.MustAddressFromHex(seed)[:], 0))
-	err := suiclient.RequestFundsFromFaucet(kp.Address().AsSuiAddress(), suiconn.LocalnetFaucetURL)
+	err := suiclient.RequestFundsFromFaucet(context.Background(), kp.Address().AsSuiAddress(), suiconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 	return kp
 }

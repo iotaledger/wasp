@@ -25,6 +25,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
@@ -37,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
@@ -50,7 +52,7 @@ type Cluster struct {
 	Started           bool
 	DataPath          string
 	OriginatorKeyPair *cryptolib.KeyPair
-	l1                l2connection.Client
+	l1                clients.L1Client
 	waspCmds          []*waspCmd
 	t                 *testing.T
 	log               *logger.Logger
@@ -79,7 +81,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                l2connection.NewClient(config.L1, log),
+		l1:                clients.NewL1Client(config.L1),
 		DataPath:          dataPath,
 	}
 }
@@ -99,10 +101,10 @@ func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Addres
 }
 
 func (clu *Cluster) RequestFunds(addr *cryptolib.Address) error {
-	return clu.l1.RequestFunds(addr)
+	return clu.l1.RequestFunds(context.Background(), *addr)
 }
 
-func (clu *Cluster) L1Client() l2connection.Client {
+func (clu *Cluster) L1Client() clients.L1Client {
 	return clu.l1
 }
 
@@ -268,7 +270,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 
 	chainID, err := apilib.DeployChain(
 		apilib.CreateChainParams{
-			Layer2Client:      clu.L1Client(),
+			Layer1Client:      clu.L1Client(),
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 			N:                 uint16(len(committeeNodes)),
 			T:                 quorum,
@@ -826,37 +828,26 @@ func (clu *Cluster) ActiveNodes() []int {
 	return nodes
 }
 
-func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
-	_, err := clu.l1.PostTxAndWaitUntilConfirmation(tx)
-	return err
-}
-
 func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	// get funds controlled by addr
-	outputMap, err := clu.l1.OutputMap(addr)
+
+	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsSuiAddress())
 	if err != nil {
-		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
+		clu.log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.Bech32(parameters.Bech32Hrp))
 		return nil
 	}
+
 	balance := isc.NewEmptyAssets()
-	for _, out := range outputMap {
-		panic("refactor me: transaction.AssetsFromOutput")
-		_ = out
-		//balance.Add(transaction.AssetsFromOutput(out))
+	for _, out := range balances {
+		panic("refactor me: AddressBalances (Fix isc.Assets to use BigInt)")
+
+		if out.CoinType == parameters.Token.CoinType {
+			//	balance.BaseTokens = out.TotalBalance
+		} else {
+			//	balance.NativeTokens = out
+		}
 	}
 
-	// if the address is an alias output, we also need to fetch the output itself and add that balance
-	// if aliasAddr, ok := addr.(*iotago.AliasAddress); ok { // TODO: is it still needed?
-	_, aliasOutput, err := clu.l1.GetAliasOutput(iotago.AliasID(*addr))
-	if err != nil {
-		fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
-		return nil
-	}
-
-	panic("refactor me: transaction.AssetsFromOutput")
-	_ = aliasOutput
-	//balance.Add(transaction.AssetsFromOutput(aliasOutput))
-	//}
 	return balance
 }
 
@@ -869,16 +860,12 @@ func (clu *Cluster) AssertAddressBalances(addr *cryptolib.Address, expected *isc
 	return clu.AddressBalances(addr).Equals(expected)
 }
 
-func (clu *Cluster) GetOutputs(addr *cryptolib.Address) (map[iotago.OutputID]iotago.Output, error) {
-	return clu.l1.OutputMap(addr)
-}
-
 func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Address, issuerKeypair *cryptolib.KeyPair) (iotago.OutputID, *iotago.NFTOutput, error) {
-	outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
+	panic("refactor me: transaction.NewMintNFTsTransaction")
+	/*outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
 	if err != nil {
 		return iotago.OutputID{}, nil, err
 	}
-	panic("refactor me: transaction.NewMintNFTsTransaction")
 	var tx *iotago.Transaction
 	_ = outputsSet
 	err = errors.New("refactor me: MintL1NFT")
@@ -902,6 +889,6 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Addres
 			return oID, oNFT, nil
 		}
 	}
-
+	*/
 	return iotago.OutputID{}, nil, fmt.Errorf("inconsistency: couldn't find newly minted NFT in tx")
 }

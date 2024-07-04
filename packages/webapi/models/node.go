@@ -43,7 +43,7 @@ type L1Params struct {
 }
 
 func MapL1Params(l1 *parameters.L1Params) *L1Params {
-	params := &L1Params{
+	/*params := &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxPayloadSize: l1.MaxPayloadSize,
 		Protocol: ProtocolParameters{
@@ -67,8 +67,8 @@ func MapL1Params(l1 *parameters.L1Params) *L1Params {
 			UseMetricPrefix: l1.BaseToken.UseMetricPrefix,
 		},
 	}
-
-	return params
+	*/
+	return nil
 }
 
 type VersionResponse struct {
