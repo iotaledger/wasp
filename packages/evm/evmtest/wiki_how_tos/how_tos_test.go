@@ -1,4 +1,4 @@
-package wikihowtos_test
+package wiki_how_tos_test
 
 import (
 	_ "embed"

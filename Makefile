@@ -37,6 +37,7 @@ wasm:
 compile-solidity:
 	cd packages/vm/core/evm/iscmagic && go generate
 	cd packages/evm/evmtest && go generate
+	cd packages/evm/evmtest/wiki_how_tos && go generate
 
 build-cli:
 	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -tags ${WASP_CLI_TAGS} -o ../../
