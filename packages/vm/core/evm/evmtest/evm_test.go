@@ -597,7 +597,7 @@ func TestISCNFTMint(t *testing.T) {
 	require.NotEmpty(t, mintID2)
 
 	/// produce a block (so the minted nft gets accounted for)
-	_, err = iscTest.triggerEvent("Hi from EVM!")
+	_, err = iscTest.triggerEvent("Hi from EVM 2 !")
 	require.NoError(t, err)
 	///
 
