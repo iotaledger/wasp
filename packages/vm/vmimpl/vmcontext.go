@@ -34,8 +34,11 @@ type vmContext struct {
 	chainInfo  *isc.ChainInfo
 	blockGas   blockGas
 
+	onBlockCloseCallbacks []blockCloseCallback
+
 	schemaVersion isc.SchemaVersion
 }
+type blockCloseCallback func(requestIndex uint16)
 
 type blockGas struct {
 	burned     uint64
@@ -270,4 +273,8 @@ func (vmctx *vmContext) locateProgram(chainState kv.KVStore, programHash hashing
 		vmtype, binary, err = blob.LocateProgram(s, programHash)
 	})
 	return vmtype, binary, err
+}
+
+func (vmctx *vmContext) onBlockClose(f blockCloseCallback) {
+	vmctx.onBlockCloseCallbacks = append(vmctx.onBlockCloseCallbacks, f)
 }

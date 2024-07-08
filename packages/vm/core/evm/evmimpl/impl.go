@@ -463,15 +463,16 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "unable to parse assets from params")
 	txData := l1DepositOriginatorBytes
 	// create a fake tx so that the operation is visible by the EVM
-	addDummyTxWithTransferEvents(ctx, toAddress, assets, txData)
+	AddDummyTxWithTransferEvents(ctx, toAddress, assets, txData, true)
 	return nil
 }
 
-func addDummyTxWithTransferEvents(
+func AddDummyTxWithTransferEvents(
 	ctx isc.Sandbox,
 	toAddress common.Address,
 	assets *isc.Assets,
 	txData []byte,
+	reuseCurrentTxContext bool,
 ) {
 	zeroAddress := common.Address{}
 	logs := makeTransferEvents(ctx, zeroAddress, toAddress, assets)
@@ -488,7 +489,7 @@ func addDummyTxWithTransferEvents(
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData = append(txData, assets.Bytes()...)
-	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
+	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...) // +1 because "current block = anchor state index +1"
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 
 	tx := types.NewTx(
@@ -509,10 +510,17 @@ func addDummyTxWithTransferEvents(
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
+	if !reuseCurrentTxContext {
+		// called from outside vmrun, just add the tx without a gas value
+		createBlockchainDB(ctx.State(), chainInfo).AddTransaction(tx, receipt)
+		return
+	}
+
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
 		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
-		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
-		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
+		blockchainDB := createBlockchainDB(evmPartition, chainInfo)
+		receipt.CumulativeGasUsed = blockchainDB.GetPendingCumulativeGasUsed() + receipt.GasUsed
+		blockchainDB.AddTransaction(tx, receipt)
 	})
 }
 

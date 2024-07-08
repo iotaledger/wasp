@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -297,4 +298,14 @@ func (e *SoloChainEnv) latestEVMTxs() types.Transactions {
 	block, err := e.Chain.EVM().BlockByNumber(nil)
 	require.NoError(e.t, err)
 	return block.Transactions()
+}
+
+func (e *SoloChainEnv) LastBlockEVMLogs() []*types.Log {
+	blockNumber := e.getBlockNumber()
+	logs, err := e.evmChain.Logs(&ethereum.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(blockNumber),
+		ToBlock:   new(big.Int).SetUint64(blockNumber),
+	}, &jsonrpc.ParametersDefault().Logs)
+	require.NoError(e.t, err)
+	return logs
 }
