@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
@@ -27,7 +28,6 @@ func TestStartNewChain(t *testing.T) {
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
-		nil,
 	)
 	require.NoError(t, err)
 	t.Log("anchor: ", anchor)
@@ -37,6 +37,8 @@ func TestReceiveRequest(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
 	chainSigner := newSignerWithFunds(t, suisigner.TestSeed, 1)
+	suiSigner := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	suiChainSigner := cryptolib.SignerToSuiSigner(chainSigner)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
@@ -51,7 +53,6 @@ func TestReceiveRequest(t *testing.T) {
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
-		nil,
 	)
 	require.NoError(t, err)
 
@@ -66,7 +67,7 @@ func TestReceiveRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	createAndSendRequestRes, err := client.CreateAndSendRequest(
+	createAndSendRequestTxnBytes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -78,10 +79,17 @@ func TestReceiveRequest(t *testing.T) {
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		false,
 	)
 
+	require.NoError(t, err)
+
+	createAndSendRequestRes, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		suiSigner,
+		createAndSendRequestTxnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
 	require.NoError(t, err)
 	require.True(t, createAndSendRequestRes.Effects.Data.IsSuccess())
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo("request", "Request")
@@ -92,7 +100,7 @@ func TestReceiveRequest(t *testing.T) {
 	require.NoError(t, err)
 	anchorRef := resGetObject.Data.Ref()
 
-	res, err := client.ReceiveAndUpdateStateRootRequest(
+	receiveAndUpdateStateRootRequestTxnBytes, err := client.ReceiveAndUpdateStateRootRequest(
 		context.Background(),
 		chainSigner,
 		iscPackageID,
@@ -101,8 +109,16 @@ func TestReceiveRequest(t *testing.T) {
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+
+	receiveAndUpdateStateRootRequestRes, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		suiChainSigner,
+		receiveAndUpdateStateRootRequestTxnBytes,
 		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
-	require.True(t, res.Effects.Data.IsSuccess())
+	require.True(t, receiveAndUpdateStateRootRequestRes.Effects.Data.IsSuccess())
 }

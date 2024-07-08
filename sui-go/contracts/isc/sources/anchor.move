@@ -18,7 +18,6 @@ module isc::anchor {
         id: UID,
         /// Anchor assets.
         assets: Referent<AssetsBag>,
-        /// Anchor assets.
         state_root: vector<u8>,
         state_index: u32,
     }

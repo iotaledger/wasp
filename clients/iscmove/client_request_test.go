@@ -4,9 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/stretchr/testify/require"
@@ -29,7 +28,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
-		nil,
 	)
 	require.NoError(t, err)
 
@@ -44,7 +42,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	res, err := client.CreateAndSendRequest(
+	createAndSendRequestTxnBytes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -56,18 +54,18 @@ func TestCreateAndSendRequest(t *testing.T) {
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true, ShowEvents: true},
 		false,
 	)
 	require.NoError(t, err)
-	require.True(t, res.Effects.Data.IsSuccess())
-
-	_, err = res.GetCreatedObjectInfo("request", "Request")
+	createAndSendRequestRes, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		cryptolib.SignerToSuiSigner(cryptolibSigner),
+		createAndSendRequestTxnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
 	require.NoError(t, err)
-}
+	require.True(t, createAndSendRequestRes.Effects.Data.IsSuccess())
 
-func newLocalnetClient() *iscmove.Client {
-	return iscmove.NewClient(iscmove.Config{
-		APIURL: suiconn.LocalnetEndpointURL,
-	})
+	_, err = createAndSendRequestRes.GetCreatedObjectInfo("request", "Request")
+	require.NoError(t, err)
 }

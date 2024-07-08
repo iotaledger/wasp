@@ -4,18 +4,15 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/kr/pretty"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove/mock_contract"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -60,19 +57,6 @@ func setupAndDeploy(t *testing.T) testSetup {
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	createdCap, _ := lo.Find(
-		txnResponse.ObjectChanges, func(item serialization.TagJson[suijsonrpc.ObjectChange]) bool {
-			if item.Data.Created != nil && strings.Contains(item.Data.Created.ObjectType, "TreasuryCap") {
-				return true
-			}
-
-			return false
-		},
-	)
-
-	capObj, err := client.GetObject(context.Background(), suiclient.GetObjectRequest{
-		ObjectID: &createdCap.Data.Created.ObjectID,
-	})
 	require.NoError(t, err)
 	startNewChainRes, err := client.StartNewChain(
 		context.Background(),
@@ -85,7 +69,6 @@ func setupAndDeploy(t *testing.T) testSetup {
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
-		capObj,
 	)
 	require.NoError(t, err)
 	t.Logf("StartNewChain response: %#v\n", startNewChainRes)

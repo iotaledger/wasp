@@ -89,8 +89,8 @@ func (c *Client) AssetsBagPlaceCoin(
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	devMode bool,
+) ([]byte, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -133,13 +133,7 @@ func (c *Client) AssetsBagPlaceCoin(
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-
-	return txnResponse, nil
+	return txnBytes, nil
 }
 
 func (c *Client) AssetsDestroyEmpty(
@@ -150,8 +144,8 @@ func (c *Client) AssetsDestroyEmpty(
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	devMode bool,
+) ([]byte, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -189,14 +183,5 @@ func (c *Client) AssetsDestroyEmpty(
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
-	}
-
-	return txnResponse, nil
+	return txnBytes, nil
 }

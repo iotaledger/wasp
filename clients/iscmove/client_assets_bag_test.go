@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
@@ -31,7 +32,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, assetsBagRef)
 
-	res, err := client.AssetsDestroyEmpty(
+	assetsDestroyEmptyTxnBytes, err := client.AssetsDestroyEmpty(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -39,13 +40,18 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+		false,
 	)
 	require.NoError(t, err)
-	_, err = res.GetCreatedObjectInfo("assets_bag", "AssetsBag")
+	assetsDestroyEmptyRes, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		cryptolib.SignerToSuiSigner(cryptolibSigner),
+		assetsDestroyEmptyTxnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
+	require.NoError(t, err)
+	require.True(t, assetsDestroyEmptyRes.Effects.Data.IsSuccess())
+	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo("assets_bag", "AssetsBag")
 	require.Error(t, err, "not found")
 }
 
@@ -80,7 +86,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	assetsBagAddItemsRes, err := client.AssetsBagPlaceCoin(
+	assetsBagAddItemsTxnBytes, err := client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -90,10 +96,14 @@ func TestAssetsBagAddItems(t *testing.T) {
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+		false,
+	)
+	require.NoError(t, err)
+	assetsBagAddItemsRes, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		cryptolib.SignerToSuiSigner(cryptolibSigner),
+		assetsBagAddItemsTxnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, assetsBagAddItemsRes.Effects.Data.IsSuccess())

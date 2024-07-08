@@ -20,22 +20,10 @@ func (c *Client) StartNewChain(
 	gasPrice uint64,
 	gasBudget uint64,
 	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	treasuryCap *suijsonrpc.SuiObjectResponse,
 ) (*Anchor, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
-	arguments := []sui.Argument{}
-	if treasuryCap != nil {
-		ref := treasuryCap.Data.Ref()
-		arguments = []sui.Argument{
-			ptb.MustObj(
-				sui.ObjectArg{
-					ImmOrOwnedObject: &ref,
-				},
-			),
-		}
-	}
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -43,7 +31,7 @@ func (c *Client) StartNewChain(
 				Module:        "anchor",
 				Function:      "start_new_chain",
 				TypeArguments: []sui.TypeTag{},
-				Arguments:     arguments,
+				Arguments:     []sui.Argument{},
 			},
 		},
 	)
@@ -97,8 +85,8 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	devMode bool,
+) ([]byte, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 	ptb := sui.NewProgrammableTransactionBuilder()
 
@@ -172,11 +160,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	return txnResponse, nil
+	return txnBytes, nil
 }
 
 func (c *Client) getAnchorFromSuiTransactionBlockResponse(

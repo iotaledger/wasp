@@ -24,6 +24,12 @@ func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	return kp
 }
 
+func newLocalnetClient() *iscmove.Client {
+	return iscmove.NewClient(iscmove.Config{
+		APIURL: suiconn.LocalnetEndpointURL,
+	})
+}
+
 func TestKeys(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
 	client := iscmove.NewClient(iscmove.Config{

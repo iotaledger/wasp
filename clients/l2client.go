@@ -19,7 +19,6 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-		treasuryCap *suijsonrpc.SuiObjectResponse,
 	) (*iscmove.Anchor, error)
 	CreateAndSendRequest(
 		ctx context.Context,
@@ -33,9 +32,8 @@ type L2Client interface {
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
 		devMode bool,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+	) ([]byte, error)
 	ReceiveAndUpdateStateRootRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -45,8 +43,8 @@ type L2Client interface {
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+		devMode bool,
+	) ([]byte, error)
 	AssetsBagNew(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -66,8 +64,8 @@ type L2Client interface {
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+		devMode bool,
+	) ([]byte, error)
 	AssetsDestroyEmpty(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -76,8 +74,8 @@ type L2Client interface {
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+		devMode bool,
+	) ([]byte, error)
 }
 
 var _ L2Client = &iscmove.Client{}
