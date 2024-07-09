@@ -22,6 +22,10 @@ func MustPackageIDFromHex(str string) *PackageID {
 	return packageID
 }
 
+func ObjectIDFromArray(objectID [AddressLen]byte) *ObjectID {
+	return AddressFromArray(objectID)
+}
+
 func ObjectIDFromHex(str string) (*ObjectID, error) {
 	return AddressFromHex(str)
 }

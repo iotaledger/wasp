@@ -3,10 +3,9 @@ package sm_inputs
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 type ConsensusDecidedState struct {
@@ -18,15 +17,15 @@ type ConsensusDecidedState struct {
 
 var _ gpa.Input = &ConsensusDecidedState{}
 
-func NewConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) (*ConsensusDecidedState, <-chan state.State) {
-	commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+func NewConsensusDecidedState(ctx context.Context, anchor *iscmove.Anchor) (*ConsensusDecidedState, <-chan state.State) {
+	commitment, err := state.NewL1CommitmentFromAnchor(anchor)
 	if err != nil {
-		panic("Cannot make L1 commitment from alias output")
+		panic("Cannot make L1 commitment from anchor")
 	}
 	resultChannel := make(chan state.State, 1)
 	return &ConsensusDecidedState{
 		context:      ctx,
-		stateIndex:   aliasOutput.GetStateIndex(),
+		stateIndex:   anchor.StateIndex,
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel

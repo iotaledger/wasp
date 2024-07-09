@@ -11,6 +11,11 @@ const AddressLen = 32
 
 type Address [AddressLen]uint8
 
+func AddressFromArray(address [AddressLen]byte) *Address {
+	result := Address(address)
+	return &result
+}
+
 func AddressFromHex(str string) (*Address, error) {
 	if strings.HasPrefix(str, "0x") || strings.HasPrefix(str, "0X") {
 		str = str[2:]

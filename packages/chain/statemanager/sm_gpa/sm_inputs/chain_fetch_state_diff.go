@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 type ChainFetchStateDiff struct {
@@ -21,24 +20,24 @@ type ChainFetchStateDiff struct {
 
 var _ gpa.Input = &ChainFetchStateDiff{}
 
-func NewChainFetchStateDiff(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
-	if prevAO == nil {
+func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *iscmove.Anchor) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
+	if prevAnchor == nil {
 		// Only the current state is needed, if prevAO is unknown.
-		prevAO = nextAO
+		prevAnchor = nextAnchor
 	}
-	oldCommitment, err := transaction.L1CommitmentFromAliasOutput(prevAO.GetAliasOutput())
+	oldCommitment, err := state.NewL1CommitmentFromAnchor(prevAnchor)
 	if err != nil {
-		panic(fmt.Errorf("Cannot make L1 commitment from previous alias output, error: %w", err))
+		panic(fmt.Errorf("Cannot make L1 commitment from previous anchor, error: %w", err))
 	}
-	newCommitment, err := transaction.L1CommitmentFromAliasOutput(nextAO.GetAliasOutput())
+	newCommitment, err := state.NewL1CommitmentFromAnchor(nextAnchor)
 	if err != nil {
-		panic(fmt.Errorf("Cannot make L1 commitment from next alias output, error: %w", err))
+		panic(fmt.Errorf("Cannot make L1 commitment from next anchor, error: %w", err))
 	}
 	resultChannel := make(chan *ChainFetchStateDiffResults, 1)
 	return &ChainFetchStateDiff{
 		context:         ctx,
-		oldStateIndex:   prevAO.GetStateIndex(),
-		newStateIndex:   nextAO.GetStateIndex(),
+		oldStateIndex:   prevAnchor.StateIndex,
+		newStateIndex:   nextAnchor.StateIndex,
 		oldL1Commitment: oldCommitment,
 		newL1Commitment: newCommitment,
 		resultCh:        resultChannel,

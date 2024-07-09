@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
-
-const BlockHashSize = 20
-
-type BlockHash [BlockHashSize]byte
 
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
@@ -31,25 +27,22 @@ func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	}
 }
 
-func BlockHashFromString(hash string) (BlockHash, error) {
-	byteSlice, err := iotago.DecodeHex(hash)
+func NewL1CommitmentFromAnchor(anchor *iscmove.Anchor) (*L1Commitment, error) {
+	trieRoot, err := trie.HashFromBytes(anchor.StateRoot)
 	if err != nil {
-		return BlockHash{}, err
+		return nil, fmt.Errorf("failed to create trie root: %w", err)
 	}
-	var ret BlockHash
-	copy(ret[:], byteSlice)
-	return ret, nil
+	blockHash, err := NewBlockHash(anchor.BlockHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create block hash: %w", err)
+	}
+	return &L1Commitment{
+		trieRoot:  trieRoot,
+		blockHash: blockHash,
+	}, nil
 }
 
-func (bh BlockHash) String() string {
-	return iotago.EncodeHex(bh[:])
-}
-
-func (bh BlockHash) Equals(other BlockHash) bool {
-	return bh == other
-}
-
-func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
+func NewL1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
 	return rwutil.ReadFromBytes(data, new(L1Commitment))
 }
 
@@ -89,19 +82,19 @@ func (s *L1Commitment) String() string {
 
 var L1CommitmentNil = &L1Commitment{}
 
-func init() {
+/*func init() {
 	zs, err := L1CommitmentFromBytes(make([]byte, L1CommitmentSize))
 	if err != nil {
 		panic(err)
 	}
 	L1CommitmentNil = zs
-}
+}*/
 
 // PseudoRandL1Commitment is for testing only
-func PseudoRandL1Commitment() *L1Commitment {
+func NewPseudoRandL1Commitment() *L1Commitment {
 	d := make([]byte, L1CommitmentSize)
 	_, _ = util.NewPseudoRand().Read(d)
-	ret, err := L1CommitmentFromBytes(d)
+	ret, err := NewL1CommitmentFromBytes(d)
 	if err != nil {
 		panic(err)
 	}

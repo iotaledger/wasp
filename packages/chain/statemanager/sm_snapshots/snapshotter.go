@@ -71,7 +71,7 @@ func readSnapshotInfo(r io.Reader) (SnapshotInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read trie root: %w", err)
 	}
-	commitment, err := state.L1CommitmentFromBytes(trieRootArray)
+	commitment, err := state.NewL1CommitmentFromBytes(trieRootArray)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse L1 commitment: %w", err)
 	}

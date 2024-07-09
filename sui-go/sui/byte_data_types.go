@@ -18,6 +18,10 @@ type BytesData interface {
 
 type Bytes []byte
 
+func NewBytes(bytes []byte) Bytes {
+	return Bytes(bytes)
+}
+
 func (b Bytes) GetHexData() HexData {
 	return HexData(b)
 }

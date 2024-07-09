@@ -23,7 +23,7 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 func TestGetBlockMessageSerialization(t *testing.T) {
 	msg := &GetBlockMessage{
 		gpa.BasicMessage{},
-		state.PseudoRandL1Commitment(),
+		state.NewPseudoRandL1Commitment(),
 	}
 
 	rwutil.ReadWriteTest(t, msg, new(GetBlockMessage))

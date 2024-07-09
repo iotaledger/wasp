@@ -38,6 +38,7 @@ type Anchor struct {
 	ID         sui.ObjectID
 	Assets     Referent[AssetBag]
 	StateRoot  sui.Bytes
+	BlockHash  sui.Bytes
 	StateIndex uint32
 }
 
