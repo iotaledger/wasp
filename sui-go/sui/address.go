@@ -55,6 +55,10 @@ func (a Address) String() string {
 	return "0x" + hex.EncodeToString(a[:])
 }
 
+func (a SuiAddress) ToHex() string {
+	return a.String()
+}
+
 func (a Address) ShortString() string {
 	return "0x" + strings.TrimLeft(hex.EncodeToString(a[:]), "0")
 }

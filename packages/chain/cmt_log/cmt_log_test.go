@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/sui"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -110,7 +111,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.AliasOutputWithID) map[gpa.NodeID]gpa.Input {
+func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *sui.Anchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = cmt_log.NewInputAliasOutputConfirmed(ao)
@@ -118,7 +119,7 @@ func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.AliasOut
 	return inputs
 }
 
-func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *isc.AliasOutputWithID) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *sui.Anchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), consReq.GetBaseAliasOutput().OutputID(), nextAO)
@@ -126,7 +127,7 @@ func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Outp
 	return inputs
 }
 
-func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *isc.AliasOutputWithID {
+func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *sui.Anchor {
 	outputID := testiotago.RandOutputID()
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       aliasID,

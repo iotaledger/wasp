@@ -6,24 +6,24 @@ package cmt_log
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/sui"
+	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 type inputConsensusOutputDone struct {
 	logIndex          LogIndex
-	proposedBaseAO    iotago.OutputID        // Proposed BaseAO
-	baseAliasOutputID iotago.OutputID        // Decided BaseAO
-	nextAliasOutput   *isc.AliasOutputWithID // And the next one.
+	proposedBaseAO    sui_types.ObjectID // Proposed BaseAO
+	baseAliasOutputID sui_types.ObjectID // Decided BaseAO
+	nextAliasOutput   *sui.Anchor        // And the next one.
 }
 
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputDone(
 	logIndex LogIndex,
-	proposedBaseAO iotago.OutputID,
-	baseAliasOutputID iotago.OutputID,
-	nextAliasOutput *isc.AliasOutputWithID,
+	proposedBaseAO sui_types.ObjectID,
+	baseAliasOutputID sui_types.ObjectID,
+	nextAliasOutput *sui.Anchor,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
 		logIndex:          logIndex,
