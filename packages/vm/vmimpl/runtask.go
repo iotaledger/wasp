@@ -243,6 +243,7 @@ func (vmctx *vmContext) runRequests(
 
 		// abort if num of requests is above max_uint16.
 		if reqIndex+1 == math.MaxUint16 {
+			log.Warnf("aborting vm run due to excessive number of requests. total: %d, executed: %d", len(reqs), reqIndex+1)
 			break
 		}
 	}
