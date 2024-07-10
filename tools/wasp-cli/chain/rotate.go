@@ -31,11 +31,14 @@ func initRotateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chain = defaultChainFallback(chain)
 
-			prefix, newStateControllerAddr, err := cryptolib.NewAddressFromBech32(args[0])
+			newStateControllerAddr, err := cryptolib.NewAddressFromHexString(args[0])
 			log.Check(err)
-			if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
-				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
-			}
+			panic("refactor me: what are we doing without network prefixes here?")
+
+			/*
+				if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
+					log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
+				}*/
 			rotateTo(chain, newStateControllerAddr)
 		},
 	}
@@ -119,7 +122,7 @@ func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
 
 		json, err2 := tx.MarshalJSON()
 		log.Check(err2)
-		log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().Bech32(parameters.Bech32Hrp))
+		log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().String())
 		log.Printf("rotation tx: %s", string(json))
 	}
 

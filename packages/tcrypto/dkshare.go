@@ -718,7 +718,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	address, err := cryptolib.NewAddressFromString(j.Address)
+	address, err := cryptolib.NewAddressFromHexString(j.Address)
 	if err != nil {
 		return err
 	}

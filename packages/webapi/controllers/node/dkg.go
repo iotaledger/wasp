@@ -28,7 +28,7 @@ func (c *Controller) generateDKS(e echo.Context) error {
 }
 
 func (c *Controller) getDKSInfo(e echo.Context) error {
-	_, sharedAddress, err := cryptolib.NewAddressFromBech32(e.Param(params.ParamSharedAddress))
+	sharedAddress, err := cryptolib.NewAddressFromHexString(e.Param(params.ParamSharedAddress))
 	if err != nil {
 		return apierrors.InvalidPropertyError(params.ParamSharedAddress, err)
 	}

@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -319,7 +318,7 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, d
 	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	t.Logf("generated state address: %s", addr.Bech32(parameters.Bech32Hrp))
+	t.Logf("generated state address: %s", addr.String())
 
 	chain, err := clu.DeployChain(clu.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)

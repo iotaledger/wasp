@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -133,10 +132,8 @@ func AgentIDFromString(s string) (AgentID, error) {
 		}
 		return contractAgentIDFromString(contractPart, addrPart)
 	}
-	if strings.HasPrefix(addrPart, string(parameters.Bech32Hrp)) {
-		return addressAgentIDFromString(s)
-	}
-	return nil, errors.New("invalid AgentID string")
+
+	return addressAgentIDFromString(s)
 }
 
 // NewRandomAgentID creates random AgentID

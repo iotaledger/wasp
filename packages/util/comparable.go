@@ -2,7 +2,6 @@ package util
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type ComparableString string
@@ -34,5 +33,5 @@ func (c *ComparableAddress) Key() cryptolib.AddressKey {
 }
 
 func (c *ComparableAddress) String() string {
-	return c.address.Bech32(parameters.Bech32Hrp)
+	return c.address.String()
 }

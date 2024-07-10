@@ -96,7 +96,7 @@ func (c *ClusterConfig) setValidatorAddressIfNotSet() {
 		if c.Wasp[i].ValidatorKeyPair == nil {
 			kp := cryptolib.NewKeyPair()
 			c.Wasp[i].ValidatorKeyPair = kp
-			c.Wasp[i].ValidatorAddress = kp.Address().Bech32("atoi") // privtangle bech32
+			c.Wasp[i].ValidatorAddress = kp.Address().String() // privtangle address
 		}
 	}
 }

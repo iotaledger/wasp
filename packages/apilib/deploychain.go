@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
@@ -60,7 +59,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *
 	}
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n* committee size = %d\n* quorum = %d\n",
-		chainID.String(), stateControllerAddr.Bech32(parameters.Bech32Hrp), par.N, par.T)
+		chainID.String(), stateControllerAddr.String(), par.N, par.T)
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 

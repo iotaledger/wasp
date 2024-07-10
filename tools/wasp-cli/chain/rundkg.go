@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/byz_quorum"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -107,7 +106,7 @@ func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
 
 	fmt.Fprintf(os.Stdout,
 		"DKG successful\nAddress: %s\n* committee size = %v\n* quorum = %v\n* members: %s\n",
-		stateControllerAddr.Bech32(parameters.Bech32Hrp),
+		stateControllerAddr.String(),
 		len(committeePubKeys),
 		quorum,
 		committeeMembersStr,

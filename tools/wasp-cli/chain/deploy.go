@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -42,11 +41,12 @@ func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
 	if addr == "" {
 		return wallet.Load().Address()
 	}
-	prefix, govControllerAddr, err := cryptolib.NewAddressFromBech32(addr)
+	govControllerAddr, err := cryptolib.NewAddressFromHexString(addr)
 	log.Check(err)
-	if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
+	panic("refactor me: what are we doing without network prefixes here?")
+	/*if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
 		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
-	}
+	}*/
 	return govControllerAddr
 }
 

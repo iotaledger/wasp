@@ -10,9 +10,8 @@ import (
 
 	"github.com/spf13/viper"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
@@ -192,12 +191,9 @@ func GetChain(name string) isc.ChainID {
 	if configChainID == "" {
 		log.Fatal(fmt.Sprintf("chain '%s' doesn't exist in config file", name))
 	}
-	networkPrefix, _, err := iotago.ParseBech32(configChainID)
+	_, err := cryptolib.NewAddressFromHexString(configChainID)
 	log.Check(err)
 
-	if parameters.NetworkPrefix(networkPrefix) != parameters.Bech32Hrp {
-		err = fmt.Errorf("target network of the L1 node does not match the wasp-cli config")
-	}
 	log.Check(err)
 
 	chainID, err := isc.ChainIDFromString(configChainID)

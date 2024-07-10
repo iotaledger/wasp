@@ -41,7 +41,7 @@ type CommitteeInfoResponse struct {
 	AccessNodes    []CommitteeNode `json:"accessNodes" swagger:"desc(A list of all access nodes and their peering info.),required"`
 	Active         bool            `json:"active" swagger:"desc(Whether or not the chain is active.),required"`
 	CandidateNodes []CommitteeNode `json:"candidateNodes" swagger:"desc(A list of all candidate nodes and their peering info.),required"`
-	ChainID        string          `json:"chainId" swagger:"desc(ChainID (Bech32-encoded).),required"`
+	ChainID        string          `json:"chainId" swagger:"desc(ChainID (Hex Address).),required"`
 	CommitteeNodes []CommitteeNode `json:"committeeNodes" swagger:"desc(A list of all committee nodes and their peering info.),required"`
 	StateAddress   string          `json:"stateAddress" swagger:"desc(State address, if we are part of it.),required"`
 }
@@ -64,9 +64,9 @@ type PublicChainMetadata struct {
 // ChainInfoResponse includes the metadata standard
 type ChainInfoResponse struct {
 	IsActive     bool                `json:"isActive" swagger:"desc(Whether or not the chain is active),required"`
-	ChainID      string              `json:"chainID" swagger:"desc(ChainID (Bech32-encoded)),required"`
+	ChainID      string              `json:"chainID" swagger:"desc(ChainID (Hex Address)),required"`
 	EVMChainID   uint16              `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID string              `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded)),required"`
+	ChainOwnerID string              `json:"chainOwnerId" swagger:"desc(The chain owner address (Hex Address)),required"`
 	GasFeePolicy *gas.FeePolicy      `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
 	GasLimits    *gas.Limits         `json:"gasLimits" swagger:"desc(The gas limits),required"`
 	PublicURL    string              `json:"publicURL" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
