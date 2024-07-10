@@ -26,6 +26,7 @@ var (
 	FuncRegisterERC20NativeTokenOnRemoteChain = coreutil.Func(evmnames.FuncRegisterERC20NativeTokenOnRemoteChain)
 	FuncRegisterERC20ExternalNativeToken      = coreutil.Func(evmnames.FuncRegisterERC20ExternalNativeToken)
 	FuncGetERC20ExternalNativeTokenAddress    = coreutil.ViewFunc(evmnames.FuncGetERC20ExternalNativeTokenAddress)
+	FuncGetERC721CollectionAddress            = coreutil.ViewFunc(evmnames.FuncGetERC721CollectionAddress)
 	FuncRegisterERC721NFTCollection           = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
 
 	FuncNewL1Deposit = coreutil.Func(evmnames.FuncNewL1Deposit)

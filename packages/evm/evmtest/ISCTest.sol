@@ -230,8 +230,8 @@ contract ISCTest {
         ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
 
         ISCDict memory params = ISCDict(new ISCDictItem[](2));
-        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}");
-        params.items[1] = ISCDictItem("a", agentID.data);
+        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}"); // immutable metadata
+        params.items[1] = ISCDictItem("a", agentID.data); // agentID
 
         ISCDict memory ret = ISC.sandbox.call(
             ISC.util.hn("accounts"),
@@ -243,6 +243,29 @@ contract ISCTest {
     }
 
 
+    // mints an NFT as part of collectionID (requires the collection NFT to be owned by this contract)
+    function mintNFTForCollection(NFTID collectionID) public payable {
+        ISCAssets memory allowance;
+        allowance.baseTokens = 100000;
+
+        ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
+
+        ISCDict memory params = ISCDict(new ISCDictItem[](3));
+        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}"); // immutable metadata
+        params.items[1] = ISCDictItem("a", agentID.data); // agentID
+        params.items[2] = ISCDictItem("C", abi.encodePacked(collectionID)); // collectionID
+
+        ISCDict memory ret = ISC.sandbox.call(
+            ISC.util.hn("accounts"),
+            ISC.util.hn("mintNFT"),
+            params,
+            allowance
+        );
+       emit nftMint(ret.items[0].value); 
+    }
+ 
+
+
    function mintNFTToL1(bytes memory l1addr ) public payable {
         ISCAssets memory allowance;
         allowance.baseTokens = 100000;
@@ -250,8 +273,8 @@ contract ISCTest {
         ISCAgentID memory agentID = ISCTypes.newL1AgentID(l1addr);
 
         ISCDict memory params = ISCDict(new ISCDictItem[](3));
-        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}");
-        params.items[1] = ISCDictItem("a", agentID.data);
+        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}"); // immutable metadata
+        params.items[1] = ISCDictItem("a", agentID.data); // agentID
         bytes memory withdrawParam = new bytes(1);
         withdrawParam[0] = 0x01;
         params.items[2] = ISCDictItem("w", withdrawParam);

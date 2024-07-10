@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 
@@ -64,6 +65,12 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		governance.NewStateAccess(stateDraft).MaintenanceStatus(),
 		vmctx.task.Log,
 	)
+	numProcessed := uint16(len(requestResults))
+
+	// execute onBlockClose callbacks
+	for _, callback := range vmctx.onBlockCloseCallbacks {
+		callback(numProcessed + 1)
+	}
 
 	vmctx.assertConsistentGasTotals(requestResults)
 
@@ -76,8 +83,6 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	if !vmctx.task.WillProduceBlock() {
 		return taskResult
 	}
-
-	numProcessed := uint16(len(requestResults))
 
 	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
@@ -124,7 +129,6 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 	})
 
 	// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
-
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		withContractState(chainState, accounts.Contract, func(accountState kv.KVStore) {
 			newNFTIDs := accounts.UpdateLatestOutputID(accountState, vmctx.task.AnchorOutputID.TransactionID(), vmctx.task.AnchorOutput.StateIndex)
@@ -134,10 +138,14 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 			}
 
 			withContractState(chainState, evm.Contract, func(evmState kv.KVStore) {
-				for _, nftID := range newNFTIDs {
+				for nftID, owner := range newNFTIDs {
 					nft := accounts.GetNFTData(accountState, nftID)
-
-					evmimpl.RegisterERC721NFTCollectionByNFTId(evmState, nft)
+					if owner.Kind() == isc.AgentIDKindEthereumAddress {
+						// emit an EVM event so that the mint is visible from the EVM block explorer
+						vmctx.onBlockClose(
+							vmctx.emitEVMEventL1NFTMint(nft.ID, owner.(*isc.EthereumAddressAgentID)),
+						)
+					}
 				}
 			})
 		})
@@ -154,6 +162,23 @@ func (vmctx *vmContext) init(prevL1Commitment *state.L1Commitment) {
 			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
 		},
 	)
+}
+
+func (vmctx *vmContext) emitEVMEventL1NFTMint(nftID iotago.NFTID, owner *isc.EthereumAddressAgentID) blockCloseCallback {
+	return func(reqIndex uint16) {
+		// fake a request execution and insert a Mint event on the EVM
+		reqCtx := vmctx.newRequestContext(isc.NewImpersonatedOffLedgerRequest(&isc.OffLedgerRequestData{}).WithSenderAddress(&iotago.Ed25519Address{}), reqIndex)
+		reqCtx.pushCallContext(evm.Contract.Hname(), nil, nil, nil)
+		ctx := NewSandbox(reqCtx)
+		evmimpl.AddDummyTxWithTransferEvents(
+			ctx,
+			owner.EthAddress(),
+			isc.NewEmptyAssets().AddNFTs(nftID),
+			nil,
+			false,
+		)
+		reqCtx.uncommittedState.Mutations().ApplyTo(vmctx.stateDraft)
+	}
 }
 
 func (vmctx *vmContext) getAnchorOutputSD() uint64 {
@@ -214,6 +239,12 @@ func (vmctx *vmContext) runRequests(
 			} else {
 				allReqs = append(allReqs, retry)
 			}
+		}
+
+		// abort if num of requests is above max_uint16.
+		if reqIndex+1 == math.MaxUint16 {
+			log.Warnf("aborting vm run due to excessive number of requests. total: %d, executed: %d", len(reqs), reqIndex+1)
+			break
 		}
 	}
 	return results, numSuccess, numOffLedger, unprocessable

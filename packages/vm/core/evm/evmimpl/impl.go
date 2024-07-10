@@ -40,13 +40,15 @@ var Processor = evm.Contract.Processor(nil,
 
 	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
 	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(restricted(registerERC20NativeTokenOnRemoteChain)),
+
 	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
-	evm.FuncRegisterERC721NFTCollection.WithHandler(restricted(registerERC721NFTCollection)),
+	evm.FuncRegisterERC721NFTCollection.WithHandler(registerERC721NFTCollection),
 
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
 
 	// views
 	evm.FuncGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
+	evm.FuncGetERC721CollectionAddress.WithHandler(viewERC721CollectionAddress),
 	evm.FuncGetChainID.WithHandler(getChainID),
 )
 
@@ -353,6 +355,22 @@ func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView) dict.Dict {
 	return result(addr[:])
 }
 
+func viewERC721CollectionAddress(ctx isc.SandboxView) dict.Dict {
+	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(evm.FieldNFTCollectionID))
+
+	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
+
+	exists := emulator.Exist(
+		addr,
+		emulator.StateDBSubrealmR(evm.EmulatorStateSubrealmR(ctx.StateR())),
+	)
+
+	return dict.Dict{
+		evm.FieldResult:  codec.Encode(exists),
+		evm.FieldAddress: codec.Encode(addr),
+	}
+}
+
 func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 	collectionID := codec.MustDecodeNFTID(ctx.Params().Get(evm.FieldNFTCollectionID))
 
@@ -367,7 +385,7 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 		return collection
 	}()
 
-	RegisterERC721NFTCollectionByNFTId(ctx.State(), collection)
+	registerERC721NFTCollectionByNFTId(ctx.State(), collection)
 
 	return nil
 }
@@ -445,15 +463,16 @@ func newL1Deposit(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err, "unable to parse assets from params")
 	txData := l1DepositOriginatorBytes
 	// create a fake tx so that the operation is visible by the EVM
-	addDummyTxWithTransferEvents(ctx, toAddress, assets, txData)
+	AddDummyTxWithTransferEvents(ctx, toAddress, assets, txData, true)
 	return nil
 }
 
-func addDummyTxWithTransferEvents(
+func AddDummyTxWithTransferEvents(
 	ctx isc.Sandbox,
 	toAddress common.Address,
 	assets *isc.Assets,
 	txData []byte,
+	reuseCurrentTxContext bool,
 ) {
 	zeroAddress := common.Address{}
 	logs := makeTransferEvents(ctx, zeroAddress, toAddress, assets)
@@ -470,7 +489,7 @@ func addDummyTxWithTransferEvents(
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData = append(txData, assets.Bytes()...)
-	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...)
+	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...) // +1 because "current block = anchor state index +1"
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 
 	tx := types.NewTx(
@@ -491,10 +510,17 @@ func addDummyTxWithTransferEvents(
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
+	if !reuseCurrentTxContext {
+		// called from outside vmrun, just add the tx without a gas value
+		createBlockchainDB(ctx.State(), chainInfo).AddTransaction(tx, receipt)
+		return
+	}
+
 	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
 		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
-		receipt.CumulativeGasUsed = createBlockchainDB(evmPartition, chainInfo).GetPendingCumulativeGasUsed() + receipt.GasUsed
-		createBlockchainDB(evmPartition, ctx.ChainInfo()).AddTransaction(tx, receipt)
+		blockchainDB := createBlockchainDB(evmPartition, chainInfo)
+		receipt.CumulativeGasUsed = blockchainDB.GetPendingCumulativeGasUsed() + receipt.GasUsed
+		blockchainDB.AddTransaction(tx, receipt)
 	})
 }
 

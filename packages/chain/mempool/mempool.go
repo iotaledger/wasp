@@ -764,11 +764,13 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	}
 	if request.SenderAccount() == nil {
 		// do not process requests without the sender feature
+		mpi.log.Warnf("dropping request, because it has no sender feature, ID=%v", requestID)
 		return
 	}
 	//
 	// Check, maybe mempool already has it.
 	if mpi.onLedgerPool.Has(requestRef) || mpi.timePool.Has(requestRef) {
+		mpi.log.Warnf("request already in the mempool, ID=%v", requestID)
 		return
 	}
 	//
@@ -779,6 +781,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 			panic(fmt.Errorf("cannot check if request was processed: %w", err))
 		}
 		if processed {
+			mpi.log.Warnf("dropping request, because it was already processed, ID=%v", requestID)
 			return
 		}
 	}

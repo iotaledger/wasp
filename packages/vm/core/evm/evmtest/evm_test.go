@@ -500,30 +500,47 @@ func TestISCNFTMint(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	var mintID []byte
+	var mintID1 []byte
 	iscTest.CallFnExpectEvent(
 		[]ethCallOptions{{
 			value: big.NewInt(int64(5000000000000 * isc.Million)),
 		}},
 		"nftMint",
-		&mintID,
+		&mintID1,
 		"mintNFT",
 	)
-	require.NotEmpty(t, mintID)
+	require.NotEmpty(t, mintID1)
 
 	/// produce a block (so the minted nft gets accounted for)
 	_, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	///
 
+	// assert the event for minting the L1 NFT is issued on the following block
+	logs := env.LastBlockEVMLogs()
+	require.Len(t, logs, 1)
+
 	evmAccNFTs := env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
 	require.Len(t, evmAccNFTs, 1)
-	nftID := evmAccNFTs[0]
+	nftID1 := evmAccNFTs[0]
+
+	checkTransferEventERC721(
+		t,
+		logs[0],
+		iscmagic.ERC721NFTsAddress,
+		common.Address{}, // zero address (mint)
+		ethAddr,
+		iscmagic.WrapNFTID(nftID1).TokenID(),
+	)
+
+	// assert collection contract is NOT created
+	collectionAddr := iscmagic.ERC721NFTCollectionAddress(nftID1)
+	require.Empty(t, env.getCode(collectionAddr))
 
 	ret := new(iscmagic.ISCNFT)
 	env.ISCMagicSandbox(ethKey).callView(
 		"getNFTData",
-		[]interface{}{iscmagic.WrapNFTID(nftID)},
+		[]interface{}{iscmagic.WrapNFTID(nftID1)},
 		&ret,
 	)
 
@@ -541,7 +558,7 @@ func TestISCNFTMint(t *testing.T) {
 
 	err = env.ISCMagicSandbox(ethKey).callView(
 		"getIRC27NFTData",
-		[]interface{}{iscmagic.WrapNFTID(nftID)},
+		[]interface{}{iscmagic.WrapNFTID(nftID1)},
 		&retIRC27)
 	require.NoError(t, err)
 
@@ -549,6 +566,60 @@ func TestISCNFTMint(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, irc27MetaData.Name, retIRC27.Metadata.Name)
+
+	// mint a new NFT using the initial one as the collection, assert the collection contract is created
+
+	// send the collection NFT to the "isctest contract", so it can mint as part of that collection
+	{
+		erc721 := env.ERC721NFTs(ethKey)
+		_, err = erc721.CallFn(nil, "approve", iscTest.address, iscmagic.WrapNFTID(nftID1).TokenID())
+		require.NoError(t, err)
+
+		_, err = erc721.CallFn([]ethCallOptions{{
+			sender: ethKey,
+		}}, "transferFrom", ethAddr, iscTest.address, iscmagic.WrapNFTID(nftID1).TokenID())
+		require.NoError(t, err)
+
+		evmAccNFTs = env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
+		require.Len(t, evmAccNFTs, 0)
+	}
+
+	var mintID2 []byte
+	iscTest.CallFnExpectEvent(
+		[]ethCallOptions{{
+			value: big.NewInt(int64(5000000000000 * isc.Million)),
+		}},
+		"nftMint",
+		&mintID2,
+		"mintNFTForCollection",
+		iscmagic.WrapNFTID(nftID1),
+	)
+	require.NotEmpty(t, mintID2)
+
+	/// produce a block (so the minted nft gets accounted for)
+	_, err = iscTest.triggerEvent("Hi from EVM 2 !")
+	require.NoError(t, err)
+	///
+
+	evmAccNFTs = env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
+	require.Len(t, evmAccNFTs, 1)
+	nftID2 := evmAccNFTs[0]
+
+	// assert collection contract is created (for the collection NFT only)
+	require.NotEmpty(t, env.getCode(collectionAddr))
+	require.Empty(t, env.getCode(iscmagic.ERC721NFTCollectionAddress(nftID2)))
+
+	logs = env.LastBlockEVMLogs()
+	require.Len(t, logs, 1)
+
+	checkTransferEventERC721(
+		t,
+		logs[0],
+		collectionAddr,
+		common.Address{}, // zero address (mint)
+		ethAddr,
+		iscmagic.WrapNFTID(nftID2).TokenID(),
+	)
 }
 
 func TestEVMMintNFTToL1(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 type mintedNFTRecord struct {
@@ -80,6 +81,7 @@ type mintParameters struct {
 	issuerAddress     iotago.Address
 	ownerAgentID      isc.AgentID
 	withdrawOnMint    bool
+	collectionID      iotago.NFTID
 }
 
 func mintParams(ctx isc.Sandbox) mintParameters {
@@ -98,9 +100,10 @@ func mintParams(ctx isc.Sandbox) mintParameters {
 		issuerAddress:     chainAddress,
 		ownerAgentID:      targetAgentID,
 		withdrawOnMint:    withdrawOnMint,
+		collectionID:      collectionID,
 	}
 
-	if collectionID != emptyNFTID {
+	if !collectionID.Empty() {
 		// assert the NFT of collectionID is on-chain and owned by the caller
 		if !hasNFT(ctx.State(), ctx.Caller(), collectionID) {
 			panic(errCollectionNotAllowed)
@@ -163,6 +166,26 @@ func mintNFT(ctx isc.Sandbox) dict.Dict {
 	// save the info required to credit the NFT on next block
 	newlyMintedNFTsMap(ctx.State()).SetAt(codec.Encode(positionInMintedList), rec.Bytes())
 
+	// register the collection in the EVM
+	if !params.collectionID.Empty() {
+		res := ctx.CallView(
+			evm.Contract.Hname(),
+			evm.FuncGetERC721CollectionAddress.Hname(),
+			dict.Dict{evm.FieldNFTCollectionID: codec.Encode(params.collectionID)},
+		)
+		exists := codec.MustDecodeBool(res.Get(evm.FieldResult))
+
+		if !exists {
+			// NOTE must not call `RegisterERC721NFTCollection` if already registered, otherwise it will panic
+			ctx.Call(
+				evm.Contract.Hname(),
+				evm.FuncRegisterERC721NFTCollection.Hname(),
+				dict.Dict{evm.FieldNFTCollectionID: codec.Encode(params.collectionID)},
+				nil,
+			)
+		}
+	}
+
 	return dict.Dict{
 		ParamMintID: mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList),
 	}
@@ -190,11 +213,12 @@ func SaveMintedNFTOutput(state kv.KVStore, positionInMintedList, outputIndex uin
 	mintMap.SetAt(key, rec.Bytes())
 }
 
-func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
+func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.TransactionID, blockIndex uint32) map[iotago.NFTID]isc.AgentID {
 	mintMap := newlyMintedNFTsMap(state)
 	nftMap := NFTOutputMap(state)
-	newNFTIDs := make([]iotago.NFTID, 0)
+	newNFTIDs := make(map[iotago.NFTID]isc.AgentID, 0)
 
+	// iterate the minted collection of NFT's that we're looking to co-relate with their NFTIDs
 	mintMap.Iterate(func(_, recBytes []byte) bool {
 		mintedRec := mintedNFTRecordFromBytes(recBytes)
 		// calculate the NFTID from the anchor txID	+ outputIndex
@@ -213,10 +237,11 @@ func updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID iotago.Transacti
 		}
 		// save the mapping of [mintID => NFTID]
 		mintIDMap(state).SetAt(mintID(blockIndex, mintedRec.positionInMintedList), nftID[:])
-		newNFTIDs = append(newNFTIDs, nftID)
+		newNFTIDs[nftID] = mintedRec.owner
 
 		return true
 	})
+	// clear the minted collection
 	mintMap.Erase()
 
 	return newNFTIDs
