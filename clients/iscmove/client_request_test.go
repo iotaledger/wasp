@@ -17,36 +17,26 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	anchor, err := client.StartNewChain(
+	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+
+	txnBytes, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+		false,
 	)
 	require.NoError(t, err)
-
-	assetsBagRef, err := client.AssetsBagNew(
-		context.Background(),
-		cryptolibSigner,
-		iscPackageID,
-		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
-	)
+	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, "assets_bag", "AssetsBag")
 	require.NoError(t, err)
 
 	createAndSendRequestTxnBytes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		anchor.ID,
+		anchor.Ref.ObjectID,
 		assetsBagRef,
 		"test_isc_contract",
 		"test_isc_func",

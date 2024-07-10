@@ -18,8 +18,8 @@ type L2Client interface {
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*iscmove.Anchor, error)
+		devMode bool,
+	) ([]byte, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -39,7 +39,8 @@ type L2Client interface {
 		cryptolibSigner cryptolib.Signer,
 		packageID *sui.PackageID,
 		anchor *sui.ObjectRef,
-		reqObject *sui.ObjectRef,
+		reqObjects []*sui.ObjectRef,
+		stateRoot []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
@@ -52,8 +53,8 @@ type L2Client interface {
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*sui.ObjectRef, error)
+		devMode bool,
+	) ([]byte, error)
 	AssetsBagPlaceCoin(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -76,6 +77,10 @@ type L2Client interface {
 		gasBudget uint64,
 		devMode bool,
 	) ([]byte, error)
+	GetAnchorFromSuiTransactionBlockResponse(
+		ctx context.Context,
+		response *suijsonrpc.SuiTransactionBlockResponse,
+	) (*iscmove.Anchor, error)
 }
 
 var _ L2Client = &iscmove.Client{}

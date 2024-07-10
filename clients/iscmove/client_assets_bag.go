@@ -7,7 +7,6 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func (c *Client) AssetsBagNew(
@@ -17,8 +16,9 @@ func (c *Client) AssetsBagNew(
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-) (*sui.ObjectRef, error) {
+	devMode bool,
+) ([]byte, error) {
+	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -58,25 +58,20 @@ func (c *Client) AssetsBagNew(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	var txnBytes []byte
+	if devMode {
+		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
+	} else {
+		txnBytes, err = bcs.Marshal(tx)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
 	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
-	}
-
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo("assets_bag", "AssetsBag")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AssetsBag: %w", err)
-	}
-
-	return assetsBagRef, nil
+	return txnBytes, nil
 }
 
 func (c *Client) AssetsBagPlaceCoin(
@@ -129,9 +124,18 @@ func (c *Client) AssetsBagPlaceCoin(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+
+	var txnBytes []byte
+	if devMode {
+		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
+	} else {
+		txnBytes, err = bcs.Marshal(tx)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
 	}
 	return txnBytes, nil
 }
@@ -146,6 +150,7 @@ func (c *Client) AssetsDestroyEmpty(
 	gasBudget uint64,
 	devMode bool,
 ) ([]byte, error) {
+	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -179,9 +184,18 @@ func (c *Client) AssetsDestroyEmpty(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+
+	var txnBytes []byte
+	if devMode {
+		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
+	} else {
+		txnBytes, err = bcs.Marshal(tx)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
 	}
 	return txnBytes, nil
 }

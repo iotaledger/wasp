@@ -17,20 +17,19 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	assetsBagRef, err := client.AssetsBagNew(
+	txnBytes, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+		false,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, assetsBagRef)
+	require.NotNil(t, txnBytes)
+	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, "assets_bag", "AssetsBag")
+	require.NoError(t, err)
 
 	assetsDestroyEmptyTxnBytes, err := client.AssetsDestroyEmpty(
 		context.Background(),
@@ -61,20 +60,19 @@ func TestAssetsBagAddItems(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	assetsBagMain, err := client.AssetsBagNew(
+	txnBytes, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+		false,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, assetsBagMain)
+	require.NotNil(t, txnBytes)
+	assetsBagMain, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, "assets_bag", "AssetsBag")
+	require.NoError(t, err)
 
 	_, coinRef := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(

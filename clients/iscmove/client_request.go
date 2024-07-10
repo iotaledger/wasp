@@ -68,9 +68,18 @@ func (c *Client) CreateAndSendRequest(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+
+	var txnBytes []byte
+	if devMode {
+		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
+	} else {
+		txnBytes, err = bcs.Marshal(tx)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
 	}
 	return txnBytes, nil
 }

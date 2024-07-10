@@ -19,8 +19,9 @@ func (c *Client) StartNewChain(
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-) (*Anchor, error) {
+	devMode bool,
+) ([]byte, error) {
+	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -60,20 +61,20 @@ func (c *Client) StartNewChain(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes, execOptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	var txnBytes []byte
+	if devMode {
+		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
+	} else {
+		txnBytes, err = bcs.Marshal(tx)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
 	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
-	}
-
-	return c.getAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
+	return txnBytes, nil
 }
 
 func (c *Client) ReceiveAndUpdateStateRootRequest(
@@ -81,50 +82,59 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	cryptolibSigner cryptolib.Signer,
 	packageID *sui.PackageID,
 	anchor *sui.ObjectRef,
-	reqObject *sui.ObjectRef,
+	reqObjects []*sui.ObjectRef,
+	stateRoot []byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
 ) ([]byte, error) {
+	panic("impl is wrong")
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchor})
-	argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: reqObject})
-	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
-				Module:        "anchor",
-				Function:      "receive_request",
-				TypeArguments: []sui.TypeTag{},
-				Arguments:     []sui.Argument{argAnchor, argReqObject},
-			},
-		},
-	)
-	ptb.Command(
-		sui.Command{
-			TransferObjects: &sui.ProgrammableTransferObjects{
-				Objects: []sui.Argument{
-					{NestedResult: &sui.NestedResult{Cmd: 0, Result: 1}},
-				},
-				Address: ptb.MustPure(signer.Address()),
-			},
-		},
-	)
 	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::anchor::Receipt", packageID))
 	if err != nil {
 		return nil, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
 	}
+
+	for i, reqObject := range reqObjects {
+		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: reqObject})
+		ptb.Command(
+			sui.Command{
+				MoveCall: &sui.ProgrammableMoveCall{
+					Package:       packageID,
+					Module:        "anchor",
+					Function:      "receive_request",
+					TypeArguments: []sui.TypeTag{},
+					Arguments:     []sui.Argument{argAnchor, argReqObject},
+				},
+			},
+		)
+		ptb.Command(
+			sui.Command{
+				TransferObjects: &sui.ProgrammableTransferObjects{
+					Objects: []sui.Argument{
+						{NestedResult: &sui.NestedResult{Cmd: uint16(i * 2), Result: 1}},
+					},
+					Address: ptb.MustPure(anchor.ObjectID),
+				},
+			},
+		)
+	}
+
+	var nestedResults []sui.Argument
+	for i := 0; i < len(reqObjects); i++ {
+		nestedResults = append(nestedResults, sui.Argument{NestedResult: &sui.NestedResult{Cmd: uint16(i * 2), Result: 0}})
+	}
 	argReceipts := ptb.Command(sui.Command{
 		MakeMoveVec: &sui.ProgrammableMakeMoveVec{
-			Type: typeReceipt,
-			Objects: []sui.Argument{
-				{NestedResult: &sui.NestedResult{Cmd: 0, Result: 0}},
-			},
+			Type:    typeReceipt,
+			Objects: nestedResults,
 		},
 	})
+
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -134,7 +144,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
 					argAnchor,
-					ptb.MustPure([]byte{1, 2, 3}),
+					ptb.MustPure(stateRoot),
 					argReceipts,
 				},
 			},
@@ -148,7 +158,6 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 		}
 		gasPayments = coins.CoinRefs()
 	}
-
 	tx := sui.NewProgrammable(
 		signer.Address(),
 		pt,
@@ -156,14 +165,30 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 		gasBudget,
 		gasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+
+	var txnBytes []byte
+	if devMode {
+		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
+	} else {
+		txnBytes, err = bcs.Marshal(tx)
+		if err != nil {
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+		}
 	}
 	return txnBytes, nil
 }
 
-func (c *Client) getAnchorFromSuiTransactionBlockResponse(
+type bcsAnchor struct {
+	ID         *sui.ObjectID
+	Assets     Referent[AssetBag]
+	StateRoot  sui.Bytes
+	StateIndex uint32
+}
+
+func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 	ctx context.Context,
 	response *suijsonrpc.SuiTransactionBlockResponse,
 ) (*Anchor, error) {
@@ -181,13 +206,27 @@ func (c *Client) getAnchorFromSuiTransactionBlockResponse(
 	}
 	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
 
-	anchor := Anchor{}
-	n, err := bcs.Unmarshal(anchorBCS, &anchor)
+	_anchor := bcsAnchor{}
+	n, err := bcs.Unmarshal(anchorBCS, &_anchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
 	if n != len(anchorBCS) {
 		return nil, errors.New("cannot decode anchor: excess bytes")
 	}
+
+	resGetObject, err := c.GetObject(context.Background(),
+		suiclient.GetObjectRequest{ObjectID: _anchor.ID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Anchor object: %w", err)
+	}
+	anchorRef := resGetObject.Data.Ref()
+	anchor := Anchor{
+		Ref:        &anchorRef,
+		Assets:     _anchor.Assets,
+		StateRoot:  _anchor.StateRoot,
+		StateIndex: _anchor.StateIndex,
+	}
+
 	return &anchor, nil
 }
