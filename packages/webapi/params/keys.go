@@ -19,15 +19,15 @@ const (
 )
 
 const (
-	DescriptionAgentID              = "AgentID (Bech32 for L1 accounts | Hex for EVM)"
+	DescriptionAgentID              = "AgentID (Hex Address for L1 accounts | Hex for EVM)"
 	DescriptionBlobHash             = "BlobHash (Hex)"
-	DescriptionChainID              = "ChainID (Bech32)"
+	DescriptionChainID              = "ChainID (Hex Address)"
 	DescriptionContractHName        = "The contract hname (Hex)"
 	DescriptionFieldKey             = "FieldKey (String)"
 	DescriptionNFTID                = "NFT ID (Hex)"
 	DescriptionPeer                 = "Name or PubKey (hex) of the trusted peer"
 	DescriptionRequestID            = "RequestID (Hex)"
-	DescriptionSharedAddress        = "SharedAddress (Bech32)"
+	DescriptionSharedAddress        = "SharedAddress (Hex Address)"
 	DescriptionStateKey             = "State Key (Hex)"
 	DescriptionTxHash               = "Transaction hash (Hex)"
 	DescriptionUsername             = "The username"

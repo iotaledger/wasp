@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // $ sui keytool list
@@ -49,20 +47,10 @@ func TestAddressSerialization(t *testing.T) {
 	require.True(t, addr1.Equals(addr2))
 }
 
-func TestAddressToBech32(t *testing.T) {
-	addr1 := NewRandomAddress()
-	np1 := iotago.NetworkPrefix("abc")
-	bech32 := addr1.Bech32(np1)
-	np2, addr2, err := NewAddressFromBech32(bech32)
-	require.NoError(t, err)
-	require.Equal(t, np1, np2)
-	require.True(t, addr1.Equals(addr2))
-}
-
 func TestAddressToString(t *testing.T) {
 	addr1 := NewRandomAddress()
 	str := addr1.String()
-	addr2, err := NewAddressFromString(str)
+	addr2, err := NewAddressFromHexString(str)
 	require.NoError(t, err)
 	require.True(t, addr1.Equals(addr2))
 }

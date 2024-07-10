@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -20,7 +19,7 @@ func NewAddressAgentID(addr *cryptolib.Address) *AddressAgentID {
 }
 
 func addressAgentIDFromString(s string) (*AddressAgentID, error) {
-	_, addr, err := cryptolib.NewAddressFromBech32(s)
+	addr, err := cryptolib.NewAddressFromHexString(s)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func (a *AddressAgentID) Kind() AgentIDKind {
 }
 
 func (a *AddressAgentID) String() string {
-	return a.a.Bech32(parameters.Bech32Hrp)
+	return a.a.String()
 }
 
 func (a *AddressAgentID) Read(r io.Reader) error {

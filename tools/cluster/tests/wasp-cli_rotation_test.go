@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -63,7 +62,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 		"--chain=chain1",
 		committee,
 		quorum,
-		fmt.Sprintf("--gov-controller=%s", w.WaspCliAddress.Bech32(parameters.Bech32Hrp)),
+		fmt.Sprintf("--gov-controller=%s", w.WaspCliAddress.String()),
 		"--node=0",
 	)
 	matches := regexp.MustCompile(`.*ChainID:\s*([a-zA-Z0-9_]*)\s+.*`).FindStringSubmatch(strings.Join(out, " "))

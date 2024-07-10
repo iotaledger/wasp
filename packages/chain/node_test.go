@@ -359,10 +359,6 @@ func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 	panic("should be unused in test")
 }
 
-func (tnc *testNodeConn) GetBech32HRP() iotago.NetworkPrefix {
-	return testparameters.GetBech32HRP()
-}
-
 func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
 	return testparameters.GetL1ParamsForTesting()
 }

@@ -6,7 +6,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type RequestJSON struct {
@@ -37,7 +36,7 @@ func RequestToJSONObject(request Request) RequestJSON {
 		Params:        msg.Params.JSONDict(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
-		TargetAddress: request.TargetAddress().Bech32(parameters.Bech32Hrp),
+		TargetAddress: request.TargetAddress().String(),
 	}
 }
 

@@ -7,7 +7,6 @@
     "protocol": {
       "version": 2,
       "networkName": "private_tangle1",
-      "bech32Hrp": "tst",
       "minPowScore": 0,
       "belowMaxDepth": 15,
       "rentStructure": {

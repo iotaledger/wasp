@@ -145,12 +145,9 @@ func New(
 ) *Chains {
 	var validatorFeeAddr *cryptolib.Address
 	if validatorAddrStr != "" {
-		bechPrefix, addr, err := cryptolib.NewAddressFromBech32(validatorAddrStr)
+		addr, err := cryptolib.NewAddressFromHexString(validatorAddrStr)
 		if err != nil {
 			panic(fmt.Errorf("error parsing validator.address: %s", err.Error()))
-		}
-		if bechPrefix != nodeConnection.GetL1Params().Protocol.Bech32HRP {
-			panic(fmt.Errorf("validator.address Bech32 HRP does not match network HRP, expected: %s, got: %s", nodeConnection.GetL1Params().Protocol.Bech32HRP, bechPrefix))
 		}
 		validatorFeeAddr = addr
 	}

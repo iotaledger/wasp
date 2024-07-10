@@ -38,7 +38,3 @@ func GetL1ParamsForTesting() *parameters.L1Params {
 func GetL1ProtocolParamsForTesting() *iotago.ProtocolParameters {
 	return l1ParamsForTesting.Protocol
 }
-
-func GetBech32HRP() iotago.NetworkPrefix {
-	return l1ParamsForTesting.Protocol.Bech32HRP
-}

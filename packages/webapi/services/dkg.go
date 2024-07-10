@@ -8,7 +8,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -94,7 +93,7 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 	}
 
 	dkShareInfo := &models.DKSharesInfo{
-		Address:         dkShare.GetAddress().Bech32(parameters.Bech32Hrp),
+		Address:         dkShare.GetAddress().String(),
 		PeerIdentities:  peerIdentitiesHex,
 		PeerIndex:       dkShare.GetIndex(),
 		PublicKey:       iotago.EncodeHex(publicKey),
