@@ -37,7 +37,7 @@ module isc::assets_bag {
         AssetsBag{
             id: object::new(ctx),
             size: 0,
-         }
+        }
     }
 
     /// Destroys an empty AssetsBag object and returns its balance.
