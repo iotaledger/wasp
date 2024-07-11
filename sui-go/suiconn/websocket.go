@@ -78,8 +78,6 @@ func (c *WebsocketClient) CallContext(ctx context.Context, resultCh chan []byte,
 		return err
 	}
 
-	fmt.Printf("establish successfully, subscriptionID: %d, Waiting to accept data...\n", rsp.Result)
-
 	go func(conn *websocket.Conn) {
 		for {
 			messageType, messageData, err := conn.ReadMessage()

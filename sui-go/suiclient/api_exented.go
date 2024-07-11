@@ -46,7 +46,7 @@ type GetOwnedObjectsRequest struct {
 	Query *suijsonrpc.SuiObjectResponseQuery
 	// Cursor is an optional paging cursor.
 	// If provided, the query will start from the next item after the specified cursor.
-	Cursor *suijsonrpc.CheckpointedObjectID
+	Cursor *sui.ObjectID
 	// Limit is the maximum number of items returned per page, defaults to [QUERY_MAX_RESULT_LIMIT_OBJECTS] if not
 	// provided
 	Limit *uint
@@ -113,13 +113,13 @@ func (s *Client) ResolveNameServiceNames(
 	return &resp, s.http.CallContext(ctx, &resp, resolveNameServiceNames, req.Owner, req.Cursor, req.Limit)
 }
 
-func (s *Client) SubscribeEvent(
+func (s *WebsocketClient) SubscribeEvent(
 	ctx context.Context,
 	filter *suijsonrpc.EventFilter,
 	resultCh chan suijsonrpc.SuiEvent,
 ) error {
 	resp := make(chan []byte, 10)
-	err := s.websocket.CallContext(ctx, resp, subscribeEvent, filter)
+	err := s.ws.CallContext(ctx, resp, subscribeEvent, filter)
 	if err != nil {
 		return err
 	}

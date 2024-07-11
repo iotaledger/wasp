@@ -4,11 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
@@ -28,7 +30,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, txnBytes)
-	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, "assets_bag", "AssetsBag")
+	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	assetsDestroyEmptyTxnBytes, err := client.AssetsDestroyEmpty(
@@ -50,7 +52,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.True(t, assetsDestroyEmptyRes.Effects.Data.IsSuccess())
-	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo("assets_bag", "AssetsBag")
+	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.Error(t, err, "not found")
 }
 
@@ -71,7 +73,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, txnBytes)
-	assetsBagMain, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, "assets_bag", "AssetsBag")
+	assetsBagMain, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, coinRef := buildDeployMintTestcoin(t, client, cryptolibSigner)

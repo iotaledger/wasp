@@ -4,11 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCreateAndSendRequest(t *testing.T) {
@@ -29,7 +31,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, "assets_bag", "AssetsBag")
+	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	createAndSendRequestTxnBytes, err := client.CreateAndSendRequest(
@@ -56,6 +58,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, createAndSendRequestRes.Effects.Data.IsSuccess())
 
-	_, err = createAndSendRequestRes.GetCreatedObjectInfo("request", "Request")
+	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 }

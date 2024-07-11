@@ -1,6 +1,7 @@
 package sui
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -116,6 +117,17 @@ func (s *StructTag) UnmarshalJSON(data []byte) error {
 	s.Name = parsedStructTag.Name
 	s.TypeParams = parsedStructTag.TypeParams
 	return nil
+}
+
+func (s *StructTag) String() string {
+	if len(s.TypeParams) > 0 {
+		panic("TODO")
+	}
+	return fmt.Sprintf("%s::%s::%s", s.Address, s.Module, s.Name)
+}
+
+func (s *StructTag) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
 }
 
 func StructTagFromString(data string) (*StructTag, error) {

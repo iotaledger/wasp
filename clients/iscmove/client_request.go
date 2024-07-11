@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -38,7 +39,7 @@ func (c *Client) CreateAndSendRequest(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
-				Module:        "request",
+				Module:        RequestModuleName,
 				Function:      "create_and_send_request",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{

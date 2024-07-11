@@ -30,18 +30,7 @@ func NewClient(config Config) *Client {
 }
 
 func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	var faucetURL string
-	switch c.config.APIURL {
-	case suiconn.TestnetEndpointURL:
-		faucetURL = suiconn.TestnetFaucetURL
-	case suiconn.DevnetEndpointURL:
-		faucetURL = suiconn.DevnetFaucetURL
-	case suiconn.LocalnetEndpointURL:
-		faucetURL = suiconn.LocalnetFaucetURL
-	default:
-		panic("not supported network")
-	}
-	return suiclient.RequestFundsFromFaucet(context.TODO(), address.AsSuiAddress(), faucetURL)
+	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), suiconn.FaucetURL(c.config.APIURL))
 }
 
 func (c *Client) Health(ctx context.Context) error {

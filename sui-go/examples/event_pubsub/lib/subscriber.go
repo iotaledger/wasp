@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 type Subscriber struct {
-	client *suiclient.Client
+	client *suiclient.WebsocketClient
 	// *account.Account
 }
 
-func NewSubscriber(client *suiclient.Client) *Subscriber {
+func NewSubscriber(client *suiclient.WebsocketClient) *Subscriber {
 	return &Subscriber{client: client}
 }
 

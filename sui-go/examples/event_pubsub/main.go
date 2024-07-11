@@ -19,7 +19,7 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewWebsocket(suiconn.TestnetEndpointURL, suiconn.TestnetWebsocketEndpointURL)
 	sender, err := suisigner.NewSignerWithMnemonic(suisigner.TestMnemonic, suisigner.KeySchemeFlagDefault)
 	if err != nil {
 		log.Panic(err)
@@ -35,7 +35,7 @@ func main() {
 	}
 
 	log.Println("sender: ", sender.Address())
-	publisher := serialization.NewPublisher(api, sender)
+	publisher := serialization.NewPublisher(api.Client, sender)
 	subscriber := serialization.NewSubscriber(api)
 
 	go func() {

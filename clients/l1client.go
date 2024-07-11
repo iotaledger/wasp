@@ -42,11 +42,6 @@ type L1Client interface {
 		ctx context.Context,
 		req suiclient.ResolveNameServiceNamesRequest,
 	) (*suijsonrpc.SuiNamePage, error)
-	SubscribeEvent(
-		ctx context.Context,
-		filter *suijsonrpc.EventFilter,
-		resultCh chan suijsonrpc.SuiEvent,
-	) error
 	DevInspectTransactionBlock(
 		ctx context.Context,
 		req suiclient.DevInspectTransactionBlockRequest,
@@ -62,7 +57,6 @@ type L1Client interface {
 	GetCommitteeInfo(
 		ctx context.Context,
 		epoch *suijsonrpc.BigInt, // optional
-
 	) (*suijsonrpc.CommitteeInfo, error)
 	GetLatestSuiSystemState(ctx context.Context) (*suijsonrpc.SuiSystemStateSummary, error)
 	GetReferenceGasPrice(ctx context.Context) (*suijsonrpc.BigInt, error)
@@ -196,7 +190,6 @@ type L1Client interface {
 	WithSignerAndFund(seed []byte, index int) (*suiclient.Client, suisigner.Signer)
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
-	WithWebsocket(url string)
 }
 
 var _ L1Client = &L1ClientExt{}
@@ -209,20 +202,9 @@ type L1ClientExt struct {
 
 func (c *L1ClientExt) RequestFunds(ctx context.Context, address cryptolib.Address) error {
 	faucetURL := c.Config.FaucetURL
-
 	if faucetURL == "" {
-		switch c.Config.APIURL {
-		case suiconn.TestnetEndpointURL:
-			faucetURL = suiconn.TestnetFaucetURL
-		case suiconn.DevnetEndpointURL:
-			faucetURL = suiconn.DevnetFaucetURL
-		case suiconn.LocalnetEndpointURL:
-			faucetURL = suiconn.LocalnetFaucetURL
-		default:
-			panic("unspecified FaucetURL")
-		}
+		faucetURL = suiconn.FaucetURL(c.Config.APIURL)
 	}
-
 	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
 }
 
