@@ -35,8 +35,6 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 }
 
 func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, requestObjects []sui.ObjectRef, stateRoot []byte) (sui.ProgrammableTransaction, error) {
-	panic("impl is wrong")
-
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &anchorID})

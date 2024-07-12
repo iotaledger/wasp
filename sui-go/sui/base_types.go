@@ -1,6 +1,8 @@
 package sui
 
-import "github.com/iotaledger/wasp/sui-go/sui/serialization"
+import (
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
+)
 
 type (
 	PackageID      = Address
@@ -39,6 +41,18 @@ type ObjectRef struct {
 	ObjectID *ObjectID      `json:"objectId"`
 	Version  SequenceNumber `json:"version"`
 	Digest   *ObjectDigest  `json:"digest"`
+}
+
+type ObjectInfo struct {
+	Ref  *ObjectRef
+	Type *ResourceType
+}
+
+func NewObjectInfo(ref *ObjectRef, objType *ResourceType) *ObjectInfo {
+	var info ObjectInfo
+	info.Ref = ref
+	info.Type = objType
+	return &info
 }
 
 type MoveObjectType struct {

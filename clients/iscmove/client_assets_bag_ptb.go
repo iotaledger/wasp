@@ -44,7 +44,7 @@ func NewAssetsBagPlaceCoinPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectR
 				Package:       &packageID,
 				Module:        AssetsBagModuleName,
 				Function:      "place_coin",
-				TypeArguments: []sui.TypeTag{typeTag.Struct.TypeParams[0]},
+				TypeArguments: []sui.TypeTag{*typeTag},
 				Arguments: []sui.Argument{
 					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coin}),

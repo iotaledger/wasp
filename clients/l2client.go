@@ -62,7 +62,7 @@ type L2Client interface {
 		packageID sui.PackageID,
 		assetsBagRef *sui.ObjectRef,
 		coin *sui.ObjectRef,
-		coinType string,
+		coinType suijsonrpc.CoinType,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,

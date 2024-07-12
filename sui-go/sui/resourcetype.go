@@ -46,6 +46,15 @@ func NewResourceType(str string) (*ResourceType, error) {
 	}, nil
 }
 
+func (r *ResourceType) UnmarshalJSON(data []byte) error {
+	resource, err := NewResourceType(string(data[1 : len(data)-1]))
+	if err != nil {
+		return err
+	}
+	*r = *resource
+	return nil
+}
+
 func (r ResourceType) Contains(address *Address, moduleName string, funcName string) bool {
 	if r.Module == moduleName && r.ObjectName == funcName {
 		if address == nil {
