@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -29,7 +30,7 @@ func (c *Client) StartNewChain(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
-				Module:        "anchor",
+				Module:        AnchorModuleName,
 				Function:      "start_new_chain",
 				TypeArguments: []sui.TypeTag{},
 				Arguments:     []sui.Argument{},
@@ -94,7 +95,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchor})
-	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::anchor::Receipt", packageID))
+	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, AnchorModuleName, ReceiptObjectName))
 	if err != nil {
 		return nil, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
 	}
@@ -105,7 +106,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 			sui.Command{
 				MoveCall: &sui.ProgrammableMoveCall{
 					Package:       packageID,
-					Module:        "anchor",
+					Module:        AnchorModuleName,
 					Function:      "receive_request",
 					TypeArguments: []sui.TypeTag{},
 					Arguments:     []sui.Argument{argAnchor, argReqObject},
@@ -139,7 +140,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
-				Module:        "anchor",
+				Module:        AnchorModuleName,
 				Function:      "update_state_root",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
@@ -192,7 +193,7 @@ func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 	ctx context.Context,
 	response *suijsonrpc.SuiTransactionBlockResponse,
 ) (*Anchor, error) {
-	anchorObjRef, err := response.GetCreatedObjectInfo("anchor", "Anchor")
+	anchorObjRef, err := response.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}

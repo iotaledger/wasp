@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -26,7 +27,7 @@ func (c *Client) AssetsBagNew(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
-				Module:        "assets_bag",
+				Module:        AssetsBagModuleName,
 				Function:      "new",
 				TypeArguments: []sui.TypeTag{},
 				Arguments:     []sui.Argument{},
@@ -97,7 +98,7 @@ func (c *Client) AssetsBagPlaceCoin(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
-				Module:        "assets_bag",
+				Module:        AssetsBagModuleName,
 				Function:      "place_coin",
 				TypeArguments: []sui.TypeTag{typeTag.Struct.TypeParams[0]},
 				Arguments: []sui.Argument{
@@ -158,7 +159,7 @@ func (c *Client) AssetsDestroyEmpty(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       packageID,
-				Module:        "assets_bag",
+				Module:        AssetsBagModuleName,
 				Function:      "destroy_empty",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{

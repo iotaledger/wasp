@@ -24,3 +24,16 @@ const (
 	// localnet doesn't have a fixed ChainIdentifier
 	// ChainIdentifierLocalnet
 )
+
+func FaucetURL(apiURL string) string {
+	switch apiURL {
+	case TestnetEndpointURL:
+		return TestnetFaucetURL
+	case DevnetEndpointURL:
+		return DevnetFaucetURL
+	case LocalnetEndpointURL:
+		return LocalnetFaucetURL
+	default:
+		panic("unspecified FaucetURL")
+	}
+}

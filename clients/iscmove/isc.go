@@ -1,8 +1,22 @@
 package iscmove
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
+)
+
+const (
+	AnchorModuleName  = "anchor"
+	AnchorObjectName  = "Anchor"
+	ReceiptObjectName = "Receipt"
+
+	AssetsBagModuleName = "assets_bag"
+	AssetsBagObjectName = "AssetsBag"
+	AssetObjectName     = "Asset"
+
+	RequestModuleName      = "request"
+	RequestDataObjectName  = "RequestData"
+	RequestObjectName      = "Request"
+	RequestEventObjectName = "RequestEvent"
 )
 
 /*
@@ -46,13 +60,13 @@ type Receipt struct {
 }
 
 type RequestData struct {
-	Contract isc.Hname
-	Function isc.Hname
-	Args     [][]uint8
+	Contract string // TODO: should be isc.Hname
+	Function string
+	Args     []sui.Bytes
 }
 
 type Request struct {
-	ID        sui.ObjectID
+	ID        *sui.ObjectID
 	Sender    sui.Address
 	AssetsBag Referent[AssetBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
 	Data      *RequestData       `bcs:"optional"`
