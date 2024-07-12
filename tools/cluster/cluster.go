@@ -269,6 +269,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 
 	chainID, err := apilib.DeployChain(
+		context.Background(),
 		apilib.CreateChainParams{
 			Layer1Client:      clu.L1Client(),
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),

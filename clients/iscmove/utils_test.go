@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) *sui.PackageID {
+func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) sui.PackageID {
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 	iscBytecode := contracts.ISC()
 
@@ -40,7 +40,7 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cry
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	return packageID
+	return *packageID
 }
 
 func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectRef) {

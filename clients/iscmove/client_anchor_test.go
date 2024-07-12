@@ -27,6 +27,7 @@ func TestStartNewChain(t *testing.T) {
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
+		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
@@ -125,7 +126,7 @@ func TestReceiveRequest(t *testing.T) {
 	require.True(t, receiveAndUpdateStateRootRequestRes.Effects.Data.IsSuccess())
 }
 
-func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID *sui.PackageID) *iscmove.Anchor {
+func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) *iscmove.Anchor {
 	txnBytes, err := client.StartNewChain(
 		context.Background(),
 		signer,
@@ -133,6 +134,7 @@ func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
+		[]byte{},
 		false,
 	)
 	require.NoError(t, err)

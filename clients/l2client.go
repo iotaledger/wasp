@@ -14,16 +14,17 @@ type L2Client interface {
 	StartNewChain(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
-		packageID *sui.PackageID,
+		packageID sui.PackageID,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
+		initParams []byte,
 		devMode bool,
 	) ([]byte, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
-		packageID *sui.PackageID,
+		packageID sui.PackageID,
 		anchorAddress *sui.ObjectID,
 		assetsBagRef *sui.ObjectRef,
 		iscContractName string,
@@ -37,7 +38,7 @@ type L2Client interface {
 	ReceiveAndUpdateStateRootRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
-		packageID *sui.PackageID,
+		packageID sui.PackageID,
 		anchor *sui.ObjectRef,
 		reqObjects []*sui.ObjectRef,
 		stateRoot []byte,
@@ -49,7 +50,7 @@ type L2Client interface {
 	AssetsBagNew(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
-		packageID *sui.PackageID,
+		packageID sui.PackageID,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
@@ -58,7 +59,7 @@ type L2Client interface {
 	AssetsBagPlaceCoin(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
-		packageID *sui.PackageID,
+		packageID sui.PackageID,
 		assetsBagRef *sui.ObjectRef,
 		coin *sui.ObjectRef,
 		coinType string,
@@ -70,7 +71,7 @@ type L2Client interface {
 	AssetsDestroyEmpty(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
-		packageID *sui.PackageID,
+		packageID sui.PackageID,
 		assetsBagRef *sui.ObjectRef,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,

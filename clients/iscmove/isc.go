@@ -51,6 +51,7 @@ type AssetBag struct {
 type Anchor struct {
 	Ref        *sui.ObjectRef
 	Assets     Referent[AssetBag]
+	InitParams []byte
 	StateRoot  sui.Bytes
 	StateIndex uint32
 }

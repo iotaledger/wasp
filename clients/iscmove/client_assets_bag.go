@@ -13,7 +13,7 @@ import (
 func (c *Client) AssetsBagNew(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
+	packageID sui.PackageID,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -26,7 +26,7 @@ func (c *Client) AssetsBagNew(
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        AssetsBagModuleName,
 				Function:      "new",
 				TypeArguments: []sui.TypeTag{},
@@ -78,7 +78,7 @@ func (c *Client) AssetsBagNew(
 func (c *Client) AssetsBagPlaceCoin(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
+	packageID sui.PackageID,
 	assetsBagRef *sui.ObjectRef,
 	coin *sui.ObjectRef,
 	coinType string,
@@ -97,7 +97,7 @@ func (c *Client) AssetsBagPlaceCoin(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        AssetsBagModuleName,
 				Function:      "place_coin",
 				TypeArguments: []sui.TypeTag{typeTag.Struct.TypeParams[0]},
@@ -144,7 +144,7 @@ func (c *Client) AssetsBagPlaceCoin(
 func (c *Client) AssetsDestroyEmpty(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
+	packageID sui.PackageID,
 	assetsBagRef *sui.ObjectRef,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
@@ -158,7 +158,7 @@ func (c *Client) AssetsDestroyEmpty(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        AssetsBagModuleName,
 				Function:      "destroy_empty",
 				TypeArguments: []sui.TypeTag{},

@@ -16,10 +16,11 @@ import (
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
+	packageID sui.PackageID,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
+	initParams []byte,
 	devMode bool,
 ) ([]byte, error) {
 	var err error
@@ -29,11 +30,13 @@ func (c *Client) StartNewChain(
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        AnchorModuleName,
 				Function:      "start_new_chain",
 				TypeArguments: []sui.TypeTag{},
-				Arguments:     []sui.Argument{},
+				Arguments: []sui.Argument{
+					ptb.MustPure(initParams),
+				},
 			},
 		},
 	)
@@ -81,7 +84,7 @@ func (c *Client) StartNewChain(
 func (c *Client) ReceiveAndUpdateStateRootRequest(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
+	packageID sui.PackageID,
 	anchor *sui.ObjectRef,
 	reqObjects []*sui.ObjectRef,
 	stateRoot []byte,
@@ -105,7 +108,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 		ptb.Command(
 			sui.Command{
 				MoveCall: &sui.ProgrammableMoveCall{
-					Package:       packageID,
+					Package:       &packageID,
 					Module:        AnchorModuleName,
 					Function:      "receive_request",
 					TypeArguments: []sui.TypeTag{},
@@ -139,7 +142,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        AnchorModuleName,
 				Function:      "update_state_root",
 				TypeArguments: []sui.TypeTag{},
@@ -185,6 +188,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 type bcsAnchor struct {
 	ID         *sui.ObjectID
 	Assets     Referent[AssetBag]
+	InitParams []byte
 	StateRoot  sui.Bytes
 	StateIndex uint32
 }
@@ -216,7 +220,7 @@ func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 		return nil, errors.New("cannot decode anchor: excess bytes")
 	}
 
-	resGetObject, err := c.GetObject(context.Background(),
+	resGetObject, err := c.GetObject(ctx,
 		suiclient.GetObjectRequest{ObjectID: _anchor.ID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Anchor object: %w", err)
@@ -225,6 +229,7 @@ func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 	anchor := Anchor{
 		Ref:        &anchorRef,
 		Assets:     _anchor.Assets,
+		InitParams: _anchor.InitParams,
 		StateRoot:  _anchor.StateRoot,
 		StateIndex: _anchor.StateIndex,
 	}

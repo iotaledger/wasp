@@ -16,7 +16,7 @@ import (
 func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
+	packageID sui.PackageID,
 	anchorAddress *sui.ObjectID,
 	assetsBagRef *sui.ObjectRef,
 	iscContractName string,
@@ -38,7 +38,7 @@ func (c *Client) CreateAndSendRequest(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        RequestModuleName,
 				Function:      "create_and_send_request",
 				TypeArguments: []sui.TypeTag{},
