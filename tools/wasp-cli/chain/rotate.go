@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -63,13 +64,14 @@ func initRotateWithDKGCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chain = defaultChainFallback(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
+			ctx := context.Background()
 
 			if !skipMaintenance {
 				setMaintenanceStatus(chain, node, true, offLedger)
 				defer setMaintenanceStatus(chain, node, false, offLedger)
 			}
 
-			controllerAddr := doDKG(node, peers, quorum)
+			controllerAddr := doDKG(ctx, node, peers, quorum)
 			rotateTo(chain, controllerAddr)
 		},
 	}

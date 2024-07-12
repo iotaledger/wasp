@@ -4,6 +4,7 @@
 package apilib
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -29,10 +33,11 @@ type CreateChainParams struct {
 	Prefix               string
 	InitParams           dict.Dict
 	GovernanceController *cryptolib.Address
+	PackageID            sui.PackageID
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
+func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -45,25 +50,36 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	chainID, err := CreateChainOrigin(
-		par.Layer1Client,
-		par.OriginatorKeyPair,
-		stateControllerAddr,
-		govControllerAddr,
-		par.InitParams,
-	)
-	fmt.Fprint(textout, par.Prefix)
+	anchorBytes, err := par.Layer1Client.L2Client().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
+	if err != nil {
+		return isc.ChainID{}, err
+	}
+
+	txnResponse, err := par.Layer1Client.SignAndExecuteTransaction(
+		context.Background(),
+		cryptolib.SignerToSuiSigner(par.OriginatorKeyPair),
+		anchorBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		})
+	if err != nil {
+		return isc.ChainID{}, err
+	}
+
+	anchor, err := par.Layer1Client.L2Client().GetAnchorFromSuiTransactionBlockResponse(context.Background(), txnResponse)
 	if err != nil {
 		fmt.Fprintf(textout, "Creating chain origin and init transaction.. FAILED: %v\n", err)
 		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
+	
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n* committee size = %d\n* quorum = %d\n",
-		chainID.String(), stateControllerAddr.String(), par.N, par.T)
+		anchor.Ref.ObjectID.String(), stateControllerAddr.String(), par.N, par.T)
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
-	return chainID, err
+	return isc.ChainIDFromObjectID(*anchor.Ref.ObjectID), err
 }
 
 func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
@@ -82,6 +98,7 @@ func CreateChainOrigin(
 	governanceController *cryptolib.Address,
 	initParams dict.Dict,
 ) (isc.ChainID, error) {
+
 	// originatorAddr := originator.Address()
 	// ----------- request owner address' outputs from the ledger
 	/*

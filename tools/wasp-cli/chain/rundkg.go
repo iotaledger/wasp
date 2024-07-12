@@ -33,7 +33,7 @@ func initRunDKGCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			doDKG(node, peers, quorum)
+			doDKG(context.Background(), node, peers, quorum)
 		},
 	}
 
@@ -44,9 +44,9 @@ func initRunDKGCmd() *cobra.Command {
 	return cmd
 }
 
-func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
+func doDKG(ctx context.Context, node string, peers []string, quorum int) *cryptolib.Address {
 	client := cliclients.WaspClient(node)
-	nodeInfo, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute() //nolint:bodyclose // false positive
+	nodeInfo, _, err := client.NodeApi.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
 	log.Check(err)
 
 	// Consider own node as a committee, if peers are not specified.
@@ -59,7 +59,7 @@ func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
 	thisNodeFound := false
 	{
 		var trustedPeers []apiclient.PeeringNodeIdentityResponse
-		trustedPeers, _, err = client.NodeApi.GetTrustedPeers(context.Background()).Execute() //nolint:bodyclose // false positive
+		trustedPeers, _, err = client.NodeApi.GetTrustedPeers(ctx).Execute() //nolint:bodyclose // false positive
 		log.Check(err)
 
 		for _, peer := range peers {

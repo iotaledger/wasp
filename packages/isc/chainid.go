@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 const ChainIDLength = iotago.AliasIDLength
@@ -19,7 +20,7 @@ var emptyChainID = ChainID{}
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
 type (
-	ChainID    iotago.AliasID
+	ChainID    sui.ObjectID
 	ChainIDKey string
 )
 
@@ -29,6 +30,10 @@ func EmptyChainID() ChainID {
 }
 
 func ChainIDFromAddress(addr *cryptolib.Address) ChainID {
+	return ChainID(addr[:])
+}
+
+func ChainIDFromObjectID(addr sui.ObjectID) ChainID {
 	return ChainID(addr[:])
 }
 
