@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -14,6 +15,7 @@ import (
 type L1Config struct {
 	FaucetURL string
 	APIURL    string
+	GraphURL  string
 }
 
 type L1Client interface {
@@ -190,6 +192,7 @@ type L1Client interface {
 	WithSignerAndFund(seed []byte, index int) (*suiclient.Client, suisigner.Signer)
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
+	L2Client() L2Client
 }
 
 var _ L1Client = &L1ClientExt{}
@@ -211,6 +214,13 @@ func (c *L1ClientExt) RequestFunds(ctx context.Context, address cryptolib.Addres
 func (c *L1ClientExt) Health(ctx context.Context) error {
 	_, err := c.Client.GetLatestSuiSystemState(ctx)
 	return err
+}
+
+func (c *L1ClientExt) L2Client() L2Client {
+	return NewL2Client(iscmove.Config{
+		APIURL:   c.Config.APIURL,
+		GraphURL: c.Config.GraphURL,
+	})
 }
 
 func NewL1Client(l1Config L1Config) L1Client {

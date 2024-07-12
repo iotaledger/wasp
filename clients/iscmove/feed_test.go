@@ -50,7 +50,7 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	feed := iscmove.NewRequestsFeed(
 		suiconn.LocalnetEndpointURL,
 		suiconn.LocalnetWebsocketEndpointURL,
-		*iscPackageID,
+		iscPackageID,
 		*anchor.Ref.ObjectID,
 		log,
 	)
