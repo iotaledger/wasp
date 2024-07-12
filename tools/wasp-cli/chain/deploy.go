@@ -131,7 +131,10 @@ func initDeployCmd() *cobra.Command {
 
 			govController := controllerAddrDefaultFallback(govControllerStr)
 
-			stateController := doDKG(ctx, node, peers, quorum)
+			// TODO: Fixme: doDKG requires a somewhat runnable wasp node :D
+			// stateController := doDKG(ctx, node, peers, quorum)
+
+			stateController := cryptolib.NewRandomAddress()
 
 			par := apilib.CreateChainParams{
 				Layer1Client:         l1Client,
@@ -155,7 +158,8 @@ func initDeployCmd() *cobra.Command {
 
 			config.AddChain(chainName, chainID.String())
 
-			activateChain(node, chainName, chainID)
+			// TODO: Fixme: This requires a runnable node as well.
+			// activateChain(node, chainName, chainID)
 		},
 	}
 

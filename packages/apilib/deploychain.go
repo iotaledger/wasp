@@ -56,7 +56,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 	}
 
 	txnResponse, err := par.Layer1Client.SignAndExecuteTransaction(
-		context.Background(),
+		ctx,
 		cryptolib.SignerToSuiSigner(par.OriginatorKeyPair),
 		anchorBytes,
 		&suijsonrpc.SuiTransactionBlockResponseOptions{
@@ -67,12 +67,12 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		return isc.ChainID{}, err
 	}
 
-	anchor, err := par.Layer1Client.L2Client().GetAnchorFromSuiTransactionBlockResponse(context.Background(), txnResponse)
+	anchor, err := par.Layer1Client.L2Client().GetAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
 	if err != nil {
 		fmt.Fprintf(textout, "Creating chain origin and init transaction.. FAILED: %v\n", err)
 		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
-	
+
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n* committee size = %d\n* quorum = %d\n",
 		anchor.Ref.ObjectID.String(), stateControllerAddr.String(), par.N, par.T)
