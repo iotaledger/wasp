@@ -29,31 +29,14 @@ func (c *Client) CreateAndSendRequest(
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
-	anchorRes, err := c.GetObject(context.Background(), suiclient.GetObjectRequest{ObjectID: anchorAddress})
+	anchorRes, err := c.GetObject(ctx, suiclient.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
-	anchorRef := anchorRes.Data.Ref()
-	ptb := sui.NewProgrammableTransactionBuilder()
 
-	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        RequestModuleName,
-				Function:      "create_and_send_request",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
-					ptb.MustPure(anchorRef.ObjectID),
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-					ptb.MustPure(&bcs.Option[string]{Some: iscContractName}),
-					ptb.MustPure(&bcs.Option[string]{Some: iscFunctionName}),
-					ptb.MustPure(&bcs.Option[[][]byte]{Some: args}),
-				},
-			},
-		},
-	)
-	pt := ptb.Finish()
+	anchorRef := anchorRes.Data.Ref()
+
+	ptb := NewCreateAndSendRequestPTB(packageID, *anchorRef.ObjectID, assetsBagRef, iscContractName, iscFunctionName, args)
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -65,7 +48,7 @@ func (c *Client) CreateAndSendRequest(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		pt,
+		ptb,
 		gasPayments,
 		gasBudget,
 		gasPrice,

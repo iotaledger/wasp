@@ -39,8 +39,8 @@ type L2Client interface {
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
-		anchor *sui.ObjectRef,
-		reqObjects []*sui.ObjectRef,
+		anchor sui.ObjectRef,
+		reqObjects []sui.ObjectRef,
 		stateRoot []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
