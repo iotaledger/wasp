@@ -5,11 +5,9 @@ package apilib
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -18,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -50,27 +47,9 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	anchorBytes, err := par.Layer1Client.L2Client().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
+	anchor, err := par.Layer1Client.L2Client().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
 	if err != nil {
 		return isc.ChainID{}, err
-	}
-
-	txnResponse, err := par.Layer1Client.SignAndExecuteTransaction(
-		ctx,
-		cryptolib.SignerToSuiSigner(par.OriginatorKeyPair),
-		anchorBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		})
-	if err != nil {
-		return isc.ChainID{}, err
-	}
-
-	anchor, err := par.Layer1Client.L2Client().GetAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
-	if err != nil {
-		fmt.Fprintf(textout, "Creating chain origin and init transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
@@ -80,50 +59,6 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
 	return isc.ChainIDFromObjectID(*anchor.Ref.ObjectID), err
-}
-
-func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
-	var utxoIDs iotago.OutputIDs
-	for id := range utxoMap {
-		utxoIDs = append(utxoIDs, id)
-	}
-	return utxoIDs
-}
-
-// CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(
-	layer1Client clients.L1Client,
-	originator cryptolib.Signer,
-	stateController *cryptolib.Address,
-	governanceController *cryptolib.Address,
-	initParams dict.Dict,
-) (isc.ChainID, error) {
-
-	// originatorAddr := originator.Address()
-	// ----------- request owner address' outputs from the ledger
-	/*
-		utxoMap, err := layer2Client.OutputMap(originatorAddr)
-		if err != nil {
-			return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-		}
-	*/
-
-	// ----------- create origin transaction
-	panic("refactor me: origin.NewChainOriginTransaction")
-	var chainID isc.ChainID
-	err := errors.New("refactor me: CreateChainOrigin")
-
-	if err != nil {
-		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}
-
-	// ------------- post origin transaction and wait for confirmation
-	/*_, err = layer2Client.PostTxAndWaitUntilConfirmation(originTx)
-	if err != nil {
-		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}*/
-
-	return chainID, nil
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its
