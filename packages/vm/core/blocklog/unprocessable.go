@@ -3,7 +3,6 @@ package blocklog
 import (
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -11,10 +10,11 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type unprocessableRequestRecord struct {
-	outputID iotago.OutputID
+	outputID sui.ObjectID
 	req      isc.Request
 }
 
@@ -62,33 +62,40 @@ func (s *StateReader) unprocessableMap() *collections.ImmutableMap {
 
 // save request reference / address of the sender
 func (s *StateWriter) SaveUnprocessable(req isc.OnLedgerRequest, blockIndex uint32, outputIndex uint16) {
+	panic("refactor me: OutputID + Index? Still relevant?")
+
 	rec := unprocessableRequestRecord{
 		// TransactionID is unknown yet, will be filled next block
-		outputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
+		// outputID: iotago.OutputIDFromTransactionIDAndIndex(sui.ObjectID{}, outputIndex),
+		outputID: sui.ObjectID{},
 		req:      req,
 	}
+
 	s.unprocessableMap().SetAt(req.ID().Bytes(), rec.Bytes())
 	s.newUnprocessableRequestsArray().Push(req.ID().Bytes())
 }
 
-func (s *StateWriter) updateUnprocessableRequestsOutputID(anchorTxID iotago.TransactionID) {
+func (s *StateWriter) updateUnprocessableRequestsOutputID(anchorTxID sui.ObjectID) {
 	newReqs := s.newUnprocessableRequestsArray()
 	allReqs := s.unprocessableMap()
 	n := newReqs.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newReqs.GetAt(i)
 		rec := mustUnprocessableRequestRecordFromBytes(allReqs.GetAt(k))
-		rec.outputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.outputID.Index())
+		panic("refactor me: OutputID + Index? Still relevant?")
+		// rec.outputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.outputID.Index())
+
+		rec.outputID = anchorTxID
 		allReqs.SetAt(k, rec.Bytes())
 	}
 	newReqs.Erase()
 }
 
-func (s *StateReader) GetUnprocessable(reqID isc.RequestID) (req isc.Request, outputID iotago.OutputID, err error) {
+func (s *StateReader) GetUnprocessable(reqID isc.RequestID) (req isc.Request, outputID sui.ObjectID, err error) {
 	recData := s.unprocessableMap().GetAt(reqID.Bytes())
 	rec, err := unprocessableRequestRecordFromBytes(recData)
 	if err != nil {
-		return nil, iotago.OutputID{}, err
+		return nil, sui.ObjectID{}, err
 	}
 	return rec.req, rec.outputID, nil
 }

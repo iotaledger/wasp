@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (s *StateWriter) GetBlockRegistry() *collections.Array {
@@ -35,7 +36,7 @@ func (s *StateWriter) SaveNextBlockInfo(blockInfo *BlockInfo) {
 }
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
-func (s *StateWriter) UpdateLatestBlockInfo(anchorTxID iotago.TransactionID) {
+func (s *StateWriter) UpdateLatestBlockInfo(anchorTxID sui.ObjectID) {
 	s.updateUnprocessableRequestsOutputID(anchorTxID)
 }
 

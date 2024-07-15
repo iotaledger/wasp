@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type contractSandbox struct {
@@ -186,7 +187,7 @@ func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, amount *big.Int) 
 	s.reqctx.creditToAccountFullDecimals(agentID, amount, true)
 }
 
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, outputID iotago.OutputID) {
+func (s *contractSandbox) RetryUnprocessable(req isc.Request, outputID sui.ObjectID) {
 	s.reqctx.RetryUnprocessable(req, outputID)
 }
 

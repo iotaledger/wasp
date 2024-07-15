@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // Request wraps any data which can be potentially be interpreted as a request
@@ -85,9 +86,9 @@ type OffLedgerRequest interface {
 type OnLedgerRequest interface {
 	Request
 	Clone() OnLedgerRequest
-	Output() iotago.Output
+	Output() Request
 	IsInternalUTXO(ChainID) bool
-	OutputID() iotago.OutputID
+	OutputID() sui.ObjectID
 	Features() Features
 }
 

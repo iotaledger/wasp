@@ -10,14 +10,16 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type onLedgerRequestData struct {
-	outputID iotago.OutputID
-	output   iotago.Output
+	outputID sui.ObjectID
+	output   iscmove.Request
 
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
@@ -281,20 +283,20 @@ func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 
 type RetryOnLedgerRequest struct {
 	OnLedgerRequest
-	retryOutputID iotago.OutputID
+	retryOutputID sui.ObjectID
 }
 
-func NewRetryOnLedgerRequest(req OnLedgerRequest, retryOutput iotago.OutputID) *RetryOnLedgerRequest {
+func NewRetryOnLedgerRequest(req OnLedgerRequest, retryOutput sui.ObjectID) *RetryOnLedgerRequest {
 	return &RetryOnLedgerRequest{
 		OnLedgerRequest: req,
 		retryOutputID:   retryOutput,
 	}
 }
 
-func (r *RetryOnLedgerRequest) RetryOutputID() iotago.OutputID {
+func (r *RetryOnLedgerRequest) RetryOutputID() sui.ObjectID {
 	return r.retryOutputID
 }
 
-func (r *RetryOnLedgerRequest) SetRetryOutputID(oid iotago.OutputID) {
+func (r *RetryOnLedgerRequest) SetRetryOutputID(oid sui.ObjectID) {
 	r.retryOutputID = oid
 }

@@ -115,7 +115,7 @@ func (vmctx *vmContext) init() {
 
 		// save the anchor tx ID of the current state
 		blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState)).UpdateLatestBlockInfo(
-			vmctx.task.AnchorOutputID.TransactionID(),
+			vmctx.task.AnchorOutputID,
 		)
 
 		// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
