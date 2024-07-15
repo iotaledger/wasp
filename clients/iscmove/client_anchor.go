@@ -24,31 +24,9 @@ func (c *Client) StartNewChain(
 	devMode bool,
 ) (*Anchor, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
-	arg1 := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        AnchorModuleName,
-				Function:      "start_new_chain",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
-					ptb.MustPure(initParams),
-				},
-			},
-		},
-	)
-	ptb.Command(
-		sui.Command{
-			TransferObjects: &sui.ProgrammableTransferObjects{
-				Objects: []sui.Argument{arg1},
-				Address: ptb.MustPure(signer.Address()),
-			},
-		},
-	)
-	pt := ptb.Finish()
+	ptb := NewStartNewChainPTB(packageID, initParams, cryptolibSigner.Address())
+	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -60,7 +38,7 @@ func (c *Client) StartNewChain(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		pt,
+		ptb,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -97,76 +75,20 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
-	anchor *sui.ObjectRef,
-	reqObjects []*sui.ObjectRef,
+	anchor sui.ObjectRef,
+	reqObjects []sui.ObjectRef,
 	stateRoot []byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
-	panic("impl is wrong")
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
-	ptb := sui.NewProgrammableTransactionBuilder()
-
-	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchor})
-	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, AnchorModuleName, ReceiptObjectName))
+	ptb, err := NewReceiveRequestPTB(packageID, anchor, reqObjects, stateRoot)
 	if err != nil {
-		return nil, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
+		return nil, err
 	}
 
-	for i, reqObject := range reqObjects {
-		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: reqObject})
-		ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
-					Package:       &packageID,
-					Module:        AnchorModuleName,
-					Function:      "receive_request",
-					TypeArguments: []sui.TypeTag{},
-					Arguments:     []sui.Argument{argAnchor, argReqObject},
-				},
-			},
-		)
-		ptb.Command(
-			sui.Command{
-				TransferObjects: &sui.ProgrammableTransferObjects{
-					Objects: []sui.Argument{
-						{NestedResult: &sui.NestedResult{Cmd: uint16(i * 2), Result: 1}},
-					},
-					Address: ptb.MustPure(anchor.ObjectID),
-				},
-			},
-		)
-	}
-
-	var nestedResults []sui.Argument
-	for i := 0; i < len(reqObjects); i++ {
-		nestedResults = append(nestedResults, sui.Argument{NestedResult: &sui.NestedResult{Cmd: uint16(i * 2), Result: 0}})
-	}
-	argReceipts := ptb.Command(sui.Command{
-		MakeMoveVec: &sui.ProgrammableMakeMoveVec{
-			Type:    typeReceipt,
-			Objects: nestedResults,
-		},
-	})
-
-	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        AnchorModuleName,
-				Function:      "update_state_root",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
-					argAnchor,
-					ptb.MustPure(stateRoot),
-					argReceipts,
-				},
-			},
-		},
-	)
-	pt := ptb.Finish()
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
 		if err != nil {
@@ -176,7 +98,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	}
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		pt,
+		ptb,
 		gasPayments,
 		gasBudget,
 		gasPrice,

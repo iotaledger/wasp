@@ -23,27 +23,7 @@ func (c *Client) AssetsBagNew(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
-	arg1 := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        AssetsBagModuleName,
-				Function:      "new",
-				TypeArguments: []sui.TypeTag{},
-				Arguments:     []sui.Argument{},
-			},
-		},
-	)
-	ptb.Command(
-		sui.Command{
-			TransferObjects: &sui.ProgrammableTransferObjects{
-				Objects: []sui.Argument{arg1},
-				Address: ptb.MustPure(signer.Address()),
-			},
-		},
-	)
-	pt := ptb.Finish()
+	ptb := NewAssetsBagNewPTB(packageID, cryptolibSigner.Address())
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -55,7 +35,7 @@ func (c *Client) AssetsBagNew(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		pt,
+		ptb,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -102,26 +82,10 @@ func (c *Client) AssetsBagPlaceCoin(
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
-	typeTag, err := sui.TypeTagFromString(coinType)
+	ptb, err := NewAssetsBagPlaceCoinPTB(packageID, assetsBagRef, coin, coinType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse TypeTag: %s: %w", coinType, err)
+		return nil, fmt.Errorf("can't create PTB: %w", err)
 	}
-	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        AssetsBagModuleName,
-				Function:      "place_coin",
-				TypeArguments: []sui.TypeTag{typeTag.Struct.TypeParams[0]},
-				Arguments: []sui.Argument{
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coin}),
-				},
-			},
-		},
-	)
-	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -133,7 +97,7 @@ func (c *Client) AssetsBagPlaceCoin(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		pt,
+		ptb,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -179,21 +143,7 @@ func (c *Client) AssetsDestroyEmpty(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
-	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        AssetsBagModuleName,
-				Function:      "destroy_empty",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-				},
-			},
-		},
-	)
-	pt := ptb.Finish()
+	ptb := NewAssetsDestroyEmptyPTB(packageID, assetsBagRef)
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -205,7 +155,7 @@ func (c *Client) AssetsDestroyEmpty(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		pt,
+		ptb,
 		gasPayments,
 		gasBudget,
 		gasPrice,
