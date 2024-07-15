@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // CreateAndSendRequest calls <packageID>::request::create_and_send_request() and transfers the created
@@ -26,7 +27,7 @@ func (c *Client) CreateAndSendRequest(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) ([]byte, error) {
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 	anchorRes, err := c.GetObject(context.Background(), suiclient.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
@@ -82,5 +83,18 @@ func (c *Client) CreateAndSendRequest(
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	}
-	return txnBytes, nil
+
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		signer,
+		txnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	}
+	return txnResponse, nil
 }

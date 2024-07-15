@@ -20,7 +20,7 @@ type L2Client interface {
 		gasBudget uint64,
 		initParams []byte,
 		devMode bool,
-	) ([]byte, error)
+	) (*iscmove.Anchor, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -34,7 +34,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) ([]byte, error)
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	ReceiveAndUpdateStateRootRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -46,7 +46,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) ([]byte, error)
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	AssetsBagNew(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -55,7 +55,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) ([]byte, error)
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	AssetsBagPlaceCoin(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -67,7 +67,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) ([]byte, error)
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	AssetsDestroyEmpty(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -77,7 +77,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) ([]byte, error)
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	GetAnchorFromSuiTransactionBlockResponse(
 		ctx context.Context,
 		response *suijsonrpc.SuiTransactionBlockResponse,
