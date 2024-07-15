@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -29,21 +28,16 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	defer cancel()
 
 	// create AssetsBag owned by iscOwner
-	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(
-		client,
+	txnResponse, err := client.AssetsBagNew(
+		ctx,
 		iscOwner,
-		lo.Must(client.AssetsBagNew(
-			ctx,
-			iscOwner,
-			iscPackageID,
-			nil,
-			suiclient.DefaultGasPrice,
-			suiclient.DefaultGasBudget,
-			false,
-		)),
-		iscmove.AssetsBagModuleName,
-		iscmove.AssetsBagObjectName,
+		iscPackageID,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
 	)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
@@ -59,26 +53,21 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	feed.SubscribeNewRequests(ctx, newRequests)
 
 	// create a Request and send to anchor
-	requestRef, err := signAndExecuteTransactionGetObjectRef(
-		client,
+	txnResponse, err = client.CreateAndSendRequest(
+		ctx,
 		iscOwner,
-		lo.Must(client.CreateAndSendRequest(
-			ctx,
-			iscOwner,
-			iscPackageID,
-			anchor.Ref.ObjectID,
-			assetsBagRef,
-			"dummy_isc_contract",
-			"dummy_isc_func",
-			[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-			nil,
-			suiclient.DefaultGasPrice,
-			suiclient.DefaultGasBudget,
-			false,
-		)),
-		iscmove.RequestModuleName,
-		iscmove.RequestObjectName,
+		iscPackageID,
+		anchor.Ref.ObjectID,
+		assetsBagRef,
+		"dummy_isc_contract",
+		"dummy_isc_func",
+		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
 	)
+	requestRef, err := txnResponse.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	req := <-newRequests

@@ -22,7 +22,7 @@ func (c *Client) StartNewChain(
 	gasBudget uint64,
 	initParams []byte,
 	devMode bool,
-) ([]byte, error) {
+) (*Anchor, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
@@ -78,7 +78,19 @@ func (c *Client) StartNewChain(
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	}
-	return txnBytes, nil
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		signer,
+		txnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	}
+	return c.GetAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
 }
 
 func (c *Client) ReceiveAndUpdateStateRootRequest(
@@ -92,7 +104,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) ([]byte, error) {
+) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	panic("impl is wrong")
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -182,7 +194,19 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	}
-	return txnBytes, nil
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		signer,
+		txnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	}
+	return txnResponse, nil
 }
 
 type bcsAnchor struct {

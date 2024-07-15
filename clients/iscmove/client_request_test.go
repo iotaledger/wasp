@@ -7,9 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
@@ -21,7 +19,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
 
-	txnBytes, err := client.AssetsBagNew(
+	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -31,10 +29,10 @@ func TestCreateAndSendRequest(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	createAndSendRequestTxnBytes, err := client.CreateAndSendRequest(
+	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -49,14 +47,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	createAndSendRequestRes, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		cryptolib.SignerToSuiSigner(cryptolibSigner),
-		createAndSendRequestTxnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
-	)
-	require.NoError(t, err)
-	require.True(t, createAndSendRequestRes.Effects.Data.IsSuccess())
 
 	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)

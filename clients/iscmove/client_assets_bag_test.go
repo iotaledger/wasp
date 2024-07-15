@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
@@ -19,7 +18,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	txnBytes, err := client.AssetsBagNew(
+	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -29,11 +28,10 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, txnBytes)
-	assetsBagRef, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	assetsDestroyEmptyTxnBytes, err := client.AssetsDestroyEmpty(
+	assetsDestroyEmptyRes, err := client.AssetsDestroyEmpty(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -44,14 +42,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsDestroyEmptyRes, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		cryptolib.SignerToSuiSigner(cryptolibSigner),
-		assetsDestroyEmptyTxnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
-	)
-	require.NoError(t, err)
-	require.True(t, assetsDestroyEmptyRes.Effects.Data.IsSuccess())
+
 	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.Error(t, err, "not found")
 }
@@ -62,7 +53,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	txnBytes, err := client.AssetsBagNew(
+	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
@@ -72,8 +63,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	require.NotNil(t, txnBytes)
-	assetsBagMain, err := signAndExecuteTransactionGetObjectRef(client, cryptolibSigner, txnBytes, iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, coinRef := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -86,11 +76,11 @@ func TestAssetsBagAddItems(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	assetsBagAddItemsTxnBytes, err := client.AssetsBagPlaceCoin(
+	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		assetsBagMain,
+		assetsBagMainRef,
 		coinRef,
 		*getCoinRef.Data.Type,
 		nil,
@@ -99,12 +89,4 @@ func TestAssetsBagAddItems(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagAddItemsRes, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		cryptolib.SignerToSuiSigner(cryptolibSigner),
-		assetsBagAddItemsTxnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
-	)
-	require.NoError(t, err)
-	require.True(t, assetsBagAddItemsRes.Effects.Data.IsSuccess())
 }
