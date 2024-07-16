@@ -20,7 +20,7 @@ func NewGraph(graphqlURL string) *SuiGraph {
 	}
 }
 
-func (g *SuiGraph) GetAssetBag(ctx context.Context, assetBagID sui.ObjectID) (
+func (g *SuiGraph) GetAssetsBag(ctx context.Context, assetBagID sui.ObjectID) (
 	*sui_graph.GetAssetsBagResponse,
 	error,
 ) {

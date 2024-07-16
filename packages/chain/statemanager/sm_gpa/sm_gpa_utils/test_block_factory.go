@@ -24,7 +24,7 @@ import (
 
 type anchorData struct {
 	ref          *sui.ObjectRef
-	assets       iscmove.Referent[iscmove.AssetBag]
+	assets       iscmove.Referent[iscmove.AssetsBag]
 	l1Commitment *state.L1Commitment
 	stateIndex   uint32
 }
@@ -53,9 +53,9 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 			Version:  0,
 			Digest:   nil, // TODO
 		},
-		assets: iscmove.Referent[iscmove.AssetBag]{
+		assets: iscmove.Referent[iscmove.AssetsBag]{
 			//ID: nil, // TODO
-			Value: &iscmove.AssetBag{
+			Value: &iscmove.AssetsBag{
 				//ID:   nil, // TODO
 				Size: 0,
 			},

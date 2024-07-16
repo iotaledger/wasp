@@ -42,12 +42,12 @@ func (s *Client) GetDynamicFields(
 type GetOwnedObjectsRequest struct {
 	// Address is the owner's Sui address
 	Address *sui.Address
-	// Query is the objects query criteria.
+	// [optional] Query is the objects query criteria.
 	Query *suijsonrpc.SuiObjectResponseQuery
-	// Cursor is an optional paging cursor.
+	// [optional] Cursor is an optional paging cursor.
 	// If provided, the query will start from the next item after the specified cursor.
 	Cursor *sui.ObjectID
-	// Limit is the maximum number of items returned per page, defaults to [QUERY_MAX_RESULT_LIMIT_OBJECTS] if not
+	// [optional] Limit is the maximum number of items returned per page, defaults to [QUERY_MAX_RESULT_LIMIT_OBJECTS] if not
 	// provided
 	Limit *uint
 }

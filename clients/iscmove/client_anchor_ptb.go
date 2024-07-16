@@ -34,9 +34,7 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 	return ptb.Finish()
 }
 
-func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, requestObjects []sui.ObjectRef, stateRoot []byte) (sui.ProgrammableTransaction, error) {
-	panic("impl is wrong")
-
+func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*AssetsBag, stateRoot []byte) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &anchorID})
@@ -45,9 +43,23 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, reque
 		return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
 	}
 
-	for i, reqObject := range requestObjects {
+	var argReceiveRequests []sui.Argument
+	argBorrowAssets := ptb.Command(
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        AnchorModuleName,
+				Function:      "borrow_assets",
+				TypeArguments: []sui.TypeTag{},
+				Arguments:     []sui.Argument{argAnchor},
+			},
+		},
+	)
+	argAnchorAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
+	argAnchorBorrow := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
+	for _, reqObject := range requestObjects {
 		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: &reqObject})
-		ptb.Command(
+		argReceiveRequest := ptb.Command(
 			sui.Command{
 				MoveCall: &sui.ProgrammableMoveCall{
 					Package:       &packageID,
@@ -58,21 +70,54 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, reque
 				},
 			},
 		)
+		argReceiveRequests = append(argReceiveRequests, argReceiveRequest)
+
+		assetsBag := reqAssetsBagsMap[reqObject]
+		argAssetsBag := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
+		for _, bal := range assetsBag.Balances {
+			typeTag, err := sui.TypeTagFromString(bal.CoinType)
+			if err != nil {
+				return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Balance's Coin TypeTag: %w", err)
+			}
+			argBal := ptb.Command(
+				sui.Command{
+					MoveCall: &sui.ProgrammableMoveCall{
+						Package:       &packageID,
+						Module:        AssetsBagModuleName,
+						Function:      "take_all_coin_balance",
+						TypeArguments: []sui.TypeTag{*typeTag},
+						Arguments:     []sui.Argument{argAssetsBag},
+					},
+				},
+			)
+			ptb.Command(
+				sui.Command{
+					MoveCall: &sui.ProgrammableMoveCall{
+						Package:       &packageID,
+						Module:        AssetsBagModuleName,
+						Function:      "place_coin_balance",
+						TypeArguments: []sui.TypeTag{*typeTag},
+						Arguments:     []sui.Argument{argAnchorAssets, argBal},
+					},
+				},
+			)
+		}
 		ptb.Command(
 			sui.Command{
-				TransferObjects: &sui.ProgrammableTransferObjects{
-					Objects: []sui.Argument{
-						{NestedResult: &sui.NestedResult{Cmd: uint16(i * 2), Result: 1}},
-					},
-					Address: ptb.MustPure(anchorID.ObjectID),
+				MoveCall: &sui.ProgrammableMoveCall{
+					Package:       &packageID,
+					Module:        AssetsBagModuleName,
+					Function:      "destroy_empty",
+					TypeArguments: []sui.TypeTag{},
+					Arguments:     []sui.Argument{argAssetsBag},
 				},
 			},
 		)
 	}
 
 	var nestedResults []sui.Argument
-	for i := 0; i < len(requestObjects); i++ {
-		nestedResults = append(nestedResults, sui.Argument{NestedResult: &sui.NestedResult{Cmd: uint16(i * 2), Result: 0}})
+	for _, argReceiveRequest := range argReceiveRequests {
+		nestedResults = append(nestedResults, sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 0}})
 	}
 	argReceipts := ptb.Command(sui.Command{
 		MakeMoveVec: &sui.ProgrammableMakeMoveVec{
@@ -80,6 +125,22 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, reque
 			Objects: nestedResults,
 		},
 	})
+
+	ptb.Command(
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        AnchorModuleName,
+				Function:      "return_assets_from_borrow",
+				TypeArguments: []sui.TypeTag{},
+				Arguments: []sui.Argument{
+					argAnchor,
+					argAnchorAssets,
+					argAnchorBorrow,
+				},
+			},
+		},
+	)
 
 	ptb.Command(
 		sui.Command{

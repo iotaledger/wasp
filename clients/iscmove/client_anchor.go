@@ -2,7 +2,7 @@ package iscmove
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
@@ -24,9 +24,9 @@ func (c *Client) StartNewChain(
 	devMode bool,
 ) (*Anchor, error) {
 	var err error
+	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := NewStartNewChainPTB(packageID, initParams, cryptolibSigner.Address())
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -68,7 +68,17 @@ func (c *Client) StartNewChain(
 	if !txnResponse.Effects.Data.IsSuccess() {
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
-	return c.GetAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
+
+	anchorRef, err := txnResponse.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
+	}
+	anchor, err := c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
+	}
+
+	return anchor, nil
 }
 
 func (c *Client) ReceiveAndUpdateStateRootRequest(
@@ -84,7 +94,17 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
-	ptb, err := NewReceiveRequestPTB(packageID, anchor, reqObjects, stateRoot)
+
+	reqAssetsBagsMap := make(map[sui.ObjectRef]*AssetsBag)
+	for _, req := range reqObjects {
+		assetsBag, err := c.GetAssetsBagFromRequestID(ctx, req.ObjectID)
+		if err != nil {
+			panic(err)
+		}
+		reqAssetsBagsMap[req] = assetsBag
+	}
+
+	ptb, err := NewReceiveRequestPTB(packageID, anchor, reqObjects, reqAssetsBagsMap, stateRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -131,53 +151,44 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	return txnResponse, nil
 }
 
-type bcsAnchor struct {
-	ID         *sui.ObjectID
-	Assets     Referent[AssetBag]
-	InitParams []byte
-	StateRoot  sui.Bytes
-	StateIndex uint32
-}
-
-func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
+func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
-	response *suijsonrpc.SuiTransactionBlockResponse,
+	anchorObjectID *sui.ObjectID,
 ) (*Anchor, error) {
-	anchorObjRef, err := response.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
-	}
 
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
-		ObjectID: anchorObjRef.ObjectID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+	getObjectResponseAnchor, err := c.GetObject(ctx, suiclient.GetObjectRequest{
+		ObjectID: anchorObjectID,
+		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true, ShowContent: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
-	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
 
-	_anchor := bcsAnchor{}
-	n, err := bcs.Unmarshal(anchorBCS, &_anchor)
+	var tmpAnchorJsonObject anchorJsonObject
+	err = json.Unmarshal(getObjectResponseAnchor.Data.Content.Data.MoveObject.Fields, &tmpAnchorJsonObject)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
-	}
-	if n != len(anchorBCS) {
-		return nil, errors.New("cannot decode anchor: excess bytes")
+		return nil, fmt.Errorf("failed to unmarshal fields in Anchor: %w", err)
 	}
 
 	resGetObject, err := c.GetObject(ctx,
-		suiclient.GetObjectRequest{ObjectID: _anchor.ID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
+		suiclient.GetObjectRequest{ObjectID: tmpAnchorJsonObject.ID.ID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Anchor object: %w", err)
 	}
 	anchorRef := resGetObject.Data.Ref()
+	assets, err := c.GetAssetsBagFromAnchorID(ctx, anchorRef.ObjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AssetsBag from Anchor: %w", err)
+	}
 	anchor := Anchor{
-		Ref:        &anchorRef,
-		Assets:     _anchor.Assets,
-		InitParams: _anchor.InitParams,
-		StateRoot:  _anchor.StateRoot,
-		StateIndex: _anchor.StateIndex,
+		Ref: &anchorRef,
+		Assets: Referent[AssetsBag]{
+			ID:    *tmpAnchorJsonObject.Assets.Fields.ID,
+			Value: assets,
+		},
+		InitParams: tmpAnchorJsonObject.InitParams,
+		StateRoot:  tmpAnchorJsonObject.StateRoot,
+		StateIndex: tmpAnchorJsonObject.StateIndex,
 	}
 
 	return &anchor, nil

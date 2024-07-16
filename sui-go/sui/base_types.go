@@ -49,6 +49,18 @@ type ObjectRef struct {
 	Version  SequenceNumber `json:"version"`
 	Digest   *ObjectDigest  `json:"digest"`
 }
+
+type ObjectInfo struct {
+	Ref  *ObjectRef
+	Type *ResourceType
+}
+
+func NewObjectInfo(ref *ObjectRef, objType *ResourceType) *ObjectInfo {
+	var info ObjectInfo
+	info.Ref = ref
+	info.Type = objType
+	return &info
+}
 type ObjectRefKey [AddressLen + 8]byte
 
 func (or *ObjectRef) Equals(other *ObjectRef) bool {
