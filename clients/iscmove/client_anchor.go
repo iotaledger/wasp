@@ -2,6 +2,7 @@ package iscmove
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
@@ -23,9 +24,9 @@ func (c *Client) StartNewChain(
 	devMode bool,
 ) (*Anchor, error) {
 	var err error
+	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := NewStartNewChainPTB(packageID, initParams, cryptolibSigner.Address())
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -67,7 +68,17 @@ func (c *Client) StartNewChain(
 	if !txnResponse.Effects.Data.IsSuccess() {
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
-	return c.GetAnchorFromSuiTransactionBlockResponse(ctx, txnResponse)
+
+	anchorRef, err := txnResponse.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
+	}
+	anchor, err := c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
+	}
+
+	return anchor, nil
 }
 
 func (c *Client) ReceiveAndUpdateStateRootRequest(
@@ -140,74 +151,44 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	return txnResponse, nil
 }
 
-type MoveAnchor struct {
-	ID         *sui.ObjectID
-	Assets     Referent[MoveAssetsBag]
-	InitParams []byte
-	StateRoot  sui.Bytes
-	StateIndex uint32
-}
-
-func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
-	ctx context.Context,
-	response *suijsonrpc.SuiTransactionBlockResponse,
-) (*Anchor, error) {
-	anchorObjRef, err := response.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
-	}
-
-	anchor, err := c.GetAnchorFromObjectID(ctx, anchorObjRef.ObjectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
-	}
-
-	return anchor, nil
-}
-
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *sui.ObjectID,
 ) (*Anchor, error) {
 
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
+	getObjectResponseAnchor, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true, ShowContent: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
-	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
 
-	_anchor := MoveAnchor{}
-	n, err := bcs.Unmarshal(anchorBCS, &_anchor)
+	var tmpAnchorJsonObject anchorJsonObject
+	err = json.Unmarshal(getObjectResponseAnchor.Data.Content.Data.MoveObject.Fields, &tmpAnchorJsonObject)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
-	}
-	if n != len(anchorBCS) {
-		// FIXME this currently can't pass
-		// return nil, errors.New("cannot decode anchor: excess bytes")
+		return nil, fmt.Errorf("failed to unmarshal fields in Anchor: %w", err)
 	}
 
 	resGetObject, err := c.GetObject(ctx,
-		suiclient.GetObjectRequest{ObjectID: _anchor.ID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
+		suiclient.GetObjectRequest{ObjectID: tmpAnchorJsonObject.ID.ID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Anchor object: %w", err)
 	}
 	anchorRef := resGetObject.Data.Ref()
-	assets, err := c.GetAssetsBagFromAnchor(ctx, anchorRef.ObjectID)
+	assets, err := c.GetAssetsBagFromAnchorID(ctx, anchorRef.ObjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AssetsBag from Anchor: %w", err)
 	}
 	anchor := Anchor{
 		Ref: &anchorRef,
 		Assets: Referent[AssetsBag]{
-			ID:    _anchor.Assets.ID,
+			ID:    *tmpAnchorJsonObject.Assets.Fields.ID,
 			Value: assets,
 		},
-		InitParams: _anchor.InitParams,
-		StateRoot:  _anchor.StateRoot,
-		StateIndex: _anchor.StateIndex,
+		InitParams: tmpAnchorJsonObject.InitParams,
+		StateRoot:  tmpAnchorJsonObject.StateRoot,
+		StateIndex: tmpAnchorJsonObject.StateIndex,
 	}
 
 	return &anchor, nil

@@ -29,11 +29,11 @@ func (c *Client) CreateAndSendRequest(
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+
 	anchorRes, err := c.GetObject(ctx, suiclient.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
-
 	anchorRef := anchorRes.Data.Ref()
 
 	ptb := NewCreateAndSendRequestPTB(packageID, *anchorRef.ObjectID, assetsBagRef, iscContractName, iscFunctionName, args)

@@ -241,7 +241,7 @@ func (c *Client) GetAssetsBagFromAssetsBagID(ctx context.Context, assetsBagObjec
 	return assetBag, nil
 }
 
-func (c *Client) GetAssetsBagFromAnchor(ctx context.Context, anchorObjID *sui.ObjectID) (*AssetsBag, error) {
+func (c *Client) GetAssetsBagFromAnchorID(ctx context.Context, anchorObjID *sui.ObjectID) (*AssetsBag, error) {
 	getObjectResponseAnchor, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjID,
 		Options: &suijsonrpc.SuiObjectDataOptions{
