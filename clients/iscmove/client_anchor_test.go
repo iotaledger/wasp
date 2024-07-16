@@ -34,7 +34,31 @@ func TestStartNewChain(t *testing.T) {
 	t.Log("anchor: ", anchor)
 }
 
-func TestReceiveRequest(t *testing.T) {
+func TestGetAnchorFromObjectID(t *testing.T) {
+	client := newLocalnetClient()
+	signer := newSignerWithFunds(t, suisigner.TestSeed, 0)
+
+	iscPackageID := buildAndDeployISCContracts(t, client, signer)
+
+	anchor1, err := client.StartNewChain(
+		context.Background(),
+		signer,
+		iscPackageID,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		[]byte{},
+		false,
+	)
+	require.NoError(t, err)
+	t.Log("anchor1: ", anchor1)
+
+	anchor2, err := client.GetAnchorFromObjectID(context.Background(), anchor1.Ref.ObjectID)
+	require.NoError(t, err)
+	require.Equal(t, anchor1, anchor2)
+}
+
+func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
 	chainSigner := newSignerWithFunds(t, suisigner.TestSeed, 1)

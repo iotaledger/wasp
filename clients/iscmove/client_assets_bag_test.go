@@ -153,7 +153,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
 }
 
-func TestGetAssetsBagFromAnchor(t *testing.T) {
+func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
 	client := newLocalnetClient()
 
@@ -177,7 +177,7 @@ func TestGetAssetsBagFromAnchor(t *testing.T) {
 
 	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &iscPackageID, anchor.Ref, testcoinInfo)
 
-	assetsBag, err := client.GetAssetsBagFromAnchor(context.Background(), anchor.Ref.ObjectID)
+	assetsBag, err := client.GetAssetsBagFromAnchorID(context.Background(), anchor.Ref.ObjectID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]

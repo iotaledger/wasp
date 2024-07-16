@@ -88,7 +88,8 @@ type anchorJsonObject struct {
 		} `json:"fields"`
 	} `json:"assets"`
 	ID         suijsonrpc.MoveUID `json:"id"`
-	StateIndex uint64             `json:"state_index"`
+	InitParams []byte             `json:"init_params"`
+	StateIndex uint32             `json:"state_index"`
 	StateRoot  []byte             `json:"state_root"`
 }
 

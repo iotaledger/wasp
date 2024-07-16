@@ -78,10 +78,6 @@ type L2Client interface {
 		gasBudget uint64,
 		devMode bool,
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	GetAnchorFromSuiTransactionBlockResponse(
-		ctx context.Context,
-		response *suijsonrpc.SuiTransactionBlockResponse,
-	) (*iscmove.Anchor, error)
 }
 
 var _ L2Client = &iscmove.Client{}
