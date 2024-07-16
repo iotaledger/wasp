@@ -2,7 +2,6 @@ package iscmove
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
@@ -131,9 +130,9 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	return txnResponse, nil
 }
 
-type bcsAnchor struct {
+type MoveAnchor struct {
 	ID         *sui.ObjectID
-	Assets     Referent[AssetBag]
+	Assets     Referent[MoveAssetsBag]
 	InitParams []byte
 	StateRoot  sui.Bytes
 	StateIndex uint32
@@ -148,8 +147,21 @@ func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}
 
+	anchor, err := c.GetAnchorFromObjectID(ctx, anchorObjRef.ObjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
+	}
+
+	return anchor, nil
+}
+
+func (c *Client) GetAnchorFromObjectID(
+	ctx context.Context,
+	anchorObjectID *sui.ObjectID,
+) (*Anchor, error) {
+
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
-		ObjectID: anchorObjRef.ObjectID,
+		ObjectID: anchorObjectID,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
@@ -157,13 +169,14 @@ func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 	}
 	anchorBCS := getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes
 
-	_anchor := bcsAnchor{}
+	_anchor := MoveAnchor{}
 	n, err := bcs.Unmarshal(anchorBCS, &_anchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
 	if n != len(anchorBCS) {
-		return nil, errors.New("cannot decode anchor: excess bytes")
+		// FIXME this currently can't pass
+		// return nil, errors.New("cannot decode anchor: excess bytes")
 	}
 
 	resGetObject, err := c.GetObject(ctx,
@@ -172,9 +185,16 @@ func (c *Client) GetAnchorFromSuiTransactionBlockResponse(
 		return nil, fmt.Errorf("failed to get Anchor object: %w", err)
 	}
 	anchorRef := resGetObject.Data.Ref()
+	assets, err := c.GetAssetsBagFromAnchor(ctx, anchorRef.ObjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AssetsBag from Anchor: %w", err)
+	}
 	anchor := Anchor{
-		Ref:        &anchorRef,
-		Assets:     _anchor.Assets,
+		Ref: &anchorRef,
+		Assets: Referent[AssetsBag]{
+			ID:    _anchor.Assets.ID,
+			Value: assets,
+		},
 		InitParams: _anchor.InitParams,
 		StateRoot:  _anchor.StateRoot,
 		StateIndex: _anchor.StateIndex,

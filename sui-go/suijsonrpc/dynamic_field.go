@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )
 
+// in sui/crates/sui-types/src/dynamic_field.rs
 type DynamicFieldInfo struct {
 	Name       sui.DynamicFieldName                        `json:"name"`
 	BcsName    sui.Base58                                  `json:"bcsName"`

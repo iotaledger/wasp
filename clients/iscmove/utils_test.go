@@ -43,7 +43,7 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cry
 	return *packageID
 }
 
-func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectRef) {
+func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectInfo) {
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 
@@ -96,6 +96,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer crypto
 
 	coinRef, err := txnRes.GetCreatedObjectInfo("testcoin", "TESTCOIN")
 	require.NoError(t, err)
+	coinInfo := sui.NewObjectInfo(coinRef, &sui.ResourceType{Address: packageID, Module: "testcoin", ObjectName: "TESTCOIN"})
 
-	return &packageRef, coinRef
+	return &packageRef, coinInfo
 }

@@ -67,8 +67,8 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 			oldObjArg = *oldValue.Object
 		}
 
-		switch {
-		case oldObjArg.SharedObject.InitialSharedVersion == objArg.SharedObject.InitialSharedVersion:
+		if (oldObjArg.SharedObject != nil && objArg.SharedObject != nil) &&
+			(oldObjArg.SharedObject.InitialSharedVersion == objArg.SharedObject.InitialSharedVersion) {
 			if oldObjArg.id() != objArg.id() {
 				return Argument{}, errors.New("invariant violation! object has id does not match call arg")
 			}
@@ -79,7 +79,7 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 					Mutable:              oldObjArg.SharedObject.Mutable || objArg.SharedObject.Mutable,
 				},
 			}
-		default:
+		} else {
 			if oldObjArg != objArg {
 				return Argument{}, fmt.Errorf(
 					"mismatched Object argument kind for object %s. "+

@@ -2,6 +2,7 @@ package iscmove
 
 import (
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -43,17 +44,52 @@ type Referent[T any] struct {
 	Value *T `bcs:"optional"`
 }
 
-type AssetBag struct {
-	ID   sui.ObjectID
-	Size uint64
+type AssetsBag struct {
+	ID       sui.ObjectID
+	Size     uint64
+	Balances map[suijsonrpc.CoinType]*suijsonrpc.Balance
+}
+
+func NewAssetsBag() *AssetsBag {
+	return &AssetsBag{
+		Balances: make(map[suijsonrpc.CoinType]*suijsonrpc.Balance),
+	}
+}
+
+type MoveAssetsBag struct {
+	ID   suijsonrpc.MoveUID
+	Size *suijsonrpc.BigInt
+}
+
+func NewMoveAssetsBag() *MoveAssetsBag {
+	return &MoveAssetsBag{Size: suijsonrpc.NewBigInt(0)}
 }
 
 type Anchor struct {
 	Ref        *sui.ObjectRef
-	Assets     Referent[AssetBag]
+	Assets     Referent[AssetsBag]
 	InitParams []byte
 	StateRoot  sui.Bytes
 	StateIndex uint32
+}
+
+type anchorJsonObject struct {
+	Assets struct {
+		Type   string `json:"type"`
+		Fields struct {
+			ID    *sui.ObjectID `json:"id"`
+			Value struct {
+				Type   string `json:"type"`
+				Fields struct {
+					ID   suijsonrpc.MoveUID `json:"id"`
+					Size suijsonrpc.BigInt  `json:"size"`
+				} `json:"fields"`
+			} `json:"value"`
+		} `json:"fields"`
+	} `json:"assets"`
+	ID         suijsonrpc.MoveUID `json:"id"`
+	StateIndex uint64             `json:"state_index"`
+	StateRoot  []byte             `json:"state_root"`
 }
 
 type Receipt struct {
@@ -69,8 +105,34 @@ type RequestData struct {
 type Request struct {
 	ID        *sui.ObjectID
 	Sender    sui.Address
-	AssetsBag Referent[AssetBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
-	Data      *RequestData       `bcs:"optional"`
+	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	Data      *RequestData        `bcs:"optional"`
+}
+
+type requestJsonObject struct {
+	AssetsBag struct {
+		Type   string `json:"type"`
+		Fields struct {
+			ID    *sui.ObjectID `json:"id"`
+			Value struct {
+				Type   string `json:"type"`
+				Fields struct {
+					ID   *suijsonrpc.MoveUID `json:"id"`
+					Size suijsonrpc.BigInt   `json:"size"`
+				} `json:"fields"`
+			} `json:"value"`
+		} `json:"fields"`
+	} `json:"assets_bag"`
+	Data struct {
+		Type   string `json:"type"`
+		Fields struct {
+			Args     [][]byte `json:"args"`
+			Contract string   `json:"contract"`
+			Function string   `json:"function"`
+		} `json:"fields"`
+	} `json:"data"`
+	ID     suijsonrpc.MoveUID `json:"id"`
+	Sender *sui.Address       `json:"sender"`
 }
 
 // Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
