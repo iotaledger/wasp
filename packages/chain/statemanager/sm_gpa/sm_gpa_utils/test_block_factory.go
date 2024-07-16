@@ -23,6 +23,7 @@ import (
 )
 
 type anchorData struct {
+	ref          *sui.ObjectRef
 	assets       iscmove.Referent[iscmove.AssetBag]
 	l1Commitment *state.L1Commitment
 	stateIndex   uint32
@@ -32,7 +33,6 @@ type BlockFactory struct {
 	t                   require.TestingT
 	store               state.Store
 	chainID             isc.ChainID
-	anchorID            *sui.ObjectID
 	chainInitParams     dict.Dict
 	lastBlockCommitment *state.L1Commitment
 	anchorData          map[state.BlockHash]anchorData
@@ -48,6 +48,11 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	chainID := isc.RandomChainID()
 	originCommitment := origin.L1Commitment(0, chainInitParams, 0)
 	originAnchorData := anchorData{
+		ref: &sui.ObjectRef{
+			ObjectID: sui.ObjectIDFromArray(chainID),
+			Version:  0,
+			Digest:   nil, // TODO
+		},
 		assets: iscmove.Referent[iscmove.AssetBag]{
 			//ID: nil, // TODO
 			Value: &iscmove.AssetBag{
@@ -64,7 +69,6 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 		t:                   t,
 		store:               chainStore,
 		chainID:             chainID,
-		anchorID:            sui.ObjectIDFromArray(chainID),
 		chainInitParams:     chainInitParams,
 		lastBlockCommitment: originCommitment,
 		anchorData:          map[state.BlockHash]anchorData{originCommitment.BlockHash(): originAnchorData},
@@ -210,7 +214,7 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.Anch
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
 	return &iscmove.Anchor{
-		ID:         *bfT.anchorID,
+		Ref:        anchorData.ref,
 		Assets:     anchorData.assets,
 		StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
 		BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 const BlockHashSize = 20
@@ -24,17 +25,17 @@ func NewBlockHash(hash []byte) (BlockHash, error) {
 		trieRoot:  c,
 		blockHash: blockHash,
 	}
-}
+}*/
 
 func BlockHashFromString(hash string) (BlockHash, error) {
-	byteSlice, err := iotago.DecodeHex(hash)
+	byteSlice, err := cryptolib.DecodeHex(hash)
 	if err != nil {
 		return BlockHash{}, err
 	}
 	var ret BlockHash
 	copy(ret[:], byteSlice)
 	return ret, nil
-}*/
+}
 
 func (bh BlockHash) Bytes() []byte {
 	return bh[:]

@@ -4,12 +4,13 @@
 package cons
 
 import (
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type SyncMP interface {
-	BaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
+	BaseAliasOutputReceived(baseAliasOutput *iscmove.Anchor) gpa.OutMessages
 	ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages
 	RequestsReceived(requests []isc.Request) gpa.OutMessages
@@ -17,9 +18,9 @@ type SyncMP interface {
 }
 
 type syncMPImpl struct {
-	BaseAliasOutput       *isc.AliasOutputWithID
+	BaseAliasOutput       *iscmove.Anchor
 	DecidedRequestIDs     []isc.RequestID
-	proposalInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
+	proposalInputsReadyCB func(baseAliasOutput *iscmove.Anchor) gpa.OutMessages
 	proposalReceived      bool
 	proposalReceivedCB    func(requestRefs []*isc.RequestRef) gpa.OutMessages
 	requestsNeeded        bool
@@ -29,7 +30,7 @@ type syncMPImpl struct {
 }
 
 func NewSyncMP(
-	proposalInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
+	proposalInputsReadyCB func(baseAliasOutput *iscmove.Anchor) gpa.OutMessages,
 	proposalReceivedCB func(requestRefs []*isc.RequestRef) gpa.OutMessages,
 	requestsNeededCB func(requestIDs []*isc.RequestRef) gpa.OutMessages,
 	requestsReceivedCB func(requests []isc.Request) gpa.OutMessages,
@@ -42,7 +43,7 @@ func NewSyncMP(
 	}
 }
 
-func (sub *syncMPImpl) BaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
+func (sub *syncMPImpl) BaseAliasOutputReceived(baseAliasOutput *iscmove.Anchor) gpa.OutMessages {
 	if sub.BaseAliasOutput != nil {
 		return nil
 	}

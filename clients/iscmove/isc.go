@@ -1,6 +1,9 @@
 package iscmove
 
 import (
+	"io"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -62,7 +65,22 @@ func (a *Anchor) GetStateIndex() uint32 {
 }
 
 func (a *Anchor) Equals(b *Anchor) bool {
-	return a.ID == b.ID
+	return a.Ref.Equals(b.Ref)
+}
+
+// Used in packages/chain/cons/bp/batch_proposal_set as key of a map
+// TODO: maybe use a.Ref.Key() instead? Maybe have Key() for Anchor type?
+func (a *Anchor) Hash() hashing.HashValue {
+	res, _ := hashing.HashValueFromBytes(a.Ref.Bytes())
+	return res
+}
+
+func (a *Anchor) Read(r io.Reader) error {
+	return nil // TODO implement
+}
+
+func (a *Anchor) Write(w io.Writer) error {
+	return nil // TODO implement
 }
 
 type Receipt struct {

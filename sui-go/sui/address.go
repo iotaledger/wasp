@@ -55,7 +55,11 @@ func (a Address) String() string {
 	return "0x" + hex.EncodeToString(a[:])
 }
 
-func (a SuiAddress) ToHex() string {
+func (a Address) Equals(other Address) bool {
+	return a == other
+}
+
+func (a Address) ToHex() string {
 	return a.String()
 }
 

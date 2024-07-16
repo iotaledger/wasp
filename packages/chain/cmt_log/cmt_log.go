@@ -95,10 +95,10 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/sui"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/byz_quorum"
@@ -127,10 +127,10 @@ var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 // logIndex (there will be no different baseAliasOutputs for the same logIndex).
 type Output struct {
 	logIndex        LogIndex
-	baseAliasOutput *sui.Anchor
+	baseAliasOutput *iscmove.Anchor
 }
 
-func makeOutput(logIndex LogIndex, baseAliasOutput *sui.Anchor) *Output {
+func makeOutput(logIndex LogIndex, baseAliasOutput *iscmove.Anchor) *Output {
 	return &Output{logIndex: logIndex, baseAliasOutput: baseAliasOutput}
 }
 
@@ -138,7 +138,7 @@ func (o *Output) GetLogIndex() LogIndex {
 	return o.logIndex
 }
 
-func (o *Output) GetBaseAliasOutput() *sui.Anchor {
+func (o *Output) GetBaseAliasOutput() *iscmove.Anchor {
 	return o.baseAliasOutput
 }
 

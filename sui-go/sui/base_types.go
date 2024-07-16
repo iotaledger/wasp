@@ -1,6 +1,11 @@
 package sui
 
-import "github.com/iotaledger/wasp/sui-go/sui/serialization"
+import (
+	"encoding/binary"
+	"fmt"
+
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
+)
 
 type (
 	PackageID      = Address
@@ -44,6 +49,34 @@ type ObjectRef struct {
 	Version  SequenceNumber `json:"version"`
 	Digest   *ObjectDigest  `json:"digest"`
 }
+type ObjectRefKey [AddressLen + 8]byte
+
+func (or *ObjectRef) Equals(other *ObjectRef) bool {
+	if or == nil {
+		return other == nil
+	}
+	return or.ObjectID.Equals(*other.ObjectID) &&
+		EqualSequenceNumbers(or.Version, other.Version) &&
+		or.Digest.Equals(*other.Digest)
+}
+
+func (or *ObjectRef) String() string {
+	return fmt.Sprintf("obj{id=%s, version=%v, digest=%s}", or.ObjectID.String(), or.Version, or.Digest.String())
+}
+
+func (or *ObjectRef) Bytes() []byte {
+	version := make([]byte, 8)
+	binary.LittleEndian.PutUint64(version, or.Version)
+	result := or.ObjectID[:]
+	result = append(result, version...)
+	return result
+}
+
+func (or *ObjectRef) Key() ObjectRefKey {
+	var result ObjectRefKey
+	copy(result[:], or.Bytes())
+	return result
+}
 
 type MoveObjectType struct {
 	Other     *StructTag
@@ -53,3 +86,7 @@ type MoveObjectType struct {
 }
 
 func (o MoveObjectType) IsBcsEnum() {}
+
+func EqualSequenceNumbers(sn1, sn2 SequenceNumber) bool {
+	return sn1 == sn2
+}

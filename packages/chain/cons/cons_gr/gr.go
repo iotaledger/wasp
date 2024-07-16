@@ -48,7 +48,7 @@ func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) Cons
 }
 
 type Mempool interface {
-	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID, consensusID ConsensusID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.Anchor, consensusID ConsensusID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
@@ -92,7 +92,7 @@ func (o *Output) String() string {
 }
 
 type input struct {
-	baseAliasOutput *isc.AliasOutputWithID
+	baseAliasOutput *iscmove.Anchor
 	outputCB        func(*Output)
 	recoverCB       func()
 }
@@ -212,7 +212,7 @@ func New(
 	return cgr
 }
 
-func (cgr *ConsGr) Input(baseAliasOutput *isc.AliasOutputWithID, outputCB func(*Output), recoverCB func()) {
+func (cgr *ConsGr) Input(baseAliasOutput *iscmove.Anchor, outputCB func(*Output), recoverCB func()) {
 	wasReceivedBefore := cgr.inputReceived.Swap(true)
 	if wasReceivedBefore {
 		panic(fmt.Errorf("duplicate input: %v", baseAliasOutput))

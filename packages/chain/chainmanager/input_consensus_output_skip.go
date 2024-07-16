@@ -9,19 +9,19 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputSkip struct {
 	committeeAddr  cryptolib.Address
 	logIndex       cmt_log.LogIndex
-	proposedBaseAO sui_types.ObjectID
+	proposedBaseAO *sui.ObjectRef
 }
 
 func NewInputConsensusOutputSkip(
 	committeeAddr cryptolib.Address,
 	logIndex cmt_log.LogIndex,
-	proposedBaseAO sui_types.ObjectID,
+	proposedBaseAO *sui.ObjectRef,
 ) gpa.Input {
 	return &inputConsensusOutputSkip{
 		committeeAddr:  committeeAddr,
@@ -32,9 +32,9 @@ func NewInputConsensusOutputSkip(
 
 func (inp *inputConsensusOutputSkip) String() string {
 	return fmt.Sprintf(
-		"{chainMgr.inputConsensusOutputSkip, committeeAddr=%v, logIndex=%v, proposedBaseAO=%v}",
+		"{chainMgr.inputConsensusOutputSkip, committeeAddr=%v, logIndex=%v, proposedBaseAO=%s}",
 		inp.committeeAddr.String(),
 		inp.logIndex,
-		inp.proposedBaseAO.ToHex(),
+		inp.proposedBaseAO.String(),
 	)
 }
