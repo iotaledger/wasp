@@ -5,9 +5,9 @@ ifdef OS
 BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
 else
 ifeq ($(shell uname -m), arm64)
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG) -extldflags \"-Wa,--noexecstack\""
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
 else
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG) -extldflags \"-z noexecstack\""
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
 endif
 endif
 DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
