@@ -83,7 +83,17 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
-	ptb, err := NewReceiveRequestPTB(packageID, anchor, reqObjects, stateRoot)
+
+	reqAssetsBagsMap := make(map[sui.ObjectRef]*AssetsBag)
+	for _, req := range reqObjects {
+		assetsBag, err := c.GetAssetsBagFromRequestID(ctx, req.ObjectID)
+		if err != nil {
+			panic(err)
+		}
+		reqAssetsBagsMap[req] = assetsBag
+	}
+
+	ptb, err := NewReceiveRequestPTB(packageID, anchor, reqObjects, reqAssetsBagsMap, stateRoot)
 	if err != nil {
 		return nil, err
 	}
