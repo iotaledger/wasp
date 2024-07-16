@@ -71,7 +71,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}
 
-	requestFrom, err := cryptolib.NewAddressFromString(estimateGasRequest.FromAddress)
+	requestFrom, err := cryptolib.NewAddressFromHexString(estimateGasRequest.FromAddress)
 	if err != nil {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}

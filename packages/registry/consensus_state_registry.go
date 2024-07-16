@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -51,7 +50,7 @@ func (c *comparableChainCommitteeID) Key() comparableChainCommitteeIDKey {
 }
 
 func (c *comparableChainCommitteeID) String() string {
-	return fmt.Sprintf("%s-%s", c.chainID, c.address.Bech32(parameters.Bech32Hrp))
+	return fmt.Sprintf("%s-%s", c.chainID, c.address.String())
 }
 
 type consensusState struct {
@@ -86,10 +85,10 @@ type jsonConsensusState struct {
 }
 
 func (c *consensusState) MarshalJSON() ([]byte, error) {
-	chainIDBech32 := c.identifier.chainID.AsAddress().Bech32(parameters.Bech32Hrp)
+	chainID := c.identifier.chainID.AsAddress().String()
 
 	return json.Marshal(&jsonConsensusState{
-		ChainID:          chainIDBech32,
+		ChainID:          chainID,
 		CommitteeAddress: c.identifier.address.String(),
 		LogIndex:         c.LogIndex.AsUint32(),
 	})
@@ -106,7 +105,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	committeeAddress, err := cryptolib.NewAddressFromString(j.CommitteeAddress)
+	committeeAddress, err := cryptolib.NewAddressFromHexString(j.CommitteeAddress)
 	if err != nil {
 		return err
 	}
@@ -179,11 +178,11 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 			// ignore unknown files
 			return nil
 		}
-
-		committeeAddressBech32 := filesRegex.FindStringSubmatch(subFolderFile.Name())[1]
-		_, committeeAddress, err := cryptolib.NewAddressFromBech32(committeeAddressBech32)
+		panic("refactor me: Bech32 regex and validation")
+		committeeAddressHex := filesRegex.FindStringSubmatch(subFolderFile.Name())[1]
+		committeeAddress, err := cryptolib.NewAddressFromHexString(committeeAddressHex)
 		if err != nil {
-			return fmt.Errorf("unable to parse committee bech32 address (%s), error: %w", committeeAddressBech32, err)
+			return fmt.Errorf("unable to parse committee hex address (%s), error: %w", committeeAddressHex, err)
 		}
 
 		consensusStateFilePath := path.Join(subFolderPath, subFolderFile.Name())
@@ -233,14 +232,16 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 			continue
 		}
 
-		chainAddressBech32 := foldersRegex.FindStringSubmatch(rootFolderFile.Name())[0]
-		_, chainAddress, err := cryptolib.NewAddressFromBech32(chainAddressBech32)
+		chainAddressHex := foldersRegex.FindStringSubmatch(rootFolderFile.Name())[0]
+		panic("refactor me: Bech32 regex and validation (FindStringSubmatch)")
+
+		chainAddress, err := cryptolib.NewAddressFromHexString(chainAddressHex)
 		if err != nil {
-			return fmt.Errorf("unable to parse consensus state bech32 address (%s), error: %w", chainAddressBech32, err)
+			return fmt.Errorf("unable to parse consensus state hex address (%s), error: %w", chainAddressHex, err)
 		}
 
 		/*if chainAddress.Type() != iotago.AddressAlias {
-			return fmt.Errorf("chainID bech32 address is not an alias address (%s), error: %w", chainAddressBech32, err)
+			return fmt.Errorf("chainID bech32 address is not an alias address (%s), error: %w", chainAddressHex, err)
 		}*/ // TODO: is it needed?
 
 		chainID := isc.ChainIDFromAddress(chainAddress)
@@ -264,10 +265,10 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 }
 
 func (p *ConsensusStateRegistry) getConsensusStateFilePath(state *consensusState) string {
-	chainAddressBech32 := state.ChainID().AsAddress().Bech32(parameters.NetworkPrefix(p.networkPrefix))
-	committeeAddressBech32 := state.Address().Bech32(parameters.NetworkPrefix(p.networkPrefix))
+	chainAddressHex := state.ChainID().AsAddress().String()
+	committeeAddressHex := state.Address().String()
 
-	return path.Join(p.folderPath, chainAddressBech32, fmt.Sprintf("%s.json", committeeAddressBech32))
+	return path.Join(p.folderPath, chainAddressHex, fmt.Sprintf("%s.json", committeeAddressHex))
 }
 
 func (p *ConsensusStateRegistry) writeConsensusStateJSON(state *consensusState) error {

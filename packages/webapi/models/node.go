@@ -24,8 +24,6 @@ type ProtocolParameters struct {
 	Version byte `json:"version" swagger:"desc(The protocol version),required"`
 	// The human friendly name of the network.
 	NetworkName string `json:"networkName" swagger:"desc(The network name),required"`
-	// The HRP prefix used for Bech32 addresses in the network.
-	Bech32HRP iotago.NetworkPrefix `json:"bech32Hrp" swagger:"desc(The human readable network prefix),required"`
 	// The minimum pow score of the network.
 	MinPoWScore uint32 `json:"minPowScore" swagger:"desc(The minimal PoW score),required,min(1)"`
 	// The below max depth parameter of the network.

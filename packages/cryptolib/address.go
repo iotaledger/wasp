@@ -6,8 +6,6 @@ import (
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/bech32"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -50,31 +48,12 @@ func NewAddressFromBytes(addr []byte) (*Address, error) {
 	return result, nil
 }
 
-func NewAddressFromString(addr string) (*Address, error) {
+func NewAddressFromHexString(addr string) (*Address, error) {
 	addrBytes, err := DecodeHex(addr)
 	if err != nil {
 		return nil, fmt.Errorf("Error decoding hex: %w", err)
 	}
 	return NewAddressFromBytes(addrBytes)
-}
-
-// ParseBech32 decodes a bech32 encoded string.
-func NewAddressFromBech32(s string) (iotago.NetworkPrefix, *Address, error) {
-	hrp, addrData, err := bech32.Decode(s)
-	if err != nil {
-		return "", nil, fmt.Errorf("invalid bech32 encoding: %w", err)
-	}
-
-	if len(addrData) == 0 {
-		return "", nil, fmt.Errorf("address data is empty")
-	}
-
-	address, err := NewAddressFromBytes(addrData)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to obtain address from byte array: %w", err)
-	}
-
-	return iotago.NetworkPrefix(hrp), address, nil
 }
 
 func NewAddressFromKey(key AddressKey) *Address {
@@ -107,14 +86,6 @@ func (a *Address) Equals(other *Address) bool {
 
 func (a *Address) Bytes() []byte {
 	return a[:]
-}
-
-func (a *Address) Bech32(hrp parameters.NetworkPrefix) string {
-	s, err := bech32.Encode(string(hrp), a.Bytes())
-	if err != nil {
-		panic(err)
-	}
-	return s
 }
 
 func (a *Address) String() string {

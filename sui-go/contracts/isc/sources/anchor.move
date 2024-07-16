@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::anchor {
-    use sui::borrow::{Self, Referent, Borrow};
+    use sui::{
+        borrow::{Self, Referent, Borrow},
+    };
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
@@ -16,7 +18,7 @@ module isc::anchor {
         id: UID,
         /// Anchor assets.
         assets: Referent<AssetsBag>,
-        /// Anchor assets.
+        init_params: vector<u8>,
         state_root: vector<u8>,
         state_index: u32,
     }
@@ -29,18 +31,19 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(init_params: vector<u8>, ctx: &mut TxContext): Anchor {
         Anchor{
             id: object::new(ctx),
             assets: borrow::new(assets_bag::new(ctx), ctx),
+            init_params: init_params,
             state_root: vector::empty(),
             state_index: 0,
-         }
+        }
     }
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor { id, assets, state_root: _, state_index: _ } = self;
+        let Anchor { id, assets, state_root: _, state_index: _, init_params: _ } = self;
         id.delete();
         assets.destroy()
     }

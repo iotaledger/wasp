@@ -4,18 +4,18 @@
 package apilib
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -30,10 +30,11 @@ type CreateChainParams struct {
 	Prefix               string
 	InitParams           dict.Dict
 	GovernanceController *cryptolib.Address
+	PackageID            sui.PackageID
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
+func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -46,68 +47,18 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr *
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	chainID, err := CreateChainOrigin(
-		par.Layer1Client,
-		par.OriginatorKeyPair,
-		stateControllerAddr,
-		govControllerAddr,
-		par.InitParams,
-	)
-	fmt.Fprint(textout, par.Prefix)
+	anchor, err := par.Layer1Client.L2Client().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
 	if err != nil {
-		fmt.Fprintf(textout, "Creating chain origin and init transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, err
 	}
+
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n* committee size = %d\n* quorum = %d\n",
-		chainID.String(), stateControllerAddr.Bech32(parameters.Bech32Hrp), par.N, par.T)
+		anchor.Ref.ObjectID.String(), stateControllerAddr.String(), par.N, par.T)
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
-	return chainID, err
-}
-
-func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
-	var utxoIDs iotago.OutputIDs
-	for id := range utxoMap {
-		utxoIDs = append(utxoIDs, id)
-	}
-	return utxoIDs
-}
-
-// CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(
-	layer1Client clients.L1Client,
-	originator cryptolib.Signer,
-	stateController *cryptolib.Address,
-	governanceController *cryptolib.Address,
-	initParams dict.Dict,
-) (isc.ChainID, error) {
-	// originatorAddr := originator.Address()
-	// ----------- request owner address' outputs from the ledger
-	/*
-		utxoMap, err := layer2Client.OutputMap(originatorAddr)
-		if err != nil {
-			return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-		}
-	*/
-
-	// ----------- create origin transaction
-	panic("refactor me: origin.NewChainOriginTransaction")
-	var chainID isc.ChainID
-	err := errors.New("refactor me: CreateChainOrigin")
-
-	if err != nil {
-		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}
-
-	// ------------- post origin transaction and wait for confirmation
-	/*_, err = layer2Client.PostTxAndWaitUntilConfirmation(originTx)
-	if err != nil {
-		return isc.ChainID{}, fmt.Errorf("CreateChainOrigin: %w", err)
-	}*/
-
-	return chainID, nil
+	return isc.ChainIDFromObjectID(*anchor.Ref.ObjectID), err
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its

@@ -48,7 +48,7 @@ require (
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
 	github.com/ethereum/go-ethereum v1.13.13 // indirect
-	github.com/fardream/go-bcs v0.5.0 // indirect
+	github.com/fardream/go-bcs v0.7.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fbiville/markdown-table-formatter v0.3.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect

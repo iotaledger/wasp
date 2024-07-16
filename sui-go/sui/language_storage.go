@@ -1,6 +1,7 @@
 package sui
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -71,7 +72,7 @@ func TypeTagFromString(data string) (*TypeTag, error) {
 			Module:  Identifier(structMatches[2]),
 			Name:    Identifier(structMatches[3]),
 		}
-		if len(structMatches) > 4 {
+		if len(structMatches) > 5 && structMatches[4] != "" {
 			typeTag, err := parseStructTypeArgs(structMatches[5])
 			if err != nil {
 				return nil, fmt.Errorf("can't parse TypeParams of a Struct in TypeParams: %w", err)
@@ -116,6 +117,17 @@ func (s *StructTag) UnmarshalJSON(data []byte) error {
 	s.Name = parsedStructTag.Name
 	s.TypeParams = parsedStructTag.TypeParams
 	return nil
+}
+
+func (s *StructTag) String() string {
+	if len(s.TypeParams) > 0 {
+		panic("TODO")
+	}
+	return fmt.Sprintf("%s::%s::%s", s.Address, s.Module, s.Name)
+}
+
+func (s *StructTag) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
 }
 
 func StructTagFromString(data string) (*StructTag, error) {

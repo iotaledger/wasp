@@ -61,8 +61,8 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetSummary("Get all NFT ids belonging to an account")
 
 	api.GET("chains/:chainID/core/accounts/account/:agentID/foundries", c.getAccountFoundries).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "agentID", "AgentID (Bech32 for L1 accounts, Hex for EVM)").
+		AddParamPath("", "chainID", "ChainID (Hex Address)").
+		AddParamPath("", "agentID", "AgentID (Hex Address for L1 accounts, Hex for EVM)").
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "All foundries owned by an account", mocker.Get(models.AccountFoundriesResponse{}), nil).
@@ -97,7 +97,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 
 	//nolint:unused
 	type foundryOutputParams struct {
-		chainID      string `swagger:"required,desc(ChainID (Bech32))"`
+		chainID      string `swagger:"required,desc(ChainID (Hex Address))"`
 		serialNumber uint32 `swagger:"required,min(1),desc(Serial Number (uint32))"`
 	}
 
@@ -150,7 +150,7 @@ func (c *Controller) addBlobContractRoutes(api echoswagger.ApiGroup, mocker inte
 func (c *Controller) addErrorContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	//nolint:unused
 	type errorMessageFormat struct {
-		chainID       string `swagger:"required,desc(ChainID (Bech32))"`
+		chainID       string `swagger:"required,desc(ChainID (Hex Address))"`
 		contractHname string `swagger:"required,desc(Contract (Hname as Hex))"`
 		errorID       uint16 `swagger:"required,min(1),desc(Error Id (uint16))"`
 	}
@@ -205,7 +205,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 
 	//nolint:unused
 	type blocks struct {
-		chainID    string `swagger:"required,desc(ChainID (Bech32))"`
+		chainID    string `swagger:"required,desc(ChainID (Hex Address))"`
 		blockIndex uint32 `swagger:"required,min(1),desc(BlockIndex (uint32))"`
 	}
 

@@ -332,15 +332,6 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 	}
 }
 
-func (nc *nodeConnection) GetBech32HRP() iotago.NetworkPrefix {
-	protoParams := nc.GetL1ProtocolParams()
-	if protoParams == nil {
-		panic("L1 protocol parameters unknown")
-	}
-
-	return protoParams.Bech32HRP
-}
-
 func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
 	return nc.l1Params
 }

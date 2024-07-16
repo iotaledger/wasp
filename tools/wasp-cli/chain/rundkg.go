@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/byz_quorum"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -34,7 +33,7 @@ func initRunDKGCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			doDKG(node, peers, quorum)
+			doDKG(context.Background(), node, peers, quorum)
 		},
 	}
 
@@ -45,9 +44,9 @@ func initRunDKGCmd() *cobra.Command {
 	return cmd
 }
 
-func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
+func doDKG(ctx context.Context, node string, peers []string, quorum int) *cryptolib.Address {
 	client := cliclients.WaspClient(node)
-	nodeInfo, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute() //nolint:bodyclose // false positive
+	nodeInfo, _, err := client.NodeApi.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
 	log.Check(err)
 
 	// Consider own node as a committee, if peers are not specified.
@@ -60,7 +59,7 @@ func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
 	thisNodeFound := false
 	{
 		var trustedPeers []apiclient.PeeringNodeIdentityResponse
-		trustedPeers, _, err = client.NodeApi.GetTrustedPeers(context.Background()).Execute() //nolint:bodyclose // false positive
+		trustedPeers, _, err = client.NodeApi.GetTrustedPeers(ctx).Execute() //nolint:bodyclose // false positive
 		log.Check(err)
 
 		for _, peer := range peers {
@@ -107,7 +106,7 @@ func doDKG(node string, peers []string, quorum int) *cryptolib.Address {
 
 	fmt.Fprintf(os.Stdout,
 		"DKG successful\nAddress: %s\n* committee size = %v\n* quorum = %v\n* members: %s\n",
-		stateControllerAddr.Bech32(parameters.Bech32Hrp),
+		stateControllerAddr.String(),
 		len(committeePubKeys),
 		quorum,
 		committeeMembersStr,

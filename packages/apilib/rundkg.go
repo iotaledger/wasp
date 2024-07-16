@@ -33,7 +33,7 @@ func RunDKG(client *apiclient.APIClient, peerPubKeys []string, threshold uint16,
 		return nil, err
 	}
 
-	_, addr, err := cryptolib.NewAddressFromBech32(dkShares.Address)
+	addr, err := cryptolib.NewAddressFromHexString(dkShares.Address)
 	if err != nil {
 		return nil, fmt.Errorf("RunDKG: invalid address returned from DKG: %w", err)
 	}

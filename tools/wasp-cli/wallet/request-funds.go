@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -21,7 +20,7 @@ func initRequestFundsCmd() *cobra.Command {
 			log.Check(cliclients.L1Client().RequestFunds(context.Background(), *address))
 
 			model := &RequestFundsModel{
-				Address: address.Bech32(parameters.Bech32Hrp),
+				Address: address.String(),
 				Message: "success",
 			}
 

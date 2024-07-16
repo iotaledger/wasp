@@ -64,7 +64,7 @@ func (r SuiRawData) Content() string {
 
 type SuiRawMoveObject struct {
 	Type              sui.StructTag      `json:"type"`
-	HasPublicTransfer bool                     `json:"hasPublicTransfer"`
+	HasPublicTransfer bool               `json:"hasPublicTransfer"`
 	Version           sui.SequenceNumber `json:"version"`
 	BcsBytes          sui.Base64Data     `json:"bcsBytes"`
 }
@@ -73,7 +73,7 @@ type SuiRawMovePackage struct {
 	Id              *sui.ObjectID             `json:"id"`
 	Version         sui.SequenceNumber        `json:"version"`
 	ModuleMap       map[string]sui.Base64Data `json:"moduleMap"`
-	TypeOriginTable []TypeOrigin                    `json:"typeOriginTable"`
+	TypeOriginTable []TypeOrigin              `json:"typeOriginTable"`
 	LinkageTable    map[sui.ObjectID]UpgradeInfo
 }
 
@@ -83,14 +83,14 @@ type UpgradeInfo struct {
 }
 
 type TypeOrigin struct {
-	ModuleName string             `json:"moduleName"`
-	StructName string             `json:"structName"`
+	ModuleName string       `json:"moduleName"`
+	StructName string       `json:"structName"`
 	Package    sui.ObjectID `json:"package"`
 }
 
 type SuiObjectData struct {
 	ObjectID *sui.ObjectID     `json:"objectId"`
-	Version  *BigInt                 `json:"version"`
+	Version  *BigInt           `json:"version"`
 	Digest   *sui.ObjectDigest `json:"digest"`
 	/**
 	 * Type of the object, default to be undefined unless SuiObjectDataOptions.showType is set to true
@@ -183,18 +183,13 @@ type SuiObjectResponse struct {
 
 type CheckpointSequenceNumber = uint64
 
-type CheckpointedObjectID struct {
-	ObjectID     sui.ObjectID `json:"objectId"`
-	AtCheckpoint *BigInt            `json:"atCheckpoint"`
-}
-
 type ObjectsPage = Page[SuiObjectResponse, sui.ObjectID]
 
 // TODO need use Enum
 type SuiObjectDataFilter struct {
 	Package    *sui.ObjectID `json:"Package,omitempty"`
-	MoveModule *MoveModule         `json:"MoveModule,omitempty"`
-	StructType string              `json:"StructType,omitempty"`
+	MoveModule *MoveModule   `json:"MoveModule,omitempty"`
+	StructType string        `json:"StructType,omitempty"`
 }
 
 type SuiObjectResponseQuery struct {
@@ -252,7 +247,7 @@ func (s SuiPastObject) Content() string {
 
 type SuiGetPastObjectRequest struct {
 	ObjectId *sui.ObjectID `json:"objectId"`
-	Version  *BigInt             `json:"version"`
+	Version  *BigInt       `json:"version"`
 }
 
 type SuiNamePage = Page[string, sui.ObjectID]

@@ -13,78 +13,75 @@ import (
 type L2Client interface {
 	StartNewChain(
 		ctx context.Context,
-		signer cryptolib.Signer,
-		packageID *sui.PackageID,
+		cryptolibSigner cryptolib.Signer,
+		packageID sui.PackageID,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-		treasuryCap *suijsonrpc.SuiObjectResponse,
+		initParams []byte,
+		devMode bool,
 	) (*iscmove.Anchor, error)
-	SendCoin(
+	CreateAndSendRequest(
 		ctx context.Context,
-		signer cryptolib.Signer,
-		anchorPackageID *sui.PackageID,
+		cryptolibSigner cryptolib.Signer,
+		packageID sui.PackageID,
 		anchorAddress *sui.ObjectID,
-		coinType string,
-		coinObject *sui.ObjectID,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
-		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	ReceiveCoin(
-		ctx context.Context,
-		signer cryptolib.Signer,
-		anchorPackageID *sui.PackageID,
-		anchorAddress *sui.ObjectID,
-		coinType string,
-		receivingCoinObject *sui.ObjectID,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
-		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	GetAssets(
-		ctx context.Context,
-		anchorPackageID *sui.PackageID,
-		anchorAddress *sui.ObjectID,
-	) (*iscmove.Assets, error)
-	CreateRequest(
-		ctx context.Context,
-		signer cryptolib.Signer,
-		packageID *sui.PackageID,
-		anchorAddress *sui.ObjectID,
+		assetsBagRef *sui.ObjectRef,
 		iscContractName string,
 		iscFunctionName string,
 		args [][]byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+		devMode bool,
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	SendRequest(
+	ReceiveAndUpdateStateRootRequest(
 		ctx context.Context,
-		signer cryptolib.Signer,
-		packageID *sui.PackageID,
-		anchorAddress *sui.ObjectID,
-		reqObjID *sui.ObjectID,
+		cryptolibSigner cryptolib.Signer,
+		packageID sui.PackageID,
+		anchor sui.ObjectRef,
+		reqObjects []sui.ObjectRef,
+		stateRoot []byte,
 		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
+		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+		devMode bool,
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	ReceiveRequest(
+	AssetsBagNew(
 		ctx context.Context,
-		signer cryptolib.Signer,
-		packageID *sui.PackageID,
-		anchorAddress *sui.ObjectID,
-		reqObjID *sui.ObjectID,
+		cryptolibSigner cryptolib.Signer,
+		packageID sui.PackageID,
 		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64, // TODO use gasPrice when we change MoveCall API to PTB version
+		gasPrice uint64,
 		gasBudget uint64,
-		execOptions *suijsonrpc.SuiTransactionBlockResponseOptions,
+		devMode bool,
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+	AssetsBagPlaceCoin(
+		ctx context.Context,
+		cryptolibSigner cryptolib.Signer,
+		packageID sui.PackageID,
+		assetsBagRef *sui.ObjectRef,
+		coin *sui.ObjectRef,
+		coinType string,
+		gasPayments []*sui.ObjectRef, // optional
+		gasPrice uint64,
+		gasBudget uint64,
+		devMode bool,
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+	AssetsDestroyEmpty(
+		ctx context.Context,
+		cryptolibSigner cryptolib.Signer,
+		packageID sui.PackageID,
+		assetsBagRef *sui.ObjectRef,
+		gasPayments []*sui.ObjectRef, // optional
+		gasPrice uint64,
+		gasBudget uint64,
+		devMode bool,
+	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+	GetAnchorFromSuiTransactionBlockResponse(
+		ctx context.Context,
+		response *suijsonrpc.SuiTransactionBlockResponse,
+	) (*iscmove.Anchor, error)
 }
 
 var _ L2Client = &iscmove.Client{}

@@ -25,7 +25,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
-			_, chainAddress, err := cryptolib.NewAddressFromBech32(chainAlias)
+			chainAddress, err := cryptolib.NewAddressFromHexString(chainAlias)
 			log.Check(err)
 
 			chainID := isc.ChainIDFromAddress(chainAddress)

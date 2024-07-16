@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
@@ -306,7 +305,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 				}
 
 			return false
-		
+
 		*/
 	}
 
@@ -556,18 +555,19 @@ func (ncc *ncChain) queryLatestChainStateAliasOutput(ctx context.Context) (iotag
 }
 
 func (ncc *ncChain) queryChainOutputIDs(ctx context.Context) ([]iotago.OutputID, error) {
-	bech32Addr := ncc.chainID.AsAddress().Bech32(parameters.Bech32Hrp)
+	hexAddr := ncc.chainID.AsAddress().String()
 
 	falseCondition := false
+	panic("refactor me: queryChainOutputIDs")
 	queries := []nodeclient.IndexerQuery{
-		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr, IndexerStorageDepositParas: nodeclient.IndexerStorageDepositParas{
+		&nodeclient.BasicOutputsQuery{AddressBech32: hexAddr, IndexerStorageDepositParas: nodeclient.IndexerStorageDepositParas{
 			HasStorageDepositReturn: &falseCondition,
 		}},
-		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
-		&nodeclient.NFTsQuery{AddressBech32: bech32Addr, IndexerStorageDepositParas: nodeclient.IndexerStorageDepositParas{
+		&nodeclient.FoundriesQuery{AliasAddressBech32: hexAddr},
+		&nodeclient.NFTsQuery{AddressBech32: hexAddr, IndexerStorageDepositParas: nodeclient.IndexerStorageDepositParas{
 			HasStorageDepositReturn: &falseCondition,
 		}},
-		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
+		// &nodeclient.AliasesQuery{GovernorBech32: hexAddr}, // TODO chains can't own alias outputs for now
 	}
 
 	// we cache the outputIDs for faster indexer queries, outputs are fetched afterwards

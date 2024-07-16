@@ -14,7 +14,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/onchangemap"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -86,10 +85,11 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			return nil
 		}
 
-		sharedAddressBech32 := filesRegex.FindStringSubmatch(file.Name())[1]
-		_, sharedAddress, err := cryptolib.NewAddressFromBech32(sharedAddressBech32)
+		panic("refactor me: Validate regex and address validation")
+		sharedAddressHex := filesRegex.FindStringSubmatch(file.Name())[1]
+		sharedAddress, err := cryptolib.NewAddressFromHexString(sharedAddressHex)
 		if err != nil {
-			return fmt.Errorf("unable to parse shared bech32 address (%s), error: %w", sharedAddressBech32, err)
+			return fmt.Errorf("unable to parse shared hex address (%s), error: %w", sharedAddressHex, err)
 		}
 
 		dkShareFilePath := path.Join(p.folderPath, file.Name())
@@ -111,9 +111,9 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 }
 
 func (p *DKSharesRegistry) getDKShareFilePath(dkShare tcrypto.DKShare) string {
-	sharedAddressBech32 := dkShare.GetAddress().Bech32(parameters.NetworkPrefix(p.networkPrefix))
+	sharedAddressHex := dkShare.GetAddress().String()
 
-	return path.Join(p.folderPath, fmt.Sprintf("%s.json", sharedAddressBech32))
+	return path.Join(p.folderPath, fmt.Sprintf("%s.json", sharedAddressHex))
 }
 
 func (p *DKSharesRegistry) writeDKShareJSONToFolder(dkShare tcrypto.DKShare) error {

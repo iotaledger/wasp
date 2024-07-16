@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -21,7 +20,7 @@ func initAddressCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			model := &AddressModel{Address: address.Bech32(parameters.Bech32Hrp), Index: int(myWallet.AddressIndex())}
+			model := &AddressModel{Address: address.String(), Index: int(myWallet.AddressIndex())}
 
 			if log.VerboseFlag {
 				verboseOutput := make(map[string]string)
@@ -66,7 +65,7 @@ func initBalanceCmd() *cobra.Command {
 			log.Check(err)
 
 			model := &BalanceModel{
-				Address:      address.Bech32(parameters.Bech32Hrp),
+				Address:      address.String(),
 				AddressIndex: myWallet.AddressIndex(),
 				Tokens:       balance,
 			}

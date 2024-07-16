@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -31,11 +32,14 @@ func initRotateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chain = defaultChainFallback(chain)
 
-			prefix, newStateControllerAddr, err := cryptolib.NewAddressFromBech32(args[0])
+			newStateControllerAddr, err := cryptolib.NewAddressFromHexString(args[0])
 			log.Check(err)
-			if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
-				log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
-			}
+			panic("refactor me: what are we doing without network prefixes here?")
+
+			/*
+				if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
+					log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
+				}*/
 			rotateTo(chain, newStateControllerAddr)
 		},
 	}
@@ -60,13 +64,14 @@ func initRotateWithDKGCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chain = defaultChainFallback(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
+			ctx := context.Background()
 
 			if !skipMaintenance {
 				setMaintenanceStatus(chain, node, true, offLedger)
 				defer setMaintenanceStatus(chain, node, false, offLedger)
 			}
 
-			controllerAddr := doDKG(node, peers, quorum)
+			controllerAddr := doDKG(ctx, node, peers, quorum)
 			rotateTo(chain, controllerAddr)
 		},
 	}
@@ -119,7 +124,7 @@ func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
 
 		json, err2 := tx.MarshalJSON()
 		log.Check(err2)
-		log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().Bech32(parameters.Bech32Hrp))
+		log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().String())
 		log.Printf("rotation tx: %s", string(json))
 	}
 

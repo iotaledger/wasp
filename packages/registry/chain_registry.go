@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
@@ -107,36 +106,39 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 		return errors.New("missing chainID")
 	}
 
-	_, address, err := iotago.ParseBech32(j.ChainID)
+	address, err := cryptolib.NewAddressFromHexString(j.ChainID)
 	if err != nil {
 		return err
 	}
 
-	if address.Type() != iotago.AddressAlias {
-		return errors.New("chainID is not an alias address")
-	}
-
-	aliasAddress, ok := address.(*iotago.AliasAddress)
-	if !ok {
-		return errors.New("chainID is not an alias address")
-	}
-
-	accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
-	for i, accessNodePubKeyHex := range j.AccessNodes {
-		accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePubKeyHex)
-		if err != nil {
-			return err
+	panic("refactor me: Checking if address is an alias address")
+	_ = address
+	/*
+		if address.Type() != iotago.AddressAlias {
+			return errors.New("chainID is not an alias address")
 		}
 
-		accessNodesPubKeys[i] = accessNodePubKey
-	}
+		aliasAddress, ok := address.(*iotago.AliasAddress)
+		if !ok {
+			return errors.New("chainID is not an alias address")
+		}
 
-	*r = ChainRecord{
-		id:          isc.ChainID(aliasAddress.AliasID()),
-		Active:      j.Active,
-		AccessNodes: accessNodesPubKeys,
-	}
+		accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
+		for i, accessNodePubKeyHex := range j.AccessNodes {
+			accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePubKeyHex)
+			if err != nil {
+				return err
+			}
 
+			accessNodesPubKeys[i] = accessNodePubKey
+		}
+
+		*r = ChainRecord{
+			id:          isc.ChainID(aliasAddress.AliasID()),
+			Active:      j.Active,
+			AccessNodes: accessNodesPubKeys,
+		}
+	*/
 	return nil
 }
 
