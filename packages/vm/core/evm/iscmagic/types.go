@@ -218,7 +218,6 @@ type IRC27NFTMetadata struct {
 	Uri         string //nolint:revive // false positive
 	Name        string
 	Description string
-	Attributes  string
 }
 
 func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
@@ -229,7 +228,6 @@ func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
 		Uri:         m.URI,
 		Name:        m.Name,
 		Description: m.Description,
-		Attributes:  m.Attributes,
 	}
 }
 

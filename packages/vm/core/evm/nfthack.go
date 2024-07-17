@@ -15,10 +15,10 @@ import (
 // This hack is so that the ERC721 tokenURI view function returns the NFT name and description
 // for explorers
 type PackedNFTURI struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Attributes  string `json:"attributes,omitempty"`
-	Image       string `json:"image"`
+	Name        string        `json:"name"`
+	Description string        `json:"description,omitempty"`
+	Attributes  []interface{} `json:"attributes,omitempty"`
+	Image       string        `json:"image"`
 }
 
 const dataURLPrefix = "data:application/json;base64"

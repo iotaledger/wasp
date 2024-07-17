@@ -1459,7 +1459,7 @@ func TestNonces(t *testing.T) {
 func TestNFTMint(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar", "[]").Bytes()
+	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar", nil).Bytes()
 
 	_seedIndex := 0
 	seedIndex := func() int {
@@ -1597,7 +1597,7 @@ func TestNFTMint(t *testing.T) {
 
 		req = solo.NewCallParams(
 			accounts.Contract.Name, accounts.FuncMintNFT.Name,
-			accounts.ParamNFTImmutableData, isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection", "").Bytes(),
+			accounts.ParamNFTImmutableData, isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection", nil).Bytes(),
 			accounts.ParamAgentID, agentID.Bytes(),
 			accounts.ParamCollectionID, codec.Encode(firstNFTID),
 		).
