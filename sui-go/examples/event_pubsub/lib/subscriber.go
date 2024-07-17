@@ -20,7 +20,7 @@ func NewSubscriber(client *suiclient.WebsocketClient) *Subscriber {
 }
 
 func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *sui.PackageID) {
-	resultCh := make(chan suijsonrpc.SuiEvent)
+	resultCh := make(chan *suijsonrpc.SuiEvent)
 	err := s.client.SubscribeEvent(context.Background(), &suijsonrpc.EventFilter{Package: packageID}, resultCh)
 	if err != nil {
 		log.Fatal(err)
@@ -30,3 +30,4 @@ func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *sui.PackageI
 		fmt.Println("result: ", result)
 	}
 }
+

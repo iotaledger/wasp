@@ -79,8 +79,8 @@ func (c *WebsocketClient) CallContext(ctx context.Context, resultCh chan []byte,
 	go func(conn *websocket.Conn) {
 		for {
 			messageType, messageData, err := conn.ReadMessage()
-			if nil != err {
-				log.Fatal(err)
+			if err != nil {
+				log.Fatalf("conn.ReadMessage(): %s", err)
 				break
 			}
 			switch messageType {
@@ -93,7 +93,8 @@ func (c *WebsocketClient) CallContext(ctx context.Context, resultCh chan []byte,
 					log.Fatalf("sui returned error: %s", respmsg.Error)
 				}
 				if len(respmsg.Params) == 0 {
-					log.Fatal(ErrNoResult)
+					log.Printf("Ignoring websocket message: %+v\n", respmsg)
+					continue
 				}
 				var params jsonrpcWebsocketParams
 				if err := json.Unmarshal(respmsg.Params, &params); err != nil {

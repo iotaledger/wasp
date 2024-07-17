@@ -8,12 +8,12 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 )
 
-// Client provides convenient methods to interact with the `isc` Move contracts.
 type Config struct {
 	APIURL   string
 	GraphURL string
 }
 
+// Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
 	*suiclient.Client
 	*SuiGraph

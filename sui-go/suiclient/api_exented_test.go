@@ -349,7 +349,7 @@ func TestSubscribeEvent(t *testing.T) {
 	type args struct {
 		ctx      context.Context
 		filter   *suijsonrpc.EventFilter
-		resultCh chan suijsonrpc.SuiEvent
+		resultCh chan *suijsonrpc.SuiEvent
 	}
 	tests := []struct {
 		name    string
@@ -364,7 +364,7 @@ func TestSubscribeEvent(t *testing.T) {
 				filter: &suijsonrpc.EventFilter{
 					Package: sui.MustPackageIDFromHex("0x000000000000000000000000000000000000000000000000000000000000dee9"),
 				},
-				resultCh: make(chan suijsonrpc.SuiEvent),
+				resultCh: make(chan *suijsonrpc.SuiEvent),
 			},
 		},
 	}

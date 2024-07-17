@@ -21,7 +21,7 @@ type L2Client interface {
 		gasBudget uint64,
 		initParams []byte,
 		devMode bool,
-	) (*iscmove.Anchor, *sui.ObjectRef, error)
+	) (*iscmove.RefWithObject[iscmove.Anchor], error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,

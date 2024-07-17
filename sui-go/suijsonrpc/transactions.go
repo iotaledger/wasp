@@ -376,7 +376,8 @@ type TransactionFilter struct {
 		From *sui.Address `json:"from"`
 		To   *sui.Address `json:"to"`
 	} `json:"FromAndToAddress,omitempty"`
-	TransactionKind *string `json:"TransactionKind,omitempty"`
+	TransactionKind   *string   `json:"TransactionKind,omitempty"`
+	TransactionKindIn *[]string `json:"TransactionKindIn,omitempty"`
 }
 
 type SuiTransactionBlockResponseOptions struct {

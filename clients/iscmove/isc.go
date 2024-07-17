@@ -45,6 +45,11 @@ type Referent[T any] struct {
 	Value *T `bcs:"optional"`
 }
 
+type RefWithObject[T any] struct {
+	sui.ObjectRef
+	Object *T
+}
+
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
 	ID   sui.ObjectID

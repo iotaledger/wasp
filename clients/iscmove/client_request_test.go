@@ -18,7 +18,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	_, anchorRef := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -37,7 +37,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		anchorRef.ObjectID,
+		anchor.ObjectID,
 		assetsBagRef,
 		isc.Hn("test_isc_contract"),
 		isc.Hn("test_isc_func"),
