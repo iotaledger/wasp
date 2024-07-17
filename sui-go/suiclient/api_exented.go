@@ -6,8 +6,6 @@ import (
 	"errors"
 	"log"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -126,12 +124,7 @@ func (s *WebsocketClient) SubscribeEvent(
 	go func() {
 		for messageData := range resp {
 			var result suijsonrpc.SuiEvent
-			if gjson.ParseBytes(messageData).Get("error").Exists() {
-				log.Fatal(gjson.ParseBytes(messageData).Get("error").String())
-			}
-
-			err := json.Unmarshal([]byte(gjson.ParseBytes(messageData).Get("params.result").String()), &result)
-			if err != nil {
+			if err := json.Unmarshal(messageData, &result); err != nil {
 				log.Fatal(err)
 			}
 
