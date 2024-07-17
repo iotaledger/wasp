@@ -25,11 +25,6 @@ module isc::assets_bag {
 
     // === Dynamic Field keys ===
 
-    /// Dynamic field key for an asset placed into the AssetsBag.
-    public struct Asset has store, copy, drop {
-        id: ID,
-    }
-
     // === AssetsBag packing and unpacking ===
 
     /// Creates a new empty `AssetsBag`
@@ -108,7 +103,7 @@ module isc::assets_bag {
 
     /// Internal: "place" an asset to the AssetsBag.
     fun place_asset_internal<T: key + store>(self: &mut AssetsBag, asset: T) {
-        dof::add(&mut self.id, Asset { id: object::id(&asset) }, asset);
+        dof::add(&mut self.id, object::id(&asset), asset);
         self.size = self.size + 1;
     }
 
@@ -129,6 +124,6 @@ module isc::assets_bag {
     /// Internal: "take" an asset from the AssetsBag.
     fun take_asset_internal<T: key + store>(self: &mut AssetsBag, id: ID): T {
         self.size = self.size - 1;
-        dof::remove(&mut self.id, Asset { id })
+        dof::remove(&mut self.id, id)
     }
 }

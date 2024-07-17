@@ -8,9 +8,9 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
@@ -20,7 +20,7 @@ func TestStartNewChain(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
-	anchor, err := client.StartNewChain(
+	anchor, _, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		iscPackageID,
@@ -40,7 +40,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
-	anchor1, err := client.StartNewChain(
+	anchor1, _, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		iscPackageID,
@@ -53,7 +53,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 	require.NoError(t, err)
 	t.Log("anchor1: ", anchor1)
 
-	anchor2, err := client.GetAnchorFromObjectID(context.Background(), anchor1.Ref.ObjectID)
+	anchor2, err := client.GetAnchorFromObjectID(context.Background(), &anchor1.ID)
 	require.NoError(t, err)
 	require.Equal(t, anchor1, anchor2)
 }
@@ -65,7 +65,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	anchor := startNewChain(t, client, chainSigner, iscPackageID)
+	anchor, anchorRef := startNewChain(t, client, chainSigner, iscPackageID)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -84,10 +84,10 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		anchor.Ref.ObjectID,
+		&anchor.ID,
 		sentAssetsBagRef,
-		"test_isc_contract",
-		"test_isc_func",
+		isc.Hn("test_isc_contract"),
+		isc.Hn("test_isc_func"),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		nil,
 		suiclient.DefaultGasPrice,
@@ -99,11 +99,6 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
-
-	resGetObject, err := client.GetObject(context.Background(),
-		suiclient.GetObjectRequest{ObjectID: anchor.Ref.ObjectID, Options: &suijsonrpc.SuiObjectDataOptions{ShowType: true}})
-	require.NoError(t, err)
-	anchorRef := resGetObject.Data.Ref()
 
 	_, err = client.ReceiveAndUpdateStateRootRequest(
 		context.Background(),
@@ -120,8 +115,8 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) *iscmove.Anchor {
-	anchor, err := client.StartNewChain(
+func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) (*iscmove.Anchor, *sui.ObjectRef) {
+	anchor, anchorRef, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		iscPackageID,
@@ -132,5 +127,5 @@ func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer
 		false,
 	)
 	require.NoError(t, err)
-	return anchor
+	return anchor, anchorRef
 }

@@ -7,8 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -143,7 +145,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	assetsBag, err := client.GetAssetsBagFromAssetsBagID(context.Background(), assetsBagMainRef.ObjectID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), assetsBagMainRef.ObjectID)
 	require.NoError(t, err)
 	require.Equal(t, *assetsBagMainRef.ObjectID, assetsBag.ID)
 	require.Equal(t, uint64(1), assetsBag.Size)
@@ -159,7 +161,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor, anchorRef := startNewChain(t, client, cryptolibSigner, iscPackageID)
 
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -175,9 +177,9 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.NoError(t, err)
 	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
 
-	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &iscPackageID, anchor.Ref, testcoinInfo)
+	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &iscPackageID, anchorRef, testcoinInfo)
 
-	assetsBag, err := client.GetAssetsBagFromAnchorID(context.Background(), anchor.Ref.ObjectID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Assets.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
@@ -192,7 +194,8 @@ func borrowAnchorAssetsAndPlaceCoin(
 	cryptolibSigner cryptolib.Signer,
 	packageID *sui.PackageID,
 	anchorRef *sui.ObjectRef,
-	testcoinInfo *sui.ObjectInfo) {
+	testcoinInfo *sui.ObjectInfo,
+) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -271,7 +274,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	_, anchorRef := startNewChain(t, client, cryptolibSigner, iscPackageID)
 
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -321,10 +324,10 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		anchor.Ref.ObjectID,
+		anchorRef.ObjectID,
 		&tmpAssetsBagRef,
-		"test_isc_contract",
-		"test_isc_func",
+		isc.Hn("test_isc_contract"),
+		isc.Hn("test_isc_func"),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		nil,
 		suiclient.DefaultGasPrice,
@@ -336,7 +339,10 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	assetsBag, err := client.GetAssetsBagFromRequestID(context.Background(), reqRef.ObjectID)
+	req, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	require.NoError(t, err)
+
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &req.Assets.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]

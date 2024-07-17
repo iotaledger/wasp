@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -20,15 +21,15 @@ type L2Client interface {
 		gasBudget uint64,
 		initParams []byte,
 		devMode bool,
-	) (*iscmove.Anchor, error)
+	) (*iscmove.Anchor, *sui.ObjectRef, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		anchorAddress *sui.ObjectID,
 		assetsBagRef *sui.ObjectRef,
-		iscContractName string,
-		iscFunctionName string,
+		iscContractName isc.Hname,
+		iscFunctionName isc.Hname,
 		args [][]byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
@@ -39,8 +40,8 @@ type L2Client interface {
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
-		anchor sui.ObjectRef,
-		reqObjects []sui.ObjectRef,
+		anchorRef *sui.ObjectRef,
+		reqs []sui.ObjectRef,
 		stateRoot []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,

@@ -16,7 +16,6 @@ module isc::anchor {
     /// By default it is owned by a single address.
     public struct Anchor has key, store {
         id: UID,
-        /// Anchor assets.
         assets: Referent<AssetsBag>,
         init_params: vector<u8>,
         state_root: vector<u8>,
@@ -85,8 +84,8 @@ module isc::anchor {
 
     // === Test Functions ===
 
-    /// test only function to create a receipt
     #[test_only]
+    /// test only function to create a receipt
     public fun create_receipt_for_testing(request_id: ID): Receipt {
         Receipt { request_id }
     }

@@ -1,8 +1,5 @@
 module testcoin::testcoin {
-    use std::option;
-    use sui::coin::{Self, Coin, TreasuryCap};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
+    use sui::coin::{Self, TreasuryCap};
 
     /// The type identifier of coin. The coin will have a type
     /// tag of kind: `Coin<package_object::testcoin::TESTCOIN>`
