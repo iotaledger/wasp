@@ -61,7 +61,6 @@ struct IRC27NFTMetadata {
     string uri;
     string name;
     string description;
-    string attributes;
 }
 
 // Information about an on-chain IRC27 NFT
