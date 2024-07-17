@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
@@ -22,7 +23,7 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	chainOwner := newSignerWithFunds(t, suisigner.TestSeed, 1)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, iscOwner)
-	anchor := startNewChain(t, client, chainOwner, iscPackageID)
+	_, anchorRef := startNewChain(t, client, chainOwner, iscPackageID)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -45,7 +46,7 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 		suiconn.LocalnetEndpointURL,
 		suiconn.LocalnetWebsocketEndpointURL,
 		iscPackageID,
-		*anchor.Ref.ObjectID,
+		*anchorRef.ObjectID,
 		log,
 	)
 
@@ -57,10 +58,10 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 		ctx,
 		iscOwner,
 		iscPackageID,
-		anchor.Ref.ObjectID,
+		anchorRef.ObjectID,
 		assetsBagRef,
-		"dummy_isc_contract",
-		"dummy_isc_func",
+		isc.Hn("dummy_isc_contract"),
+		isc.Hn("dummy_isc_func"),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		nil,
 		suiclient.DefaultGasPrice,
@@ -71,7 +72,7 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	req := <-newRequests
-	require.Equal(t, *requestRef.ObjectID, *req.ID)
+	require.Equal(t, *requestRef.ObjectID, req.ID)
 
 	ownedRequests := make(chan iscmove.Request, 1)
 	feed.SubscribeOwnedRequests(ctx, ownedRequests)
@@ -79,7 +80,7 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	n := 0
 	for req := range ownedRequests {
 		n += 1
-		require.Equal(t, *requestRef.ObjectID, *req.ID)
+		require.Equal(t, *requestRef.ObjectID, req.ID)
 	}
 	require.Equal(t, 1, n)
 }
