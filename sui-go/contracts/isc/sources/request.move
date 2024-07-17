@@ -12,7 +12,7 @@ module isc::request {
     // === Main structs ===
 
     /// Contains the request data to be used off-chain.
-    public struct RequestData has copy, drop, store {
+    public struct RequestData has drop, store {
         /// Contract name
         contract: String,
         /// Function name
