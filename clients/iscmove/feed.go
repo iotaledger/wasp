@@ -63,15 +63,13 @@ func (c *RequestsFeed) fetchAllRequestsOwned(
 			Address: &c.AnchorAddress,
 			Query: &suijsonrpc.SuiObjectResponseQuery{
 				Filter: &suijsonrpc.SuiObjectDataFilter{
-					StructType: (&sui.StructTag{
+					StructType: &sui.StructTag{
 						Address: &c.ISCPackageID,
 						Module:  RequestModuleName,
 						Name:    RequestObjectName,
-					}).String(),
+					},
 				},
-				Options: &suijsonrpc.SuiObjectDataOptions{
-					ShowBcs: true,
-				},
+				Options: &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
 			},
 			Cursor: lastSeen,
 		})
@@ -158,9 +156,7 @@ func (c *RequestsFeed) consumeRequestEvents(
 			}
 			getObjectRes, err := c.Sui.GetObject(ctx, suiclient.GetObjectRequest{
 				ObjectID: &reqEvent.RequestID,
-				Options: &suijsonrpc.SuiObjectDataOptions{
-					ShowBcs: true,
-				},
+				Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
 			})
 			if err != nil {
 				c.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
