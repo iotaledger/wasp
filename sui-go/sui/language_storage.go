@@ -1,7 +1,6 @@
 package sui
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -29,6 +28,34 @@ type TypeTag struct {
 }
 
 func (t TypeTag) IsBcsEnum() {}
+
+func (t *TypeTag) String() string {
+	if t.Address != nil {
+		return "address"
+	} else if t.Signer != nil {
+		return "signer"
+	} else if t.Bool != nil {
+		return "bool"
+	} else if t.U8 != nil {
+		return "u8"
+	} else if t.U16 != nil {
+		return "u16"
+	} else if t.U32 != nil {
+		return "u32"
+	} else if t.U64 != nil {
+		return "u64"
+	} else if t.U128 != nil {
+		return "u128"
+	} else if t.U256 != nil {
+		return "u256"
+	} else if t.Vector != nil {
+		return fmt.Sprintf("vector<%s>", t.Vector.String())
+	} else if t.Struct != nil {
+		return t.Struct.String()
+	} else {
+		panic("unknown type")
+	}
+}
 
 // refer TypeTagSerializer.parseFromStr() at 'sdk/typescript/src/bcs/type-tag-serializer.ts'
 func TypeTagFromString(data string) (*TypeTag, error) {
@@ -119,15 +146,31 @@ func (s *StructTag) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *StructTag) String() string {
-	if len(s.TypeParams) > 0 {
-		panic("TODO")
+func (s *StructTag) MarshalJSON() ([]byte, error) {
+	if s.Address == nil || s.Module == "" || s.Name == "" {
+		return nil, fmt.Errorf("empty StructTag")
 	}
-	return fmt.Sprintf("%s::%s::%s", s.Address, s.Module, s.Name)
+	return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
 }
 
-func (s *StructTag) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
+func (s *StructTag) String() string {
+	if s.Address == nil || s.Module == "" || s.Name == "" {
+		panic("empty StructTag")
+	}
+	typeParams := ""
+	if len(s.TypeParams) > 0 {
+		tmp := ""
+		for i, typeTag := range s.TypeParams {
+			typeTagString := ""
+			if i != 0 {
+				typeTagString = ", "
+			}
+			typeTagString = typeTagString + typeTag.String()
+			tmp = tmp + typeTagString
+		}
+		typeParams = fmt.Sprintf("<%s>", tmp)
+	}
+	return s.Address.String() + "::" + s.Module + "::" + s.Name + typeParams
 }
 
 func StructTagFromString(data string) (*StructTag, error) {

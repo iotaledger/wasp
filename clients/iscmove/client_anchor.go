@@ -158,7 +158,7 @@ func (c *Client) GetAnchorFromObjectID(
 
 	getObjectResponseAnchor, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true, ShowContent: true},
+		Options:  &suijsonrpc.SuiObjectDataOptions{ShowContent: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
