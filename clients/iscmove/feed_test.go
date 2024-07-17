@@ -23,7 +23,7 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	chainOwner := newSignerWithFunds(t, suisigner.TestSeed, 1)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, iscOwner)
-	_, anchorRef := startNewChain(t, client, chainOwner, iscPackageID)
+	anchor := startNewChain(t, client, chainOwner, iscPackageID)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -43,22 +43,23 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	feed := iscmove.NewRequestsFeed(
-		suiconn.LocalnetEndpointURL,
+		iscmove.Config{APIURL: suiconn.LocalnetEndpointURL},
 		suiconn.LocalnetWebsocketEndpointURL,
 		iscPackageID,
-		*anchorRef.ObjectID,
+		*anchor.ObjectID,
 		log,
 	)
 
-	newRequests := make(chan iscmove.Request, 1)
-	feed.SubscribeNewRequests(ctx, newRequests)
+	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
+	newRequests := make(chan *iscmove.Request, 1)
+	feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
 		ctx,
 		iscOwner,
 		iscPackageID,
-		anchorRef.ObjectID,
+		anchor.ObjectID,
 		assetsBagRef,
 		isc.Hn("dummy_isc_contract"),
 		isc.Hn("dummy_isc_func"),
@@ -74,13 +75,11 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	req := <-newRequests
 	require.Equal(t, *requestRef.ObjectID, req.ID)
 
-	ownedRequests := make(chan iscmove.Request, 1)
-	feed.SubscribeOwnedRequests(ctx, ownedRequests)
+	updatedAnchor, ownedReqs, err := feed.FetchCurrentState(ctx)
+	require.NoError(t, err)
 
-	n := 0
-	for req := range ownedRequests {
-		n += 1
-		require.Equal(t, *requestRef.ObjectID, req.ID)
-	}
-	require.Equal(t, 1, n)
+	require.Equal(t, anchor.Version, updatedAnchor.Version)
+
+	require.Len(t, ownedReqs, 1)
+	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
 }

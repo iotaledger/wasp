@@ -36,7 +36,7 @@ const (
 	resolveNameServiceAddress SuiXMethod = "suix_resolveNameServiceAddress"
 	resolveNameServiceNames   SuiXMethod = "suix_resolveNameServiceNames"
 	subscribeEvent            SuiXMethod = "suix_subscribeEvent"
-	subscribeTransaction      SuiXMethod = "suix_subscribeTransaction" // TODO
+	subscribeTransaction      SuiXMethod = "suix_subscribeTransaction"
 
 	// Governance Read API
 	getCommitteeInfo        SuiXMethod = "suix_getCommitteeInfo" // TODO
@@ -89,3 +89,4 @@ const (
 	dryRunTransactionBlock     SuiMethod = "sui_dryRunTransactionBlock"
 	executeTransactionBlock    SuiMethod = "sui_executeTransactionBlock"
 )
+

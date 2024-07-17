@@ -114,24 +114,60 @@ func (s *Client) ResolveNameServiceNames(
 func (s *WebsocketClient) SubscribeEvent(
 	ctx context.Context,
 	filter *suijsonrpc.EventFilter,
-	resultCh chan suijsonrpc.SuiEvent,
+	resultCh chan<- *suijsonrpc.SuiEvent,
 ) error {
-	resp := make(chan []byte, 10)
-	err := s.ws.CallContext(ctx, resp, subscribeEvent, filter)
+	wsCh := make(chan []byte, 10)
+	err := s.ws.CallContext(ctx, wsCh, subscribeEvent, filter)
 	if err != nil {
 		return err
 	}
 	go func() {
-		for messageData := range resp {
-			var result suijsonrpc.SuiEvent
-			if err := json.Unmarshal(messageData, &result); err != nil {
-				log.Fatal(err)
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case messageData, ok := <-wsCh:
+				if !ok {
+					break
+				}
+				var result *suijsonrpc.SuiEvent
+				if err := json.Unmarshal(messageData, &result); err != nil {
+					log.Fatal(err)
+				}
+				resultCh <- result
 			}
-
-			resultCh <- result
 		}
 	}()
 	return nil
 }
 
-// TODO SubscribeTransaction
+func (s *WebsocketClient) SubscribeTransaction(
+	ctx context.Context,
+	filter *suijsonrpc.TransactionFilter,
+	resultCh chan<- *suijsonrpc.SuiTransactionBlockEffects,
+) error {
+	panic("TODO: not working because ws.CallContext() cannot be called twice in parallel")
+	wsCh := make(chan []byte, 10)
+	err := s.ws.CallContext(ctx, wsCh, subscribeTransaction, filter)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case messageData, ok := <-wsCh:
+				if !ok {
+					break
+				}
+				var result *suijsonrpc.SuiTransactionBlockEffects
+				if err := json.Unmarshal(messageData, &result); err != nil {
+					log.Fatal(err)
+				}
+				resultCh <- result
+			}
+		}
+	}()
+	return nil
+}

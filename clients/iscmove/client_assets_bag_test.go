@@ -161,7 +161,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	anchor, anchorRef := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
 
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -177,9 +177,9 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.NoError(t, err)
 	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
 
-	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &iscPackageID, anchorRef, testcoinInfo)
+	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &iscPackageID, &anchor.ObjectRef, testcoinInfo)
 
-	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Assets.Value.ID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
@@ -274,7 +274,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	_, anchorRef := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
 
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -324,7 +324,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		anchorRef.ObjectID,
+		anchor.ObjectID,
 		&tmpAssetsBagRef,
 		isc.Hn("test_isc_contract"),
 		isc.Hn("test_isc_func"),

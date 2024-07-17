@@ -21,7 +21,7 @@ func (c *Client) StartNewChain(
 	gasBudget uint64,
 	initParams []byte,
 	devMode bool,
-) (*Anchor, *sui.ObjectRef, error) {
+) (*RefWithObject[Anchor], error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
@@ -30,7 +30,7 @@ func (c *Client) StartNewChain(
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
+			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
 		gasPayments = coins.CoinRefs()
 	}
@@ -47,12 +47,12 @@ func (c *Client) StartNewChain(
 	if devMode {
 		txnBytes, err = bcs.Marshal(tx.V1.Kind)
 		if err != nil {
-			return nil, nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
 		txnBytes, err = bcs.Marshal(tx)
 		if err != nil {
-			return nil, nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
@@ -62,22 +62,22 @@ func (c *Client) StartNewChain(
 		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("can't execute the transaction: %w", err)
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
 	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
 
 	anchorRef, err := txnResponse.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
+		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}
 	anchor, err := c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
+		return nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
 	}
 
-	return anchor, anchorRef, nil
+	return anchor, nil
 }
 
 func (c *Client) ReceiveAndUpdateStateRootRequest(
@@ -157,7 +157,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *sui.ObjectID,
-) (*Anchor, error) {
+) (*RefWithObject[Anchor], error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -171,7 +171,10 @@ func (c *Client) GetAnchorFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	return &anchor, nil
+	return &RefWithObject[Anchor]{
+		ObjectRef: getObjectResponse.Data.Ref(),
+		Object:    &anchor,
+	}, nil
 }
 
 func (c *Client) GetRequestFromObjectID(

@@ -20,7 +20,7 @@ func TestStartNewChain(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
-	anchor, _, err := client.StartNewChain(
+	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		iscPackageID,
@@ -40,7 +40,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
-	anchor1, _, err := client.StartNewChain(
+	anchor1, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		iscPackageID,
@@ -53,7 +53,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 	require.NoError(t, err)
 	t.Log("anchor1: ", anchor1)
 
-	anchor2, err := client.GetAnchorFromObjectID(context.Background(), &anchor1.ID)
+	anchor2, err := client.GetAnchorFromObjectID(context.Background(), &anchor1.Object.ID)
 	require.NoError(t, err)
 	require.Equal(t, anchor1, anchor2)
 }
@@ -65,7 +65,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
-	anchor, anchorRef := startNewChain(t, client, chainSigner, iscPackageID)
+	anchor := startNewChain(t, client, chainSigner, iscPackageID)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -84,7 +84,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		&anchor.ID,
+		&anchor.Object.ID,
 		sentAssetsBagRef,
 		isc.Hn("test_isc_contract"),
 		isc.Hn("test_isc_func"),
@@ -104,7 +104,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 		context.Background(),
 		chainSigner,
 		iscPackageID,
-		anchorRef,
+		&anchor.ObjectRef,
 		[]sui.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
 		nil,
@@ -115,8 +115,8 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) (*iscmove.Anchor, *sui.ObjectRef) {
-	anchor, anchorRef, err := client.StartNewChain(
+func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) *iscmove.RefWithObject[iscmove.Anchor] {
+	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		iscPackageID,
@@ -127,5 +127,5 @@ func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer
 		false,
 	)
 	require.NoError(t, err)
-	return anchor, anchorRef
+	return anchor
 }
