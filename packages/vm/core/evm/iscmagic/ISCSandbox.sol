@@ -180,13 +180,18 @@ interface ISCSandbox {
      * @dev Retrieves the details of an IRC27 NFT based on its ID.
      * @param id The ID of the IRC27 NFT.
      * @return The IRC27NFT data of the specified NFT.
+     *
+     * Note: the metadata.uri field is encoded as a data URL with:
+     * base64(jsonEncode({
+     *   "name": NFT.name,
+     *   "description": NFT.description,
+     *   "image": NFT.URI
+     * }))
+     *
+     * Note: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form.
      */
-    // Note: the metadata.uri field is encoded as a data URL with:
-    // base64(jsonEncode({
-    //   "name": NFT.name,
-    //   "description": NFT.description,
-    //   "image": NFT.URI
-    // }))
+    function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
+
     function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
 
     /**
