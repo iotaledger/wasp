@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -18,73 +17,40 @@ import (
 )
 
 type onLedgerRequestData struct {
-	outputID sui.ObjectID
-	output   iscmove.Request
+	requestID sui.ObjectID
 
-	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
-
-	featureBlocks    iotago.FeatureSet
-	unlockConditions iotago.UnlockConditionSet
-	requestMetadata  *RequestMetadata
+	requestMetadata *RequestMetadata
 }
 
 var (
 	_ Request         = new(onLedgerRequestData)
 	_ OnLedgerRequest = new(onLedgerRequestData)
 	_ Calldata        = new(onLedgerRequestData)
-	_ Features        = new(onLedgerRequestData)
 )
-
-func OnLedgerFromUTXO(output iotago.Output, outputID iotago.OutputID) (OnLedgerRequest, error) {
-	r := &onLedgerRequestData{}
-	if err := r.readFromUTXO(output, outputID); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-func (req *onLedgerRequestData) readFromUTXO(output iotago.Output, outputID iotago.OutputID) error {
-	var reqMetadata *RequestMetadata
-	var err error
-
-	fbSet := output.FeatureSet()
-
-	reqMetadata, err = requestMetadataFromFeatureSet(fbSet)
-	if err != nil {
-		reqMetadata = nil // bad metadata. // we must handle these request, so that those funds are not lost forever
-	}
-
-	req.output = output
-	req.outputID = outputID
-	req.featureBlocks = fbSet
-	req.unlockConditions = output.UnlockConditionSet()
-	req.requestMetadata = reqMetadata
-	return nil
-}
 
 func (req *onLedgerRequestData) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
-	rr.ReadN(req.outputID[:])
+	rr.ReadN(req.requestID[:])
 	outputData := rr.ReadBytes()
 	if rr.Err != nil {
 		return rr.Err
 	}
-	req.output, rr.Err = util.OutputFromBytes(outputData)
+	req.request, rr.Err = util.OutputFromBytes(outputData)
 	if rr.Err != nil {
 		return rr.Err
 	}
-	return req.readFromUTXO(req.output, req.outputID)
+	return req.readFromUTXO(req.request, req.requestID)
 }
 
 func (req *onLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
-	ww.WriteN(req.outputID[:])
+	ww.WriteN(req.requestID[:])
 	if ww.Err != nil {
 		return ww.Err
 	}
-	outputData, err := req.output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
+	outputData, err := req.request.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
 	ww.Err = err
 	ww.WriteBytes(outputData)
 	return ww.Err
@@ -118,11 +84,11 @@ func (req *onLedgerRequestData) Message() Message {
 
 func (req *onLedgerRequestData) Clone() OnLedgerRequest {
 	outputID := iotago.OutputID{}
-	copy(outputID[:], req.outputID[:])
+	copy(outputID[:], req.requestID[:])
 
 	ret := &onLedgerRequestData{
-		outputID:         outputID,
-		output:           req.output.Clone(),
+		requestID:        outputID,
+		request:          req.request.Clone(),
 		featureBlocks:    req.featureBlocks.Clone(),
 		unlockConditions: util.CloneMap(req.unlockConditions),
 	}
@@ -130,19 +96,6 @@ func (req *onLedgerRequestData) Clone() OnLedgerRequest {
 		ret.requestMetadata = req.requestMetadata.Clone()
 	}
 	return ret
-}
-
-func (req *onLedgerRequestData) Expiry() (time.Time, *cryptolib.Address) {
-	expiration := req.unlockConditions.Expiration()
-	if expiration == nil {
-		return time.Time{}, nil
-	}
-
-	return time.Unix(int64(expiration.UnixTime), 0), cryptolib.NewAddressFromIotago(expiration.ReturnAddress)
-}
-
-func (req *onLedgerRequestData) Features() Features {
-	return req
 }
 
 func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
@@ -153,66 +106,15 @@ func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 }
 
 func (req *onLedgerRequestData) ID() RequestID {
-	return RequestID(req.outputID)
-}
-
-// IsInternalUTXO if true the output cannot be interpreted as a request
-func (req *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
-	if req.output.Type() == iotago.OutputFoundry {
-		return true
-	}
-	if req.senderAddress() == nil {
-		return false
-	}
-	if !req.senderAddress().Equals(chainID.AsAddress()) {
-		return false
-	}
-	if req.requestMetadata != nil {
-		return false
-	}
-	return true
+	return RequestID(req.requestID)
 }
 
 func (req *onLedgerRequestData) IsOffLedger() bool {
 	return false
 }
 
-func (req *onLedgerRequestData) NFT() *NFT {
-	nftOutput, ok := req.output.(*iotago.NFTOutput)
-	if !ok {
-		return nil
-	}
-
-	ret := &NFT{}
-
-	ret.ID = util.NFTIDFromNFTOutput(nftOutput, req.OutputID())
-
-	for _, featureBlock := range nftOutput.ImmutableFeatures {
-		if block, ok := featureBlock.(*iotago.IssuerFeature); ok {
-			ret.Issuer = cryptolib.NewAddressFromIotago(block.Address)
-		}
-		if block, ok := featureBlock.(*iotago.MetadataFeature); ok {
-			ret.Metadata = block.Data
-		}
-	}
-
-	return ret
-}
-
-func (req *onLedgerRequestData) Output() iotago.Output {
-	return req.output
-}
-
-func (req *onLedgerRequestData) OutputID() iotago.OutputID {
-	return req.outputID
-}
-
-func (req *onLedgerRequestData) ReturnAmount() (uint64, bool) {
-	storageDepositReturn := req.unlockConditions.StorageDepositReturn()
-	if storageDepositReturn == nil {
-		return 0, false
-	}
-	return storageDepositReturn.Amount, true
+func (req *onLedgerRequestData) RequestID() sui.ObjectID {
+	return req.requestID
 }
 
 func (req *onLedgerRequestData) SenderAccount() AgentID {
@@ -234,6 +136,7 @@ func (req *onLedgerRequestData) senderAddress() *cryptolib.Address {
 	if senderBlock == nil {
 		return nil
 	}
+
 	return cryptolib.NewAddressFromIotago(senderBlock.Address)
 }
 
@@ -253,7 +156,8 @@ func (req *onLedgerRequestData) String() string {
 }
 
 func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
-	switch out := req.output.(type) {
+	// TODO: refactor me: (?) Is TargetAddress still needed? It will always be the ChainID anyway, I think.
+	/*switch out := req.request.(type) {
 	case *iotago.BasicOutput:
 		return cryptolib.NewAddressFromIotago(out.Ident())
 	case *iotago.FoundryOutput:
@@ -264,15 +168,9 @@ func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
 		return cryptolib.NewAddressFromIotago(out.AliasID.ToAddress())
 	default:
 		panic("onLedgerRequestData:TargetAddress implement me")
-	}
-}
+	}*/
 
-func (req *onLedgerRequestData) TimeLock() time.Time {
-	timelock := req.unlockConditions.Timelock()
-	if timelock == nil {
-		return time.Time{}
-	}
-	return time.Unix(int64(timelock.UnixTime), 0)
+	return req.request.Anchor
 }
 
 func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {

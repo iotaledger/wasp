@@ -7,7 +7,6 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -91,7 +90,9 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request
 func (reqctx *requestContext) checkReasonToSkipOnLedger() error {
-	if err := reqctx.checkInternalOutput(); err != nil {
+	// TODO: Validate this
+
+	/*if err := reqctx.checkInternalOutput(); err != nil {
 		return err
 	}
 	if err := reqctx.checkReasonReturnAmount(); err != nil {
@@ -102,7 +103,7 @@ func (reqctx *requestContext) checkReasonToSkipOnLedger() error {
 	}
 	if err := reqctx.checkReasonExpiry(); err != nil {
 		return err
-	}
+	}*/
 	if reqctx.vm.txbuilder.InputsAreFull() {
 		return vmexceptions.ErrInputLimitExceeded
 	}
@@ -122,7 +123,7 @@ func (reqctx *requestContext) checkInternalOutput() error {
 
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
-func (reqctx *requestContext) checkReasonTimeLock() error {
+/* func (reqctx *requestContext) checkReasonTimeLock() error {
 	timeLock := reqctx.req.(isc.OnLedgerRequest).Features().TimeLock()
 	if !timeLock.IsZero() {
 		if reqctx.vm.task.FinalStateTimestamp().Before(timeLock) {
@@ -130,11 +131,11 @@ func (reqctx *requestContext) checkReasonTimeLock() error {
 		}
 	}
 	return nil
-}
+}*/
 
 // checkReasonExpiry checking expiry conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
-func (reqctx *requestContext) checkReasonExpiry() error {
+/* func (reqctx *requestContext) checkReasonExpiry() error {
 	expiry, _ := reqctx.req.(isc.OnLedgerRequest).Features().Expiry()
 
 	if expiry.IsZero() {
@@ -163,11 +164,12 @@ func (reqctx *requestContext) checkReasonExpiry() error {
 
 	return nil
 }
+*/
 
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
-func (reqctx *requestContext) checkReasonReturnAmount() error {
+/*func (reqctx *requestContext) checkReasonReturnAmount() error {
 	if _, ok := reqctx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
 		return errors.New("return amount feature not supported in this version")
 	}
 	return nil
-}
+}*/

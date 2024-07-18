@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type RequestKind rwutil.Kind
@@ -59,7 +60,7 @@ func RequestFromReader(rr *rwutil.Reader) (ret Request) {
 
 // region RequestID //////////////////////////////////////////////////////////////////
 
-type RequestID iotago.OutputID
+type RequestID sui.ObjectID
 
 const RequestIDDigestLen = 6
 

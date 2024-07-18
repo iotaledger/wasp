@@ -865,24 +865,24 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Addres
 	panic("refactor me: transaction.NewMintNFTsTransaction")
 	/*outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
 	if err != nil {
-		return iotago.OutputID{}, nil, err
+		return iotago.RequestID{}, nil, err
 	}
 	var tx *iotago.Transaction
 	_ = outputsSet
 	err = errors.New("refactor me: MintL1NFT")
 
 	if err != nil {
-		return iotago.OutputID{}, nil, err
+		return iotago.RequestID{}, nil, err
 	}
 	_, err = clu.l1.PostTxAndWaitUntilConfirmation(tx)
 	if err != nil {
-		return iotago.OutputID{}, nil, err
+		return iotago.RequestID{}, nil, err
 	}
 
 	// go through the tx and find the newly minted NFT
 	outputSet, err := tx.OutputsSet()
 	if err != nil {
-		return iotago.OutputID{}, nil, err
+		return iotago.RequestID{}, nil, err
 	}
 
 	for oID, o := range outputSet {

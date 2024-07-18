@@ -122,7 +122,7 @@ func (txb *AnchorTransactionBuilder) splitAssetsIntoInternalOutputs(req isc.OnLe
 	if req.NFT() != nil {
 		// create new output
 		panic("refactor me: vmtxbuilder.internalNFTOutputFromRequest")
-		// nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.OutputID())
+		// nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.RequestID())
 		// requiredSD += nftIncl.resultingOutput.Amount
 	}
 
@@ -225,7 +225,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 	// consumed on-ledger requests
 	for i := range txb.consumed {
 		req := txb.consumed[i]
-		outputID := req.OutputID()
+		outputID := req.RequestID()
 		output := req.Output()
 		if retrReq, ok := req.(*isc.RetryOnLedgerRequest); ok {
 			outputID = retrReq.RetryOutputID()

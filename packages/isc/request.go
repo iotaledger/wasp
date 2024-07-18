@@ -48,19 +48,12 @@ type Calldata interface {
 	Message() Message
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
-	NFT() *NFT // Not nil if the request is an NFT request
+	// NFT() *NFT // Not nil if the request is an NFT request
 	SenderAccount() AgentID
 	TargetAddress() *cryptolib.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	EVMCallMsg() *ethereum.CallMsg
 }
 
-type Features interface {
-	// Expiry returns the expiry time and sender address, or a zero time if not present
-	Expiry() (time.Time, *cryptolib.Address) // return expiry time data and sender address or nil, nil if does not exist
-	ReturnAmount() (uint64, bool)
-	// TimeLock returns the timelock feature, or a zero time if not present
-	TimeLock() time.Time
-}
 
 type UnsignedOffLedgerRequest interface {
 	Bytes() []byte
@@ -86,15 +79,7 @@ type OffLedgerRequest interface {
 type OnLedgerRequest interface {
 	Request
 	Clone() OnLedgerRequest
-	Output() Request
-	IsInternalUTXO(ChainID) bool
-	OutputID() sui.ObjectID
-	Features() Features
-}
-
-type ReturnAmountOptions interface {
-	ReturnTo() iotago.Address
-	Amount() uint64
+	RequestID() sui.ObjectID
 }
 
 func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, args ...interface{}), prefix string) {
@@ -109,6 +94,7 @@ func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, a
 	}
 }
 
+// TODO: Refactor me:
 // RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
 func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error) {
 	txid, err := tx.ID()
@@ -129,7 +115,7 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 			continue
 		}
 
-		// wrap output into the isc.Request
+		// wrap request into the isc.Request
 		odata, err := OnLedgerFromUTXO(output, iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i)))
 		if err != nil {
 			return nil, err // TODO: maybe log the error and keep processing?
@@ -151,9 +137,11 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 	return ret, nil
 }
 
+
+// TODO: Clarify if we want to keep expiry dates.
+/*
 // don't process any request which deadline will expire within 1 minute
 const RequestConsideredExpiredWindow = time.Minute * 1
-
 func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 	expiry, _ := req.Features().Expiry()
 	if expiry.IsZero() {
@@ -165,12 +153,12 @@ func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 func RequestIsUnlockable(req OnLedgerRequest, chainAddress *cryptolib.Address, currentTime time.Time) bool {
 	panic("TODO")
 	/*
-		output, _ := req.Output().(iotago.TransIndepIdentOutput)
-		return output.UnlockableBy(chainAddress.AsSuiAddress(), &iotago.ExternalUnlockParameters{
+		request, _ := req.Output().(iotago.TransIndepIdentOutput)
+		return request.UnlockableBy(chainAddress.AsSuiAddress(), &iotago.ExternalUnlockParameters{
 			ConfUnix: uint32(currentTime.Unix()),
 		})
 	*/
-}
+}*/
 
 func RequestHash(req Request) hashing.HashValue {
 	return hashing.HashData(req.Bytes())

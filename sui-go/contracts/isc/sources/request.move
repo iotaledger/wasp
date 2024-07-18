@@ -23,6 +23,8 @@ module isc::request {
     /// Represents a request object
     public struct Request has key {
         id: UID,
+        /// The anchor address
+        anchor: address,
         /// Request sender
         sender: address,
         /// Bag of assets associated to the request
@@ -71,6 +73,7 @@ module isc::request {
             sender: _,
             assets_bag,
             message: _,
+            anchor: _,
         } = self;
         let inner_id = id.uid_to_inner();
         id.delete();
@@ -104,6 +107,7 @@ module isc::request {
     ): Request {
         Request{
             id: object::new(ctx),
+            anchor: ctx.sender(), // Just some fake data.
             sender: ctx.sender(),
             assets_bag: borrow::new(assets_bag, ctx),
             message: Message{

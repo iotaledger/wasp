@@ -164,11 +164,11 @@ func AliasOutputWithIDFromTx(tx *iotago.Transaction, aliasAddr *cryptolib.Addres
 			}
 
 			if cryptolib.NewAddressFromIotago(aliasID.ToAddress()).Equals(aliasAddr) {
-				// output found
+				// request found
 				return NewAliasOutputWithID(aliasOutput, outputID), nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("cannot find alias output for address %v in transaction", aliasAddr.String())
+	return nil, fmt.Errorf("cannot find alias request for address %v in transaction", aliasAddr.String())
 }

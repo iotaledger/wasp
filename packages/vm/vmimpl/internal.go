@@ -39,7 +39,7 @@ func (reqctx *requestContext) creditNFTToAccount(agentID isc.AgentID) {
 	o := req.Output()
 	nftOutput := o.(*iotago.NFTOutput)
 	if nftOutput.NFTID.Empty() {
-		nftOutput.NFTID = util.NFTIDFromNFTOutput(nftOutput, req.OutputID()) // handle NFTs that were minted diractly to the chain
+		nftOutput.NFTID = util.NFTIDFromNFTOutput(nftOutput, req.RequestID()) // handle NFTs that were minted diractly to the chain
 	}
 	reqctx.accountsStateWriter(false).CreditNFTToAccount(agentID, nftOutput, reqctx.ChainID())
 }

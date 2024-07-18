@@ -62,7 +62,7 @@ func (s *StateReader) unprocessableMap() *collections.ImmutableMap {
 
 // save request reference / address of the sender
 func (s *StateWriter) SaveUnprocessable(req isc.OnLedgerRequest, blockIndex uint32, outputIndex uint16) {
-	panic("refactor me: OutputID + Index? Still relevant?")
+	panic("refactor me: RequestID + Index? Still relevant?")
 
 	rec := unprocessableRequestRecord{
 		// TransactionID is unknown yet, will be filled next block
@@ -82,7 +82,7 @@ func (s *StateWriter) updateUnprocessableRequestsOutputID(anchorTxID sui.ObjectI
 	for i := uint32(0); i < n; i++ {
 		k := newReqs.GetAt(i)
 		rec := mustUnprocessableRequestRecordFromBytes(allReqs.GetAt(k))
-		panic("refactor me: OutputID + Index? Still relevant?")
+		panic("refactor me: RequestID + Index? Still relevant?")
 		// rec.outputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.outputID.Index())
 
 		rec.outputID = anchorTxID
