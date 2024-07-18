@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
@@ -125,10 +126,10 @@ func (s *WebsocketClient) SubscribeEvent(
 		for {
 			select {
 			case <-ctx.Done():
-				break
+				return
 			case messageData, ok := <-wsCh:
 				if !ok {
-					break
+					return
 				}
 				var result *suijsonrpc.SuiEvent
 				if err := json.Unmarshal(messageData, &result); err != nil {
@@ -144,9 +145,8 @@ func (s *WebsocketClient) SubscribeEvent(
 func (s *WebsocketClient) SubscribeTransaction(
 	ctx context.Context,
 	filter *suijsonrpc.TransactionFilter,
-	resultCh chan<- *suijsonrpc.SuiTransactionBlockEffects,
+	resultCh chan<- *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
 ) error {
-	panic("TODO: not working because ws.CallContext() cannot be called twice in parallel")
 	wsCh := make(chan []byte, 10)
 	err := s.ws.CallContext(ctx, wsCh, subscribeTransaction, filter)
 	if err != nil {
@@ -156,12 +156,12 @@ func (s *WebsocketClient) SubscribeTransaction(
 		for {
 			select {
 			case <-ctx.Done():
-				break
+				return
 			case messageData, ok := <-wsCh:
 				if !ok {
-					break
+					return
 				}
-				var result *suijsonrpc.SuiTransactionBlockEffects
+				var result *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects]
 				if err := json.Unmarshal(messageData, &result); err != nil {
 					log.Fatal(err)
 				}

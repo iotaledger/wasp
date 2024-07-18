@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -383,6 +384,59 @@ func TestSubscribeEvent(t *testing.T) {
 				cnt := 0
 				for results := range tt.args.resultCh {
 					fmt.Println("results: ", results)
+					// FIXME we need to check finite number request in details
+					cnt++
+					if cnt > 3 {
+						break
+					}
+				}
+			},
+		)
+	}
+}
+
+func TestSubscribeTransaction(t *testing.T) {
+	api := suiclient.NewWebsocket(suiconn.MainnetEndpointURL, "wss://sui-mainnet.public.blastapi.io")
+
+	type args struct {
+		ctx      context.Context
+		filter   *suijsonrpc.TransactionFilter
+		resultCh chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects]
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *suijsonrpc.SuiTransactionBlockEffects
+		wantErr bool
+	}{
+		{
+			name: "test for filter transaction",
+			args: args{
+				ctx: context.TODO(),
+				filter: &suijsonrpc.TransactionFilter{
+					MoveFunction: &suijsonrpc.TransactionFilterMoveFunction{
+						Package: *sui.MustPackageIDFromHex("0x2c68443db9e8c813b194010c11040a3ce59f47e4eb97a2ec805371505dad7459"),
+					},
+				},
+				resultCh: make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects]),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				err := api.SubscribeTransaction(
+					tt.args.ctx,
+					tt.args.filter,
+					tt.args.resultCh,
+				)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("SubscribeTransaction() error: %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				cnt := 0
+				for results := range tt.args.resultCh {
+					fmt.Println("results: ", results.Data.V1)
 					// FIXME we need to check finite number request in details
 					cnt++
 					if cnt > 3 {

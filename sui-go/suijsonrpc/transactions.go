@@ -362,22 +362,37 @@ type DevInspectResults struct {
 }
 
 type TransactionFilter struct {
-	Checkpoint   *sui.SequenceNumber `json:"Checkpoint,omitempty"`
-	MoveFunction *struct {
-		Package  sui.ObjectID `json:"package"`
-		Module   string       `json:"module,omitempty"`
-		Function string       `json:"function,omitempty"`
-	} `json:"MoveFunction,omitempty"`
-	InputObject      *sui.ObjectID `json:"InputObject,omitempty"`
-	ChangedObject    *sui.ObjectID `json:"ChangedObject,omitempty"`
-	FromAddress      *sui.Address  `json:"FromAddress,omitempty"`
-	ToAddress        *sui.Address  `json:"ToAddress,omitempty"`
-	FromAndToAddress *struct {
-		From *sui.Address `json:"from"`
-		To   *sui.Address `json:"to"`
-	} `json:"FromAndToAddress,omitempty"`
-	TransactionKind   *string   `json:"TransactionKind,omitempty"`
-	TransactionKindIn *[]string `json:"TransactionKindIn,omitempty"`
+	/// Query by checkpoint.
+	Checkpoint *BigInt `json:"Checkpoint,omitempty"`
+	/// Query by move function.
+	MoveFunction *TransactionFilterMoveFunction `json:"MoveFunction,omitempty"`
+	/// Query by input object.
+	InputObject *sui.ObjectID `json:"InputObject,omitempty"`
+	/// Query by changed object, including created, mutated and unwrapped objects.
+	ChangedObject *sui.ObjectID `json:"ChangedObject,omitempty"`
+	/// Query by sender address.
+	FromAddress *sui.Address `json:"FromAddress,omitempty"`
+	/// Query by recipient address.
+	ToAddress *sui.Address `json:"ToAddress,omitempty"`
+	/// Query by sender and recipient address.
+	FromAndToAddress *TransactionFilterFromAndToAddress `json:"FromAndToAddress,omitempty"`
+	/// Query txs that have a given address as sender or recipient.
+	FromOrToAddress *sui.Address `json:"FromOrToAddress,omitempty"`
+	/// Query by transaction kind
+	TransactionKind *string `json:"TransactionKind,omitempty"`
+	/// Query transactions of any given kind in the input.
+	TransactionKindIn []string `json:"TransactionKindIn,omitempty"`
+}
+
+type TransactionFilterMoveFunction struct {
+	Package  sui.ObjectID   `json:"package"`
+	Module   sui.Identifier `json:"module,omitempty"`
+	Function sui.Identifier `json:"function,omitempty"`
+}
+
+type TransactionFilterFromAndToAddress struct {
+	From *sui.Address `json:"from"`
+	To   *sui.Address `json:"to"`
 }
 
 type SuiTransactionBlockResponseOptions struct {
