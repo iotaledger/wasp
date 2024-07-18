@@ -55,7 +55,7 @@ func NewHTTPClient(url string) *HTTPClient {
 //
 // The result must be a pointer so that package json can unmarshal into it. You
 // can also pass nil, in which case the result is ignored.
-func (c *HTTPClient) CallContext(ctx context.Context, result interface{}, method JsonRpcMethod, args ...interface{}) error {
+func (c *HTTPClient) CallContext(ctx context.Context, result interface{}, method JsonRPCMethod, args ...interface{}) error {
 	if result != nil && reflect.TypeOf(result).Kind() != reflect.Ptr {
 		return fmt.Errorf("call result parameter must be pointer or nil interface: %v", result)
 	}

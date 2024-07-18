@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/iotaledger/wasp/sui-go/suitest"
 )
 
 const (
@@ -19,7 +19,9 @@ const (
 )
 
 func TestRequestAddDelegation(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+
 	coins, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
 		Limit: 10,
@@ -51,7 +53,7 @@ func TestRequestAddDelegation(t *testing.T) {
 }
 
 func TestRequestWithdrawDelegation(t *testing.T) {
-	client := suiclient.New(suiconn.TestnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 
 	signer, err := sui.AddressFromHex("0xd77955e670f42c1bc5e94b9e68e5fe9bdbed9134d784f2a14dfe5fc1b24b5d9f")
 	require.NoError(t, err)
@@ -80,3 +82,4 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 	require.Equal(t, "", simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
 }
+

@@ -18,7 +18,7 @@ import (
 
 func TestGetDynamicFieldObject(t *testing.T) {
 	t.Skip("FIXME")
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 	parentObjectID, err := sui.AddressFromHex("0x1719957d7a2bf9d72459ff0eab8e600cbb1991ef41ddd5b4a8c531035933d256")
 	require.NoError(t, err)
 	type args struct {
@@ -64,7 +64,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 }
 
 func TestGetDynamicFields(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	limit := 5
 	type args struct {
 		ctx            context.Context
@@ -113,8 +113,8 @@ func TestGetDynamicFields(t *testing.T) {
 }
 
 func TestGetOwnedObjects(t *testing.T) {
-	client := suiclient.New(suiconn.TestnetEndpointURL)
-	signer := suisigner.NewSignerByIndex(suisigner.TestSeed, suisigner.KeySchemeFlagEd25519, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suisigner.NewSignerByIndex(testSeed, suisigner.KeySchemeFlagEd25519, 0)
 	t.Run("struct tag", func(t *testing.T) {
 		structTag, err := sui.StructTagFromString("0x2::coin::Coin<0x2::sui::SUI>")
 		require.NoError(t, err)
@@ -195,7 +195,7 @@ func TestGetOwnedObjects(t *testing.T) {
 }
 
 func TestQueryEvents(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	limit := 10
 
 	type args struct {
@@ -255,7 +255,7 @@ func TestQueryEvents(t *testing.T) {
 }
 
 func TestQueryTransactionBlocks(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	limit := uint(10)
 	type args struct {
 		ctx             context.Context
@@ -276,7 +276,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 				ctx: context.TODO(),
 				query: &suijsonrpc.SuiTransactionBlockResponseQuery{
 					Filter: &suijsonrpc.TransactionFilter{
-						FromAddress: suisigner.TestAddress,
+						FromAddress: testAddress,
 					},
 					Options: &suijsonrpc.SuiTransactionBlockResponseOptions{
 						ShowInput:   true,
@@ -312,7 +312,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 }
 
 func TestResolveNameServiceAddress(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	addr, err := api.ResolveNameServiceAddress(context.Background(), "2222.sui")
 	require.NoError(t, err)
 	require.Equal(t, "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9", addr.String())
@@ -322,7 +322,7 @@ func TestResolveNameServiceAddress(t *testing.T) {
 }
 
 func TestResolveNameServiceNames(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	owner := sui.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
 	namePage, err := api.ResolveNameServiceNames(
 		context.Background(), suiclient.ResolveNameServiceNamesRequest{
@@ -347,7 +347,7 @@ func TestSubscribeEvent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetEndpointURL, suiconn.LocalnetWebsocketEndpointURL)
+	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL)
 
 	type args struct {
 		ctx      context.Context
@@ -401,7 +401,7 @@ func TestSubscribeTransaction(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetEndpointURL, suiconn.LocalnetWebsocketEndpointURL)
+	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL)
 
 	type args struct {
 		ctx      context.Context

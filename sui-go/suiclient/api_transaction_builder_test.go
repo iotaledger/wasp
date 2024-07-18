@@ -14,12 +14,12 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/iotaledger/wasp/sui-go/suitest"
 )
 
 func TestBatchTransaction(t *testing.T) {
 	t.Log("TestBatchTransaction TODO")
-	// api := suiclient.New(suiconn.DevnetEndpointURL)
+	// api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 
 	// txnBytes, err := api.BatchTransaction(context.Background(), signer, *coin1, *coin2, nil, 10000)
 	// require.NoError(t, err)
@@ -28,8 +28,8 @@ func TestBatchTransaction(t *testing.T) {
 
 func TestMergeCoins(t *testing.T) {
 	t.Skip("FIXME create an account has at least two coin objects on chain")
-	// api := suiclient.New(suiconn.TestnetEndpointURL)
-	// signer := suisigner.TestAddress
+	// api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	// signer := testAddress
 	// coins, err := api.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 	// 	Owner: signer,
 	// 	Limit: 10,
@@ -57,7 +57,8 @@ func TestMergeCoins(t *testing.T) {
 }
 
 func TestMoveCall(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
 
 	sdkVerifyBytecode := contracts.SDKVerify()
 
@@ -132,8 +133,10 @@ func TestMoveCall(t *testing.T) {
 }
 
 func TestPay(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	coins, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
 		Limit: 10,
@@ -174,8 +177,10 @@ func TestPay(t *testing.T) {
 }
 
 func TestPayAllSui(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	limit := uint(3)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
@@ -229,9 +234,11 @@ func TestPayAllSui(t *testing.T) {
 }
 
 func TestPaySui(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient1 := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
-	_, recipient2 := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 2)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient1 := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+	recipient2 := suitest.MakeSignerWithFunds(2, suiconn.TestnetFaucetURL)
+
 	limit := uint(4)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
@@ -303,7 +310,8 @@ func TestPaySui(t *testing.T) {
 }
 
 func TestPublish(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
 
 	testcoinBytecode := contracts.Testcoin()
 
@@ -331,7 +339,9 @@ func TestPublish(t *testing.T) {
 }
 
 func TestSplitCoin(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+
 	limit := uint(4)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
@@ -369,7 +379,9 @@ func TestSplitCoin(t *testing.T) {
 }
 
 func TestSplitCoinEqual(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+
 	limit := uint(4)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
@@ -404,8 +416,10 @@ func TestSplitCoinEqual(t *testing.T) {
 }
 
 func TestTransferObject(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	limit := uint(3)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),
@@ -437,8 +451,10 @@ func TestTransferObject(t *testing.T) {
 }
 
 func TestTransferSui(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	limit := uint(3)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer.Address(),

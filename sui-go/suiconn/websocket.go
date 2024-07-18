@@ -113,7 +113,7 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 	}
 }
 
-func (c *WebsocketClient) writeMsg(method JsonRpcMethod, args ...interface{}) (string, error) {
+func (c *WebsocketClient) writeMsg(method JsonRPCMethod, args ...interface{}) (string, error) {
 	msg, err := c.newMessage(method.String(), args...)
 	if err != nil {
 		return "", err
@@ -125,7 +125,7 @@ func (c *WebsocketClient) writeMsg(method JsonRpcMethod, args ...interface{}) (s
 	return id, nil
 }
 
-func (c *WebsocketClient) CallContext(ctx context.Context, result interface{}, method JsonRpcMethod, args ...interface{}) error {
+func (c *WebsocketClient) CallContext(ctx context.Context, result interface{}, method JsonRPCMethod, args ...interface{}) error {
 	if result != nil && reflect.TypeOf(result).Kind() != reflect.Ptr {
 		return fmt.Errorf("call result parameter must be pointer or nil interface: %v", result)
 	}
@@ -145,7 +145,7 @@ func (c *WebsocketClient) CallContext(ctx context.Context, result interface{}, m
 	return json.Unmarshal(respmsg.Result, result)
 }
 
-func (c *WebsocketClient) Subscribe(ctx context.Context, resultCh chan []byte, method JsonRpcMethod, args ...interface{}) error {
+func (c *WebsocketClient) Subscribe(ctx context.Context, resultCh chan<- []byte, method JsonRPCMethod, args ...interface{}) error {
 	var subID uint64
 	err := c.CallContext(ctx, &subID, method, args...)
 	if err != nil {

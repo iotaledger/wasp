@@ -15,16 +15,21 @@ import (
 	serialization "github.com/iotaledger/wasp/sui-go/examples/event_pubsub/lib"
 )
 
+var testMnemonic = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
+
 func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
-	api := suiclient.NewWebsocket(suiconn.TestnetEndpointURL, suiconn.TestnetWebsocketEndpointURL)
-	sender, err := suisigner.NewSignerWithMnemonic(suisigner.TestMnemonic, suisigner.KeySchemeFlagDefault)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api := suiclient.NewWebsocket(ctx, suiconn.TestnetWebsocketEndpointURL)
+	sender, err := suisigner.NewSignerWithMnemonic(testMnemonic, suisigner.KeySchemeFlagDefault)
 	if err != nil {
 		log.Panic(err)
 	}
-	err = suiclient.RequestFundsFromFaucet(context.Background(), sender.Address(), suiconn.TestnetFaucetURL)
+	err = suiclient.RequestFundsFromFaucet(ctx, sender.Address(), suiconn.TestnetFaucetURL)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -35,20 +40,21 @@ func main() {
 	}
 
 	log.Println("sender: ", sender.Address())
-	publisher := serialization.NewPublisher(api.Client, sender)
+	publisher := serialization.NewPublisher(api, sender)
 	subscriber := serialization.NewSubscriber(api)
 
 	go func() {
 		for {
-			publisher.PublishEvents(context.Background(), packageID)
+			publisher.PublishEvents(ctx, packageID)
 		}
 	}()
 
 	go func() {
 		for {
-			subscriber.SubscribeEvent(context.Background(), packageID)
+			subscriber.SubscribeEvent(ctx, packageID)
 		}
 	}()
 
 	<-done
 }
+

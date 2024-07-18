@@ -10,12 +10,11 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func TestGetAllBalances(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
-	balances, err := api.GetAllBalances(context.TODO(), suisigner.TestAddress)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
+	balances, err := api.GetAllBalances(context.TODO(), testAddress)
 	require.NoError(t, err)
 	for _, balance := range balances {
 		t.Logf(
@@ -43,10 +42,10 @@ func TestGetAllCoins(t *testing.T) {
 	}{
 		{
 			name: "successful with limit",
-			a:    suiclient.New(suiconn.TestnetEndpointURL),
+			a:    suiclient.NewHTTP(suiconn.TestnetEndpointURL),
 			args: args{
 				ctx:     context.TODO(),
-				address: suisigner.TestAddress,
+				address: testAddress,
 				cursor:  nil,
 				limit:   3,
 			},
@@ -54,10 +53,10 @@ func TestGetAllCoins(t *testing.T) {
 		},
 		{
 			name: "successful without limit",
-			a:    suiclient.New(suiconn.TestnetEndpointURL),
+			a:    suiclient.NewHTTP(suiconn.TestnetEndpointURL),
 			args: args{
 				ctx:     context.TODO(),
-				address: suisigner.TestAddress,
+				address: testAddress,
 				cursor:  nil,
 				limit:   0,
 			},
@@ -85,8 +84,8 @@ func TestGetAllCoins(t *testing.T) {
 }
 
 func TestGetBalance(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
-	balance, err := api.GetBalance(context.TODO(), suiclient.GetBalanceRequest{Owner: suisigner.TestAddress})
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
+	balance, err := api.GetBalance(context.TODO(), suiclient.GetBalanceRequest{Owner: testAddress})
 	require.NoError(t, err)
 	t.Logf(
 		"Coin Name: %v, Count: %v, Total: %v, Locked: %v",
@@ -96,7 +95,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestGetCoinMetadata(t *testing.T) {
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 	metadata, err := api.GetCoinMetadata(context.TODO(), suijsonrpc.SuiCoinType)
 	require.NoError(t, err)
 	testSuiMetadata := &suijsonrpc.SuiCoinMetadata{
@@ -111,10 +110,10 @@ func TestGetCoinMetadata(t *testing.T) {
 }
 
 func TestGetCoins(t *testing.T) {
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 	defaultCoinType := suijsonrpc.SuiCoinType
 	coins, err := api.GetCoins(context.TODO(), suiclient.GetCoinsRequest{
-		Owner:    suisigner.TestAddress,
+		Owner:    testAddress,
 		CoinType: &defaultCoinType,
 		Limit:    3,
 	})
@@ -142,7 +141,7 @@ func TestGetTotalSupply(t *testing.T) {
 	}{
 		{
 			name: "get Sui supply",
-			api:  suiclient.New(suiconn.DevnetEndpointURL),
+			api:  suiclient.NewHTTP(suiconn.DevnetEndpointURL),
 			args: args{
 				context.TODO(),
 				suijsonrpc.SuiCoinType,

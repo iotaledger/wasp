@@ -13,8 +13,7 @@ import (
 )
 
 type Feed struct {
-	Sui           *suiclient.WebsocketClient
-	ISC           *Client // TODO: remove this, should be able to use the same websocket connection for all calls
+	Client        *Client
 	ISCPackageID  sui.PackageID
 	AnchorAddress sui.ObjectID
 	log           *logger.Logger
@@ -22,15 +21,14 @@ type Feed struct {
 
 func NewFeed(
 	ctx context.Context,
-	config Config,
 	wsURL string,
+	faucetURL string,
 	iscPackageID sui.PackageID,
 	anchorAddress sui.ObjectID,
 	log *logger.Logger,
 ) *Feed {
 	return &Feed{
-		Sui:           suiclient.NewWebsocket(ctx, config.APIURL, wsURL),
-		ISC:           NewClient(config),
+		Client:        NewWebsocketClient(ctx, wsURL, "", faucetURL),
 		ISCPackageID:  iscPackageID,
 		AnchorAddress: anchorAddress,
 		log:           log,
@@ -40,14 +38,14 @@ func NewFeed(
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
 func (c *Feed) FetchCurrentState(ctx context.Context) (*RefWithObject[Anchor], []*Request, error) {
-	anchor, err := c.ISC.GetAnchorFromObjectID(ctx, &c.AnchorAddress)
+	anchor, err := c.Client.GetAnchorFromObjectID(ctx, &c.AnchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
 	reqs := make([]*Request, 0)
 	var lastSeen *sui.ObjectID
 	for {
-		res, err := c.Sui.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
+		res, err := c.Client.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
 			Address: &c.AnchorAddress,
 			Query: &suijsonrpc.SuiObjectResponseQuery{
 				Filter: &suijsonrpc.SuiObjectDataFilter{
@@ -96,7 +94,7 @@ func (c *Feed) subscribeToNewRequests(
 ) {
 	for {
 		events := make(chan *suijsonrpc.SuiEvent)
-		err := c.Sui.SubscribeEvent(
+		err := c.Client.SubscribeEvent(
 			ctx,
 			&suijsonrpc.EventFilter{
 				MoveEventType: &sui.StructTag{
@@ -143,7 +141,7 @@ func (c *Feed) consumeRequestEvents(
 				c.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
-			req, err := c.ISC.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
+			req, err := c.Client.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				c.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
@@ -159,7 +157,7 @@ func (c *Feed) subscribeToAnchorUpdates(
 ) {
 	for {
 		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
-		err := c.Sui.SubscribeTransaction(
+		err := c.Client.SubscribeTransaction(
 			ctx,
 			&suijsonrpc.TransactionFilter{
 				ChangedObject: &c.AnchorAddress,
@@ -198,7 +196,7 @@ func (c *Feed) consumeAnchorUpdates(
 			}
 			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == c.AnchorAddress {
-					r, err := c.Sui.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
+					r, err := c.Client.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
 						ObjectID: &c.AnchorAddress,
 						Version:  obj.Reference.Version,
 						Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},

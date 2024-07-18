@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
-
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/sui-go/suitest"
 )
 
 func TestMintToken(t *testing.T) {
-	client, signer := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
 
 	// module name is 'testcoin'
 	tokenPackageID, treasuryCap := deployTestcoin(t, client, signer)
@@ -82,14 +84,14 @@ func deployTestcoin(t *testing.T, client *suiclient.Client, signer suisigner.Sig
 }
 
 func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 
 	options := suijsonrpc.SuiObjectDataOptions{
 		ShowType:    true,
 		ShowContent: true,
 	}
 	coinType := fmt.Sprintf("0x2::coin::Coin<%v>", suijsonrpc.SuiCoinType)
-	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.TODO(), suisigner.TestAddress, &options, coinType)
+	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.TODO(), testAddress, &options, coinType)
 	require.NoError(t, err)
 	t.Log(filterObject)
 }

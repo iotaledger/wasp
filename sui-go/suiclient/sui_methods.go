@@ -89,4 +89,3 @@ const (
 	dryRunTransactionBlock     SuiMethod = "sui_dryRunTransactionBlock"
 	executeTransactionBlock    SuiMethod = "sui_executeTransactionBlock"
 )
-

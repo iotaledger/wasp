@@ -16,12 +16,12 @@ type GetDynamicFieldObjectRequest struct {
 	Name           *sui.DynamicFieldName
 }
 
-func (s *Client) GetDynamicFieldObject(
+func (c *Client) GetDynamicFieldObject(
 	ctx context.Context,
 	req GetDynamicFieldObjectRequest,
 ) (*suijsonrpc.SuiObjectResponse, error) {
 	var resp suijsonrpc.SuiObjectResponse
-	return &resp, s.http.CallContext(ctx, &resp, getDynamicFieldObject, req.ParentObjectID, req.Name)
+	return &resp, c.transport.Call(ctx, &resp, getDynamicFieldObject, req.ParentObjectID, req.Name)
 }
 
 type GetDynamicFieldsRequest struct {
@@ -30,12 +30,12 @@ type GetDynamicFieldsRequest struct {
 	Limit          *uint         // optional
 }
 
-func (s *Client) GetDynamicFields(
+func (c *Client) GetDynamicFields(
 	ctx context.Context,
 	req GetDynamicFieldsRequest,
 ) (*suijsonrpc.DynamicFieldPage, error) {
 	var resp suijsonrpc.DynamicFieldPage
-	return &resp, s.http.CallContext(ctx, &resp, getDynamicFields, req.ParentObjectID, req.Cursor, req.Limit)
+	return &resp, c.transport.Call(ctx, &resp, getDynamicFields, req.ParentObjectID, req.Cursor, req.Limit)
 }
 
 type GetOwnedObjectsRequest struct {
@@ -51,12 +51,12 @@ type GetOwnedObjectsRequest struct {
 	Limit *uint
 }
 
-func (s *Client) GetOwnedObjects(
+func (c *Client) GetOwnedObjects(
 	ctx context.Context,
 	req GetOwnedObjectsRequest,
 ) (*suijsonrpc.ObjectsPage, error) {
 	var resp suijsonrpc.ObjectsPage
-	return &resp, s.http.CallContext(ctx, &resp, getOwnedObjects, req.Address, req.Query, req.Cursor, req.Limit)
+	return &resp, c.transport.Call(ctx, &resp, getOwnedObjects, req.Address, req.Query, req.Cursor, req.Limit)
 }
 
 type QueryEventsRequest struct {
@@ -66,12 +66,12 @@ type QueryEventsRequest struct {
 	DescendingOrder bool                // optional
 }
 
-func (s *Client) QueryEvents(
+func (c *Client) QueryEvents(
 	ctx context.Context,
 	req QueryEventsRequest,
 ) (*suijsonrpc.EventPage, error) {
 	var resp suijsonrpc.EventPage
-	return &resp, s.http.CallContext(ctx, &resp, queryEvents, req.Query, req.Cursor, req.Limit, req.DescendingOrder)
+	return &resp, c.transport.Call(ctx, &resp, queryEvents, req.Query, req.Cursor, req.Limit, req.DescendingOrder)
 }
 
 type QueryTransactionBlocksRequest struct {
@@ -81,17 +81,17 @@ type QueryTransactionBlocksRequest struct {
 	DescendingOrder bool                   // optional
 }
 
-func (s *Client) QueryTransactionBlocks(
+func (c *Client) QueryTransactionBlocks(
 	ctx context.Context,
 	req QueryTransactionBlocksRequest,
 ) (*suijsonrpc.TransactionBlocksPage, error) {
 	resp := suijsonrpc.TransactionBlocksPage{}
-	return &resp, s.http.CallContext(ctx, &resp, queryTransactionBlocks, req.Query, req.Cursor, req.Limit, req.DescendingOrder)
+	return &resp, c.transport.Call(ctx, &resp, queryTransactionBlocks, req.Query, req.Cursor, req.Limit, req.DescendingOrder)
 }
 
-func (s *Client) ResolveNameServiceAddress(ctx context.Context, suiName string) (*sui.Address, error) {
+func (c *Client) ResolveNameServiceAddress(ctx context.Context, suiName string) (*sui.Address, error) {
 	var resp sui.Address
-	err := s.http.CallContext(ctx, &resp, resolveNameServiceAddress, suiName)
+	err := c.transport.Call(ctx, &resp, resolveNameServiceAddress, suiName)
 	if err != nil && err.Error() == "nil address" {
 		return nil, errors.New("sui name not found")
 	}
@@ -104,21 +104,21 @@ type ResolveNameServiceNamesRequest struct {
 	Limit  *uint         // optional
 }
 
-func (s *Client) ResolveNameServiceNames(
+func (c *Client) ResolveNameServiceNames(
 	ctx context.Context,
 	req ResolveNameServiceNamesRequest,
 ) (*suijsonrpc.SuiNamePage, error) {
 	var resp suijsonrpc.SuiNamePage
-	return &resp, s.http.CallContext(ctx, &resp, resolveNameServiceNames, req.Owner, req.Cursor, req.Limit)
+	return &resp, c.transport.Call(ctx, &resp, resolveNameServiceNames, req.Owner, req.Cursor, req.Limit)
 }
 
-func (s *WebsocketClient) SubscribeEvent(
+func (s *Client) SubscribeEvent(
 	ctx context.Context,
 	filter *suijsonrpc.EventFilter,
 	resultCh chan<- *suijsonrpc.SuiEvent,
 ) error {
 	wsCh := make(chan []byte, 10)
-	err := s.ws.Subscribe(ctx, wsCh, subscribeEvent, filter)
+	err := s.transport.Subscribe(ctx, wsCh, subscribeEvent, filter)
 	if err != nil {
 		return err
 	}
@@ -142,13 +142,13 @@ func (s *WebsocketClient) SubscribeEvent(
 	return nil
 }
 
-func (s *WebsocketClient) SubscribeTransaction(
+func (s *Client) SubscribeTransaction(
 	ctx context.Context,
 	filter *suijsonrpc.TransactionFilter,
 	resultCh chan<- *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
 ) error {
 	wsCh := make(chan []byte, 10)
-	err := s.ws.Subscribe(ctx, wsCh, subscribeTransaction, filter)
+	err := s.transport.Subscribe(ctx, wsCh, subscribeTransaction, filter)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/move"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/iotaledger/wasp/sui-go/suitest"
 )
 
 //go:generate sh -c "cd ../swap && sui move build --dump-bytecode-as-base64 > bytecode.json"
@@ -17,8 +17,10 @@ import (
 var swapBytecodeJSON []byte
 
 func main() {
-	suiClient, signer := suiclient.New(suiconn.LocalnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, swapper := suiclient.New(suiconn.LocalnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 1)
+	suiClient := suiclient.NewHTTP(suiconn.LocalnetEndpointURL)
+	signer := suitest.MakeSignerWithFunds(0, suiconn.LocalnetFaucetURL)
+	swapper := suitest.MakeSignerWithFunds(1, suiconn.LocalnetFaucetURL)
+
 	fmt.Println("signer: ", signer.Address())
 	fmt.Println("swapper: ", swapper.Address())
 

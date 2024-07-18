@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var testMnemonic = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
+
 func TestNewSigner(t *testing.T) {
 	testMnemonic := "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
 	testIotaAddress := sui.MustAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
@@ -25,7 +27,7 @@ func TestNewSigner(t *testing.T) {
 }
 
 func TestSignatureMarshalUnmarshal(t *testing.T) {
-	signer, err := suisigner.NewSignerWithMnemonic(suisigner.TestMnemonic, suisigner.KeySchemeFlagDefault)
+	signer, err := suisigner.NewSignerWithMnemonic(testMnemonic, suisigner.KeySchemeFlagDefault)
 	require.NoError(t, err)
 
 	msg := "I want to have some bubble tea"

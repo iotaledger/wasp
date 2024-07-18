@@ -14,11 +14,10 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
@@ -53,7 +52,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 }
 
 func TestAssetsBagAddItems(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
@@ -100,7 +99,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
@@ -156,7 +155,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
@@ -269,7 +268,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 }
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)

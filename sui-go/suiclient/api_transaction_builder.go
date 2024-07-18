@@ -16,12 +16,12 @@ type BatchTransactionRequest struct {
 }
 
 // TODO: execution_mode : <SuiTransactionBlockBuilderMode>
-func (s *Client) BatchTransaction(
+func (c *Client) BatchTransaction(
 	ctx context.Context,
 	req BatchTransactionRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, batchTransaction, req.Signer, req.TxnParams, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, batchTransaction, req.Signer, req.TxnParams, req.Gas, req.GasBudget)
 }
 
 type MergeCoinsRequest struct {
@@ -33,12 +33,12 @@ type MergeCoinsRequest struct {
 }
 
 // MergeCoins Create an unsigned transaction to merge multiple coins into one coin.
-func (s *Client) MergeCoins(
+func (c *Client) MergeCoins(
 	ctx context.Context,
 	req MergeCoinsRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, mergeCoins, req.Signer, req.PrimaryCoin, req.CoinToMerge, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, mergeCoins, req.Signer, req.PrimaryCoin, req.CoinToMerge, req.Gas, req.GasBudget)
 }
 
 type MoveCallRequest struct {
@@ -57,12 +57,12 @@ type MoveCallRequest struct {
 // TODO: execution_mode : <SuiTransactionBlockBuilderMode>
 // `arguments: []any` *SuiAddress can be arguments here, it will automatically convert to Address in hex string.
 // [][]byte can't be passed. User should encode array of hex string.
-func (s *Client) MoveCall(
+func (c *Client) MoveCall(
 	ctx context.Context,
 	req MoveCallRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(
+	return &resp, c.transport.Call(
 		ctx,
 		&resp,
 		moveCall,
@@ -86,12 +86,12 @@ type PayRequest struct {
 	GasBudget  *suijsonrpc.BigInt
 }
 
-func (s *Client) Pay(
+func (c *Client) Pay(
 	ctx context.Context,
 	req PayRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, pay, req.Signer, req.InputCoins, req.Recipients, req.Amount, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, pay, req.Signer, req.InputCoins, req.Recipients, req.Amount, req.Gas, req.GasBudget)
 }
 
 type PayAllSuiRequest struct {
@@ -102,12 +102,12 @@ type PayAllSuiRequest struct {
 }
 
 // PayAllSui Create an unsigned transaction to send all SUI coins to one recipient.
-func (s *Client) PayAllSui(
+func (c *Client) PayAllSui(
 	ctx context.Context,
 	req PayAllSuiRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, payAllSui, req.Signer, req.InputCoins, req.Recipient, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, payAllSui, req.Signer, req.InputCoins, req.Recipient, req.GasBudget)
 }
 
 type PaySuiRequest struct {
@@ -119,12 +119,12 @@ type PaySuiRequest struct {
 }
 
 // see explanation in https://forums.sui.io/t/how-to-use-the-sui-paysui-method/2282
-func (s *Client) PaySui(
+func (c *Client) PaySui(
 	ctx context.Context,
 	req PaySuiRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, paySui, req.Signer, req.InputCoins, req.Recipients, req.Amount, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, paySui, req.Signer, req.InputCoins, req.Recipients, req.Amount, req.GasBudget)
 }
 
 type PublishRequest struct {
@@ -135,12 +135,12 @@ type PublishRequest struct {
 	GasBudget       *suijsonrpc.BigInt
 }
 
-func (s *Client) Publish(
+func (c *Client) Publish(
 	ctx context.Context,
 	req PublishRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	var resp suijsonrpc.TransactionBytes
-	return &resp, s.http.CallContext(ctx, &resp, publish, req.Sender, req.CompiledModules, req.Dependencies, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, publish, req.Sender, req.CompiledModules, req.Dependencies, req.Gas, req.GasBudget)
 }
 
 type RequestAddStakeRequest struct {
@@ -152,12 +152,12 @@ type RequestAddStakeRequest struct {
 	GasBudget *suijsonrpc.BigInt
 }
 
-func (s *Client) RequestAddStake(
+func (c *Client) RequestAddStake(
 	ctx context.Context,
 	req RequestAddStakeRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	var resp suijsonrpc.TransactionBytes
-	return &resp, s.http.CallContext(ctx, &resp, requestAddStake, req.Signer, req.Coins, req.Amount, req.Validator, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, requestAddStake, req.Signer, req.Coins, req.Amount, req.Validator, req.Gas, req.GasBudget)
 }
 
 type RequestWithdrawStakeRequest struct {
@@ -167,12 +167,12 @@ type RequestWithdrawStakeRequest struct {
 	GasBudget   *suijsonrpc.BigInt
 }
 
-func (s *Client) RequestWithdrawStake(
+func (c *Client) RequestWithdrawStake(
 	ctx context.Context,
 	req RequestWithdrawStakeRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	var resp suijsonrpc.TransactionBytes
-	return &resp, s.http.CallContext(ctx, &resp, requestWithdrawStake, req.Signer, req.StakedSuiId, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, requestWithdrawStake, req.Signer, req.StakedSuiId, req.Gas, req.GasBudget)
 }
 
 type SplitCoinRequest struct {
@@ -185,12 +185,12 @@ type SplitCoinRequest struct {
 
 // SplitCoin Creates an unsigned transaction to split a coin object into multiple coins.
 // better to replace with unsafe_pay API which consumes less gas
-func (s *Client) SplitCoin(
+func (c *Client) SplitCoin(
 	ctx context.Context,
 	req SplitCoinRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, splitCoin, req.Signer, req.Coin, req.SplitAmounts, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, splitCoin, req.Signer, req.Coin, req.SplitAmounts, req.Gas, req.GasBudget)
 }
 
 type SplitCoinEqualRequest struct {
@@ -203,12 +203,12 @@ type SplitCoinEqualRequest struct {
 
 // SplitCoinEqual Creates an unsigned transaction to split a coin object into multiple equal-size coins.
 // better to replace with unsafe_pay API which consumes less gas
-func (s *Client) SplitCoinEqual(
+func (c *Client) SplitCoinEqual(
 	ctx context.Context,
 	req SplitCoinEqualRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, splitCoinEqual, req.Signer, req.Coin, req.SplitCount, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, splitCoinEqual, req.Signer, req.Coin, req.SplitCount, req.Gas, req.GasBudget)
 }
 
 type TransferObjectRequest struct {
@@ -220,12 +220,12 @@ type TransferObjectRequest struct {
 }
 
 // TransferObject Create an unsigned transaction to transfer an object from one address to another. The object's type must allow public transfers
-func (s *Client) TransferObject(
+func (c *Client) TransferObject(
 	ctx context.Context,
 	req TransferObjectRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, transferObject, req.Signer, req.ObjectID, req.Gas, req.GasBudget, req.Recipient)
+	return &resp, c.transport.Call(ctx, &resp, transferObject, req.Signer, req.ObjectID, req.Gas, req.GasBudget, req.Recipient)
 }
 
 type TransferSuiRequest struct {
@@ -237,10 +237,10 @@ type TransferSuiRequest struct {
 }
 
 // TransferSui Create an unsigned transaction to send SUI coin object to a Sui address. The SUI object is also used as the gas object.
-func (s *Client) TransferSui(
+func (c *Client) TransferSui(
 	ctx context.Context,
 	req TransferSuiRequest,
 ) (*suijsonrpc.TransactionBytes, error) {
 	resp := suijsonrpc.TransactionBytes{}
-	return &resp, s.http.CallContext(ctx, &resp, transferSui, req.Signer, req.ObjectID, req.GasBudget, req.Recipient, req.Amount)
+	return &resp, c.transport.Call(ctx, &resp, transferSui, req.Signer, req.ObjectID, req.GasBudget, req.Recipient, req.Amount)
 }

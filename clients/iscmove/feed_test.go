@@ -12,16 +12,13 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func TestRequestsFeed(t *testing.T) {
-	client := iscmove.NewClient(iscmove.Config{
-		APIURL: suiconn.LocalnetEndpointURL,
-	})
+	client := newLocalnetClient()
 
-	iscOwner := newSignerWithFunds(t, suisigner.TestSeed, 0)
-	chainOwner := newSignerWithFunds(t, suisigner.TestSeed, 1)
+	iscOwner := newSignerWithFunds(t, testSeed, 0)
+	chainOwner := newSignerWithFunds(t, testSeed, 1)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, iscOwner)
 	anchor := startNewChain(t, client, chainOwner, iscPackageID)
@@ -45,8 +42,8 @@ func TestRequestsFeed(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	feed := iscmove.NewFeed(
 		ctx,
-		iscmove.Config{APIURL: suiconn.LocalnetEndpointURL},
 		suiconn.LocalnetWebsocketEndpointURL,
+		suiconn.LocalnetFaucetURL,
 		iscPackageID,
 		*anchor.ObjectID,
 		log,
