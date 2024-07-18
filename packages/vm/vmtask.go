@@ -53,6 +53,7 @@ type VMTaskResult struct {
 	// TransactionEssence *iotago.TransactionEssence
 	// InputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
 	InputsCommitment []byte
+	StateMetadata    []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult
 }

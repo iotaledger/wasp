@@ -325,7 +325,7 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.RegisterERC20Extern
 	return result(addr[:])
 }
 
-func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, nativeTokenID iotago.NativeTokenID) *common.Address {
+func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, nativeTokenID isc.NativeTokenID) *common.Address {
 	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
 	if !ok {
 		return nil

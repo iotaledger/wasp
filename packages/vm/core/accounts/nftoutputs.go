@@ -3,6 +3,7 @@ package accounts
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (s *StateWriter) newNFTsArray() *collections.Array {
@@ -20,21 +21,21 @@ func (s *StateReader) nftOutputMapR() *collections.ImmutableMap {
 func (s *StateWriter) SaveNFTOutput(out *iotago.NFTOutput, outputIndex uint16) {
 	tokenRec := NFTOutputRec{
 		// TransactionID is unknown yet, will be filled next block
-		OutputID: iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
+		OutputID: sui.ObjectID{},
 		Output:   out,
 	}
 	s.nftOutputMap().SetAt(out.NFTID[:], tokenRec.Bytes())
 	s.newNFTsArray().Push(out.NFTID[:])
 }
 
-func (s *StateWriter) updateNFTOutputIDs(anchorTxID iotago.TransactionID) {
+func (s *StateWriter) updateNFTOutputIDs(anchorTxID sui.ObjectID) {
 	newNFTs := s.newNFTsArray()
 	allNFTs := s.nftOutputMap()
 	n := newNFTs.Len()
 	for i := uint32(0); i < n; i++ {
 		nftID := newNFTs.GetAt(i)
 		rec := mustNFTOutputRecFromBytes(allNFTs.GetAt(nftID))
-		rec.OutputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.OutputID.Index())
+		rec.OutputID = anchorTxID
 		allNFTs.SetAt(nftID, rec.Bytes())
 	}
 	newNFTs.Erase()

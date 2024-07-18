@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var (
@@ -188,7 +189,7 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets, chainID)
 }
 
-func (s *StateWriter) UpdateLatestOutputID(anchorTxID iotago.TransactionID, blockIndex uint32) map[iotago.NFTID]isc.AgentID {
+func (s *StateWriter) UpdateLatestOutputID(anchorTxID sui.ObjectID, blockIndex uint32) []iotago.NFTID {
 	s.updateNativeTokenOutputIDs(anchorTxID)
 	s.updateFoundryOutputIDs(anchorTxID)
 	s.updateNFTOutputIDs(anchorTxID)

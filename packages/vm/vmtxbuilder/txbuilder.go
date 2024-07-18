@@ -16,7 +16,7 @@ import (
 type AccountsContractRead struct {
 	// nativeTokenOutputLoaderFunc loads stored output from the state
 	// Should return nil if does not exist
-	NativeTokenOutput func(iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
+	NativeTokenOutput func(isc.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
 
 	// foundryLoaderFunc returns foundry output and id by its serial number
 	// Should return nil if foundry does not exist
@@ -49,7 +49,7 @@ type AnchorTransactionBuilder struct {
 	accountsView AccountsContractRead
 
 	// balances of native tokens loaded during the batch run
-	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
+	balanceNativeTokens map[isc.NativeTokenID]*nativeTokenBalance
 	// all nfts loaded during the batch run
 	nftsIncluded map[iotago.NFTID]*nftIncluded
 	// all nfts minted
@@ -73,7 +73,7 @@ func NewAnchorTransactionBuilder(
 		anchorOutputStorageDeposit: anchorOutputStorageDeposit,
 		accountsView:               accounts,
 		consumed:                   make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
-		balanceNativeTokens:        make(map[iotago.NativeTokenID]*nativeTokenBalance),
+		balanceNativeTokens:        make(map[isc.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:              make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:           make(map[uint32]*foundryInvoked),
 		nftsIncluded:               make(map[iotago.NFTID]*nftIncluded),

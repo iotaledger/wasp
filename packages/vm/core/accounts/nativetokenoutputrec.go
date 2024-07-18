@@ -5,12 +5,12 @@ import (
 	"io"
 	"math/big"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type nativeTokenOutputRec struct {
-	OutputID          iotago.OutputID
+	OutputID          sui.ObjectID
 	Amount            *big.Int
 	StorageBaseTokens uint64 // always storage deposit
 }

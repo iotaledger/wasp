@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 var Address = NewCodec(decodeAddress, encodeAddress)
@@ -56,16 +57,16 @@ func encodeTokenScheme(o iotago.TokenScheme) []byte {
 
 var NativeTokenID = NewCodec(decodeNativeTokenID, encodeNativeTokenID)
 
-func decodeNativeTokenID(b []byte) (ret iotago.NativeTokenID, err error) {
+func decodeNativeTokenID(b []byte) (ret isc.NativeTokenID, err error) {
 	if len(b) != len(ret) {
 		return ret, fmt.Errorf("%T: bytes length must be %d", ret, len(ret))
 	}
-	copy(ret[:], b)
-	return ret, nil
+
+	return isc.NativeTokenIDFromBytes(b)
 }
 
-func encodeNativeTokenID(nftID iotago.NativeTokenID) []byte {
-	return nftID[:]
+func encodeNativeTokenID(nftID isc.NativeTokenID) []byte {
+	return nftID.Bytes()
 }
 
 var NFTID = NewCodec(decodeNFTID, encodeNFTID)

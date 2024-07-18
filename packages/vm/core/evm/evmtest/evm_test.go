@@ -1540,8 +1540,8 @@ func TestERC20NativeTokens(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
 
-	err = env.Chain.SendFromL2ToL2Account(isc.NewAssets(0, iotago.NativeTokens{
-		&iotago.NativeToken{ID: nativeTokenID, Amount: supply},
+	err = env.Chain.SendFromL2ToL2Account(isc.NewAssets(0, isc.NativeTokens{
+		&isc.NativeToken{ID: nativeTokenID, Amount: supply},
 	}), ethAgentID, foundryOwner)
 	require.NoError(t, err)
 
@@ -1730,7 +1730,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 			Message: accounts.FuncTransferAllowanceTo.Message(ethAgentID),
 			Allowance: &isc.Assets{
 				BaseTokens: baseTokensToTransferOnTestChain,
-				NativeTokens: []*iotago.NativeToken{
+				NativeTokens: []*isc.NativeToken{
 					{ID: nativeTokenID, Amount: supply}, // specify the token to be transferred here
 				},
 			},
@@ -1745,7 +1745,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		iscmagic.WrapISCAssets(
 			&isc.Assets{
 				BaseTokens: baseTokensToTransferOnTestChain + 1*isc.Million, // must add some base tokens in order to pay for the gas on the target chain
-				NativeTokens: []*iotago.NativeToken{
+				NativeTokens: []*isc.NativeToken{
 					{ID: nativeTokenID, Amount: supply}, // specify the token to be transferred here
 				},
 			},
@@ -1796,7 +1796,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 func testERC20NativeTokens(
 	env *SoloChainEnv,
 	erc20 *IscContractInstance,
-	nativeTokenID iotago.NativeTokenID,
+	nativeTokenID isc.NativeTokenID,
 	tokenName, tokenTickerSymbol string,
 	tokenDecimals uint8,
 	supply *big.Int,

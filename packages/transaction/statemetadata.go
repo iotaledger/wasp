@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -77,15 +77,15 @@ func (s *StateMetadata) Write(w io.Writer) error {
 
 /////////////// avoiding circular imports: state <-> transaction //////////////////
 
-func L1CommitmentFromAliasOutput(ao *iotago.AliasOutput) (*state.L1Commitment, error) {
-	s, err := StateMetadataFromBytes(ao.StateMetadata)
+func L1CommitmentFromAliasOutput(ao *iscmove.Anchor) (*state.L1Commitment, error) {
+	s, err := StateMetadataFromBytes(ao.StateRoot)
 	if err != nil {
 		return nil, err
 	}
 	return s.L1Commitment, nil
 }
 
-func MustL1CommitmentFromAliasOutput(ao *iotago.AliasOutput) *state.L1Commitment {
+func MustL1CommitmentFromAliasOutput(ao *iscmove.Anchor) *state.L1Commitment {
 	l1c, err := L1CommitmentFromAliasOutput(ao)
 	if err != nil {
 		panic(err)

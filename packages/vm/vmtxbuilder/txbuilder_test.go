@@ -23,7 +23,7 @@ var dummyStateMetadata = []byte("foobar")
 
 type mockAccountContractRead struct {
 	assets             *isc.Assets
-	nativeTokenOutputs map[iotago.NativeTokenID]*iotago.BasicOutput
+	nativeTokenOutputs map[isc.NativeTokenID]*iotago.BasicOutput
 }
 
 func (m *mockAccountContractRead) Read() AccountsContractRead {
@@ -118,7 +118,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		req2, err := isc.OnLedgerFromUTXO(&iotago.NFTOutput{
 			Amount: 1 * isc.Million,
 			NFTID:  nftID,
-			NativeTokens: []*iotago.NativeToken{
+			NativeTokens: []*isc.NativeToken{
 				{ID: nativeTokenID1, Amount: big.NewInt(1)},
 				{ID: nativeTokenID2, Amount: big.NewInt(2)},
 				{ID: nativeTokenID3, Amount: big.NewInt(3)},
@@ -162,7 +162,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	anchorID := tpkg.RandOutputID(0)
 
-	initTest := func(numTokenIDs int) (*AnchorTransactionBuilder, *mockAccountContractRead, []iotago.NativeTokenID) {
+	initTest := func(numTokenIDs int) (*AnchorTransactionBuilder, *mockAccountContractRead, []isc.NativeTokenID) {
 		mockedAccounts := newMockAccountsContractRead(anchor)
 		txb := NewAnchorTransactionBuilder(
 			anchor,
@@ -171,7 +171,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 			mockedAccounts.Read(),
 		)
 
-		nativeTokenIDs := make([]iotago.NativeTokenID, 0)
+		nativeTokenIDs := make([]isc.NativeTokenID, 0)
 		for i := 0; i < numTokenIDs; i++ {
 			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
 		}
@@ -179,7 +179,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 
 	// return deposit in BaseToken
-	consumeUTXO := func(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, mockedAccounts *mockAccountContractRead) {
+	consumeUTXO := func(t *testing.T, txb *AnchorTransactionBuilder, id isc.NativeTokenID, amountNative uint64, mockedAccounts *mockAccountContractRead) {
 
 		panic("refactor me: transaction.MakeBasicOutput")
 		var out iotago.Output
@@ -197,10 +197,10 @@ func TestTxBuilderConsistency(t *testing.T) {
 		txb.MustBalanced()
 	}
 
-	addOutput := func(txb *AnchorTransactionBuilder, amount uint64, nativeTokenID iotago.NativeTokenID, mockedAccounts *mockAccountContractRead) {
+	addOutput := func(txb *AnchorTransactionBuilder, amount uint64, nativeTokenID isc.NativeTokenID, mockedAccounts *mockAccountContractRead) {
 		outAssets := &isc.Assets{
 			BaseTokens: 1 * isc.Million,
-			NativeTokens: iotago.NativeTokens{{
+			NativeTokens: isc.NativeTokens{{
 				ID:     nativeTokenID,
 				Amount: new(big.Int).SetUint64(amount),
 			}},
@@ -241,7 +241,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 
-	runConsume := func(txb *AnchorTransactionBuilder, nativeTokenIDs []iotago.NativeTokenID, numRun int, amountNative uint64, mockedAccounts *mockAccountContractRead) {
+	runConsume := func(txb *AnchorTransactionBuilder, nativeTokenIDs []isc.NativeTokenID, numRun int, amountNative uint64, mockedAccounts *mockAccountContractRead) {
 		for i := 0; i < numRun; i++ {
 			idx := i % len(nativeTokenIDs)
 			consumeUTXO(t, txb, nativeTokenIDs[idx], amountNative, mockedAccounts)
@@ -328,7 +328,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 	t.Run("send some of the tokens in balance", func(t *testing.T) {
 		txb, mockedAccounts, nativeTokenIDs := initTest(5)
-		setNativeTokenAccountsBalance := func(id iotago.NativeTokenID, amount int64) {
+		setNativeTokenAccountsBalance := func(id isc.NativeTokenID, amount int64) {
 			mockedAccounts.assets.AddNativeTokens(id, big.NewInt(amount))
 			// create internal accounting outputs with 0 base tokens (they must be updated in the output side)
 			out := txb.newInternalTokenOutput(aliasID, id)
@@ -391,7 +391,7 @@ func TestFoundries(t *testing.T) {
 	}
 	anchorID := tpkg.RandOutputID(0)
 
-	var nativeTokenIDs []iotago.NativeTokenID
+	var nativeTokenIDs []isc.NativeTokenID
 	var txb *AnchorTransactionBuilder
 	var numTokenIDs int
 
@@ -405,7 +405,7 @@ func TestFoundries(t *testing.T) {
 			mockedAccounts.Read(),
 		)
 
-		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
+		nativeTokenIDs = make([]isc.NativeTokenID, 0)
 
 		for i := 0; i < numTokenIDs; i++ {
 			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())

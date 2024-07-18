@@ -11,7 +11,6 @@ import (
 	gethmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -81,7 +80,7 @@ func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens 
 func setAllowanceNativeTokens(ctx isc.Sandbox, from, to common.Address, nativeTokenID iscmagic.NativeTokenID, numTokens *big.Int) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
 		ntSet := allowance.NativeTokens.MustSet()
-		ntSet[nativeTokenID.MustUnwrap()] = &iotago.NativeToken{
+		ntSet[nativeTokenID.MustUnwrap()] = &isc.NativeToken{
 			ID:     nativeTokenID.MustUnwrap(),
 			Amount: numTokens,
 		}
@@ -120,16 +119,16 @@ func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.
 }
 
 // directory of ERC20 contract addresses by native token ID
-func keyERC20ExternalNativeTokensAddress(nativeTokenID iotago.NativeTokenID) kv.Key {
+func keyERC20ExternalNativeTokensAddress(nativeTokenID isc.NativeTokenID) kv.Key {
 	return prefixERC20ExternalNativeTokens + kv.Key(nativeTokenID[:])
 }
 
-func addERC20ExternalNativeTokensAddress(ctx isc.Sandbox, nativeTokenID iotago.NativeTokenID, addr common.Address) {
+func addERC20ExternalNativeTokensAddress(ctx isc.Sandbox, nativeTokenID isc.NativeTokenID, addr common.Address) {
 	state := evm.ISCMagicSubrealm(ctx.State())
 	state.Set(keyERC20ExternalNativeTokensAddress(nativeTokenID), addr.Bytes())
 }
 
-func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID iotago.NativeTokenID) (ret common.Address, ok bool) {
+func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID isc.NativeTokenID) (ret common.Address, ok bool) {
 	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	b := state.Get(keyERC20ExternalNativeTokensAddress(nativeTokenID))
 	if b == nil {

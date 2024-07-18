@@ -3,7 +3,6 @@ package vmimpl
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -13,26 +12,19 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
-)
-
-const (
-	// ExpiryUnlockSafetyWindowDuration creates safety window around time assumption,
-	// the UTXO won't be consumed to avoid race conditions
-	ExpiryUnlockSafetyWindowDuration = 1 * time.Minute
 )
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
 func (reqctx *requestContext) earlyCheckReasonToSkip(maintenanceMode bool) error {
-	if reqctx.vm.task.AnchorOutput.StateIndex == 0 {
-		if len(reqctx.vm.task.AnchorOutput.NativeTokens) > 0 {
+	/*if reqctx.vm.task.AnchorOutput.StateIndex == 0 {
+		if len(reqctx.vm.task.AnchorOutput.Assets.Value) > 0 {
 			return errors.New("can't init chain with native assets on the origin alias output")
 		}
 	} else {
 		if len(reqctx.vm.task.AnchorOutput.NativeTokens) > 0 {
 			panic("inconsistency: native assets on the anchor output")
 		}
-	}
+	}*/
 
 	if maintenanceMode &&
 		reqctx.req.Message().Target.Contract != governance.Contract.Hname() {
@@ -90,33 +82,8 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 
 // checkReasonToSkipOnLedger check reasons to skip UTXO request
 func (reqctx *requestContext) checkReasonToSkipOnLedger() error {
-	// TODO: Validate this
-
-	/*if err := reqctx.checkInternalOutput(); err != nil {
-		return err
-	}
-	if err := reqctx.checkReasonReturnAmount(); err != nil {
-		return err
-	}
-	if err := reqctx.checkReasonTimeLock(); err != nil {
-		return err
-	}
-	if err := reqctx.checkReasonExpiry(); err != nil {
-		return err
-	}*/
-	if reqctx.vm.txbuilder.InputsAreFull() {
-		return vmexceptions.ErrInputLimitExceeded
-	}
 	if err := reqctx.checkReasonRequestProcessed(); err != nil {
 		return err
-	}
-	return nil
-}
-
-func (reqctx *requestContext) checkInternalOutput() error {
-	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
-	if reqctx.req.(isc.OnLedgerRequest).IsInternalUTXO(reqctx.ChainID()) {
-		return errors.New("it is an internal output")
 	}
 	return nil
 }

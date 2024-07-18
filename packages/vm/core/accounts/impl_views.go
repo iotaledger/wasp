@@ -31,7 +31,7 @@ func viewBalanceBaseTokenEVM(ctx isc.SandboxView, optionalAgentID *isc.AgentID) 
 }
 
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
-func viewBalanceNativeToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
+func viewBalanceNativeToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID, nativeTokenID isc.NativeTokenID) *big.Int {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getNativeTokenAmount(
 		accountKey(aid, ctx.ChainID()),
@@ -52,9 +52,9 @@ func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint
 }
 
 // viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
-func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) []iotago.NativeTokenID {
+func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) []isc.NativeTokenID {
 	ntMap := NewStateReaderFromSandbox(ctx).nativeTokenOutputMapR()
-	ret := make([]iotago.NativeTokenID, 0, ntMap.Len())
+	ret := make([]isc.NativeTokenID, 0, ntMap.Len())
 	ntMap.IterateKeys(func(b []byte) bool {
 		ntID := codec.NativeTokenID.MustDecode(b)
 		ret = append(ret, ntID)

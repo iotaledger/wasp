@@ -347,8 +347,8 @@ func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy
 		// take tokens to destroy from allowance
 		accountID := ctx.AccountID()
 		ctx.TransferAllowedFunds(accountID,
-			isc.NewAssets(0, iotago.NativeTokens{
-				&iotago.NativeToken{
+			isc.NewAssets(0, isc.NativeTokens{
+				&isc.NativeToken{
 					ID:     nativeTokenID,
 					Amount: delta,
 				},

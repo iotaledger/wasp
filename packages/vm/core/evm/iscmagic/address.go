@@ -49,7 +49,7 @@ func ERC20NativeTokensAddress(foundrySN uint32) common.Address {
 // from the first 17 bytes of hash(nativeTokenID). In case of a collision, it reapplies the
 // hash and checks for a collision again, repeating until it gives up.
 func ERC20ExternalNativeTokensAddress(
-	nativeTokenID iotago.NativeTokenID,
+	nativeTokenID isc.NativeTokenID,
 	isTaken func(common.Address) bool,
 ) (common.Address, error) {
 	const maxAttempts = 10

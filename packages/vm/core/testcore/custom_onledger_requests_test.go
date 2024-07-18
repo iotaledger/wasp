@@ -47,7 +47,7 @@ func TestNoSenderFeature(t *testing.T) {
 	_, err = ch.PostRequestOffLedger(solo.NewCallParams(accounts.FuncWithdraw.Message()).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(allowance).
-		AddAllowanceNativeTokensVect(&iotago.NativeToken{
+		AddAllowanceNativeTokensVect(&isc.NativeToken{
 			ID:     nativeTokenID,
 			Amount: nativeTokenAmount,
 		}).
@@ -73,7 +73,7 @@ func TestNoSenderFeature(t *testing.T) {
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets: &isc.Assets{
 				BaseTokens:   5 * isc.Million,
-				NativeTokens: []*iotago.NativeToken{{ID: nativeTokenID, Amount: nativeTokenAmount}},
+				NativeTokens: []*isc.NativeToken{{ID: nativeTokenID, Amount: nativeTokenAmount}},
 				NFTs:         []iotago.NFTID{nft.ID},
 			},
 			Metadata: &isc.SendMetadata{

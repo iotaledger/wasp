@@ -41,7 +41,7 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 	return isc.NewContractAgentID(chainID, isc.Hname(h))
 }
 
-var dummyAssetID = [iotago.NativeTokenIDLength]byte{1, 2, 3}
+var dummyAssetID = [isc.NativeTokenIDLength]byte{1, 2, 3}
 
 func checkLedgerT(t *testing.T, v isc.SchemaVersion, state dict.Dict) *isc.Assets {
 	require.NotPanics(t, func() {
@@ -326,7 +326,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	}
 	accounts.NewStateWriter(v, state).CreditNFTToAccount(agentID1, &iotago.NFTOutput{
 		Amount:       0,
-		NativeTokens: []*iotago.NativeToken{},
+		NativeTokens: []*isc.NativeToken{},
 		NFTID:        NFT1.ID,
 		ImmutableFeatures: []iotago.Feature{
 			&iotago.IssuerFeature{Address: NFT1.Issuer.AsIotagoAddress()},
@@ -341,7 +341,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	// nft data is saved (accounts.SaveNFTOutput must be called)
 	accounts.NewStateWriter(v, state).SaveNFTOutput(&iotago.NFTOutput{
 		Amount:       0,
-		NativeTokens: []*iotago.NativeToken{},
+		NativeTokens: []*isc.NativeToken{},
 		NFTID:        NFT1.ID,
 		ImmutableFeatures: []iotago.Feature{
 			&iotago.IssuerFeature{Address: NFT1.Issuer.AsIotagoAddress()},
@@ -387,7 +387,7 @@ func testCreditDebitNFT1(t *testing.T, v isc.SchemaVersion) {
 	}
 	accounts.NewStateWriter(v, state).CreditNFTToAccount(agentID1, &iotago.NFTOutput{
 		Amount:       0,
-		NativeTokens: []*iotago.NativeToken{},
+		NativeTokens: []*isc.NativeToken{},
 		NFTID:        nft.ID,
 		ImmutableFeatures: []iotago.Feature{
 			&iotago.IssuerFeature{Address: nft.Issuer.AsIotagoAddress()},

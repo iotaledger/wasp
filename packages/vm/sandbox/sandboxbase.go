@@ -46,12 +46,12 @@ func (s *SandboxBase) BalanceBaseTokens() (bts uint64, remainder *big.Int) {
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())
 }
 
-func (s *SandboxBase) BalanceNativeToken(nativeTokenID iotago.NativeTokenID) *big.Int {
+func (s *SandboxBase) BalanceNativeToken(nativeTokenID isc.NativeTokenID) *big.Int {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetNativeTokenBalance(s.AccountID(), nativeTokenID)
 }
 
-func (s *SandboxBase) BalanceNativeTokens() iotago.NativeTokens {
+func (s *SandboxBase) BalanceNativeTokens() isc.NativeTokens {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetNativeTokens(s.AccountID())
 }

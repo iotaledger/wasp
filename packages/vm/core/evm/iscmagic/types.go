@@ -45,16 +45,16 @@ type NativeTokenID struct {
 	Data []byte
 }
 
-func WrapNativeTokenID(nativeTokenID iotago.NativeTokenID) NativeTokenID {
+func WrapNativeTokenID(nativeTokenID isc.NativeTokenID) NativeTokenID {
 	return NativeTokenID{Data: nativeTokenID[:]}
 }
 
-func (a NativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
+func (a NativeTokenID) Unwrap() (ret isc.NativeTokenID) {
 	copy(ret[:], a.Data)
 	return
 }
 
-func (a NativeTokenID) MustUnwrap() (ret iotago.NativeTokenID) {
+func (a NativeTokenID) MustUnwrap() (ret isc.NativeTokenID) {
 	copy(ret[:], a.Data)
 	return
 }
@@ -65,15 +65,15 @@ type NativeToken struct {
 	Amount *big.Int
 }
 
-func WrapNativeToken(nativeToken *iotago.NativeToken) NativeToken {
+func WrapNativeToken(nativeToken *isc.NativeToken) NativeToken {
 	return NativeToken{
 		ID:     WrapNativeTokenID(nativeToken.ID),
 		Amount: nativeToken.Amount,
 	}
 }
 
-func (nt NativeToken) Unwrap() *iotago.NativeToken {
-	return &iotago.NativeToken{
+func (nt NativeToken) Unwrap() *isc.NativeToken {
+	return &isc.NativeToken{
 		ID:     nt.ID.Unwrap(),
 		Amount: nt.Amount,
 	}
@@ -264,7 +264,7 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 }
 
 func (a ISCAssets) Unwrap() *isc.Assets {
-	tokens := make(iotago.NativeTokens, len(a.NativeTokens))
+	tokens := make(isc.NativeTokens, len(a.NativeTokens))
 	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = nativeToken.Unwrap()
 	}

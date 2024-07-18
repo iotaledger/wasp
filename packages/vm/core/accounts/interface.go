@@ -266,11 +266,11 @@ func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
 
 type OutputNativeTokenIDs struct{}
 
-func (OutputNativeTokenIDs) Encode(ids []iotago.NativeTokenID) dict.Dict {
+func (OutputNativeTokenIDs) Encode(ids []isc.NativeTokenID) dict.Dict {
 	return codec.SliceToDictKeys(codec.NativeTokenID, ids)
 }
 
-func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]iotago.NativeTokenID, error) {
+func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]isc.NativeTokenID, error) {
 	return codec.SliceFromDictKeys(codec.NativeTokenID, r)
 }
 

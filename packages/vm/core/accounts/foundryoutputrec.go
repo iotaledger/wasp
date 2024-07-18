@@ -6,11 +6,12 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // foundryOutputRec contains information to reconstruct output
 type foundryOutputRec struct {
-	OutputID    iotago.OutputID
+	OutputID    sui.ObjectID
 	Amount      uint64 // always storage deposit
 	TokenScheme iotago.TokenScheme
 	Metadata    []byte
