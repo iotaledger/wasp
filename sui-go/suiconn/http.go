@@ -50,16 +50,6 @@ func NewHTTPClient(url string) *HTTPClient {
 	}
 }
 
-// Call performs a JSON-RPC call with the given arguments and unmarshals into
-// the result if no error occurred.
-//
-// The result must be a pointer so that package json can unmarshal into it. You
-// can also pass nil, in which case the result is ignored.
-func (c *HTTPClient) Call(result interface{}, method JsonRpcMethod, args ...interface{}) error {
-	ctx := context.Background()
-	return c.CallContext(ctx, result, method, args...)
-}
-
 // CallContext performs a JSON-RPC call with the given arguments. If the context is
 // canceled before the call has successfully returned, CallContext returns immediately.
 //

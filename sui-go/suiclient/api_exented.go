@@ -118,7 +118,7 @@ func (s *WebsocketClient) SubscribeEvent(
 	resultCh chan<- *suijsonrpc.SuiEvent,
 ) error {
 	wsCh := make(chan []byte, 10)
-	err := s.ws.CallContext(ctx, wsCh, subscribeEvent, filter)
+	err := s.ws.Subscribe(ctx, wsCh, subscribeEvent, filter)
 	if err != nil {
 		return err
 	}
@@ -148,11 +148,12 @@ func (s *WebsocketClient) SubscribeTransaction(
 	resultCh chan<- *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
 ) error {
 	wsCh := make(chan []byte, 10)
-	err := s.ws.CallContext(ctx, wsCh, subscribeTransaction, filter)
+	err := s.ws.Subscribe(ctx, wsCh, subscribeTransaction, filter)
 	if err != nil {
 		return err
 	}
 	go func() {
+		defer close(resultCh)
 		for {
 			select {
 			case <-ctx.Done():

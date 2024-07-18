@@ -39,10 +39,10 @@ type WebsocketClient struct {
 	ws      *suiconn.WebsocketClient
 }
 
-func NewWebsocket(apiURL, wsURL string) *WebsocketClient {
+func NewWebsocket(ctx context.Context, apiURL, wsURL string) *WebsocketClient {
 	return &WebsocketClient{
 		Client: New(apiURL),
-		ws:     suiconn.NewWebsocketClient(wsURL),
+		ws:     suiconn.NewWebsocketClient(ctx, wsURL),
 	}
 }
 
@@ -50,4 +50,3 @@ const (
 	DefaultGasBudget uint64 = 10000000
 	DefaultGasPrice  uint64 = 1000
 )
-

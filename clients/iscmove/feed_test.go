@@ -9,12 +9,13 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
-func TestRequestsFeedOwnedRequests(t *testing.T) {
+func TestRequestsFeed(t *testing.T) {
 	client := iscmove.NewClient(iscmove.Config{
 		APIURL: suiconn.LocalnetEndpointURL,
 	})
@@ -42,7 +43,8 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
-	feed := iscmove.NewRequestsFeed(
+	feed := iscmove.NewFeed(
+		ctx,
 		iscmove.Config{APIURL: suiconn.LocalnetEndpointURL},
 		suiconn.LocalnetWebsocketEndpointURL,
 		iscPackageID,
@@ -50,8 +52,8 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 		log,
 	)
 
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
-	newRequests := make(chan *iscmove.Request, 1)
+	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
+	newRequests := make(chan *iscmove.Request, 10)
 	feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
@@ -82,4 +84,21 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
+
+	_, err = client.ReceiveAndUpdateStateRootRequest(
+		context.Background(),
+		chainOwner,
+		iscPackageID,
+		&anchor.ObjectRef,
+		[]sui.ObjectRef{*requestRef},
+		[]byte{1, 2, 3},
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+
+	upd := <-anchorUpdates
+	require.EqualValues(t, []byte{1, 2, 3}, upd.Object.StateRoot)
 }

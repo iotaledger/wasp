@@ -344,8 +344,10 @@ func TestResolveNameServiceNames(t *testing.T) {
 }
 
 func TestSubscribeEvent(t *testing.T) {
-	t.Skip("passed at local side, but returned error on GitHub")
-	api := suiclient.NewWebsocket(suiconn.MainnetEndpointURL, suiconn.MainnetWebsocketEndpointURL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetEndpointURL, suiconn.LocalnetWebsocketEndpointURL)
 
 	type args struct {
 		ctx      context.Context
@@ -396,7 +398,10 @@ func TestSubscribeEvent(t *testing.T) {
 }
 
 func TestSubscribeTransaction(t *testing.T) {
-	api := suiclient.NewWebsocket(suiconn.MainnetEndpointURL, "wss://sui-mainnet.public.blastapi.io")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetEndpointURL, suiconn.LocalnetWebsocketEndpointURL)
 
 	type args struct {
 		ctx      context.Context

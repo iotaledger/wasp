@@ -20,7 +20,8 @@ type Feed struct {
 	log           *logger.Logger
 }
 
-func NewRequestsFeed(
+func NewFeed(
+	ctx context.Context,
 	config Config,
 	wsURL string,
 	iscPackageID sui.PackageID,
@@ -28,7 +29,7 @@ func NewRequestsFeed(
 	log *logger.Logger,
 ) *Feed {
 	return &Feed{
-		Sui:           suiclient.NewWebsocket(config.APIURL, wsURL),
+		Sui:           suiclient.NewWebsocket(ctx, config.APIURL, wsURL),
 		ISC:           NewClient(config),
 		ISCPackageID:  iscPackageID,
 		AnchorAddress: anchorAddress,
@@ -85,8 +86,7 @@ func (c *Feed) SubscribeToUpdates(
 	anchorCh chan<- *RefWithObject[Anchor],
 	requestsCh chan<- *Request,
 ) {
-	// TODO fix
-	// go c.subscribeToAnchorUpdates(ctx, anchorCh)
+	go c.subscribeToAnchorUpdates(ctx, anchorCh)
 	go c.subscribeToNewRequests(ctx, requestsCh)
 }
 
@@ -132,10 +132,10 @@ func (c *Feed) consumeRequestEvents(
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			return
 		case ev, ok := <-events:
 			if !ok {
-				break
+				return
 			}
 			var reqEvent RequestEvent
 			err := suiclient.UnmarshalBCS(ev.Bcs, &reqEvent)
@@ -191,10 +191,10 @@ func (c *Feed) consumeAnchorUpdates(
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			return
 		case change, ok := <-changes:
 			if !ok {
-				break
+				return
 			}
 			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == c.AnchorAddress {
