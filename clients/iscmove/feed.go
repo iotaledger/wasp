@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -157,7 +158,7 @@ func (c *Feed) subscribeToAnchorUpdates(
 	anchorCh chan<- *RefWithObject[Anchor],
 ) {
 	for {
-		changes := make(chan *suijsonrpc.SuiTransactionBlockEffects)
+		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
 		err := c.Sui.SubscribeTransaction(
 			ctx,
 			&suijsonrpc.TransactionFilter{
@@ -184,7 +185,7 @@ func (c *Feed) subscribeToAnchorUpdates(
 
 func (c *Feed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *suijsonrpc.SuiTransactionBlockEffects,
+	changes <-chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
 	anchorCh chan<- *RefWithObject[Anchor],
 ) {
 	for {
@@ -195,7 +196,7 @@ func (c *Feed) consumeAnchorUpdates(
 			if !ok {
 				break
 			}
-			for _, obj := range change.V1.Mutated {
+			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == c.AnchorAddress {
 					r, err := c.Sui.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
 						ObjectID: &c.AnchorAddress,
