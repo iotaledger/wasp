@@ -182,7 +182,7 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, blockID iotago.B
 
 	checkContext := func() error {
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("failed to wait for block confimation within timeout: %w", err)
+			return fmt.Errorf("failed to wait for block confirmation within timeout: %w", err)
 		}
 
 		return nil
