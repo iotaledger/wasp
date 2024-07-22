@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/iotaledger/wasp/sui-go/suitest"
 
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
@@ -18,7 +18,9 @@ import (
 func TestPTBMoveCall(t *testing.T) {
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
-			client, sender := suiclient.New(suiconn.LocalnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+			client := suiclient.NewHTTP(suiconn.LocalnetEndpointURL)
+			sender := suitest.MakeSignerWithFunds(0, suiconn.LocalnetFaucetURL)
+
 			_, packageID, err := client.PublishContract(
 				context.Background(),
 				sender,
@@ -85,8 +87,10 @@ func TestPTBMoveCall(t *testing.T) {
 }
 
 func TestPTBTransferObject(t *testing.T) {
-	client, sender := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := client.WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	sender := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: sender.Address(),
 		Limit: 2,
@@ -127,8 +131,10 @@ func TestPTBTransferObject(t *testing.T) {
 }
 
 func TestPTBTransferSui(t *testing.T) {
-	client, sender := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := client.WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	sender := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: sender.Address(),
 		Limit: 1,
@@ -169,8 +175,10 @@ func TestPTBTransferSui(t *testing.T) {
 }
 
 func TestPTBPayAllSui(t *testing.T) {
-	client, sender := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient := client.WithSignerAndFund(suisigner.TestSeed, 1)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	sender := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: sender.Address(),
 		Limit: 3,
@@ -209,9 +217,11 @@ func TestPTBPayAllSui(t *testing.T) {
 }
 
 func TestPTBPaySui(t *testing.T) {
-	client, sender := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient1 := client.WithSignerAndFund(suisigner.TestSeed, 1)
-	_, recipient2 := client.WithSignerAndFund(suisigner.TestSeed, 2)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	sender := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient1 := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+	recipient2 := suitest.MakeSignerWithFunds(2, suiconn.TestnetFaucetURL)
+
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: sender.Address(),
 		Limit: 1,
@@ -276,9 +286,11 @@ func TestPTBPaySui(t *testing.T) {
 }
 
 func TestPTBPay(t *testing.T) {
-	client, sender := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
-	_, recipient1 := client.WithSignerAndFund(suisigner.TestSeed, 1)
-	_, recipient2 := client.WithSignerAndFund(suisigner.TestSeed, 2)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	sender := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+	recipient1 := suitest.MakeSignerWithFunds(1, suiconn.TestnetFaucetURL)
+	recipient2 := suitest.MakeSignerWithFunds(2, suiconn.TestnetFaucetURL)
+
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: sender.Address(),
 		Limit: 3,
@@ -356,3 +368,4 @@ func TestPTBPay(t *testing.T) {
 	txBytesRemote := txn.TxBytes.Data()
 	require.Equal(t, txBytes, txBytesRemote)
 }
+

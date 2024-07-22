@@ -14,12 +14,12 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
-func (s *Client) GetCoinObjsForTargetAmount(
+func (c *Client) GetCoinObjsForTargetAmount(
 	ctx context.Context,
 	address *sui.Address,
 	targetAmount uint64,
 ) (suijsonrpc.Coins, error) {
-	coins, err := s.GetCoins(
+	coins, err := c.GetCoins(
 		ctx, GetCoinsRequest{
 			Owner: address,
 			Limit: 200,
@@ -35,7 +35,7 @@ func (s *Client) GetCoinObjsForTargetAmount(
 	return pickedCoins.Coins, nil
 }
 
-func (s *Client) SignAndExecuteTransaction(
+func (c *Client) SignAndExecuteTransaction(
 	ctx context.Context,
 	signer suisigner.Signer,
 	txBytes sui.Base64Data,
@@ -46,7 +46,7 @@ func (s *Client) SignAndExecuteTransaction(
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction block: %w", err)
 	}
-	resp, err := s.ExecuteTransactionBlock(
+	resp, err := c.ExecuteTransactionBlock(
 		ctx,
 		ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
@@ -64,7 +64,7 @@ func (s *Client) SignAndExecuteTransaction(
 	return resp, nil
 }
 
-func (s *Client) PublishContract(
+func (c *Client) PublishContract(
 	ctx context.Context,
 	signer suisigner.Signer,
 	modules []*sui.Base64Data,
@@ -72,7 +72,7 @@ func (s *Client) PublishContract(
 	gasBudget uint64,
 	options *suijsonrpc.SuiTransactionBlockResponseOptions,
 ) (*suijsonrpc.SuiTransactionBlockResponse, *sui.PackageID, error) {
-	txnBytes, err := s.Publish(
+	txnBytes, err := c.Publish(
 		context.Background(),
 		PublishRequest{
 			Sender:          signer.Address(),
@@ -84,7 +84,7 @@ func (s *Client) PublishContract(
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to publish move contract: %w", err)
 	}
-	txnResponse, err := s.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
 	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
 		return nil, nil, fmt.Errorf("failed to sign move contract tx: %w", err)
 	}
@@ -96,7 +96,7 @@ func (s *Client) PublishContract(
 	return txnResponse, packageID, nil
 }
 
-func (s *Client) MintToken(
+func (c *Client) MintToken(
 	ctx context.Context,
 	signer suisigner.Signer,
 	packageID *sui.PackageID,
@@ -105,7 +105,7 @@ func (s *Client) MintToken(
 	mintAmount uint64,
 	options *suijsonrpc.SuiTransactionBlockResponseOptions,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
-	txnBytes, err := s.MoveCall(
+	txnBytes, err := c.MoveCall(
 		ctx,
 		MoveCallRequest{
 			Signer:    signer.Address(),
@@ -121,7 +121,7 @@ func (s *Client) MintToken(
 		return nil, fmt.Errorf("failed to call mint() move call: %w", err)
 	}
 
-	txnResponse, err := s.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}
@@ -133,8 +133,8 @@ func (s *Client) MintToken(
 const QUERY_MAX_RESULT_LIMIT = 50
 
 // GetSuiCoinsOwnedByAddress This function will retrieve a maximum of 200 coins.
-func (s *Client) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui.Address) (suijsonrpc.Coins, error) {
-	page, err := s.GetCoins(
+func (c *Client) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui.Address) (suijsonrpc.Coins, error) {
+	page, err := c.GetCoins(
 		ctx, GetCoinsRequest{
 			Owner: address,
 			Limit: 200,
@@ -147,27 +147,27 @@ func (s *Client) GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui.Add
 }
 
 // BatchGetObjectsOwnedByAddress @param filterType You can specify filtering out the specified resources, this will fetch all resources if it is not empty ""
-func (s *Client) BatchGetObjectsOwnedByAddress(
+func (c *Client) BatchGetObjectsOwnedByAddress(
 	ctx context.Context,
 	address *sui.Address,
 	options *suijsonrpc.SuiObjectDataOptions,
 	filterType string,
 ) ([]suijsonrpc.SuiObjectResponse, error) {
 	filterType = strings.TrimSpace(filterType)
-	return s.BatchGetFilteredObjectsOwnedByAddress(
+	return c.BatchGetFilteredObjectsOwnedByAddress(
 		ctx, address, options, func(sod *suijsonrpc.SuiObjectData) bool {
 			return filterType == "" || filterType == *sod.Type
 		},
 	)
 }
 
-func (s *Client) BatchGetFilteredObjectsOwnedByAddress(
+func (c *Client) BatchGetFilteredObjectsOwnedByAddress(
 	ctx context.Context,
 	address *sui.Address,
 	options *suijsonrpc.SuiObjectDataOptions,
 	filter func(*suijsonrpc.SuiObjectData) bool,
 ) ([]suijsonrpc.SuiObjectResponse, error) {
-	filteringObjs, err := s.GetOwnedObjects(
+	filteringObjs, err := c.GetOwnedObjects(
 		ctx, GetOwnedObjectsRequest{
 			Address: address,
 			Query: &suijsonrpc.SuiObjectResponseQuery{
@@ -191,7 +191,7 @@ func (s *Client) BatchGetFilteredObjectsOwnedByAddress(
 		objIds = append(objIds, obj.Data.ObjectID)
 	}
 
-	return s.MultiGetObjects(
+	return c.MultiGetObjects(
 		ctx, MultiGetObjectsRequest{
 			ObjectIDs: objIds,
 			Options:   options,

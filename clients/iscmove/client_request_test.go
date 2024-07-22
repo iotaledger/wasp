@@ -9,12 +9,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := newLocalnetClient()
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 

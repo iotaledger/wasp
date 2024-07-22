@@ -20,20 +20,20 @@ type DevInspectTransactionBlockRequest struct {
 // When a `TransactionData` is given, error `Deserialization error: malformed utf8` will be returned.
 // which is different from `DryRunTransaction` and `ExecuteTransactionBlock`
 // `DryRunTransaction` and `ExecuteTransactionBlock` takes `TransactionData` in base64
-func (s *Client) DevInspectTransactionBlock(
+func (c *Client) DevInspectTransactionBlock(
 	ctx context.Context,
 	req DevInspectTransactionBlockRequest,
 ) (*suijsonrpc.DevInspectResults, error) {
 	var resp suijsonrpc.DevInspectResults
-	return &resp, s.http.CallContext(ctx, &resp, devInspectTransactionBlock, req.SenderAddress, req.TxKindBytes, req.GasPrice, req.Epoch)
+	return &resp, c.transport.Call(ctx, &resp, devInspectTransactionBlock, req.SenderAddress, req.TxKindBytes, req.GasPrice, req.Epoch)
 }
 
-func (s *Client) DryRunTransaction(
+func (c *Client) DryRunTransaction(
 	ctx context.Context,
 	txDataBytes sui.Base64Data,
 ) (*suijsonrpc.DryRunTransactionBlockResponse, error) {
 	var resp suijsonrpc.DryRunTransactionBlockResponse
-	return &resp, s.http.CallContext(ctx, &resp, dryRunTransactionBlock, txDataBytes)
+	return &resp, c.transport.Call(ctx, &resp, dryRunTransactionBlock, txDataBytes)
 }
 
 type ExecuteTransactionBlockRequest struct {
@@ -43,10 +43,10 @@ type ExecuteTransactionBlockRequest struct {
 	RequestType suijsonrpc.ExecuteTransactionRequestType       // optional
 }
 
-func (s *Client) ExecuteTransactionBlock(
+func (c *Client) ExecuteTransactionBlock(
 	ctx context.Context,
 	req ExecuteTransactionBlockRequest,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	resp := suijsonrpc.SuiTransactionBlockResponse{}
-	return &resp, s.http.CallContext(ctx, &resp, executeTransactionBlock, req.TxDataBytes, req.Signatures, req.Options, req.RequestType)
+	return &resp, c.transport.Call(ctx, &resp, executeTransactionBlock, req.TxDataBytes, req.Signatures, req.Options, req.RequestType)
 }

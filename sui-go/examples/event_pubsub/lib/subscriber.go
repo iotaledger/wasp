@@ -11,11 +11,11 @@ import (
 )
 
 type Subscriber struct {
-	client *suiclient.WebsocketClient
+	client *suiclient.Client
 	// *account.Account
 }
 
-func NewSubscriber(client *suiclient.WebsocketClient) *Subscriber {
+func NewSubscriber(client *suiclient.Client) *Subscriber {
 	return &Subscriber{client: client}
 }
 
@@ -30,4 +30,3 @@ func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *sui.PackageI
 		fmt.Println("result: ", result)
 	}
 }
-

@@ -1,4 +1,4 @@
-package utils
+package suitest
 
 import (
 	"log"
@@ -15,3 +15,4 @@ func GetGitRoot() string {
 	// Trim the newline character from the output
 	return strings.TrimSpace(string(output))
 }
+

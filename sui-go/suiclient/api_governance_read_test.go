@@ -13,7 +13,7 @@ import (
 )
 
 func TestGetCommitteeInfo(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	epochId := suijsonrpc.NewBigInt(400)
 	committeeInfo, err := client.GetCommitteeInfo(context.Background(), epochId)
 	require.NoError(t, err)
@@ -23,14 +23,14 @@ func TestGetCommitteeInfo(t *testing.T) {
 }
 
 func TestGetLatestSuiSystemState(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	state, err := client.GetLatestSuiSystemState(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, state)
 }
 
 func TestGetReferenceGasPrice(t *testing.T) {
-	client := suiclient.New(suiconn.DevnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	gasPrice, err := client.GetReferenceGasPrice(context.Background())
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, gasPrice.Int64(), int64(1000))
@@ -38,7 +38,7 @@ func TestGetReferenceGasPrice(t *testing.T) {
 
 func TestGetStakes(t *testing.T) {
 	// FIXME change the valid staking sui address
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 
 	address, err := sui.AddressFromHex("0x8ecaf4b95b3c82c712d3ddb22e7da88d2286c4653f3753a86b6f7a216a3ca518")
 	require.NoError(t, err)
@@ -60,7 +60,7 @@ func TestGetStakes(t *testing.T) {
 }
 
 func TestGetStakesByIds(t *testing.T) {
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 	owner, err := sui.AddressFromHex("0xd77955e670f42c1bc5e94b9e68e5fe9bdbed9134d784f2a14dfe5fc1b24b5d9f")
 	require.NoError(t, err)
 	stakes, err := api.GetStakes(context.Background(), owner)
@@ -79,7 +79,7 @@ func TestGetStakesByIds(t *testing.T) {
 }
 
 func TestGetValidatorsApy(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	apys, err := api.GetValidatorsApy(context.Background())
 	require.NoError(t, err)
 	t.Logf("current epoch %v", apys.Epoch)

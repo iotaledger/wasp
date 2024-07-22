@@ -82,7 +82,3 @@ type L2Client interface {
 }
 
 var _ L2Client = &iscmove.Client{}
-
-func NewL2Client(config iscmove.Config) L2Client {
-	return iscmove.NewClient(config)
-}

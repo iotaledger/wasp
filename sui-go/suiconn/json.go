@@ -48,6 +48,6 @@ func (err *jsonError) ErrorData() interface{} {
 	return err.Data
 }
 
-type JsonRpcMethod interface {
+type JsonRPCMethod interface {
 	String() string
 }

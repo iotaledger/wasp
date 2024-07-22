@@ -11,12 +11,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func TestStartNewChain(t *testing.T) {
 	client := newLocalnetClient()
-	signer := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	signer := newSignerWithFunds(t, testSeed, 0)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
@@ -36,7 +35,7 @@ func TestStartNewChain(t *testing.T) {
 
 func TestGetAnchorFromObjectID(t *testing.T) {
 	client := newLocalnetClient()
-	signer := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	signer := newSignerWithFunds(t, testSeed, 0)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, signer)
 
@@ -60,8 +59,8 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 
 func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	client := newLocalnetClient()
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
-	chainSigner := newSignerWithFunds(t, suisigner.TestSeed, 1)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	chainSigner := newSignerWithFunds(t, testSeed, 1)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 

@@ -189,21 +189,20 @@ type L1Client interface {
 		ctx context.Context,
 		req suiclient.TryMultiGetPastObjectsRequest,
 	) ([]*suijsonrpc.SuiPastObjectResponse, error)
-	WithSignerAndFund(seed []byte, index int) (*suiclient.Client, suisigner.Signer)
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
-	L2Client() L2Client
+	L2() L2Client
 }
 
-var _ L1Client = &L1ClientExt{}
+var _ L1Client = &l1Client{}
 
-type L1ClientExt struct {
+type l1Client struct {
 	*suiclient.Client
 
 	Config L1Config
 }
 
-func (c *L1ClientExt) RequestFunds(ctx context.Context, address cryptolib.Address) error {
+func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
 	faucetURL := c.Config.FaucetURL
 	if faucetURL == "" {
 		faucetURL = suiconn.FaucetURL(c.Config.APIURL)
@@ -211,21 +210,18 @@ func (c *L1ClientExt) RequestFunds(ctx context.Context, address cryptolib.Addres
 	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
 }
 
-func (c *L1ClientExt) Health(ctx context.Context) error {
+func (c *l1Client) Health(ctx context.Context) error {
 	_, err := c.Client.GetLatestSuiSystemState(ctx)
 	return err
 }
 
-func (c *L1ClientExt) L2Client() L2Client {
-	return NewL2Client(iscmove.Config{
-		APIURL:   c.Config.APIURL,
-		GraphURL: c.Config.GraphURL,
-	})
+func (c *l1Client) L2() L2Client {
+	return iscmove.NewClient(c.Client, c.Config.GraphURL, c.Config.FaucetURL)
 }
 
 func NewL1Client(l1Config L1Config) L1Client {
-	return &L1ClientExt{
-		suiclient.New(l1Config.APIURL),
+	return &l1Client{
+		suiclient.NewHTTP(l1Config.APIURL),
 		l1Config,
 	}
 }

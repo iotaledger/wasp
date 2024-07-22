@@ -9,18 +9,16 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
-func TestRequestsFeedOwnedRequests(t *testing.T) {
-	client := iscmove.NewClient(iscmove.Config{
-		APIURL: suiconn.LocalnetEndpointURL,
-	})
+func TestRequestsFeed(t *testing.T) {
+	client := newLocalnetClient()
 
-	iscOwner := newSignerWithFunds(t, suisigner.TestSeed, 0)
-	chainOwner := newSignerWithFunds(t, suisigner.TestSeed, 1)
+	iscOwner := newSignerWithFunds(t, testSeed, 0)
+	chainOwner := newSignerWithFunds(t, testSeed, 1)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, iscOwner)
 	anchor := startNewChain(t, client, chainOwner, iscPackageID)
@@ -42,16 +40,17 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
-	feed := iscmove.NewRequestsFeed(
-		iscmove.Config{APIURL: suiconn.LocalnetEndpointURL},
+	feed := iscmove.NewFeed(
+		ctx,
 		suiconn.LocalnetWebsocketEndpointURL,
+		suiconn.LocalnetFaucetURL,
 		iscPackageID,
 		*anchor.ObjectID,
 		log,
 	)
 
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
-	newRequests := make(chan *iscmove.Request, 1)
+	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
+	newRequests := make(chan *iscmove.Request, 10)
 	feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
@@ -82,4 +81,21 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
+
+	_, err = client.ReceiveAndUpdateStateRootRequest(
+		context.Background(),
+		chainOwner,
+		iscPackageID,
+		&anchor.ObjectRef,
+		[]sui.ObjectRef{*requestRef},
+		[]byte{1, 2, 3},
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+
+	upd := <-anchorUpdates
+	require.EqualValues(t, []byte{1, 2, 3}, upd.Object.StateRoot)
 }
