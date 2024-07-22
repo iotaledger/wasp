@@ -53,7 +53,7 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens uint64, gasPrice 
 	return fee - sendToValidator, sendToValidator
 }
 
-// FeeFromGasWithGasPerToken calculates the gas fee using the given gasPrice
+// FeeFromGasWithGasPrice calculates the gas fee using the given gasPrice
 // (expressed in ISC base tokens with 'full decimals').
 func FeeFromGasWithGasPrice(gasUnits uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) uint64 {
 	feeFullDecimals := new(big.Int).SetUint64(gasUnits)

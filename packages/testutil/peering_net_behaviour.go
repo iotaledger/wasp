@@ -71,7 +71,7 @@ type peeringNetUnreliable struct {
 	log        *logger.Logger
 }
 
-// NewPeeringNetReliable constructs the PeeringNetBehavior.
+// NewPeeringNetUnreliable constructs the PeeringNetBehavior.
 func NewPeeringNetUnreliable(deliverPct, repeatPct int, delayFrom, delayTill time.Duration, log *logger.Logger) PeeringNetBehavior {
 	return &peeringNetUnreliable{
 		deliverPct: deliverPct,

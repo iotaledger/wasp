@@ -14,7 +14,7 @@ type TestingT interface { // Interface so there's no need to pass the concrete t
 	Name() string
 }
 
-// NewLogger produces a logger adjusted for test cases.
+// NewSimple produces a logger adjusted for test cases.
 func NewSimple(debug bool) *logger.Logger {
 	cfg := zap.NewDevelopmentConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("04:05.000")
