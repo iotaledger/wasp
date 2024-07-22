@@ -58,14 +58,10 @@ func assetsToJSONObject(assets *Assets) *AssetsJSON {
 	}
 
 	ret := &AssetsJSON{
-		BaseTokens:   strconv.FormatUint(assets.BaseTokens, 10),
+		BaseTokens:   strconv.FormatUint(assets.BaseTokens.Uint64(), 10),
 		NativeTokens: NativeTokensToJSONObject(assets.NativeTokens),
-		NFTs:         make([]string, len(assets.NFTs)),
 	}
 
-	for k, v := range assets.NFTs {
-		ret.NFTs[k] = v.ToHex()
-	}
 	return ret
 }
 
@@ -103,14 +99,14 @@ type NativeTokenJSON struct {
 	Amount string `json:"amount" swagger:"required"`
 }
 
-func NativeTokenToJSONObject(token *iotago.NativeToken) *NativeTokenJSON {
+func NativeTokenToJSONObject(token *NativeToken) *NativeTokenJSON {
 	return &NativeTokenJSON{
-		ID:     token.ID.ToHex(),
+		ID:     string(token.CoinType),
 		Amount: token.Amount.String(),
 	}
 }
 
-func NativeTokensToJSONObject(tokens iotago.NativeTokens) []*NativeTokenJSON {
+func NativeTokensToJSONObject(tokens NativeTokens) []*NativeTokenJSON {
 	nativeTokens := make([]*NativeTokenJSON, len(tokens))
 
 	for k, v := range tokens {

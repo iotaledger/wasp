@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -18,18 +17,18 @@ func TestAssetsSerialization(t *testing.T) {
 	maxVal.Exp(maxVal, e, nil)
 	maxVal.Sub(maxVal, big.NewInt(1))
 
-	tokens := iotago.NativeTokens{
-		&iotago.NativeToken{
-			ID:     [iotago.NativeTokenIDLength]byte{1},
-			Amount: big.NewInt(100),
+	tokens := isc.NativeTokens{
+		&isc.NativeToken{
+			CoinType: isc.NativeTokenID("0xabc"),
+			Amount:   big.NewInt(100),
 		},
-		&iotago.NativeToken{
-			ID:     [iotago.NativeTokenIDLength]byte{2},
-			Amount: big.NewInt(200),
+		&isc.NativeToken{
+			CoinType: isc.NativeTokenID("0xdef"),
+			Amount:   big.NewInt(200),
 		},
-		&iotago.NativeToken{
-			ID:     [iotago.NativeTokenIDLength]byte{3},
-			Amount: util.MaxUint256,
+		&isc.NativeToken{
+			CoinType: isc.NativeTokenID("0xghe"),
+			Amount:   util.MaxUint256,
 		},
 	}
 
@@ -44,39 +43,37 @@ func TestAssetsSpendBudget(t *testing.T) {
 	require.True(t, budget.IsEmpty())
 	require.True(t, budget.IsEmpty())
 
-	budget = &isc.Assets{BaseTokens: 1}
+	budget = &isc.Assets{BaseTokens: big.NewInt(1)}
 	require.True(t, budget.Spend(toSpend))
 	require.False(t, toSpend.Spend(budget))
 
-	budget = &isc.Assets{BaseTokens: 10}
+	budget = &isc.Assets{BaseTokens: big.NewInt(10)}
 	require.True(t, budget.Spend(budget))
 	require.True(t, budget.IsEmpty())
 
-	budget = &isc.Assets{BaseTokens: 2}
-	toSpend = &isc.Assets{BaseTokens: 1}
+	budget = &isc.Assets{BaseTokens: big.NewInt(2)}
+	toSpend = &isc.Assets{BaseTokens: big.NewInt(1)}
 	require.True(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(&isc.Assets{
-		BaseTokens:   1,
-		NativeTokens: []*iotago.NativeToken{},
-		NFTs:         []iotago.NFTID{},
+		BaseTokens:   big.NewInt(1),
+		NativeTokens: []*isc.NativeToken{},
 	}))
 
-	budget = &isc.Assets{BaseTokens: 1}
-	toSpend = &isc.Assets{BaseTokens: 2}
+	budget = &isc.Assets{BaseTokens: big.NewInt(1)}
+	toSpend = &isc.Assets{BaseTokens: big.NewInt(2)}
 	require.False(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(&isc.Assets{
-		BaseTokens:   1,
-		NativeTokens: []*iotago.NativeToken{},
-		NFTs:         []iotago.NFTID{},
+		BaseTokens:   big.NewInt(1),
+		NativeTokens: []*isc.NativeToken{},
 	}))
 
 	nativeTokenID1 := tpkg.RandNativeToken().ID
 	nativeTokenID2 := tpkg.RandNativeToken().ID
 
 	budget = &isc.Assets{
-		BaseTokens: 1,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID1, Amount: big.NewInt(5)},
+		BaseTokens: big.NewInt(1),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID1.String()), Amount: big.NewInt(5)},
 		},
 	}
 	toSpend = budget.Clone()
@@ -84,78 +81,55 @@ func TestAssetsSpendBudget(t *testing.T) {
 	require.True(t, budget.IsEmpty())
 
 	budget = &isc.Assets{
-		BaseTokens: 1,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID1, Amount: big.NewInt(5)},
+		BaseTokens: big.NewInt(1),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID1.String()), Amount: big.NewInt(5)},
 		},
 	}
 	cloneBudget := budget.Clone()
 	toSpend = &isc.Assets{
-		BaseTokens: 1,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID1, Amount: big.NewInt(10)},
+		BaseTokens: big.NewInt(1),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID1.String()), Amount: big.NewInt(10)},
 		},
 	}
 	require.False(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(cloneBudget))
 
 	budget = &isc.Assets{
-		BaseTokens: 1,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID1, Amount: big.NewInt(5)},
-			{ID: nativeTokenID2, Amount: big.NewInt(1)},
+		BaseTokens: big.NewInt(1),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID1.String()), Amount: big.NewInt(5)},
+			{CoinType: isc.NativeTokenID(nativeTokenID2.String()), Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &isc.Assets{
-		BaseTokens: 1,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID1, Amount: big.NewInt(5)},
+		BaseTokens: big.NewInt(1),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID1.String()), Amount: big.NewInt(5)},
 		},
 	}
 	expected := &isc.Assets{
-		BaseTokens: 0,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID2, Amount: big.NewInt(1)},
+		BaseTokens: big.NewInt(0),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID2.String()), Amount: big.NewInt(1)},
 		},
 	}
 	require.True(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(expected))
 
 	budget = &isc.Assets{
-		BaseTokens: 10,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID2, Amount: big.NewInt(1)},
+		BaseTokens: big.NewInt(10),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID2.String()), Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &isc.Assets{
-		BaseTokens: 1,
-		NativeTokens: iotago.NativeTokens{
-			{ID: nativeTokenID1, Amount: big.NewInt(5)},
+		BaseTokens: big.NewInt(1),
+		NativeTokens: isc.NativeTokens{
+			{CoinType: isc.NativeTokenID(nativeTokenID1.String()), Amount: big.NewInt(5)},
 		},
 	}
 
 	require.False(t, budget.Spend(toSpend))
-}
-
-func TestAssetsAddNFTs(t *testing.T) {
-	nftSet1 := []iotago.NFTID{
-		{1},
-		{2},
-		{3},
-	}
-
-	nftSet2 := []iotago.NFTID{
-		{3},
-		{4},
-		{5},
-	}
-	a := isc.NewAssets(0, nil, nftSet1...)
-	b := isc.NewAssets(0, nil, nftSet2...)
-	a.Add(b)
-	require.Len(t, a.NFTs, 5)
-	require.Contains(t, a.NFTs, iotago.NFTID{1})
-	require.Contains(t, a.NFTs, iotago.NFTID{2})
-	require.Contains(t, a.NFTs, iotago.NFTID{3})
-	require.Contains(t, a.NFTs, iotago.NFTID{4})
-	require.Contains(t, a.NFTs, iotago.NFTID{5})
 }
