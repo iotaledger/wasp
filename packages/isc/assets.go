@@ -202,7 +202,7 @@ func (a *Assets) Add(b *Assets) *Assets {
 }
 
 func (a *Assets) IsEmpty() bool {
-	return a == nil || (a.BaseTokens.Cmp(big.NewInt(0)) == 0 &&
+	return a == nil || a.BaseTokens == nil || (a.BaseTokens.Cmp(big.NewInt(0)) == 0 &&
 		len(a.NativeTokens) == 0)
 }
 
