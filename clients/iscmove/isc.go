@@ -1,6 +1,9 @@
 package iscmove
 
 import (
+	"io"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -68,7 +71,31 @@ type Anchor struct {
 	Assets     Referent[AssetsBag]
 	InitParams []byte
 	StateRoot  sui.Bytes
+	BlockHash  sui.Bytes
 	StateIndex uint32
+}
+
+func (a *Anchor) GetStateIndex() uint32 {
+	return a.StateIndex
+}
+
+func (a *Anchor) Equals(b *Anchor) bool {
+	return a.ID.Equals(b.ID)
+}
+
+// Used in packages/chain/cons/bp/batch_proposal_set as key of a map
+// TODO: maybe use a.Ref.Key() instead? Maybe have Key() for Anchor type?
+func (a *Anchor) Hash() hashing.HashValue {
+	res, _ := hashing.HashValueFromBytes(a.ID.Bytes())
+	return res
+}
+
+func (a *Anchor) Read(r io.Reader) error {
+	return nil // TODO implement
+}
+
+func (a *Anchor) Write(w io.Writer) error {
+	return nil // TODO implement
 }
 
 type Receipt struct {

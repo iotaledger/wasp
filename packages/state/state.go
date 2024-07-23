@@ -68,7 +68,7 @@ func (s *state) PreviousL1Commitment() *L1Commitment {
 
 func loadPrevL1CommitmentFromState(chainState kv.KVStoreReader) *L1Commitment {
 	data := chainState.Get(kv.Key(coreutil.StatePrefixPrevL1Commitment))
-	l1c, err := L1CommitmentFromBytes(data)
+	l1c, err := NewL1CommitmentFromBytes(data)
 	mustNoErr(err)
 	return l1c
 }

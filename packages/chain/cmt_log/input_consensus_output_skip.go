@@ -6,19 +6,19 @@ package cmt_log
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputSkip struct {
 	logIndex       LogIndex
-	proposedBaseAO iotago.OutputID
+	proposedBaseAO *sui.ObjectRef
 }
 
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputSkip(
 	logIndex LogIndex,
-	proposedBaseAO iotago.OutputID,
+	proposedBaseAO *sui.ObjectRef,
 ) gpa.Input {
 	return &inputConsensusOutputSkip{
 		logIndex:       logIndex,
@@ -28,7 +28,7 @@ func NewInputConsensusOutputSkip(
 
 func (inp *inputConsensusOutputSkip) String() string {
 	return fmt.Sprintf(
-		"{cmtLog.inputConsensusOutputSkip, logIndex=%v, proposedBaseAO=%v}",
-		inp.logIndex, inp.proposedBaseAO.ToHex(),
+		"{cmtLog.inputConsensusOutputSkip, logIndex=%v, proposedBaseAO=%s}",
+		inp.logIndex, inp.proposedBaseAO.String(),
 	)
 }

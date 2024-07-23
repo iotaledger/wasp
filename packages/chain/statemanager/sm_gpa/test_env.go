@@ -214,7 +214,7 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusStateProposal(commitment *sta
 }
 
 func (teT *testEnv) sendConsensusStateProposal(commitment *state.L1Commitment, nodeID gpa.NodeID) <-chan interface{} {
-	input, responseCh := sm_inputs.NewConsensusStateProposal(context.Background(), teT.bf.GetAliasOutput(commitment))
+	input, responseCh := sm_inputs.NewConsensusStateProposal(context.Background(), teT.bf.GetAnchor(commitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
@@ -239,7 +239,7 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusDecidedState(commitment *stat
 }
 
 func (teT *testEnv) sendConsensusDecidedState(commitment *state.L1Commitment, nodeID gpa.NodeID) <-chan state.State {
-	input, responseCh := sm_inputs.NewConsensusDecidedState(context.Background(), teT.bf.GetAliasOutput(commitment))
+	input, responseCh := sm_inputs.NewConsensusDecidedState(context.Background(), teT.bf.GetAnchor(commitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
@@ -265,7 +265,7 @@ func (teT *testEnv) sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, new
 }
 
 func (teT *testEnv) sendChainFetchStateDiff(oldCommitment, newCommitment *state.L1Commitment, nodeID gpa.NodeID) <-chan *sm_inputs.ChainFetchStateDiffResults {
-	input, responseCh := sm_inputs.NewChainFetchStateDiff(context.Background(), teT.bf.GetAliasOutput(oldCommitment), teT.bf.GetAliasOutput(newCommitment))
+	input, responseCh := sm_inputs.NewChainFetchStateDiff(context.Background(), teT.bf.GetAnchor(oldCommitment), teT.bf.GetAnchor(newCommitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }

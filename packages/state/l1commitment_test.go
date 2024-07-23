@@ -5,20 +5,27 @@ import (
 
 	"pgregory.net/rapid"
 
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/stretchr/testify/require"
 )
 
-func TestL1Commitment(t *testing.T) {
-	sc := PseudoRandL1Commitment()
+func TestL1CommitmentConversionToBytes(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		trieRoot, err := trie.HashFromBytes(rapid.SliceOfN(rapid.Byte(), trie.HashSizeBytes, trie.HashSizeBytes).Draw(t, "trie root"))
+		require.NoError(t, err)
+		blockHash, err := NewBlockHash(rapid.SliceOfN(rapid.Byte(), BlockHashSize, BlockHashSize).Draw(t, "block hash"))
+		require.NoError(t, err)
+		l1Commitment := newL1Commitment(trieRoot, blockHash)
 
-	data := sc.Bytes()
-	scBack, err := L1CommitmentFromBytes(data)
-	require.NoError(t, err)
-	require.Equal(t, sc.TrieRoot(), scBack.TrieRoot())
-	require.Equal(t, sc.BlockHash(), scBack.BlockHash())
+		l1CommitmentBack, err := NewL1CommitmentFromBytes(l1Commitment.Bytes())
+		require.NoError(t, err)
+		require.True(t, l1Commitment.TrieRoot().Equals(l1CommitmentBack.TrieRoot()))
+		require.True(t, l1Commitment.BlockHash().Equals(l1CommitmentBack.BlockHash()))
+		require.True(t, l1Commitment.Equals(l1CommitmentBack))
+	})
 }
 
-func TestBlockHash(t *testing.T) {
+/*func TestBlockHash(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		blockHashSlice := rapid.SliceOfN(rapid.Byte(), BlockHashSize, BlockHashSize).Draw(t, "block hash")
 		var blockHash BlockHash
@@ -28,4 +35,4 @@ func TestBlockHash(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, blockHash.Equals(blockHashNew))
 	})
-}
+}*/

@@ -6,16 +6,16 @@ package cmt_log
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type inputConsensusOutputRejected struct {
-	aliasOutput *isc.AliasOutputWithID
+	aliasOutput *iscmove.Anchor
 	logIndex    LogIndex
 }
 
-func NewInputConsensusOutputRejected(aliasOutput *isc.AliasOutputWithID, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputRejected(aliasOutput *iscmove.Anchor, logIndex LogIndex) gpa.Input {
 	return &inputConsensusOutputRejected{
 		aliasOutput: aliasOutput,
 		logIndex:    logIndex,

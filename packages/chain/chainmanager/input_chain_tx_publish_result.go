@@ -7,18 +7,18 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/sui"
 )
 
 type inputChainTxPublishResult struct {
 	committeeAddr cryptolib.Address
 	logIndex      cmt_log.LogIndex
 	txID          iotago.TransactionID
-	aliasOutput   *isc.AliasOutputWithID
+	aliasOutput   *sui.Anchor
 	confirmed     bool
 }
 
-func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex, txID iotago.TransactionID, aliasOutput *isc.AliasOutputWithID, confirmed bool) gpa.Input {
+func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex, txID iotago.TransactionID, aliasOutput *sui.Anchor, confirmed bool) gpa.Input {
 	return &inputChainTxPublishResult{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

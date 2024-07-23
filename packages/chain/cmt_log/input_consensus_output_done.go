@@ -6,24 +6,24 @@ package cmt_log
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputDone struct {
 	logIndex          LogIndex
-	proposedBaseAO    iotago.OutputID        // Proposed BaseAO
-	baseAliasOutputID iotago.OutputID        // Decided BaseAO
-	nextAliasOutput   *isc.AliasOutputWithID // And the next one.
+	proposedBaseAO    sui.ObjectID    // Proposed BaseAO
+	baseAliasOutputID sui.ObjectID    // Decided BaseAO
+	nextAliasOutput   *iscmove.Anchor // And the next one.
 }
 
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputDone(
 	logIndex LogIndex,
-	proposedBaseAO iotago.OutputID,
-	baseAliasOutputID iotago.OutputID,
-	nextAliasOutput *isc.AliasOutputWithID,
+	proposedBaseAO sui.ObjectID,
+	baseAliasOutputID sui.ObjectID,
+	nextAliasOutput *iscmove.Anchor,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
 		logIndex:          logIndex,
@@ -35,7 +35,7 @@ func NewInputConsensusOutputDone(
 
 func (inp *inputConsensusOutputDone) String() string {
 	return fmt.Sprintf(
-		"{cmtLog.inputConsensusOutputDone, logIndex=%v, proposedBaseAO=%v, baseAliasOutputID=%v, nextAliasOutput=%v}",
-		inp.logIndex, inp.proposedBaseAO.ToHex(), inp.baseAliasOutputID.ToHex(), inp.nextAliasOutput,
+		"{cmtLog.inputConsensusOutputDone, logIndex=%v, proposedBaseAO=%s, baseAliasOutputID=%s, nextAliasOutput=%v}",
+		inp.logIndex, inp.proposedBaseAO.String(), inp.baseAliasOutputID.String(), inp.nextAliasOutput,
 	)
 }

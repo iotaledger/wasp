@@ -11,8 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -20,8 +19,15 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
+
+type anchorData struct {
+	ref          *sui.ObjectRef
+	assets       iscmove.Referent[iscmove.AssetsBag]
+	l1Commitment *state.L1Commitment
+	stateIndex   uint32
+}
 
 type BlockFactory struct {
 	t                   require.TestingT
@@ -29,7 +35,7 @@ type BlockFactory struct {
 	chainID             isc.ChainID
 	chainInitParams     dict.Dict
 	lastBlockCommitment *state.L1Commitment
-	aliasOutputs        map[state.BlockHash]*isc.AliasOutputWithID
+	anchorData          map[state.BlockHash]anchorData
 }
 
 func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *BlockFactory {
@@ -39,29 +45,24 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	} else {
 		chainInitParams = nil
 	}
-	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
-	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
-	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
-	_ = stateAddress
-	panic("refactor me: AsIotagoAddress")
+	chainID := isc.RandomChainID()
 	originCommitment := origin.L1Commitment(0, chainInitParams, 0)
-	aliasOutput0 := &iotago.AliasOutput{
-		Amount:        tpkg.TestTokenSupply,
-		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
-		StateMetadata: testutil.DummyStateMetadata(originCommitment).Bytes(),
-		Conditions:    iotago.UnlockConditions{
-			// &iotago.StateControllerAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
-			// &iotago.GovernorAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
+	originAnchorData := anchorData{
+		ref: &sui.ObjectRef{
+			ObjectID: sui.ObjectIDFromArray(chainID),
+			Version:  0,
+			Digest:   nil, // TODO
 		},
-		Features: iotago.Features{
-			&iotago.SenderFeature{
-				// Address: stateAddress.AsIotagoAddress(),
+		assets: iscmove.Referent[iscmove.AssetsBag]{
+			//ID: nil, // TODO
+			Value: &iscmove.AssetsBag{
+				//ID:   nil, // TODO
+				Size: 0,
 			},
 		},
+		l1Commitment: originCommitment,
+		stateIndex:   0,
 	}
-	aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
-	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
-	aliasOutputs[originCommitment.BlockHash()] = originOutput
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	origin.InitChain(0, chainStore, chainInitParams, 0)
 	return &BlockFactory{
@@ -70,8 +71,46 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 		chainID:             chainID,
 		chainInitParams:     chainInitParams,
 		lastBlockCommitment: originCommitment,
-		aliasOutputs:        aliasOutputs,
+		anchorData:          map[state.BlockHash]anchorData{originCommitment.BlockHash(): originAnchorData},
 	}
+
+	/*
+	   aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
+	   chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
+	   stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
+	   _ = stateAddress
+	   originCommitment := origin.L1Commitment(0, chainInitParams, 0)
+
+	   	aliasOutput0 := &iotago.AliasOutput{
+	   		Amount:        tpkg.TestTokenSupply,
+	   		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
+	   		StateMetadata: testutil.DummyStateMetadata(originCommitment).Bytes(),
+	   		Conditions:    iotago.UnlockConditions{
+	   			// &iotago.StateControllerAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
+	   			// &iotago.GovernorAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
+	   		},
+	   		Features: iotago.Features{
+	   			&iotago.SenderFeature{
+	   				// Address: stateAddress.AsIotagoAddress(),
+	   			},
+	   		},
+	   	}
+
+	   aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
+	   originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
+	   aliasOutputs[originCommitment.BlockHash()] = originOutput
+	   chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	   origin.InitChain(0, chainStore, chainInitParams, 0)
+
+	   	return &BlockFactory{
+	   		t:                   t,
+	   		store:               chainStore,
+	   		chainID:             chainID,
+	   		chainInitParams:     chainInitParams,
+	   		lastBlockCommitment: originCommitment,
+	   		anchors: 	         aliasOutputs,
+	   	}
+	*/
 }
 
 func (bfT *BlockFactory) GetChainID() isc.ChainID {
@@ -82,8 +121,8 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginOutput() *isc.AliasOutputWithID {
-	return bfT.GetAliasOutput(origin.L1Commitment(0, bfT.chainInitParams, 0))
+func (bfT *BlockFactory) GetOriginAnchor() *iscmove.Anchor {
+	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
 func (bfT *BlockFactory) GetOriginBlock() state.Block {
@@ -148,21 +187,14 @@ func (bfT *BlockFactory) GetNextBlock(
 	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
 	newCommitment := block.L1Commitment()
 
-	consumedAliasOutput := bfT.GetAliasOutput(commitment).GetAliasOutput()
+	consumedAnchor := bfT.GetAnchor(commitment)
 
-	aliasOutput := &iotago.AliasOutput{
-		Amount:         consumedAliasOutput.Amount,
-		NativeTokens:   consumedAliasOutput.NativeTokens,
-		AliasID:        consumedAliasOutput.AliasID,
-		StateIndex:     consumedAliasOutput.StateIndex + 1,
-		StateMetadata:  testutil.DummyStateMetadata(newCommitment).Bytes(),
-		FoundryCounter: consumedAliasOutput.FoundryCounter,
-		Conditions:     consumedAliasOutput.Conditions,
-		Features:       consumedAliasOutput.Features,
+	newAnchorData := anchorData{
+		assets:       consumedAnchor.Assets,
+		l1Commitment: newCommitment,
+		stateIndex:   consumedAnchor.StateIndex + 1,
 	}
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(bfT.t), 0)
-	aliasOutputWithID := isc.NewAliasOutputWithID(aliasOutput, aliasOutputID)
-	bfT.aliasOutputs[newCommitment.BlockHash()] = aliasOutputWithID
+	bfT.anchorData[newCommitment.BlockHash()] = newAnchorData
 
 	return block
 }
@@ -178,10 +210,16 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAliasOutput(commitment *state.L1Commitment) *isc.AliasOutputWithID {
-	result, ok := bfT.aliasOutputs[commitment.BlockHash()]
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.Anchor {
+	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return result
+	return &iscmove.Anchor{
+		Ref:        anchorData.ref,
+		Assets:     anchorData.assets,
+		StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
+		BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
+		StateIndex: anchorData.stateIndex,
+	}
 }
 
 func getRandomTxID(t require.TestingT) iotago.TransactionID {

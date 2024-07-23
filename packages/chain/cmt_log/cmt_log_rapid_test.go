@@ -9,6 +9,7 @@ import (
 	"pgregory.net/rapid"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -17,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type cmtLogTestRapidSM struct {
@@ -25,8 +27,8 @@ type cmtLogTestRapidSM struct {
 	governorAddress *cryptolib.Address
 	stateAddress    *cryptolib.Address
 	tc              *gpa.TestContext
-	l1Chain         []*isc.AliasOutputWithID // The actual chain.
-	l1Delivered     map[gpa.NodeID]int       // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
+	l1Chain         []*iscmove.Anchor  // The actual chain.
+	l1Delivered     map[gpa.NodeID]int // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
 	genAOSerial     uint32
 	genNodeID       *rapid.Generator[gpa.NodeID]
 }
@@ -64,7 +66,7 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}
 	sm.tc = gpa.NewTestContext(gpaNodes)
-	sm.l1Chain = []*isc.AliasOutputWithID{}
+	sm.l1Chain = []*iscmove.Anchor{}
 	sm.l1Delivered = map[gpa.NodeID]int{}
 	//
 	// Generators.
@@ -79,9 +81,9 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 	return sm
 }
 
-func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.AliasOutputWithID {
+func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *iscmove.Anchor {
 	sm.genAOSerial++
-	var outputID iotago.OutputID
+	var outputID sui.ObjectID    // TODO -> ObjectRef
 	binary.BigEndian.PutUint32(outputID[:], sm.genAOSerial)
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       sm.aliasID,
@@ -98,9 +100,9 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.Alias
 // func (sm *cmtLogTestRapidSM) ConsDone(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	var li cmtLog.LogIndex         // TODO: Set it.
-// 	var pAO iotago.OutputID        // TODO: Set it.
-// 	var bAO iotago.OutputID        // TODO: Set it.
-// 	var nAO *isc.AliasOutputWithID // TODO: Set it.
+// 	var pAO sui_types.ObjectID        // TODO: Set it.
+// 	var bAO sui_types.ObjectID        // TODO: Set it.
+// 	var nAO *sui.Anchor // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputDone(li, pAO, bAO, nAO))
 // 	sm.tc.RunAll()
 // }
@@ -108,7 +110,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.Alias
 // func (sm *cmtLogTestRapidSM) ConsSkip(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	var li cmtLog.LogIndex  // TODO: Set it.
-// 	var pAO iotago.OutputID // TODO: Set it.
+// 	var pAO sui_types.ObjectID // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputSkip(li, pAO))
 // 	sm.tc.RunAll()
 // }
@@ -122,7 +124,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.Alias
 
 // func (sm *cmtLogTestRapidSM) ConsConfirmed(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
-// 	var ao *isc.AliasOutputWithID // TODO: Set it.
+// 	var ao *sui.Anchor // TODO: Set it.
 // 	var li cmtLog.LogIndex        // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputConfirmed(ao, li))
 // 	sm.tc.RunAll()
@@ -130,7 +132,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.Alias
 
 // func (sm *cmtLogTestRapidSM) ConsRejected(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
-// 	var ao *isc.AliasOutputWithID // TODO: Set it.
+// 	var ao *sui.Anchor // TODO: Set it.
 // 	var li cmtLog.LogIndex        // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputRejected(ao, li))
 // 	sm.tc.RunAll()

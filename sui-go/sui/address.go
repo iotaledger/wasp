@@ -11,6 +11,11 @@ const AddressLen = 32
 
 type Address [AddressLen]uint8
 
+func AddressFromArray(address [AddressLen]byte) *Address {
+	result := Address(address)
+	return &result
+}
+
 func AddressFromHex(str string) (*Address, error) {
 	if strings.HasPrefix(str, "0x") || strings.HasPrefix(str, "0X") {
 		str = str[2:]
@@ -38,6 +43,10 @@ func MustAddressFromHex(str string) *Address {
 	return addr
 }
 
+func (a Address) Bytes() []byte { // NOTE: Bytes() is more conventional name for such method; I am not sure, if Data() method is necessary.
+	return a[:]
+}
+
 func (a Address) Data() []byte {
 	return a[:]
 }
@@ -48,6 +57,14 @@ func (a Address) Length() int {
 
 func (a Address) String() string {
 	return "0x" + hex.EncodeToString(a[:])
+}
+
+func (a Address) Equals(other Address) bool {
+	return a == other
+}
+
+func (a Address) ToHex() string {
+	return a.String()
 }
 
 func (a Address) ShortString() string {

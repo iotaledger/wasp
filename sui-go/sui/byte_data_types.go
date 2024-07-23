@@ -1,6 +1,7 @@
 package sui
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -17,6 +18,10 @@ type BytesData interface {
 }
 
 type Bytes []byte
+
+func NewBytes(bytes []byte) Bytes {
+	return Bytes(bytes)
+}
 
 func (b Bytes) GetHexData() HexData {
 	return HexData(b)
@@ -131,6 +136,10 @@ func (b Base58) Length() int {
 }
 func (b Base58) String() string {
 	return base58.Encode(b)
+}
+
+func (b Base58) Equals(other Base58) bool {
+	return bytes.Equal(b, other)
 }
 
 func (b Base58) MarshalJSON() ([]byte, error) {

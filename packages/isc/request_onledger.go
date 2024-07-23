@@ -3,6 +3,7 @@ package isc
 import (
 	"fmt"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -98,7 +99,7 @@ func (req *onLedgerRequestData) Assets() *Assets {
 	amount := req.output.Deposit()
 	// FIXME work on the SUI version
 	// tokens := req.output.NativeTokenList()
-	ret := NewAssets(amount, nil)
+	ret := NewAssets(new(big.Int).SetUint64(amount), nil)
 	return ret
 }
 

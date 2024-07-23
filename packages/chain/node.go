@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
@@ -370,7 +371,7 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(ao *isc.AliasOutputWithID) {
+		func(ao *iscmove.Anchor) {
 			cni.stateTrackerAct.TrackAliasOutput(ao, true)
 		},
 		func(block state.Block) {

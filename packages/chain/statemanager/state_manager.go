@@ -8,6 +8,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
@@ -33,7 +34,7 @@ type StateMgr interface {
 	// indexes.
 	ChainFetchStateDiff(
 		ctx context.Context,
-		prevAO, nextAO *isc.AliasOutputWithID,
+		prevAnchor, nextAnchor *iscmove.Anchor,
 	) <-chan *sm_inputs.ChainFetchStateDiffResults
 	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
@@ -185,8 +186,8 @@ func New(
 // Implementations for chain package
 // -------------------------------------
 
-func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) <-chan *sm_inputs.ChainFetchStateDiffResults {
-	input, resultCh := sm_inputs.NewChainFetchStateDiff(ctx, prevAO, nextAO)
+func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *iscmove.Anchor) <-chan *sm_inputs.ChainFetchStateDiffResults {
+	input, resultCh := sm_inputs.NewChainFetchStateDiff(ctx, prevAnchor, nextAnchor)
 	smT.addInput(input)
 	return resultCh
 }
@@ -214,15 +215,15 @@ func (smT *stateManager) PreliminaryBlock(block state.Block) error {
 
 // ConsensusStateProposal asks State manager to ensure that all the blocks for aliasOutput are available.
 // `nil` is sent via the returned channel upon successful retrieval of every block for aliasOutput.
-func (smT *stateManager) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan interface{} {
-	input, resultCh := sm_inputs.NewConsensusStateProposal(ctx, aliasOutput)
+func (smT *stateManager) ConsensusStateProposal(ctx context.Context, anchor *iscmove.Anchor) <-chan interface{} {
+	input, resultCh := sm_inputs.NewConsensusStateProposal(ctx, anchor)
 	smT.addInput(input)
 	return resultCh
 }
 
 // ConsensusDecidedState asks State manager to return a virtual state with stateCommitment as its state commitment
-func (smT *stateManager) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
-	input, resultCh := sm_inputs.NewConsensusDecidedState(ctx, aliasOutput)
+func (smT *stateManager) ConsensusDecidedState(ctx context.Context, anchor *iscmove.Anchor) <-chan state.State {
+	input, resultCh := sm_inputs.NewConsensusDecidedState(ctx, anchor)
 	smT.addInput(input)
 	return resultCh
 }

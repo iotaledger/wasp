@@ -20,9 +20,9 @@ type Assets struct {
 
 var BaseTokenID = []byte{}
 
-func NewAssets(baseTokens uint64, tokens NativeTokens) *Assets {
+func NewAssets(baseTokens *big.Int, tokens NativeTokens) *Assets {
 	ret := &Assets{
-		BaseTokens:   new(big.Int).SetUint64(baseTokens),
+		BaseTokens:   baseTokens,
 		NativeTokens: tokens,
 	}
 	return ret
@@ -212,7 +212,7 @@ func (a *Assets) AddBaseTokens(amount uint64) *Assets {
 }
 
 func (a *Assets) AddNativeTokens(nativeTokenID NativeTokenID, amount *big.Int) *Assets {
-	b := NewAssets(0, NativeTokens{
+	b := NewAssets(big.NewInt(0), NativeTokens{
 		&NativeToken{
 			CoinType: nativeTokenID,
 			Amount:   amount,
