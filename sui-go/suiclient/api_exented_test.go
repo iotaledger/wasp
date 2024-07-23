@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -17,7 +18,7 @@ import (
 
 func TestGetDynamicFieldObject(t *testing.T) {
 	t.Skip("FIXME")
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 	parentObjectID, err := sui.AddressFromHex("0x1719957d7a2bf9d72459ff0eab8e600cbb1991ef41ddd5b4a8c531035933d256")
 	require.NoError(t, err)
 	type args struct {
@@ -63,7 +64,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 }
 
 func TestGetDynamicFields(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	limit := 5
 	type args struct {
 		ctx            context.Context
@@ -112,38 +113,89 @@ func TestGetDynamicFields(t *testing.T) {
 }
 
 func TestGetOwnedObjects(t *testing.T) {
-	api := suiclient.New(suiconn.TestnetEndpointURL)
-	signer := suisigner.NewSignerByIndex(suisigner.TestSeed, suisigner.KeySchemeFlagEd25519, 0)
-	query := suijsonrpc.SuiObjectResponseQuery{
-		Filter: &suijsonrpc.SuiObjectDataFilter{
-			StructType: "0x2::coin::Coin<0x2::sui::SUI>",
-		},
-		Options: &suijsonrpc.SuiObjectDataOptions{
-			ShowType:    true,
-			ShowContent: true,
-		},
-	}
-	limit := uint(2)
-	objs, err := api.GetOwnedObjects(
-		context.Background(), suiclient.GetOwnedObjectsRequest{
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := suisigner.NewSignerByIndex(testSeed, suisigner.KeySchemeFlagEd25519, 0)
+	t.Run("struct tag", func(t *testing.T) {
+		structTag, err := sui.StructTagFromString("0x2::coin::Coin<0x2::sui::SUI>")
+		require.NoError(t, err)
+		query := suijsonrpc.SuiObjectResponseQuery{
+			Filter: &suijsonrpc.SuiObjectDataFilter{
+				StructType: structTag,
+			},
+			Options: &suijsonrpc.SuiObjectDataOptions{
+				ShowType:    true,
+				ShowContent: true,
+			},
+		}
+		limit := uint(10)
+		objs, err := client.GetOwnedObjects(context.Background(), suiclient.GetOwnedObjectsRequest{
 			Address: signer.Address(),
 			Query:   &query,
-			Cursor:  nil,
 			Limit:   &limit,
-		},
-	)
-	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(objs.Data), int(limit))
-	require.NoError(t, err)
-	var fields suijsonrpc.CoinFields
-	err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
+		})
+		require.NoError(t, err)
+		require.Equal(t, len(objs.Data), int(limit))
+		require.NoError(t, err)
+		var fields suijsonrpc.CoinFields
+		err = json.Unmarshal(objs.Data[9].Data.Content.Data.MoveObject.Fields, &fields)
+		require.NoError(t, err)
+		require.Equal(t, "1000000000", fields.Balance.String())
+	})
 
-	require.NoError(t, err)
-	require.Equal(t, "1000000000", fields.Balance.String())
+	t.Run("move module", func(t *testing.T) {
+		query := suijsonrpc.SuiObjectResponseQuery{
+			Filter: &suijsonrpc.SuiObjectDataFilter{
+				AddressOwner: signer.Address(),
+			},
+			Options: &suijsonrpc.SuiObjectDataOptions{
+				ShowType:    true,
+				ShowContent: true,
+			},
+		}
+		limit := uint(9)
+		objs, err := client.GetOwnedObjects(context.Background(), suiclient.GetOwnedObjectsRequest{
+			Address: signer.Address(),
+			Query:   &query,
+			Limit:   &limit,
+		})
+		require.NoError(t, err)
+		require.Equal(t, len(objs.Data), int(limit))
+		require.NoError(t, err)
+		var fields suijsonrpc.CoinFields
+		err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
+		require.NoError(t, err)
+		require.Equal(t, "1000000000", fields.Balance.String())
+	})
+	// query := suijsonrpc.SuiObjectResponseQuery{
+	// 	Filter: &suijsonrpc.SuiObjectDataFilter{
+	// 		StructType: "0x2::coin::Coin<0x2::sui::SUI>",
+	// 	},
+	// 	Options: &suijsonrpc.SuiObjectDataOptions{
+	// 		ShowType:    true,
+	// 		ShowContent: true,
+	// 	},
+	// }
+	// limit := uint(2)
+	// objs, err := client.GetOwnedObjects(
+	// 	context.Background(), suiclient.GetOwnedObjectsRequest{
+	// 		Address: signer.Address(),
+	// 		Query:   &query,
+	// 		Cursor:  nil,
+	// 		Limit:   &limit,
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// require.GreaterOrEqual(t, len(objs.Data), int(limit))
+	// require.NoError(t, err)
+	// var fields suijsonrpc.CoinFields
+	// err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
+
+	// require.NoError(t, err)
+	// require.Equal(t, "1000000000", fields.Balance.String())
 }
 
 func TestQueryEvents(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	limit := 10
 
 	type args struct {
@@ -203,7 +255,7 @@ func TestQueryEvents(t *testing.T) {
 }
 
 func TestQueryTransactionBlocks(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	limit := uint(10)
 	type args struct {
 		ctx             context.Context
@@ -224,7 +276,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 				ctx: context.TODO(),
 				query: &suijsonrpc.SuiTransactionBlockResponseQuery{
 					Filter: &suijsonrpc.TransactionFilter{
-						FromAddress: suisigner.TestAddress,
+						FromAddress: testAddress,
 					},
 					Options: &suijsonrpc.SuiTransactionBlockResponseOptions{
 						ShowInput:   true,
@@ -260,7 +312,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 }
 
 func TestResolveNameServiceAddress(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	addr, err := api.ResolveNameServiceAddress(context.Background(), "2222.sui")
 	require.NoError(t, err)
 	require.Equal(t, "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9", addr.String())
@@ -270,7 +322,7 @@ func TestResolveNameServiceAddress(t *testing.T) {
 }
 
 func TestResolveNameServiceNames(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	owner := sui.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
 	namePage, err := api.ResolveNameServiceNames(
 		context.Background(), suiclient.ResolveNameServiceNamesRequest{
@@ -292,13 +344,15 @@ func TestResolveNameServiceNames(t *testing.T) {
 }
 
 func TestSubscribeEvent(t *testing.T) {
-	t.Skip("passed at local side, but returned error on GitHub")
-	api := suiclient.NewWebsocket(suiconn.MainnetEndpointURL, suiconn.MainnetWebsocketEndpointURL)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL)
 
 	type args struct {
 		ctx      context.Context
 		filter   *suijsonrpc.EventFilter
-		resultCh chan suijsonrpc.SuiEvent
+		resultCh chan *suijsonrpc.SuiEvent
 	}
 	tests := []struct {
 		name    string
@@ -313,7 +367,7 @@ func TestSubscribeEvent(t *testing.T) {
 				filter: &suijsonrpc.EventFilter{
 					Package: sui.MustPackageIDFromHex("0x000000000000000000000000000000000000000000000000000000000000dee9"),
 				},
-				resultCh: make(chan suijsonrpc.SuiEvent),
+				resultCh: make(chan *suijsonrpc.SuiEvent),
 			},
 		},
 	}
@@ -332,6 +386,62 @@ func TestSubscribeEvent(t *testing.T) {
 				cnt := 0
 				for results := range tt.args.resultCh {
 					fmt.Println("results: ", results)
+					// FIXME we need to check finite number request in details
+					cnt++
+					if cnt > 3 {
+						break
+					}
+				}
+			},
+		)
+	}
+}
+
+func TestSubscribeTransaction(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL)
+
+	type args struct {
+		ctx      context.Context
+		filter   *suijsonrpc.TransactionFilter
+		resultCh chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects]
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *suijsonrpc.SuiTransactionBlockEffects
+		wantErr bool
+	}{
+		{
+			name: "test for filter transaction",
+			args: args{
+				ctx: context.TODO(),
+				filter: &suijsonrpc.TransactionFilter{
+					MoveFunction: &suijsonrpc.TransactionFilterMoveFunction{
+						Package: *sui.MustPackageIDFromHex("0x2c68443db9e8c813b194010c11040a3ce59f47e4eb97a2ec805371505dad7459"),
+					},
+				},
+				resultCh: make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects]),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				err := api.SubscribeTransaction(
+					tt.args.ctx,
+					tt.args.filter,
+					tt.args.resultCh,
+				)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("SubscribeTransaction() error: %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				cnt := 0
+				for results := range tt.args.resultCh {
+					fmt.Println("results: ", results.Data.V1)
 					// FIXME we need to check finite number request in details
 					cnt++
 					if cnt > 3 {

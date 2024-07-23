@@ -49,12 +49,12 @@ func (t *TagJson[T]) UnmarshalJSON(data []byte) error {
 	}
 	v, ok := tmp[t.Data.Tag()]
 	if !ok {
-		return fmt.Errorf("no such tag: %s in json data %v", t.Data.Tag(), tmp)
+		return fmt.Errorf("no such tag: %q in json data: %v", t.Data.Tag(), tmp)
 	}
 	var subType string
 	err = json.Unmarshal(v, &subType)
 	if err != nil {
-		return fmt.Errorf("the tag [%s] value is not string", t.Data.Tag())
+		return fmt.Errorf("the tag %q value is not string", t.Data.Tag())
 	}
 	for i := 0; i < rv.Type().NumField(); i++ {
 		if !strings.Contains(rv.Type().Field(i).Tag.Get("json"), subType) {

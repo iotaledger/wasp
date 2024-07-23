@@ -7,13 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := newLocalnetClient()
-	cryptolibSigner := newSignerWithFunds(t, suisigner.TestSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
 
@@ -36,10 +36,10 @@ func TestCreateAndSendRequest(t *testing.T) {
 		context.Background(),
 		cryptolibSigner,
 		iscPackageID,
-		anchor.Ref.ObjectID,
+		anchor.ObjectID,
 		assetsBagRef,
-		"test_isc_contract",
-		"test_isc_func",
+		isc.Hn("test_isc_contract"),
+		isc.Hn("test_isc_func"),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		nil,
 		suiclient.DefaultGasPrice,

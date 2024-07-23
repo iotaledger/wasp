@@ -13,18 +13,23 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
+)
+
+var (
+	testMnemonic = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
+	testSeed     = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116, 90, 172, 148, 59, 33, 88, 252, 134, 42, 231, 198, 208, 141, 209, 116, 78, 21, 216, 24}
+	testAddress  = sui.MustAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
 )
 
 func TestGetChainIdentifier(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	chainID, err := client.GetChainIdentifier(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, suiconn.ChainIdentifierSuiMainnet, chainID)
 }
 
 func TestGetCheckpoint(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	checkpoint, err := client.GetCheckpoint(context.Background(), suijsonrpc.NewBigInt(1000))
 	require.NoError(t, err)
 	targetCheckpoint := &suijsonrpc.Checkpoint{
@@ -48,7 +53,7 @@ func TestGetCheckpoint(t *testing.T) {
 }
 
 func TestGetCheckpoints(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	cursor := suijsonrpc.NewBigInt(999)
 	limit := uint64(2)
 	checkpointPage, err := client.GetCheckpoints(context.Background(), suiclient.GetCheckpointsRequest{
@@ -99,7 +104,7 @@ func TestGetCheckpoints(t *testing.T) {
 }
 
 func TestGetEvents(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	digest, err := sui.NewDigest("3vVi8XZgNpzQ34PFgwJTQqWtPMU84njcBX1EUxUHhyDk")
 	require.NoError(t, err)
 	events, err := client.GetEvents(context.Background(), digest)
@@ -153,7 +158,7 @@ func TestGetEvents(t *testing.T) {
 }
 
 func TestGetLatestCheckpointSequenceNumber(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	sequenceNumber, err := client.GetLatestCheckpointSequenceNumber(context.Background())
 	require.NoError(t, err)
 	num, err := strconv.Atoi(sequenceNumber)
@@ -166,9 +171,9 @@ func TestGetObject(t *testing.T) {
 		ctx   context.Context
 		objID *sui.ObjectID
 	}
-	api := suiclient.New(suiconn.TestnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 	coins, err := api.GetCoins(context.TODO(), suiclient.GetCoinsRequest{
-		Owner: suisigner.TestAddress,
+		Owner: testAddress,
 		Limit: 1,
 	})
 	require.NoError(t, err)
@@ -219,7 +224,7 @@ func TestGetObject(t *testing.T) {
 }
 
 func TestGetProtocolConfig(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	version := suijsonrpc.NewBigInt(47)
 	protocolConfig, err := api.GetProtocolConfig(context.Background(), version)
 	require.NoError(t, err)
@@ -227,14 +232,14 @@ func TestGetProtocolConfig(t *testing.T) {
 }
 
 func TestGetTotalTransactionBlocks(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	res, err := api.GetTotalTransactionBlocks(context.Background())
 	require.NoError(t, err)
 	t.Log(res)
 }
 
 func TestGetTransactionBlock(t *testing.T) {
-	client := suiclient.New(suiconn.MainnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	digest, err := sui.NewDigest("D1TM8Esaj3G9xFEDirqMWt9S7HjJXFrAGYBah1zixWTL")
 	require.NoError(t, err)
 	resp, err := client.GetTransactionBlock(
@@ -272,9 +277,9 @@ func TestGetTransactionBlock(t *testing.T) {
 }
 
 func TestMultiGetObjects(t *testing.T) {
-	api := suiclient.New(suiconn.DevnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.DevnetEndpointURL)
 	coins, err := api.GetCoins(context.TODO(), suiclient.GetCoinsRequest{
-		Owner: suisigner.TestAddress,
+		Owner: testAddress,
 		Limit: 1,
 	})
 	require.NoError(t, err)
@@ -305,7 +310,7 @@ func TestMultiGetObjects(t *testing.T) {
 }
 
 func TestMultiGetTransactionBlocks(t *testing.T) {
-	client := suiclient.New(suiconn.TestnetEndpointURL)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
 
 	resp, err := client.MultiGetTransactionBlocks(
 		context.Background(),
@@ -326,7 +331,7 @@ func TestMultiGetTransactionBlocks(t *testing.T) {
 }
 
 func TestTryGetPastObject(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	// there is no software-level guarantee/SLA that objects with past versions can be retrieved by this API
 	resp, err := api.TryGetPastObject(context.Background(), suiclient.TryGetPastObjectRequest{
 		ObjectID: sui.MustObjectIDFromHex("0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f"),
@@ -341,7 +346,7 @@ func TestTryGetPastObject(t *testing.T) {
 }
 
 func TestTryMultiGetPastObjects(t *testing.T) {
-	api := suiclient.New(suiconn.MainnetEndpointURL)
+	api := suiclient.NewHTTP(suiconn.MainnetEndpointURL)
 	req := []*suijsonrpc.SuiGetPastObjectRequest{
 		{
 			ObjectId: sui.MustObjectIDFromHex("0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f"),

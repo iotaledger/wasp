@@ -51,10 +51,6 @@ func (req *onLedgerRequestData) readFromUTXO(output iotago.Output, outputID iota
 		reqMetadata = nil // bad metadata. // we must handle these request, so that those funds are not lost forever
 	}
 
-	if reqMetadata != nil {
-		reqMetadata.Allowance.fillEmptyNFTIDs(output, outputID)
-	}
-
 	req.output = output
 	req.outputID = outputID
 	req.featureBlocks = fbSet
@@ -100,12 +96,9 @@ func (req *onLedgerRequestData) Allowance() *Assets {
 
 func (req *onLedgerRequestData) Assets() *Assets {
 	amount := req.output.Deposit()
-	tokens := req.output.NativeTokenList()
-	ret := NewAssets(amount, tokens)
-	NFT := req.NFT()
-	if NFT != nil {
-		ret.AddNFTs(NFT.ID)
-	}
+	// FIXME work on the SUI version
+	// tokens := req.output.NativeTokenList()
+	ret := NewAssets(amount, nil)
 	return ret
 }
 

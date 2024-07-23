@@ -84,9 +84,9 @@ module isc::anchor_tests {
         );*/ // Commented because cannot be executed received in this test
         let req = request::create_for_testing(
             req_assets,
-            option::some(string::utf8(b"contract")), 
-            option::some(string::utf8(b"function")), 
-            option::some(vector::empty()), 
+            42, // contract hname
+            42, // entry point
+            vector::empty(), // args
             &mut ctx,
         );
 

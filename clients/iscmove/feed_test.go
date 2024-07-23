@@ -7,19 +7,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
-func TestRequestsFeedOwnedRequests(t *testing.T) {
-	client := iscmove.NewClient(iscmove.Config{
-		APIURL: suiconn.LocalnetEndpointURL,
-	})
+func TestRequestsFeed(t *testing.T) {
+	client := newLocalnetClient()
 
-	iscOwner := newSignerWithFunds(t, suisigner.TestSeed, 0)
-	chainOwner := newSignerWithFunds(t, suisigner.TestSeed, 1)
+	iscOwner := newSignerWithFunds(t, testSeed, 0)
+	chainOwner := newSignerWithFunds(t, testSeed, 1)
 
 	iscPackageID := buildAndDeployISCContracts(t, client, iscOwner)
 	anchor := startNewChain(t, client, chainOwner, iscPackageID)
@@ -41,26 +40,28 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
-	feed := iscmove.NewRequestsFeed(
-		suiconn.LocalnetEndpointURL,
+	feed := iscmove.NewFeed(
+		ctx,
 		suiconn.LocalnetWebsocketEndpointURL,
+		suiconn.LocalnetFaucetURL,
 		iscPackageID,
-		*anchor.Ref.ObjectID,
+		*anchor.ObjectID,
 		log,
 	)
 
-	newRequests := make(chan iscmove.Request, 1)
-	feed.SubscribeNewRequests(ctx, newRequests)
+	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
+	newRequests := make(chan *iscmove.Request, 10)
+	feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
 		ctx,
 		iscOwner,
 		iscPackageID,
-		anchor.Ref.ObjectID,
+		anchor.ObjectID,
 		assetsBagRef,
-		"dummy_isc_contract",
-		"dummy_isc_func",
+		isc.Hn("dummy_isc_contract"),
+		isc.Hn("dummy_isc_func"),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		nil,
 		suiclient.DefaultGasPrice,
@@ -71,15 +72,30 @@ func TestRequestsFeedOwnedRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	req := <-newRequests
-	require.Equal(t, *requestRef.ObjectID, *req.ID)
+	require.Equal(t, *requestRef.ObjectID, req.ID)
 
-	ownedRequests := make(chan iscmove.Request, 1)
-	feed.SubscribeOwnedRequests(ctx, ownedRequests)
+	updatedAnchor, ownedReqs, err := feed.FetchCurrentState(ctx)
+	require.NoError(t, err)
 
-	n := 0
-	for req := range ownedRequests {
-		n += 1
-		require.Equal(t, *requestRef.ObjectID, *req.ID)
-	}
-	require.Equal(t, 1, n)
+	require.Equal(t, anchor.Version, updatedAnchor.Version)
+
+	require.Len(t, ownedReqs, 1)
+	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
+
+	_, err = client.ReceiveAndUpdateStateRootRequest(
+		context.Background(),
+		chainOwner,
+		iscPackageID,
+		&anchor.ObjectRef,
+		[]sui.ObjectRef{*requestRef},
+		[]byte{1, 2, 3},
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+
+	upd := <-anchorUpdates
+	require.EqualValues(t, []byte{1, 2, 3}, upd.Object.StateRoot)
 }

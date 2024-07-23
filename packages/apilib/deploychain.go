@@ -47,18 +47,18 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	anchor, err := par.Layer1Client.L2Client().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
+	anchor, err := par.Layer1Client.L2().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
 	if err != nil {
 		return isc.ChainID{}, err
 	}
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n* committee size = %d\n* quorum = %d\n",
-		anchor.Ref.ObjectID.String(), stateControllerAddr.String(), par.N, par.T)
+		anchor.ObjectID.String(), stateControllerAddr.String(), par.N, par.T)
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
-	return isc.ChainIDFromObjectID(*anchor.Ref.ObjectID), err
+	return isc.ChainIDFromObjectID(*anchor.ObjectID), err
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its

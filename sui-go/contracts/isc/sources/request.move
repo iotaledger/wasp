@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::request {
-    use std::string::String;
     use sui::{
         borrow::{Self, Referent},
         event::Self,
@@ -11,12 +10,12 @@ module isc::request {
 
     // === Main structs ===
 
-    /// Contains the request data to be used off-chain.
-    public struct RequestData has copy, drop, store {
+    /// Contains the target contract, entry point and arguments
+    public struct Message has drop, store {
         /// Contract name
-        contract: String,
+        contract: u32,
         /// Function name
-        function: String,
+        function: u32,
         /// Function arguments
         args: vector<vector<u8>>,
     }
@@ -28,8 +27,8 @@ module isc::request {
         sender: address,
         /// Bag of assets associated to the request
         assets_bag: Referent<AssetsBag>,
-        /// The request data, to be used off-chain 
-        data: Option<RequestData>,
+        /// The target contract, entry point and arguments
+        message: Message,
     }
 
     // === Events ===
@@ -48,28 +47,20 @@ module isc::request {
     public fun create_and_send_request(
         anchor: address,
         assets_bag: AssetsBag,
-        contract: Option<String>,
-        function: Option<String>,
-        args: Option<vector<vector<u8>>>,
+        contract: u32,
+        function: u32,
+        args: vector<vector<u8>>,
         ctx: &mut TxContext,
     ) {
-        let id = object::new(ctx);
-        let data = if (option::is_some(&contract) 
-            && option::is_some(&function)
-            && option::is_some(&args)) {
-                option::some(RequestData {
-                    contract: contract.destroy_some(),
-                    function: function.destroy_some(),
-                    args: args.destroy_some(),
-                })
-            } else {
-                option::none()
-            };
         send(Request{
-            id,
+            id: object::new(ctx),
             sender: ctx.sender(),
             assets_bag: borrow::new(assets_bag, ctx),
-            data,
+            message: Message{
+                contract,
+                function,
+                args,
+            },
         }, anchor)
     }
 
@@ -79,7 +70,7 @@ module isc::request {
             id,
             sender: _,
             assets_bag,
-            data: _,
+            message: _,
         } = self;
         let inner_id = id.uid_to_inner();
         id.delete();
@@ -102,32 +93,24 @@ module isc::request {
 
     // === Test Functions ===
 
-    /// test only function to create a request
     #[test_only]
+    /// test only function to create a request
     public fun create_for_testing(
         assets_bag: AssetsBag,
-        contract: Option<String>,
-        function: Option<String>,
-        args: Option<vector<vector<u8>>>,
+        contract: u32,
+        function: u32,
+        args: vector<vector<u8>>,
         ctx: &mut TxContext,
     ): Request {
-        let id = object::new(ctx);
-        let data = if (option::is_some(&contract) 
-            && option::is_some(&function)
-            && option::is_some(&args)) {
-                option::some(RequestData {
-                    contract: contract.destroy_some(),
-                    function: function.destroy_some(),
-                    args: args.destroy_some(),
-                })
-            } else {
-                option::none()
-            };
         Request{
-            id,
+            id: object::new(ctx),
             sender: ctx.sender(),
             assets_bag: borrow::new(assets_bag, ctx),
-            data,
+            message: Message{
+                contract,
+                function,
+                args,
+            },
         }
     }
 }

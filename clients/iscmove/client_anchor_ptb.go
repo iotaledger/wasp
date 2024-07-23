@@ -34,10 +34,10 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 	return ptb.Finish()
 }
 
-func NewReceiveRequestPTB(packageID sui.PackageID, anchorID sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*AssetsBag, stateRoot []byte) (sui.ProgrammableTransaction, error) {
+func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
-	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &anchorID})
+	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef})
 	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, AnchorModuleName, ReceiptObjectName))
 	if err != nil {
 		return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)

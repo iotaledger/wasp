@@ -12,11 +12,13 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/iotaledger/wasp/sui-go/suitest"
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
-	client, sender := suiclient.New(suiconn.TestnetEndpointURL).WithSignerAndFund(suisigner.TestSeed, 0)
+	client := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	sender := suitest.MakeSignerWithFunds(0, suiconn.TestnetFaucetURL)
+
 	limit := uint(3)
 	coinPages, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: sender.Address(),
@@ -50,8 +52,8 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 }
 
 func TestDryRunTransaction(t *testing.T) {
-	api := suiclient.New(suiconn.TestnetEndpointURL)
-	signer := suisigner.TestAddress
+	api := suiclient.NewHTTP(suiconn.TestnetEndpointURL)
+	signer := testAddress
 	coins, err := api.GetCoins(context.Background(), suiclient.GetCoinsRequest{
 		Owner: signer,
 		Limit: 10,

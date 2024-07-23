@@ -3,6 +3,8 @@ package suiconn
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -18,6 +20,11 @@ type jsonrpcMessage struct {
 	Params  json.RawMessage `json:"params,omitempty"`
 	Error   *jsonError      `json:"error,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
+}
+
+type jsonrpcWebsocketParams struct {
+	Subscription suijsonrpc.BigInt `json:"subscription,omitempty"`
+	Result       json.RawMessage   `json:"result,omitempty"`
 }
 
 type jsonError struct {
@@ -41,6 +48,6 @@ func (err *jsonError) ErrorData() interface{} {
 	return err.Data
 }
 
-type JsonRpcMethod interface {
+type JsonRPCMethod interface {
 	String() string
 }
