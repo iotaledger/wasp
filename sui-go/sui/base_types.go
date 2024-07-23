@@ -10,6 +10,7 @@ import (
 type (
 	PackageID      = Address
 	ObjectID       = Address
+	ObjectIDKey    = [AddressLen]byte
 	SequenceNumber = uint64
 	Identifier     = string
 	ObjectType     = string
@@ -43,6 +44,12 @@ func MustObjectIDFromHex(str string) *ObjectID {
 	return objectID
 }
 
+func (id ObjectID) Key() ObjectIDKey {
+	var result ObjectIDKey
+	copy(result[:], id.Bytes())
+	return result
+}
+
 // ObjectRef for BCS, need to keep this order
 type ObjectRef struct {
 	ObjectID *ObjectID      `json:"objectId"`
@@ -61,6 +68,7 @@ func NewObjectInfo(ref *ObjectRef, objType *ResourceType) *ObjectInfo {
 	info.Type = objType
 	return &info
 }
+
 type ObjectRefKey [AddressLen + 8]byte
 
 func (or *ObjectRef) Equals(other *ObjectRef) bool {

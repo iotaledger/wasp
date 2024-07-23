@@ -80,13 +80,13 @@ func (a *Anchor) GetStateIndex() uint32 {
 }
 
 func (a *Anchor) Equals(b *Anchor) bool {
-	return a.Ref.Equals(b.Ref)
+	return a.ID.Equals(b.ID)
 }
 
 // Used in packages/chain/cons/bp/batch_proposal_set as key of a map
 // TODO: maybe use a.Ref.Key() instead? Maybe have Key() for Anchor type?
 func (a *Anchor) Hash() hashing.HashValue {
-	res, _ := hashing.HashValueFromBytes(a.Ref.Bytes())
+	res, _ := hashing.HashValueFromBytes(a.ID.Bytes())
 	return res
 }
 

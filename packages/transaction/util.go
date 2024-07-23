@@ -61,8 +61,8 @@ func ComputeInputsAndRemainder(
 	*iotago.BasicOutput,
 	error,
 ) {
-	baseTokensIn := uint64(0)
-	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
+	//baseTokensIn := uint64(0)
+	//tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 	NFTsIn := make(map[iotago.NFTID]bool)
 
 	var remainder *iotago.BasicOutput
@@ -104,7 +104,7 @@ func ComputeInputsAndRemainder(
 		panic("refactor me: transaction.AssetsFromOutput")
 		// a := AssetsFromOutput(output)
 
-		var a *isc.Assets
+		/*var a *isc.Assets
 		baseTokensIn += a.BaseTokens
 		for _, nativeToken := range a.NativeTokens {
 			nativeTokenAmountSum, ok := tokensIn[nativeToken.ID]
@@ -118,7 +118,7 @@ func ComputeInputsAndRemainder(
 		remainder, errLast = computeRemainderOutput(senderAddress, baseTokensIn, baseTokenOut, tokensIn, tokensOut)
 		if errLast == nil && len(NFTsIn) == len(nftsOut) {
 			break
-		}
+		}*/
 	}
 	if errLast != nil {
 		return nil, nil, errLast

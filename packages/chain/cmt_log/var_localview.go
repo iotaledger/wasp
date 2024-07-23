@@ -87,7 +87,7 @@ type VarLocalView interface {
 	//
 	// Corresponds to the `tx_posted` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
-	ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef, published *iscmove.Anchor) (*iscmove.Anchor, bool) // TODO: Recheck, if consumed AO is the decided one.
+	ConsensusOutputDone(logIndex LogIndex, consumed sui.ObjectID, published *iscmove.Anchor) (*iscmove.Anchor, bool) // TODO: Recheck, if consumed AO is the decided one.
 	//
 	// Corresponds to the `ao_received` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
@@ -104,7 +104,7 @@ type VarLocalView interface {
 
 type varLocalViewEntry struct {
 	output   *iscmove.Anchor // The AO published.
-	consumed *sui.ObjectRef  // The AO used as an input for the TX.
+	consumed sui.ObjectID    // The AO used as an input for the TX.
 	rejected bool            // True, if the AO as rejected. We keep them to detect the other rejected AOs.
 	logIndex LogIndex        // LogIndex of the consensus produced the output, if any.
 }
@@ -145,7 +145,7 @@ func (lvi *varLocalViewImpl) Value() *iscmove.Anchor {
 	return lvi.findLatestPending()
 }
 
-func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef, published *iscmove.Anchor) (*iscmove.Anchor, bool) {
+func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed sui.ObjectID, published *iscmove.Anchor) (*iscmove.Anchor, bool) {
 	lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.Ref=%s, published=%v", logIndex, consumed.String(), published)
 	stateIndex := published.GetStateIndex()
 	prevLatest := lvi.findLatestPending()
@@ -249,7 +249,7 @@ func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *iscmove.Anchor) (*isc
 }
 
 func (lvi *varLocalViewImpl) markDependentAsRejected(ao *iscmove.Anchor) {
-	accRejected := map[sui.ObjectRefKey]struct{}{ao.Ref.Key(): {}}
+	accRejected := map[sui.ObjectIDKey]struct{}{ao.ID.Key(): {}}
 	for si := ao.GetStateIndex() + 1; ; si++ {
 		es, esFound := lvi.pending.Get(si)
 		if !esFound {
@@ -259,7 +259,7 @@ func (lvi *varLocalViewImpl) markDependentAsRejected(ao *iscmove.Anchor) {
 			if _, ok := accRejected[e.consumed.Key()]; ok && !e.rejected {
 				lvi.log.Debugf("⊳ Also marking %v as rejected.", e.output)
 				e.rejected = true
-				accRejected[e.output.Ref.Key()] = struct{}{}
+				accRejected[e.output.ID.Key()] = struct{}{}
 			}
 		}
 	}
@@ -329,7 +329,7 @@ func (lvi *varLocalViewImpl) findLatestPending() *iscmove.Anchor {
 		if entries[0].rejected {
 			return nil // Some are rejected.
 		}
-		if !latest.Ref.Equals(entries[0].consumed) {
+		if !latest.ID.Equals(entries[0].consumed) {
 			return nil // Don't form a chain.
 		}
 		latest = entries[0].output

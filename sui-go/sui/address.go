@@ -43,6 +43,10 @@ func MustAddressFromHex(str string) *Address {
 	return addr
 }
 
+func (a Address) Bytes() []byte { // NOTE: Bytes() is more conventional name for such method; I am not sure, if Data() method is necessary.
+	return a[:]
+}
+
 func (a Address) Data() []byte {
 	return a[:]
 }

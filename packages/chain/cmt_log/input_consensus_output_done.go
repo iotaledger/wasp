@@ -13,16 +13,16 @@ import (
 
 type inputConsensusOutputDone struct {
 	logIndex          LogIndex
-	proposedBaseAO    *sui.ObjectRef  // Proposed BaseAO
-	baseAliasOutputID *sui.ObjectRef  // Decided BaseAO
+	proposedBaseAO    sui.ObjectID    // Proposed BaseAO
+	baseAliasOutputID sui.ObjectID    // Decided BaseAO
 	nextAliasOutput   *iscmove.Anchor // And the next one.
 }
 
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputDone(
 	logIndex LogIndex,
-	proposedBaseAO *sui.ObjectRef,
-	baseAliasOutputID *sui.ObjectRef,
+	proposedBaseAO sui.ObjectID,
+	baseAliasOutputID sui.ObjectID,
 	nextAliasOutput *iscmove.Anchor,
 ) gpa.Input {
 	return &inputConsensusOutputDone{

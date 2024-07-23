@@ -35,7 +35,7 @@ type NewTransferTransactionParams struct {
 // NewTransferTransaction creates a basic output transaction that sends L1 Token to another L1 address
 func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transaction, error) {
 	panic("refactor me: transaction.MakeBasicOutput")
-	var output iotago.Output
+	/*var output iotago.Output
 
 	if !params.DisableAutoAdjustStorageDeposit {
 		panic("refactor me: transaction.AdjustToMinimumStorageDeposit")
@@ -76,7 +76,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 
 	inputsCommitment := inputIDs.OrderedSet(params.UnspentOutputs).MustCommitment()
 
-	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, params.SenderKeyPair, parameters.L1().Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, params.SenderKeyPair, parameters.L1().Protocol.NetworkID())*/
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
