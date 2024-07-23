@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func NativeTokenIDFromBytes(data []byte) (ret NativeTokenID, err error) {
-	rr := rwutil.NewBytesReader(data)
-	ret = NativeTokenID(rr.ReadString())
-	rr.Close()
-	return ret, rr.Err
+	ret = NativeTokenID(data)
+	return ret, nil
 }
 
 func MustNativeTokenIDFromBytes(data []byte) NativeTokenID {
