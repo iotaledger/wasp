@@ -54,6 +54,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 const (
@@ -105,46 +107,18 @@ type PeerStatus struct {
 	Connected  bool
 }
 
-type RequestOutputHandler = func(outputInfo *isc.OutputInfo)
+type RequestHandler = func(req *iscmove.Request)
 
-// The Alias Outputs must be passed here in-order. The last alias output in the list
-// is the unspent one (if there is a chain of outputs confirmed in a milestone).
-type AliasOutputHandler = func(outputInfo *isc.OutputInfo)
+// The Anchor versions must be passed here in-order. The last one
+// is the current one.
+type AnchorHandler = func(anchor *iscmove.RefWithObject[iscmove.Anchor])
 
-type TxPostHandler = func(tx *iotago.Transaction, confirmed bool)
-
-type MilestoneHandler = func(timestamp time.Time)
-
-type ChainNodeConn interface {
-	// Publishing can be canceled via the context.
-	// The result must be returned via the callback, unless ctx is canceled first.
-	// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
-	PublishTX(
-		ctx context.Context,
-		chainID isc.ChainID,
-		tx *iotago.Transaction,
-		callback TxPostHandler,
-	) error
-	// Alias outputs are expected to be returned in order. Considering the Hornet node, the rules are:
-	//   - Upon Attach -- existing unspent alias output is returned FIRST.
-	//   - Upon receiving a spent/unspent AO from L1 they are returned in
-	//     the same order, as the milestones are issued.
-	//   - If a single milestone has several alias outputs, they have to be ordered
-	//     according to the chain of TXes.
-	//
-	// NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
-	AttachChain(
-		ctx context.Context,
-		chainID isc.ChainID,
-		recvRequestCB RequestOutputHandler,
-		recvAliasOutput AliasOutputHandler,
-		recvMilestone MilestoneHandler,
-		onChainConnect func(),
-		onChainDisconnect func(),
-	)
-	// called if the mempoll has dropped some requests during congestion, and now the congestion stopped
-	RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID)
+type SignedTx struct {
+	Data       *sui.TransactionData
+	Signatures []*suisigner.Signature
 }
+
+type TxPostHandler = func(tx SignedTx, err error)
 
 type chainNodeImpl struct {
 	me                  gpa.NodeID
@@ -371,7 +345,7 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(ao *iscmove.Anchor) {
+		func(anchor *iscmove.Anchor) {
 			cni.stateTrackerAct.TrackAliasOutput(ao, true)
 		},
 		func(block state.Block) {

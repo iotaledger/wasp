@@ -216,7 +216,7 @@ func (c *l1Client) Health(ctx context.Context) error {
 }
 
 func (c *l1Client) L2() L2Client {
-	return iscmove.NewClient(c.Client, c.Config.GraphURL, c.Config.FaucetURL)
+	return iscmove.NewClient(c.Client, c.Config.FaucetURL)
 }
 
 func NewL1Client(l1Config L1Config) L1Client {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -347,7 +348,9 @@ func TestSubscribeEvent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL)
+	log := testlogger.NewLogger(t)
+	api, err := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL, log)
+	require.NoError(t, err)
 
 	type args struct {
 		ctx      context.Context
@@ -401,7 +404,9 @@ func TestSubscribeTransaction(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	api := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL)
+	log := testlogger.NewLogger(t)
+	api, err := suiclient.NewWebsocket(ctx, suiconn.LocalnetWebsocketEndpointURL, log)
+	require.NoError(t, err)
 
 	type args struct {
 		ctx      context.Context

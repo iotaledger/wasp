@@ -28,7 +28,6 @@ func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 func newLocalnetClient() *iscmove.Client {
 	return iscmove.NewHTTPClient(
 		suiconn.LocalnetEndpointURL,
-		"", // graphURL
 		suiconn.LocalnetFaucetURL,
 	)
 }

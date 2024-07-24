@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
-	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/nodeconn"
@@ -37,29 +36,9 @@ type dependencies struct {
 }
 
 func provide(c *dig.Container) error {
-	if err := c.Provide(func() (*nodebridge.NodeBridge, error) {
-		nodeBridge := nodebridge.NewNodeBridge(
-			Component.Logger(),
-			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
-		)
-
-		if err := nodeBridge.Connect(
-			Component.Daemon().ContextStopped(),
-			ParamsINX.Address,
-			ParamsINX.MaxConnectionAttempts,
-		); err != nil {
-			return nil, err
-		}
-
-		return nodeBridge, nil
-	}); err != nil {
-		Component.LogPanic(err)
-	}
-
 	type nodeConnectionDeps struct {
 		dig.In
 
-		NodeBridge      *nodebridge.NodeBridge
 		ShutdownHandler *shutdown.ShutdownHandler
 	}
 
