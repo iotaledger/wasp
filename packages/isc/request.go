@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -53,7 +52,6 @@ type Calldata interface {
 	TargetAddress() *cryptolib.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	EVMCallMsg() *ethereum.CallMsg
 }
-
 
 type UnsignedOffLedgerRequest interface {
 	Bytes() []byte
@@ -106,7 +104,9 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 	}
 
 	ret := make(map[ChainID][]Request)
-	for i, output := range tx.Essence.Outputs {
+	_ = txid
+	panic("refactor me")
+	/*for i, output := range tx.Essence.Outputs {
 		switch output.(type) {
 		case *iotago.BasicOutput, *iotago.NFTOutput:
 			// process it
@@ -122,9 +122,7 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 		}
 
 		addr := odata.TargetAddress()
-		/*if addr.Type() != iotago.AddressAlias {
-			continue
-		}*/ // TODO: is it needed?
+
 
 		chainID := ChainIDFromAddress(addr)
 
@@ -133,31 +131,19 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 		}
 
 		ret[chainID] = append(ret[chainID], odata)
-	}
+	}*/
 	return ret, nil
 }
 
-
 // TODO: Clarify if we want to keep expiry dates.
-/*
 // don't process any request which deadline will expire within 1 minute
-const RequestConsideredExpiredWindow = time.Minute * 1
+/*const RequestConsideredExpiredWindow = time.Minute * 1
 func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 	expiry, _ := req.Features().Expiry()
 	if expiry.IsZero() {
 		return false
 	}
 	return !expiry.IsZero() && currentTime.After(expiry.Add(-RequestConsideredExpiredWindow))
-}
-
-func RequestIsUnlockable(req OnLedgerRequest, chainAddress *cryptolib.Address, currentTime time.Time) bool {
-	panic("TODO")
-	/*
-		request, _ := req.Output().(iotago.TransIndepIdentOutput)
-		return request.UnlockableBy(chainAddress.AsSuiAddress(), &iotago.ExternalUnlockParameters{
-			ConfUnix: uint32(currentTime.Unix()),
-		})
-	*/
 }*/
 
 func RequestHash(req Request) hashing.HashValue {

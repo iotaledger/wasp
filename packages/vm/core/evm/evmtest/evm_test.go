@@ -1994,7 +1994,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 		evmGasRatio   util.Ratio32
 		txGasPrice    *big.Int
 		expectedError string
-		gasBurned     uint64
+		gasBurned     *big.Int
 		feeCharged    uint64
 	}{
 		{
@@ -2019,8 +2019,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    nil,
 			expectedError: "insufficient gas price: got 0, minimum is 10000000000",
-			gasBurned:     168098,
-			feeCharged:    1681,
+			gasBurned:     big.NewInt(168154),
+			feeCharged:    1682,
 		},
 		{
 			name:          "default policy, gas price too low",
@@ -2028,15 +2028,15 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    big.NewInt(9999999999),
 			expectedError: "insufficient gas price: got 9999999999, minimum is 10000000000",
-			gasBurned:     168098,
-			feeCharged:    1681,
+			gasBurned:     big.NewInt(168154),
+			feeCharged:    1682,
 		},
 		{
 			name:        "default policy, gas price just enough",
 			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:  big.NewInt(10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  259,
 		},
 		{
@@ -2044,7 +2044,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:  big.NewInt(2 * 10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  2 * 259,
 		},
 		{
@@ -2052,7 +2052,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 2},
 			txGasPrice:  big.NewInt(2 * 10000000000),
-			gasBurned:   (25883 + 1) / 2,
+			gasBurned:   big.NewInt(int64((25883 + 1) / 2)),
 			feeCharged:  2 * 259 / 2,
 		},
 		{
@@ -2061,15 +2061,15 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:    big.NewInt(19999999999),
 			expectedError: "insufficient gas price: got 19999999999, minimum is 20000000000",
-			gasBurned:     168098,
-			feeCharged:    2 * 1681,
+			gasBurned:     big.NewInt(168154),
+			feeCharged:    2 * 1682,
 		},
 		{
 			name:        "gas more expensive, gas price just enough",
 			gasPerToken: util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:  big.NewInt(2 * 10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  2 * 259,
 		},
 		{
@@ -2077,7 +2077,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			gasPerToken: util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:  big.NewInt(2 * 2 * 10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  2 * 2 * 259,
 		},
 	} {

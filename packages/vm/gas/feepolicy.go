@@ -111,7 +111,7 @@ func (p *FeePolicy) IsEnoughForMinimumFee(availableTokens *big.Int, gasPrice *bi
 func (p *FeePolicy) GasBudgetFromTokens(availableTokens *big.Int, gasPrice *big.Int, l1BaseTokenDecimals uint32) *big.Int {
 	if p.GasPerToken.IsEmpty() {
 		panic("refactor me: Check this MaxUint64 relevance. There is no 'max' bigInt, it can be infinite in theory.")
-		return math.MaxUint64
+		return new(big.Int).SetUint64(math.MaxUint64)
 	}
 	if gasPrice != nil {
 		gasBudget := util.BaseTokensDecimalsToEthereumDecimals(availableTokens, l1BaseTokenDecimals)

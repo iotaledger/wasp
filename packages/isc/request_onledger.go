@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -17,7 +15,9 @@ import (
 )
 
 type onLedgerRequestData struct {
-	requestID sui.ObjectID
+	requestID     sui.ObjectID
+	senderAddress *cryptolib.Address
+	targetAddress *cryptolib.Address
 
 	requestMetadata *RequestMetadata
 }
@@ -79,22 +79,24 @@ func (req *onLedgerRequestData) Message() Message {
 	if req.requestMetadata == nil {
 		return Message{}
 	}
+
 	return req.requestMetadata.Message
 }
 
 func (req *onLedgerRequestData) Clone() OnLedgerRequest {
-	outputID := iotago.OutputID{}
+	outputID := sui.ObjectID{}
 	copy(outputID[:], req.requestID[:])
 
 	ret := &onLedgerRequestData{
-		requestID:        outputID,
-		request:          req.request.Clone(),
-		featureBlocks:    req.featureBlocks.Clone(),
-		unlockConditions: util.CloneMap(req.unlockConditions),
+		requestID:     outputID,
+		senderAddress: req.senderAddress.Clone(),
+		targetAddress: req.targetAddress.Clone(),
 	}
+
 	if req.requestMetadata != nil {
 		ret.requestMetadata = req.requestMetadata.Clone()
 	}
+
 	return ret
 }
 
@@ -118,7 +120,7 @@ func (req *onLedgerRequestData) RequestID() sui.ObjectID {
 }
 
 func (req *onLedgerRequestData) SenderAccount() AgentID {
-	sender := req.senderAddress()
+	sender := req.SenderAddress()
 	if sender == nil {
 		return nil
 	}
@@ -131,13 +133,8 @@ func (req *onLedgerRequestData) SenderAccount() AgentID {
 	return NewAgentID(sender)
 }
 
-func (req *onLedgerRequestData) senderAddress() *cryptolib.Address {
-	senderBlock := req.featureBlocks.SenderFeature()
-	if senderBlock == nil {
-		return nil
-	}
-
-	return cryptolib.NewAddressFromIotago(senderBlock.Address)
+func (req *onLedgerRequestData) SenderAddress() *cryptolib.Address {
+	return req.senderAddress
 }
 
 func (req *onLedgerRequestData) String() string {
@@ -156,21 +153,7 @@ func (req *onLedgerRequestData) String() string {
 }
 
 func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
-	// TODO: refactor me: (?) Is TargetAddress still needed? It will always be the ChainID anyway, I think.
-	/*switch out := req.request.(type) {
-	case *iotago.BasicOutput:
-		return cryptolib.NewAddressFromIotago(out.Ident())
-	case *iotago.FoundryOutput:
-		return cryptolib.NewAddressFromIotago(out.Ident())
-	case *iotago.NFTOutput:
-		return cryptolib.NewAddressFromIotago(out.Ident())
-	case *iotago.AliasOutput:
-		return cryptolib.NewAddressFromIotago(out.AliasID.ToAddress())
-	default:
-		panic("onLedgerRequestData:TargetAddress implement me")
-	}*/
-
-	return req.request.Anchor
+	return req.targetAddress
 }
 
 func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
