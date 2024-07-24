@@ -1118,7 +1118,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		"text/html",
 		"https://my-awesome-nft-project.com",
 		"a string that is longer than 32 bytes",
-		`[{"trait_type": "collection", "value": "super"}]`,
+		[]interface{}{`{"trait_type": "collection", "value": "super"}`},
 	)
 
 	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
@@ -1129,13 +1129,13 @@ func TestERC721NFTCollection(t *testing.T) {
 			"application/json",
 			"https://my-awesome-nft-project.com/1.json",
 			"nft1",
-			`[{"trait_type": "Foo", "value": "Bar"}]`,
+			[]interface{}{`{"trait_type": "Foo", "value": "Bar"}`},
 		),
 		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/2.json",
 			"nft2",
-			`[{"trait_type": "Bar", "value": "Baz"}]`,
+			[]interface{}{`{"trait_type": "Bar", "value": "Baz"}`},
 		),
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,

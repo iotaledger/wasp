@@ -25,6 +25,15 @@ var (
 	GetBalanceContractBytecode    = common.FromHex(strings.TrimSpace(GetBalanceContractBytecodeHex))
 )
 
+//go:generate sh -c "solc --abi --bin --overwrite @iscmagic=`realpath ../../../vm/core/evm/iscmagic` Entropy.sol -o ."
+var (
+	//go:embed Entropy.abi
+	EntropyContractABI string
+	//go:embed Entropy.bin
+	EntropyContractBytecodeHex string
+	EntropyContractBytecode    = common.FromHex(strings.TrimSpace(EntropyContractBytecodeHex))
+)
+
 func TestBaseBalance(t *testing.T) {
 	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
@@ -111,4 +120,19 @@ func TestAgentID(t *testing.T) {
 	var agentID []byte
 	instance.CallFnExpectEvent(nil, "GotAgentID", &agentID, "getAgentID")
 	assert.Equal(t, senderAgentID.Bytes(), agentID)
+}
+
+func TestEntropy(t *testing.T) {
+	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	privateKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+
+	instance := env.DeployContract(privateKey, EntropyContractABI, EntropyContractBytecode)
+
+	// get the entropy of the contract
+	// and check if it is different from the previous one
+	var entropy [32]byte
+	instance.CallFnExpectEvent(nil, "EntropyEvent", &entropy, "emitEntropy")
+	var entropy2 [32]byte
+	instance.CallFnExpectEvent(nil, "EntropyEvent", &entropy2, "emitEntropy")
+	assert.NotEqual(t, entropy, entropy2)
 }

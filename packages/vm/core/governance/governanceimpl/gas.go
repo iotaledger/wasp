@@ -26,7 +26,7 @@ func setFeePolicy(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-// getFeeInfo returns fee policy in serialized form
+// getFeePolicy returns fee policy in serialized form
 func getFeePolicy(ctx isc.SandboxView) dict.Dict {
 	gp := governance.MustGetGasFeePolicy(ctx.StateR())
 
