@@ -457,7 +457,7 @@ func (s *dkShareImpl) DSSVerifyMasterSignature(data, signature []byte) error {
 }
 
 func (s *dkShareImpl) DSS() SecretShare {
-	return newDistKeyShare( // TODO: Use a singe instance.
+	return newDistKeyShare( // TODO: Use a single instance.
 		&share.PriShare{
 			I: int(*s.index),
 			V: s.edPrivateShare.Clone(),
