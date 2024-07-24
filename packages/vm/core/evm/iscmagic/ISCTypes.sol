@@ -145,6 +145,9 @@ library ISCTypes {
      * @dev Get the type of an L1 address.
      * @param addr The L1 address.
      * @return The type of the L1 address.
+     *
+     * For more details about the types of L1 addresses, please refer to the IOTA Tangle Improvement Proposal (TIP) 18:
+     * https://wiki.iota.org/tips/tips/TIP-0018/#address-unlock-condition
      */
     function L1AddressType(
         L1Address memory addr

@@ -81,7 +81,7 @@ interface ISCSandbox {
     ) external view returns (ISCAssets memory);
 
     /**
-     * @dev Sends the specified assets from the caller's L2 account to the EVM core contract's account and includes the specified metadata and options.
+     * @dev Sends the specified assets from the caller's L2 account to a L1 address and includes the specified metadata and options. This can also be used to create on-ledger requests to the chain itself.
      * @param targetAddress The L1 address to send the assets to.
      * @param assets The assets to be sent.
      * @param adjustMinimumStorageDeposit Whether to adjust the minimum storage deposit.
@@ -98,7 +98,7 @@ interface ISCSandbox {
 
     /**
      * @dev Calls the specified entry point of the ISC contract with the given parameters and allowance.
-     * @param contractHname The hash name of the contract.
+     * @param contractHname The hname of the contract.
      * @param entryPoint The entry point to be called.
      * @param params The parameters to pass to the entry point.
      * @param allowance The assets to be allowed for the call.
@@ -113,7 +113,7 @@ interface ISCSandbox {
 
     /**
      * @dev Calls the specified view entry point of the ISC contract with the given parameters.
-     * @param contractHname The hash name of the contract.
+     * @param contractHname The hname of the contract.
      * @param entryPoint The view entry point to be called.
      * @param params The parameters to pass to the view entry point.
      * @return The return data from the ISC contract view call.

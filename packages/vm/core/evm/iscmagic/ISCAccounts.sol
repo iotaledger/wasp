@@ -26,14 +26,14 @@ interface ISCAccounts {
     function getL2BalanceNativeTokens(NativeTokenID memory id, ISCAgentID memory agentID) external view returns (uint256);
 
     /**
-     * @dev This function retrieves the number of NFTs owned by a given account.
+     * @dev This function retrieves the IDs of NFTs owned by a given account.
      * @param agentID The ID of the agent (account) whose NFTs are to be retrieved
      * @return An array of NFTIDs representing the NFTs owned by the specified account
      */
     function getL2NFTs(ISCAgentID memory agentID) external view returns (NFTID[] memory);
 
     /**
-     * @dev This function retrieves the NFTs owned by a given account.
+     * @dev This function retrieves the number of NFTs owned by a given account.
      * @param agentID The ID of the agent (account) whose NFT amount is to be retrieved
      * @return The amount of L2 NFTs owned by the specified account
      */
