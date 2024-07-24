@@ -88,7 +88,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)),
 		chainclient.PostRequestParams{
 			Transfer:  isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
-			Allowance: isc.NewAssetsBaseTokens(amount),
+			Allowance: isc.NewAssetsBaseTokensU64(amount),
 		},
 	)
 	require.NoError(e.T, err)

@@ -146,20 +146,20 @@ func (rid ISCRequestID) MustUnwrap() isc.RequestID {
 }
 
 // NFTID matches the type definition in ISCTypes.sol
-type NFTID [iotago.NFTIDLength]byte
+type NFTID [isc.NFTIDLength]byte
 
 func init() {
-	if iotago.NFTIDLength != 32 {
+	if isc.NFTIDLength != 32 {
 		panic("static check: NFTID length does not match bytes32 in ISCTypes.sol")
 	}
 }
 
-func WrapNFTID(c iotago.NFTID) (ret NFTID) {
+func WrapNFTID(c isc.NFTID) (ret NFTID) {
 	copy(ret[:], c[:])
 	return
 }
 
-func (n NFTID) Unwrap() (ret iotago.NFTID) {
+func (n NFTID) Unwrap() (ret isc.NFTID) {
 	copy(ret[:], n[:])
 	return
 }
@@ -268,7 +268,7 @@ func (a ISCAssets) Unwrap() *isc.Assets {
 	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = nativeToken.Unwrap()
 	}
-	nfts := make([]iotago.NFTID, len(a.Nfts))
+	nfts := make([]isc.NFTID, len(a.Nfts))
 	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}

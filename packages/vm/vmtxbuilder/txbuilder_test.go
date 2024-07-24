@@ -34,7 +34,7 @@ func (m *mockAccountContractRead) Read() AccountsContractRead {
 		FoundryOutput: func(uint32) (*iotago.FoundryOutput, iotago.OutputID) {
 			return nil, iotago.OutputID{}
 		},
-		NFTOutput: func(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
+		NFTOutput: func(id isc.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
 			return nil, iotago.OutputID{}
 		},
 		TotalFungibleTokens: func() *isc.Assets {
@@ -45,7 +45,7 @@ func (m *mockAccountContractRead) Read() AccountsContractRead {
 
 func newMockAccountsContractRead(anchor *iotago.AliasOutput) *mockAccountContractRead {
 	anchorMinSD := parameters.L1().Protocol.RentStructure.MinRent(anchor)
-	assets := isc.NewAssetsBaseTokens(anchor.Deposit() - anchorMinSD)
+	assets := isc.NewAssetsBaseTokensU64(anchor.Deposit() - anchorMinSD)
 	return &mockAccountContractRead{
 		assets:             assets,
 		nativeTokenOutputs: make(map[iotago.FoundryID]*iotago.BasicOutput),
@@ -130,7 +130,7 @@ func TestTxBuilderBasic(t *testing.T) {
 
 		// deduct SD costs of creating the internal accounting outputs
 		mockedAccounts.assets.Add(req2.Assets())
-		mockedAccounts.assets.Spend(isc.NewAssetsBaseTokens(totalSDBaseTokensUsedToSplitAssets))
+		mockedAccounts.assets.Spend(isc.NewAssetsBaseTokensU64(totalSDBaseTokensUsedToSplitAssets))
 
 		essence, _ = txb.BuildTransactionEssence(dummyStateMetadata)
 		txb.MustBalanced()
@@ -192,7 +192,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 		require.NoError(t, err)
 		sdCost := txb.Consume(req)
 		mockedAccounts.assets.Add(req.Assets())
-		mockedAccounts.assets.Spend(isc.NewAssetsBaseTokens(sdCost))
+		mockedAccounts.assets.Spend(isc.NewAssetsBaseTokensU64(sdCost))
 		txb.BuildTransactionEssence(dummyStateMetadata)
 		txb.MustBalanced()
 	}
@@ -214,7 +214,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 			panic("out of balance in chain output")
 		}
 		if sdAdjust < 0 {
-			mockedAccounts.assets.Spend(isc.NewAssetsBaseTokens(uint64(-sdAdjust)))
+			mockedAccounts.assets.Spend(isc.NewAssetsBaseTokensU64(uint64(-sdAdjust)))
 		} else {
 			mockedAccounts.assets.AddBaseTokens(uint64(sdAdjust))
 		}

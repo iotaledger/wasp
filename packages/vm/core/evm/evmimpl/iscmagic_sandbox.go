@@ -69,7 +69,7 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) uint64 {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
 		evmAddr,
 		caller,
-		isc.NewAssetsBaseTokens(adjustedTxValue),
+		isc.NewAssetsBaseTokensU64(adjustedTxValue),
 	)
 
 	return adjustedTxValue

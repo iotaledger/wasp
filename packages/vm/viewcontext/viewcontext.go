@@ -124,11 +124,11 @@ func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) isc.NativeTokens {
 	return ctx.accountsStateWithGasBurn().GetNativeTokens(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
+func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []isc.NFTID {
 	return ctx.accountsStateWithGasBurn().GetAccountNFTs(agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
+func (ctx *ViewContext) GetNFTData(nftID isc.NFTID) *isc.NFT {
 	return ctx.accountsStateWithGasBurn().GetNFTData(nftID)
 }
 

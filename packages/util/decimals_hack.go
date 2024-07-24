@@ -21,7 +21,7 @@ func adaptDecimals(value *big.Int, fromDecimals, toDecimals uint32) (result *big
 }
 
 // wei => base tokens
-func EthereumDecimalsToBaseTokenDecimals(value *big.Int, baseTokenDecimals uint32) (result uint64, remainder *big.Int) {
+func EthereumDecimalsToBaseTokenDecimals(value *big.Int, baseTokenDecimals uint32) (result *big.Int, remainder *big.Int) {
 	if baseTokenDecimals > ethereumDecimals {
 		panic("expected baseTokenDecimals <= ethereumDecimals")
 	}
@@ -29,10 +29,10 @@ func EthereumDecimalsToBaseTokenDecimals(value *big.Int, baseTokenDecimals uint3
 	if !r.IsUint64() {
 		panic("cannot convert ether value to base tokens: too large")
 	}
-	return r.Uint64(), m
+	return r, m
 }
 
-func MustEthereumDecimalsToBaseTokenDecimalsExact(value *big.Int, baseTokenDecimals uint32) (result uint64) {
+func MustEthereumDecimalsToBaseTokenDecimalsExact(value *big.Int, baseTokenDecimals uint32) (result *big.Int) {
 	r, m := EthereumDecimalsToBaseTokenDecimals(value, baseTokenDecimals)
 	if m.Sign() != 0 {
 		panic("cannot convert ether value to base tokens: non-exact conversion")
@@ -41,11 +41,11 @@ func MustEthereumDecimalsToBaseTokenDecimalsExact(value *big.Int, baseTokenDecim
 }
 
 // base tokens => wei
-func BaseTokensDecimalsToEthereumDecimals(value uint64, baseTokenDecimals uint32) (result *big.Int) {
+func BaseTokensDecimalsToEthereumDecimals(value *big.Int, baseTokenDecimals uint32) (result *big.Int) {
 	if baseTokenDecimals > ethereumDecimals {
 		panic("expected baseTokenDecimals <= ethereumDecimals")
 	}
-	r, m := adaptDecimals(new(big.Int).SetUint64(value), baseTokenDecimals, ethereumDecimals)
+	r, m := adaptDecimals(value, baseTokenDecimals, ethereumDecimals)
 	if m.Sign() != 0 {
 		panic("expected zero remainder")
 	}

@@ -12,10 +12,10 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (s *StateReader) getBaseTokens(accountKey kv.Key) (tokens uint64, remainder *big.Int) {
+func (s *StateReader) getBaseTokens(accountKey kv.Key) (tokens *big.Int, remainder *big.Int) {
 	switch s.v {
 	case 0:
-		return lo.Must(codec.Uint64.Decode(s.state.Get(BaseTokensKey(accountKey)), 0)), big.NewInt(0)
+		return lo.Must(codec.BigIntAbs.Decode(s.state.Get(BaseTokensKey(accountKey)), big.NewInt(0))), big.NewInt(0)
 	default:
 		amount := s.getBaseTokensFullDecimals(accountKey)
 		// convert from 18 decimals, discard the remainder
@@ -35,10 +35,10 @@ func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
 	}
 }
 
-func (s *StateWriter) setBaseTokens(accountKey kv.Key, amount uint64) {
+func (s *StateWriter) setBaseTokens(accountKey kv.Key, amount *big.Int) {
 	switch s.v {
 	case 0:
-		s.state.Set(BaseTokensKey(accountKey), codec.Uint64.Encode(amount))
+		s.state.Set(BaseTokensKey(accountKey), codec.BigIntAbs.Encode(amount))
 	default:
 		fullDecimals := util.BaseTokensDecimalsToEthereumDecimals(amount, parameters.Decimals)
 		s.setBaseTokensFullDecimals(accountKey, fullDecimals)
@@ -59,16 +59,18 @@ func BaseTokensKey(accountKey kv.Key) kv.Key {
 	return prefixBaseTokens + accountKey
 }
 
-func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment int64, chainID isc.ChainID) {
-	switch {
-	case adjustment > 0:
-		s.CreditToAccount(account, isc.NewAssets(uint64(adjustment), nil), chainID)
-	case adjustment < 0:
-		s.DebitFromAccount(account, isc.NewAssets(uint64(-adjustment), nil), chainID)
+func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment *big.Int, chainID isc.ChainID) {
+	switch adjustment.Cmp(big.NewInt(0)) {
+	case 1:
+		// Greater than 0
+		s.CreditToAccount(account, isc.NewAssets(adjustment, nil), chainID)
+	case -1:
+		// Smaller than 0
+		s.DebitFromAccount(account, isc.NewAssets(new(big.Int).Neg(adjustment), nil), chainID)
 	}
 }
 
-func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts uint64, remainder *big.Int) {
+func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts *big.Int, remainder *big.Int) {
 	return s.getBaseTokens(accountKey(agentID, chainID))
 }
 
@@ -76,7 +78,7 @@ func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID, chai
 	return s.getBaseTokensFullDecimals(accountKey(agentID, chainID))
 }
 
-func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) uint64 {
+func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) *big.Int {
 	bts, _ := s.getBaseTokens(accountKey(agentID, chainID))
 	return bts
 }

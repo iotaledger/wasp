@@ -293,7 +293,7 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1")
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositAssetsToL2(isc.NewAssetsBaseTokens(5*isc.Million), nil)
+		err := ret.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(5*isc.Million), nil)
 		require.NoError(env.T, err)
 	}
 	return ret

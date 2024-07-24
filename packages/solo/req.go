@@ -61,7 +61,7 @@ func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceBaseTokens(amount uint64) *CallParams {
-	return r.AddAllowance(isc.NewAssetsBaseTokens(amount))
+	return r.AddAllowance(isc.NewAssetsBaseTokensU64(amount))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {

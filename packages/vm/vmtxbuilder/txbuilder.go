@@ -24,7 +24,7 @@ type AccountsContractRead struct {
 
 	// NFTOutput returns the stored NFT output from the state
 	// Should return nil if NFT is not accounted for
-	NFTOutput func(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID)
+	NFTOutput func(id isc.NFTID) (*iotago.NFTOutput, iotago.OutputID)
 
 	// TotalFungibleTokens returns the total base tokens and native tokens accounted by the chain
 	TotalFungibleTokens func() *isc.Assets
@@ -51,7 +51,7 @@ type AnchorTransactionBuilder struct {
 	// balances of native tokens loaded during the batch run
 	balanceNativeTokens map[isc.NativeTokenID]*nativeTokenBalance
 	// all nfts loaded during the batch run
-	nftsIncluded map[iotago.NFTID]*nftIncluded
+	nftsIncluded map[isc.NFTID]*nftIncluded
 	// all nfts minted
 	nftsMinted []iotago.Output
 	// invoked foundries. Foundry serial number is used as a key
@@ -76,7 +76,7 @@ func NewAnchorTransactionBuilder(
 		balanceNativeTokens:        make(map[isc.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:              make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:           make(map[uint32]*foundryInvoked),
-		nftsIncluded:               make(map[iotago.NFTID]*nftIncluded),
+		nftsIncluded:               make(map[isc.NFTID]*nftIncluded),
 		nftsMinted:                 make([]iotago.Output, 0),
 	}
 }

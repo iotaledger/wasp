@@ -51,7 +51,7 @@ func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, i
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetFoundryOutput(serNum, vmctx.ChainID())
 }
 
-func (vmctx *vmContext) loadNFT(nftID iotago.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
+func (vmctx *vmContext) loadNFT(nftID isc.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNFTOutput(nftID)
 }
 

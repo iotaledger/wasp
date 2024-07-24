@@ -109,7 +109,7 @@ func testConsBasic(t *testing.T, n, f int) {
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokens(100_000_000),
+				Assets:                        isc.NewAssetsBaseTokensU64(100_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),

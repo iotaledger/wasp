@@ -3,11 +3,12 @@ package gas
 import (
 	"errors"
 	"fmt"
+	"math/big"
 )
 
 type BurnCode uint16
 
-type BurnFunction func(x uint64) uint64
+type BurnFunction func(x *big.Int) *big.Int
 
 type BurnCodeRecord struct {
 	Name string

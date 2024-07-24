@@ -90,7 +90,7 @@ func mintParams(
 	immutableMetadata []byte,
 	targetAgentID isc.AgentID,
 	withdrawOnMint bool,
-	collectionID iotago.NFTID,
+	collectionID isc.NFTID,
 ) mintParameters {
 	chainAddress := ctx.ChainID().AsAddress()
 	ret := mintParameters{
@@ -141,7 +141,7 @@ func mintNFT(
 	immutableMetadata []byte,
 	target isc.AgentID,
 	withdrawOnMint bool,
-	collectionID iotago.NFTID,
+	collectionID isc.NFTID,
 ) []byte {
 	params := mintParams(ctx, immutableMetadata, target, withdrawOnMint, collectionID)
 
@@ -160,9 +160,9 @@ func mintNFT(
 	)
 
 	// debit the SD required for the NFT from the sender account
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount)) // claim tokens from allowance
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokensU64(nftOutput.Amount)) // claim tokens from allowance
 	state := NewStateWriterFromSandbox(ctx)
-	state.DebitFromAccount(ctx.AccountID(), isc.NewAssetsBaseTokens(nftOutput.Amount), ctx.ChainID()) // debit from this SC account
+	state.DebitFromAccount(ctx.AccountID(), isc.NewAssetsBaseTokensU64(nftOutput.Amount), ctx.ChainID()) // debit from this SC account
 
 	rec := mintedNFTRecord{
 		positionInMintedList: positionInMintedList,
@@ -204,7 +204,7 @@ func mintNFT(
 	return mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList)
 }
 
-func viewNFTIDbyMintID(ctx isc.SandboxView, internalMintID []byte) (ret iotago.NFTID) {
+func viewNFTIDbyMintID(ctx isc.SandboxView, internalMintID []byte) (ret isc.NFTID) {
 	state := NewStateReaderFromSandbox(ctx)
 	b := state.mintIDMapR().GetAt(internalMintID)
 	copy(ret[:], b)
@@ -235,7 +235,7 @@ func (s *StateWriter) updateNewlyMintedNFTOutputIDs(state kv.KVStore, anchorTxID
 		mintedRec := mintedNFTRecordFromBytes(recBytes)
 		// calculate the NFTID from the anchor txID	+ outputIndex
 		outputID := iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, mintedRec.outputIndex)
-		nftID := iotago.NFTIDFromOutputID(outputID)
+		nftID := isc.NFTIDFromOutputID(outputID)
 
 		if mintedRec.owner.Kind() != isc.AgentIDKindNil { // when owner is nil, means the NFT was minted directly to a L1 wallet
 			outputRec := NFTOutputRec{

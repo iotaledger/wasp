@@ -19,7 +19,7 @@ func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) *isc.Assets 
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
-func viewBalanceBaseToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint64 {
+func viewBalanceBaseToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID) *big.Int {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).GetBaseTokensBalanceDiscardExtraDecimals(aid, ctx.ChainID())
 }
@@ -87,7 +87,7 @@ func viewFoundryOutput(ctx isc.SandboxView, sn uint32) iotago.Output {
 }
 
 // viewAccountNFTs returns the NFTIDs of NFTs owned by an account
-func viewAccountNFTs(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []iotago.NFTID {
+func viewAccountNFTs(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []isc.NFTID {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountNFTs(aid)
@@ -98,18 +98,18 @@ func viewAccountNFTAmount(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uin
 	return NewStateReaderFromSandbox(ctx).accountToNFTsMapR(aid).Len()
 }
 
-func viewAccountNFTsInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID iotago.NFTID) []iotago.NFTID {
+func viewAccountNFTsInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID isc.NFTID) []isc.NFTID {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountNFTsInCollection(aid, collectionID)
 }
 
-func viewAccountNFTAmountInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID iotago.NFTID) uint32 {
+func viewAccountNFTAmountInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID isc.NFTID) uint32 {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).nftsByCollectionMapR(aid, kv.Key(collectionID[:])).Len()
 }
 
 // viewNFTData returns the NFT data for a given NFTID
-func viewNFTData(ctx isc.SandboxView, nftID iotago.NFTID) *isc.NFT {
+func viewNFTData(ctx isc.SandboxView, nftID isc.NFTID) *isc.NFT {
 	ctx.Log().Debugf("accounts.viewNFTData")
 	data := NewStateReaderFromSandbox(ctx).GetNFTData(nftID)
 	if data == nil {

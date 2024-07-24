@@ -511,7 +511,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
 	}
 	err := ch.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(amount),
+		isc.NewAssetsBaseTokensU64(amount),
 		agentID,
 		walletKey,
 	)

@@ -56,7 +56,7 @@ func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, 
 }
 
 // debitNFTFromAccount removes a NFT from an account.
-func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, nftID iotago.NFTID, gasBurn bool) {
+func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, nftID isc.NFTID, gasBurn bool) {
 	reqctx.accountsStateWriter(gasBurn).DebitNFTFromAccount(agentID, nftID, reqctx.ChainID())
 }
 
@@ -112,14 +112,14 @@ func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) isc.NativeTok
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountNFTs(agentID isc.AgentID) (ret []iotago.NFTID) {
+func (reqctx *requestContext) GetAccountNFTs(agentID isc.AgentID) (ret []isc.NFTID) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetAccountNFTs(agentID)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
+func (reqctx *requestContext) GetNFTData(nftID isc.NFTID) (ret *isc.NFT) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNFTData(nftID)
 	})

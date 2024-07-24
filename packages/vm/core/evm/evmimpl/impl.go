@@ -255,7 +255,7 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.RegisterERC20N
 	sd := ctx.EstimateRequiredStorageDeposit(req)
 	// this request is sent by contract account,
 	// so we move enough allowance for the gas fee below in the req.Assets.AddBaseTokens() function call
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(sd+10*gas.LimitsDefault.MinGasPerRequest))
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokensU64(sd+10*gas.LimitsDefault.MinGasPerRequest))
 	req.Assets.AddBaseTokens(sd + 10*gas.LimitsDefault.MinGasPerRequest)
 	ctx.Send(req)
 

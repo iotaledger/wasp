@@ -26,7 +26,7 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(e.t, err)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount)),
 	)
 
 	myAgentID := isc.NewAgentID(myAddress)
@@ -54,14 +54,14 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-depositBaseTokens)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-depositBaseTokens)),
 	)
 
 	// withdraw some base tokens back
 	baseTokensToWithdraw := 1 * isc.Million
 	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{
-			Allowance: isc.NewAssetsBaseTokens(baseTokensToWithdraw),
+			Allowance: isc.NewAssetsBaseTokensU64(baseTokensToWithdraw),
 		},
 	)
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance-baseTokensToWithdraw-gasFees2)
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
 	)
 
 	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining base tokens

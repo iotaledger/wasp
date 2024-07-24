@@ -78,7 +78,7 @@ func ERC20NativeTokensFoundrySN(addr common.Address) (uint32, error) {
 	return codec.Uint32.MustDecode(payload[0:4]), nil
 }
 
-func ERC721NFTCollectionAddress(collectionID iotago.NFTID) common.Address {
+func ERC721NFTCollectionAddress(collectionID isc.NFTID) common.Address {
 	return packMagicAddress(addressKindERC721NFTCollection, collectionID[:maxPayloadLength])
 }
 

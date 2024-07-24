@@ -29,11 +29,11 @@ func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
 	// the storage deposit will be returned along with the withdrawal
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: targetChain.AsAddress(),
-		Assets:        isc.NewAssetsBaseTokens(storageDeposit + gasReserveTransferAccountToChain + gasReserve),
+		Assets:        isc.NewAssetsBaseTokensU64(storageDeposit + gasReserveTransferAccountToChain + gasReserve),
 		Metadata: &isc.SendMetadata{
 			Message:   accounts.FuncTransferAccountToChain.Message(&gasReserve),
 			GasBudget: gasReserve,
-			Allowance: isc.NewAssetsBaseTokens(withdrawal + storageDeposit + gasReserve),
+			Allowance: isc.NewAssetsBaseTokensU64(withdrawal + storageDeposit + gasReserve),
 		},
 	})
 

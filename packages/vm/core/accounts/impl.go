@@ -58,7 +58,7 @@ var Processor = Contract.Processor(nil,
 // this expects the origin amount minus SD
 func (s *StateWriter) SetInitialState(baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	s.CreditToAccount(CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
+	s.CreditToAccount(CommonAccount(), isc.NewAssetsBaseTokensU64(baseTokensOnAnchor), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -368,7 +368,7 @@ func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy
 		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment), ctx.ChainID())
 	case storageDepositAdjustment > 0:
 		// storage deposit is returned to the caller account
-		state.CreditToAccount(caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
+		state.CreditToAccount(caller, isc.NewAssetsBaseTokensU64(uint64(storageDepositAdjustment)), ctx.ChainID())
 	}
 	eventFoundryModified(ctx, sn)
 	return

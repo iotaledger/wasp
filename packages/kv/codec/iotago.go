@@ -71,7 +71,7 @@ func encodeNativeTokenID(nftID isc.NativeTokenID) []byte {
 
 var NFTID = NewCodec(decodeNFTID, encodeNFTID)
 
-func decodeNFTID(b []byte) (ret iotago.NFTID, err error) {
+func decodeNFTID(b []byte) (ret isc.NFTID, err error) {
 	if len(b) != len(ret) {
 		return ret, fmt.Errorf("%T: bytes length must be %d", ret, len(ret))
 	}
@@ -79,6 +79,6 @@ func decodeNFTID(b []byte) (ret iotago.NFTID, err error) {
 	return ret, nil
 }
 
-func encodeNFTID(nftID iotago.NFTID) []byte {
+func encodeNFTID(nftID isc.NFTID) []byte {
 	return nftID[:]
 }

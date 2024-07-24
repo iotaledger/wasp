@@ -105,8 +105,8 @@ func testPost3Recursive(t *testing.T, e *ChainEnv) {
 
 	var numRepeats int64 = 3
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssetsBaseTokens(10 * isc.Million),
-		Allowance: isc.NewAssetsBaseTokens(9 * isc.Million),
+		Transfer:  isc.NewAssetsBaseTokensU64(10 * isc.Million),
+		Allowance: isc.NewAssetsBaseTokensU64(9 * isc.Million),
 	})
 	require.NoError(t, err)
 
@@ -183,7 +183,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
+		isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
 }

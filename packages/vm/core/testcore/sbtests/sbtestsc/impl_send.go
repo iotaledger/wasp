@@ -23,7 +23,7 @@ func testSplitFunds(ctx isc.Sandbox) dict.Dict {
 		ctx.Send(
 			isc.RequestParameters{
 				TargetAddress: addr,
-				Assets:        isc.NewAssetsBaseTokens(baseTokensToTransfer),
+				Assets:        isc.NewAssetsBaseTokensU64(baseTokensToTransfer),
 			},
 		)
 	}
@@ -158,7 +158,7 @@ func sendLargeRequest(ctx isc.Sandbox) dict.Dict {
 	if provided < storageDeposit {
 		panic("not enough funds for storage deposit")
 	}
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(storageDeposit))
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokensU64(storageDeposit))
 	req.Assets.BaseTokens = storageDeposit
 	ctx.Send(req)
 	return nil

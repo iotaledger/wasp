@@ -131,7 +131,7 @@ func testOffledgerRequest900KB(t *testing.T, e *ChainEnv) {
 	offledgerReq, err := chClient.PostOffLedgerRequest(context.Background(),
 		blob.FuncStoreBlob.Message(paramsDict),
 		chainclient.PostRequestParams{
-			Allowance: isc.NewAssetsBaseTokens(10 * isc.Million),
+			Allowance: isc.NewAssetsBaseTokensU64(10 * isc.Million),
 		},
 	)
 	require.NoError(t, err)
@@ -202,7 +202,7 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 
 	// deposit funds before sending the off-ledger requestargs
 	reqTx, err := chClient.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokens(baseTokes),
+		Transfer: isc.NewAssetsBaseTokensU64(baseTokes),
 	})
 	require.NoError(e.t, err)
 

@@ -100,9 +100,9 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *types.Anc
 // func (sm *cmtLogTestRapidSM) ConsDone(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	var li cmtLog.LogIndex         // TODO: Set it.
-// 	var pAO sui_types.ObjectID        // TODO: Set it.
-// 	var bAO sui_types.ObjectID        // TODO: Set it.
-// 	var nAO *sui.Anchor // TODO: Set it.
+// 	var pAO sui.ObjectID        // TODO: Set it.
+// 	var bAO sui.ObjectID        // TODO: Set it.
+// 	var nAO *iscmove.Anchor // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputDone(li, pAO, bAO, nAO))
 // 	sm.tc.RunAll()
 // }
@@ -110,7 +110,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *types.Anc
 // func (sm *cmtLogTestRapidSM) ConsSkip(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	var li cmtLog.LogIndex  // TODO: Set it.
-// 	var pAO sui_types.ObjectID // TODO: Set it.
+// 	var pAO sui.ObjectID // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputSkip(li, pAO))
 // 	sm.tc.RunAll()
 // }
@@ -124,7 +124,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *types.Anc
 
 // func (sm *cmtLogTestRapidSM) ConsConfirmed(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
-// 	var ao *sui.Anchor // TODO: Set it.
+// 	var ao *iscmove.Anchor // TODO: Set it.
 // 	var li cmtLog.LogIndex        // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputConfirmed(ao, li))
 // 	sm.tc.RunAll()
@@ -132,7 +132,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *types.Anc
 
 // func (sm *cmtLogTestRapidSM) ConsRejected(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
-// 	var ao *sui.Anchor // TODO: Set it.
+// 	var ao *iscmove.Anchor // TODO: Set it.
 // 	var li cmtLog.LogIndex        // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputRejected(ao, li))
 // 	sm.tc.RunAll()

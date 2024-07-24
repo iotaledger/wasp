@@ -196,7 +196,7 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.reqctx.gas.maxTokensToSpendForGasFee
-	return isc.NewAssetsBaseTokens(amount)
+	return isc.NewAssetsBaseTokensU64(amount)
 }
 
 func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) dict.Dict {

@@ -39,7 +39,7 @@ func test2Chains(t *testing.T) {
 	chain2, _ := env.NewChainExt(nil, 0, "chain2")
 	// chain owner deposit base tokens on chain2
 	chain2BaseTokenOwnerDeposit := 5 * isc.Million
-	err := chain2.DepositAssetsToL2(isc.NewAssetsBaseTokens(chain2BaseTokenOwnerDeposit), nil)
+	err := chain2.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(chain2BaseTokenOwnerDeposit), nil)
 	require.NoError(t, err)
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
@@ -122,7 +122,7 @@ func test2Chains(t *testing.T) {
 			sbtestsc.ParamGasReserveTransferAccountToChain: gasFeeTransferAccountToChain,
 		}))).
 			AddBaseTokens(withdrawBaseTokensToSend).
-			WithAllowance(isc.NewAssetsBaseTokens(withdrawReqAllowance)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(withdrawReqAllowance)).
 			WithMaxAffordableGasBudget(),
 		userWallet,
 	)

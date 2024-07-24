@@ -10,20 +10,20 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputDone struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
-	proposedBaseAO  sui_types.ObjectID
+	proposedBaseAO  sui.ObjectID
 	consensusResult *cons.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr cryptolib.Address,
 	logIndex cmt_log.LogIndex,
-	proposedBaseAO sui_types.ObjectID,
+	proposedBaseAO sui.ObjectID,
 	consensusResult *cons.Result,
 ) gpa.Input {
 	return &inputConsensusOutputDone{

@@ -217,7 +217,7 @@ func (fp *newNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, e
 	metadata := isc.NewIRC30NativeTokenMetadata(fp.tokenName, fp.tokenSymbol, fp.tokenDecimals)
 
 	req := NewCallParams(accounts.FuncNativeTokenCreate.Message(metadata, sch)).
-		WithAllowance(isc.NewAssetsBaseTokens(allowanceForFoundryStorageDeposit)).
+		WithAllowance(isc.NewAssetsBaseTokensU64(allowanceForFoundryStorageDeposit)).
 		AddBaseTokens(allowanceForFoundryStorageDeposit).
 		WithMaxAffordableGasBudget()
 
@@ -246,7 +246,7 @@ func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.Signer) error {
 func (ch *Chain) MintTokens(sn uint32, amount *big.Int, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.FuncNativeTokenModifySupply.MintTokens(sn, amount)).
 		AddBaseTokens(allowanceForModifySupply).
-		WithAllowance(isc.NewAssetsBaseTokens(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
+		WithAllowance(isc.NewAssetsBaseTokensU64(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
 		WithMaxAffordableGasBudget()
 
 	_, rec, err := ch.EstimateGasOnLedger(req, user)
@@ -343,7 +343,7 @@ func (ch *Chain) Withdraw(assets *isc.Assets, user cryptolib.Signer) error {
 		AddAllowance(assets).
 		WithGasBudget(math.MaxUint64)
 	if assets.BaseTokens == 0 {
-		req.AddAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)) // for storage deposit
+		req.AddAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)) // for storage deposit
 	}
 	_, err := ch.PostRequestOffLedger(req, user)
 	return err
@@ -365,7 +365,7 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Asset
 }
 
 func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend uint64, target isc.AgentID, user cryptolib.Signer) error {
-	return ch.SendFromL1ToL2Account(totalBaseTokens, isc.NewAssetsBaseTokens(baseTokensSend), target, user)
+	return ch.SendFromL1ToL2Account(totalBaseTokens, isc.NewAssetsBaseTokensU64(baseTokensSend), target, user)
 }
 
 // SendFromL2ToL2Account moves ftokens on L2 from user's account to the target
@@ -379,7 +379,7 @@ func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Assets, target isc.AgentID,
 }
 
 func (ch *Chain) SendFromL2ToL2AccountBaseTokens(baseTokens uint64, target isc.AgentID, user cryptolib.Signer) error {
-	return ch.SendFromL2ToL2Account(isc.NewAssetsBaseTokens(baseTokens), target, user)
+	return ch.SendFromL2ToL2Account(isc.NewAssetsBaseTokensU64(baseTokens), target, user)
 }
 
 func (ch *Chain) SendFromL2ToL2AccountNativeTokens(id iotago.NativeTokenID, target isc.AgentID, amount *big.Int, user cryptolib.Signer) error {

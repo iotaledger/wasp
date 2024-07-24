@@ -51,7 +51,7 @@ func TestPruning(t *testing.T) {
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(chain.ChainID, evmAddr)
-	env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+	env.TransferFundsTo(isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter
 	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))

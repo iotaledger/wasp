@@ -28,7 +28,7 @@ func TestRequestDataSerialization(t *testing.T) {
 		requestMetadata := &RequestMetadata{
 			SenderContract: ContractIdentityFromHname(Hn("sender_contract")),
 			Message:        NewMessage(Hn("target_contract"), Hn("entrypoint")),
-			Allowance:      NewAssetsBaseTokens(1),
+			Allowance:      NewAssetsBaseTokensU64(1),
 			GasBudget:      1000,
 		}
 		basicOutput := &iotago.BasicOutput{

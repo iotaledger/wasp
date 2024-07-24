@@ -9,7 +9,7 @@ import (
 )
 
 type nftIncluded struct {
-	ID                iotago.NFTID
+	ID                isc.NFTID
 	accountingInputID iotago.OutputID // only available when the input is already accounted for (NFT was deposited in a previous block)
 	accountingInput   *iotago.NFTOutput
 	resultingOutput   *iotago.NFTOutput // this is not the same as in the `nativeTokenBalance` struct, this can be the accounting output, or the output leaving the chain. // TODO should refactor to follow the same logic so its easier to grok
@@ -23,7 +23,7 @@ type nftIncluded struct {
 // all cases need 1 input and 1 output, but in the last case we don't need to keep the "accounting" for the NFT
 
 func (n *nftIncluded) Clone() *nftIncluded {
-	nftID := iotago.NFTID{}
+	nftID := isc.NFTID{}
 	copy(nftID[:], n.ID[:])
 
 	outputID := iotago.OutputID{}

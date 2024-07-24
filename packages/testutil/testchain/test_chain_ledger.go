@@ -77,7 +77,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 tcl.chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokens(100_000_000),
+				Assets:                        isc.NewAssetsBaseTokensU64(100_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),
@@ -102,7 +102,7 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 tcl.chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokens(2_000_000),
+				Assets:                        isc.NewAssetsBaseTokensU64(2_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message: root.FuncDeployContract.Message(

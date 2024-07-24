@@ -88,14 +88,14 @@ func TestWithdrawEverything(t *testing.T) {
 
 	// construct the request to estimate an withdrawal (leave a few tokens to pay for gas)
 	req := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		AddAllowance(isc.NewAssetsBaseTokens(l2balance - 1000)).
+		AddAllowance(isc.NewAssetsBaseTokensU64(l2balance - 1000)).
 		WithMaxAffordableGasBudget()
 
 	_, estimate, err := ch.EstimateGasOffLedger(req, sender)
 	require.NoError(t, err)
 
 	// set the allowance to the maximum possible value
-	req = req.WithAllowance(isc.NewAssetsBaseTokens(l2balance - estimate.GasFeeCharged)).
+	req = req.WithAllowance(isc.NewAssetsBaseTokensU64(l2balance - estimate.GasFeeCharged)).
 		WithGasBudget(estimate.GasBurned)
 
 	// retry the estimation (fee will be lower when writing "0" to the user account, instead of some positive number)
@@ -103,7 +103,7 @@ func TestWithdrawEverything(t *testing.T) {
 	require.NoError(t, err)
 
 	// set the allowance to the maximum possible value
-	req = req.WithAllowance(isc.NewAssetsBaseTokens(l2balance - estimate2.GasFeeCharged)).
+	req = req.WithAllowance(isc.NewAssetsBaseTokensU64(l2balance - estimate2.GasFeeCharged)).
 		WithGasBudget(estimate2.GasBurned)
 
 	_, err = ch.PostRequestOffLedger(req, sender)
@@ -842,7 +842,7 @@ func TestTransferAndCheckBaseTokens(t *testing.T) {
 
 	// deposit some base tokens into the common account
 	someUserWallet, _ := v.env.NewKeyPairWithFunds()
-	err := v.ch.SendFromL1ToL2Account(11*isc.Million, isc.NewAssetsBaseTokens(10*isc.Million), accounts.CommonAccount(), someUserWallet)
+	err := v.ch.SendFromL1ToL2Account(11*isc.Million, isc.NewAssetsBaseTokensU64(10*isc.Million), accounts.CommonAccount(), someUserWallet)
 	require.NoError(t, err)
 	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens)
@@ -1331,14 +1331,14 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 	wallet, _ := ch.Env.NewKeyPairWithFunds()
 	allowances := []*isc.Assets{
 		// test base token
-		isc.NewAssetsBaseTokens(1000 * isc.Million),
+		isc.NewAssetsBaseTokensU64(1000 * isc.Million),
 		// test fungible tokens
 		isc.NewAssets(0, isc.NativeTokens{&isc.NativeToken{
 			ID:     [38]byte{0x1},
 			Amount: big.NewInt(10),
 		}}),
 		// test NFTs
-		isc.NewAssets(0, nil, iotago.NFTID{0x1}),
+		isc.NewAssets(0, nil, isc.NFTID{0x1}),
 	}
 	for _, a := range allowances {
 		_, err := ch.PostRequestSync(
@@ -1362,7 +1362,7 @@ func TestDepositWithNoGasBudget(t *testing.T) {
 	// try to deposit with 0 gas budget
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(accounts.FuncDeposit.Message()).
-			WithFungibleTokens(isc.NewAssetsBaseTokens(2*isc.Million)).
+			WithFungibleTokens(isc.NewAssetsBaseTokensU64(2*isc.Million)).
 			WithGasBudget(0),
 		senderWallet,
 	)
@@ -1387,7 +1387,7 @@ func TestRequestWithNoGasBudget(t *testing.T) {
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 
 	// post the request via on-ledger (the account has funds now), the request gets bumped to "minGasBudget"
-	_, err = ch.PostRequestSync(req.WithFungibleTokens(isc.NewAssetsBaseTokens(10*isc.Million)), senderWallet)
+	_, err = ch.PostRequestSync(req.WithFungibleTokens(isc.NewAssetsBaseTokensU64(10*isc.Million)), senderWallet)
 	require.EqualValues(t, gas.LimitsDefault.MinGasPerRequest, ch.LastReceipt().GasBudget)
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 
@@ -1401,7 +1401,7 @@ func TestNonces(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 	senderWallet, _ := env.NewKeyPairWithFunds()
-	ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(10*isc.Million), senderWallet)
+	ch.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(10*isc.Million), senderWallet)
 
 	req := solo.NewCallParamsEx("dummy", "dummy").WithGasBudget(0).WithNonce(0)
 	_, err := ch.PostRequestOffLedger(req, senderWallet)
@@ -1460,7 +1460,7 @@ func TestNFTMint(t *testing.T) {
 			nil,
 		)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
@@ -1485,7 +1485,7 @@ func TestNFTMint(t *testing.T) {
 			nil,
 		)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
@@ -1502,7 +1502,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to another user and keep it on chain
 		req := solo.NewCallParams(accounts.FuncMintNFT.Message(nil, anotherUserAgentID, nil, nil)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
@@ -1525,7 +1525,7 @@ func TestNFTMint(t *testing.T) {
 			nil,
 		)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, env.L1NFTs(anotherUserAddr), 0)
@@ -1534,7 +1534,7 @@ func TestNFTMint(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
 		userL1NFTs := env.L1NFTs(anotherUserAddr)
-		NFTID := iotago.NFTIDFromOutputID(lo.Keys(userL1NFTs)[0])
+		NFTID := isc.NFTIDFromOutputID(lo.Keys(userL1NFTs)[0])
 		require.Len(t, userL1NFTs, 1)
 
 		// post a dummy request to make the chain progress to the next block
@@ -1554,7 +1554,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(accounts.FuncMintNFT.Message(mockNFTMetadata, agentID, nil, nil)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, ch.L2NFTs(agentID), 0)
@@ -1577,7 +1577,7 @@ func TestNFTMint(t *testing.T) {
 			&firstNFTID,
 		)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		ret, err := ch.PostRequestSync(req, wallet)
@@ -1619,7 +1619,7 @@ func TestNFTMint(t *testing.T) {
 		// mint NFT to self and keep it on chain
 		req := solo.NewCallParams(accounts.FuncMintNFT.Message(mockNFTMetadata, agentID, nil, nil)).
 			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssetsBaseTokens(1 * isc.Million)).
+			WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
 			WithMaxAffordableGasBudget()
 
 		require.Len(t, ch.L2NFTs(agentID), 0)

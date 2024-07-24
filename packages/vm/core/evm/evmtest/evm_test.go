@@ -841,7 +841,7 @@ func TestSendBaseTokens(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(transfer)),
 	)
 	require.NoError(t, err)
 
@@ -884,7 +884,7 @@ func TestSendBaseTokensAnotherChain(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(transfer)),
 	)
 	require.NoError(t, err)
 
@@ -928,7 +928,7 @@ func TestCannotDepleteAccount(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(transfer)),
 	)
 	require.NoError(t, err)
 
@@ -984,10 +984,10 @@ func TestSendNFT(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, env.Chain.L2NFTs(ethAgentID))
 	require.Equal(t,
-		[]iotago.NFTID{nft.ID},
+		[]isc.NFTID{nft.ID},
 		lo.Map(
 			lo.Values(env.solo.L1NFTs(receiver)),
-			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
+			func(v *iotago.NFTOutput, _ int) isc.NFTID { return v.NFTID },
 		),
 	)
 	// there must be 2 Transfer events emitted from the ERC721NFTs contract:
@@ -1308,7 +1308,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	randAgentID := isc.NewAgentID(cryptolib.NewRandomAddress())
 
 	nBaseTokens := uint64(100)
-	allowance := isc.NewAssetsBaseTokens(nBaseTokens)
+	allowance := isc.NewAssetsBaseTokensU64(nBaseTokens)
 
 	_, err := iscTest.CallFn(
 		nil,
@@ -1363,7 +1363,7 @@ func TestISCSendWithArgs(t *testing.T) {
 		nil,
 		"send",
 		iscmagic.WrapL1Address(env.Chain.ChainID.AsAddress()),
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(sendBaseTokens)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(sendBaseTokens)),
 		false, // auto adjust SD
 		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
 			Message:   inccounter.FuncIncCounter.Message(nil),
@@ -1957,7 +1957,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -1976,7 +1976,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -2201,7 +2201,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	// fund the contract via a L1 wallet ISC transfer, then call `sendTo` to use those funds
 	l1Wallet, _ := env.Chain.Env.NewKeyPairWithFunds()
 	env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(10*isc.Million),
+		isc.NewAssetsBaseTokensU64(10*isc.Million),
 		isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscTest.address),
 		l1Wallet,
 	)
@@ -2628,7 +2628,7 @@ func TestCaller(t *testing.T) {
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 	err := env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(42),
+		isc.NewAssetsBaseTokensU64(42),
 		isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscTest.address),
 		env.Chain.OriginatorPrivateKey,
 	)
@@ -2679,7 +2679,7 @@ func TestL1DepositEVM(t *testing.T) {
 	_, ethAddr := solo.NewEthereumAccount()
 	amount := 1 * isc.Million
 	err := env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(amount),
+		isc.NewAssetsBaseTokensU64(amount),
 		isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr),
 		wallet,
 	)
@@ -2729,7 +2729,7 @@ func TestL1DepositEVM(t *testing.T) {
 	// issue the same deposit again, assert txHashes do not collide
 
 	err = env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(amount),
+		isc.NewAssetsBaseTokensU64(amount),
 		isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr),
 		wallet,
 	)

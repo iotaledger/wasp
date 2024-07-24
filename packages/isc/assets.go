@@ -19,6 +19,7 @@ import (
 type Assets struct {
 	BaseTokens   *big.Int     `json:"baseTokens"`
 	NativeTokens NativeTokens `json:"nativeTokens"`
+	NFTs         []any        `json:"nfts"` // TODO: Figure out NFTs, for now just a stub for all references
 }
 
 var BaseTokenID = []byte{}
@@ -27,6 +28,7 @@ func NewAssets(baseTokens *big.Int, tokens NativeTokens) *Assets {
 	ret := &Assets{
 		BaseTokens:   baseTokens,
 		NativeTokens: tokens,
+		NFTs:         []any{},
 	}
 	return ret
 }
@@ -54,7 +56,9 @@ func NewAssetsBaseTokens(amount uint64) *Assets {
 }
 
 func NewEmptyAssets() *Assets {
-	return &Assets{}
+	return &Assets{
+		NFTs: []any{},
+	}
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {

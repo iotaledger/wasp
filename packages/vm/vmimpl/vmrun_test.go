@@ -29,7 +29,7 @@ func TestNFTDepositNoIssuer(t *testing.T) {
 	o := &iotago.NFTOutput{
 		Amount:       100 * isc.Million,
 		NativeTokens: []*isc.NativeToken{},
-		NFTID:        iotago.NFTID{0x1},
+		NFTID:        isc.NFTID{0x1},
 		Conditions:   []iotago.UnlockCondition{},
 		Features: []iotago.Feature{
 			&iotago.MetadataFeature{
