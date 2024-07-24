@@ -4,52 +4,63 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"sync"
 	"sync/atomic"
 
 	"github.com/gorilla/websocket"
+
+	"github.com/iotaledger/hive.go/logger"
 )
 
 type WebsocketClient struct {
-	idCounter  uint32
-	conn       *websocket.Conn
-	writeQueue chan *jsonrpcMessage
-	readers    sync.Map // id -> chan *jsonrpcMessage
+	idCounter         uint32
+	conn              *websocket.Conn
+	writeQueue        chan *jsonrpcMessage
+	readers           sync.Map // id -> chan *jsonrpcMessage
+	log               *logger.Logger
+	shutdownWaitGroup sync.WaitGroup
 }
 
-type CallOp struct {
-	Method string
-	Params []interface{}
-}
-
-func NewWebsocketClient(ctx context.Context, url string) *WebsocketClient {
+func NewWebsocketClient(
+	ctx context.Context,
+	url string,
+	log *logger.Logger,
+) (*WebsocketClient, error) {
 	dialer := websocket.Dialer{}
-	conn, _, err := dialer.Dial(url, nil)
+	conn, _, err := dialer.DialContext(ctx, url, nil)
 	if err != nil {
-		panic(fmt.Sprintf("failed to connect to websocket server: %s, %s", err, url))
+		return nil, fmt.Errorf("failed to connect to websocket server: %w", err)
 	}
 	c := &WebsocketClient{
 		conn:       conn,
 		writeQueue: make(chan *jsonrpcMessage),
+		log:        log,
 	}
+	c.shutdownWaitGroup.Add(1)
 	go c.loop(ctx)
-	return c
+	return c, nil
+}
+
+func (c *WebsocketClient) WaitUntilStopped() {
+	c.shutdownWaitGroup.Wait()
 }
 
 func (c *WebsocketClient) loop(ctx context.Context) {
+	defer c.shutdownWaitGroup.Done()
+
 	type readMsgResult struct {
 		messageType int
 		p           []byte
 	}
 	receivedMsgs := make(chan readMsgResult)
 	go func() {
+		defer close(receivedMsgs)
 		for {
 			m, p, err := c.conn.ReadMessage()
 			if err != nil {
-				log.Printf("WebsocketClient read loop: %s", err)
+				c.log.Errorf("WebsocketClient read loop: %s", err)
 				return
 			} else {
 				receivedMsgs <- readMsgResult{messageType: m, p: p}
@@ -57,6 +68,7 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 		}
 	}()
 
+	defer c.conn.Close()
 	for {
 		select {
 		case <-ctx.Done():
@@ -64,20 +76,23 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 		case msgToSend := <-c.writeQueue:
 			reqBody, err := json.Marshal(msgToSend)
 			if err != nil {
-				log.Printf("WebsocketClient: could not marshal json: %s", err)
+				c.log.Errorf("WebsocketClient: could not marshal json: %s", err)
 				continue
 			}
 			err = c.conn.WriteMessage(websocket.TextMessage, reqBody)
 			if nil != err {
-				log.Printf("WebsocketClient: write error: %s", err)
+				c.log.Errorf("WebsocketClient: write error: %s", err)
 				return
 			}
-		case receivedMsg := <-receivedMsgs:
+		case receivedMsg, ok := <-receivedMsgs:
+			if !ok {
+				return
+			}
 			switch receivedMsg.messageType {
 			case websocket.TextMessage:
 				var m *jsonrpcMessage
 				if err := json.Unmarshal(receivedMsg.p, &m); err != nil {
-					log.Printf("WebsocketClient: could not unmarshal response body: %s", err)
+					c.log.Errorf("WebsocketClient: could not unmarshal response body: %s", err)
 					continue
 				}
 				var id string
@@ -90,24 +105,24 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 						Subscription uint64 `json:"subscription"`
 					}
 					if err := json.Unmarshal(m.Params, &s); err != nil {
-						log.Printf("WebsocketClient: could not unmarshal subscription params: %s", err)
+						c.log.Errorf("WebsocketClient: could not unmarshal subscription params: %s", err)
 						continue
 					}
 					id = fmt.Sprintf("%s:%d", m.Method, s.Subscription)
 				} else {
-					log.Printf("WebsocketClient: cannot identify message: %s", receivedMsg.p)
+					c.log.Errorf("WebsocketClient: cannot identify message: %s", receivedMsg.p)
 					continue
 				}
 				readCh, ok := c.readers.Load(id)
 				if ok {
 					readCh.(chan *jsonrpcMessage) <- m
 				} else {
-					log.Printf("WebsocketClient: no reader for message: %s", receivedMsg.p)
+					c.log.Errorf("WebsocketClient: no reader for message: %s", receivedMsg.p)
 					continue
 				}
 
 			default:
-				log.Printf("WebsocketClient: ignoring binary message: %x", receivedMsg.p)
+				c.log.Warnf("WebsocketClient: ignoring binary message: %x", receivedMsg.p)
 			}
 		}
 	}
@@ -164,16 +179,17 @@ func (c *WebsocketClient) Subscribe(ctx context.Context, resultCh chan<- []byte,
 				return
 			case msg := <-readCh:
 				if msg.Error != nil {
-					log.Printf("subscription error: %s", msg.Error)
+					c.log.Errorf("subscription error: %s", msg.Error)
 					return
 				}
 				if len(msg.Params) == 0 {
-					log.Printf("Ignoring websocket subscription message: %+v\n", msg)
+					c.log.Warnf("Ignoring websocket subscription message: %+v\n", msg)
 					continue
 				}
 				var params jsonrpcWebsocketParams
 				if err := json.Unmarshal(msg.Params, &params); err != nil {
-					log.Fatalf("could not unmarshal msg.Params: %s", err)
+					c.log.Errorf("could not unmarshal msg.Params: %s", err)
+					continue
 				}
 				resultCh <- params.Result
 			}

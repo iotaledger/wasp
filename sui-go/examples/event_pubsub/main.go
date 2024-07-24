@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
@@ -24,7 +24,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	api := suiclient.NewWebsocket(ctx, suiconn.TestnetWebsocketEndpointURL)
+	log := testlogger.NewSimple(false)
+	api, err := suiclient.NewWebsocket(ctx, suiconn.TestnetWebsocketEndpointURL, log)
+	if err != nil {
+		log.Panic(err)
+	}
 	sender, err := suisigner.NewSignerWithMnemonic(testMnemonic, suisigner.KeySchemeFlagDefault)
 	if err != nil {
 		log.Panic(err)
@@ -39,7 +43,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	log.Println("sender: ", sender.Address())
+	log.Infof("sender: %s", sender.Address())
 	publisher := serialization.NewPublisher(api, sender)
 	subscriber := serialization.NewSubscriber(api)
 
@@ -57,4 +61,3 @@ func main() {
 
 	<-done
 }
-

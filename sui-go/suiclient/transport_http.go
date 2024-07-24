@@ -27,3 +27,6 @@ func (h *httpTransport) Call(ctx context.Context, v any, method suiconn.JsonRPCM
 func (h *httpTransport) Subscribe(ctx context.Context, v chan<- []byte, method suiconn.JsonRPCMethod, args ...any) error {
 	panic("cannot subscribe over http")
 }
+
+func (h *httpTransport) WaitUntilStopped() {
+}

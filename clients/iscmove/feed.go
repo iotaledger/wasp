@@ -12,45 +12,48 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-type Feed struct {
-	Client        *Client
-	ISCPackageID  sui.PackageID
-	AnchorAddress sui.ObjectID
+type ChainFeed struct {
+	wsClient      *Client
+	iscPackageID  sui.PackageID
+	anchorAddress sui.ObjectID
 	log           *logger.Logger
 }
 
-func NewFeed(
+func NewChainFeed(
 	ctx context.Context,
-	wsURL string,
-	faucetURL string,
+	wsClient *Client,
 	iscPackageID sui.PackageID,
 	anchorAddress sui.ObjectID,
 	log *logger.Logger,
-) *Feed {
-	return &Feed{
-		Client:        NewWebsocketClient(ctx, wsURL, "", faucetURL),
-		ISCPackageID:  iscPackageID,
-		AnchorAddress: anchorAddress,
-		log:           log,
+) *ChainFeed {
+	return &ChainFeed{
+		wsClient:      wsClient,
+		iscPackageID:  iscPackageID,
+		anchorAddress: anchorAddress,
+		log:           log.Named("iscmove-chainfeed"),
 	}
+}
+
+func (f *ChainFeed) WaitUntilStopped() {
+	f.wsClient.WaitUntilStopped()
 }
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (c *Feed) FetchCurrentState(ctx context.Context) (*RefWithObject[Anchor], []*Request, error) {
-	anchor, err := c.Client.GetAnchorFromObjectID(ctx, &c.AnchorAddress)
+func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*RefWithObject[Anchor], []*Request, error) {
+	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
 	reqs := make([]*Request, 0)
 	var lastSeen *sui.ObjectID
 	for {
-		res, err := c.Client.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
-			Address: &c.AnchorAddress,
+		res, err := f.wsClient.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
+			Address: &f.anchorAddress,
 			Query: &suijsonrpc.SuiObjectResponseQuery{
 				Filter: &suijsonrpc.SuiObjectDataFilter{
 					StructType: &sui.StructTag{
-						Address: &c.ISCPackageID,
+						Address: &f.iscPackageID,
 						Module:  RequestModuleName,
 						Name:    RequestObjectName,
 					},
@@ -79,26 +82,26 @@ func (c *Feed) FetchCurrentState(ctx context.Context) (*RefWithObject[Anchor], [
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
-func (c *Feed) SubscribeToUpdates(
+func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
 	anchorCh chan<- *RefWithObject[Anchor],
 	requestsCh chan<- *Request,
 ) {
-	go c.subscribeToAnchorUpdates(ctx, anchorCh)
-	go c.subscribeToNewRequests(ctx, requestsCh)
+	go f.subscribeToAnchorUpdates(ctx, anchorCh)
+	go f.subscribeToNewRequests(ctx, requestsCh)
 }
 
-func (c *Feed) subscribeToNewRequests(
+func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
 	requests chan<- *Request,
 ) {
 	for {
 		events := make(chan *suijsonrpc.SuiEvent)
-		err := c.Client.SubscribeEvent(
+		err := f.wsClient.SubscribeEvent(
 			ctx,
 			&suijsonrpc.EventFilter{
 				MoveEventType: &sui.StructTag{
-					Address: &c.ISCPackageID,
+					Address: &f.iscPackageID,
 					Module:  RequestModuleName,
 					Name:    RequestEventObjectName,
 				},
@@ -106,23 +109,23 @@ func (c *Feed) subscribeToNewRequests(
 			events,
 		)
 		if ctx.Err() != nil {
-			c.log.Errorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
+			f.log.Errorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
 			return
 		}
 		if err != nil {
-			c.log.Errorf("subscribeToNewRequests: failed to call SubscribeEvent(): %s", err)
+			f.log.Errorf("subscribeToNewRequests: failed to call SubscribeEvent(): %s", err)
 		} else {
-			c.consumeRequestEvents(ctx, events, requests)
+			f.consumeRequestEvents(ctx, events, requests)
 		}
 		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
-			c.log.Errorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
+			f.log.Errorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
 			return
 		}
 	}
 }
 
-func (c *Feed) consumeRequestEvents(
+func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
 	events <-chan *suijsonrpc.SuiEvent,
 	requests chan<- *Request,
@@ -138,12 +141,12 @@ func (c *Feed) consumeRequestEvents(
 			var reqEvent RequestEvent
 			err := suiclient.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
-				c.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
+				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
-			req, err := c.Client.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
+			req, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
-				c.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
+				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
 			requests <- req
@@ -151,37 +154,37 @@ func (c *Feed) consumeRequestEvents(
 	}
 }
 
-func (c *Feed) subscribeToAnchorUpdates(
+func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
 	anchorCh chan<- *RefWithObject[Anchor],
 ) {
 	for {
 		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
-		err := c.Client.SubscribeTransaction(
+		err := f.wsClient.SubscribeTransaction(
 			ctx,
 			&suijsonrpc.TransactionFilter{
-				ChangedObject: &c.AnchorAddress,
+				ChangedObject: &f.anchorAddress,
 			},
 			changes,
 		)
 		if ctx.Err() != nil {
-			c.log.Errorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
+			f.log.Errorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
 			return
 		}
 		if err != nil {
-			c.log.Errorf("subscribeToAnchorUpdates: failed to call SubscribeEvent(): %s", err)
+			f.log.Errorf("subscribeToAnchorUpdates: failed to call SubscribeEvent(): %s", err)
 		} else {
-			c.consumeAnchorUpdates(ctx, changes, anchorCh)
+			f.consumeAnchorUpdates(ctx, changes, anchorCh)
 		}
 		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
-			c.log.Errorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
+			f.log.Errorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
 			return
 		}
 	}
 }
 
-func (c *Feed) consumeAnchorUpdates(
+func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
 	changes <-chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
 	anchorCh chan<- *RefWithObject[Anchor],
@@ -195,24 +198,24 @@ func (c *Feed) consumeAnchorUpdates(
 				return
 			}
 			for _, obj := range change.Data.V1.Mutated {
-				if *obj.Reference.ObjectID == c.AnchorAddress {
-					r, err := c.Client.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
-						ObjectID: &c.AnchorAddress,
+				if *obj.Reference.ObjectID == f.anchorAddress {
+					r, err := f.wsClient.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
+						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
 						Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
 					})
 					if err != nil {
-						c.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
+						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
 						continue
 					}
 					if r.Data.VersionFound == nil {
-						c.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
+						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
 						continue
 					}
 					var anchor *Anchor
 					err = suiclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
-						c.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
+						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
 					anchorCh <- &RefWithObject[Anchor]{

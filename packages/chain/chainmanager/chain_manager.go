@@ -200,7 +200,7 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
-	trackActiveStateCB func(ao *sui.Anchor),
+	trackActiveStateCB func(anchor *sui.Anchor),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	deriveAOByQuorum bool,

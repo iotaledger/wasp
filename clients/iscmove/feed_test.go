@@ -40,18 +40,27 @@ func TestRequestsFeed(t *testing.T) {
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
-	feed := iscmove.NewFeed(
+
+	wsClient, err := iscmove.NewWebsocketClient(
 		ctx,
 		suiconn.LocalnetWebsocketEndpointURL,
 		suiconn.LocalnetFaucetURL,
+		log,
+	)
+	require.NoError(t, err)
+
+	chainFeed := iscmove.NewChainFeed(
+		ctx,
+		wsClient,
 		iscPackageID,
 		*anchor.ObjectID,
 		log,
 	)
+	defer chainFeed.WaitUntilStopped()
 
 	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
 	newRequests := make(chan *iscmove.Request, 10)
-	feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
+	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
@@ -74,7 +83,7 @@ func TestRequestsFeed(t *testing.T) {
 	req := <-newRequests
 	require.Equal(t, *requestRef.ObjectID, req.ID)
 
-	updatedAnchor, ownedReqs, err := feed.FetchCurrentState(ctx)
+	updatedAnchor, ownedReqs, err := chainFeed.FetchCurrentState(ctx)
 	require.NoError(t, err)
 
 	require.Equal(t, anchor.Version, updatedAnchor.Version)
