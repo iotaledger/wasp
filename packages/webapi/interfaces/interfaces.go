@@ -17,11 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
-var (
-	ErrChainNotFound      = errors.New("chain not found")
-	ErrCantDeleteLastUser = errors.New("you can't delete the last user")
-)
-
 type APIController interface {
 	Name() string
 	RegisterPublic(publicAPI echoswagger.ApiGroup, mocker Mocker)

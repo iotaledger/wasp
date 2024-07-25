@@ -478,7 +478,7 @@ func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 
 	ret, exists := c.allChains.Get(chainID)
 	if !exists {
-		return nil, interfaces.ErrChainNotFound
+		return nil, interfaces.NewChainNotFoundError(chainID)
 	}
 	return ret.chain, nil
 }

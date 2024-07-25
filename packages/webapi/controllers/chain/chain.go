@@ -65,7 +65,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	}
 
 	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if errors.Is(err, interfaces.ErrChainNotFound) {
+	if errors.As(err, &interfaces.ChainNotFoundError{}) {
 		return e.NoContent(http.StatusNotFound)
 	} else if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, "")
 		c.log.Infof("getchaininfo %v", err)
 
-		if errors.Is(err, interfaces.ErrChainNotFound) {
+		if errors.As(err, &interfaces.ChainNotFoundError{}) {
 			// TODO: Validate this logic here. Is it possible to still get more chain info?
 			chainList = append(chainList, models.ChainInfoResponse{
 				IsActive: false,
