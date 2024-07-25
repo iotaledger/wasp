@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/packages/util"
