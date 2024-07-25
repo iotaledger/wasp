@@ -83,7 +83,7 @@ type L2Client interface {
 	GetAssetsBagWithBalances(
 		ctx context.Context,
 		assetsBagID *sui.ObjectID,
-	) (*types.AssetsBagWithBalances, error)
+	) (*iscmove.AssetsBagWithBalances, error)
 }
 
 var _ L2Client = &iscmove.Client{}
