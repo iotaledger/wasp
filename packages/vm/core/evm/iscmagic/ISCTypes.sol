@@ -141,12 +141,26 @@ struct ISCTokenProperties {
 }
 
 library ISCTypes {
+    /**
+     * @dev Get the type of an L1 address.
+     * @param addr The L1 address.
+     * @return The type of the L1 address.
+     *
+     * For more details about the types of L1 addresses, please refer to the IOTA Tangle Improvement Proposal (TIP) 18:
+     * https://wiki.iota.org/tips/tips/TIP-0018/#address-unlock-condition
+     */
     function L1AddressType(
         L1Address memory addr
     ) internal pure returns (uint8) {
         return uint8(addr.data[0]);
     }
 
+    /**
+     * @dev Create a new Ethereum AgentID.
+     * @param addr The Ethereum address.
+     * @param iscChainID The ISC chain ID.
+     * @return The new ISCAgentID.
+     */
     function newEthereumAgentID(
         address addr,
         ISCChainID iscChainID
@@ -169,6 +183,11 @@ library ISCTypes {
         return r;
     }
 
+    /**
+     * @dev Create a new L1 AgentID.
+     * @param l1Addr The L1 address.
+     * @return The new ISCAgentID.
+     */
     function newL1AgentID(
         bytes memory l1Addr
     ) internal pure returns (ISCAgentID memory) {
@@ -187,10 +206,20 @@ library ISCTypes {
         return r;
     }
 
+    /**
+     * @dev Check if an ISCAgentID is of Ethereum type.
+     * @param a The ISCAgentID to check.
+     * @return True if the ISCAgentID is of Ethereum type, false otherwise.
+     */
     function isEthereum(ISCAgentID memory a) internal pure returns (bool) {
         return uint8(a.data[0]) == ISCAgentIDKindEthereumAddress;
     }
 
+    /**
+     * @dev Get the Ethereum address from an ISCAgentID.
+     * @param a The ISCAgentID.
+     * @return The Ethereum address.
+     */
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
         bytes memory b = new bytes(20);
         //offset of 33 (kind byte + chainID)
@@ -198,6 +227,11 @@ library ISCTypes {
         return address(uint160(bytes20(b)));
     }
 
+    /**
+     * @dev Get the chain ID from an ISCAgentID.
+     * @param a The ISCAgentID.
+     * @return The ISCChainID.
+     */
     function chainID(ISCAgentID memory a) internal pure returns (ISCChainID) {
         bytes32 out;
         for (uint i = 0; i < 32; i++) {
@@ -207,10 +241,21 @@ library ISCTypes {
         return ISCChainID.wrap(out);
     }
 
+    /**
+     * @notice Convert a token ID to an NFTID.
+     * @param tokenID The token ID.
+     * @return The NFTID.
+     */
     function asNFTID(uint256 tokenID) internal pure returns (NFTID) {
         return NFTID.wrap(bytes32(tokenID));
     }
 
+    /**
+     * @dev Check if an NFT is part of a given collection.
+     * @param nft The NFT to check.
+     * @param collectionId The collection ID to check against.
+     * @return True if the NFT is part of the collection, false otherwise.
+     */
     function isInCollection(
         ISCNFT memory nft,
         NFTID collectionId
