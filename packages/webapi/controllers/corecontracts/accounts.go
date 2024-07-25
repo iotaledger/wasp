@@ -15,14 +15,14 @@ import (
 )
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	assetsResponse := &models.AssetsResponse{
@@ -34,9 +34,9 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	agentID, err := params.DecodeAgentID(e)
@@ -46,7 +46,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 
 	assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	assetsResponse := &models.AssetsResponse{
@@ -58,9 +58,9 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 }
 
 func (c *Controller) getAccountNFTs(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	agentID, err := params.DecodeAgentID(e)
@@ -70,7 +70,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 
 	nfts, err := corecontracts.GetAccountNFTs(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	nftsResponse := &models.AccountNFTsResponse{
@@ -85,9 +85,9 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 }
 
 func (c *Controller) getAccountFoundries(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	agentID, err := params.DecodeAgentID(e)
 	if err != nil {
@@ -96,7 +96,7 @@ func (c *Controller) getAccountFoundries(e echo.Context) error {
 
 	foundries, err := corecontracts.GetAccountFoundries(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	return e.JSON(http.StatusOK, &models.AccountFoundriesResponse{
@@ -105,9 +105,9 @@ func (c *Controller) getAccountFoundries(e echo.Context) error {
 }
 
 func (c *Controller) getAccountNonce(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	agentID, err := params.DecodeAgentID(e)
@@ -117,7 +117,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 
 	nonce, err := corecontracts.GetAccountNonce(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	nonceResponse := &models.AccountNonceResponse{
@@ -128,9 +128,9 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 }
 
 func (c *Controller) getNFTData(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	nftID, err := params.DecodeNFTID(e)
@@ -140,7 +140,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 
 	nftData, err := corecontracts.GetNFTData(ch, *nftID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	nftDataResponse := isc.NFTToJSONObject(nftData)
@@ -149,14 +149,14 @@ func (c *Controller) getNFTData(e echo.Context) error {
 }
 
 func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	registries, err := corecontracts.GetNativeTokenIDRegistry(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	nativeTokenIDRegistryResponse := &models.NativeTokenIDRegistryResponse{
@@ -171,9 +171,9 @@ func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
 }
 
 func (c *Controller) getFoundryOutput(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	serialNumber, err := params.DecodeUInt(e, "serialNumber")
@@ -183,7 +183,7 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 
 	foundryOutput, err := corecontracts.GetFoundryOutput(ch, uint32(serialNumber), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	foundryOutputID, err := foundryOutput.ID()
