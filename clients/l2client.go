@@ -79,6 +79,11 @@ type L2Client interface {
 		gasBudget uint64,
 		devMode bool,
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+	GetAssetsBagWithBalances(
+		ctx context.Context,
+		assetsBagID *sui.ObjectID,
+	) (*iscmove.AssetsBagWithBalances, error)
+	AssetsBagWithBalancesToAssets(assetsBag iscmove.AssetsBagWithBalances) *isc.Assets
 }
 
 var _ L2Client = &iscmove.Client{}

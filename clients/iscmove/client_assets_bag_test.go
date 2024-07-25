@@ -2,6 +2,7 @@ package iscmove_test
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -185,6 +186,26 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, testCointype, bal.CoinType)
 	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+}
+
+func TestAssetsBagWithBalancesToAssets(t *testing.T) {
+	client := newLocalnetClient()
+
+	assetsBag := iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmove.AssetsBag{
+			ID:   *sui.MustAddressFromHex("0x123"),
+			Size: 2,
+		},
+		Balances: iscmove.AssetsBagBalances{
+			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(33)}},
+			"0xa1":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(11)}},
+			"0xa2":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(22)}},
+		},
+	}
+	assets := client.AssetsBagWithBalancesToAssets(assetsBag)
+	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int, assets.BaseTokens)
+	require.Equal(t, assetsBag.Balances["0xa1"].TotalBalance.Int, assets.NativeTokens.MustSet()["0xa1"].Amount)
+	require.Equal(t, assetsBag.Balances["0xa2"].TotalBalance.Int, assets.NativeTokens.MustSet()["0xa2"].Amount)
 }
 
 func borrowAnchorAssetsAndPlaceCoin(
