@@ -8,6 +8,7 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -229,4 +230,22 @@ func (c *Client) GetAssetsBagWithBalances(
 	}
 
 	return &bag, nil
+}
+
+func (c *Client) AssetsBagWithBalancesToAssets(assetsBag AssetsBagWithBalances) *isc.Assets {
+	assets := &isc.Assets{
+		BaseTokens:   assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int,
+		NativeTokens: make(isc.NativeTokens, len(assetsBag.Balances)-1),
+	}
+	cnt := 0
+	for k, v := range assetsBag.Balances {
+		if k != suijsonrpc.SuiCoinType {
+			assets.NativeTokens[cnt] = &isc.NativeToken{
+				CoinType: isc.NativeTokenID(k),
+				Amount:   v.TotalBalance.Int,
+			}
+			cnt++
+		}
+	}
+	return assets
 }

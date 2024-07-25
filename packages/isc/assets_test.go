@@ -32,7 +32,7 @@ func TestAssetsSerialization(t *testing.T) {
 		},
 	}
 
-	assets := isc.NewAssets(1, tokens)
+	assets := isc.NewAssets(big.NewInt(1), tokens)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
 
