@@ -28,7 +28,7 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 	e.Set(controllerutils.EchoContextKeyChainID, chainID)
 
 	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
+		return apierrors.ChainNotFoundError()
 	}
 
 	requestDecoded, err := iotago.DecodeHex(request.Request)

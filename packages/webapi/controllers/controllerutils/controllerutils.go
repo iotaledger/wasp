@@ -23,7 +23,7 @@ func ChainIDFromParams(c echo.Context, cs interfaces.ChainService) (isc.ChainID,
 	}
 
 	if !cs.HasChain(chainID) {
-		return isc.ChainID{}, apierrors.ChainNotFoundError(chainID.String())
+		return isc.ChainID{}, apierrors.ChainNotFoundError()
 	}
 	// set chainID to be used by the prometheus metrics
 	c.Set(EchoContextKeyChainID, chainID)

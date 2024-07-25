@@ -26,9 +26,9 @@ type BlobValueResponse struct {
 }
 
 func (c *Controller) getBlobValue(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	blobHash, err := params.DecodeBlobHash(e)
@@ -40,7 +40,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 
 	blobValueBytes, err := corecontracts.GetBlobValue(ch, *blobHash, fieldKey, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	blobValueResponse := &BlobValueResponse{
@@ -57,9 +57,9 @@ type BlobInfoResponse struct {
 func (c *Controller) getBlobInfo(e echo.Context) error {
 	fmt.Println("GET BLOB INFO")
 
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	blobHash, err := params.DecodeBlobHash(e)
@@ -69,7 +69,7 @@ func (c *Controller) getBlobInfo(e echo.Context) error {
 
 	blobInfo, ok, err := corecontracts.GetBlobInfo(ch, *blobHash, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	fmt.Printf("GET BLOB INFO: ok:%v, err:%v", ok, err)

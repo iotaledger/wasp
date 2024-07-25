@@ -31,14 +31,14 @@ func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoRespon
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	chainInfo, err := corecontracts.GetChainInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	chainInfoResponse := MapGovChainInfoResponse(chainInfo)
@@ -47,14 +47,14 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 }
 
 func (c *Controller) getChainOwner(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	chainOwner, err := corecontracts.GetChainOwner(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	chainOwnerResponse := models.GovChainOwnerResponse{
@@ -65,14 +65,14 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 }
 
 func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	encodedAddresses := make([]string, len(addresses))
