@@ -3,8 +3,9 @@ package isc
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestChainIDSerialization(t *testing.T) {
