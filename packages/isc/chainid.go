@@ -127,10 +127,6 @@ func (id ChainID) ShortString() string {
 
 // String human-readable form (bech32)
 func (id ChainID) String() string {
-	if id.Empty() {
-		return ""
-	}
-
 	return id.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
