@@ -286,7 +286,7 @@ func (a *Assets) Read(r io.Reader) error {
 		return rr.Err
 	}
 	if (flags & hasBaseTokens) != 0 {
-		a.BaseTokens = big.NewInt(0).SetUint64(rr.ReadAmount64())
+		a.BaseTokens = rr.ReadUint256()
 	}
 	if (flags & hasNativeTokens) != 0 {
 		size := rr.ReadSize16()
@@ -318,7 +318,7 @@ func (a *Assets) Write(w io.Writer) error {
 
 	ww.WriteByte(flags)
 	if (flags & hasBaseTokens) != 0 {
-		ww.WriteAmount64(a.BaseTokens.Uint64())
+		ww.WriteUint256(a.BaseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
 		ww.WriteSize16(len(a.NativeTokens))
