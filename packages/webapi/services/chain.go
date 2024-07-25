@@ -163,7 +163,7 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTr
 
 	governanceChainInfo, err := corecontracts.GetChainInfo(ch, blockIndexOrTrieRoot)
 	if err != nil {
-		if chainRecord != nil && errors.As(err, &interfaces.ChainNotFoundError{}) {
+		if chainRecord != nil && errors.Is(err, interfaces.ErrChainNotFound) {
 			return &dto.ChainInfo{ChainID: chainID, IsActive: false}, nil
 		}
 

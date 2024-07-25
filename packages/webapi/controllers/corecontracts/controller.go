@@ -27,11 +27,9 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) handleViewCallError(err error, chainID isc.ChainID) error {
-	var chainNotFound interfaces.ChainNotFoundError
-	if errors.As(err, &chainNotFound) {
-		return apierrors.ChainNotFoundError(chainNotFound.ChainID.String())
+	if errors.Is(err, interfaces.ErrChainNotFound) {
+		return apierrors.ChainNotFoundError(chainID.String())
 	}
-
 	return apierrors.ContractExecutionError(err)
 }
 

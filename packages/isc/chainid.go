@@ -45,19 +45,13 @@ func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 }
 
 func ChainIDFromString(bech32 string) (ChainID, error) {
-	netPrefix, addr, err := iotago.ParseBech32(bech32)
+	_, addr, err := iotago.ParseBech32(bech32)
 	if err != nil {
 		return ChainID{}, err
 	}
 	if addr.Type() != iotago.AddressAlias {
 		return ChainID{}, fmt.Errorf("chainID must be an alias address (%s)", bech32)
 	}
-
-	expectedNetPrefix := parameters.L1().Protocol.Bech32HRP
-	if netPrefix != expectedNetPrefix {
-		return ChainID{}, fmt.Errorf("invalid network prefix: %s", netPrefix)
-	}
-
 	return ChainIDFromAddress(addr.(*iotago.AliasAddress)), nil
 }
 
