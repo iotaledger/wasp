@@ -3,25 +3,21 @@ package isc
 import (
 	"fmt"
 	"io"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type onLedgerRequestData struct {
-	requestID     sui.ObjectID
-	senderAddress *cryptolib.Address
-	targetAddress *cryptolib.Address
-	assets *Assets
+	requestID       sui.ObjectID
+	senderAddress   *cryptolib.Address
+	targetAddress   *cryptolib.Address
+	assets          *Assets
 	requestMetadata *RequestMetadata
 }
 
@@ -33,20 +29,20 @@ var (
 
 func OnLedgerFromRequest(request iscmove.Request) (OnLedgerRequest, error) {
 	r := &onLedgerRequestData{
-		requestID: request.ID,
+		requestID:     request.ID,
 		senderAddress: request.Sender,
 		targetAddress: request.Anchor,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
-			Message:        Message{
+			Message: Message{
 				Target: CallTarget{
 					Contract:   request.Message.Contract,
 					EntryPoint: request.Message.Function,
 				},
 				Params: dict.New(), // TODO: set request.Message.Params (turn dict to list of args)
 			},
-			Allowance:      NewEmptyAssets(),
-			GasBudget:      0,
+			Allowance: NewEmptyAssets(),
+			GasBudget: 0,
 		},
 	}
 
@@ -54,30 +50,30 @@ func OnLedgerFromRequest(request iscmove.Request) (OnLedgerRequest, error) {
 }
 
 func (req *onLedgerRequestData) Read(r io.Reader) error {
+	var err error
 	rr := rwutil.NewReader(r)
+
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
 	rr.ReadN(req.requestID[:])
-	outputData := rr.ReadBytes()
-	if rr.Err != nil {
-		return rr.Err
+	rr.ReadN(req.senderAddress[:])
+	rr.ReadN(req.targetAddress[:])
+
+	req.requestMetadata, err = RequestMetadataFromBytes(rr.ReadBytes())
+	if err != nil {
+		return err
 	}
-	req.request, rr.Err = util.OutputFromBytes(outputData)
-	if rr.Err != nil {
-		return rr.Err
-	}
-	return req.readFromUTXO(req.request, req.requestID)
+
+	return rr.Err
 }
 
 func (req *onLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
 	ww.WriteN(req.requestID[:])
-	if ww.Err != nil {
-		return ww.Err
-	}
-	outputData, err := req.request.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
-	ww.Err = err
-	ww.WriteBytes(outputData)
+	ww.WriteN(req.senderAddress[:])
+	ww.WriteN(req.targetAddress[:])
+	ww.Write(req.requestMetadata)
+
 	return ww.Err
 }
 
@@ -89,11 +85,7 @@ func (req *onLedgerRequestData) Allowance() *Assets {
 }
 
 func (req *onLedgerRequestData) Assets() *Assets {
-	amount := req.requestMetadata.
-	// FIXME work on the SUI version
-	// tokens := req.output.NativeTokenList()
-	ret := NewAssets(new(big.Int).SetUint64(amount), nil)
-	return ret
+	return req.assets
 }
 
 func (req *onLedgerRequestData) Bytes() []byte {
