@@ -458,7 +458,7 @@ func (s *dkShareImpl) DSSVerifyMasterSignature(data, signature []byte) error {
 }
 
 func (s *dkShareImpl) DSS() SecretShare {
-	return newDistKeyShare( // TODO: Use a singe instance.
+	return newDistKeyShare( // TODO: Use a single instance.
 		&share.PriShare{
 			I: int(*s.index),
 			V: s.edPrivateShare.Clone(),
@@ -518,7 +518,7 @@ func (s *dkShareImpl) BLSVerifySigShare(data []byte, sigshare tbls.SigShare) err
 	return bdn.Verify(s.blsSuite, s.blsPublicShares[idx], data, sigshare.Value())
 }
 
-// BLSRecoverFullSignature generates (recovers) master signature from partial sigshares.
+// BLSRecoverMasterSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
 func (s *dkShareImpl) BLSRecoverMasterSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var err error

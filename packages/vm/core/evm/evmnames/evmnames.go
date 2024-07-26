@@ -15,6 +15,7 @@ const (
 	FuncRegisterERC20NativeTokenOnRemoteChain = "registerERC20NativeTokenOnRemoteChain"
 	FuncRegisterERC20ExternalNativeToken      = "registerERC20ExternalNativeToken"
 	ViewGetERC20ExternalNativeTokenAddress    = "getERC20ExternalNativeTokenAddress"
+	ViewGetERC721CollectionAddress            = "getERC721CollectionAddress"
 	FuncRegisterERC721NFTCollection           = "registerERC721NFTCollection"
 
 	FuncNewL1Deposit = "newL1Deposit"
@@ -43,4 +44,7 @@ const (
 	FieldTargetAddress      = "A"
 
 	FieldAgentIDDepositOriginator = "l"
+	FieldAgentIDWithdrawalTarget  = "t"
+	FieldFromAddress              = "f"
+	FieldToAddress                = "t"
 )

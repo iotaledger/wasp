@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -69,6 +71,8 @@ func Encode(v interface{}) []byte {
 		return Ratio32.Encode(vt)
 	case *util.Ratio32:
 		return Ratio32.Encode(*vt)
+	case common.Address:
+		return vt.Bytes()
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))
 	}

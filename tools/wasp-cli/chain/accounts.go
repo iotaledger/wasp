@@ -25,40 +25,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func initListAccountsCmd() *cobra.Command {
-	var node string
-	var chain string
-
-	cmd := &cobra.Command{
-		Use:   "list-accounts",
-		Short: "List L2 accounts",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			node = waspcmd.DefaultWaspNodeFallback(node)
-			chain = defaultChainFallback(chain)
-
-			client := cliclients.WaspClient(node)
-			chainID := config.GetChain(chain)
-
-			accountList, _, err := client.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
-			log.Check(err)
-
-			log.Printf("Total %d account(s) in chain %s\n", len(accountList.Accounts), config.GetChain(chain).String())
-
-			header := []string{"agentid"}
-			rows := make([][]string, len(accountList.Accounts))
-			for i, account := range accountList.Accounts {
-				rows[i] = []string{account}
-			}
-			log.PrintTable(header, rows)
-		},
-	}
-
-	waspcmd.WithWaspNodeFlag(cmd, &node)
-	withChainFlag(cmd, &chain)
-	return cmd
-}
-
 func initBalanceCmd() *cobra.Command {
 	var node string
 	var chain string

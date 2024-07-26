@@ -303,17 +303,6 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	return ch.ChainID, chainOwnerID, contracts
 }
 
-// GetEventsForContract calls the view in the 'blocklog' core smart contract to retrieve events for a given smart contract.
-func (ch *Chain) GetEventsForContract(name string) ([]*isc.Event, error) {
-	viewResult, err := ch.CallView(blocklog.ViewGetEventsForContract.Message(blocklog.EventsForContractQuery{
-		Contract: isc.Hn(name),
-	}))
-	if err != nil {
-		return nil, err
-	}
-	return blocklog.ViewGetEventsForContract.Output.Decode(viewResult)
-}
-
 // GetEventsForRequest calls the view in the 'blocklog' core smart contract to retrieve events for a given request.
 func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]*isc.Event, error) {
 	viewResult, err := ch.CallView(blocklog.ViewGetEventsForRequest.Message(reqID))

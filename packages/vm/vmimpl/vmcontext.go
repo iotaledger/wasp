@@ -34,8 +34,11 @@ type vmContext struct {
 	chainInfo  *isc.ChainInfo
 	blockGas   blockGas
 
+	onBlockCloseCallbacks []blockCloseCallback
+
 	schemaVersion isc.SchemaVersion
 }
+type blockCloseCallback func(requestIndex uint16)
 
 type blockGas struct {
 	burned     uint64
@@ -257,4 +260,8 @@ func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestRe
 
 func (vmctx *vmContext) locateProgram(chainState kv.KVStore, programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 	return blob.NewStateReader(blob.Contract.StateSubrealm(chainState)).LocateProgram(programHash)
+}
+
+func (vmctx *vmContext) onBlockClose(f blockCloseCallback) {
+	vmctx.onBlockCloseCallbacks = append(vmctx.onBlockCloseCallbacks, f)
 }

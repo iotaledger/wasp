@@ -66,9 +66,6 @@ var (
 		coreutil.FieldWithCodec(ParamMintID, codec.Bytes),
 		coreutil.FieldWithCodec(ParamNFTID, codec.NFTID),
 	)
-	ViewAccounts = coreutil.NewViewEP01(Contract, "accounts",
-		OutputAccountList{},
-	)
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
 		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
 		OutputFungibleTokens{},

@@ -8,18 +8,15 @@ Method | HTTP request | Description
 [**accountsGetAccountFoundries**](CorecontractsApi.md#accountsGetAccountFoundries) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
 [**accountsGetAccountNFTIDs**](CorecontractsApi.md#accountsGetAccountNFTIDs) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
 [**accountsGetAccountNonce**](CorecontractsApi.md#accountsGetAccountNonce) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**accountsGetAccounts**](CorecontractsApi.md#accountsGetAccounts) | **GET** /v1/chains/{chainID}/core/accounts | Get a list of all accounts
 [**accountsGetFoundryOutput**](CorecontractsApi.md#accountsGetFoundryOutput) | **GET** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
 [**accountsGetNFTData**](CorecontractsApi.md#accountsGetNFTData) | **GET** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
 [**accountsGetNativeTokenIDRegistry**](CorecontractsApi.md#accountsGetNativeTokenIDRegistry) | **GET** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
 [**accountsGetTotalAssets**](CorecontractsApi.md#accountsGetTotalAssets) | **GET** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**blobsGetAllBlobs**](CorecontractsApi.md#blobsGetAllBlobs) | **GET** /v1/chains/{chainID}/core/blobs | Get all stored blobs
 [**blobsGetBlobInfo**](CorecontractsApi.md#blobsGetBlobInfo) | **GET** /v1/chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
 [**blobsGetBlobValue**](CorecontractsApi.md#blobsGetBlobValue) | **GET** /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
 [**blocklogGetBlockInfo**](CorecontractsApi.md#blocklogGetBlockInfo) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
 [**blocklogGetControlAddresses**](CorecontractsApi.md#blocklogGetControlAddresses) | **GET** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
 [**blocklogGetEventsOfBlock**](CorecontractsApi.md#blocklogGetEventsOfBlock) | **GET** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
-[**blocklogGetEventsOfContract**](CorecontractsApi.md#blocklogGetEventsOfContract) | **GET** /v1/chains/{chainID}/core/blocklog/events/contract/{contractHname} | Get events of a contract
 [**blocklogGetEventsOfLatestBlock**](CorecontractsApi.md#blocklogGetEventsOfLatestBlock) | **GET** /v1/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
 [**blocklogGetEventsOfRequest**](CorecontractsApi.md#blocklogGetEventsOfRequest) | **GET** /v1/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
 [**blocklogGetLatestBlockInfo**](CorecontractsApi.md#blocklogGetLatestBlockInfo) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
@@ -275,63 +272,6 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **accountsGetAccounts**
-> AccountListResponse accountsGetAccounts()
-
-
-### Example
-
-
-```typescript
-import {  } from '';
-import * as fs from 'fs';
-
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
-
-let body:.CorecontractsApiAccountsGetAccountsRequest = {
-  // string | ChainID (Bech32)
-  chainID: "chainID_example",
-  // string | Block index or trie root (optional)
-  block: "block_example",
-};
-
-apiInstance.accountsGetAccounts(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**AccountListResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | A list of all accounts |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
 # **accountsGetFoundryOutput**
 > FoundryOutputResponse accountsGetFoundryOutput()
 
@@ -562,63 +502,6 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | All stored assets |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **blobsGetAllBlobs**
-> BlobListResponse blobsGetAllBlobs()
-
-
-### Example
-
-
-```typescript
-import {  } from '';
-import * as fs from 'fs';
-
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
-
-let body:.CorecontractsApiBlobsGetAllBlobsRequest = {
-  // string | ChainID (Bech32)
-  chainID: "chainID_example",
-  // string | Block index or trie root (optional)
-  block: "block_example",
-};
-
-apiInstance.blobsGetAllBlobs(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**BlobListResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | All stored blobs |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
@@ -898,66 +781,6 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**EventsResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | The events |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **blocklogGetEventsOfContract**
-> EventsResponse blocklogGetEventsOfContract()
-
-
-### Example
-
-
-```typescript
-import {  } from '';
-import * as fs from 'fs';
-
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
-
-let body:.CorecontractsApiBlocklogGetEventsOfContractRequest = {
-  // string | ChainID (Bech32)
-  chainID: "chainID_example",
-  // string | The contract hname (Hex)
-  contractHname: "contractHname_example",
-  // string | Block index or trie root (optional)
-  block: "block_example",
-};
-
-apiInstance.blocklogGetEventsOfContract(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **contractHname** | [**string**] | The contract hname (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 

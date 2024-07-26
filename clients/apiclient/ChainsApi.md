@@ -8,6 +8,7 @@ Method | HTTP request | Description
 [**addAccessNode**](ChainsApi.md#addAccessNode) | **PUT** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
 [**callView**](ChainsApi.md#callView) | **POST** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
 [**deactivateChain**](ChainsApi.md#deactivateChain) | **POST** /v1/chains/{chainID}/deactivate | Deactivate a chain
+[**dumpAccounts**](ChainsApi.md#dumpAccounts) | **POST** /v1/chains/{chainID}/dump-accounts | dump accounts information into a humanly-readable format
 [**estimateGasOffledger**](ChainsApi.md#estimateGasOffledger) | **POST** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**estimateGasOnledger**](ChainsApi.md#estimateGasOnledger) | **POST** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
 [**getChainInfo**](ChainsApi.md#getChainInfo) | **GET** /v1/chains/{chainID} | Get information about a specific chain
@@ -258,6 +259,60 @@ Name | Type | Description  | Notes
 |-------------|-------------|------------------|
 **200** | Chain was successfully deactivated |  -  |
 **304** | Chain was not deactivated |  -  |
+**401** | Unauthorized (Wrong permissions, missing token) |  -  |
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
+
+# **dumpAccounts**
+> void dumpAccounts()
+
+
+### Example
+
+
+```typescript
+import {  } from '';
+import * as fs from 'fs';
+
+const configuration = .createConfiguration();
+const apiInstance = new .ChainsApi(configuration);
+
+let body:.ChainsApiDumpAccountsRequest = {
+  // string | ChainID (Bech32)
+  chainID: "chainID_example",
+};
+
+apiInstance.dumpAccounts(body).then((data:any) => {
+  console.log('API called successfully. Returned data: ' + data);
+}).catch((error:any) => console.error(error));
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+
+
+### Return type
+
+**void**
+
+### Authorization
+
+[Authorization](README.md#Authorization)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Accounts dump will be produced |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)

@@ -36,13 +36,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 	unprocessableToRetry []isc.OnLedgerRequest,
 	err error,
 ) {
-	reqctx := &requestContext{
-		vm:               vmctx,
-		req:              req,
-		requestIndex:     requestIndex,
-		entropy:          hashing.HashData(append(codec.Uint16.Encode(requestIndex), vmctx.task.Entropy[:]...)),
-		uncommittedState: buffered.NewBufferedKVStore(vmctx.stateDraft),
-	}
+	reqctx := vmctx.newRequestContext(req, requestIndex)
 
 	if vmctx.task.EnableGasBurnLogging {
 		reqctx.gas.burnLog = gas.NewGasBurnLog()
@@ -79,6 +73,16 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	reqctx.uncommittedState.Mutations().ApplyTo(vmctx.stateDraft)
 	return result, reqctx.unprocessableToRetry, nil
+}
+
+func (vmctx *vmContext) newRequestContext(req isc.Request, requestIndex uint16) *requestContext {
+	return &requestContext{
+		vm:               vmctx,
+		req:              req,
+		requestIndex:     requestIndex,
+		entropy:          hashing.HashData(append(codec.Uint16.Encode(requestIndex), vmctx.task.Entropy[:]...)),
+		uncommittedState: buffered.NewBufferedKVStore(vmctx.stateDraft),
+	}
 }
 
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {

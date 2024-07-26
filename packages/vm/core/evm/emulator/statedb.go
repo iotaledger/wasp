@@ -8,10 +8,12 @@ import (
 	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -48,30 +50,36 @@ func accountSelfDestructedKey(addr common.Address) kv.Key {
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
 // The Ethereum account balance is tied to the L1 balance.
 type StateDB struct {
-	ctx       Context
-	kv        kv.KVStore // subrealm of ctx.State()
-	logs      []*types.Log
-	snapshots map[int][]*types.Log
-	refund    uint64
+	ctx              Context
+	kv               kv.KVStore // subrealm of ctx.State()
+	logs             []*types.Log
+	snapshots        map[int][]*types.Log
+	refund           uint64
+	transientStorage transientStorage        // EIP-1153
+	newContracts     map[common.Address]bool // EIP-6780
 }
 
 var _ vm.StateDB = &StateDB{}
 
 func NewStateDB(ctx Context) *StateDB {
 	return &StateDB{
-		ctx:       ctx,
-		kv:        StateDBSubrealm(ctx.State()),
-		snapshots: make(map[int][]*types.Log),
+		ctx:              ctx,
+		kv:               StateDBSubrealm(ctx.State()),
+		snapshots:        make(map[int][]*types.Log),
+		transientStorage: newTransientStorage(),
+		newContracts:     make(map[common.Address]bool),
 	}
 }
 
 // NewStateDBFromKVStore Creates a StateDB without any context. Handle with care. Functions requiring the context will crash.
 // It is currently only used for the ERC721 registration using a KVStore which doesn't justify a new class.
-func NewStateDBFromKVStore(store kv.KVStore) *StateDB {
+func NewStateDBFromKVStore(emulatorState kv.KVStore) *StateDB {
 	return &StateDB{
-		ctx:       nil,
-		kv:        StateDBSubrealm(store),
-		snapshots: make(map[int][]*types.Log),
+		ctx:              nil,
+		kv:               StateDBSubrealm(emulatorState),
+		snapshots:        make(map[int][]*types.Log),
+		transientStorage: newTransientStorage(),
+		newContracts:     make(map[common.Address]bool),
 	}
 }
 
@@ -83,7 +91,27 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 	CreateAccount(s.kv, addr)
 }
 
-func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int) {
+// CreateContract is used whenever a contract is created. This may be preceded
+// by CreateAccount, but that is not required if it already existed in the
+// state due to funds sent beforehand.
+// This operation sets the 'newContract'-flag, which is required in order to
+// correctly handle EIP-6780 'delete-in-same-transaction' logic.
+func (s *StateDB) CreateContract(addr common.Address) {
+	s.CreateAccount(addr)
+	s.newContracts[addr] = true
+}
+
+// GetStorageRoot implements vm.StateDB.
+func (s *StateDB) GetStorageRoot(addr common.Address) common.Hash {
+	return common.BytesToHash([]byte(accountStateKey(addr, common.Hash{})))
+}
+
+// PointCache implements vm.StateDB.
+func (s *StateDB) PointCache() *utils.PointCache {
+	panic("unimplemented")
+}
+
+func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
 	if amount.Sign() == 0 {
 		return
 	}
@@ -93,7 +121,7 @@ func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int) {
 	s.ctx.SubBaseTokensBalance(addr, amount.ToBig())
 }
 
-func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int) {
+func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
 	if amount.Sign() == 0 {
 		return
 	}
@@ -225,18 +253,27 @@ func (s *StateDB) SelfDestruct(addr common.Address) {
 	s.kv.Set(accountSelfDestructedKey(addr), []byte{1})
 }
 
-func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
-	return s.kv.Has(accountSelfDestructedKey(addr))
+func (s *StateDB) Selfdestruct6780(addr common.Address) {
+	// only allow selfdestruct if within the creation tx (as per EIP-6780)
+	if s.newContracts[addr] {
+		s.SelfDestruct(addr)
+	}
 }
 
-func (s *StateDB) Selfdestruct6780(addr common.Address) {
-	panic("unimplemented")
+func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
+	return s.kv.Has(accountSelfDestructedKey(addr))
 }
 
 // Exist reports whether the given account exists in state.
 // Notably this should also return true for self-destructed accounts.
 func (s *StateDB) Exist(addr common.Address) bool {
-	return s.kv.Has(accountNonceKey(addr))
+	return Exist(addr, s.kv)
+}
+
+// Exist reports whether the given account exists in state.
+// expects s to be the stateDB state partition
+func Exist(addr common.Address, s kv.KVStoreReader) bool {
+	return s.Has(accountNonceKey(addr))
 }
 
 // Empty returns whether the given account is empty. Empty
@@ -297,21 +334,23 @@ func (s *StateDB) GetLogs() []*types.Log {
 
 func (s *StateDB) AddPreimage(common.Hash, []byte) { panic("not implemented") }
 
-func (s *StateDB) ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error {
-	panic("not implemented")
-}
-
 // GetTransientState implements vm.StateDB
-func (*StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
-	panic("unimplemented")
-}
-
-// Prepare implements vm.StateDB
-func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList) {
-	// do nothing
+func (s *StateDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
+	return s.transientStorage.Get(addr, key)
 }
 
 // SetTransientState implements vm.StateDB
-func (*StateDB) SetTransientState(addr common.Address, key common.Hash, value common.Hash) {
-	panic("unimplemented")
+func (s *StateDB) SetTransientState(addr common.Address, key common.Hash, value common.Hash) {
+	s.transientStorage.Set(addr, key, value)
+}
+
+// Prepare implements vm.StateDB
+// cleans up refunds, transient storage and "newContract" flags
+func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList) {
+	// reset refund
+	s.refund = 0
+	// reset transient storage
+	s.transientStorage = newTransientStorage()
+	// reset "newContract" flags
+	s.newContracts = make(map[common.Address]bool)
 }

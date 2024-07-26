@@ -60,6 +60,7 @@ struct IRC27NFTMetadata {
     string mimeType;
     string uri;
     string name;
+    string description;
 }
 
 // Information about an on-chain IRC27 NFT
@@ -164,6 +165,24 @@ library ISCTypes {
         //write eth addr
         for (uint i = 0; i < addrBytes.length; i++) {
             r.data[i + 1 + chainIDBytes.length] = addrBytes[i];
+        }
+        return r;
+    }
+
+    function newL1AgentID(
+        bytes memory l1Addr
+    ) internal pure returns (ISCAgentID memory) {
+        if (l1Addr.length != 32) {
+            revert("bad address length");
+        }
+        ISCAgentID memory r;
+        r.data = new bytes(2 + 32); // 2 for the kind + The hash size of BLAKE2b-256 in bytes.
+        r.data[0] = bytes1(ISCAgentIDKindAddress); // isc agentID kind
+        r.data[1] = bytes1(0); // iota go AddressEd25519 AddressType = 0
+
+        //write l1 address
+        for (uint i = 0; i < l1Addr.length; i++) {
+            r.data[i + 2] = l1Addr[i];
         }
         return r;
     }

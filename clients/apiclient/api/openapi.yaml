@@ -346,39 +346,6 @@ paths:
       summary: Get all available chain contracts
       tags:
       - chains
-  /v1/chains/{chainID}/core/accounts:
-    get:
-      operationId: accountsGetAccounts
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountListResponse'
-          description: A list of all accounts
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get a list of all accounts
-      tags:
-      - corecontracts
   /v1/chains/{chainID}/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
@@ -684,39 +651,6 @@ paths:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
       summary: Get all stored assets
-      tags:
-      - corecontracts
-  /v1/chains/{chainID}/core/blobs:
-    get:
-      operationId: blobsGetAllBlobs
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlobListResponse'
-          description: All stored blobs
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get all stored blobs
       tags:
       - corecontracts
   /v1/chains/{chainID}/core/blobs/{blobHash}:
@@ -1139,46 +1073,6 @@ paths:
       summary: Get events of a block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/contract/{contractHname}:
-    get:
-      operationId: blocklogGetEventsOfContract
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: The contract hname (Hex)
-        in: path
-        name: contractHname
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventsResponse'
-          description: The events
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get events of a contract
-      tags:
-      - corecontracts
   /v1/chains/{chainID}/core/blocklog/events/request/{requestID}:
     get:
       operationId: blocklogGetEventsOfRequest
@@ -1477,6 +1371,32 @@ paths:
       security:
       - Authorization: []
       summary: Deactivate a chain
+      tags:
+      - chains
+  /v1/chains/{chainID}/dump-accounts:
+    post:
+      operationId: dump-accounts
+      parameters:
+      - description: ChainID (Bech32)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Accounts dump will be produced
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: dump accounts information into a humanly-readable format
       tags:
       - chains
   /v1/chains/{chainID}/estimategas-offledger:
@@ -1962,7 +1882,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse__'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
                 type: array
           description: A list of all peers
         "401":
@@ -2342,25 +2262,6 @@ components:
       type: object
       xml:
         name: AccountFoundriesResponse
-    AccountListResponse:
-      example:
-        accounts:
-        - accounts
-        - accounts
-      properties:
-        accounts:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: Accounts
-            wrapped: true
-      required:
-      - accounts
-      type: object
-      xml:
-        name: AccountListResponse
     AccountNFTsResponse:
       example:
         nftIds:
@@ -2608,28 +2509,6 @@ components:
       type: object
       xml:
         name: BaseToken
-    Blob:
-      example:
-        size: 1
-        hash: hash
-      properties:
-        hash:
-          format: string
-          type: string
-          xml:
-            name: Hash
-        size:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Size
-      required:
-      - hash
-      - size
-      type: object
-      xml:
-        name: Blob
     BlobInfoResponse:
       example:
         fields:
@@ -2647,24 +2526,6 @@ components:
       type: object
       xml:
         name: BlobInfoResponse
-    BlobListResponse:
-      example:
-        Blobs:
-        - size: 1
-          hash: hash
-        - size: 1
-          hash: hash
-      properties:
-        Blobs:
-          items:
-            $ref: '#/components/schemas/Blob'
-          type: array
-          xml:
-            name: Blobs
-            wrapped: true
-      type: object
-      xml:
-        name: BlobListResponse
     BlobValueResponse:
       example:
         valueData: valueData
@@ -2803,18 +2664,18 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
         evmChainId: 1074
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
-            a: 0
-            b: 0
-          validatorFeeShare: 1
+            a: 1
+            b: 100
+          validatorFeeShare: 0
           evmGasRatio:
             a: 1
             b: 1
@@ -3020,18 +2881,18 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: peeringURL
+            peeringURL: localhost:4000
             name: name
-            publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-            numUsers: 6
+            publicKey: 0x0000
+            numUsers: 1
             isTrusted: true
           accessAPI: accessAPI
         chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
@@ -3137,10 +2998,10 @@ components:
       example:
         node:
           isAlive: true
-          peeringURL: peeringURL
+          peeringURL: localhost:4000
           name: name
-          publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          numUsers: 6
+          publicKey: 0x0000
+          numUsers: 1
           isTrusted: true
         accessAPI: accessAPI
       properties:
@@ -3706,9 +3567,9 @@ components:
     FeePolicy:
       example:
         gasPerToken:
-          a: 0
-          b: 0
-        validatorFeeShare: 1
+          a: 1
+          b: 100
+        validatorFeeShare: 0
         evmGasRatio:
           a: 1
           b: 1
@@ -3735,15 +3596,15 @@ components:
         gasPerToken:
           a: 0
           b: 0
-        validatorFeeShare: 0
+        validatorFeeShare: 1
         evmGasRatio:
           a: 0
           b: 0
       properties:
         evmGasRatio:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
+          $ref: '#/components/schemas/Ratio32__'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3809,17 +3670,17 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 5
-          minGasPerRequest: 7
-          maxGasPerBlock: 5
-          maxGasPerRequest: 2
+          maxGasExternalViewCall: 6
+          minGasPerRequest: 5
+          maxGasPerBlock: 1
+          maxGasPerRequest: 5
         chainID: chainID
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 0
+          validatorFeeShare: 1
           evmGasRatio:
             a: 0
             b: 0
@@ -4232,10 +4093,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 5
-        minGasPerRequest: 7
-        maxGasPerBlock: 5
-        maxGasPerRequest: 2
+        maxGasExternalViewCall: 6
+        minGasPerRequest: 5
+        maxGasPerBlock: 1
+        maxGasPerRequest: 5
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4808,60 +4669,6 @@ components:
     PeeringNodeStatusResponse_:
       example:
         isAlive: true
-        peeringURL: peeringURL
-        name: name
-        publicKey: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-        numUsers: 6
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        name:
-          format: string
-          type: string
-          xml:
-            name: Name
-        numUsers:
-          description: The amount of users attached to the peer
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        peeringURL:
-          description: The peering URL of the peer
-          format: string
-          type: string
-          xml:
-            name: PeeringURL
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 61270151fbd8c71e43c17e0eff8c76c1ba991be28f088f72a05d790f302d67c7
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - name
-      - numUsers
-      - peeringURL
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse__:
-      example:
-        isAlive: true
         peeringURL: localhost:4000
         name: name
         publicKey: 0x0000
@@ -5119,6 +4926,31 @@ components:
       xml:
         name: Ratio32
     Ratio32_:
+      example:
+        a: 1
+        b: 100
+      properties:
+        a:
+          example: 1
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: A
+        b:
+          example: 100
+          format: int32
+          minimum: 0
+          type: integer
+          xml:
+            name: B
+      required:
+      - a
+      - b
+      type: object
+      xml:
+        name: Ratio32
+    Ratio32__:
       example:
         a: 0
         b: 0

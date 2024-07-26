@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -44,11 +43,6 @@ func viewBalanceNativeToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID, n
 func viewTotalAssets(ctx isc.SandboxView) *isc.Assets {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
 	return NewStateReaderFromSandbox(ctx).getFungibleTokens(L2TotalsAccount)
-}
-
-// viewAccounts returns list of all accounts
-func viewAccounts(ctx isc.SandboxView) dict.Dict {
-	return NewStateReaderFromSandbox(ctx).AllAccountsAsDict()
 }
 
 // nonces are only sent with off-ledger requests

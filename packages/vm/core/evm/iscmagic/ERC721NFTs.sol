@@ -24,7 +24,7 @@ contract ERC721NFTs {
 
     /**
      * @dev Emitted when a token is transferred from one address to another.
-     * 
+     *
      * @param from The address transferring the token.
      * @param to The address receiving the token.
      * @param tokenId The ID of the token being transferred.
@@ -37,7 +37,7 @@ contract ERC721NFTs {
 
     /**
      * @dev Emitted when the approval of a token is changed or reaffirmed.
-     * 
+     *
      * @param owner The owner of the token.
      * @param approved The new approved address.
      * @param tokenId The ID of the token.
@@ -50,7 +50,7 @@ contract ERC721NFTs {
 
     /**
      * @dev Emitted when operator gets the allowance from owner.
-     * 
+     *
      * @param owner The owner of the token.
      * @param operator The operator to get the approval.
      * @param approved True if the operator got approval, false if not.
@@ -91,23 +91,32 @@ contract ERC721NFTs {
      * @return The address of the owner of the token.
      */
     function ownerOf(uint256 tokenId) public view returns (address) {
-        ISCNFT memory nft = __iscSandbox.getNFTData(tokenId.asNFTID());
-        require(nft.owner.isEthereum());
-        require(_isManagedByThisContract(nft));
-        return nft.owner.ethAddress();
+        try __iscSandbox.getNFTData(tokenId.asNFTID()) returns (
+            ISCNFT memory nft
+        ) {
+            require(nft.owner.isEthereum());
+            require(_isManagedByThisContract(nft));
+            return nft.owner.ethAddress();
+        } catch {
+            revert("ERC721NonexistentToken");
+        }
+    }
+
+    function _requireNftExists(uint256 tokenId) internal view {
+        ownerOf(tokenId); // ownderOf will revert if the NFT does not exist
     }
 
     /**
      * @dev Safely transfers an ERC721 token from one address to another.
-     * 
+     *
      * Emits a `Transfer` event.
-     * 
+     *
      * Requirements:
      * - `from` cannot be the zero address.
      * - `to` cannot be the zero address.
      * - The token must exist and be owned by `from`.
      * - If `to` is a smart contract, it must implement the `onERC721Received` function and return the magic value.
-     * 
+     *
      * @param from The address to transfer the token from.
      * @param to The address to transfer the token to.
      * @param tokenId The ID of the token to be transferred.
@@ -125,14 +134,14 @@ contract ERC721NFTs {
 
     /**
      * @dev Safely transfers an ERC721 token from one address to another.
-     * 
+     *
      * Emits a `Transfer` event.
-     * 
+     *
      * Requirements:
      * - `from` cannot be the zero address.
      * - `to` cannot be the zero address.
      * - The caller must own the token or be approved for it.
-     * 
+     *
      * @param from The address to transfer the token from.
      * @param to The address to transfer the token to.
      * @param tokenId The ID of the token to be transferred.
@@ -197,6 +206,7 @@ contract ERC721NFTs {
      * @return The address approved to transfer the ownership of the token.
      */
     function getApproved(uint256 tokenId) public view returns (address) {
+        _requireNftExists(tokenId);
         return _tokenApprovals[tokenId];
     }
 
@@ -290,20 +300,19 @@ contract ERC721NFTs {
         return size > 0;
     }
 
-    // IERC721Metadata
-
     function name() external view virtual returns (string memory) {
-        return "";
+        return "L1 NFTs";
     }
 
     function symbol() external pure returns (string memory) {
-        return ""; // not defined in IRC27
+        return "CollectionL1";
     }
 
+    // IERC721Metadata
     function tokenURI(uint256 tokenId) external view returns (string memory) {
-        IRC27NFT memory nft = __iscSandbox.getIRC27NFTData(tokenId.asNFTID());
-        require(_isManagedByThisContract(nft.nft));
-        return nft.metadata.uri;
+        _requireNftExists(tokenId);
+        string memory uri = __iscSandbox.getIRC27TokenURI(tokenId.asNFTID());
+        return uri;
     }
 }
 

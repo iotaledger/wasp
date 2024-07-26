@@ -500,25 +500,47 @@ func TestISCNFTMint(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	_, err := iscTest.CallFn([]ethCallOptions{{
-		value: big.NewInt(int64(5000000000000 * isc.Million)),
-	}}, "mintNFT")
-
-	require.NoError(t, err)
+	var mintID1 []byte
+	iscTest.CallFnExpectEvent(
+		[]ethCallOptions{{
+			value: big.NewInt(int64(5000000000000 * isc.Million)),
+		}},
+		"nftMint",
+		&mintID1,
+		"mintNFT",
+	)
+	require.NotEmpty(t, mintID1)
 
 	/// produce a block (so the minted nft gets accounted for)
-	_, err = iscTest.triggerEvent("Hi from EVM!")
+	_, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
 	///
 
+	// assert the event for minting the L1 NFT is issued on the following block
+	logs := env.LastBlockEVMLogs()
+	require.Len(t, logs, 1)
+
 	evmAccNFTs := env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
 	require.Len(t, evmAccNFTs, 1)
-	nftID := evmAccNFTs[0]
+	nftID1 := evmAccNFTs[0]
+
+	checkTransferEventERC721(
+		t,
+		logs[0],
+		iscmagic.ERC721NFTsAddress,
+		common.Address{}, // zero address (mint)
+		ethAddr,
+		iscmagic.WrapNFTID(nftID1).TokenID(),
+	)
+
+	// assert collection contract is NOT created
+	collectionAddr := iscmagic.ERC721NFTCollectionAddress(nftID1)
+	require.Empty(t, env.getCode(collectionAddr))
 
 	ret := new(iscmagic.ISCNFT)
 	env.ISCMagicSandbox(ethKey).callView(
 		"getNFTData",
-		[]interface{}{iscmagic.WrapNFTID(nftID)},
+		[]interface{}{iscmagic.WrapNFTID(nftID1)},
 		&ret,
 	)
 
@@ -534,15 +556,86 @@ func TestISCNFTMint(t *testing.T) {
 
 	retIRC27 := new(iscmagic.IRC27NFT)
 
-	env.ISCMagicSandbox(ethKey).callView(
+	err = env.ISCMagicSandbox(ethKey).callView(
 		"getIRC27NFTData",
-		[]interface{}{iscmagic.WrapNFTID(nftID)},
+		[]interface{}{iscmagic.WrapNFTID(nftID1)},
 		&retIRC27)
+	require.NoError(t, err)
 
 	irc27MetaData, err := isc.IRC27NFTMetadataFromBytes(ret.Metadata)
 	require.NoError(t, err)
 
 	require.Equal(t, irc27MetaData.Name, retIRC27.Metadata.Name)
+
+	// mint a new NFT using the initial one as the collection, assert the collection contract is created
+
+	// send the collection NFT to the "isctest contract", so it can mint as part of that collection
+	{
+		erc721 := env.ERC721NFTs(ethKey)
+		_, err = erc721.CallFn(nil, "approve", iscTest.address, iscmagic.WrapNFTID(nftID1).TokenID())
+		require.NoError(t, err)
+
+		_, err = erc721.CallFn([]ethCallOptions{{
+			sender: ethKey,
+		}}, "transferFrom", ethAddr, iscTest.address, iscmagic.WrapNFTID(nftID1).TokenID())
+		require.NoError(t, err)
+
+		evmAccNFTs = env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
+		require.Len(t, evmAccNFTs, 0)
+	}
+
+	var mintID2 []byte
+	iscTest.CallFnExpectEvent(
+		[]ethCallOptions{{
+			value: big.NewInt(int64(5000000000000 * isc.Million)),
+		}},
+		"nftMint",
+		&mintID2,
+		"mintNFTForCollection",
+		iscmagic.WrapNFTID(nftID1),
+	)
+	require.NotEmpty(t, mintID2)
+
+	/// produce a block (so the minted nft gets accounted for)
+	_, err = iscTest.triggerEvent("Hi from EVM 2 !")
+	require.NoError(t, err)
+	///
+
+	evmAccNFTs = env.Chain.L2NFTs(isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr))
+	require.Len(t, evmAccNFTs, 1)
+	nftID2 := evmAccNFTs[0]
+
+	// assert collection contract is created (for the collection NFT only)
+	require.NotEmpty(t, env.getCode(collectionAddr))
+	require.Empty(t, env.getCode(iscmagic.ERC721NFTCollectionAddress(nftID2)))
+
+	logs = env.LastBlockEVMLogs()
+	require.Len(t, logs, 1)
+
+	checkTransferEventERC721(
+		t,
+		logs[0],
+		collectionAddr,
+		common.Address{}, // zero address (mint)
+		ethAddr,
+		iscmagic.WrapNFTID(nftID2).TokenID(),
+	)
+}
+
+func TestEVMMintNFTToL1(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	someL1Addr := tpkg.RandEd25519Address()
+
+	_, err := iscTest.CallFn([]ethCallOptions{{
+		value: big.NewInt(int64(5000000000000 * isc.Million)),
+	}}, "mintNFTToL1", someL1Addr[:])
+
+	require.NoError(t, err)
+
+	require.Len(t, env.solo.L1NFTs(someL1Addr), 1)
 }
 
 func TestISCTriggerEvent(t *testing.T) {
@@ -897,6 +990,32 @@ func TestSendNFT(t *testing.T) {
 			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
 		),
 	)
+	// there must be 2 Transfer events emitted from the ERC721NFTs contract:
+	// 1. Transfer NFT ethAddress -> ISCTest
+	// 2. Transfer NFT ISCTest -> 0x0 (send to L1)
+	{
+		blockTxs := lo.Must(env.evmChain.BlockByNumber(nil)).Transactions()
+		require.Len(t, blockTxs, 1)
+		tx := blockTxs[0]
+		receipt := env.evmChain.TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 2)
+		checkTransferEventERC721(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC721NFTsAddress,
+			ethAddr,
+			iscTest.address,
+			iscmagic.WrapNFTID(nft.ID).TokenID(),
+		)
+		checkTransferEventERC721(
+			t,
+			receipt.Logs[1],
+			iscmagic.ERC721NFTsAddress,
+			iscTest.address,
+			common.Address{},
+			iscmagic.WrapNFTID(nft.ID).TokenID(),
+		)
+	}
 }
 
 func TestERC721NFTs(t *testing.T) {
@@ -915,6 +1034,23 @@ func TestERC721NFTs(t *testing.T) {
 	nft, _, err := env.solo.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, []byte("foobar"))
 	require.NoError(t, err)
 	env.Chain.MustDepositNFT(nft, ethAgentID, env.Chain.OriginatorPrivateKey)
+
+	// there must be a Transfer event emitted from the ERC721NFTs contract
+	{
+		blockTxs := env.latestEVMTxs()
+		require.Len(t, blockTxs, 1)
+		tx := blockTxs[0]
+		receipt := env.evmChain.TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 1)
+		checkTransferEventERC721(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC721NFTsAddress,
+			common.Address{},
+			ethAddr,
+			iscmagic.WrapNFTID(nft.ID).TokenID(),
+		)
+	}
 
 	{
 		var n *big.Int
@@ -980,6 +1116,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		"text/html",
 		"https://my-awesome-nft-project.com",
 		"a string that is longer than 32 bytes",
+		[]interface{}{`{"trait_type": "collection", "value": "super"}`},
 	)
 
 	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
@@ -990,11 +1127,13 @@ func TestERC721NFTCollection(t *testing.T) {
 			"application/json",
 			"https://my-awesome-nft-project.com/1.json",
 			"nft1",
+			[]interface{}{`{"trait_type": "Foo", "value": "Bar"}`},
 		),
 		isc.NewIRC27NFTMetadata(
 			"application/json",
 			"https://my-awesome-nft-project.com/2.json",
 			"nft2",
+			[]interface{}{`{"trait_type": "Bar", "value": "Baz"}`},
 		),
 	}
 	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
@@ -1009,17 +1148,41 @@ func TestERC721NFTCollection(t *testing.T) {
 		require.True(t, env.solo.HasL1NFT(collectionOwnerAddr, &nft.ID))
 	}
 
-	// deposit all nfts on L2
-	nfts := func() []*isc.NFT {
-		var nfts []*isc.NFT
+	// deposit the collection NFT in the owner's L2 account
+	collectionNFT, _ := lo.Find(allNFTs, func(nft *isc.NFT) bool { return nft.ID == collection.ID })
+	env.Chain.MustDepositNFT(collectionNFT, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
+
+	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
+	require.NoError(t, err)
+
+	// should not allow to register again
+	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
+	require.ErrorContains(t, err, "already exists")
+
+	// deposit the two nfts of the collection on ethAddr's L2 account
+	nfts := func() (nfts []*isc.NFT) {
 		for _, nft := range allNFTs {
 			if nft.ID == collection.ID {
-				// the collection NFT in the owner's account
-				env.Chain.MustDepositNFT(nft, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
-			} else {
-				// others in ethAgentID's account
-				env.Chain.MustDepositNFT(nft, ethAgentID, collectionOwner)
-				nfts = append(nfts, nft)
+				continue
+			}
+			env.Chain.MustDepositNFT(nft, ethAgentID, collectionOwner)
+			nfts = append(nfts, nft)
+
+			// there must be a Transfer event emitted from the ERC721NFTCollection contract
+			{
+				blockTxs := env.latestEVMTxs()
+				require.Len(t, blockTxs, 1)
+				tx := blockTxs[0]
+				receipt := env.evmChain.TransactionReceipt(tx.Hash())
+				require.Len(t, receipt.Logs, 1)
+				checkTransferEventERC721(
+					t,
+					receipt.Logs[0],
+					iscmagic.ERC721NFTCollectionAddress(collection.ID),
+					common.Address{},
+					ethAddr,
+					iscmagic.WrapNFTID(nft.ID).TokenID(),
+				)
 			}
 		}
 		return nfts
@@ -1033,13 +1196,6 @@ func TestERC721NFTCollection(t *testing.T) {
 		return metadata.URI == nftMetadatas[0].URI
 	})
 	require.True(t, ok)
-
-	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
-	require.NoError(t, err)
-
-	// should not allow to register again
-	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
-	require.ErrorContains(t, err, "already exists")
 
 	erc721 := env.ERC721NFTCollection(ethKey, collection.ID)
 
@@ -1101,7 +1257,12 @@ func TestERC721NFTCollection(t *testing.T) {
 	{
 		var uri string
 		erc721.callView("tokenURI", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &uri)
-		require.EqualValues(t, nftMetadatas[0].URI, uri)
+		p, err := evm.DecodePackedNFTURI(uri)
+		require.NoError(t, err)
+		require.EqualValues(t, nftMetadatas[0].URI, p.Image)
+		require.EqualValues(t, nftMetadatas[0].Name, p.Name)
+		require.EqualValues(t, nftMetadatas[0].Description, p.Description)
+		require.EqualValues(t, nftMetadatas[0].Attributes, p.Attributes)
 	}
 }
 
@@ -1328,6 +1489,21 @@ func TestERC20BaseTokens(t *testing.T) {
 	}
 }
 
+func checkTransferEventERC721(
+	t *testing.T,
+	log *types.Log,
+	contractAddress, from, to common.Address,
+	tokenID *big.Int,
+) {
+	require.Equal(t, contractAddress, log.Address)
+	require.Len(t, log.Topics, 4)
+	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
+	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
+	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
+	require.Equal(t, evmutil.ERC721TokenIDToIndexedTopic(tokenID), log.Topics[3])
+	require.Empty(t, log.Data)
+}
+
 func TestERC20NativeTokens(t *testing.T) {
 	env := InitEVM(t, false)
 
@@ -1348,7 +1524,6 @@ func TestERC20NativeTokens(t *testing.T) {
 		WithTokenSymbol(tokenTickerSymbol).
 		WithTokenDecimals(tokenDecimals).
 		CreateFoundry()
-
 	require.NoError(t, err)
 	err = env.Chain.MintTokens(foundrySN, supply, foundryOwner)
 	require.NoError(t, err)
@@ -1370,6 +1545,23 @@ func TestERC20NativeTokens(t *testing.T) {
 	}), ethAgentID, foundryOwner)
 	require.NoError(t, err)
 
+	// there must be a Transfer event emitted from the ERC20NativeTokens contract
+	{
+		blockTxs := env.latestEVMTxs()
+		require.Len(t, blockTxs, 1)
+		tx := blockTxs[0]
+		receipt := env.evmChain.TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 1)
+		checkTransferEventERC20(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC20NativeTokensAddress(foundrySN),
+			common.Address{},
+			ethAddr,
+			supply,
+		)
+	}
+
 	{
 		sandbox := env.ISCMagicSandbox(ethKey)
 		var addr common.Address
@@ -1388,6 +1580,21 @@ func TestERC20NativeTokens(t *testing.T) {
 		supply,
 		ethAgentID,
 	)
+}
+
+func checkTransferEventERC20(
+	t *testing.T,
+	log *types.Log,
+	contractAddress, from, to common.Address,
+	amount *big.Int,
+) {
+	require.Equal(t, contractAddress, log.Address)
+
+	require.Len(t, log.Topics, 3)
+	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
+	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
+	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
+	require.Equal(t, evmutil.PackUint256(amount), log.Data)
 }
 
 // helper to make sandbox calls via EVM in a more readable way
@@ -1431,7 +1638,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	// TODO could be improved, but we cannot just do env.ISCMagicSandbox to create a sandbox of the foundry chain. Will keep it this way to minimize conflicts with the 2.0 branch
 	parsedABI, err := abi.JSON(strings.NewReader(iscmagic.SandboxABI))
 	require.NoError(t, err)
-	sandbox := &IscContractInstance{
+	foundryChainISCMagic := &IscContractInstance{
 		EVMContractInstance: &EVMContractInstance{
 			chain: &SoloChainEnv{
 				t:          t,
@@ -1447,7 +1654,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	}
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	sandboxCall(t, ethKey, sandbox,
+	sandboxCall(t, ethKey, foundryChainISCMagic,
 		accounts.Contract.Hname(),
 		accounts.FuncNativeTokenCreate.Hname(),
 		dict.Dict{
@@ -1468,7 +1675,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 	require.NoError(t, err)
 
 	// use the foundry owner ethereum account to mint tokens
-	sandboxCall(t, ethKey, sandbox,
+	sandboxCall(t, ethKey, foundryChainISCMagic,
 		accounts.Contract.Hname(),
 		accounts.FuncNativeTokenModifySupply.Hname(),
 		dict.Dict{
@@ -1480,7 +1687,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 
 	// foundryChain itself will create a request targeting the test chain
 	// this request must be done by the foundry owner (the foundry creator in this case)
-	sandboxCall(t, ethKey, sandbox,
+	sandboxCall(t, ethKey, foundryChainISCMagic,
 		evm.Contract.Hname(),
 		evm.FuncRegisterERC20NativeTokenOnRemoteChain.Hname(),
 		dict.Dict{
@@ -1531,7 +1738,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		},
 	)
 
-	_, err = sandbox.CallFn(
+	_, err = foundryChainISCMagic.CallFn(
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(env.Chain.ChainID.AsAddress()), // target of the "send" call is the test chain
@@ -1548,6 +1755,23 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		iscmagic.ISCSendOptions{},
 	)
 	require.NoError(t, err)
+
+	// there must be a Transfer event emitted from the foundry chain's ERC20NativeTokens contract
+	{
+		blockTxs := lo.Must(foundryChain.EVM().BlockByNumber(nil)).Transactions()
+		require.Len(t, blockTxs, 1)
+		tx := blockTxs[0]
+		receipt := foundryChain.EVM().TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 1)
+		checkTransferEventERC20(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC20NativeTokensAddress(foundrySN),
+			ethAddr,
+			common.Address{},
+			supply,
+		)
+	}
 
 	// wait until chainB handles the request, assert it was processed successfully
 	env.Chain.WaitUntil(func() bool {
@@ -1795,8 +2019,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    nil,
 			expectedError: "insufficient gas price: got 0, minimum is 10000000000",
-			gasBurned:     168154,
-			feeCharged:    1682,
+			gasBurned:     168098,
+			feeCharged:    1681,
 		},
 		{
 			name:          "default policy, gas price too low",
@@ -1804,8 +2028,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    big.NewInt(9999999999),
 			expectedError: "insufficient gas price: got 9999999999, minimum is 10000000000",
-			gasBurned:     168154,
-			feeCharged:    1682,
+			gasBurned:     168098,
+			feeCharged:    1681,
 		},
 		{
 			name:        "default policy, gas price just enough",
@@ -1837,8 +2061,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:    big.NewInt(19999999999),
 			expectedError: "insufficient gas price: got 19999999999, minimum is 20000000000",
-			gasBurned:     168154,
-			feeCharged:    2 * 1682,
+			gasBurned:     168098,
+			feeCharged:    2 * 1681,
 		},
 		{
 			name:        "gas more expensive, gas price just enough",
@@ -2131,6 +2355,7 @@ func TestStaticCall(t *testing.T) {
 }
 
 func TestSelfDestruct(t *testing.T) {
+	// NOTE: since EIP-6780 self-destruct was deprecated
 	env := InitEVM(t, false)
 	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
 
@@ -2153,11 +2378,23 @@ func TestSelfDestruct(t *testing.T) {
 	_, err := iscTest.CallFn([]ethCallOptions{{sender: ethKey}}, "testSelfDestruct", beneficiary)
 	require.NoError(t, err)
 
-	require.Empty(t, env.getCode(iscTest.address))
+	// (EIP-6780) SELFDESTRUCT will recover all funds to the target but not delete the account,
+	// except when called in the same transaction as creation
+	require.NotEmpty(t, env.getCode(iscTest.address))
 	require.Zero(t, env.Chain.L2BaseTokens(iscTestAgentID))
 	require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, beneficiary)))
 
 	testdbhash.VerifyContractStateHash(env.solo, evm.Contract, "", t.Name())
+}
+
+func TestSelfDestruct6780(t *testing.T) {
+	env := InitEVM(t, false)
+	ethKey, _ := env.Chain.EthereumAccountByIndexWithL2Funds(0)
+	iscTest := env.deployISCTestContract(ethKey)
+
+	var createContractAddr common.Address
+	iscTest.CallFnExpectEvent(nil, "TestSelfDestruct6780ContractCreated", &createContractAddr, "testSelfDestruct6780")
+	require.Empty(t, env.getCode(createContractAddr))
 }
 
 func TestChangeGasLimit(t *testing.T) {
@@ -2318,8 +2555,8 @@ func TestTraceTransaction(t *testing.T) {
 		_, err := storage.store(43)
 		require.NoError(t, err)
 		trace := traceLatestTx()
-		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
-		require.EqualValues(t, storage.address, common.HexToAddress(trace.To))
+		require.EqualValues(t, ethAddr, trace.From)
+		require.EqualValues(t, storage.address, *trace.To)
 		require.Empty(t, trace.Calls)
 	}
 	{
@@ -2327,8 +2564,8 @@ func TestTraceTransaction(t *testing.T) {
 		_, err := iscTest.triggerEvent("Hi from EVM!")
 		require.NoError(t, err)
 		trace := traceLatestTx()
-		require.EqualValues(t, ethAddr, common.HexToAddress(trace.From))
-		require.EqualValues(t, iscTest.address, common.HexToAddress(trace.To))
+		require.EqualValues(t, ethAddr, trace.From)
+		require.EqualValues(t, iscTest.address, *trace.To)
 		require.NotEmpty(t, trace.Calls)
 	}
 }
@@ -2452,9 +2689,7 @@ func TestL1DepositEVM(t *testing.T) {
 	require.NoError(t, err)
 
 	// previous block must only have 1 tx, that corresponds to the deposit to ethAddr
-	block, err := env.Chain.EVM().BlockByNumber(big.NewInt(int64(env.getBlockNumber())))
-	require.NoError(t, err)
-	blockTxs := block.Transactions()
+	blockTxs := env.latestEVMTxs()
 	require.Len(t, blockTxs, 1)
 	tx := blockTxs[0]
 	require.True(t, tx.GasPrice().Cmp(util.Big0) == 1)
@@ -2471,7 +2706,7 @@ func TestL1DepositEVM(t *testing.T) {
 
 	// blockIndex
 	blockIndex := rr.ReadUint32()
-	require.Equal(t, block.Number().Uint64(), uint64(blockIndex))
+	require.Equal(t, env.evmChain.BlockNumber().Uint64(), uint64(blockIndex))
 	reqIndex := rr.ReadUint16()
 	require.Zero(t, reqIndex)
 	n, err := buf.Read([]byte{})
@@ -2500,9 +2735,7 @@ func TestL1DepositEVM(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	block2, err := env.Chain.EVM().BlockByNumber(big.NewInt(int64(env.getBlockNumber())))
-	require.NoError(t, err)
-	blockTxs2 := block2.Transactions()
+	blockTxs2 := env.latestEVMTxs()
 	require.Len(t, blockTxs2, 1)
 	tx2 := blockTxs2[0]
 	require.NotEqual(t, tx.Hash(), tx2.Hash())

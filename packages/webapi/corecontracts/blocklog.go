@@ -92,13 +92,3 @@ func GetEventsForBlock(ch chain.Chain, blockIndex uint32, blockIndexOrTrieRoot s
 	}
 	return blocklog.ViewGetEventsForBlock.Output2.Decode(ret)
 }
-
-func GetEventsForContract(ch chain.Chain, contractHname isc.Hname, blockIndexOrTrieRoot string) ([]*isc.Event, error) {
-	ret, err := common.CallView(ch, blocklog.ViewGetEventsForContract.Message(blocklog.EventsForContractQuery{
-		Contract: contractHname,
-	}), blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-	return blocklog.ViewGetEventsForContract.Output.Decode(ret)
-}

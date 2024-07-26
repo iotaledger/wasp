@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"golang.org/x/exp/maps"
 
@@ -57,12 +58,13 @@ func (m *UserManager) Users() map[string]*User {
 
 // User returns a copy of a user.
 func (m *UserManager) User(name string) (*User, error) {
-	return m.onChangeMap.Get(util.ComparableString(name))
+	return m.onChangeMap.Get(util.ComparableString(strings.ToLower(name)))
 }
 
 // AddUser adds a user to the user manager.
 func (m *UserManager) AddUser(user *User) error {
 	user.Permissions = m.SanitizePermissions(user.Permissions)
+	user.Name = strings.ToLower(user.Name)
 
 	return m.onChangeMap.Add(user)
 }
@@ -70,6 +72,7 @@ func (m *UserManager) AddUser(user *User) error {
 // ModifyUser modifies a user in the user manager.
 func (m *UserManager) ModifyUser(user *User) error {
 	user.Permissions = m.SanitizePermissions(user.Permissions)
+	user.Name = strings.ToLower(user.Name)
 
 	_, err := m.onChangeMap.Modify(user.ID(), func(item *User) bool {
 		*item = *user

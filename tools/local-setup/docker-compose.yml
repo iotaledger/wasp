@@ -6,7 +6,7 @@ services:
 
   traefik:
     container_name: traefik
-    image: traefik:v3.0
+    image: traefik:v3.1
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"

@@ -524,10 +524,8 @@ func TestRPCTraceTx(t *testing.T) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
 	require.NoError(t, err)
 	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
-	env.soloChain.WaitForRequestsMark()
 
 	// make it so that 2 requests are included in the same block
-	env.soloChain.WaitForRequestsMark()
 
 	tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
 		&types.LegacyTx{
@@ -551,6 +549,7 @@ func TestRPCTraceTx(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	env.soloChain.WaitForRequestsMark()
 	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
 	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
 
@@ -580,7 +579,7 @@ func TestRPCTraceTx(t *testing.T) {
 		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
 	)
 	require.NoError(t, err)
-	lastCallRegExp := regexp.MustCompile(`.*{"type":"CALL",.+"to":"0x([a-zA-Z0-9_.-]+)".*}`)
+	lastCallRegExp := regexp.MustCompile(`{.+"to":"0x([a-zA-Z0-9_.-]+)".*}`)
 	match1 := lastCallRegExp.Find(res1)
 	match2 := lastCallRegExp.Find(res2)
 	require.NotEqual(t, match1, match2)

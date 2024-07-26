@@ -15,7 +15,7 @@ func EVMTraceTransaction(
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
-	tracer tracers.Tracer,
+	tracer *tracers.Tracer,
 ) error {
 	_, err := runISCTask(
 		ch,

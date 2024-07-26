@@ -53,10 +53,6 @@ var (
 		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
 		OutputEvents{},
 	)
-	ViewGetEventsForContract = coreutil.NewViewEP11(Contract, "getEventsForContract",
-		InputEventsForContract{},
-		OutputEvents{},
-	)
 	ViewHasUnprocessable = coreutil.NewViewEP11(Contract, "hasUnprocessable",
 		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
 		coreutil.FieldWithCodec(ParamUnprocessableRequestExists, codec.Bool),

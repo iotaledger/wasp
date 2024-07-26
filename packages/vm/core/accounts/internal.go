@@ -188,7 +188,7 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets, chainID)
 }
 
-func (s *StateWriter) UpdateLatestOutputID(anchorTxID iotago.TransactionID, blockIndex uint32) []iotago.NFTID {
+func (s *StateWriter) UpdateLatestOutputID(anchorTxID iotago.TransactionID, blockIndex uint32) map[iotago.NFTID]isc.AgentID {
 	s.updateNativeTokenOutputIDs(anchorTxID)
 	s.updateFoundryOutputIDs(anchorTxID)
 	s.updateNFTOutputIDs(anchorTxID)

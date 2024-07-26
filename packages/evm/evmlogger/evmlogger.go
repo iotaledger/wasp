@@ -2,9 +2,9 @@ package evmlogger
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/ethereum/go-ethereum/log"
-	"golang.org/x/exp/slog"
 
 	hiveLog "github.com/iotaledger/hive.go/logger"
 )

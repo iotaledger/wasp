@@ -6,8 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -173,14 +175,14 @@ func (e *SoloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *IscCont
 }
 
 func (e *SoloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundrySN uint32) *IscContractInstance {
-	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
+	ntABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
 		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC20NativeTokensAddress(foundrySN),
-			abi:           erc20BaseABI,
+			abi:           ntABI,
 		},
 	}
 }
@@ -281,4 +283,20 @@ func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.Ke
 		collectionOwner,
 	)
 	return err
+}
+
+func (e *SoloChainEnv) latestEVMTxs() types.Transactions {
+	block, err := e.Chain.EVM().BlockByNumber(nil)
+	require.NoError(e.t, err)
+	return block.Transactions()
+}
+
+func (e *SoloChainEnv) LastBlockEVMLogs() []*types.Log {
+	blockNumber := e.getBlockNumber()
+	logs, err := e.evmChain.Logs(&ethereum.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(blockNumber),
+		ToBlock:   new(big.Int).SetUint64(blockNumber),
+	}, &jsonrpc.ParametersDefault().Logs)
+	require.NoError(e.t, err)
+	return logs
 }

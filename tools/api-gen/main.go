@@ -36,7 +36,29 @@ func main() {
 	}
 
 	swagger := webapi.CreateEchoSwagger(e, app.Version)
-	v2.Init(mockLog, swagger, app.Version, nil, nil, nil, nil, nil, nil, &NodeIdentityProviderMock{}, nil, nil, nil, nil, authentication.AuthConfiguration{Scheme: authentication.AuthJWT}, time.Second, nil, "", nil, jsonrpc.ParametersDefault())
+	v2.Init(
+		mockLog,
+		swagger,
+		app.Version,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		&NodeIdentityProviderMock{},
+		nil,
+		nil,
+		nil,
+		nil,
+		authentication.AuthConfiguration{Scheme: authentication.AuthJWT},
+		time.Second,
+		nil,
+		"",
+		"",
+		nil,
+		jsonrpc.ParametersDefault(),
+	)
 
 	root, ok := swagger.(*echoswagger.Root)
 	if !ok {

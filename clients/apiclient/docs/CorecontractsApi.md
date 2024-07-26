@@ -8,18 +8,15 @@ Method | HTTP request | Description
 [**AccountsGetAccountFoundries**](CorecontractsApi.md#AccountsGetAccountFoundries) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
 [**AccountsGetAccountNFTIDs**](CorecontractsApi.md#AccountsGetAccountNFTIDs) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
 [**AccountsGetAccountNonce**](CorecontractsApi.md#AccountsGetAccountNonce) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**AccountsGetAccounts**](CorecontractsApi.md#AccountsGetAccounts) | **Get** /v1/chains/{chainID}/core/accounts | Get a list of all accounts
 [**AccountsGetFoundryOutput**](CorecontractsApi.md#AccountsGetFoundryOutput) | **Get** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
 [**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
 [**AccountsGetNativeTokenIDRegistry**](CorecontractsApi.md#AccountsGetNativeTokenIDRegistry) | **Get** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
 [**AccountsGetTotalAssets**](CorecontractsApi.md#AccountsGetTotalAssets) | **Get** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**BlobsGetAllBlobs**](CorecontractsApi.md#BlobsGetAllBlobs) | **Get** /v1/chains/{chainID}/core/blobs | Get all stored blobs
 [**BlobsGetBlobInfo**](CorecontractsApi.md#BlobsGetBlobInfo) | **Get** /v1/chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
 [**BlobsGetBlobValue**](CorecontractsApi.md#BlobsGetBlobValue) | **Get** /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
 [**BlocklogGetBlockInfo**](CorecontractsApi.md#BlocklogGetBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
 [**BlocklogGetControlAddresses**](CorecontractsApi.md#BlocklogGetControlAddresses) | **Get** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
 [**BlocklogGetEventsOfBlock**](CorecontractsApi.md#BlocklogGetEventsOfBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
-[**BlocklogGetEventsOfContract**](CorecontractsApi.md#BlocklogGetEventsOfContract) | **Get** /v1/chains/{chainID}/core/blocklog/events/contract/{contractHname} | Get events of a contract
 [**BlocklogGetEventsOfLatestBlock**](CorecontractsApi.md#BlocklogGetEventsOfLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
 [**BlocklogGetEventsOfRequest**](CorecontractsApi.md#BlocklogGetEventsOfRequest) | **Get** /v1/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
 [**BlocklogGetLatestBlockInfo**](CorecontractsApi.md#BlocklogGetLatestBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
@@ -328,76 +325,6 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## AccountsGetAccounts
-
-> AccountListResponse AccountsGetAccounts(ctx, chainID).Block(block).Execute()
-
-Get a list of all accounts
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    block := "block_example" // string | Block index or trie root (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetAccounts(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetAccounts``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetAccounts`: AccountListResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetAccounts`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAccountsGetAccountsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**AccountListResponse**](AccountListResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
 ## AccountsGetFoundryOutput
 
 > FoundryOutputResponse AccountsGetFoundryOutput(ctx, chainID, serialNumber).Block(block).Execute()
@@ -669,76 +596,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AssetsResponse**](AssetsResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## BlobsGetAllBlobs
-
-> BlobListResponse BlobsGetAllBlobs(ctx, chainID).Block(block).Execute()
-
-Get all stored blobs
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    block := "block_example" // string | Block index or trie root (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlobsGetAllBlobs(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlobsGetAllBlobs``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlobsGetAllBlobs`: BlobListResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlobsGetAllBlobs`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiBlobsGetAllBlobsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**BlobListResponse**](BlobListResponse.md)
 
 ### Authorization
 
@@ -1093,79 +950,6 @@ Name | Type | Description  | Notes
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiBlocklogGetEventsOfBlockRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**EventsResponse**](EventsResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## BlocklogGetEventsOfContract
-
-> EventsResponse BlocklogGetEventsOfContract(ctx, chainID, contractHname).Block(block).Execute()
-
-Get events of a contract
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    contractHname := "contractHname_example" // string | The contract hname (Hex)
-    block := "block_example" // string | Block index or trie root (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetEventsOfContract(context.Background(), chainID, contractHname).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetEventsOfContract``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetEventsOfContract`: EventsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetEventsOfContract`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**contractHname** | **string** | The contract hname (Hex) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiBlocklogGetEventsOfContractRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes

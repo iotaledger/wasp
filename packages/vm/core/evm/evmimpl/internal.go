@@ -8,11 +8,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -22,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/samber/lo"
 )
 
 // MintBlock "mints" the Ethereum block after all requests in the ISC
@@ -31,7 +30,7 @@ func MintBlock(evmPartition kv.KVStore, chainInfo *isc.ChainInfo, blockTimestamp
 	createBlockchainDB(evmPartition, chainInfo).MintBlock(timestamp(blockTimestamp))
 }
 
-func getTracer(ctx isc.Sandbox) tracers.Tracer {
+func getTracer(ctx isc.Sandbox) *tracing.Hooks {
 	tracer := ctx.EVMTracer()
 	if tracer == nil {
 		return nil
@@ -39,7 +38,7 @@ func getTracer(ctx isc.Sandbox) tracers.Tracer {
 	if tracer.TxIndex != uint64(ctx.RequestIndex()) {
 		return nil // trace only the transaction we're interested in
 	}
-	return tracer.Tracer
+	return tracer.Tracer.Hooks
 }
 
 func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {

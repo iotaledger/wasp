@@ -48,7 +48,7 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID,
 	return receipt, nil
 }
 
-// WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
+// WaitUntilEVMRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
 // but also checks the receipt and return an error if the request was processed with an error
 func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(chainID isc.ChainID, txHash common.Hash, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
 	requestID := isc.RequestIDFromEVMTxHash(txHash)

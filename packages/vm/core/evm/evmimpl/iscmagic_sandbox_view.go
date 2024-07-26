@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -41,6 +42,14 @@ func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IR
 		Nft:      iscmagic.WrapISCNFT(nft),
 		Metadata: iscmagic.WrapIRC27NFTMetadata(metadata),
 	}
+}
+
+// handler for ISCSandbox::getIRC27TokenURI
+func (h *magicContractHandler) GetIRC27TokenURI(nftID iscmagic.NFTID) string {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
+	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
+	h.ctx.RequireNoError(err)
+	return evm.EncodePackedNFTURI(metadata)
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds

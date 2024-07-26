@@ -28,14 +28,12 @@ func TestDepositWithdraw(t *testing.T) {
 	require.True(t,
 		e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount)),
 	)
-	chEnv.checkLedger()
 
 	myAgentID := isc.NewAgentID(myAddress)
 	// origAgentID := isc.NewAgentID(chain.OriginatorAddress(), 0)
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)
-	chEnv.checkLedger()
 
 	// deposit some base tokens to the chain
 	depositBaseTokens := 10 * isc.Million
@@ -47,7 +45,6 @@ func TestDepositWithdraw(t *testing.T) {
 
 	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, true, 30*time.Second)
 	require.NoError(t, err)
-	chEnv.checkLedger()
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
 	gasFees1, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
@@ -71,7 +68,6 @@ func TestDepositWithdraw(t *testing.T) {
 	receipt, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
-	chEnv.checkLedger()
 	gasFees2, err := iotago.DecodeUint64(receipt.GasFeeCharged)
 	require.NoError(t, err)
 

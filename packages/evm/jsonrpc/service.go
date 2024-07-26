@@ -416,8 +416,6 @@ func (e *EthService) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 				_ = notifier.Notify(rpcSub.ID, h)
 			case <-rpcSub.Err():
 				return
-			case <-notifier.Closed():
-				return
 			}
 		}
 	}()
@@ -445,8 +443,6 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 					_ = notifier.Notify(rpcSub.ID, log)
 				}
 			case <-rpcSub.Err():
-				return
-			case <-notifier.Closed():
 				return
 			}
 		}

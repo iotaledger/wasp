@@ -32,11 +32,11 @@ The commands above execute a subset of all available tests. If you introduced ma
 
 #### Step 1: Install golintci
 
-See the [provider instructions](https://golangci-lint.run/usage/install/#local-installation) on how to install golintci.
+See the [provider instructions](https://golangci-lint.run/welcome/install/#local-installation) on how to install golintci.
 
 #### Step 2: Set Up Your Environment
 
-See the [provider instructions](https://golangci-lint.run/usage/integrations/#editor-integration) on integrating `golintci` into your source code editor. You can also find our [recommended settings](#appendix-recommended-settings) for VS Code and GoLand at the bottom of this article.
+See the [provider instructions](https://golangci-lint.run/welcome/integrations/#editor-integration) on integrating `golintci` into your source code editor. You can also find our [recommended settings](#appendix-recommended-settings) for VS Code and GoLand at the bottom of this article.
 
 ### Usage
 
