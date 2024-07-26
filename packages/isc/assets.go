@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -126,7 +127,7 @@ func (a *Assets) Equals(b *Assets) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	if a.BaseTokens.Cmp(b.BaseTokens) != 0 {
+	if !bigint.Equal(a.BaseTokens, b.BaseTokens) {
 		return false
 	}
 
@@ -135,7 +136,7 @@ func (a *Assets) Equals(b *Assets) bool {
 	}
 	bTokensSet := b.NativeTokens.MustSet()
 	for _, nativeToken := range a.NativeTokens {
-		if nativeToken.Amount.Cmp(bTokensSet[nativeToken.CoinType].Amount) != 0 {
+		if !bigint.Equal(nativeToken.Amount, bTokensSet[nativeToken.CoinType].Amount) {
 			return false
 		}
 	}
@@ -157,8 +158,7 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 		a.NativeTokens = nil
 		return true
 	}
-
-	if a.BaseTokens.Cmp(toSpend.BaseTokens) < 0 {
+	if bigint.Less(a.BaseTokens, toSpend.BaseTokens) {
 		return false
 	}
 
@@ -166,14 +166,14 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 
 	for _, nativeToken := range toSpend.NativeTokens {
 		curr, ok := targetSet[nativeToken.CoinType]
-		if !ok || curr.Amount.Cmp(nativeToken.Amount) < 0 {
+		if !ok || bigint.Less(curr.Amount, nativeToken.Amount) {
 			return false
 		}
-		curr.Amount.Sub(curr.Amount, nativeToken.Amount)
+		curr.Amount = bigint.Sub(curr.Amount, nativeToken.Amount)
 	}
 
 	// budget is enough
-	a.BaseTokens.Sub(a.BaseTokens, toSpend.BaseTokens)
+	a.BaseTokens = bigint.Sub(a.BaseTokens, toSpend.BaseTokens)
 	a.NativeTokens = a.NativeTokens[:0]
 	for _, nativeToken := range targetSet {
 		if util.IsZeroBigInt(nativeToken.Amount) {
@@ -185,11 +185,11 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 }
 
 func (a *Assets) Add(b *Assets) *Assets {
-	a.BaseTokens.Add(a.BaseTokens, b.BaseTokens)
+	a.BaseTokens = bigint.Add(a.BaseTokens, b.BaseTokens)
 	resultTokens := a.NativeTokens.MustSet()
 	for _, nativeToken := range b.NativeTokens {
 		if resultTokens[nativeToken.CoinType] != nil {
-			resultTokens[nativeToken.CoinType].Amount.Add(
+			resultTokens[nativeToken.CoinType].Amount = bigint.Add(
 				resultTokens[nativeToken.CoinType].Amount,
 				nativeToken.Amount,
 			)
@@ -202,12 +202,12 @@ func (a *Assets) Add(b *Assets) *Assets {
 }
 
 func (a *Assets) IsEmpty() bool {
-	return a == nil || a.BaseTokens == nil || (a.BaseTokens.Cmp(big.NewInt(0)) == 0 &&
+	return a == nil || a.BaseTokens == nil || (bigint.Equal(a.BaseTokens, big.NewInt(0)) &&
 		len(a.NativeTokens) == 0)
 }
 
 func (a *Assets) AddBaseTokens(amount uint64) *Assets {
-	a.BaseTokens.Add(a.BaseTokens, big.NewInt(0).SetUint64(amount))
+	a.BaseTokens = bigint.Add(a.BaseTokens, big.NewInt(0).SetUint64(amount))
 	return a
 }
 
@@ -285,7 +285,7 @@ func (a *Assets) Write(w io.Writer) error {
 	}
 
 	var flags byte
-	if a.BaseTokens.Cmp(big.NewInt(0)) != 0 {
+	if !bigint.Equal(a.BaseTokens, big.NewInt(0)) {
 		flags |= hasBaseTokens
 	}
 	if len(a.NativeTokens) != 0 {
