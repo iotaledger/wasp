@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -31,7 +32,7 @@ func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.
 	bals := ch.L2Assets(agentID)
 	actualTokenBalance := bals.AmountNativeToken(nativeTokenID)
 	require.Truef(ch.Env.T,
-		expected.Cmp(actualTokenBalance) == 0,
+		bigint.Equal(expected, actualTokenBalance),
 		"expected: %v, got: %v", expected.String(), actualTokenBalance.String(),
 	)
 }
@@ -82,7 +83,7 @@ func (ch *Chain) AssertL2TotalNativeTokens(nativeTokenID iotago.NativeTokenID, b
 		h.Helper()
 	}
 	bals := ch.L2TotalAssets()
-	require.True(ch.Env.T, bal.Cmp(bals.AmountNativeToken(nativeTokenID)) == 0)
+	require.True(ch.Env.T, bigint.Equal(bal, bals.AmountNativeToken(nativeTokenID)))
 }
 
 func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
