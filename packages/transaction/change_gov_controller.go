@@ -36,7 +36,7 @@ func NewChangeGovControllerTx(
 	newConditions := make(iotago.UnlockConditions, len(chainOutput.Conditions))
 	for i, c := range chainOutput.Conditions {
 		if _, ok := c.(*iotago.GovernorAddressUnlockCondition); ok {
-			// change the gov unlock condiiton to the new owner
+			// change the gov unlock condition to the new owner
 			newConditions[i] = &iotago.GovernorAddressUnlockCondition{
 				Address: newGovController,
 			}

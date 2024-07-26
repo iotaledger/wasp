@@ -21,31 +21,6 @@ type BlobListResponse struct {
 	Blobs []Blob
 }
 
-func (c *Controller) listBlobs(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-
-	blobList, err := corecontracts.ListBlobs(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-
-	blobListResponse := &BlobListResponse{
-		Blobs: make([]Blob, 0, len(blobList)),
-	}
-
-	for k, v := range blobList {
-		blobListResponse.Blobs = append(blobListResponse.Blobs, Blob{
-			Hash: k.Hex(),
-			Size: v,
-		})
-	}
-
-	return e.JSON(http.StatusOK, blobListResponse)
-}
-
 type BlobValueResponse struct {
 	ValueData string `json:"valueData" swagger:"required,desc(The blob data (Hex))"`
 }

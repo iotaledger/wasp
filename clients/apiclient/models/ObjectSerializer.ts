@@ -1,5 +1,4 @@
 export * from '../models/AccountFoundriesResponse';
-export * from '../models/AccountListResponse';
 export * from '../models/AccountNFTsResponse';
 export * from '../models/AccountNonceResponse';
 export * from '../models/AddUserRequest';
@@ -8,9 +7,7 @@ export * from '../models/AssetsJSON';
 export * from '../models/AssetsResponse';
 export * from '../models/AuthInfoModel';
 export * from '../models/BaseToken';
-export * from '../models/Blob';
 export * from '../models/BlobInfoResponse';
-export * from '../models/BlobListResponse';
 export * from '../models/BlobValueResponse';
 export * from '../models/BlockInfoResponse';
 export * from '../models/BurnRecord';
@@ -90,7 +87,6 @@ export * from '../models/ValidationError';
 export * from '../models/VersionResponse';
 
 import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountListResponse } from '../models/AccountListResponse';
 import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
@@ -99,9 +95,7 @@ import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { Blob } from '../models/Blob';
 import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobListResponse } from '../models/BlobListResponse';
 import { BlobValueResponse } from '../models/BlobValueResponse';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
@@ -204,7 +198,6 @@ let enumsMap: Set<string> = new Set<string>([
 
 let typeMap: {[index: string]: any} = {
     "AccountFoundriesResponse": AccountFoundriesResponse,
-    "AccountListResponse": AccountListResponse,
     "AccountNFTsResponse": AccountNFTsResponse,
     "AccountNonceResponse": AccountNonceResponse,
     "AddUserRequest": AddUserRequest,
@@ -213,9 +206,7 @@ let typeMap: {[index: string]: any} = {
     "AssetsResponse": AssetsResponse,
     "AuthInfoModel": AuthInfoModel,
     "BaseToken": BaseToken,
-    "Blob": Blob,
     "BlobInfoResponse": BlobInfoResponse,
-    "BlobListResponse": BlobListResponse,
     "BlobValueResponse": BlobValueResponse,
     "BlockInfoResponse": BlockInfoResponse,
     "BurnRecord": BurnRecord,

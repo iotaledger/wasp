@@ -93,6 +93,7 @@ func Init(
 	requestCacheTTL time.Duration,
 	websocketService *websocket.Service,
 	indexDbPath string,
+	accountDumpsPath string,
 	pub *publisher.Publisher,
 	jsonrpcParams *jsonrpc.Parameters,
 ) {
@@ -115,7 +116,7 @@ func Init(
 	authMiddleware := authentication.AddAuthentication(server, userManager, nodeIdentityProvider, authConfig, mocker)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService),
+		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, accountDumpsPath),
 		apimetrics.NewMetricsController(chainService, metricsService),
 		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService),

@@ -1439,7 +1439,7 @@ func TestNonces(t *testing.T) {
 func TestNFTMint(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar").Bytes()
+	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar", nil).Bytes()
 
 	_seedIndex := 0
 	seedIndex := func() int {

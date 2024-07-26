@@ -12,7 +12,6 @@ import (
 var Processor = Contract.Processor(nil,
 	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
 	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
-	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
 	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
@@ -125,14 +124,6 @@ func viewGetEventsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uin
 	events := state.GetEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 
 	return blockIndex, lo.Map(events, func(b []byte, _ int) *isc.Event {
-		return lo.Must(isc.EventFromBytes(b))
-	})
-}
-
-// viewGetEventsForContract returns a list of events for a given smart contract.
-func viewGetEventsForContract(ctx isc.SandboxView, q EventsForContractQuery) []*isc.Event {
-	events := NewStateReaderFromSandbox(ctx).getSmartContractEventsInternal(q)
-	return lo.Map(events, func(b []byte, _ int) *isc.Event {
 		return lo.Must(isc.EventFromBytes(b))
 	})
 }

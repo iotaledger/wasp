@@ -14,10 +14,10 @@ import (
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru/v2"
 
@@ -86,6 +86,7 @@ func getConfig(chainID int) *params.ChainConfig {
 		LondonBlock:         big.NewInt(0),
 		Ethash:              &params.EthashConfig{},
 		ShanghaiTime:        new(uint64),
+		CancunTime:          new(uint64),
 	}
 	if !c.IsShanghai(common.Big0, 0) {
 		panic("ChainConfig should report EVM version as Shanghai")
@@ -121,7 +122,7 @@ func Init(
 	chainID uint16,
 	gasLimits GasLimits,
 	timestamp uint64,
-	alloc core.GenesisAlloc,
+	alloc types.GenesisAlloc,
 ) {
 	bdb := NewBlockchainDB(emulatorState, gasLimits.Block, BlockKeepAll)
 	if bdb.Initialized() {
@@ -229,7 +230,7 @@ func (e *EVMEmulator) applyMessage(
 	msg *core.Message,
 	statedb vm.StateDB,
 	header *types.Header,
-	tracer tracers.Tracer,
+	tracer *tracing.Hooks,
 ) (res *core.ExecutionResult, err error) {
 	// Set msg gas price to 0
 	msg.GasPrice = big.NewInt(0)
@@ -285,7 +286,7 @@ func abiEncodeError(err error) []byte {
 
 func (e *EVMEmulator) SendTransaction(
 	tx *types.Transaction,
-	tracer tracers.Tracer,
+	tracer *tracing.Hooks,
 	addToBlockchain ...bool,
 ) (receipt *types.Receipt, result *core.ExecutionResult, err error) {
 	statedb := e.StateDB()

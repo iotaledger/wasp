@@ -14,7 +14,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22"
         id: go
 
       - name: Check out code into the Go module directory
@@ -36,23 +36,23 @@ jobs:
     steps:
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22"
         id: go
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
 
       - name: Run global scope golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.54.2
+          version: v1.56.1
           args: --timeout 15m0s
-          skip-pkg-cache: true
+          skip-cache: true
 
       - name: Run  golangci-lint on wasp-cli
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v6
         with:
           working-directory: tools/wasp-cli
-          version: v1.54.2
+          version: v1.56.1
           args: --timeout 15m0s
-          skip-pkg-cache: true
+          skip-cache: true

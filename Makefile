@@ -1,15 +1,6 @@
 GIT_REF_TAG := $(shell git describe --tags)
 BUILD_TAGS = rocksdb
-ifdef OS
-# windows
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/isc-private/components/app.Version=$(GIT_REF_TAG)"
-else
-ifeq ($(shell uname -m), arm64)
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/isc-private/components/app.Version=$(GIT_REF_TAG) -extldflags \"-Wa,--noexecstack\""
-else
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/isc-private/components/app.Version=$(GIT_REF_TAG) -extldflags \"-z noexecstack\""
-endif
-endif
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
 DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
 #
@@ -32,6 +23,7 @@ all: build-lint
 compile-solidity:
 	cd packages/vm/core/evm/iscmagic && go generate
 	cd packages/evm/evmtest && go generate
+	cd packages/evm/evmtest/wiki_how_tos && go generate
 
 build-cli:
 	cd tools/wasp-cli && go mod tidy && go build  -ldflags $(BUILD_LD_FLAGS) -o ../../

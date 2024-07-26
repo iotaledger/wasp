@@ -23,11 +23,3 @@ func GetBlobValue(ch chain.Chain, blobHash hashing.HashValue, key string, blockI
 	}
 	return blob.ViewGetBlobField.Output.Decode(ret)
 }
-
-func ListBlobs(ch chain.Chain, blockIndexOrTrieRoot string) (map[hashing.HashValue]uint32, error) {
-	ret, err := common.CallView(ch, blob.ViewListBlobs.Message(), blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-	return blob.ViewListBlobs.Output.Decode(ret)
-}

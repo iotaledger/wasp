@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -230,7 +229,7 @@ func TestBlockchain(t *testing.T) {
 	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
 	faucetSupply := new(big.Int).SetUint64(math.MaxUint64)
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{
 		faucetAddress: faucetSupply,
 	})
@@ -306,7 +305,7 @@ func TestBlockchainPersistence(t *testing.T) {
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
@@ -435,7 +434,7 @@ func TestStorageContract(t *testing.T) {
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
@@ -504,7 +503,7 @@ func TestStorageContract(t *testing.T) {
 }
 
 func TestERC20Contract(t *testing.T) {
-	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)
@@ -631,7 +630,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, *context) 
 	faucet, err := crypto.GenerateKey()
 	require.NoError(b, err)
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	genesisAlloc := map[common.Address]types.Account{}
 	ctx := newContext(map[common.Address]*big.Int{})
 
 	Init(ctx.State(), evm.DefaultChainID, ctx.GasLimits(), ctx.Timestamp(), genesisAlloc)

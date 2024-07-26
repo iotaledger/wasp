@@ -161,15 +161,6 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) [
 	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
 }
 
-func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock uint32) []*isc.Event {
-	res, err := chain.CallView(blocklog.ViewGetEventsForContract.Message(blocklog.EventsForContractQuery{
-		Contract:   inccounter.Contract.Hname(),
-		BlockRange: &blocklog.BlockRange{From: fromBlock, To: toBlock},
-	}))
-	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForContract.Output.Decode(res))
-}
-
 func TestGetEvents(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(inccounter.Processor)
@@ -216,17 +207,6 @@ func TestGetEvents(t *testing.T) {
 	events = getEventsForBlock(t, ch)
 	require.Len(t, events, 1)
 	checkEventCounter(t, events[0], 3)
-
-	events = getEventsForSC(t, ch, 0, 1000)
-	require.Len(t, events, 4)
-	checkEventCounter(t, events[0], 0)
-	checkEventCounter(t, events[1], 1)
-	checkEventCounter(t, events[2], 2)
-	checkEventCounter(t, events[3], 3)
-
-	events = getEventsForSC(t, ch, 2, 3)
-	require.Len(t, events, 1)
-	checkEventCounter(t, events[0], 0)
 }
 
 func checkEventCounter(t *testing.T, event *isc.Event, value uint64) {

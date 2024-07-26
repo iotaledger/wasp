@@ -25,9 +25,6 @@ var (
 		coreutil.FieldWithCodec(ParamField, codec.Bytes),
 		coreutil.FieldWithCodec(ParamBytes, codec.Bytes),
 	)
-	ViewListBlobs = coreutil.NewViewEP01(Contract, "listBlobs",
-		OutputBlobDirectory{},
-	)
 )
 
 // state variables

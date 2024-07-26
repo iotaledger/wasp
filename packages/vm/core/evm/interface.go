@@ -51,6 +51,12 @@ var (
 		coreutil.FieldWithCodec(FieldNativeTokenID, codec.NativeTokenID),
 		coreutil.FieldWithCodecOptional(FieldResult, codec.EthereumAddress),
 	)
+
+	ViewGetERC721CollectionAddress = coreutil.NewViewEP11(Contract, evmnames.ViewGetERC721CollectionAddress,
+		coreutil.FieldWithCodec(FieldNativeTokenID, codec.NFTID),
+		coreutil.FieldWithCodecOptional(FieldResult, codec.EthereumAddress),
+	)
+	
 )
 
 const (
@@ -78,6 +84,9 @@ const (
 	FieldTargetAddress      = evmnames.FieldTargetAddress
 
 	FieldAgentIDDepositOriginator = evmnames.FieldAgentIDDepositOriginator
+	FieldAgentIDWithdrawalTarget  = evmnames.FieldAgentIDWithdrawalTarget
+	FieldFromAddress              = evmnames.FieldFromAddress
+	FieldToAddress                = evmnames.FieldToAddress
 )
 
 const (
@@ -170,10 +179,7 @@ func (InputRegisterERC20ExteralNativeToken) Decode(d dict.Dict) (ret RegisterERC
 	if err != nil {
 		return
 	}
-	ret.SourceChain, err = codec.Address.Decode(d[FieldTargetAddress])
-	if err != nil {
-		return
-	}
+	ret.SourceChain, err = codec.Address.Decode(d[FieldTargetAddress])FuncGetERC721CollectionAddress
 	ret.FoundryTokenScheme, err = codec.TokenScheme.Decode(d[FieldFoundryTokenScheme])
 	if err != nil {
 		return

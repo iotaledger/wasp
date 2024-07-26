@@ -14,7 +14,6 @@ var Processor = Contract.Processor(nil,
 	FuncStoreBlob.WithHandler(storeBlob),
 	ViewGetBlobField.WithHandler(getBlobField),
 	ViewGetBlobInfo.WithHandler(getBlobInfo),
-	ViewListBlobs.WithHandler(listBlobs),
 )
 
 func (s *StateWriter) SetInitialState() {
@@ -86,14 +85,4 @@ func getBlobField(ctx isc.SandboxView, blobHash hashing.HashValue, field []byte)
 		panic(errNotFound)
 	}
 	return value
-}
-
-func listBlobs(ctx isc.SandboxView) map[hashing.HashValue]uint32 {
-	ctx.Log().Debugf("blob.listBlobs.begin")
-	ret := map[hashing.HashValue]uint32{}
-	NewStateReaderFromSandbox(ctx).GetDirectory().Iterate(func(hash []byte, totalSize []byte) bool {
-		ret[lo.Must(codec.HashValue.Decode(hash))] = lo.Must(DecodeSize(totalSize))
-		return true
-	})
-	return ret
 }

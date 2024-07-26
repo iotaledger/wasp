@@ -1,0 +1,1 @@
+[{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bytes32","name":"entropy","type":"bytes32"}],"name":"EntropyEvent","type":"event"},{"inputs":[],"name":"emitEntropy","outputs":[],"stateMutability":"nonpayable","type":"function"}]

@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
@@ -90,12 +91,12 @@ func TestUploadBlob(t *testing.T) {
 			require.EqualValues(t, 1, len(m))
 			require.EqualValues(t, len(data), m["field"])
 		}
-		ret, err := ch.CallView(blob.ViewListBlobs.Message())
-		require.NoError(t, err)
-		sizes := lo.Must(blob.ViewListBlobs.Output.Decode(ret))
-		require.EqualValues(t, howMany, len(sizes))
+
+		blobs := blob.ListBlobs(lo.Must(ch.Store().LatestState()))
+		require.EqualValues(t, howMany, len(blobs))
+
 		for _, h := range hashes {
-			size := sizes[h]
+			size := blobs[kv.Key(h.Bytes())]
 			require.EqualValues(t, len("dummy data #1"), int(size))
 
 			ret, err := ch.CallView(blob.ViewGetBlobField.Message(h, []byte("field")))
@@ -151,10 +152,8 @@ func TestUploadContractBinary(t *testing.T) {
 		_, err := ch.UploadContractBinary(nil, vmType, binary)
 		require.NoError(t, err)
 
-		ret, err := ch.CallView(blob.ViewListBlobs.Message())
-		require.NoError(t, err)
-		sizes := lo.Must(blob.ViewListBlobs.Output.Decode(ret))
-		require.EqualValues(t, 1, len(sizes))
+		ret := blob.ListBlobs(lo.Must(ch.Store().LatestState()))
+		require.EqualValues(t, 1, len(ret))
 	})
 }
 

@@ -61,7 +61,7 @@ func (n *peeringNetReliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan
 	}
 }
 
-// peeringNetUnreliable simulates unreliable network by droppin, repeating, delaying and reordering messages.
+// peeringNetUnreliable simulates unreliable network by dropping, repeating, delaying and reordering messages.
 type peeringNetUnreliable struct {
 	deliverPct int // probability to deliver a message (in percents)
 	repeatPct  int // Probability to repeat a message (in percents, if delivered)
@@ -71,7 +71,7 @@ type peeringNetUnreliable struct {
 	log        *logger.Logger
 }
 
-// NewPeeringNetReliable constructs the PeeringNetBehavior.
+// NewPeeringNetUnreliable constructs the PeeringNetBehavior.
 func NewPeeringNetUnreliable(deliverPct, repeatPct int, delayFrom, delayTill time.Duration, log *logger.Logger) PeeringNetBehavior {
 	return &peeringNetUnreliable{
 		deliverPct: deliverPct,

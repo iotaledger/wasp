@@ -239,23 +239,6 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	return eventsResponse(e, events)
 }
 
-func (c *Controller) getContractEvents(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-	contractHname, err := params.DecodeHNameFromHNameHexString(e, "contractHname")
-	if err != nil {
-		return err
-	}
-
-	events, err := corecontracts.GetEventsForContract(ch, contractHname, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-	return eventsResponse(e, events)
-}
-
 func (c *Controller) getRequestEvents(e echo.Context) error {
 	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {

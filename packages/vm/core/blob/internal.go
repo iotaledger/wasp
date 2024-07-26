@@ -84,6 +84,18 @@ func (s *StateReader) GetBlobSizes(blobHash hashing.HashValue) *collections.Immu
 	return collections.NewMapReadOnly(s.state, sizesMapName(blobHash))
 }
 
+// Note: only used in tests
+func ListBlobs(state kv.KVStoreReader) map[kv.Key]uint32 {
+	partition := subrealm.NewReadOnly(state, kv.Key(Contract.Hname().Bytes()))
+	r := NewStateReader(partition)
+	ret := make(map[kv.Key]uint32)
+	r.contractStateGetDirectory().Iterate(func(hash []byte, totalSize []byte) bool {
+		ret[kv.Key(hash)] = codec.Uint32.MustDecode(totalSize)
+		return true
+	})
+	return ret
+}
+
 func (s *StateReader) LocateProgram(programHash hashing.HashValue) (string, []byte, error) {
 	blbValues := s.GetBlobValues(programHash)
 	programBinary := blbValues.GetAt([]byte(VarFieldProgramBinary))

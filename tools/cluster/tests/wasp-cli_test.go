@@ -90,62 +90,6 @@ func TestZeroGasFee(t *testing.T) {
 	})
 }
 
-func TestWaspCLI1Chain(t *testing.T) {
-	w := newWaspCLITest(t)
-
-	chainName := "chain1"
-
-	committee, quorum := w.ArgCommitteeConfig(0)
-
-	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--evm-chainid=1091", "--block-keep-amount=123", "--node=0")
-	w.ActivateChainOnAllNodes(chainName, 0)
-
-	// test chain info command
-	chainID := w.ChainID(0)
-
-	require.NotEmpty(t, chainID)
-	t.Logf("Chain ID: %s", chainID)
-
-	// test chain list command
-	out := w.MustRun("chain", "list", "--node=0")
-	require.Contains(t, out[0], "Total 1 chain(s)")
-	require.Contains(t, out[4], chainID)
-
-	// test chain list-contracts command
-	out = w.MustRun("chain", "list-contracts", "--node=0")
-	require.Regexp(t, `Total \d+ contracts in chain .{64}`, out[0])
-
-	// test chain list-accounts command
-	out = w.MustRun("chain", "list-accounts", "--node=0")
-	require.Contains(t, out[0], "Total 1 account(s)")
-	agentID := strings.TrimSpace(out[4])
-	require.NotEmpty(t, agentID)
-	t.Logf("Agent ID: %s", agentID)
-
-	// test chain balance command
-	out = w.MustRun("chain", "balance", agentID, "--node=0")
-	// check that the chain balance of owner is > 0
-	r := regexp.MustCompile(`(?m)base\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
-	require.Len(t, r, 2)
-	bal, err := strconv.ParseInt(r[1], 10, 64)
-	require.NoError(t, err)
-	require.Positive(t, bal)
-
-	// same test, this time calling the view function manually
-	out = w.MustRun("chain", "call-view", "accounts", "balance", "string", "a", "agentid", agentID, "--node=0")
-	out = w.MustPipe(out, "decode", "bytes", "bigint")
-
-	r = regexp.MustCompile(`(?m):\s+(\d+)$`).FindStringSubmatch(out[0])
-	bal2, err := strconv.ParseInt(r[1], 10, 64)
-	require.NoError(t, err)
-	require.EqualValues(t, bal, bal2)
-
-	// test the chainlog
-	out = w.MustRun("chain", "events", "root", "--node=0")
-	require.Len(t, out, 1)
-}
-
 func checkBalance(t *testing.T, out []string, expected int) {
 	t.Helper()
 	// regex example: base tokens 1000000

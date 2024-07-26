@@ -2,7 +2,6 @@ import { ResponseContext, RequestContext, HttpFile } from '../http/http';
 import { Configuration} from '../configuration'
 
 import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountListResponse } from '../models/AccountListResponse';
 import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
@@ -11,9 +10,7 @@ import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { Blob } from '../models/Blob';
 import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobListResponse } from '../models/BlobListResponse';
 import { BlobValueResponse } from '../models/BlobValueResponse';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
@@ -177,6 +174,15 @@ export class PromiseChainsApi {
      */
     public deactivateChain(chainID: string, _options?: Configuration): Promise<void> {
         const result = this.api.deactivateChain(chainID, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * dump accounts information into a humanly-readable format
+     * @param chainID ChainID (Bech32)
+     */
+    public dumpAccounts(chainID: string, _options?: Configuration): Promise<void> {
+        const result = this.api.dumpAccounts(chainID, _options);
         return result.toPromise();
     }
 
@@ -381,16 +387,6 @@ export class PromiseCorecontractsApi {
     }
 
     /**
-     * Get a list of all accounts
-     * @param chainID ChainID (Bech32)
-     * @param block Block index or trie root
-     */
-    public accountsGetAccounts(chainID: string, block?: string, _options?: Configuration): Promise<AccountListResponse> {
-        const result = this.api.accountsGetAccounts(chainID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
      * Get the foundry output
      * @param chainID ChainID (Bech32)
      * @param serialNumber Serial Number (uint32)
@@ -429,16 +425,6 @@ export class PromiseCorecontractsApi {
      */
     public accountsGetTotalAssets(chainID: string, block?: string, _options?: Configuration): Promise<AssetsResponse> {
         const result = this.api.accountsGetTotalAssets(chainID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all stored blobs
-     * @param chainID ChainID (Bech32)
-     * @param block Block index or trie root
-     */
-    public blobsGetAllBlobs(chainID: string, block?: string, _options?: Configuration): Promise<BlobListResponse> {
-        const result = this.api.blobsGetAllBlobs(chainID, block, _options);
         return result.toPromise();
     }
 
@@ -494,17 +480,6 @@ export class PromiseCorecontractsApi {
      */
     public blocklogGetEventsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<EventsResponse> {
         const result = this.api.blocklogGetEventsOfBlock(chainID, blockIndex, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get events of a contract
-     * @param chainID ChainID (Bech32)
-     * @param contractHname The contract hname (Hex)
-     * @param block Block index or trie root
-     */
-    public blocklogGetEventsOfContract(chainID: string, contractHname: string, block?: string, _options?: Configuration): Promise<EventsResponse> {
-        const result = this.api.blocklogGetEventsOfContract(chainID, contractHname, block, _options);
         return result.toPromise();
     }
 

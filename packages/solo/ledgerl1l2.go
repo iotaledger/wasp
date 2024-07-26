@@ -11,15 +11,32 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // L2Accounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) L2Accounts() []isc.AgentID {
-	d, err := ch.CallView(accounts.ViewAccounts.Message())
+	d := accounts.NewStateAccess(lo.Must(ch.Store().LatestState())).AllAccounts()
+	keys := d.KeysSorted()
+	ret := make([]isc.AgentID, 0, len(keys)-1)
+	for _, key := range keys {
+		aid, err := accounts.AgentIDFromKey(key, ch.ChainID)
+		require.NoError(ch.Env.T, err)
+		ret = append(ret, aid)
+	}
+	return ret
+}
+
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *isc.Assets {
 	require.NoError(ch.Env.T, err)
-	return lo.Must(accounts.ViewAccounts.Output.DecodeAccounts(d, ch.ChainID))
+	if d.IsEmpty() {
+		return isc.NewEmptyAssets()
+	}
+	ret, err := isc.AssetsFromDict(d)
+	require.NoError(ch.Env.T, err)
+	return ret
 }
 
 func (ch *Chain) L2Ledger() map[string]*isc.Assets {
@@ -129,7 +146,7 @@ func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, e
 	return o.MustNativeTokenID(), nil
 }
 
-type newNativeTokenParams struct {
+type NewNativeTokenParams struct {
 	ch            *Chain
 	user          *cryptolib.KeyPair
 	sch           iotago.TokenScheme
@@ -161,27 +178,27 @@ func (ch *Chain) NewNativeTokenParams(maxSupply *big.Int) *newNativeTokenParams 
 	return ret
 }
 
-func (fp *newNativeTokenParams) WithUser(user *cryptolib.KeyPair) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithUser(user *cryptolib.KeyPair) *NewNativeTokenParams {
 	fp.user = user
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenScheme(sch iotago.TokenScheme) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenScheme(sch iotago.TokenScheme) *NewNativeTokenParams {
 	fp.sch = sch
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenName(tokenName string) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenName(tokenName string) *NewNativeTokenParams {
 	fp.tokenName = tokenName
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenSymbol(tokenSymbol string) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenSymbol(tokenSymbol string) *NewNativeTokenParams {
 	fp.tokenSymbol = tokenSymbol
 	return fp
 }
 
-func (fp *newNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *newNativeTokenParams {
+func (fp *NewNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *NewNativeTokenParams {
 	fp.tokenDecimals = tokenDecimals
 	return fp
 }
