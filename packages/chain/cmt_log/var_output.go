@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 )
 
 type VarOutput interface {
@@ -12,7 +12,7 @@ type VarOutput interface {
 	StatusString() string
 	Value() *Output
 	LogIndexAgreed(li LogIndex)
-	TipAOChanged(ao *iscmove.Anchor)
+	TipAOChanged(ao *iscmove_types.Anchor)
 	HaveRejection()
 	HaveMilestone()
 	CanPropose()
@@ -21,7 +21,7 @@ type VarOutput interface {
 
 type varOutputImpl struct {
 	candidateLI                LogIndex
-	candidateAO                *iscmove.Anchor
+	candidateAO                *iscmove_types.Anchor
 	canPropose                 bool
 	milestonesToWait           int
 	suspended                  bool
@@ -64,7 +64,7 @@ func (vo *varOutputImpl) LogIndexAgreed(li LogIndex) {
 	vo.tryOutput()
 }
 
-func (vo *varOutputImpl) TipAOChanged(ao *iscmove.Anchor) {
+func (vo *varOutputImpl) TipAOChanged(ao *iscmove_types.Anchor) {
 	vo.candidateAO = ao
 	vo.tryOutput()
 }

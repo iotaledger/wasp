@@ -7,10 +7,31 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
+
+func TestAssetsBagWithBalancesToAssets(t *testing.T) {
+	assetsBag := iscmove_types.AssetsBagWithBalances{
+		AssetsBag: iscmove_types.AssetsBag{
+			ID:   *sui.MustAddressFromHex("0x123"),
+			Size: 2,
+		},
+		Balances: iscmove_types.AssetsBagBalances{
+			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(33)}},
+			"0xa1":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(11)}},
+			"0xa2":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(22)}},
+		},
+	}
+	assets := isc.AssetsFromAssetsBag(assetsBag)
+	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int, assets.BaseTokens)
+	require.Equal(t, assetsBag.Balances["0xa1"].TotalBalance.Int, assets.NativeTokens.MustSet()["0xa1"].Amount)
+	require.Equal(t, assetsBag.Balances["0xa2"].TotalBalance.Int, assets.NativeTokens.MustSet()["0xa2"].Amount)
+}
 
 func TestAssetsSerialization(t *testing.T) {
 	maxVal, e := big.NewInt(2), big.NewInt(256)

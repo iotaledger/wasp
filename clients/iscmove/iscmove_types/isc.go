@@ -1,10 +1,10 @@
-package iscmove
+package iscmove_types
 
 import (
 	"io"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -103,16 +103,17 @@ type Receipt struct {
 }
 
 type Message struct {
-	Contract isc.Hname
-	Function isc.Hname
-	Args     []sui.Bytes
+	Contract uint32
+	Function uint32
+	Args     [][]sui.Bytes
 }
 
 type Request struct {
-	ID      sui.ObjectID
-	Sender  sui.Address
-	Assets  Referent[AssetsBag]
-	Message Message
+	ID        sui.ObjectID
+	Anchor    *cryptolib.Address
+	Sender    *cryptolib.Address
+	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
+	Message   Message
 }
 
 // Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
@@ -122,20 +123,18 @@ type IRC27MetaData struct {
 	URI               string // Actually of type "Url" in SUI -> Create proper type?
 	Name              string
 	CollectionName    *string `bcs:"optional"`
-	Royalties         Table[sui.Address, uint32]
+	Royalties         Table[*cryptolib.Address, uint32]
 	IssuerName        *string  `bcs:"optional"`
 	Description       *string  `bcs:"optional"`
 	Attributes        []string // This is actually of Type VecSet which guarantees no duplicates. Not sure if we want to create a separate type for it. But we need to filter it to ensure no duplicates eventually.
 	NonStandardFields Table[string, string]
 }
 
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/nft.move
-
 type NFT struct {
 	ID                sui.ObjectID
-	LegacySender      *sui.Address `bcs:"optional"`
-	Metadata          *[]uint8     `bcs:"optional"`
-	Tag               *[]uint8     `bcs:"optional"`
-	ImmutableIssuer   *sui.Address `bcs:"optional"`
+	LegacySender      *cryptolib.Address `bcs:"optional"`
+	Metadata          *[]uint8           `bcs:"optional"`
+	Tag               *[]uint8           `bcs:"optional"`
+	ImmutableIssuer   *cryptolib.Address `bcs:"optional"`
 	ImmutableMetadata IRC27MetaData
 }

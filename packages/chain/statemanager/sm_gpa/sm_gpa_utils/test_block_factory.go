@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -121,7 +122,7 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *iscmove.Anchor {
+func (bfT *BlockFactory) GetOriginAnchor() *iscmove_types.Anchor {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
@@ -210,10 +211,10 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.Anchor {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove_types.Anchor {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return &iscmove.Anchor{
+	return &iscmove_types.Anchor{
 		Ref:        anchorData.ref,
 		Assets:     anchorData.assets,
 		StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),

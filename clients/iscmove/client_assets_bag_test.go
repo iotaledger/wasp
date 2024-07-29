@@ -2,7 +2,6 @@ package iscmove_test
 
 import (
 	"context"
-	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +9,7 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -33,7 +33,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove_types.AssetsBagModuleName, iscmove_types.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	assetsDestroyEmptyRes, err := client.AssetsDestroyEmpty(
@@ -48,7 +48,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(iscmove_types.AssetsBagModuleName, iscmove_types.AssetsBagObjectName)
 	require.Error(t, err, "not found")
 }
 
@@ -68,7 +68,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove_types.AssetsBagModuleName, iscmove_types.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -188,26 +188,6 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
 }
 
-func TestAssetsBagWithBalancesToAssets(t *testing.T) {
-	client := newLocalnetClient()
-
-	assetsBag := iscmove.AssetsBagWithBalances{
-		AssetsBag: iscmove.AssetsBag{
-			ID:   *sui.MustAddressFromHex("0x123"),
-			Size: 2,
-		},
-		Balances: iscmove.AssetsBagBalances{
-			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(33)}},
-			"0xa1":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(11)}},
-			"0xa2":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(22)}},
-		},
-	}
-	assets := client.AssetsBagWithBalancesToAssets(assetsBag)
-	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int, assets.BaseTokens)
-	require.Equal(t, assetsBag.Balances["0xa1"].TotalBalance.Int, assets.NativeTokens.MustSet()["0xa1"].Amount)
-	require.Equal(t, assetsBag.Balances["0xa2"].TotalBalance.Int, assets.NativeTokens.MustSet()["0xa2"].Amount)
-}
-
 func borrowAnchorAssetsAndPlaceCoin(
 	t *testing.T, ctx context.Context,
 	client *iscmove.Client,
@@ -320,7 +300,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove_types.AssetsBagModuleName, iscmove_types.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, err = client.AssetsBagPlaceCoin(
@@ -356,13 +336,13 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove_types.RequestModuleName, iscmove_types.RequestObjectName)
 	require.NoError(t, err)
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
 
-	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &req.Assets.Value.ID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]

@@ -1,4 +1,4 @@
-package iscmove
+package iscmove_types
 
 type Bag = map[any]any
 

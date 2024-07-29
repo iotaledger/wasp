@@ -27,7 +27,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
@@ -107,11 +107,11 @@ type PeerStatus struct {
 	Connected  bool
 }
 
-type RequestHandler = func(req *iscmove.Request)
+type RequestHandler = func(req *iscmove_types.Request)
 
 // The Anchor versions must be passed here in-order. The last one
 // is the current one.
-type AnchorHandler = func(anchor *iscmove.RefWithObject[iscmove.Anchor])
+type AnchorHandler = func(anchor *iscmove_types.RefWithObject[iscmove_types.Anchor])
 
 type SignedTx struct {
 	Data       *sui.TransactionData
@@ -345,7 +345,7 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(anchor *iscmove.Anchor) {
+		func(anchor *iscmove_types.Anchor) {
 			cni.stateTrackerAct.TrackAliasOutput(ao, true)
 		},
 		func(block state.Block) {
