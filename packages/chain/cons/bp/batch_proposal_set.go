@@ -10,7 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -28,9 +28,9 @@ func (bps batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
 
 // Decided Base Alias Output is the one, that was proposed by F+1 nodes or more.
 // If there is more that 1 such ID, we refuse to use all of them.
-func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.Anchor {
+func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove_types.Anchor {
 	counts := map[hashing.HashValue]int{}
-	values := map[hashing.HashValue]*iscmove.Anchor{}
+	values := map[hashing.HashValue]*iscmove_types.Anchor{}
 	for _, bp := range bps {
 		h := bp.baseAliasOutput.Hash()
 		counts[h]++
@@ -39,7 +39,7 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.Anchor {
 		}
 	}
 
-	var found *iscmove.Anchor
+	var found *iscmove_types.Anchor
 	var uncertain bool
 	for h, count := range counts {
 		if count > f {
@@ -62,7 +62,7 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.Anchor {
 
 // Take requests proposed by at least F+1 nodes. Then the request is proposed at least by 1 fair node.
 // We should only consider the proposals from the nodes that proposed the decided AO, otherwise we can select already processed requests.
-func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove.Anchor) []*isc.RequestRef {
+func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove_types.Anchor) []*isc.RequestRef {
 	minNumberMentioned := f + 1
 	requestsByKey := map[isc.RequestRefKey]*isc.RequestRef{}
 	numMentioned := map[isc.RequestRefKey]int{}

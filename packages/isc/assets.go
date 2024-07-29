@@ -7,11 +7,13 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 type Assets struct {
@@ -27,6 +29,24 @@ func NewAssets(baseTokens *big.Int, tokens NativeTokens) *Assets {
 		NativeTokens: tokens,
 	}
 	return ret
+}
+
+func AssetsFromAssetsBag(assetsBag iscmove_types.AssetsBagWithBalances) *Assets {
+	assets := &Assets{
+		BaseTokens:   assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int,
+		NativeTokens: make(NativeTokens, len(assetsBag.Balances)-1),
+	}
+	cnt := 0
+	for k, v := range assetsBag.Balances {
+		if k != suijsonrpc.SuiCoinType {
+			assets.NativeTokens[cnt] = &NativeToken{
+				CoinType: NativeTokenID(k),
+				Amount:   v.TotalBalance.Int,
+			}
+			cnt++
+		}
+	}
+	return assets
 }
 
 func NewAssetsBaseTokens(amount uint64) *Assets {

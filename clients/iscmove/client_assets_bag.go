@@ -7,8 +7,8 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -194,18 +194,18 @@ func (c *Client) AssetsDestroyEmpty(
 func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
 	assetsBagID *sui.ObjectID,
-) (*AssetsBagWithBalances, error) {
+) (*iscmove_types.AssetsBagWithBalances, error) {
 	fields, err := c.GetDynamicFields(ctx, suiclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
 
-	bag := AssetsBagWithBalances{
-		AssetsBag: AssetsBag{
+	bag := iscmove_types.AssetsBagWithBalances{
+		AssetsBag: iscmove_types.AssetsBag{
 			ID:   *assetsBagID,
 			Size: uint64(len(fields.Data)),
 		},
-		Balances: make(AssetsBagBalances),
+		Balances: make(iscmove_types.AssetsBagBalances),
 	}
 	for _, data := range fields.Data {
 		resGetObject, err := c.GetObject(ctx, suiclient.GetObjectRequest{
@@ -230,22 +230,4 @@ func (c *Client) GetAssetsBagWithBalances(
 	}
 
 	return &bag, nil
-}
-
-func (c *Client) AssetsBagWithBalancesToAssets(assetsBag AssetsBagWithBalances) *isc.Assets {
-	assets := &isc.Assets{
-		BaseTokens:   assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int,
-		NativeTokens: make(isc.NativeTokens, len(assetsBag.Balances)-1),
-	}
-	cnt := 0
-	for k, v := range assetsBag.Balances {
-		if k != suijsonrpc.SuiCoinType {
-			assets.NativeTokens[cnt] = &isc.NativeToken{
-				CoinType: isc.NativeTokenID(k),
-				Amount:   v.TotalBalance.Int,
-			}
-			cnt++
-		}
-	}
-	return assets
 }

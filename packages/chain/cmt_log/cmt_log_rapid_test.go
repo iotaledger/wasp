@@ -9,7 +9,7 @@ import (
 	"pgregory.net/rapid"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -27,8 +27,8 @@ type cmtLogTestRapidSM struct {
 	governorAddress *cryptolib.Address
 	stateAddress    *cryptolib.Address
 	tc              *gpa.TestContext
-	l1Chain         []*iscmove.Anchor  // The actual chain.
-	l1Delivered     map[gpa.NodeID]int // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
+	l1Chain         []*iscmove_types.Anchor // The actual chain.
+	l1Delivered     map[gpa.NodeID]int      // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
 	genAOSerial     uint32
 	genNodeID       *rapid.Generator[gpa.NodeID]
 }
@@ -66,7 +66,7 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}
 	sm.tc = gpa.NewTestContext(gpaNodes)
-	sm.l1Chain = []*iscmove.Anchor{}
+	sm.l1Chain = []*iscmove_types.Anchor{}
 	sm.l1Delivered = map[gpa.NodeID]int{}
 	//
 	// Generators.
@@ -81,9 +81,9 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 	return sm
 }
 
-func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *iscmove.Anchor {
+func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *iscmove_types.Anchor {
 	sm.genAOSerial++
-	var outputID sui.ObjectID    // TODO -> ObjectRef
+	var outputID sui.ObjectID // TODO -> ObjectRef
 	binary.BigEndian.PutUint32(outputID[:], sm.genAOSerial)
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       sm.aliasID,

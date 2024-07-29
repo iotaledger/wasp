@@ -6,6 +6,7 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
+	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -21,7 +22,7 @@ func (c *Client) StartNewChain(
 	gasBudget uint64,
 	initParams []byte,
 	devMode bool,
-) (*RefWithObject[Anchor], error) {
+) (*iscmove_types.RefWithObject[iscmove_types.Anchor], error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
@@ -68,7 +69,7 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
 
-	anchorRef, err := txnResponse.GetCreatedObjectInfo(AnchorModuleName, AnchorObjectName)
+	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove_types.AnchorModuleName, iscmove_types.AnchorObjectName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}
@@ -94,13 +95,13 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	reqAssetsBagsMap := make(map[sui.ObjectRef]*AssetsBagWithBalances)
+	reqAssetsBagsMap := make(map[sui.ObjectRef]*iscmove_types.AssetsBagWithBalances)
 	for _, reqRef := range reqs {
 		req, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
 			return nil, err
 		}
-		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &req.Assets.Value.ID)
+		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +158,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *sui.ObjectID,
-) (*RefWithObject[Anchor], error) {
+) (*iscmove_types.RefWithObject[iscmove_types.Anchor], error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -166,12 +167,12 @@ func (c *Client) GetAnchorFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
-	var anchor Anchor
+	var anchor iscmove_types.Anchor
 	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &anchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	return &RefWithObject[Anchor]{
+	return &iscmove_types.RefWithObject[iscmove_types.Anchor]{
 		ObjectRef: getObjectResponse.Data.Ref(),
 		Object:    &anchor,
 	}, nil
@@ -180,7 +181,7 @@ func (c *Client) GetAnchorFromObjectID(
 func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	id *sui.ObjectID,
-) (*Request, error) {
+) (*iscmove_types.Request, error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: id,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -189,7 +190,7 @@ func (c *Client) GetRequestFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
-	var req Request
+	var req iscmove_types.Request
 	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
