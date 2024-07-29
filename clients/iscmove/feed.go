@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
+	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -41,12 +41,12 @@ func (f *ChainFeed) WaitUntilStopped() {
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove_types.RefWithObject[iscmove_types.Anchor], []*iscmove_types.Request, error) {
+func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*types.RefWithObject[types.Anchor], []*types.Request, error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	reqs := make([]*iscmove_types.Request, 0)
+	reqs := make([]*types.Request, 0)
 	var lastSeen *sui.ObjectID
 	for {
 		res, err := f.wsClient.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
@@ -55,8 +55,8 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove_types.RefWi
 				Filter: &suijsonrpc.SuiObjectDataFilter{
 					StructType: &sui.StructTag{
 						Address: &f.iscPackageID,
-						Module:  iscmove_types.RequestModuleName,
-						Name:    iscmove_types.RequestObjectName,
+						Module:  types.RequestModuleName,
+						Name:    types.RequestObjectName,
 					},
 				},
 				Options: &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -71,7 +71,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove_types.RefWi
 		}
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
-			var req iscmove_types.Request
+			var req types.Request
 			err := suiclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
@@ -85,8 +85,8 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove_types.RefWi
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
-	anchorCh chan<- *iscmove_types.RefWithObject[iscmove_types.Anchor],
-	requestsCh chan<- *iscmove_types.Request,
+	anchorCh chan<- *types.RefWithObject[types.Anchor],
+	requestsCh chan<- *types.Request,
 ) {
 	go f.subscribeToAnchorUpdates(ctx, anchorCh)
 	go f.subscribeToNewRequests(ctx, requestsCh)
@@ -94,7 +94,7 @@ func (f *ChainFeed) SubscribeToUpdates(
 
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
-	requests chan<- *iscmove_types.Request,
+	requests chan<- *types.Request,
 ) {
 	for {
 		events := make(chan *suijsonrpc.SuiEvent)
@@ -103,8 +103,8 @@ func (f *ChainFeed) subscribeToNewRequests(
 			&suijsonrpc.EventFilter{
 				MoveEventType: &sui.StructTag{
 					Address: &f.iscPackageID,
-					Module:  iscmove_types.RequestModuleName,
-					Name:    iscmove_types.RequestEventObjectName,
+					Module:  types.RequestModuleName,
+					Name:    types.RequestEventObjectName,
 				},
 			},
 			events,
@@ -129,7 +129,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
 	events <-chan *suijsonrpc.SuiEvent,
-	requests chan<- *iscmove_types.Request,
+	requests chan<- *types.Request,
 ) {
 	for {
 		select {
@@ -139,7 +139,7 @@ func (f *ChainFeed) consumeRequestEvents(
 			if !ok {
 				return
 			}
-			var reqEvent iscmove_types.RequestEvent
+			var reqEvent types.RequestEvent
 			err := suiclient.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
@@ -157,7 +157,7 @@ func (f *ChainFeed) consumeRequestEvents(
 
 func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
-	anchorCh chan<- *iscmove_types.RefWithObject[iscmove_types.Anchor],
+	anchorCh chan<- *types.RefWithObject[types.Anchor],
 ) {
 	for {
 		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
@@ -188,7 +188,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
 	changes <-chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
-	anchorCh chan<- *iscmove_types.RefWithObject[iscmove_types.Anchor],
+	anchorCh chan<- *types.RefWithObject[types.Anchor],
 ) {
 	for {
 		select {
@@ -213,13 +213,13 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
 						continue
 					}
-					var anchor *iscmove_types.Anchor
+					var anchor *types.Anchor
 					err = suiclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
-					anchorCh <- &iscmove_types.RefWithObject[iscmove_types.Anchor]{
+					anchorCh <- &types.RefWithObject[types.Anchor]{
 						ObjectRef: r.Data.VersionFound.Ref(),
 						Object:    anchor,
 					}

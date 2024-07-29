@@ -1,4 +1,4 @@
-package iscmove_types
+package types
 
 import "github.com/iotaledger/wasp/sui-go/sui"
 

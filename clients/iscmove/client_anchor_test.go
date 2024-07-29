@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
@@ -77,7 +77,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove_types.AssetsBagModuleName, iscmove_types.AssetsBagObjectName)
+	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(types.AssetsBagModuleName, types.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
@@ -97,7 +97,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 
 	require.NoError(t, err)
 
-	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove_types.RequestModuleName, iscmove_types.RequestObjectName)
+	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(types.RequestModuleName, types.RequestObjectName)
 	require.NoError(t, err)
 
 	_, err = client.ReceiveAndUpdateStateRootRequest(
@@ -115,7 +115,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) *iscmove_types.RefWithObject[iscmove_types.Anchor] {
+func startNewChain(t *testing.T, client *iscmove.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) *types.RefWithObject[types.Anchor] {
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,

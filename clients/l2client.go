@@ -5,9 +5,9 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -22,7 +22,7 @@ type L2Client interface {
 		gasBudget uint64,
 		initParams []byte,
 		devMode bool,
-	) (*iscmove_types.RefWithObject[iscmove_types.Anchor], error)
+	) (*types.RefWithObject[types.Anchor], error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -83,8 +83,7 @@ type L2Client interface {
 	GetAssetsBagWithBalances(
 		ctx context.Context,
 		assetsBagID *sui.ObjectID,
-	) (*iscmove_types.AssetsBagWithBalances, error)
-	AssetsBagWithBalancesToAssets(assetsBag iscmove_types.AssetsBagWithBalances) *isc.Assets
+	) (*types.AssetsBagWithBalances, error)
 }
 
 var _ L2Client = &iscmove.Client{}
