@@ -63,7 +63,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmove_types"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -76,6 +75,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -113,12 +113,12 @@ type Output struct {
 	Terminated bool
 	//
 	// Requests for other components.
-	NeedMempoolProposal       *iscmove_types.Anchor // Requests for the mempool are needed for this Base Alias Output.
-	NeedMempoolRequests       []*isc.RequestRef     // Request payloads are needed from mempool for this IDs/Hash.
-	NeedStateMgrStateProposal *iscmove_types.Anchor // Query for a proposal for Virtual State (it will go to the batch proposal).
-	NeedStateMgrDecidedState  *iscmove_types.Anchor // Query for a decided Virtual State to be used by VM.
-	NeedStateMgrSaveBlock     state.StateDraft      // Ask StateMgr to save the produced block.
-	NeedVMResult              *vm.VMTask            // VM Result is needed for this (agreed) batch.
+	NeedMempoolProposal       *types.Anchor     // Requests for the mempool are needed for this Base Alias Output.
+	NeedMempoolRequests       []*isc.RequestRef // Request payloads are needed from mempool for this IDs/Hash.
+	NeedStateMgrStateProposal *types.Anchor     // Query for a proposal for Virtual State (it will go to the batch proposal).
+	NeedStateMgrDecidedState  *types.Anchor     // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
+	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
@@ -128,7 +128,7 @@ type Output struct {
 type Result struct {
 	Transaction     *sui.ProgrammableTransaction // The TX for committing the block.
 	BaseAliasOutput sui.ObjectID                 // AO consumed in the TX.
-	NextAliasOutput *iscmove_types.Anchor        // AO produced in the TX.
+	NextAliasOutput *types.Anchor                // AO produced in the TX.
 	Block           state.Block                  // The state diff produced.
 }
 
@@ -380,7 +380,7 @@ func (c *consImpl) StatusString() string {
 ////////////////////////////////////////////////////////////////////////////////
 // MP -- MemPool
 
-func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *iscmove_types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *types.Anchor) gpa.OutMessages {
 	c.output.NeedMempoolProposal = baseAliasOutput
 	return nil
 }
@@ -403,17 +403,17 @@ func (c *consImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessage
 ////////////////////////////////////////////////////////////////////////////////
 // SM -- StateManager
 
-func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *iscmove_types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *types.Anchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = baseAliasOutput
 	return nil
 }
 
-func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *iscmove_types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *types.Anchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
 	return c.subACS.StateProposalReceived(proposedAliasOutput)
 }
 
-func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *iscmove_types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *types.Anchor) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutput
 	return nil
 }
@@ -477,7 +477,7 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 // ACS
 
-func (c *consImpl) uponACSInputsReceived(baseAliasOutput *iscmove_types.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
+func (c *consImpl) uponACSInputsReceived(baseAliasOutput *types.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
