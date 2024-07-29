@@ -43,7 +43,7 @@ func Min(x, y *big.Int) *big.Int {
 // if gasPriceEVM == nil, the fee is calculated using the ISC GasPerToken
 // price. Otherwise, the given gasPrice (expressed in base tokens with 'full
 // decimals') is used instead.
-func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens *big.Int, gasPrice *big.Int, l1BaseTokenDecimals uint32) (sendToOwner, sendToValidator *big.Int) {
+func (p *FeePolicy) FeeFromGasBurned(gasUnits uint64, availableTokens *big.Int, gasPrice *big.Int, l1BaseTokenDecimals uint32) (sendToOwner, sendToValidator *big.Int) {
 	fee := p.FeeFromGas(gasUnits, gasPrice, l1BaseTokenDecimals)
 	fee = Min(fee, availableTokens)
 
@@ -71,9 +71,9 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits, availableTokens *big.Int, gasPric
 
 // FeeFromGasWithGasPrice calculates the gas fee using the given gasPrice
 // (expressed in ISC base tokens with 'full decimals').
-func FeeFromGasWithGasPrice(gasUnits *big.Int, gasPrice *big.Int, l1BaseTokenDecimals uint32) *big.Int {
-	feeFullDecimals := gasUnits
-	feeFullDecimals.Mul(feeFullDecimals, gasPrice)
+func FeeFromGasWithGasPrice(gasUnits uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) *big.Int {
+	feeFullDecimals := gasPrice
+	feeFullDecimals.Mul(feeFullDecimals, big.NewInt(0).SetUint64(gasUnits))
 	fee, remainder := util.EthereumDecimalsToBaseTokenDecimals(feeFullDecimals, l1BaseTokenDecimals)
 	if remainder != nil && remainder.Sign() != 0 {
 		fee.Add(fee, big.NewInt(1))
@@ -82,14 +82,16 @@ func FeeFromGasWithGasPrice(gasUnits *big.Int, gasPrice *big.Int, l1BaseTokenDec
 }
 
 // FeeFromGasWithGasPerToken calculates the gas fee using the ISC GasPerToken price
-func FeeFromGasWithGasPerToken(gasUnits *big.Int, gasPerToken util.Ratio32) *big.Int {
+func FeeFromGasWithGasPerToken(gasUnits uint64, gasPerToken util.Ratio32) *big.Int {
 	if gasPerToken.IsEmpty() {
 		return big.NewInt(0)
 	}
-	return gasPerToken.YCeilBigInt(gasUnits)
+
+	fee := gasPerToken.YCeil64(gasUnits)
+	return big.NewInt(0).SetUint64(fee)
 }
 
-func (p *FeePolicy) FeeFromGas(gasUnits *big.Int, gasPrice *big.Int, l1BaseTokenDecimals uint32) *big.Int {
+func (p *FeePolicy) FeeFromGas(gasUnits uint64, gasPrice *big.Int, l1BaseTokenDecimals uint32) *big.Int {
 	if p.GasPerToken.IsEmpty() {
 		return big.NewInt(0)
 	}

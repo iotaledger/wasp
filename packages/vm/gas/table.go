@@ -1,9 +1,6 @@
 package gas
 
-import (
-	"fmt"
-	"math/big"
-)
+import "fmt"
 
 const (
 	BurnCodeStorage1P = BurnCode(iota)
@@ -76,9 +73,15 @@ const (
 	CoefBLSAggregate = 400
 )
 
-// Cost computes the cost based on the burn code and parameters
-func (c BurnCode) Cost(p ...*big.Int) *big.Int {
-	x := big.NewInt(0)
+func constValue(constGas uint64) BurnFunction {
+	g := constGas
+	return func(_ uint64) uint64 {
+		return g
+	}
+}
+
+func (c BurnCode) Cost(p ...uint64) uint64 {
+	x := uint64(0)
 	if len(p) > 0 {
 		x = p[0]
 	}
@@ -88,34 +91,19 @@ func (c BurnCode) Cost(p ...*big.Int) *big.Int {
 	panic(fmt.Errorf("%v: %d", ErrUnknownBurnCode, c))
 }
 
-/*
- To make the burn rules easier to read, they remain uint64s but return a big.Int value.
-*/
-
-// constValue returns a BurnFunction that returns a constant value
-func constValue(constGas uint64) BurnFunction {
-	g := big.NewInt(int64(constGas))
-	return func(_ *big.Int) *big.Int {
-		return new(big.Int).Set(g)
-	}
-}
-
-// linear returns a BurnFunction that multiplies the input by a constant factor
 func linear(a uint64) BurnFunction {
-	aBigInt := big.NewInt(int64(a))
-	return func(x *big.Int) *big.Int {
-		return new(big.Int).Mul(aBigInt, x)
+	return func(x uint64) uint64 {
+		return a * x
 	}
 }
 
-// minBurn returns a BurnFunction that computes the minimum burn
 func minBurn(minGasBurn uint64) BurnFunction {
-	minGasBurnBigInt := big.NewInt(int64(minGasBurn))
-	return func(currentBurnedGas *big.Int) *big.Int {
-		if minGasBurnBigInt.Cmp(currentBurnedGas) < 0 {
+	return func(currentBurnedGas uint64) uint64 {
+		if minGasBurn < currentBurnedGas {
 			// prevent overflow
-			return big.NewInt(0)
+			return 0
 		}
-		return new(big.Int).Sub(minGasBurnBigInt, currentBurnedGas)
+
+		return minGasBurn - currentBurnedGas
 	}
 }

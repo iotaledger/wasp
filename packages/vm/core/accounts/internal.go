@@ -82,13 +82,13 @@ const (
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNFTOwner = "NW"
 
-	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the RequestID
+	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
 	// Covered in: TestFoundries
 	keyNewNativeTokens = "TN"
-	// keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the RequestID
+	// keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the OutputID
 	// Covered in: TestFoundries
 	keyNewFoundries = "FN"
-	// keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the RequestID
+	// keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the OutputID
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyNewNFTs = "NN"
 )

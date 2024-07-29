@@ -118,7 +118,7 @@ func (vmctx *vmContext) init() {
 			vmctx.task.AnchorOutputID,
 		)
 
-		// save the RequestID of the newly created tokens, foundries and NFTs in the previous block
+		// save the ObjectID of the newly created tokens, foundries and NFTs in the previous block
 		accountsState := vmctx.accountsStateWriterFromChainState(chainState)
 		newNFTIDs := accountsState.
 			UpdateLatestOutputID(vmctx.task.AnchorOutputID, vmctx.task.AnchorOutput.StateIndex)
