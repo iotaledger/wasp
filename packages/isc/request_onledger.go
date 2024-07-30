@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -27,7 +27,7 @@ var (
 	_ Calldata        = new(onLedgerRequestData)
 )
 
-func OnLedgerFromRequest(request isctypes.Request, anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
+func OnLedgerFromRequest(request iscmove.Request, anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
 	r := &onLedgerRequestData{
 		requestID:     request.ID,
 		senderAddress: request.Sender,

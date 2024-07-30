@@ -1,4 +1,4 @@
-package iscmove_test
+package iscmoveclient_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -37,12 +37,12 @@ func TestRequestsFeed(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		false,
 	)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(isctypes.AssetsBagModuleName, isctypes.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
 
-	wsClient, err := iscmove.NewWebsocketClient(
+	wsClient, err := iscmoveclient.NewWebsocketClient(
 		ctx,
 		suiconn.LocalnetWebsocketEndpointURL,
 		suiconn.LocalnetFaucetURL,
@@ -50,7 +50,7 @@ func TestRequestsFeed(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chainFeed := iscmove.NewChainFeed(
+	chainFeed := iscmoveclient.NewChainFeed(
 		ctx,
 		wsClient,
 		iscPackageID,
@@ -59,8 +59,8 @@ func TestRequestsFeed(t *testing.T) {
 	)
 	defer chainFeed.WaitUntilStopped()
 
-	anchorUpdates := make(chan *isctypes.RefWithObject[isctypes.Anchor], 10)
-	newRequests := make(chan *isctypes.Request, 10)
+	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
+	newRequests := make(chan *iscmove.Request, 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
@@ -78,7 +78,7 @@ func TestRequestsFeed(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		false,
 	)
-	requestRef, err := txnResponse.GetCreatedObjectInfo(isctypes.RequestModuleName, isctypes.RequestObjectName)
+	requestRef, err := txnResponse.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	req := <-newRequests

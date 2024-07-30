@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acs"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type SyncACS interface {
-	StateProposalReceived(proposedBaseAliasOutput *isctypes.Anchor) gpa.OutMessages
+	StateProposalReceived(proposedBaseAliasOutput *iscmove.Anchor) gpa.OutMessages
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
@@ -27,12 +27,12 @@ type SyncACS interface {
 // >     Produce a batch proposal.
 // >     Start the ACS.
 type syncACSImpl struct {
-	BaseAliasOutput  *isctypes.Anchor
+	BaseAliasOutput  *iscmove.Anchor
 	RequestRefs      []*isc.RequestRef
 	DSSIndexProposal []int
 	TimeData         time.Time
 	inputsReady      bool
-	inputsReadyCB    func(baseAliasOutput *isctypes.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages
+	inputsReadyCB    func(baseAliasOutput *iscmove.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages
 	outputReady      bool
 	outputReadyCB    func(output map[gpa.NodeID][]byte) gpa.OutMessages
 	terminated       bool
@@ -40,7 +40,7 @@ type syncACSImpl struct {
 }
 
 func NewSyncACS(
-	inputsReadyCB func(baseAliasOutput *isctypes.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages,
+	inputsReadyCB func(baseAliasOutput *iscmove.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages,
 	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages,
 	terminatedCB func(),
 ) SyncACS {
@@ -51,7 +51,7 @@ func NewSyncACS(
 	}
 }
 
-func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *isctypes.Anchor) gpa.OutMessages {
+func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *iscmove.Anchor) gpa.OutMessages {
 	if sub.BaseAliasOutput != nil {
 		return nil
 	}

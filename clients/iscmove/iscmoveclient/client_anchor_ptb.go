@@ -1,9 +1,9 @@
-package iscmove
+package iscmoveclient
 
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -14,7 +14,7 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        isctypes.AnchorModuleName,
+				Module:        iscmove.AnchorModuleName,
 				Function:      "start_new_chain",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
@@ -35,11 +35,11 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 	return ptb.Finish()
 }
 
-func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*isctypes.AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
+func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef})
-	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, isctypes.AnchorModuleName, isctypes.ReceiptObjectName))
+	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
 		return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
 	}
@@ -49,7 +49,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        isctypes.AnchorModuleName,
+				Module:        iscmove.AnchorModuleName,
 				Function:      "borrow_assets",
 				TypeArguments: []sui.TypeTag{},
 				Arguments:     []sui.Argument{argAnchor},
@@ -64,7 +64,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 			sui.Command{
 				MoveCall: &sui.ProgrammableMoveCall{
 					Package:       &packageID,
-					Module:        isctypes.AnchorModuleName,
+					Module:        iscmove.AnchorModuleName,
 					Function:      "receive_request",
 					TypeArguments: []sui.TypeTag{},
 					Arguments:     []sui.Argument{argAnchor, argReqObject},
@@ -84,7 +84,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 				sui.Command{
 					MoveCall: &sui.ProgrammableMoveCall{
 						Package:       &packageID,
-						Module:        isctypes.AssetsBagModuleName,
+						Module:        iscmove.AssetsBagModuleName,
 						Function:      "take_all_coin_balance",
 						TypeArguments: []sui.TypeTag{*typeTag},
 						Arguments:     []sui.Argument{argAssetsBag},
@@ -95,7 +95,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 				sui.Command{
 					MoveCall: &sui.ProgrammableMoveCall{
 						Package:       &packageID,
-						Module:        isctypes.AssetsBagModuleName,
+						Module:        iscmove.AssetsBagModuleName,
 						Function:      "place_coin_balance",
 						TypeArguments: []sui.TypeTag{*typeTag},
 						Arguments:     []sui.Argument{argAnchorAssets, argBal},
@@ -107,7 +107,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 			sui.Command{
 				MoveCall: &sui.ProgrammableMoveCall{
 					Package:       &packageID,
-					Module:        isctypes.AssetsBagModuleName,
+					Module:        iscmove.AssetsBagModuleName,
 					Function:      "destroy_empty",
 					TypeArguments: []sui.TypeTag{},
 					Arguments:     []sui.Argument{argAssetsBag},
@@ -131,7 +131,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        isctypes.AnchorModuleName,
+				Module:        iscmove.AnchorModuleName,
 				Function:      "return_assets_from_borrow",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
@@ -147,7 +147,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        isctypes.AnchorModuleName,
+				Module:        iscmove.AnchorModuleName,
 				Function:      "update_state_root",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{

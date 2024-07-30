@@ -1,4 +1,4 @@
-package iscmove_test
+package iscmoveclient_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -33,7 +33,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(isctypes.AssetsBagModuleName, isctypes.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	assetsDestroyEmptyRes, err := client.AssetsDestroyEmpty(
@@ -48,7 +48,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(isctypes.AssetsBagModuleName, isctypes.AssetsBagObjectName)
+	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.Error(t, err, "not found")
 }
 
@@ -68,7 +68,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(isctypes.AssetsBagModuleName, isctypes.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -190,7 +190,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 func borrowAnchorAssetsAndPlaceCoin(
 	t *testing.T, ctx context.Context,
-	client *iscmove.Client,
+	client *iscmoveclient.Client,
 	cryptolibSigner cryptolib.Signer,
 	packageID *sui.PackageID,
 	anchorRef *sui.ObjectRef,
@@ -300,7 +300,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(isctypes.AssetsBagModuleName, isctypes.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, err = client.AssetsBagPlaceCoin(
@@ -336,7 +336,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(isctypes.RequestModuleName, isctypes.RequestObjectName)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)

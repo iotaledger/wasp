@@ -1,4 +1,4 @@
-package isctypes
+package iscmove
 
 import (
 	"io"

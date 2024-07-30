@@ -1,4 +1,4 @@
-package iscmove
+package iscmoveclient
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -22,7 +22,7 @@ func (c *Client) StartNewChain(
 	gasBudget uint64,
 	initParams []byte,
 	devMode bool,
-) (*isctypes.RefWithObject[isctypes.Anchor], error) {
+) (*iscmove.RefWithObject[iscmove.Anchor], error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
@@ -69,7 +69,7 @@ func (c *Client) StartNewChain(
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
 
-	anchorRef, err := txnResponse.GetCreatedObjectInfo(isctypes.AnchorModuleName, isctypes.AnchorObjectName)
+	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}
@@ -95,7 +95,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	reqAssetsBagsMap := make(map[sui.ObjectRef]*isctypes.AssetsBagWithBalances)
+	reqAssetsBagsMap := make(map[sui.ObjectRef]*iscmove.AssetsBagWithBalances)
 	for _, reqRef := range reqs {
 		req, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
@@ -158,7 +158,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *sui.ObjectID,
-) (*isctypes.RefWithObject[isctypes.Anchor], error) {
+) (*iscmove.RefWithObject[iscmove.Anchor], error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -167,12 +167,12 @@ func (c *Client) GetAnchorFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
-	var anchor isctypes.Anchor
+	var anchor iscmove.Anchor
 	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &anchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	return &isctypes.RefWithObject[isctypes.Anchor]{
+	return &iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: getObjectResponse.Data.Ref(),
 		Object:    &anchor,
 	}, nil
@@ -181,7 +181,7 @@ func (c *Client) GetAnchorFromObjectID(
 func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	id *sui.ObjectID,
-) (*isctypes.Request, error) {
+) (*iscmove.Request, error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: id,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -190,7 +190,7 @@ func (c *Client) GetRequestFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
-	var req isctypes.Request
+	var req iscmove.Request
 	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -16,12 +16,12 @@ import (
 )
 
 func TestAssetsBagWithBalancesToAssets(t *testing.T) {
-	assetsBag := isctypes.AssetsBagWithBalances{
-		AssetsBag: isctypes.AssetsBag{
+	assetsBag := iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmove.AssetsBag{
 			ID:   *sui.MustAddressFromHex("0x123"),
 			Size: 2,
 		},
-		Balances: isctypes.AssetsBagBalances{
+		Balances: iscmove.AssetsBagBalances{
 			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(33)}},
 			"0xa1":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(11)}},
 			"0xa2":                 &suijsonrpc.Balance{TotalBalance: &suijsonrpc.BigInt{big.NewInt(22)}},

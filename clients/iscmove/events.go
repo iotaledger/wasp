@@ -1,4 +1,4 @@
-package isctypes
+package iscmove
 
 import "github.com/iotaledger/wasp/sui-go/sui"
 

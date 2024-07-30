@@ -6,16 +6,16 @@ package cmt_log
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputDone struct {
 	logIndex          LogIndex
-	proposedBaseAO    sui.ObjectID     // Proposed BaseAO
-	baseAliasOutputID sui.ObjectID     // Decided BaseAO
-	nextAliasOutput   *isctypes.Anchor // And the next one.
+	proposedBaseAO    sui.ObjectID    // Proposed BaseAO
+	baseAliasOutputID sui.ObjectID    // Decided BaseAO
+	nextAliasOutput   *iscmove.Anchor // And the next one.
 }
 
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
@@ -23,7 +23,7 @@ func NewInputConsensusOutputDone(
 	logIndex LogIndex,
 	proposedBaseAO sui.ObjectID,
 	baseAliasOutputID sui.ObjectID,
-	nextAliasOutput *isctypes.Anchor,
+	nextAliasOutput *iscmove.Anchor,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
 		logIndex:          logIndex,

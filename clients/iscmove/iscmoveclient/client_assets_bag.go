@@ -1,4 +1,4 @@
-package iscmove
+package iscmoveclient
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -194,18 +194,18 @@ func (c *Client) AssetsDestroyEmpty(
 func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
 	assetsBagID *sui.ObjectID,
-) (*isctypes.AssetsBagWithBalances, error) {
+) (*iscmove.AssetsBagWithBalances, error) {
 	fields, err := c.GetDynamicFields(ctx, suiclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
 
-	bag := isctypes.AssetsBagWithBalances{
-		AssetsBag: isctypes.AssetsBag{
+	bag := iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmove.AssetsBag{
 			ID:   *assetsBagID,
 			Size: uint64(len(fields.Data)),
 		},
-		Balances: make(isctypes.AssetsBagBalances),
+		Balances: make(iscmove.AssetsBagBalances),
 	}
 	for _, data := range fields.Data {
 		resGetObject, err := c.GetObject(ctx, suiclient.GetObjectRequest{

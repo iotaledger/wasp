@@ -12,7 +12,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -25,7 +25,7 @@ type ncChain struct {
 
 	nodeConn       *nodeConnection
 	chainID        isc.ChainID
-	feed           *iscmove.ChainFeed
+	feed           *iscmoveclient.ChainFeed
 	requestHandler chain.RequestHandler
 	anchorHandler  chain.AnchorHandler
 
@@ -48,7 +48,7 @@ func newNCChain(
 	anchorHandler chain.AnchorHandler,
 ) *ncChain {
 	anchorAddress := chainID.AsAddress().AsSuiAddress()
-	feed := iscmove.NewChainFeed(
+	feed := iscmoveclient.NewChainFeed(
 		ctx,
 		nodeConn.wsClient,
 		nodeConn.iscPackageID,
@@ -126,8 +126,8 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 }
 
 func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
-	anchorUpdates := make(chan *isctypes.RefWithObject[isctypes.Anchor])
-	newRequests := make(chan *isctypes.Request)
+	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
+	newRequests := make(chan *iscmove.Request)
 	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)

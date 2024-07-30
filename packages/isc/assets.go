@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,7 +33,7 @@ func NewAssets(baseTokens *big.Int, tokens NativeTokens) *Assets {
 	return ret
 }
 
-func AssetsFromAssetsBag(assetsBag isctypes.AssetsBagWithBalances) *Assets {
+func AssetsFromAssetsBag(assetsBag iscmove.AssetsBagWithBalances) *Assets {
 	assets := &Assets{
 		BaseTokens:   assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int,
 		NativeTokens: make(NativeTokens, len(assetsBag.Balances)-1),

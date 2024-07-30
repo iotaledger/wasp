@@ -56,7 +56,6 @@ var (
 		coreutil.FieldWithCodec(FieldNativeTokenID, codec.NFTID),
 		coreutil.FieldWithCodecOptional(FieldResult, codec.EthereumAddress),
 	)
-	
 )
 
 const (
@@ -179,7 +178,7 @@ func (InputRegisterERC20ExteralNativeToken) Decode(d dict.Dict) (ret RegisterERC
 	if err != nil {
 		return
 	}
-	ret.SourceChain, err = codec.Address.Decode(d[FieldTargetAddress])FuncGetERC721CollectionAddress
+	ret.SourceChain, err = codec.Address.Decode(d[FieldTargetAddress])
 	ret.FoundryTokenScheme, err = codec.TokenScheme.Decode(d[FieldFoundryTokenScheme])
 	if err != nil {
 		return
