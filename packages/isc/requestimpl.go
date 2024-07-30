@@ -6,11 +6,13 @@ import (
 	"io"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type RequestKind rwutil.Kind
@@ -59,7 +61,7 @@ func RequestFromReader(rr *rwutil.Reader) (ret Request) {
 
 // region RequestID //////////////////////////////////////////////////////////////////
 
-type RequestID iotago.OutputID
+type RequestID sui.ObjectID
 
 const RequestIDDigestLen = 6
 
@@ -68,12 +70,12 @@ type RequestRef struct {
 	Hash hashing.HashValue
 }
 
-const RequestRefKeyLen = iotago.OutputIDLength + 32
+const RequestRefKeyLen = sui.AddressLen + 32
 
 type RequestRefKey [RequestRefKeyLen]byte
 
 func (rrk RequestRefKey) String() string {
-	return iotago.EncodeHex(rrk[:])
+	return hexutil.Encode(rrk[:])
 }
 
 func RequestRefFromBytes(data []byte) (*RequestRef, error) {
@@ -133,7 +135,9 @@ func (ref *RequestRef) Write(w io.Writer) error {
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
-	return RequestID(iotago.OutputIDFromTransactionIDAndIndex(txid, index))
+	panic("refactor me: removal of Iota.go types")
+	return RequestID{}
+	// return RequestID(iotago.OutputIDFromTransactionIDAndIndex(txid, index))
 }
 
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
@@ -161,7 +165,8 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 }
 
 func (rid RequestID) OutputID() iotago.OutputID {
-	return iotago.OutputID(rid)
+	panic("refactor me: Removal of Iota.go types")
+	return iotago.OutputID(rid.Bytes())
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {

@@ -31,7 +31,6 @@ var (
 	_ OffLedgerRequest         = new(OffLedgerRequestData)
 	_ UnsignedOffLedgerRequest = new(OffLedgerRequestData)
 	_ Calldata                 = new(OffLedgerRequestData)
-	_ Features                 = new(OffLedgerRequestData)
 )
 
 type ImpersonatedOffLedgerRequestData struct {

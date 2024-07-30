@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -13,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
@@ -20,8 +20,8 @@ import (
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
 	Processors         *processors.Cache
-	AnchorOutput       *iotago.AliasOutput
-	AnchorOutputID     iotago.OutputID
+	AnchorOutput       *iscmove.Anchor
+	AnchorOutputID     sui.ObjectID
 	Store              state.Store
 	Requests           []isc.Request
 	TimeAssumption     time.Time
@@ -48,9 +48,11 @@ type VMTaskResult struct {
 	RotationAddress *cryptolib.Address
 	// TransactionEssence is the transaction essence for the next block,
 	// or nil if the task does not produce a normal block
-	TransactionEssence *iotago.TransactionEssence
+	// TODO: Check TransactionEssence relevance
+	// TransactionEssence *iotago.TransactionEssence
 	// InputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
 	InputsCommitment []byte
+	StateMetadata    []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult
 }

@@ -841,7 +841,7 @@ func TestSendBaseTokens(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(transfer)),
 	)
 	require.NoError(t, err)
 
@@ -884,7 +884,7 @@ func TestSendBaseTokensAnotherChain(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(transfer)),
 	)
 	require.NoError(t, err)
 
@@ -928,7 +928,7 @@ func TestCannotDepleteAccount(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(transfer)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(transfer)),
 	)
 	require.NoError(t, err)
 
@@ -984,10 +984,10 @@ func TestSendNFT(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, env.Chain.L2NFTs(ethAgentID))
 	require.Equal(t,
-		[]iotago.NFTID{nft.ID},
+		[]isc.NFTID{nft.ID},
 		lo.Map(
 			lo.Values(env.solo.L1NFTs(receiver)),
-			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
+			func(v *iotago.NFTOutput, _ int) isc.NFTID { return v.NFTID },
 		),
 	)
 	// there must be 2 Transfer events emitted from the ERC721NFTs contract:
@@ -1308,7 +1308,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	randAgentID := isc.NewAgentID(cryptolib.NewRandomAddress())
 
 	nBaseTokens := uint64(100)
-	allowance := isc.NewAssetsBaseTokens(nBaseTokens)
+	allowance := isc.NewAssetsBaseTokensU64(nBaseTokens)
 
 	_, err := iscTest.CallFn(
 		nil,
@@ -1363,7 +1363,7 @@ func TestISCSendWithArgs(t *testing.T) {
 		nil,
 		"send",
 		iscmagic.WrapL1Address(env.Chain.ChainID.AsAddress()),
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(sendBaseTokens)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(sendBaseTokens)),
 		false, // auto adjust SD
 		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
 			Message:   inccounter.FuncIncCounter.Message(nil),
@@ -1540,8 +1540,8 @@ func TestERC20NativeTokens(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
 
-	err = env.Chain.SendFromL2ToL2Account(isc.NewAssets(0, iotago.NativeTokens{
-		&iotago.NativeToken{ID: nativeTokenID, Amount: supply},
+	err = env.Chain.SendFromL2ToL2Account(isc.NewAssets(0, isc.NativeTokens{
+		&isc.NativeToken{ID: nativeTokenID, Amount: supply},
 	}), ethAgentID, foundryOwner)
 	require.NoError(t, err)
 
@@ -1730,7 +1730,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 			Message: accounts.FuncTransferAllowanceTo.Message(ethAgentID),
 			Allowance: &isc.Assets{
 				BaseTokens: baseTokensToTransferOnTestChain,
-				NativeTokens: []*iotago.NativeToken{
+				NativeTokens: []*isc.NativeToken{
 					{ID: nativeTokenID, Amount: supply}, // specify the token to be transferred here
 				},
 			},
@@ -1745,7 +1745,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 		iscmagic.WrapISCAssets(
 			&isc.Assets{
 				BaseTokens: baseTokensToTransferOnTestChain + 1*isc.Million, // must add some base tokens in order to pay for the gas on the target chain
-				NativeTokens: []*iotago.NativeToken{
+				NativeTokens: []*isc.NativeToken{
 					{ID: nativeTokenID, Amount: supply}, // specify the token to be transferred here
 				},
 			},
@@ -1796,7 +1796,7 @@ func TestERC20NativeTokensWithExternalFoundry(t *testing.T) {
 func testERC20NativeTokens(
 	env *SoloChainEnv,
 	erc20 *IscContractInstance,
-	nativeTokenID iotago.NativeTokenID,
+	nativeTokenID isc.NativeTokenID,
 	tokenName, tokenTickerSymbol string,
 	tokenDecimals uint8,
 	supply *big.Int,
@@ -1957,7 +1957,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -1976,7 +1976,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
-		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokens(tokensToWithdraw)),
+		iscmagic.WrapISCAssets(isc.NewAssetsBaseTokensU64(tokensToWithdraw)),
 		false,
 		metadata,
 		iscmagic.ISCSendOptions{},
@@ -1994,7 +1994,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 		evmGasRatio   util.Ratio32
 		txGasPrice    *big.Int
 		expectedError string
-		gasBurned     uint64
+		gasBurned     *big.Int
 		feeCharged    uint64
 	}{
 		{
@@ -2019,8 +2019,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    nil,
 			expectedError: "insufficient gas price: got 0, minimum is 10000000000",
-			gasBurned:     168098,
-			feeCharged:    1681,
+			gasBurned:     big.NewInt(168154),
+			feeCharged:    1682,
 		},
 		{
 			name:          "default policy, gas price too low",
@@ -2028,15 +2028,15 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    big.NewInt(9999999999),
 			expectedError: "insufficient gas price: got 9999999999, minimum is 10000000000",
-			gasBurned:     168098,
-			feeCharged:    1681,
+			gasBurned:     big.NewInt(168154),
+			feeCharged:    1682,
 		},
 		{
 			name:        "default policy, gas price just enough",
 			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:  big.NewInt(10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  259,
 		},
 		{
@@ -2044,7 +2044,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:  big.NewInt(2 * 10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  2 * 259,
 		},
 		{
@@ -2052,7 +2052,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			gasPerToken: util.Ratio32{A: 100, B: 1}, // default: 1 base token = 100 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 2},
 			txGasPrice:  big.NewInt(2 * 10000000000),
-			gasBurned:   (25883 + 1) / 2,
+			gasBurned:   big.NewInt(int64((25883 + 1) / 2)),
 			feeCharged:  2 * 259 / 2,
 		},
 		{
@@ -2061,15 +2061,15 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:    big.NewInt(19999999999),
 			expectedError: "insufficient gas price: got 19999999999, minimum is 20000000000",
-			gasBurned:     168098,
-			feeCharged:    2 * 1681,
+			gasBurned:     big.NewInt(168154),
+			feeCharged:    2 * 1682,
 		},
 		{
 			name:        "gas more expensive, gas price just enough",
 			gasPerToken: util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:  big.NewInt(2 * 10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  2 * 259,
 		},
 		{
@@ -2077,7 +2077,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			gasPerToken: util.Ratio32{A: 50, B: 1}, // 1 base token = 50 gas units
 			evmGasRatio: util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:  big.NewInt(2 * 2 * 10000000000),
-			gasBurned:   25883,
+			gasBurned:   big.NewInt(25883),
 			feeCharged:  2 * 2 * 259,
 		},
 	} {
@@ -2201,7 +2201,7 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	// fund the contract via a L1 wallet ISC transfer, then call `sendTo` to use those funds
 	l1Wallet, _ := env.Chain.Env.NewKeyPairWithFunds()
 	env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(10*isc.Million),
+		isc.NewAssetsBaseTokensU64(10*isc.Million),
 		isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscTest.address),
 		l1Wallet,
 	)
@@ -2628,7 +2628,7 @@ func TestCaller(t *testing.T) {
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 	err := env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(42),
+		isc.NewAssetsBaseTokensU64(42),
 		isc.NewEthereumAddressAgentID(env.Chain.ChainID, iscTest.address),
 		env.Chain.OriginatorPrivateKey,
 	)
@@ -2679,7 +2679,7 @@ func TestL1DepositEVM(t *testing.T) {
 	_, ethAddr := solo.NewEthereumAccount()
 	amount := 1 * isc.Million
 	err := env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(amount),
+		isc.NewAssetsBaseTokensU64(amount),
 		isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr),
 		wallet,
 	)
@@ -2729,7 +2729,7 @@ func TestL1DepositEVM(t *testing.T) {
 	// issue the same deposit again, assert txHashes do not collide
 
 	err = env.Chain.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(amount),
+		isc.NewAssetsBaseTokensU64(amount),
 		isc.NewEthereumAddressAgentID(env.Chain.ID(), ethAddr),
 		wallet,
 	)

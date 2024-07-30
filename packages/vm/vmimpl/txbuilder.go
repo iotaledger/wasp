@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-func (vmctx *vmContext) stateMetadata(stateCommitment *state.L1Commitment) []byte {
+func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
 	stateMetadata := transaction.StateMetadata{
 		Version:      transaction.StateMetadataSupportedVersion,
 		L1Commitment: stateCommitment,
@@ -27,7 +27,7 @@ func (vmctx *vmContext) stateMetadata(stateCommitment *state.L1Commitment) []byt
 }
 
 func (vmctx *vmContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
-	stateMetadata := vmctx.stateMetadata(stateCommitment)
+	stateMetadata := vmctx.StateMetadata(stateCommitment)
 	essence, inputsCommitment := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
 	if assertTxbuilderBalanced {
 		vmctx.txbuilder.MustBalanced()
@@ -43,7 +43,7 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (out *iotago.BasicOutput, id iotago.OutputID) {
+func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID isc.NativeTokenID) (out *iotago.BasicOutput, id iotago.OutputID) {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNativeTokenOutput(nativeTokenID, vmctx.ChainID())
 }
 
@@ -51,7 +51,7 @@ func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, i
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetFoundryOutput(serNum, vmctx.ChainID())
 }
 
-func (vmctx *vmContext) loadNFT(nftID iotago.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
+func (vmctx *vmContext) loadNFT(nftID isc.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNFTOutput(nftID)
 }
 

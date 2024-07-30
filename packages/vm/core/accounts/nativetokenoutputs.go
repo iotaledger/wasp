@@ -2,6 +2,7 @@ package accounts
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/sui-go/sui"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -23,7 +24,7 @@ func (s *StateReader) nativeTokenOutputMapR() *collections.ImmutableMap {
 func (s *StateWriter) SaveNativeTokenOutput(out *iotago.BasicOutput, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
 		// TransactionID is unknown yet, will be filled next block
-		OutputID:          iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
+		OutputID:          sui.ObjectID{},
 		StorageBaseTokens: out.Amount,
 		Amount:            out.NativeTokens[0].Amount,
 	}
@@ -31,24 +32,24 @@ func (s *StateWriter) SaveNativeTokenOutput(out *iotago.BasicOutput, outputIndex
 	s.newNativeTokensArray().Push(out.NativeTokens[0].ID[:])
 }
 
-func (s *StateWriter) updateNativeTokenOutputIDs(anchorTxID iotago.TransactionID) {
+func (s *StateWriter) updateNativeTokenOutputIDs(anchorTxID sui.ObjectID) {
 	newNativeTokens := s.newNativeTokensArray()
 	allNativeTokens := s.nativeTokenOutputMap()
 	n := newNativeTokens.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newNativeTokens.GetAt(i)
 		rec := mustNativeTokenOutputRecFromBytes(allNativeTokens.GetAt(k))
-		rec.OutputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.OutputID.Index())
+		rec.OutputID = anchorTxID
 		allNativeTokens.SetAt(k, rec.Bytes())
 	}
 	newNativeTokens.Erase()
 }
 
-func (s *StateWriter) DeleteNativeTokenOutput(nativeTokenID iotago.NativeTokenID) {
+func (s *StateWriter) DeleteNativeTokenOutput(nativeTokenID isc.NativeTokenID) {
 	s.nativeTokenOutputMap().DelAt(nativeTokenID[:])
 }
 
-func (s *StateReader) GetNativeTokenOutput(nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, iotago.OutputID) {
+func (s *StateReader) GetNativeTokenOutput(nativeTokenID sui.ObjectID, chainID isc.ChainID) (*iotago.BasicOutput, iotago.OutputID) {
 	data := s.nativeTokenOutputMapR().GetAt(nativeTokenID[:])
 	if data == nil {
 		return nil, iotago.OutputID{}
@@ -56,10 +57,10 @@ func (s *StateReader) GetNativeTokenOutput(nativeTokenID iotago.NativeTokenID, c
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
 
 	panic("refactor me: AsIotagoAddress")
-	
+
 	ret := &iotago.BasicOutput{
 		Amount: tokenRec.StorageBaseTokens,
-		NativeTokens: iotago.NativeTokens{{
+		NativeTokens: isc.NativeTokens{{
 			ID:     nativeTokenID,
 			Amount: tokenRec.Amount,
 		}},

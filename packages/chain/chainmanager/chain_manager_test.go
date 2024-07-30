@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc/sui"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -25,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
-	"github.com/iotaledger/wasp/sui-go/sui_types"
 )
 
 func TestChainMgrBasic(t *testing.T) {
@@ -87,7 +85,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
 		}
-		trackActiveStateCB := func(ao *sui.Anchor) {
+		trackActiveStateCB := func(ao *iscmove.Anchor) {
 			// Nothing
 		}
 		savePreliminaryBlockCB := func(state.Block) {
@@ -151,7 +149,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, 1, out.NeedPublishTX().Size(), "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
-		require.Equal(t, originAO.OutputID(), func() sui_types.ObjectID {
+		require.Equal(t, originAO.OutputID(), func() sui.ObjectID {
 			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
 			return tx.BaseAliasOutputID
 		}())

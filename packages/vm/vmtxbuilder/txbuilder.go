@@ -16,7 +16,7 @@ import (
 type AccountsContractRead struct {
 	// nativeTokenOutputLoaderFunc loads stored output from the state
 	// Should return nil if does not exist
-	NativeTokenOutput func(iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
+	NativeTokenOutput func(isc.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
 
 	// foundryLoaderFunc returns foundry output and id by its serial number
 	// Should return nil if foundry does not exist
@@ -24,7 +24,7 @@ type AccountsContractRead struct {
 
 	// NFTOutput returns the stored NFT output from the state
 	// Should return nil if NFT is not accounted for
-	NFTOutput func(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID)
+	NFTOutput func(id isc.NFTID) (*iotago.NFTOutput, iotago.OutputID)
 
 	// TotalFungibleTokens returns the total base tokens and native tokens accounted by the chain
 	TotalFungibleTokens func() *isc.Assets
@@ -49,9 +49,9 @@ type AnchorTransactionBuilder struct {
 	accountsView AccountsContractRead
 
 	// balances of native tokens loaded during the batch run
-	balanceNativeTokens map[iotago.NativeTokenID]*nativeTokenBalance
+	balanceNativeTokens map[isc.NativeTokenID]*nativeTokenBalance
 	// all nfts loaded during the batch run
-	nftsIncluded map[iotago.NFTID]*nftIncluded
+	nftsIncluded map[isc.NFTID]*nftIncluded
 	// all nfts minted
 	nftsMinted []iotago.Output
 	// invoked foundries. Foundry serial number is used as a key
@@ -73,10 +73,10 @@ func NewAnchorTransactionBuilder(
 		anchorOutputStorageDeposit: anchorOutputStorageDeposit,
 		accountsView:               accounts,
 		consumed:                   make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
-		balanceNativeTokens:        make(map[iotago.NativeTokenID]*nativeTokenBalance),
+		balanceNativeTokens:        make(map[isc.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:              make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:           make(map[uint32]*foundryInvoked),
-		nftsIncluded:               make(map[iotago.NFTID]*nftIncluded),
+		nftsIncluded:               make(map[isc.NFTID]*nftIncluded),
 		nftsMinted:                 make([]iotago.Output, 0),
 	}
 }
@@ -122,7 +122,7 @@ func (txb *AnchorTransactionBuilder) splitAssetsIntoInternalOutputs(req isc.OnLe
 	if req.NFT() != nil {
 		// create new output
 		panic("refactor me: vmtxbuilder.internalNFTOutputFromRequest")
-		// nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.OutputID())
+		// nftIncl := txb.internalNFTOutputFromRequest(req.Output().(*iotago.NFTOutput), req.RequestID())
 		// requiredSD += nftIncl.resultingOutput.Amount
 	}
 
@@ -225,7 +225,7 @@ func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputID
 	// consumed on-ledger requests
 	for i := range txb.consumed {
 		req := txb.consumed[i]
-		outputID := req.OutputID()
+		outputID := req.RequestID()
 		output := req.Output()
 		if retrReq, ok := req.(*isc.RetryOnLedgerRequest); ok {
 			outputID = retrReq.RetryOutputID()

@@ -41,7 +41,7 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 	return isc.NewContractAgentID(chainID, isc.Hname(h))
 }
 
-var dummyAssetID = [iotago.NativeTokenIDLength]byte{1, 2, 3}
+var dummyAssetID = [isc.NativeTokenIDLength]byte{1, 2, 3}
 
 func checkLedgerT(t *testing.T, v isc.SchemaVersion, state dict.Dict) *isc.Assets {
 	require.NotPanics(t, func() {
@@ -143,7 +143,7 @@ func testCreditDebit4(t *testing.T, v isc.SchemaVersion) {
 	require.True(t, total.Equals(isc.NewEmptyAssets()))
 
 	agentID1 := isc.NewRandomAgentID()
-	transfer := isc.NewAssetsBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := isc.NewAssetsBaseTokensU64(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
 	total = checkLedgerT(t, v, state)
 
@@ -157,7 +157,7 @@ func testCreditDebit4(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isc.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	transfer = isc.NewAssetsBaseTokens(20)
+	transfer = isc.NewAssetsBaseTokensU64(20)
 	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{})
 	require.NoError(t, err)
 	total = checkLedgerT(t, v, state)
@@ -185,7 +185,7 @@ func testCreditDebit5(t *testing.T, v isc.SchemaVersion) {
 	require.True(t, total.Equals(isc.NewEmptyAssets()))
 
 	agentID1 := isc.NewRandomAgentID()
-	transfer := isc.NewAssetsBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := isc.NewAssetsBaseTokensU64(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
 	total = checkLedgerT(t, v, state)
 
@@ -199,7 +199,7 @@ func testCreditDebit5(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isc.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	transfer = isc.NewAssetsBaseTokens(50)
+	transfer = isc.NewAssetsBaseTokensU64(50)
 	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer, isc.ChainID{}))
 	total = checkLedgerT(t, v, state)
 
@@ -223,7 +223,7 @@ func testCreditDebit6(t *testing.T, v isc.SchemaVersion) {
 	require.True(t, total.Equals(isc.NewEmptyAssets()))
 
 	agentID1 := isc.NewRandomAgentID()
-	transfer := isc.NewAssetsBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := isc.NewAssetsBaseTokensU64(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
 	checkLedgerT(t, v, state)
 
@@ -270,7 +270,7 @@ func testMoveAll(t *testing.T, v isc.SchemaVersion) {
 	agentID1 := isc.NewRandomAgentID()
 	agentID2 := isc.NewRandomAgentID()
 
-	transfer := isc.NewAssetsBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := isc.NewAssetsBaseTokensU64(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
 	accs := accounts.NewStateReader(v, state).AllAccountsAsDict()
 	require.Len(t, accs, 1)
@@ -320,13 +320,13 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isc.NewRandomAgentID()
 	NFT1 := &isc.NFT{
-		ID:       iotago.NFTID{123},
+		ID:       isc.NFTID{123},
 		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}
 	accounts.NewStateWriter(v, state).CreditNFTToAccount(agentID1, &iotago.NFTOutput{
 		Amount:       0,
-		NativeTokens: []*iotago.NativeToken{},
+		NativeTokens: []*isc.NativeToken{},
 		NFTID:        NFT1.ID,
 		ImmutableFeatures: []iotago.Feature{
 			&iotago.IssuerFeature{Address: NFT1.Issuer.AsIotagoAddress()},
@@ -341,7 +341,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	// nft data is saved (accounts.SaveNFTOutput must be called)
 	accounts.NewStateWriter(v, state).SaveNFTOutput(&iotago.NFTOutput{
 		Amount:       0,
-		NativeTokens: []*iotago.NativeToken{},
+		NativeTokens: []*isc.NativeToken{},
 		NFTID:        NFT1.ID,
 		ImmutableFeatures: []iotago.Feature{
 			&iotago.IssuerFeature{Address: NFT1.Issuer.AsIotagoAddress()},
@@ -357,7 +357,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isc.NewRandomAgentID()
 
 	// cannot move an NFT that is not owned
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(iotago.NFTID{111}), isc.ChainID{}))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(isc.NFTID{111}), isc.ChainID{}))
 
 	// moves successfully when the NFT is owned
 	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(NFT1.ID), isc.ChainID{})
@@ -381,13 +381,13 @@ func testCreditDebitNFT1(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := knownAgentID(1, 2)
 	nft := isc.NFT{
-		ID:       iotago.NFTID{123},
+		ID:       isc.NFTID{123},
 		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}
 	accounts.NewStateWriter(v, state).CreditNFTToAccount(agentID1, &iotago.NFTOutput{
 		Amount:       0,
-		NativeTokens: []*iotago.NativeToken{},
+		NativeTokens: []*isc.NativeToken{},
 		NFTID:        nft.ID,
 		ImmutableFeatures: []iotago.Feature{
 			&iotago.IssuerFeature{Address: nft.Issuer.AsIotagoAddress()},

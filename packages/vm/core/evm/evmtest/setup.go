@@ -213,7 +213,7 @@ func (e *SoloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *IscContractI
 	}
 }
 
-func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID iotago.NFTID) *IscContractInstance {
+func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID isc.NFTID) *IscContractInstance {
 	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
@@ -276,7 +276,7 @@ func (e *SoloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair,
 	return err
 }
 
-func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.NFTID) error {
+func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID isc.NFTID) error {
 	_, err := e.Chain.PostRequestOffLedger(
 		solo.NewCallParams(evm.FuncRegisterERC721NFTCollection.Message(collectionID)).
 			WithMaxAffordableGasBudget(),

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -73,6 +74,47 @@ func (ratio Ratio32) XFloor64(y uint64) uint64 {
 // XCeil64 computes x = ceil(y * a / b)
 func (ratio Ratio32) XCeil64(y uint64) uint64 {
 	return ceil(y, uint64(ratio.A), uint64(ratio.B))
+}
+
+// TODO: Validate code
+// Translated by gpt4o from the based on the functions above.
+func ceilBigInt(x, dividend, divisor *big.Int) *big.Int {
+	result := new(big.Int)
+	temp := new(big.Int).Sub(divisor, big.NewInt(1))
+	temp.Mul(x, dividend).Add(temp, temp)
+	return result.Div(temp, divisor)
+}
+
+// YFloorBigInt computes y = floor(x * b / a)
+func (ratio Ratio32) YFloorBigInt(x *big.Int) *big.Int {
+	result := new(big.Int)
+	b := new(big.Int).SetUint64(uint64(ratio.B))
+	a := new(big.Int).SetUint64(uint64(ratio.A))
+	result.Mul(x, b).Div(result, a)
+	return result
+}
+
+// YCeilBigInt computes y = ceil(x * b / a)
+func (ratio Ratio32) YCeilBigInt(x *big.Int) *big.Int {
+	b := new(big.Int).SetUint64(uint64(ratio.B))
+	a := new(big.Int).SetUint64(uint64(ratio.A))
+	return ceilBigInt(x, b, a)
+}
+
+// XFloorBigInt computes x = floor(y * a / b)
+func (ratio Ratio32) XFloorBigInt(y *big.Int) *big.Int {
+	result := new(big.Int)
+	a := new(big.Int).SetUint64(uint64(ratio.A))
+	b := new(big.Int).SetUint64(uint64(ratio.B))
+	result.Mul(y, a).Div(result, b)
+	return result
+}
+
+// XCeilBigInt computes x = ceil(y * a / b)
+func (ratio Ratio32) XCeilBigInt(y *big.Int) *big.Int {
+	a := new(big.Int).SetUint64(uint64(ratio.A))
+	b := new(big.Int).SetUint64(uint64(ratio.B))
+	return ceilBigInt(y, a, b)
 }
 
 // Set is part of the pflag.Value interface. It accepts a string in the form "a:b".

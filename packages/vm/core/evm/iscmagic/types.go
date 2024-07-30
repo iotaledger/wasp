@@ -45,16 +45,16 @@ type NativeTokenID struct {
 	Data []byte
 }
 
-func WrapNativeTokenID(nativeTokenID iotago.NativeTokenID) NativeTokenID {
+func WrapNativeTokenID(nativeTokenID isc.NativeTokenID) NativeTokenID {
 	return NativeTokenID{Data: nativeTokenID[:]}
 }
 
-func (a NativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
+func (a NativeTokenID) Unwrap() (ret isc.NativeTokenID) {
 	copy(ret[:], a.Data)
 	return
 }
 
-func (a NativeTokenID) MustUnwrap() (ret iotago.NativeTokenID) {
+func (a NativeTokenID) MustUnwrap() (ret isc.NativeTokenID) {
 	copy(ret[:], a.Data)
 	return
 }
@@ -65,15 +65,15 @@ type NativeToken struct {
 	Amount *big.Int
 }
 
-func WrapNativeToken(nativeToken *iotago.NativeToken) NativeToken {
+func WrapNativeToken(nativeToken *isc.NativeToken) NativeToken {
 	return NativeToken{
 		ID:     WrapNativeTokenID(nativeToken.ID),
 		Amount: nativeToken.Amount,
 	}
 }
 
-func (nt NativeToken) Unwrap() *iotago.NativeToken {
-	return &iotago.NativeToken{
+func (nt NativeToken) Unwrap() *isc.NativeToken {
+	return &isc.NativeToken{
 		ID:     nt.ID.Unwrap(),
 		Amount: nt.Amount,
 	}
@@ -146,20 +146,20 @@ func (rid ISCRequestID) MustUnwrap() isc.RequestID {
 }
 
 // NFTID matches the type definition in ISCTypes.sol
-type NFTID [iotago.NFTIDLength]byte
+type NFTID [isc.NFTIDLength]byte
 
 func init() {
-	if iotago.NFTIDLength != 32 {
+	if isc.NFTIDLength != 32 {
 		panic("static check: NFTID length does not match bytes32 in ISCTypes.sol")
 	}
 }
 
-func WrapNFTID(c iotago.NFTID) (ret NFTID) {
+func WrapNFTID(c isc.NFTID) (ret NFTID) {
 	copy(ret[:], c[:])
 	return
 }
 
-func (n NFTID) Unwrap() (ret iotago.NFTID) {
+func (n NFTID) Unwrap() (ret isc.NFTID) {
 	copy(ret[:], n[:])
 	return
 }
@@ -264,11 +264,11 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 }
 
 func (a ISCAssets) Unwrap() *isc.Assets {
-	tokens := make(iotago.NativeTokens, len(a.NativeTokens))
+	tokens := make(isc.NativeTokens, len(a.NativeTokens))
 	for i, nativeToken := range a.NativeTokens {
 		tokens[i] = nativeToken.Unwrap()
 	}
-	nfts := make([]iotago.NFTID, len(a.Nfts))
+	nfts := make([]isc.NFTID, len(a.Nfts))
 	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}

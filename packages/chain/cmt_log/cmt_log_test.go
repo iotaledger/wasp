@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/sui-go/sui"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -111,7 +110,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *sui.Anchor) map[gpa.NodeID]gpa.Input {
+func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *iscmove.Anchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = cmt_log.NewInputAliasOutputConfirmed(ao)
@@ -119,15 +118,15 @@ func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *sui.Anchor) 
 	return inputs
 }
 
-func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *sui.Anchor) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *iscmove.Anchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), consReq.GetBaseAliasOutput().OutputID(), nextAO)
+		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().ID, consReq.GetBaseAliasOutput().ID, nextAO)
 	}
 	return inputs
 }
 
-func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *sui.Anchor {
+func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *iscmove.Anchor {
 	outputID := testiotago.RandOutputID()
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       aliasID,

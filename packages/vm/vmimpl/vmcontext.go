@@ -171,7 +171,7 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 // 5. unprocessable requests
 func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
-	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.stateMetadata(state.L1CommitmentNil))
+	mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
 	newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
 	oldMinSD := vmctx.txbuilder.AnchorOutputStorageDeposit()
 	changeInSD := int64(oldMinSD) - int64(newMinSD)

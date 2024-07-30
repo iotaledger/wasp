@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -12,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // The following interfaces define the common functionality for SC execution (VM/external view calls)
@@ -36,9 +36,9 @@ type WaspCallContext interface {
 	Timestamp() time.Time
 	CurrentContractAccountID() isc.AgentID
 	Caller() isc.AgentID
-	GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens
+	GetNativeTokens(agentID isc.AgentID) isc.NativeTokens
 	GetBaseTokensBalance(agentID isc.AgentID) (uint64, *big.Int)
-	GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int
+	GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID sui.ObjectID) *big.Int
 	Call(msg isc.Message, allowance *isc.Assets) dict.Dict
 	ChainID() isc.ChainID
 	ChainOwnerID() isc.AgentID
@@ -49,6 +49,6 @@ type WaspCallContext interface {
 	SchemaVersion() isc.SchemaVersion
 	GasBurned() uint64
 	GasBudgetLeft() uint64
-	GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID
-	GetNFTData(nftID iotago.NFTID) *isc.NFT
+	GetAccountNFTs(agentID isc.AgentID) []isc.NFTID
+	GetNFTData(nftID isc.NFTID) *isc.NFT
 }

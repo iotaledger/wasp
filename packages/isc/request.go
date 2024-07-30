@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // Request wraps any data which can be potentially be interpreted as a request
@@ -47,18 +47,10 @@ type Calldata interface {
 	Message() Message
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
-	NFT() *NFT // Not nil if the request is an NFT request
+	// NFT() *NFT // Not nil if the request is an NFT request
 	SenderAccount() AgentID
 	TargetAddress() *cryptolib.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	EVMCallMsg() *ethereum.CallMsg
-}
-
-type Features interface {
-	// Expiry returns the expiry time and sender address, or a zero time if not present
-	Expiry() (time.Time, *cryptolib.Address) // return expiry time data and sender address or nil, nil if does not exist
-	ReturnAmount() (uint64, bool)
-	// TimeLock returns the timelock feature, or a zero time if not present
-	TimeLock() time.Time
 }
 
 type UnsignedOffLedgerRequest interface {
@@ -85,15 +77,7 @@ type OffLedgerRequest interface {
 type OnLedgerRequest interface {
 	Request
 	Clone() OnLedgerRequest
-	Output() iotago.Output
-	IsInternalUTXO(ChainID) bool
-	OutputID() iotago.OutputID
-	Features() Features
-}
-
-type ReturnAmountOptions interface {
-	ReturnTo() iotago.Address
-	Amount() uint64
+	RequestID() sui.ObjectID
 }
 
 func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, args ...interface{}), prefix string) {
@@ -108,6 +92,7 @@ func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, a
 	}
 }
 
+// TODO: Refactor me:
 // RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
 func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error) {
 	txid, err := tx.ID()
@@ -119,7 +104,9 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 	}
 
 	ret := make(map[ChainID][]Request)
-	for i, output := range tx.Essence.Outputs {
+	_ = txid
+	panic("refactor me")
+	/*for i, output := range tx.Essence.Outputs {
 		switch output.(type) {
 		case *iotago.BasicOutput, *iotago.NFTOutput:
 			// process it
@@ -128,16 +115,14 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 			continue
 		}
 
-		// wrap output into the isc.Request
+		// wrap request into the isc.Request
 		odata, err := OnLedgerFromUTXO(output, iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i)))
 		if err != nil {
 			return nil, err // TODO: maybe log the error and keep processing?
 		}
 
 		addr := odata.TargetAddress()
-		/*if addr.Type() != iotago.AddressAlias {
-			continue
-		}*/ // TODO: is it needed?
+
 
 		chainID := ChainIDFromAddress(addr)
 
@@ -146,30 +131,20 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 		}
 
 		ret[chainID] = append(ret[chainID], odata)
-	}
+	}*/
 	return ret, nil
 }
 
+// TODO: Clarify if we want to keep expiry dates.
 // don't process any request which deadline will expire within 1 minute
-const RequestConsideredExpiredWindow = time.Minute * 1
-
+/*const RequestConsideredExpiredWindow = time.Minute * 1
 func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 	expiry, _ := req.Features().Expiry()
 	if expiry.IsZero() {
 		return false
 	}
 	return !expiry.IsZero() && currentTime.After(expiry.Add(-RequestConsideredExpiredWindow))
-}
-
-func RequestIsUnlockable(req OnLedgerRequest, chainAddress *cryptolib.Address, currentTime time.Time) bool {
-	panic("TODO")
-	/*
-		output, _ := req.Output().(iotago.TransIndepIdentOutput)
-		return output.UnlockableBy(chainAddress.AsSuiAddress(), &iotago.ExternalUnlockParameters{
-			ConfUnix: uint32(currentTime.Unix()),
-		})
-	*/
-}
+}*/
 
 func RequestHash(req Request) hashing.HashValue {
 	return hashing.HashData(req.Bytes())

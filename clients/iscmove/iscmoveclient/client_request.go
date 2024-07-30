@@ -1,4 +1,4 @@
-package iscmove
+package iscmoveclient
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -21,8 +20,8 @@ func (c *Client) CreateAndSendRequest(
 	packageID sui.PackageID,
 	anchorAddress *sui.ObjectID,
 	assetsBagRef *sui.ObjectRef,
-	iscContractHname isc.Hname,
-	iscFunctionHname isc.Hname,
+	iscContractHname uint32,
+	iscFunctionHname uint32,
 	args [][]byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,

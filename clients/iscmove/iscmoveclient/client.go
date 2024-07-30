@@ -1,4 +1,4 @@
-package iscmove
+package iscmoveclient
 
 import (
 	"context"

@@ -28,8 +28,8 @@ func TestNFTDepositNoIssuer(t *testing.T) {
 	metadata := isc.RequestMetadata{Message: accounts.FuncDeposit.Message()}
 	o := &iotago.NFTOutput{
 		Amount:       100 * isc.Million,
-		NativeTokens: []*iotago.NativeToken{},
-		NFTID:        iotago.NFTID{0x1},
+		NativeTokens: []*isc.NativeToken{},
+		NFTID:        isc.NFTID{0x1},
 		Conditions:   []iotago.UnlockCondition{},
 		Features: []iotago.Feature{
 			&iotago.MetadataFeature{
@@ -76,7 +76,7 @@ func simulateRunOutput(t *testing.T, output iotago.Output) *vm.VMTaskResult {
 		iotago.OutputSet{
 			iotago.OutputID{}: &iotago.BasicOutput{
 				Amount:       1000 * isc.Million,
-				NativeTokens: []*iotago.NativeToken{},
+				NativeTokens: []*isc.NativeToken{},
 				Conditions:   []iotago.UnlockCondition{},
 				Features:     []iotago.Feature{},
 			},

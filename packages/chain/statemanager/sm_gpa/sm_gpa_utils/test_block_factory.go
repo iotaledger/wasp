@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -122,7 +121,7 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *types.Anchor {
+func (bfT *BlockFactory) GetOriginAnchor() *iscmove.Anchor {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
@@ -211,10 +210,10 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *types.Anchor {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.Anchor {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return &types.Anchor{
+	return &iscmove.Anchor{
 		Ref:        anchorData.ref,
 		Assets:     anchorData.assets,
 		StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),

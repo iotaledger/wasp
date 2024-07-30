@@ -9,7 +9,7 @@ import (
 
 const MaxPostedOutputsInOneRequest = 4
 
-func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.NFTID) *isc.NFT {
+func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID isc.NFTID) *isc.NFT {
 	return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
 }
 

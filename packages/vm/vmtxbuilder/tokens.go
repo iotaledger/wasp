@@ -15,14 +15,14 @@ import (
 
 // nativeTokenBalance represents on-chain account of the specific native token
 type nativeTokenBalance struct {
-	nativeTokenID     iotago.NativeTokenID
+	nativeTokenID     isc.NativeTokenID
 	accountingInputID iotago.OutputID     // if in != nil, otherwise zeroOutputID
 	accountingInput   *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
 	accountingOutput  *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
 func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
-	nativeTokenID := iotago.NativeTokenID{}
+	nativeTokenID := isc.NativeTokenID{}
 	copy(nativeTokenID[:], n.nativeTokenID[:])
 
 	outputID := iotago.OutputID{}
@@ -117,10 +117,10 @@ func cloneInternalBasicOutputOrNil(o *iotago.BasicOutput) *iotago.BasicOutput {
 	return o.Clone().(*iotago.BasicOutput)
 }
 
-func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.BasicOutput {
+func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID isc.NativeTokenID) *iotago.BasicOutput {
 	out := &iotago.BasicOutput{
 		Amount: 0,
-		NativeTokens: iotago.NativeTokens{{
+		NativeTokens: isc.NativeTokens{{
 			ID:     nativeTokenID,
 			Amount: big.NewInt(0),
 		}},
@@ -150,9 +150,9 @@ func (txb *AnchorTransactionBuilder) nativeTokenOutputsSorted() []*nativeTokenBa
 	return ret
 }
 
-func (txb *AnchorTransactionBuilder) NativeTokenRecordsToBeUpdated() ([]iotago.NativeTokenID, []iotago.NativeTokenID) {
-	toBeUpdated := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
-	toBeRemoved := make([]iotago.NativeTokenID, 0, len(txb.balanceNativeTokens))
+func (txb *AnchorTransactionBuilder) NativeTokenRecordsToBeUpdated() ([]isc.NativeTokenID, []isc.NativeTokenID) {
+	toBeUpdated := make([]isc.NativeTokenID, 0, len(txb.balanceNativeTokens))
+	toBeRemoved := make([]isc.NativeTokenID, 0, len(txb.balanceNativeTokens))
 	for _, nt := range txb.nativeTokenOutputsSorted() {
 		if nt.producesAccountingOutput() {
 			toBeUpdated = append(toBeUpdated, nt.nativeTokenID)
@@ -163,8 +163,8 @@ func (txb *AnchorTransactionBuilder) NativeTokenRecordsToBeUpdated() ([]iotago.N
 	return toBeUpdated, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []iotago.NativeTokenID) map[iotago.NativeTokenID]*iotago.BasicOutput {
-	ret := make(map[iotago.NativeTokenID]*iotago.BasicOutput)
+func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []isc.NativeTokenID) map[isc.NativeTokenID]*iotago.BasicOutput {
+	ret := make(map[isc.NativeTokenID]*iotago.BasicOutput)
 	for _, id := range ids {
 		ret[id] = txb.balanceNativeTokens[id].accountingOutput
 	}
@@ -175,7 +175,7 @@ func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []iotago.N
 // The call may result in adding new token ID to the ledger or disappearing one
 // This impacts storage deposit amount locked in the internal UTXOs which keep respective balances
 // Returns delta of required storage deposit
-func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID iotago.NativeTokenID, delta *big.Int) int64 {
+func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID isc.NativeTokenID, delta *big.Int) int64 {
 	if util.IsZeroBigInt(delta) {
 		return 0
 	}
@@ -205,7 +205,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID io
 // ensureNativeTokenBalance makes sure that cached output is in the builder
 // if not, it asks for the in balance by calling the loader function
 // Panics if the call results to exceeded limits
-func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID iotago.NativeTokenID) *nativeTokenBalance {
+func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID isc.NativeTokenID) *nativeTokenBalance {
 	if nativeTokenBalance, exists := txb.balanceNativeTokens[nativeTokenID]; exists {
 		return nativeTokenBalance
 	}

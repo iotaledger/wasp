@@ -255,7 +255,7 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.RegisterERC20N
 	sd := ctx.EstimateRequiredStorageDeposit(req)
 	// this request is sent by contract account,
 	// so we move enough allowance for the gas fee below in the req.Assets.AddBaseTokens() function call
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokens(sd+10*gas.LimitsDefault.MinGasPerRequest))
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokensU64(sd+10*gas.LimitsDefault.MinGasPerRequest))
 	req.Assets.AddBaseTokens(sd + 10*gas.LimitsDefault.MinGasPerRequest)
 	ctx.Send(req)
 
@@ -325,7 +325,7 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.RegisterERC20Extern
 	return result(addr[:])
 }
 
-func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, nativeTokenID iotago.NativeTokenID) *common.Address {
+func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, nativeTokenID isc.NativeTokenID) *common.Address {
 	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
 	if !ok {
 		return nil

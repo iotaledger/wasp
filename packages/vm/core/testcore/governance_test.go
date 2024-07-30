@@ -802,7 +802,7 @@ func TestGasPayout(t *testing.T) {
 
 	// top-up the common account, so its the minBalance - 10 tokens, assert what happens with the fees
 	err = ch.TransferAllowanceTo(
-		isc.NewAssetsBaseTokens(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
+		isc.NewAssetsBaseTokensU64(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
 		accounts.CommonAccount(),
 		nil,
 	)

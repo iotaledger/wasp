@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/lo"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var (
@@ -133,11 +133,12 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 		return true
 	}
 	accountKey := accountKey(agentID, chainID)
-	if lo.Return1(s.getBaseTokens(accountKey)) < allowance.BaseTokens {
+	// getBaseToken(accountKey) < allowance.BaseTokens
+	if lo.Return1(s.getBaseTokens(accountKey)).Cmp(allowance.BaseTokens) == -1 {
 		return false
 	}
 	for _, nativeToken := range allowance.NativeTokens {
-		if s.getNativeTokenAmount(accountKey, nativeToken.ID).Cmp(nativeToken.Amount) < 0 {
+		if s.getNativeTokenAmount(accountKey, nativeToken.CoinType).Cmp(nativeToken.Amount) < 0 {
 			return false
 		}
 	}
@@ -183,12 +184,12 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	if amount == 0 {
 		return
 	}
-	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
+	storageDepositAssets := isc.NewAssetsBaseTokensU64(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
 	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets, chainID)
 }
 
-func (s *StateWriter) UpdateLatestOutputID(anchorTxID iotago.TransactionID, blockIndex uint32) map[iotago.NFTID]isc.AgentID {
+func (s *StateWriter) UpdateLatestOutputID(anchorTxID sui.ObjectID, blockIndex uint32) []isc.NFTID {
 	s.updateNativeTokenOutputIDs(anchorTxID)
 	s.updateFoundryOutputIDs(anchorTxID)
 	s.updateNFTOutputIDs(anchorTxID)

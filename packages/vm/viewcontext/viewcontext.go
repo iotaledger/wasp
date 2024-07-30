@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
@@ -119,15 +120,15 @@ func (ctx *ViewContext) accountsStateWithGasBurn() *accounts.StateReader {
 	return accounts.NewStateReader(ctx.schemaVersion, ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()))
 }
 
-func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) iotago.NativeTokens {
+func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) isc.NativeTokens {
 	return ctx.accountsStateWithGasBurn().GetNativeTokens(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
+func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []isc.NFTID {
 	return ctx.accountsStateWithGasBurn().GetAccountNFTs(agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) *isc.NFT {
+func (ctx *ViewContext) GetNFTData(nftID isc.NFTID) *isc.NFT {
 	return ctx.accountsStateWithGasBurn().GetNFTData(nftID)
 }
 
@@ -139,7 +140,7 @@ func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (uint64, *big.
 	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
+func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID sui.ObjectID) *big.Int {
 	return ctx.accountsStateWithGasBurn().GetNativeTokenBalance(agentID, nativeTokenID, ctx.chainID)
 }
 

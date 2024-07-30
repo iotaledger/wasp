@@ -131,7 +131,7 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) dict
 		Metadata: &isc.SendMetadata{
 			Message:   isc.NewMessage(ctx.Contract(), FuncIncAndRepeatMany.Hname()),
 			GasBudget: math.MaxUint64,
-			Allowance: isc.NewAssetsBaseTokens(1000),
+			Allowance: isc.NewAssetsBaseTokensU64(1000),
 		},
 		Options: isc.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),

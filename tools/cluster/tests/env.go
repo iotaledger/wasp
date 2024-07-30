@@ -88,7 +88,7 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	client := e.Chain.Client(keyPair)
 	tx, err := client.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokens(amount),
+		Transfer: isc.NewAssetsBaseTokensU64(amount),
 	})
 	require.NoError(e.t, err)
 	txID, err := tx.ID()

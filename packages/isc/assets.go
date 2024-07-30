@@ -7,10 +7,10 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -19,6 +19,7 @@ import (
 type Assets struct {
 	BaseTokens   *big.Int     `json:"baseTokens"`
 	NativeTokens NativeTokens `json:"nativeTokens"`
+	NFTs         []any        `json:"nfts"` // TODO: Figure out NFTs, for now just a stub for all references
 }
 
 var BaseTokenID = []byte{}
@@ -27,11 +28,12 @@ func NewAssets(baseTokens *big.Int, tokens NativeTokens) *Assets {
 	ret := &Assets{
 		BaseTokens:   baseTokens,
 		NativeTokens: tokens,
+		NFTs:         []any{},
 	}
 	return ret
 }
 
-func AssetsFromAssetsBag(assetsBag types.AssetsBagWithBalances) *Assets {
+func AssetsFromAssetsBag(assetsBag iscmove.AssetsBagWithBalances) *Assets {
 	assets := &Assets{
 		BaseTokens:   assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int,
 		NativeTokens: make(NativeTokens, len(assetsBag.Balances)-1),
@@ -54,7 +56,9 @@ func NewAssetsBaseTokens(amount uint64) *Assets {
 }
 
 func NewEmptyAssets() *Assets {
-	return &Assets{}
+	return &Assets{
+		NFTs: []any{},
+	}
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {
@@ -282,7 +286,7 @@ func (a *Assets) Read(r io.Reader) error {
 		return rr.Err
 	}
 	if (flags & hasBaseTokens) != 0 {
-		a.BaseTokens = big.NewInt(0).SetUint64(rr.ReadAmount64())
+		a.BaseTokens = rr.ReadUint256()
 	}
 	if (flags & hasNativeTokens) != 0 {
 		size := rr.ReadSize16()
@@ -314,7 +318,7 @@ func (a *Assets) Write(w io.Writer) error {
 
 	ww.WriteByte(flags)
 	if (flags & hasBaseTokens) != 0 {
-		ww.WriteAmount64(a.BaseTokens.Uint64())
+		ww.WriteUint256(a.BaseTokens)
 	}
 	if (flags & hasNativeTokens) != 0 {
 		ww.WriteSize16(len(a.NativeTokens))

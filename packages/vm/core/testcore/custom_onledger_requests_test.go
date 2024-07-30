@@ -30,7 +30,7 @@ func TestNoSenderFeature(t *testing.T) {
 	// mint some NTs and withdraw them
 	gasFee := 10 * gas.LimitsDefault.MinGasPerRequest
 	withdrawAmount := 3 * gas.LimitsDefault.MinGasPerRequest
-	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(withdrawAmount+gasFee), wallet)
+	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(withdrawAmount+gasFee), wallet)
 	require.NoError(t, err)
 	nativeTokenAmount := big.NewInt(123)
 	sn, nativeTokenID, err := ch.NewNativeTokenParams(big.NewInt(1234)).
@@ -47,7 +47,7 @@ func TestNoSenderFeature(t *testing.T) {
 	_, err = ch.PostRequestOffLedger(solo.NewCallParams(accounts.FuncWithdraw.Message()).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(allowance).
-		AddAllowanceNativeTokensVect(&iotago.NativeToken{
+		AddAllowanceNativeTokensVect(&isc.NativeToken{
 			ID:     nativeTokenID,
 			Amount: nativeTokenAmount,
 		}).
@@ -73,8 +73,8 @@ func TestNoSenderFeature(t *testing.T) {
 			TargetAddress: ch.ChainID.AsAddress(),
 			Assets: &isc.Assets{
 				BaseTokens:   5 * isc.Million,
-				NativeTokens: []*iotago.NativeToken{{ID: nativeTokenID, Amount: nativeTokenAmount}},
-				NFTs:         []iotago.NFTID{nft.ID},
+				NativeTokens: []*isc.NativeToken{{ID: nativeTokenID, Amount: nativeTokenAmount}},
+				NFTs:         []isc.NFTID{nft.ID},
 			},
 			Metadata: &isc.SendMetadata{
 				Message:   inccounter.FuncIncCounter.Message(nil),

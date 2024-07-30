@@ -111,7 +111,7 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		reqctx.creditNFTToAccount(payoutAgentID)
 		reqctx.creditToAccount(payoutAgentID, req.Assets())
 		if storageDepositNeeded > 0 {
-			reqctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokens(storageDepositNeeded), false)
+			reqctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokensU64(storageDepositNeeded), false)
 		}
 		return
 	}
@@ -128,7 +128,7 @@ func (reqctx *requestContext) creditAssetsToChain() {
 	reqctx.creditNFTToAccount(sender)
 	if storageDepositNeeded > 0 {
 		reqctx.sdCharged = storageDepositNeeded
-		reqctx.debitFromAccount(sender, isc.NewAssetsBaseTokens(storageDepositNeeded), false)
+		reqctx.debitFromAccount(sender, isc.NewAssetsBaseTokensU64(storageDepositNeeded), false)
 	}
 }
 
@@ -452,7 +452,7 @@ func (reqctx *requestContext) chargeGasFee() {
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),
-			isc.NewAssetsBaseTokens(transferToCommonAcc),
+			isc.NewAssetsBaseTokensU64(transferToCommonAcc),
 			false,
 		)
 	}
@@ -461,7 +461,7 @@ func (reqctx *requestContext) chargeGasFee() {
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			payoutAgentID,
-			isc.NewAssetsBaseTokens(sendToPayout),
+			isc.NewAssetsBaseTokensU64(sendToPayout),
 			false,
 		)
 	}

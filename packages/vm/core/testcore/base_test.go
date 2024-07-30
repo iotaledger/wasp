@@ -310,7 +310,7 @@ func TestEstimateGas(t *testing.T) {
 	{
 		keyPair, _ := env.NewKeyPairWithFunds()
 
-		req := callParams().WithFungibleTokens(isc.NewAssetsBaseTokens(1 * isc.Million)).WithMaxAffordableGasBudget()
+		req := callParams().WithFungibleTokens(isc.NewAssetsBaseTokensU64(1 * isc.Million)).WithMaxAffordableGasBudget()
 		_, estimate, err2 := ch.EstimateGasOnLedger(req, keyPair)
 		estimatedGas = estimate.GasBurned
 		estimatedGasFee = estimate.GasFeeCharged
@@ -361,7 +361,7 @@ func TestEstimateGas(t *testing.T) {
 				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
 				anotherKeyPair, _ := env.NewKeyPairWithFunds()
 				err = ch.TransferAllowanceTo(
-					isc.NewAssetsBaseTokens(testCase.L2Balance),
+					isc.NewAssetsBaseTokensU64(testCase.L2Balance),
 					isc.NewAgentID(addr),
 					anotherKeyPair,
 				)
@@ -575,7 +575,7 @@ func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 	user, _ := env.NewKeyPairWithFunds()
-	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokens(10*isc.Million), user)
+	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(10*isc.Million), user)
 	require.NoError(t, err)
 
 	// create a request with an invalid nonce that must be skipped

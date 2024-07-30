@@ -164,7 +164,7 @@ func initDepositCmd() *cobra.Command {
 					log.Check(err)
 
 					if senderOnChainBaseTokens < feeNeeded {
-						allowance.Spend(isc.NewAssetsBaseTokens(feeNeeded - senderOnChainBaseTokens))
+						allowance.Spend(isc.NewAssetsBaseTokensU64(feeNeeded - senderOnChainBaseTokens))
 					}
 				}
 

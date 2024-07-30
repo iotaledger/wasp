@@ -13,7 +13,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/sui"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
@@ -26,10 +25,10 @@ type varLocalViewSM struct {
 	lv cmt_log.VarLocalView
 	//
 	// Following stands for the model.
-	confirmed []*sui.Anchor // A chain of confirmed AOs.
-	pending   []*sui.Anchor // A list of AOs proposed by the chain, not confirmed yet.
-	rejected  []*sui.Anchor // Rejected AOs, that should not impact the output anymore.
-	rejSync   bool          // True, if reject was done and pending was not made empty yet.
+	confirmed []*iscmove.Anchor // A chain of confirmed AOs.
+	pending   []*iscmove.Anchor // A list of AOs proposed by the chain, not confirmed yet.
+	rejected  []*iscmove.Anchor // Rejected AOs, that should not impact the output anymore.
+	rejSync   bool              // True, if reject was done and pending was not made empty yet.
 	//
 	// Helpers.
 	utxoIDCounter int // To have unique UTXO IDs.
@@ -39,10 +38,10 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 
 func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
 	sm := new(varLocalViewSM)
-	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *sui.Anchor) {}, testlogger.NewLogger(t))
-	sm.confirmed = []*sui.Anchor{}
-	sm.pending = []*sui.Anchor{}
-	sm.rejected = []*sui.Anchor{}
+	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *iscmove.Anchor) {}, testlogger.NewLogger(t))
+	sm.confirmed = []*iscmove.Anchor{}
+	sm.pending = []*iscmove.Anchor{}
+	sm.rejected = []*iscmove.Anchor{}
 	sm.rejSync = false
 	return sm
 }
@@ -64,7 +63,7 @@ func (sm *varLocalViewSM) L1ExternalAOConfirmed(t *rapid.T) {
 	sm.confirmed = append(sm.confirmed, newAO)
 	sm.rejected = append(sm.rejected, sm.pending...)
 	sm.rejSync = false
-	sm.pending = []*sui.Anchor{}
+	sm.pending = []*iscmove.Anchor{}
 }
 
 // E.g. A TX proposed by the consensus was approved.
@@ -164,7 +163,7 @@ func (sm *varLocalViewSM) Check(t *rapid.T) {
 }
 
 // We don't use randomness to generate AOs because they have to be unique.
-func (sm *varLocalViewSM) nextAO(prevAO ...*sui.Anchor) *sui.Anchor {
+func (sm *varLocalViewSM) nextAO(prevAO ...*iscmove.Anchor) *iscmove.Anchor {
 	sm.utxoIDCounter++
 	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
 	utxoInput := iotago.UTXOInput{}

@@ -3,7 +3,6 @@ package accounts
 import (
 	"math/big"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -22,37 +21,37 @@ func (s *StateWriter) nativeTokensMap(accountKey kv.Key) *collections.Map {
 	return collections.NewMap(s.state, nativeTokensMapKey(accountKey))
 }
 
-func (s *StateReader) getNativeTokenAmount(accountKey kv.Key, tokenID iotago.NativeTokenID) *big.Int {
+func (s *StateReader) getNativeTokenAmount(accountKey kv.Key, tokenID isc.NativeTokenID) *big.Int {
 	r := new(big.Int)
-	b := s.nativeTokensMapR(accountKey).GetAt(tokenID[:])
+	b := s.nativeTokensMapR(accountKey).GetAt(tokenID.Bytes())
 	if len(b) > 0 {
 		r.SetBytes(b)
 	}
 	return r
 }
 
-func (s *StateWriter) setNativeTokenAmount(accountKey kv.Key, tokenID iotago.NativeTokenID, n *big.Int) {
+func (s *StateWriter) setNativeTokenAmount(accountKey kv.Key, tokenID isc.NativeTokenID, n *big.Int) {
 	if n.Sign() == 0 {
-		s.nativeTokensMap(accountKey).DelAt(tokenID[:])
+		s.nativeTokensMap(accountKey).DelAt(tokenID.Bytes())
 	} else {
-		s.nativeTokensMap(accountKey).SetAt(tokenID[:], codec.BigIntAbs.Encode(n))
+		s.nativeTokensMap(accountKey).SetAt(tokenID.Bytes(), codec.BigIntAbs.Encode(n))
 	}
 }
 
-func (s *StateReader) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) *big.Int {
+func (s *StateReader) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID isc.NativeTokenID, chainID isc.ChainID) *big.Int {
 	return s.getNativeTokenAmount(accountKey(agentID, chainID), nativeTokenID)
 }
 
-func (s *StateReader) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTokenID) *big.Int {
+func (s *StateReader) GetNativeTokenBalanceTotal(nativeTokenID isc.NativeTokenID) *big.Int {
 	return s.getNativeTokenAmount(L2TotalsAccount, nativeTokenID)
 }
 
-func (s *StateReader) GetNativeTokens(agentID isc.AgentID, chainID isc.ChainID) iotago.NativeTokens {
-	ret := iotago.NativeTokens{}
+func (s *StateReader) GetNativeTokens(agentID isc.AgentID, chainID isc.ChainID) isc.NativeTokens {
+	ret := isc.NativeTokens{}
 	s.nativeTokensMapR(accountKey(agentID, chainID)).Iterate(func(idBytes []byte, val []byte) bool {
-		ret = append(ret, &iotago.NativeToken{
-			ID:     isc.MustNativeTokenIDFromBytes(idBytes),
-			Amount: new(big.Int).SetBytes(val),
+		ret = append(ret, &isc.NativeToken{
+			CoinType: isc.MustNativeTokenIDFromBytes(idBytes),
+			Amount:   new(big.Int).SetBytes(val),
 		})
 		return true
 	})

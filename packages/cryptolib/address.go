@@ -2,8 +2,12 @@ package cryptolib
 
 import (
 	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -113,4 +117,49 @@ func (a *Address) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteBytes(a[:])
 	return ww.Err
+}
+
+func (a Address) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.String())
+}
+
+func AddressFromHex(str string) (*Address, error) {
+	if strings.HasPrefix(str, "0x") || strings.HasPrefix(str, "0X") {
+		str = str[2:]
+	}
+	if len(str)%2 != 0 {
+		str = "0" + str
+	}
+	data, err := hex.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > sui.AddressLen {
+		return nil, errors.New("the len is invalid")
+	}
+	var address Address
+	copy(address[sui.AddressLen-len(data):], data[:])
+	return &address, nil
+}
+
+func (a *Address) UnmarshalJSON(data []byte) error {
+	var str *string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	if str == nil {
+		return errors.New("nil address")
+	}
+	tmp, err := AddressFromHex(*str)
+	if err == nil {
+		*a = *tmp
+	}
+
+	return err
+}
+
+// FIXME may need to be pointer
+func (a Address) MarshalBCS() ([]byte, error) {
+	return a[:], nil
 }

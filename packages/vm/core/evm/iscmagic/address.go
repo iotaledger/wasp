@@ -10,8 +10,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -49,11 +49,11 @@ func ERC20NativeTokensAddress(foundrySN uint32) common.Address {
 // from the first 17 bytes of hash(nativeTokenID). In case of a collision, it reapplies the
 // hash and checks for a collision again, repeating until it gives up.
 func ERC20ExternalNativeTokensAddress(
-	nativeTokenID iotago.NativeTokenID,
+	nativeTokenID isc.NativeTokenID,
 	isTaken func(common.Address) bool,
 ) (common.Address, error) {
 	const maxAttempts = 10
-	hash := hashing.HashData(nativeTokenID[:])
+	hash := hashing.HashData(nativeTokenID.Bytes())
 	for i := 0; i < maxAttempts; i++ {
 		addr := packMagicAddress(addressKindERC20ExternalNativeTokens, hash[:maxPayloadLength])
 		if !isTaken(addr) {
@@ -78,7 +78,7 @@ func ERC20NativeTokensFoundrySN(addr common.Address) (uint32, error) {
 	return codec.Uint32.MustDecode(payload[0:4]), nil
 }
 
-func ERC721NFTCollectionAddress(collectionID iotago.NFTID) common.Address {
+func ERC721NFTCollectionAddress(collectionID isc.NFTID) common.Address {
 	return packMagicAddress(addressKindERC721NFTCollection, collectionID[:maxPayloadLength])
 }
 

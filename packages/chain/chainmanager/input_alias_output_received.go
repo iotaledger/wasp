@@ -7,14 +7,13 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc/sui"
 )
 
 type inputAliasOutputConfirmed struct {
-	aliasOutput *sui.Anchor
+	aliasOutput *iscmove.Anchor
 }
 
-func NewInputAliasOutputConfirmed(aliasOutput *sui.Anchor) gpa.Input {
+func NewInputAliasOutputConfirmed(aliasOutput *iscmove.Anchor) gpa.Input {
 	return &inputAliasOutputConfirmed{
 		aliasOutput: aliasOutput,
 	}

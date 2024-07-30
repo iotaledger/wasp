@@ -3,13 +3,25 @@ package isc
 import (
 	"io"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+const NFTIDLength = 32
+
+type NFTID [NFTIDLength]byte
+
+func (nftID NFTID) ToHex() string {
+	return hexutil.Encode(nftID[:])
+}
+
+// NFTIDs are NFTID(s).
+type NFTIDs []NFTID
+
 type NFT struct {
-	ID       iotago.NFTID
+	ID       NFTID
 	Issuer   *cryptolib.Address
 	Metadata []byte  // (ImmutableMetadata)
 	Owner    AgentID // can be nil

@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -120,7 +121,7 @@ type Sandbox interface {
 	Send(metadata RequestParameters)
 	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
 	EstimateRequiredStorageDeposit(r RequestParameters) uint64
-	// StateAnchor properties of the anchor output
+	// StateAnchor properties of the anchor request
 	StateAnchor() *StateAnchor
 
 	RequestIndex() uint16
@@ -147,7 +148,7 @@ type Privileged interface {
 	MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
-	RetryUnprocessable(req Request, outputID iotago.OutputID)
+	RetryUnprocessable(req Request, outputID sui.ObjectID)
 	OnWriteReceipt(CoreCallbackFunc)
 	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) dict.Dict
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
@@ -196,19 +197,19 @@ func (m Message) WithParam(k kv.Key, v []byte) (r Message) {
 
 type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
 
-// RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
+// RequestParameters represents parameters of the on-ledger request. The request is build from these parameters
 type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress *cryptolib.Address
-	// Assets attached to the output, always taken from the caller's account.
+	// Assets attached to the request, always taken from the caller's account.
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	Assets *Assets
 	// AdjustToMinimumStorageDeposit if true base tokens in attached fungible tokens will be added to meet minimum storage deposit requirements
 	AdjustToMinimumStorageDeposit bool
-	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
+	// Metadata is a request metadata. It may be nil if the request is just sending assets to L1 address
 	Metadata *SendMetadata
-	// SendOptions includes options of the output, such as time lock or expiry parameters
+	// SendOptions includes options of the request, such as time lock or expiry parameters
 	Options SendOptions
 }
 
@@ -219,7 +220,7 @@ type Gas interface {
 	EstimateGasMode() bool
 }
 
-// StateAnchor contains properties of the anchor output/transaction in the current context
+// StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
 	ChainID              ChainID
 	Sender               *cryptolib.Address
@@ -243,7 +244,7 @@ type Expiration struct {
 	ReturnAddress *cryptolib.Address
 }
 
-// SendMetadata represents content of the data payload of the output
+// SendMetadata represents content of the data payload of the request
 type SendMetadata struct {
 	Message   Message
 	Allowance *Assets

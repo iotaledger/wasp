@@ -42,8 +42,8 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Transfer:  isc.NewAssetsBaseTokens(feeCharged),
-		Allowance: isc.NewAssetsBaseTokens(5000),
+		Transfer:  isc.NewAssetsBaseTokensU64(feeCharged),
+		Allowance: isc.NewAssetsBaseTokensU64(5000),
 	}
 	gasBudget, err := strconv.ParseUint(estimatedReceipt.GasBurned, 10, 64)
 	require.NoError(t, err)
@@ -94,7 +94,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Transfer:                 isc.NewAssetsBaseTokens(output.Deposit()),
+		Transfer:                 isc.NewAssetsBaseTokensU64(output.Deposit()),
 		Allowance:                isc.NewEmptyAssets().AddNFTs(nft.ID),
 		NFT:                      nft,
 		AutoAdjustStorageDeposit: false,
@@ -123,7 +123,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(cryptolib.NewEmptyAddress())),
 		0,
 		1*isc.Million,
-	).WithAllowance(isc.NewAssetsBaseTokens(5000)).
+	).WithAllowance(isc.NewAssetsBaseTokensU64(5000)).
 		WithSender(keyPair.GetPublicKey())
 
 	// Test that the API will fail if the FromAddress is missing
@@ -149,7 +149,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Allowance: isc.NewAssetsBaseTokens(5000),
+		Allowance: isc.NewAssetsBaseTokensU64(5000),
 	}
 	par.WithGasBudget(1 * isc.Million)
 

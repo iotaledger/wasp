@@ -25,14 +25,17 @@ type RequestJSON struct {
 func RequestToJSONObject(request Request) RequestJSON {
 	gasBudget, isEVM := request.GasBudget()
 	msg := request.Message()
+
+	panic("refactor me: NFT handling (request.Assets().NFT?")
 	return RequestJSON{
-		Allowance:     AssetsToJSONObject(request.Allowance()),
-		CallTarget:    callTargetToJSONObject(msg.Target),
-		Assets:        AssetsToJSONObject(request.Assets()),
-		GasBudget:     strconv.FormatUint(gasBudget, 10),
-		IsEVM:         isEVM,
-		IsOffLedger:   request.IsOffLedger(),
-		NFT:           NFTToJSONObject(request.NFT()),
+		Allowance:   AssetsToJSONObject(request.Allowance()),
+		CallTarget:  callTargetToJSONObject(msg.Target),
+		Assets:      AssetsToJSONObject(request.Assets()),
+		GasBudget:   strconv.FormatUint(gasBudget, 10),
+		IsEVM:       isEVM,
+		IsOffLedger: request.IsOffLedger(),
+		// TODO: Refactor me
+		// NFT:           NFTToJSONObject(request.NFT()),
 		Params:        msg.Params.JSONDict(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),

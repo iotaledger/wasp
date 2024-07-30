@@ -6,10 +6,11 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type NFTOutputRec struct {
-	OutputID iotago.OutputID
+	OutputID sui.ObjectID
 	Output   *iotago.NFTOutput
 }
 

@@ -1,4 +1,4 @@
-package iscmove_test
+package iscmoveclient_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) sui.PackageID {
+func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) sui.PackageID {
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 	iscBytecode := contracts.ISC()
 
@@ -43,7 +43,7 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmove.Client, signer cry
 	return *packageID
 }
 
-func buildDeployMintTestcoin(t *testing.T, client *iscmove.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectInfo) {
+func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectInfo) {
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 

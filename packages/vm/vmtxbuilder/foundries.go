@@ -55,7 +55,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 // returns adjustment of the storage deposit.
-func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotago.NativeTokenID, delta *big.Int) int64 {
+func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID isc.NativeTokenID, delta *big.Int) int64 {
 	sn := nativeTokenID.FoundrySerialNumber()
 	f := txb.ensureFoundry(sn)
 	if f == nil {

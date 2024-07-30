@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (s *StateWriter) newFoundriesArray() *collections.Array {
@@ -31,7 +32,7 @@ func (s *StateReader) allFoundriesMapR() *collections.ImmutableMap {
 func (s *StateWriter) SaveFoundryOutput(f *iotago.FoundryOutput, outputIndex uint16) {
 	foundryRec := foundryOutputRec{
 		// TransactionID is unknown yet, will be filled next block
-		OutputID:    iotago.OutputIDFromTransactionIDAndIndex(iotago.TransactionID{}, outputIndex),
+		OutputID:    sui.ObjectID{},
 		Amount:      f.Amount,
 		TokenScheme: f.TokenScheme,
 		Metadata:    []byte{},
@@ -45,14 +46,14 @@ func (s *StateWriter) SaveFoundryOutput(f *iotago.FoundryOutput, outputIndex uin
 	s.newFoundriesArray().Push(codec.Uint32.Encode(f.SerialNumber))
 }
 
-func (s *StateWriter) updateFoundryOutputIDs(anchorTxID iotago.TransactionID) {
+func (s *StateWriter) updateFoundryOutputIDs(anchorTxID sui.ObjectID) {
 	newFoundries := s.newFoundriesArray()
 	allFoundries := s.allFoundriesMap()
 	n := newFoundries.Len()
 	for i := uint32(0); i < n; i++ {
 		k := newFoundries.GetAt(i)
 		rec := mustFoundryOutputRecFromBytes(allFoundries.GetAt(k))
-		rec.OutputID = iotago.OutputIDFromTransactionIDAndIndex(anchorTxID, rec.OutputID.Index())
+		rec.OutputID = anchorTxID
 		allFoundries.SetAt(k, rec.Bytes())
 	}
 	newFoundries.Erase()

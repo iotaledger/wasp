@@ -95,12 +95,12 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 
 	if rotationAddr == nil {
 		// rotation does not happen
-		taskResult.TransactionEssence, taskResult.InputsCommitment = vmctx.BuildTransactionEssence(l1Commitment, true)
+		taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment)
 		vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	} else {
 		// rotation happens
 		taskResult.RotationAddress = rotationAddr
-		taskResult.TransactionEssence = nil
+		taskResult.StateMetadata = nil
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
 	return taskResult
@@ -115,13 +115,13 @@ func (vmctx *vmContext) init() {
 
 		// save the anchor tx ID of the current state
 		blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState)).UpdateLatestBlockInfo(
-			vmctx.task.AnchorOutputID.TransactionID(),
+			vmctx.task.AnchorOutputID,
 		)
 
-		// save the OutputID of the newly created tokens, foundries and NFTs in the previous block
+		// save the ObjectID of the newly created tokens, foundries and NFTs in the previous block
 		accountsState := vmctx.accountsStateWriterFromChainState(chainState)
 		newNFTIDs := accountsState.
-			UpdateLatestOutputID(vmctx.task.AnchorOutputID.TransactionID(), vmctx.task.AnchorOutput.StateIndex)
+			UpdateLatestOutputID(vmctx.task.AnchorOutputID, vmctx.task.AnchorOutput.StateIndex)
 
 		if len(newNFTIDs) > 0 {
 			for nftID, owner := range newNFTIDs {
