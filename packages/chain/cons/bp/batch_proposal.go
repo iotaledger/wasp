@@ -7,15 +7,15 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type BatchProposal struct {
 	nodeIndex               uint16            // Just for a double-check.
-	baseAliasOutput         *types.Anchor     // Proposed Base AliasOutput to use.
+	baseAliasOutput         *isctypes.Anchor  // Proposed Base AliasOutput to use.
 	dssIndexProposal        util.BitVector    // DSS Index proposal.
 	timeData                time.Time         // Our view of time.
 	validatorFeeDestination isc.AgentID       // Proposed destination for fees.
@@ -24,7 +24,7 @@ type BatchProposal struct {
 
 func NewBatchProposal(
 	nodeIndex uint16,
-	baseAliasOutput *types.Anchor,
+	baseAliasOutput *isctypes.Anchor,
 	dssIndexProposal util.BitVector,
 	timeData time.Time,
 	validatorFeeDestination isc.AgentID,
@@ -47,7 +47,7 @@ func (b *BatchProposal) Bytes() []byte {
 func (b *BatchProposal) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	b.nodeIndex = rr.ReadUint16()
-	b.baseAliasOutput = new(types.Anchor)
+	b.baseAliasOutput = new(isctypes.Anchor)
 	rr.Read(b.baseAliasOutput)
 	b.dssIndexProposal = util.NewFixedSizeBitVector(0)
 	rr.Read(b.dssIndexProposal)

@@ -12,9 +12,9 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -126,8 +126,8 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 }
 
 func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
-	anchorUpdates := make(chan *types.RefWithObject[types.Anchor])
-	newRequests := make(chan *types.Request)
+	anchorUpdates := make(chan *isctypes.RefWithObject[isctypes.Anchor])
+	newRequests := make(chan *isctypes.Request)
 	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)

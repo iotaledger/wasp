@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/isctypes"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
@@ -37,7 +37,7 @@ func TestRequestsFeed(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		false,
 	)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(types.AssetsBagModuleName, types.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(isctypes.AssetsBagModuleName, isctypes.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
@@ -59,8 +59,8 @@ func TestRequestsFeed(t *testing.T) {
 	)
 	defer chainFeed.WaitUntilStopped()
 
-	anchorUpdates := make(chan *types.RefWithObject[types.Anchor], 10)
-	newRequests := make(chan *types.Request, 10)
+	anchorUpdates := make(chan *isctypes.RefWithObject[isctypes.Anchor], 10)
+	newRequests := make(chan *isctypes.Request, 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
@@ -78,7 +78,7 @@ func TestRequestsFeed(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		false,
 	)
-	requestRef, err := txnResponse.GetCreatedObjectInfo(types.RequestModuleName, types.RequestObjectName)
+	requestRef, err := txnResponse.GetCreatedObjectInfo(isctypes.RequestModuleName, isctypes.RequestObjectName)
 	require.NoError(t, err)
 
 	req := <-newRequests
