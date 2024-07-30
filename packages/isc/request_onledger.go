@@ -6,9 +6,9 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -27,7 +27,7 @@ var (
 	_ Calldata        = new(onLedgerRequestData)
 )
 
-func OnLedgerFromRequest(request iscmove.Request) (OnLedgerRequest, error) {
+func OnLedgerFromRequest(request types.Request) (OnLedgerRequest, error) {
 	r := &onLedgerRequestData{
 		requestID:     request.ID,
 		senderAddress: request.Sender,
@@ -36,8 +36,8 @@ func OnLedgerFromRequest(request iscmove.Request) (OnLedgerRequest, error) {
 			SenderContract: ContractIdentity{},
 			Message: Message{
 				Target: CallTarget{
-					Contract:   request.Message.Contract,
-					EntryPoint: request.Message.Function,
+					Contract:   Hname(request.Message.Contract),
+					EntryPoint: Hname(request.Message.Function),
 				},
 				Params: dict.New(), // TODO: set request.Message.Params (turn dict to list of args)
 			},
