@@ -1,4 +1,4 @@
-package types
+package isctypes
 
 type Bag = map[any]any
 
