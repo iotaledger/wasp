@@ -9,8 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	// iotago "github.com/iotaledger/iota.go/v3"
-	// iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
