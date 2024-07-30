@@ -53,6 +53,21 @@ type RefWithObject[T any] struct {
 	Object *T
 }
 
+// Used in packages/chain/cons/bp/batch_proposal_set as key of a map
+// TODO: maybe use a.Ref.Digest() instead? Maybe have Key() for RefWithObject type?
+func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
+	res, _ := hashing.HashValueFromBytes(rwo.ObjectRef.Bytes())
+	return res
+}
+
+func (rwo *RefWithObject[any]) Read(r io.Reader) error {
+	return nil // TODO implement
+}
+
+func (rwo *RefWithObject[any]) Write(w io.Writer) error {
+	return nil // TODO implement
+}
+
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
 	ID   sui.ObjectID
@@ -81,13 +96,6 @@ func (a *Anchor) GetStateIndex() uint32 {
 
 func (a *Anchor) Equals(b *Anchor) bool {
 	return a.ID.Equals(b.ID)
-}
-
-// Used in packages/chain/cons/bp/batch_proposal_set as key of a map
-// TODO: maybe use a.Ref.Key() instead? Maybe have Key() for Anchor type?
-func (a *Anchor) Hash() hashing.HashValue {
-	res, _ := hashing.HashValueFromBytes(a.ID.Bytes())
-	return res
 }
 
 func (a *Anchor) Read(r io.Reader) error {

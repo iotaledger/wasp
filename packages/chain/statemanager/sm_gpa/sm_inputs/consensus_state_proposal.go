@@ -17,15 +17,15 @@ type ConsensusStateProposal struct {
 
 var _ gpa.Input = &ConsensusStateProposal{}
 
-func NewConsensusStateProposal(ctx context.Context, anchor *types.Anchor) (*ConsensusStateProposal, <-chan interface{}) {
-	commitment, err := state.NewL1CommitmentFromAnchor(anchor)
+func NewConsensusStateProposal(ctx context.Context, anchor *types.RefWithObject[types.Anchor]) (*ConsensusStateProposal, <-chan interface{}) {
+	commitment, err := state.NewL1CommitmentFromAnchor(anchor.Object)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")
 	}
 	resultChannel := make(chan interface{}, 1)
 	return &ConsensusStateProposal{
 		context:      ctx,
-		stateIndex:   anchor.StateIndex,
+		stateIndex:   anchor.Object.StateIndex,
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel

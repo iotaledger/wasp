@@ -17,7 +17,7 @@ type ConsensusDecidedState struct {
 
 var _ gpa.Input = &ConsensusDecidedState{}
 
-func NewConsensusDecidedState(ctx context.Context, anchor *types.Anchor) (*ConsensusDecidedState, <-chan state.State) {
+func NewConsensusDecidedState(ctx context.Context, anchor *types.RefWithObject[types.Anchor]) (*ConsensusDecidedState, <-chan state.State) {
 	commitment, err := state.NewL1CommitmentFromAnchor(anchor)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")
@@ -25,7 +25,7 @@ func NewConsensusDecidedState(ctx context.Context, anchor *types.Anchor) (*Conse
 	resultChannel := make(chan state.State, 1)
 	return &ConsensusDecidedState{
 		context:      ctx,
-		stateIndex:   anchor.StateIndex,
+		stateIndex:   anchor.Object.StateIndex,
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel

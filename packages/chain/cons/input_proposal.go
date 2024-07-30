@@ -12,10 +12,10 @@ import (
 
 // That's the main/initial input for the consensus.
 type inputProposal struct {
-	baseAliasOutput *types.Anchor
+	baseAliasOutput *types.RefWithObject[types.Anchor]
 }
 
-func NewInputProposal(baseAliasOutput *types.Anchor) gpa.Input {
+func NewInputProposal(baseAliasOutput *types.RefWithObject[types.Anchor]) gpa.Input {
 	return &inputProposal{baseAliasOutput: baseAliasOutput}
 }
 

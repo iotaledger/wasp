@@ -20,24 +20,24 @@ type ChainFetchStateDiff struct {
 
 var _ gpa.Input = &ChainFetchStateDiff{}
 
-func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *types.Anchor) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
+func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *types.RefWithObject[types.Anchor]) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
 	if prevAnchor == nil {
 		// Only the current state is needed, if prevAO is unknown.
 		prevAnchor = nextAnchor
 	}
-	oldCommitment, err := state.NewL1CommitmentFromAnchor(prevAnchor)
+	oldCommitment, err := state.NewL1CommitmentFromAnchor(prevAnchor.Object)
 	if err != nil {
 		panic(fmt.Errorf("Cannot make L1 commitment from previous anchor, error: %w", err))
 	}
-	newCommitment, err := state.NewL1CommitmentFromAnchor(nextAnchor)
+	newCommitment, err := state.NewL1CommitmentFromAnchor(nextAnchor.Object)
 	if err != nil {
 		panic(fmt.Errorf("Cannot make L1 commitment from next anchor, error: %w", err))
 	}
 	resultChannel := make(chan *ChainFetchStateDiffResults, 1)
 	return &ChainFetchStateDiff{
 		context:         ctx,
-		oldStateIndex:   prevAnchor.StateIndex,
-		newStateIndex:   nextAnchor.StateIndex,
+		oldStateIndex:   prevAnchor.Object.StateIndex,
+		newStateIndex:   nextAnchor.Object.StateIndex,
 		oldL1Commitment: oldCommitment,
 		newL1Commitment: newCommitment,
 		resultCh:        resultChannel,

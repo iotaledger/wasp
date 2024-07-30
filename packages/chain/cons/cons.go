@@ -113,12 +113,12 @@ type Output struct {
 	Terminated bool
 	//
 	// Requests for other components.
-	NeedMempoolProposal       *types.Anchor     // Requests for the mempool are needed for this Base Alias Output.
-	NeedMempoolRequests       []*isc.RequestRef // Request payloads are needed from mempool for this IDs/Hash.
-	NeedStateMgrStateProposal *types.Anchor     // Query for a proposal for Virtual State (it will go to the batch proposal).
-	NeedStateMgrDecidedState  *types.Anchor     // Query for a decided Virtual State to be used by VM.
-	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
-	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
+	NeedMempoolProposal       *types.RefWithObject[types.Anchor] // Requests for the mempool are needed for this Base Alias Output.
+	NeedMempoolRequests       []*isc.RequestRef                  // Request payloads are needed from mempool for this IDs/Hash.
+	NeedStateMgrStateProposal *types.RefWithObject[types.Anchor] // Query for a proposal for Virtual State (it will go to the batch proposal).
+	NeedStateMgrDecidedState  *types.RefWithObject[types.Anchor] // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrSaveBlock     state.StateDraft                   // Ask StateMgr to save the produced block.
+	NeedVMResult              *vm.VMTask                         // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
@@ -380,7 +380,7 @@ func (c *consImpl) StatusString() string {
 ////////////////////////////////////////////////////////////////////////////////
 // MP -- MemPool
 
-func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *types.RefWithObject[types.Anchor]) gpa.OutMessages {
 	c.output.NeedMempoolProposal = baseAliasOutput
 	return nil
 }
@@ -403,17 +403,17 @@ func (c *consImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessage
 ////////////////////////////////////////////////////////////////////////////////
 // SM -- StateManager
 
-func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *types.RefWithObject[types.Anchor]) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = baseAliasOutput
 	return nil
 }
 
-func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *types.RefWithObject[types.Anchor]) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
 	return c.subACS.StateProposalReceived(proposedAliasOutput)
 }
 
-func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *types.Anchor) gpa.OutMessages {
+func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *types.RefWithObject[types.Anchor]) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutput
 	return nil
 }
@@ -477,7 +477,7 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 // ACS
 
-func (c *consImpl) uponACSInputsReceived(baseAliasOutput *types.Anchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
+func (c *consImpl) uponACSInputsReceived(baseAliasOutput *types.RefWithObject[types.Anchor], requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
@@ -506,7 +506,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		return nil
 	}
 	bao := aggr.DecidedBaseAliasOutput()
-	baoID := bao.Ref
+	baoID := bao.ObjectRef
 	reqs := aggr.DecidedRequestRefs()
 	c.log.Debugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
 	return gpa.NoMessages().
@@ -555,11 +555,11 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
 	// The decided base alias output can be different from that we have proposed!
-	//decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
+	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
 		Processors:           c.processorCache,
-		AnchorOutput:         nil,               // TODO; before: decidedBaseAliasOutput.GetAliasOutput(),
-		AnchorOutputID:       iotago.OutputID{}, // TODO; before: decidedBaseAliasOutput.OutputID(),
+		AnchorOutput:         decidedBaseAliasOutput.Object,
+		AnchorOutputID:       decidedBaseAliasOutput.Object.ID,
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		TimeAssumption:       aggregatedProposals.AggregatedTime(),

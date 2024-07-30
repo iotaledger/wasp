@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -25,7 +24,7 @@ import (
 
 type anchorData struct {
 	ref          *sui.ObjectRef
-	assets       iscmove.Referent[iscmove.AssetsBag]
+	assets       types.Referent[types.AssetsBag]
 	l1Commitment *state.L1Commitment
 	stateIndex   uint32
 }
@@ -54,9 +53,9 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 			Version:  0,
 			Digest:   nil, // TODO
 		},
-		assets: iscmove.Referent[iscmove.AssetsBag]{
+		assets: types.Referent[types.AssetsBag]{
 			//ID: nil, // TODO
-			Value: &iscmove.AssetsBag{
+			Value: &types.AssetsBag{
 				//ID:   nil, // TODO
 				Size: 0,
 			},
@@ -122,7 +121,7 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *types.Anchor {
+func (bfT *BlockFactory) GetOriginAnchor() *types.RefWithObject[types.Anchor] {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
@@ -191,9 +190,14 @@ func (bfT *BlockFactory) GetNextBlock(
 	consumedAnchor := bfT.GetAnchor(commitment)
 
 	newAnchorData := anchorData{
-		assets:       consumedAnchor.Assets,
+		ref: &sui.ObjectRef{
+			ObjectID: consumedAnchor.ObjectRef.ObjectID,
+			Version:  consumedAnchor.ObjectRef.Version + 1,
+			Digest:   nil, // TODO
+		},
+		assets:       consumedAnchor.Object.Assets,
 		l1Commitment: newCommitment,
-		stateIndex:   consumedAnchor.StateIndex + 1,
+		stateIndex:   consumedAnchor.Object.StateIndex + 1,
 	}
 	bfT.anchorData[newCommitment.BlockHash()] = newAnchorData
 
@@ -211,15 +215,19 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *types.Anchor {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *types.RefWithObject[types.Anchor] {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return &types.Anchor{
-		Ref:        anchorData.ref,
-		Assets:     anchorData.assets,
-		StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
-		BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
-		StateIndex: anchorData.stateIndex,
+	return &types.RefWithObject[types.Anchor]{
+		ObjectRef: *anchorData.ref,
+		Object: &types.Anchor{
+			ID:         *anchorData.ref.ObjectID,
+			Assets:     anchorData.assets,
+			InitParams: bfT.chainInitParams.Bytes(),
+			StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
+			BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
+			StateIndex: anchorData.stateIndex,
+		},
 	}
 }
 
