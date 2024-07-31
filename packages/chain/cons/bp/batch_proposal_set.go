@@ -28,9 +28,9 @@ func (bps batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
 
 // Decided Base Alias Output is the one, that was proposed by F+1 nodes or more.
 // If there is more that 1 such ID, we refuse to use all of them.
-func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.Anchor {
+func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.RefWithObject[iscmove.Anchor] {
 	counts := map[hashing.HashValue]int{}
-	values := map[hashing.HashValue]*iscmove.Anchor{}
+	values := map[hashing.HashValue]*iscmove.RefWithObject[iscmove.Anchor]{}
 	for _, bp := range bps {
 		h := bp.baseAliasOutput.Hash()
 		counts[h]++
@@ -39,16 +39,16 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.Anchor {
 		}
 	}
 
-	var found *iscmove.Anchor
+	var found *iscmove.RefWithObject[iscmove.Anchor]
 	var uncertain bool
 	for h, count := range counts {
 		if count > f {
-			if found != nil && found.GetStateIndex() == values[h].GetStateIndex() {
+			if found != nil && found.Object.GetStateIndex() == values[h].Object.GetStateIndex() {
 				// Found more that 1 AliasOutput proposed by F+1 or more nodes.
 				uncertain = true
 				continue
 			}
-			if found == nil || found.GetStateIndex() < values[h].GetStateIndex() {
+			if found == nil || found.Object.GetStateIndex() < values[h].Object.GetStateIndex() {
 				found = values[h]
 				uncertain = false
 			}
@@ -62,7 +62,7 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.Anchor {
 
 // Take requests proposed by at least F+1 nodes. Then the request is proposed at least by 1 fair node.
 // We should only consider the proposals from the nodes that proposed the decided AO, otherwise we can select already processed requests.
-func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove.Anchor) []*isc.RequestRef {
+func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove.RefWithObject[iscmove.Anchor]) []*isc.RequestRef {
 	minNumberMentioned := f + 1
 	requestsByKey := map[isc.RequestRefKey]*isc.RequestRef{}
 	numMentioned := map[isc.RequestRefKey]int{}
@@ -70,7 +70,7 @@ func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove.Anchor) []*isc
 	// Count number of nodes proposing a request.
 	maxLen := 0
 	for _, bp := range bps {
-		if !bp.baseAliasOutput.Equals(ao) {
+		if !bp.baseAliasOutput.Equals(&ao.ObjectRef) {
 			continue
 		}
 		for _, reqRef := range bp.requestRefs {

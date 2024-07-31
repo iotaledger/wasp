@@ -17,15 +17,15 @@ type ConsensusDecidedState struct {
 
 var _ gpa.Input = &ConsensusDecidedState{}
 
-func NewConsensusDecidedState(ctx context.Context, anchor *iscmove.Anchor) (*ConsensusDecidedState, <-chan state.State) {
-	commitment, err := state.NewL1CommitmentFromAnchor(anchor)
+func NewConsensusDecidedState(ctx context.Context, anchor *iscmove.RefWithObject[iscmove.Anchor]) (*ConsensusDecidedState, <-chan state.State) {
+	commitment, err := state.NewL1CommitmentFromAnchor(anchor.Object)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")
 	}
 	resultChannel := make(chan state.State, 1)
 	return &ConsensusDecidedState{
 		context:      ctx,
-		stateIndex:   anchor.StateIndex,
+		stateIndex:   anchor.Object.StateIndex,
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel

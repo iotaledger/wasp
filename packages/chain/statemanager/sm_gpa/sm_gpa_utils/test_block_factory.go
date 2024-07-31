@@ -121,7 +121,7 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *iscmove.Anchor {
+func (bfT *BlockFactory) GetOriginAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
@@ -190,9 +190,14 @@ func (bfT *BlockFactory) GetNextBlock(
 	consumedAnchor := bfT.GetAnchor(commitment)
 
 	newAnchorData := anchorData{
-		assets:       consumedAnchor.Assets,
+		ref: &sui.ObjectRef{
+			ObjectID: consumedAnchor.ObjectRef.ObjectID,
+			Version:  consumedAnchor.ObjectRef.Version + 1,
+			Digest:   nil, // TODO
+		},
+		assets:       consumedAnchor.Object.Assets,
 		l1Commitment: newCommitment,
-		stateIndex:   consumedAnchor.StateIndex + 1,
+		stateIndex:   consumedAnchor.Object.StateIndex + 1,
 	}
 	bfT.anchorData[newCommitment.BlockHash()] = newAnchorData
 
@@ -210,15 +215,19 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.Anchor {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.RefWithObject[iscmove.Anchor] {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return &iscmove.Anchor{
-		Ref:        anchorData.ref,
-		Assets:     anchorData.assets,
-		StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
-		BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
-		StateIndex: anchorData.stateIndex,
+	return &iscmove.RefWithObject[iscmove.Anchor]{
+		ObjectRef: *anchorData.ref,
+		Object: &iscmove.Anchor{
+			ID:         *anchorData.ref.ObjectID,
+			Assets:     anchorData.assets,
+			InitParams: bfT.chainInitParams.Bytes(),
+			StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
+			BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
+			StateIndex: anchorData.stateIndex,
+		},
 	}
 }
 
