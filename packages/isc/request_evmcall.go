@@ -92,10 +92,6 @@ func (req *evmOffLedgerCallRequest) IsOffLedger() bool {
 	return true
 }
 
-func (req *evmOffLedgerCallRequest) NFT() *NFT {
-	return nil
-}
-
 func (req *evmOffLedgerCallRequest) Nonce() uint64 {
 	return 0
 }

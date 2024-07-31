@@ -12,8 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// observation: this uses the entire agentID as key, unlike acccounts.accountKey, which skips the chainID if it is the current chain. This means some bytes are wasted when saving NFTs
-
 func nftsMapKey(agentID isc.AgentID) string {
 	return prefixNFTs + string(agentID.Bytes())
 }

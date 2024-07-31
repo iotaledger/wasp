@@ -108,10 +108,6 @@ func (req *evmOffLedgerTxRequest) IsOffLedger() bool {
 	return true
 }
 
-func (req *evmOffLedgerTxRequest) NFT() *NFT {
-	return nil
-}
-
 func (req *evmOffLedgerTxRequest) Nonce() uint64 {
 	return req.tx.Nonce()
 }

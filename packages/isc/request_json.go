@@ -4,18 +4,16 @@ import (
 	"encoding/json"
 	"strconv"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type RequestJSON struct {
-	Allowance     *AssetsJSON    `json:"allowance" swagger:"required"`
+	Allowance     *Assets        `json:"allowance" swagger:"required"`
 	CallTarget    CallTargetJSON `json:"callTarget" swagger:"required"`
-	Assets        *AssetsJSON    `json:"fungibleTokens" swagger:"required"`
+	Assets        *Assets        `json:"assets" swagger:"required"`
 	GasBudget     string         `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM         bool           `json:"isEVM" swagger:"required"`
 	IsOffLedger   bool           `json:"isOffLedger" swagger:"required"`
-	NFT           *NFTJSON       `json:"nft" swagger:"required"`
 	Params        dict.JSONDict  `json:"params" swagger:"required"`
 	RequestID     string         `json:"requestId" swagger:"required"`
 	SenderAccount string         `json:"senderAccount" swagger:"required"`
@@ -26,16 +24,13 @@ func RequestToJSONObject(request Request) RequestJSON {
 	gasBudget, isEVM := request.GasBudget()
 	msg := request.Message()
 
-	panic("refactor me: NFT handling (request.Assets().NFT?")
 	return RequestJSON{
-		Allowance:   AssetsToJSONObject(request.Allowance()),
-		CallTarget:  callTargetToJSONObject(msg.Target),
-		Assets:      AssetsToJSONObject(request.Assets()),
-		GasBudget:   strconv.FormatUint(gasBudget, 10),
-		IsEVM:       isEVM,
-		IsOffLedger: request.IsOffLedger(),
-		// TODO: Refactor me
-		// NFT:           NFTToJSONObject(request.NFT()),
+		Allowance:     request.Allowance(),
+		CallTarget:    callTargetToJSONObject(msg.Target),
+		Assets:        request.Assets(),
+		GasBudget:     strconv.FormatUint(gasBudget, 10),
+		IsEVM:         isEVM,
+		IsOffLedger:   request.IsOffLedger(),
 		Params:        msg.Params.JSONDict(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
@@ -45,78 +40,6 @@ func RequestToJSONObject(request Request) RequestJSON {
 
 func RequestToJSON(req Request) ([]byte, error) {
 	return json.Marshal(RequestToJSONObject(req))
-}
-
-// ----------------------------------------------------------------------------
-
-type AssetsJSON struct {
-	BaseTokens   string             `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
-	NativeTokens []*NativeTokenJSON `json:"nativeTokens" swagger:"required"`
-	NFTs         []string           `json:"nfts" swagger:"required"`
-}
-
-func AssetsToJSONObject(assets *Assets) *AssetsJSON {
-	if assets == nil {
-		return nil
-	}
-
-	ret := &AssetsJSON{
-		BaseTokens:   strconv.FormatUint(assets.BaseTokens.Uint64(), 10),
-		NativeTokens: NativeTokensToJSONObject(assets.NativeTokens),
-	}
-
-	return ret
-}
-
-// ----------------------------------------------------------------------------
-
-type NFTJSON struct {
-	ID       string `json:"id" swagger:"required"`
-	Issuer   string `json:"issuer" swagger:"required"`
-	Metadata string `json:"metadata" swagger:"required"`
-	Owner    string `json:"owner" swagger:"required"`
-}
-
-func NFTToJSONObject(nft *NFT) *NFTJSON {
-	if nft == nil {
-		return nil
-	}
-
-	ownerString := ""
-	if nft.Owner != nil {
-		ownerString = nft.Owner.String()
-	}
-
-	return &NFTJSON{
-		ID:       nft.ID.ToHex(),
-		Issuer:   nft.Issuer.String(),
-		Metadata: iotago.EncodeHex(nft.Metadata),
-		Owner:    ownerString,
-	}
-}
-
-// ----------------------------------------------------------------------------
-
-type NativeTokenJSON struct {
-	ID     string `json:"id" swagger:"required"`
-	Amount string `json:"amount" swagger:"required"`
-}
-
-func NativeTokenToJSONObject(token *NativeToken) *NativeTokenJSON {
-	return &NativeTokenJSON{
-		ID:     string(token.CoinType),
-		Amount: token.Amount.String(),
-	}
-}
-
-func NativeTokensToJSONObject(tokens NativeTokens) []*NativeTokenJSON {
-	nativeTokens := make([]*NativeTokenJSON, len(tokens))
-
-	for k, v := range tokens {
-		nativeTokens[k] = NativeTokenToJSONObject(v)
-	}
-
-	return nativeTokens
 }
 
 // ----------------------------------------------------------------------------

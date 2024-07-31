@@ -275,16 +275,7 @@ func (ww *Writer) WriteUint64(val uint64) *Writer {
 	return ww
 }
 
-func (ww *Writer) WriteTokens(val uint64) *Writer {
-	if ww.Err == nil {
-		var b [8]byte
-		binary.LittleEndian.PutUint64(b[:], val)
-		ww.Err = WriteN(ww.w, b[:])
-	}
-	return ww
-}
-
-func (ww *Writer) WriteUint256(val *big.Int) *Writer {
+func (ww *Writer) WriteBigUint(val *big.Int) *Writer {
 	if ww.Err == nil {
 		if val == nil {
 			val = new(big.Int)
@@ -292,7 +283,7 @@ func (ww *Writer) WriteUint256(val *big.Int) *Writer {
 		if val.Sign() >= 0 {
 			return ww.WriteBytes(val.Bytes())
 		}
-		ww.Err = errors.New("negative uint256")
+		ww.Err = errors.New("negative BigInt")
 	}
 	return ww
 }

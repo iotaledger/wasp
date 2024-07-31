@@ -18,7 +18,7 @@ func EncodeCallMsg(c ethereum.CallMsg) []byte {
 		ww.WriteN(c.To[:])
 	}
 	ww.WriteGas64(c.Gas)
-	ww.WriteUint256(c.Value)
+	ww.WriteBigUint(c.Value)
 	ww.WriteBytes(c.Data)
 	return ww.Bytes()
 }
@@ -32,7 +32,7 @@ func DecodeCallMsg(data []byte) (ret ethereum.CallMsg, err error) {
 		rr.ReadN(ret.To[:])
 	}
 	ret.Gas = rr.ReadGas64()
-	ret.Value = rr.ReadUint256()
+	ret.Value = rr.ReadBigUint()
 	ret.Data = rr.ReadBytes()
 	return ret, rr.Err
 }

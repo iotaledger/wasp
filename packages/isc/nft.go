@@ -3,27 +3,15 @@ package isc
 import (
 	"io"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-const NFTIDLength = 32
-
-type NFTID [NFTIDLength]byte
-
-func (nftID NFTID) ToHex() string {
-	return hexutil.Encode(nftID[:])
-}
-
-// NFTIDs are NFTID(s).
-type NFTIDs []NFTID
-
 type NFT struct {
-	ID       NFTID
+	ID       sui.ObjectID
 	Issuer   *cryptolib.Address
-	Metadata []byte  // (ImmutableMetadata)
+	Metadata []byte
 	Owner    AgentID // can be nil
 }
 
