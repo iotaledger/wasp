@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -200,7 +199,7 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 	a.BaseTokens = bigint.Sub(a.BaseTokens, toSpend.BaseTokens)
 	a.NativeTokens = a.NativeTokens[:0]
 	for _, nativeToken := range targetSet {
-		if util.IsZeroBigInt(nativeToken.Amount) {
+		if bigint.IsZero(nativeToken.Amount) {
 			continue
 		}
 		a.NativeTokens = append(a.NativeTokens, nativeToken)

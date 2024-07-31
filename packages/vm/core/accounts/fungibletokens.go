@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -49,7 +50,7 @@ func (s *StateWriter) creditToAccount(accountKey kv.Key, assets *isc.Assets) {
 }
 
 func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
-	if !util.IsPositiveBigInt(amount) {
+	if !bigint.IsPositive(amount) {
 		return
 	}
 	s.creditToAccountFullDecimals(accountKey(agentID, chainID), amount)
@@ -125,7 +126,7 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, assets *isc.Assets) bo
 
 // DebitFromAccountFullDecimals removes the amount from the chain ledger. If not enough it panics
 func (s *StateWriter) DebitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
-	if !util.IsPositiveBigInt(amount) {
+	if !bigint.IsPositive(amount) {
 		return
 	}
 	if !s.debitFromAccountFullDecimals(accountKey(agentID, chainID), amount) {
