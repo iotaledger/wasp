@@ -7,6 +7,8 @@ import (
 	"sort"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -42,7 +44,7 @@ func (n *nativeTokenBalance) producesAccountingOutput() bool {
 		// value didn't change
 		return false
 	}
-	if util.IsZeroBigInt(n.getOutValue()) {
+	if bigint.IsZero(n.getOutValue()) {
 		// end value is 0
 		return false
 	}
@@ -176,7 +178,7 @@ func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []isc.Nati
 // This impacts storage deposit amount locked in the internal UTXOs which keep respective balances
 // Returns delta of required storage deposit
 func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID isc.NativeTokenID, delta *big.Int) int64 {
-	if util.IsZeroBigInt(delta) {
+	if bigint.IsZero(delta) {
 		return 0
 	}
 	nt := txb.ensureNativeTokenBalance(nativeTokenID).add(delta)
@@ -185,7 +187,7 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID is
 		return 0
 	}
 
-	if util.IsZeroBigInt(nt.getOutValue()) {
+	if bigint.IsZero(nt.getOutValue()) {
 		// 0 native tokens on the output side
 		if nt.accountingInput == nil {
 			// in this case the internar accounting output that would be created is not needed anymore, reiburse the SD

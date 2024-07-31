@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -105,7 +105,7 @@ func testCreditDebit2(t *testing.T, v isc.SchemaVersion) {
 	expected = isc.NewAssets(42, nil)
 	require.True(t, expected.Equals(total))
 
-	require.True(t, util.IsZeroBigInt(accounts.NewStateReader(v, state).GetNativeTokenBalance(agentID1, transfer.NativeTokens[0].ID, isc.ChainID{})))
+	require.True(t, bigint.IsZero(accounts.NewStateReader(v, state).GetNativeTokenBalance(agentID1, transfer.NativeTokens[0].ID, isc.ChainID{})))
 	bal1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
 	require.False(t, bal1.IsEmpty())
 	require.True(t, total.Equals(bal1))

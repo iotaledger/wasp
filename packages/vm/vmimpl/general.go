@@ -21,14 +21,7 @@ func (reqctx *requestContext) ChainID() isc.ChainID {
 }
 
 func (vmctx *vmContext) ChainID() isc.ChainID {
-	var chainID isc.ChainID
-	if vmctx.task.AnchorOutput.StateIndex == 0 {
-		// origin
-		chainID = isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
-	} else {
-		chainID = isc.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
-	}
-	return chainID
+	return isc.ChainID(vmctx.task.AnchorOutput.ID)
 }
 
 func (reqctx *requestContext) ChainInfo() *isc.ChainInfo {

@@ -35,11 +35,11 @@ func (vmctx *vmContext) BuildTransactionEssence(stateCommitment *state.L1Commitm
 	return essence, inputsCommitment
 }
 
-func (vmctx *vmContext) createTxBuilderSnapshot() *vmtxbuilder.AnchorTransactionBuilder {
+func (vmctx *vmContext) createTxBuilderSnapshot() vmtxbuilder.TransactionBuilder {
 	return vmctx.txbuilder.Clone()
 }
 
-func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTransactionBuilder) {
+func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot vmtxbuilder.TransactionBuilder) {
 	vmctx.txbuilder = snapshot
 }
 
