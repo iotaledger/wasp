@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -39,7 +39,7 @@ type nodeConnection struct {
 	*logger.WrappedLogger
 
 	iscPackageID sui.PackageID
-	wsClient     *iscmove.Client
+	wsClient     *iscmoveclient.Client
 
 	synced     sync.WaitGroup
 	chainsLock sync.RWMutex
@@ -55,7 +55,7 @@ func New(
 	log *logger.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	wsClient, err := iscmove.NewWebsocketClient(ctx, wsURL, "", log)
+	wsClient, err := iscmoveclient.NewWebsocketClient(ctx, wsURL, "", log)
 	if err != nil {
 		return nil, err
 	}

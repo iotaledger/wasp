@@ -1,4 +1,4 @@
-package iscmove_test
+package iscmoveclient_test
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
@@ -29,7 +29,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(types.AssetsBagModuleName, types.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
@@ -48,6 +48,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = createAndSendRequestRes.GetCreatedObjectInfo(types.RequestModuleName, types.RequestObjectName)
+	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 }

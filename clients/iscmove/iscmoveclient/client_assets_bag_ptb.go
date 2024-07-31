@@ -1,10 +1,10 @@
-package iscmove
+package iscmoveclient
 
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -14,7 +14,7 @@ func NewAssetsBagNewPTB(packageID sui.PackageID, owner *cryptolib.Address) sui.P
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        types.AssetsBagModuleName,
+				Module:        iscmove.AssetsBagModuleName,
 				Function:      "new",
 				TypeArguments: []sui.TypeTag{},
 				Arguments:     []sui.Argument{},
@@ -43,7 +43,7 @@ func NewAssetsBagPlaceCoinPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectR
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        types.AssetsBagModuleName,
+				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin",
 				TypeArguments: []sui.TypeTag{*typeTag},
 				Arguments: []sui.Argument{
@@ -63,7 +63,7 @@ func NewAssetsDestroyEmptyPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectR
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        types.AssetsBagModuleName,
+				Module:        iscmove.AssetsBagModuleName,
 				Function:      "destroy_empty",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{

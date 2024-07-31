@@ -3,7 +3,7 @@ package clients
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -216,7 +216,7 @@ func (c *l1Client) Health(ctx context.Context) error {
 }
 
 func (c *l1Client) L2() L2Client {
-	return iscmove.NewClient(c.Client, c.Config.FaucetURL)
+	return iscmoveclient.NewClient(c.Client, c.Config.FaucetURL)
 }
 
 func NewL1Client(l1Config L1Config) L1Client {

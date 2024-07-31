@@ -7,10 +7,10 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/types"
 )
 
 // Tracks a single chain of state transitions. We will have 2 instances of it:
@@ -19,7 +19,7 @@ import (
 type StateTracker interface {
 	//
 	// The main functions provided by this component.
-	TrackAliasOutput(ao *types.Anchor, strict bool)
+	TrackAliasOutput(ao *iscmove.Anchor, strict bool)
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
@@ -27,15 +27,15 @@ type StateTracker interface {
 	ChainNodeStateMgrResponse(*sm_inputs.ChainFetchStateDiffResults)
 }
 
-type StateTrackerStepCB = func(st state.State, from, till *types.Anchor, added, removed []state.Block)
+type StateTrackerStepCB = func(st state.State, from, till *iscmove.Anchor, added, removed []state.Block)
 
 type stateTrackerImpl struct {
 	ctx                    context.Context
 	stateMgr               statemanager.StateMgr
 	haveLatestCB           StateTrackerStepCB
 	haveAOState            state.State
-	haveAO                 *types.Anchor      // We have a state ready for this AO.
-	nextAO                 *types.Anchor      // For this state a query was made, but the response not received yet.
+	haveAO                 *iscmove.Anchor    // We have a state ready for this AO.
+	nextAO                 *iscmove.Anchor    // For this state a query was made, but the response not received yet.
 	nextAOCancel           context.CancelFunc // Cancel for a context used to query for the nextAO state.
 	nextAOWaitCh           <-chan *sm_inputs.ChainFetchStateDiffResults
 	awaitReceipt           AwaitReceipt
@@ -70,7 +70,7 @@ func NewStateTracker(
 	}
 }
 
-func (sti *stateTrackerImpl) TrackAliasOutput(ao *types.Anchor, strict bool) {
+func (sti *stateTrackerImpl) TrackAliasOutput(ao *iscmove.Anchor, strict bool) {
 	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
 	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
 		return

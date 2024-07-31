@@ -3,9 +3,9 @@ package sm_inputs
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/types"
 )
 
 type ConsensusDecidedState struct {
@@ -17,8 +17,8 @@ type ConsensusDecidedState struct {
 
 var _ gpa.Input = &ConsensusDecidedState{}
 
-func NewConsensusDecidedState(ctx context.Context, anchor *types.RefWithObject[types.Anchor]) (*ConsensusDecidedState, <-chan state.State) {
-	commitment, err := state.NewL1CommitmentFromAnchor(anchor)
+func NewConsensusDecidedState(ctx context.Context, anchor *iscmove.RefWithObject[iscmove.Anchor]) (*ConsensusDecidedState, <-chan state.State) {
+	commitment, err := state.NewL1CommitmentFromAnchor(anchor.Object)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")
 	}

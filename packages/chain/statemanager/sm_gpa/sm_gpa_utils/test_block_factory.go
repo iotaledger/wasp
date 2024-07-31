@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -18,13 +19,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/types"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type anchorData struct {
 	ref          *sui.ObjectRef
-	assets       types.Referent[types.AssetsBag]
+	assets       iscmove.Referent[iscmove.AssetsBag]
 	l1Commitment *state.L1Commitment
 	stateIndex   uint32
 }
@@ -53,9 +53,9 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 			Version:  0,
 			Digest:   nil, // TODO
 		},
-		assets: types.Referent[types.AssetsBag]{
+		assets: iscmove.Referent[iscmove.AssetsBag]{
 			//ID: nil, // TODO
-			Value: &types.AssetsBag{
+			Value: &iscmove.AssetsBag{
 				//ID:   nil, // TODO
 				Size: 0,
 			},
@@ -121,7 +121,7 @@ func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *types.RefWithObject[types.Anchor] {
+func (bfT *BlockFactory) GetOriginAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
@@ -215,12 +215,12 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *types.RefWithObject[types.Anchor] {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.RefWithObject[iscmove.Anchor] {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return &types.RefWithObject[types.Anchor]{
+	return &iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: *anchorData.ref,
-		Object: &types.Anchor{
+		Object: &iscmove.Anchor{
 			ID:         *anchorData.ref.ObjectID,
 			Assets:     anchorData.assets,
 			InitParams: bfT.chainInitParams.Bytes(),

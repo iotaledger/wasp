@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -61,7 +60,7 @@ func Encode(v interface{}) []byte {
 		return RequestID.Encode(*vt)
 	case isc.Hname:
 		return vt.Bytes()
-	case iotago.NFTID:
+	case isc.NFTID:
 		return NFTID.Encode(vt)
 	case isc.VMErrorCode:
 		return vt.Bytes()

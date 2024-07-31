@@ -10,8 +10,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -53,7 +53,7 @@ func ERC20ExternalNativeTokensAddress(
 	isTaken func(common.Address) bool,
 ) (common.Address, error) {
 	const maxAttempts = 10
-	hash := hashing.HashData(nativeTokenID[:])
+	hash := hashing.HashData(nativeTokenID.Bytes())
 	for i := 0; i < maxAttempts; i++ {
 		addr := packMagicAddress(addressKindERC20ExternalNativeTokens, hash[:maxPayloadLength])
 		if !isTaken(addr) {

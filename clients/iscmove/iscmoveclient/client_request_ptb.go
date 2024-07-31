@@ -1,7 +1,7 @@
-package iscmove
+package iscmoveclient
 
 import (
-	"github.com/iotaledger/wasp/packages/types"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -19,7 +19,7 @@ func NewCreateAndSendRequestPTB(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
-				Module:        types.RequestModuleName,
+				Module:        iscmove.RequestModuleName,
 				Function:      "create_and_send_request",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{

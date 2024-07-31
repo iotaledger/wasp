@@ -1,4 +1,4 @@
-package iscmove_test
+package iscmoveclient_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -25,8 +25,8 @@ func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	return kp
 }
 
-func newLocalnetClient() *iscmove.Client {
-	return iscmove.NewHTTPClient(
+func newLocalnetClient() *iscmoveclient.Client {
+	return iscmoveclient.NewHTTPClient(
 		suiconn.LocalnetEndpointURL,
 		suiconn.LocalnetFaucetURL,
 	)

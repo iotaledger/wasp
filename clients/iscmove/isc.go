@@ -1,4 +1,4 @@
-package types
+package iscmove
 
 import (
 	"io"
@@ -118,7 +118,6 @@ type Message struct {
 
 type Request struct {
 	ID        sui.ObjectID
-	Anchor    *cryptolib.Address
 	Sender    *cryptolib.Address
 	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
 	Message   Message

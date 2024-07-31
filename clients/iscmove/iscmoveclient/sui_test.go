@@ -1,17 +1,17 @@
-package iscmove_test
+package iscmoveclient_test
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func signAndExecuteTransactionGetObjectRef(
-	client *iscmove.Client,
+	client *iscmoveclient.Client,
 	cryptolibSigner cryptolib.Signer,
 	txnBytes []byte,
 	module sui.Identifier,
