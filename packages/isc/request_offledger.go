@@ -168,10 +168,6 @@ func (req *OffLedgerRequestData) IsOffLedger() bool {
 	return true
 }
 
-func (req *OffLedgerRequestData) NFT() *NFT {
-	return nil
-}
-
 // Nonce incremental nonce used for replay protection
 func (req *OffLedgerRequestData) Nonce() uint64 {
 	return req.nonce

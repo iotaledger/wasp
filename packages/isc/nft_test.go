@@ -3,14 +3,14 @@ package isc
 import (
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func TestNFTSerialization(t *testing.T) {
 	nft := &NFT{
-		ID:       iotago.NFTID{123},
+		ID:       sui.ObjectID{123},
 		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}

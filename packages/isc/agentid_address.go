@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-// AddressAgentID is an AgentID backed by a non-alias address.
+// AddressAgentID is an AgentID backed by a L1 address
 type AddressAgentID struct {
 	a *cryptolib.Address
 }

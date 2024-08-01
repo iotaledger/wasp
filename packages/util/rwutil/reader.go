@@ -346,7 +346,7 @@ func (rr *Reader) ReadUint64() (ret uint64) {
 	return binary.LittleEndian.Uint64(b[:])
 }
 
-func (rr *Reader) ReadUint256() (ret *big.Int) {
+func (rr *Reader) ReadBigUint() (ret *big.Int) {
 	ret = new(big.Int)
 	data := rr.ReadBytes()
 	if data != nil {

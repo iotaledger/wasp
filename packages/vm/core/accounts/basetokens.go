@@ -63,10 +63,10 @@ func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment *b
 	switch adjustment.Cmp(big.NewInt(0)) {
 	case 1:
 		// Greater than 0
-		s.CreditToAccount(account, isc.NewAssets(adjustment, nil), chainID)
+		s.CreditToAccount(account, isc.NewAssets(adjustment), chainID)
 	case -1:
 		// Smaller than 0
-		s.DebitFromAccount(account, isc.NewAssets(new(big.Int).Neg(adjustment), nil), chainID)
+		s.DebitFromAccount(account, isc.NewAssets(new(big.Int).Neg(adjustment)), chainID)
 	}
 }
 

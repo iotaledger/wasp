@@ -43,11 +43,10 @@ func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
 
 type Calldata interface {
 	Allowance() *Assets // transfer of assets to the smart contract. Debited from sender account
-	Assets() *Assets    // attached assets for the UTXO request, nil for off-ledger. All goes to sender
+	Assets() *Assets    // attached assets for the on-ledger request, nil for off-ledger. All goes to sender.
 	Message() Message
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
-	// NFT() *NFT // Not nil if the request is an NFT request
 	SenderAccount() AgentID
 	TargetAddress() *cryptolib.Address // TODO implement properly. Target depends on time assumptions and UTXO type
 	EVMCallMsg() *ethereum.CallMsg
