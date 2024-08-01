@@ -14,10 +14,11 @@ import (
 )
 
 type onLedgerRequestData struct {
-	requestID       sui.ObjectID
+	requestRef      sui.ObjectRef
 	senderAddress   *cryptolib.Address
 	targetAddress   *cryptolib.Address
 	assets          *Assets
+	assetsBag       *iscmove.AssetsBag
 	requestMetadata *RequestMetadata
 }
 
@@ -27,17 +28,18 @@ var (
 	_ Calldata        = new(onLedgerRequestData)
 )
 
-func OnLedgerFromRequest(request iscmove.Request, anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
+func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
 	r := &onLedgerRequestData{
-		requestID:     request.ID,
-		senderAddress: request.Sender,
+		requestRef:    request.ObjectRef,
+		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
+		assetsBag:     request.Object.AssetsBag.Value,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
 				Target: CallTarget{
-					Contract:   Hname(request.Message.Contract),
-					EntryPoint: Hname(request.Message.Function),
+					Contract:   Hname(request.Object.Message.Contract),
+					EntryPoint: Hname(request.Object.Message.Function),
 				},
 				Params: dict.New(), // TODO: set request.Message.Params (turn dict to list of args)
 			},
@@ -54,7 +56,7 @@ func (req *onLedgerRequestData) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
-	rr.ReadN(req.requestID[:])
+	rr.ReadN(req.requestRef.Bytes())
 	rr.ReadN(req.senderAddress[:])
 	rr.ReadN(req.targetAddress[:])
 
@@ -69,7 +71,7 @@ func (req *onLedgerRequestData) Read(r io.Reader) error {
 func (req *onLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
-	ww.WriteN(req.requestID[:])
+	ww.WriteN(req.requestRef.Bytes())
 	ww.WriteN(req.senderAddress[:])
 	ww.WriteN(req.targetAddress[:])
 	ww.Write(req.requestMetadata)
@@ -101,11 +103,10 @@ func (req *onLedgerRequestData) Message() Message {
 }
 
 func (req *onLedgerRequestData) Clone() OnLedgerRequest {
-	outputID := sui.ObjectID{}
-	copy(outputID[:], req.requestID[:])
+	outputRef := sui.ObjectRefFromBytes(req.requestRef.Bytes())
 
 	ret := &onLedgerRequestData{
-		requestID:     outputID,
+		requestRef:    *outputRef,
 		senderAddress: req.senderAddress.Clone(),
 		targetAddress: req.targetAddress.Clone(),
 	}
@@ -125,7 +126,7 @@ func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 }
 
 func (req *onLedgerRequestData) ID() RequestID {
-	return RequestID(req.requestID)
+	return RequestID(*req.requestRef.ObjectID)
 }
 
 func (req *onLedgerRequestData) IsOffLedger() bool {
@@ -133,7 +134,7 @@ func (req *onLedgerRequestData) IsOffLedger() bool {
 }
 
 func (req *onLedgerRequestData) RequestID() sui.ObjectID {
-	return req.requestID
+	return *req.requestRef.ObjectID
 }
 
 func (req *onLedgerRequestData) SenderAccount() AgentID {
@@ -167,6 +168,13 @@ func (req *onLedgerRequestData) String() string {
 		metadata.Message.Params.String(),
 		metadata.GasBudget,
 	)
+}
+
+func (req *onLedgerRequestData) RequestRef() sui.ObjectRef {
+	return req.requestRef
+}
+func (req *onLedgerRequestData) AssetsBag() *iscmove.AssetsBag {
+	return req.assetsBag
 }
 
 func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {

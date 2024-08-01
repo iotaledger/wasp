@@ -10,7 +10,7 @@ import (
 
 type TransactionBuilder interface {
 	Clone() TransactionBuilder
-	ConsumeRequest(req isc.OnLedgerRequest) (storageDepositNeeded *big.Int)
+	ConsumeRequest(req isc.OnLedgerRequest)
 	SendObject(object sui.Object) (storageDepositReturned *big.Int)
 	BuildTransactionEssence(stateRoot *state.L1Commitment) sui.ProgrammableTransaction // TODO add stateMetadata?
 }

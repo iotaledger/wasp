@@ -89,7 +89,17 @@ func (or *ObjectRef) Bytes() []byte {
 	binary.LittleEndian.PutUint64(version, or.Version)
 	result := or.ObjectID[:]
 	result = append(result, version...)
+	// TODO maybe we should add digest here too
 	return result
+}
+
+func ObjectRefFromBytes(b []byte) *ObjectRef {
+	var ref ObjectRef
+	ref.Version = binary.LittleEndian.Uint64(b[:8])
+	var arr [AddressLen]byte
+	copy(arr[:], b[8:])
+	ref.ObjectID = AddressFromArray(arr)
+	return &ref
 }
 
 func (or *ObjectRef) Key() ObjectRefKey {

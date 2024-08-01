@@ -101,7 +101,7 @@ func (reqctx *requestContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		if bigint.Larger(storageDepositNeeded, req.Assets().BaseTokens) {
+		if bigint.Larger(big.NewInt(0).SetUint64(storageDepositNeeded), req.Assets().BaseTokens()) {
 			panic(vmexceptions.ErrNotEnoughFundsForSD) // if sender is not specified, and extra tokens are needed to pay for SD, the request cannot be processed.
 		}
 		// onleger request with no sender, send all assets to the payoutAddress
