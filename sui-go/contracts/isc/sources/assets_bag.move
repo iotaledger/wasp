@@ -44,7 +44,7 @@ module isc::assets_bag {
 
     // === Place into the AssetsBag ===
 
-    /// Adds a the balance of a Coin as a dinamyc field of the AssetsBag where the key is
+    /// Adds a the balance of a Coin as a dynamic field of the AssetsBag where the key is
     /// the type of the Coin (OTW).
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     public fun place_coin<T>(self: &mut AssetsBag, coin: Coin<T>) {
@@ -52,14 +52,14 @@ module isc::assets_bag {
         place_coin_balance_internal(self, balance)
     }
 
-    /// Adds a the balance as a dinamyc field of the AssetsBag where the key is
+    /// Adds a the balance as a dynamic field of the AssetsBag where the key is
     /// the type of the Coin (OTW).
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     public fun place_coin_balance<T>(self: &mut AssetsBag, balance: Balance<T>) {
         place_coin_balance_internal(self, balance)
     }
 
-    /// Adds an asset as a dinamyc field of the AssetsBag where the key is
+    /// Adds an asset as a dynamic field of the AssetsBag where the key is
     /// of type Asset (indexed by object id).
     public fun place_asset<T: key + store>(self: &mut AssetsBag, asset: T) {
         place_asset_internal(self, asset)
@@ -67,13 +67,13 @@ module isc::assets_bag {
 
     // === Take from the AssetsBag ===
 
-    /// Takes an amount from the balance of a Coin set as a dinamyc field of the AssetsBag.
+    /// Takes an amount from the balance of a Coin set as a dynamic field of the AssetsBag.
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     public fun take_coin_balance<T>(self: &mut AssetsBag, amount: u64): Balance<T> {
         take_coin_balance_internal(self, amount)
     }
 
-    /// Takes all the balance of a Coin set as a dinamyc field of the AssetsBag.
+    /// Takes all the balance of a Coin set as a dynamic field of the AssetsBag.
     /// Aborts with `EInvalidSuiCoin` if the coin is of type SUI.
     public fun take_all_coin_balance<T>(self: &mut AssetsBag): Balance<T> {
         let coin_type = type_name::get<T>().into_string();
@@ -81,7 +81,7 @@ module isc::assets_bag {
         df::remove<String, Balance<T>>(&mut self.id, coin_type)
     }
 
-    /// Takes an asset set as a dinamyc field of the AssetsBag.
+    /// Takes an asset set as a dynamic field of the AssetsBag.
     public fun take_asset<T: key + store>(self: &mut AssetsBag, id: ID): T {
         take_asset_internal(self, id)
     }

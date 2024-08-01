@@ -6,24 +6,25 @@ module isc::anchor_tests {
     use std::{
         fixed_point32::{FixedPoint32},
         string::{Self, String},
-        ascii::{Self},
+        ascii::Self,
     };
     use sui::{
-        table::{Self},
-        coin::{Self},
+        table::Self,
+        coin::Self,
         sui::SUI,
-        url::{Self},
-        vec_set::{Self},
+        url::Self,
+        vec_set::Self,
     };
 
     use stardust::{
         nft::{Self, Nft},
-        irc27::{Self},
+        irc27::Self,
     };
     use isc::{
-        assets_bag::{Self},
-        anchor::{Self},
-        request::{Self},
+        assets_bag::Self,
+        anchor::Self,
+        request::Self,
+        allowance::Self,
     };
 
     // One Time Witness for coins used in the tests.
@@ -41,7 +42,7 @@ module isc::anchor_tests {
         let mut ctx = tx_context::dummy();
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(&mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
         let iota = coin::mint_for_testing<SUI>(initial_iota_in_request, &mut ctx);
@@ -67,13 +68,20 @@ module isc::anchor_tests {
         );
         let nft_id = object::id(&test_b_nft);
 
-        // ClientPTB.2 Add the assets to the bag.
+        // ClientPTB.2 create allowance
+        let mut req_allowance = allowance::new(&mut ctx);
+        let allowance_balance = coin::balance(&test_a_coin);
+        req_allowance.add_coin_allowance(allowance_balance);
+        let allowance_balance_1 = coin::balance(&test_a_coin);
+        req_allowance.add_coin_allowance(allowance_balance_1);
+
+        // ClientPTB.3 Add the assets to the bag.
         let mut req_assets = assets_bag::new(&mut ctx);
         req_assets.place_coin(test_a_coin);
         req_assets.place_coin(iota);
         req_assets.place_asset(test_b_nft);
 
-        // ClientPTB.3. Create the request and can send it to the Anchor.
+        // ClientPTB.4 Create the request and can send it to the Anchor.
         /*request::create_and_send_request(
             object::id(&anchor).id_to_address(),
             req_assets,
@@ -87,13 +95,16 @@ module isc::anchor_tests {
             42, // contract hname
             42, // entry point
             vector::empty(), // args
+            req_allowance,
+            100,
             &mut ctx,
         );
 
         // ServerPTB.1 Now the Anchor receives off-chain an event that tracks the request and can receive it.
         //let (receipt, req_extracted_assets) = anchor.receive_request(req); // Commented because cannot be executed in this test
-        let (id, mut req_extracted_assets) = req.destroy(); //this is not part of the PTB
+        let (id, mut req_extracted_assets, req_extracted_allowance) = req.destroy(); //this is not part of the PTB
         let receipt = anchor::create_receipt_for_testing(id); //this is not part of the PTB
+        req_extracted_allowance.destroy();
 
         // ServerPTB.2: borrow the asset bag of the anchor
         let (mut anchor_assets, borrow) = anchor.borrow_assets();    
