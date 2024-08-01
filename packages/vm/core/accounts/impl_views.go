@@ -3,7 +3,6 @@ package accounts
 import (
 	"math/big"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -78,12 +77,13 @@ func viewAccountFoundries(ctx isc.SandboxView, optionalAgentID *isc.AgentID) map
 var errFoundryNotFound = coreerrors.Register("foundry not found").Create()
 
 // viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
-func viewFoundryOutput(ctx isc.SandboxView, sn uint32) iotago.Output {
+func viewFoundryOutput(ctx isc.SandboxView, sn uint32) sui.ObjectID {
 	ctx.Log().Debugf("accounts.viewFoundryOutput")
 	out, _ := NewStateReaderFromSandbox(ctx).GetFoundryOutput(sn, ctx.ChainID())
 	if out == nil {
 		panic(errFoundryNotFound)
 	}
+	// TODO: refactor me (FoundryOutput -> TreasuryCap -> Sui.ObjectID)
 	return out
 }
 

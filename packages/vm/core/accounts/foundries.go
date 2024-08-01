@@ -65,10 +65,10 @@ func (s *StateWriter) DeleteFoundryOutput(sn uint32) {
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index
-func (s *StateReader) GetFoundryOutput(sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, iotago.OutputID) {
+func (s *StateReader) GetFoundryOutput(sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, sui.ObjectID) {
 	data := s.allFoundriesMapR().GetAt(codec.Uint32.Encode(sn))
 	if data == nil {
-		return nil, iotago.OutputID{}
+		return nil, sui.ObjectID{}
 	}
 	rec := mustFoundryOutputRecFromBytes(data)
 

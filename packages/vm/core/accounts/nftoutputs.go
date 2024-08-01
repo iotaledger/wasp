@@ -41,11 +41,11 @@ func (s *StateWriter) updateNFTOutputIDs(anchorTxID sui.ObjectID) {
 	newNFTs.Erase()
 }
 
-func (s *StateWriter) DeleteNFTOutput(nftID isc.NFTID) {
+func (s *StateWriter) DeleteNFTOutput(nftID sui.ObjectID) {
 	s.nftOutputMap().DelAt(nftID[:])
 }
 
-func (s *StateReader) GetNFTOutput(nftID isc.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
+func (s *StateReader) GetNFTOutput(nftID sui.ObjectID) (*iotago.NFTOutput, iotago.OutputID) {
 	data := s.nftOutputMapR().GetAt(nftID[:])
 	if data == nil {
 		return nil, iotago.OutputID{}

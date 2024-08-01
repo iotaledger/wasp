@@ -26,21 +26,6 @@ func encodeAddress(a *cryptolib.Address) []byte {
 	return a.Bytes()
 }
 
-var Output = NewCodec(decodeOutput, encodeOutput)
-
-func decodeOutput(b []byte) (iotago.Output, error) {
-	o, err := iotago.OutputSelector(uint32(b[0]))
-	if err != nil {
-		return nil, err
-	}
-	_, err = o.Deserialize(b, serializer.DeSeriModePerformValidation, nil)
-	return o, err
-}
-
-func encodeOutput(o iotago.Output) []byte {
-	return lo.Must(o.Serialize(serializer.DeSeriModeNoValidation, nil))
-}
-
 var TokenScheme = NewCodec(decodeTokenScheme, encodeTokenScheme)
 
 func decodeTokenScheme(b []byte) (iotago.TokenScheme, error) {
