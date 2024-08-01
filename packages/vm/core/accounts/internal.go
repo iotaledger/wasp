@@ -4,14 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var (
@@ -19,8 +18,8 @@ var (
 	ErrNotEnoughBaseTokensForStorageDeposit = coreerrors.Register("not enough base tokens for storage deposit").Create()
 	ErrNotEnoughAllowance                   = coreerrors.Register("not enough allowance").Create()
 	ErrBadAmount                            = coreerrors.Register("bad native asset amount").Create()
-	ErrRepeatingFoundrySerialNumber         = coreerrors.Register("repeating serial number of the foundry").Create()
-	ErrFoundryNotFound                      = coreerrors.Register("foundry not found").Create()
+	ErrDuplicateTreasuryCap                 = coreerrors.Register("duplicate TreasuryCap").Create()
+	ErrTreasuryCapNotFound                  = coreerrors.Register("TreasuryCap not found").Create()
 	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
 	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
 	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
@@ -64,10 +63,10 @@ const (
 	// Covered in: TestNFTMint
 	keyNonce = "m"
 
-	// keyCoinRecords stores a map of <CoinType> => CoinRecord
+	// keyCoinRecords stores a map of <CoinType> => array of CoinRecord
 	// Covered in: TestFoundries
 	keyCoinRecords = "RC"
-	// keyTreasuryCapRecords stores a map of <ObjectID> => TrreasuryCapRecord
+	// keyTreasuryCapRecords stores a map of <CoinType> => TreasuryCapRecord
 	// Covered in: TestFoundries
 	keyTreasuryCapRecords = "RT"
 	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
@@ -119,17 +118,13 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 		return true
 	}
 	accountKey := accountKey(agentID, chainID)
-	// getBaseToken(accountKey) < allowance.BaseTokens
-	if lo.Return1(s.getBaseTokens(accountKey)).Cmp(allowance.BaseTokens) == -1 {
-		return false
-	}
-	for _, nativeToken := range allowance.NativeTokens {
-		if s.getNativeTokenAmount(accountKey, nativeToken.CoinType).Cmp(nativeToken.Amount) < 0 {
+	for coinType, amount := range allowance.Coins {
+		if bigint.Less(s.getCoinBalance(accountKey, coinType), amount) {
 			return false
 		}
 	}
-	for _, nftID := range allowance.NFTs {
-		if !s.hasNFT(agentID, nftID) {
+	for id := range allowance.Objects {
+		if !s.hasObject(agentID, id) {
 			return false
 		}
 	}
@@ -143,20 +138,20 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 		return nil
 	}
 
-	if !s.debitFromAccount(accountKey(fromAgentID, chainID), assets) {
+	if !s.debitFromAccount(accountKey(fromAgentID, chainID), assets.Coins) {
 		return errors.New("MoveBetweenAccounts: not enough funds")
 	}
-	s.creditToAccount(accountKey(toAgentID, chainID), assets)
+	s.creditToAccount(accountKey(toAgentID, chainID), assets.Coins)
 
-	for _, nftID := range assets.NFTs {
-		nft := s.GetNFTData(nftID)
-		if nft == nil {
-			return fmt.Errorf("MoveBetweenAccounts: unknown NFT %s", nftID)
+	for id := range assets.Objects {
+		obj := s.GetObject(id)
+		if obj == nil {
+			return fmt.Errorf("MoveBetweenAccounts: unknown object %s", id)
 		}
-		if !s.debitNFTFromAccount(fromAgentID, nft) {
+		if !s.debitObjectFromAccount(fromAgentID, obj) {
 			return errors.New("MoveBetweenAccounts: NFT not found in origin account")
 		}
-		s.creditNFTToAccount(toAgentID, nft.ID, nft.Issuer)
+		s.creditObjectToAccount(toAgentID, obj)
 	}
 
 	s.touchAccount(fromAgentID, chainID)
@@ -172,14 +167,5 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	}
 	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
-	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets, chainID)
-}
-
-func (s *StateWriter) UpdateLatestOutputID(anchorTxID sui.ObjectID, blockIndex uint32) []sui.ObjectID {
-	s.updateNativeTokenOutputIDs(anchorTxID)
-	s.updateFoundryOutputIDs(anchorTxID)
-	s.updateNFTOutputIDs(anchorTxID)
-
-	newNFTIDs := s.updateNewlyMintedNFTOutputIDs(anchorTxID, blockIndex)
-	return newNFTIDs
+	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets.Coins, chainID)
 }

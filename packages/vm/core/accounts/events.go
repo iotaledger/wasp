@@ -3,22 +3,23 @@ package accounts
 import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func eventFoundryCreated(ctx isc.Sandbox, foundrySN uint32) {
+func eventCoinCreated(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {
 	ww := rwutil.NewBytesWriter()
-	ww.WriteUint32(foundrySN)
-	ctx.Event("coreaccounts.foundryCreated", ww.Bytes())
+	ww.WriteN(treasuryCapID[:])
+	ctx.Event("coreaccounts.coinCreated", ww.Bytes())
 }
 
-func eventFoundryDestroyed(ctx isc.Sandbox, foundrySN uint32) {
+func eventCoinDestroyed(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {
 	ww := rwutil.NewBytesWriter()
-	ww.WriteUint32(foundrySN)
-	ctx.Event("coreaccounts.foundryDestroyed", ww.Bytes())
+	ww.WriteN(treasuryCapID[:])
+	ctx.Event("coreaccounts.coinDestroyed", ww.Bytes())
 }
 
-func eventFoundryModified(ctx isc.Sandbox, foundrySN uint32) {
+func eventCoinModified(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {
 	ww := rwutil.NewBytesWriter()
-	ww.WriteUint32(foundrySN)
-	ctx.Event("coreaccounts.foundryModified", ww.Bytes())
+	ww.WriteN(treasuryCapID[:])
+	ctx.Event("coreaccounts.coinModified", ww.Bytes())
 }
