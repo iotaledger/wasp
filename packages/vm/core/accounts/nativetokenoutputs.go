@@ -45,8 +45,8 @@ func (s *StateWriter) updateNativeTokenOutputIDs(anchorTxID sui.ObjectID) {
 	newNativeTokens.Erase()
 }
 
-func (s *StateWriter) DeleteNativeTokenOutput(nativeTokenID isc.NativeTokenID) {
-	s.nativeTokenOutputMap().DelAt(nativeTokenID[:])
+func (s *StateWriter) DeleteNativeTokenOutput(nativeTokenID isc.CoinType) {
+	s.nativeTokenOutputMap().DelAt(nativeTokenID.Bytes())
 }
 
 func (s *StateReader) GetNativeTokenOutput(nativeTokenID sui.ObjectID, chainID isc.ChainID) (*iotago.BasicOutput, iotago.OutputID) {

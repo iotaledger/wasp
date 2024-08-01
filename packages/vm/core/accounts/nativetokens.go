@@ -21,7 +21,7 @@ func (s *StateWriter) nativeTokensMap(accountKey kv.Key) *collections.Map {
 	return collections.NewMap(s.state, nativeTokensMapKey(accountKey))
 }
 
-func (s *StateReader) getNativeTokenAmount(accountKey kv.Key, tokenID isc.NativeTokenID) *big.Int {
+func (s *StateReader) getNativeTokenAmount(accountKey kv.Key, tokenID isc.CoinType) *big.Int {
 	r := new(big.Int)
 	b := s.nativeTokensMapR(accountKey).GetAt(tokenID.Bytes())
 	if len(b) > 0 {
@@ -30,7 +30,7 @@ func (s *StateReader) getNativeTokenAmount(accountKey kv.Key, tokenID isc.Native
 	return r
 }
 
-func (s *StateWriter) setNativeTokenAmount(accountKey kv.Key, tokenID isc.NativeTokenID, n *big.Int) {
+func (s *StateWriter) setNativeTokenAmount(accountKey kv.Key, tokenID isc.CoinType, n *big.Int) {
 	if n.Sign() == 0 {
 		s.nativeTokensMap(accountKey).DelAt(tokenID.Bytes())
 	} else {
@@ -38,18 +38,19 @@ func (s *StateWriter) setNativeTokenAmount(accountKey kv.Key, tokenID isc.Native
 	}
 }
 
-func (s *StateReader) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID isc.NativeTokenID, chainID isc.ChainID) *big.Int {
+func (s *StateReader) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID isc.CoinType, chainID isc.ChainID) *big.Int {
 	return s.getNativeTokenAmount(accountKey(agentID, chainID), nativeTokenID)
 }
 
-func (s *StateReader) GetNativeTokenBalanceTotal(nativeTokenID isc.NativeTokenID) *big.Int {
+func (s *StateReader) GetNativeTokenBalanceTotal(nativeTokenID isc.CoinType) *big.Int {
 	return s.getNativeTokenAmount(L2TotalsAccount, nativeTokenID)
 }
 
-func (s *StateReader) GetNativeTokens(agentID isc.AgentID, chainID isc.ChainID) isc.NativeTokens {
-	ret := isc.NativeTokens{}
+func (s *StateReader) GetNativeTokens(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
+	ret := isc.CoinBalances{}
 	s.nativeTokensMapR(accountKey(agentID, chainID)).Iterate(func(idBytes []byte, val []byte) bool {
-		ret = append(ret, &isc.NativeToken{
+		// TODO: Adapt to map structure
+		ret = append(ret, &isc.Coin{
 			CoinType: isc.MustNativeTokenIDFromBytes(idBytes),
 			Amount:   new(big.Int).SetBytes(val),
 		})

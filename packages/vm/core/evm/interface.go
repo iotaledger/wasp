@@ -48,7 +48,7 @@ var (
 	)
 
 	ViewGetERC20ExternalNativeTokenAddress = coreutil.NewViewEP11(Contract, evmnames.ViewGetERC20ExternalNativeTokenAddress,
-		coreutil.FieldWithCodec(FieldNativeTokenID, codec.NativeTokenID),
+		coreutil.FieldWithCodec(FieldNativeTokenID, codec.CoinType),
 		coreutil.FieldWithCodecOptional(FieldResult, codec.EthereumAddress),
 	)
 

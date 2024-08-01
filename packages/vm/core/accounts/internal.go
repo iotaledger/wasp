@@ -184,12 +184,12 @@ func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.Ch
 	if amount == 0 {
 		return
 	}
-	storageDepositAssets := isc.NewAssetsBaseTokensU64(amount)
+	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
 	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets, chainID)
 }
 
-func (s *StateWriter) UpdateLatestOutputID(anchorTxID sui.ObjectID, blockIndex uint32) []isc.NFTID {
+func (s *StateWriter) UpdateLatestOutputID(anchorTxID sui.ObjectID, blockIndex uint32) []sui.ObjectID {
 	s.updateNativeTokenOutputIDs(anchorTxID)
 	s.updateFoundryOutputIDs(anchorTxID)
 	s.updateNFTOutputIDs(anchorTxID)

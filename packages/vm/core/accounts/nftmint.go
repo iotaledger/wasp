@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type mintedNFTRecord struct {
@@ -90,7 +91,7 @@ func mintParams(
 	immutableMetadata []byte,
 	targetAgentID isc.AgentID,
 	withdrawOnMint bool,
-	collectionID isc.NFTID,
+	collectionID sui.ObjectID{},
 ) mintParameters {
 	chainAddress := ctx.ChainID().AsAddress()
 	ret := mintParameters{
@@ -141,7 +142,7 @@ func mintNFT(
 	immutableMetadata []byte,
 	target isc.AgentID,
 	withdrawOnMint bool,
-	collectionID isc.NFTID,
+	collectionID sui.ObjectID{},
 ) []byte {
 	params := mintParams(ctx, immutableMetadata, target, withdrawOnMint, collectionID)
 
@@ -204,7 +205,7 @@ func mintNFT(
 	return mintID(ctx.StateAnchor().StateIndex+1, positionInMintedList)
 }
 
-func viewNFTIDbyMintID(ctx isc.SandboxView, internalMintID []byte) (ret isc.NFTID) {
+func viewNFTIDbyMintID(ctx isc.SandboxView, internalMintID []byte) (ret sui.ObjectID) {
 	state := NewStateReaderFromSandbox(ctx)
 	b := state.mintIDMapR().GetAt(internalMintID)
 	copy(ret[:], b)

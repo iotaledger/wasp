@@ -56,7 +56,7 @@ func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, 
 }
 
 // debitNFTFromAccount removes a NFT from an account.
-func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, nftID isc.NFTID, gasBurn bool) {
+func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, nftID sui.ObjectID, gasBurn bool) {
 	reqctx.accountsStateWriter(gasBurn).DebitNFTFromAccount(agentID, nftID, reqctx.ChainID())
 }
 
@@ -88,7 +88,7 @@ func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowan
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID sui.ObjectID) *big.Int {
+func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID isc.CoinType) *big.Int {
 	var ret *big.Int
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokenBalance(agentID, nativeTokenID, reqctx.ChainID())
@@ -96,7 +96,7 @@ func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeT
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalanceTotal(nativeTokenID sui.ObjectID) *big.Int {
+func (reqctx *requestContext) GetNativeTokenBalanceTotal(nativeTokenID isc.CoinType) *big.Int {
 	var ret *big.Int
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokenBalanceTotal(nativeTokenID)
@@ -104,22 +104,22 @@ func (reqctx *requestContext) GetNativeTokenBalanceTotal(nativeTokenID sui.Objec
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) isc.NativeTokens {
-	var ret isc.NativeTokens
+func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) []isc.CoinType {
+	var ret []isc.CoinType
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokens(agentID, reqctx.ChainID())
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountNFTs(agentID isc.AgentID) (ret []isc.NFTID) {
+func (reqctx *requestContext) GetAccountNFTs(agentID isc.AgentID) (ret []sui.ObjectID) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetAccountNFTs(agentID)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNFTData(nftID isc.NFTID) (ret *isc.NFT) {
+func (reqctx *requestContext) GetNFTData(nftID sui.ObjectID) (ret *isc.NFT) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNFTData(nftID)
 	})

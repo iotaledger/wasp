@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
@@ -80,12 +81,12 @@ var (
 	)
 	ViewBalanceNativeToken = coreutil.NewViewEP21(Contract, "balanceNativeToken",
 		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamNativeTokenID, codec.NativeTokenID),
+		coreutil.FieldWithCodec(ParamNativeTokenID, codec.CoinType),
 		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
 	)
 	ViewNativeToken = coreutil.NewViewEP11(Contract, "nativeToken",
 		coreutil.FieldWithCodec(ParamFoundrySN, codec.Uint32),
-		coreutil.FieldWithCodec(ParamFoundryOutputBin, codec.Output),
+		coreutil.FieldWithCodec(ParamFoundryOutputBin, codec.ObjectID), // TODO: refactor me (Output was removed and ObjectID used instead)
 	)
 
 	ViewGetAccountNonce = coreutil.NewViewEP11(Contract, "getAccountNonce",
@@ -204,7 +205,7 @@ func (e EPMintNFT) Message(
 	immutableMetadata []byte,
 	target isc.AgentID,
 	withdrawOnMint *bool,
-	collectionID *isc.NFTID,
+	collectionID *sui.ObjectID,
 ) isc.Message {
 	params := dict.Dict{
 		ParamNFTImmutableData: immutableMetadata,
@@ -219,13 +220,13 @@ func (e EPMintNFT) Message(
 	return e.EntryPointInfo.Message(params)
 }
 
-func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, isc.NFTID) []byte) *coreutil.EntryPointHandler[isc.Sandbox] {
+func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, sui.ObjectID) []byte) *coreutil.EntryPointHandler[isc.Sandbox] {
 	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 		d := ctx.Params().Dict
 		immutableMetadata := lo.Must(codec.Bytes.Decode(d[ParamNFTImmutableData]))
 		target := lo.Must(codec.AgentID.Decode(d[ParamAgentID]))
 		withdraw := lo.Must(codec.Bool.Decode(d[ParamNFTWithdrawOnMint], false))
-		collID := lo.Must(codec.NFTID.Decode(d[ParamCollectionID], isc.NFTID{}))
+		collID := lo.Must(codec.NFTID.Decode(d[ParamCollectionID], sui.ObjectID{}))
 
 		mintID := f(ctx, immutableMetadata, target, withdraw, collID)
 		return dict.Dict{ParamMintID: mintID}
@@ -234,7 +235,7 @@ func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, is
 
 type OutputNFTIDs struct{}
 
-func (OutputNFTIDs) Encode(nftIDs []isc.NFTID) dict.Dict {
+func (OutputNFTIDs) Encode(nftIDs []sui.ObjectID) dict.Dict {
 	// TODO: add pagination?
 	if len(nftIDs) > math.MaxUint16 {
 		panic("too many NFTs")
@@ -242,7 +243,7 @@ func (OutputNFTIDs) Encode(nftIDs []isc.NFTID) dict.Dict {
 	return codec.SliceToArray(codec.NFTID, nftIDs, ParamNFTIDs)
 }
 
-func (OutputNFTIDs) Decode(r dict.Dict) ([]isc.NFTID, error) {
+func (OutputNFTIDs) Decode(r dict.Dict) ([]sui.ObjectID, error) {
 	return codec.SliceFromArray(codec.NFTID, r, ParamNFTIDs)
 }
 
@@ -266,12 +267,12 @@ func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
 
 type OutputNativeTokenIDs struct{}
 
-func (OutputNativeTokenIDs) Encode(ids []isc.NativeTokenID) dict.Dict {
-	return codec.SliceToDictKeys(codec.NativeTokenID, ids)
+func (OutputNativeTokenIDs) Encode(ids []isc.CoinType) dict.Dict {
+	return codec.SliceToDictKeys(codec.CoinType, ids)
 }
 
-func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]isc.NativeTokenID, error) {
-	return codec.SliceFromDictKeys(codec.NativeTokenID, r)
+func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]isc.CoinType, error) {
+	return codec.SliceFromDictKeys(codec.CoinType, r)
 }
 
 type OutputFungibleTokens struct{}

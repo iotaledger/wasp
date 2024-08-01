@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func TestAccounts(t *testing.T) {
@@ -41,7 +42,7 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 	return isc.NewContractAgentID(chainID, isc.Hname(h))
 }
 
-var dummyAssetID = [isc.NativeTokenIDLength]byte{1, 2, 3}
+var dummyAssetID = isc.CoinType("foo")
 
 func checkLedgerT(t *testing.T, v isc.SchemaVersion, state dict.Dict) *isc.Assets {
 	require.NotPanics(t, func() {
@@ -320,7 +321,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isc.NewRandomAgentID()
 	NFT1 := &isc.NFT{
-		ID:       isc.NFTID{123},
+		ID:       sui.ObjectID{123},
 		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}
@@ -357,7 +358,7 @@ func testTransferNFTs(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isc.NewRandomAgentID()
 
 	// cannot move an NFT that is not owned
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(isc.NFTID{111}), isc.ChainID{}))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(sui.ObjectID{111}), isc.ChainID{}))
 
 	// moves successfully when the NFT is owned
 	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewEmptyAssets().AddNFTs(NFT1.ID), isc.ChainID{})
@@ -381,7 +382,7 @@ func testCreditDebitNFT1(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := knownAgentID(1, 2)
 	nft := isc.NFT{
-		ID:       isc.NFTID{123},
+		ID:       sui.ObjectID{123},
 		Issuer:   cryptolib.NewRandomAddress(),
 		Metadata: []byte("foobar"),
 	}

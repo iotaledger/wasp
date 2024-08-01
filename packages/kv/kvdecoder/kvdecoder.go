@@ -301,7 +301,7 @@ func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) (i
 		}
 		return iotago.NativeTokenID{}, fmt.Errorf("GetNativeTokenID: mandatory parameter %q does not exist", key)
 	}
-	return codec.NativeTokenID.Decode(v)
+	return codec.CoinType.Decode(v)
 }
 
 func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) iotago.NativeTokenID {

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func nftsMapKey(agentID isc.AgentID) string {
@@ -61,11 +62,11 @@ func (s *StateWriter) nftsByCollectionMap(agentID isc.AgentID, collectionKey kv.
 	return collections.NewMap(s.state, nftsByCollectionMapKey(agentID, collectionKey))
 }
 
-func (s *StateReader) hasNFT(agentID isc.AgentID, nftID isc.NFTID) bool {
+func (s *StateReader) hasNFT(agentID isc.AgentID, nftID sui.ObjectID) bool {
 	return s.accountToNFTsMapR(agentID).HasAt(nftID[:])
 }
 
-func (s *StateWriter) removeNFTOwner(nftID isc.NFTID, agentID isc.AgentID) bool {
+func (s *StateWriter) removeNFTOwner(nftID sui.ObjectID, agentID isc.AgentID) bool {
 	// remove the mapping of NFTID => owner
 	nftMap := s.nftToOwnerMap()
 	if !nftMap.HasAt(nftID[:]) {
@@ -82,7 +83,7 @@ func (s *StateWriter) removeNFTOwner(nftID isc.NFTID, agentID isc.AgentID) bool 
 	return true
 }
 
-func (s *StateWriter) setNFTOwner(nftID isc.NFTID, agentID isc.AgentID) {
+func (s *StateWriter) setNFTOwner(nftID sui.ObjectID, agentID isc.AgentID) {
 	// add to the mapping of NFTID => owner
 	nftMap := s.nftToOwnerMap()
 	nftMap.SetAt(nftID[:], agentID.Bytes())
@@ -92,7 +93,7 @@ func (s *StateWriter) setNFTOwner(nftID isc.NFTID, agentID isc.AgentID) {
 	nfts.SetAt(nftID[:], codec.Bool.Encode(true))
 }
 
-func (s *StateReader) GetNFTData(nftID isc.NFTID) *isc.NFT {
+func (s *StateReader) GetNFTData(nftID sui.ObjectID) *isc.NFT {
 	o, oID := s.GetNFTOutput(nftID)
 	if o == nil {
 		return nil
@@ -127,7 +128,7 @@ func (s *StateWriter) CreditNFTToAccount(agentID isc.AgentID, nftOutput *iotago.
 	s.SaveNFTOutput(nftOutput, 0)
 }
 
-func (s *StateWriter) creditNFTToAccount(agentID isc.AgentID, nftID isc.NFTID, issuer *cryptolib.Address) {
+func (s *StateWriter) creditNFTToAccount(agentID isc.AgentID, nftID sui.ObjectID, issuer *cryptolib.Address) {
 	s.setNFTOwner(nftID, agentID)
 
 	collectionKey := nftCollectionKey(issuer)
@@ -137,7 +138,7 @@ func (s *StateWriter) creditNFTToAccount(agentID isc.AgentID, nftID isc.NFTID, i
 
 // DebitNFTFromAccount removes an NFT from an account.
 // If the account does not own the nft, it panics.
-func (s *StateWriter) DebitNFTFromAccount(agentID isc.AgentID, nftID isc.NFTID, chainID isc.ChainID) {
+func (s *StateWriter) DebitNFTFromAccount(agentID isc.AgentID, nftID sui.ObjectID, chainID isc.ChainID) {
 	nft := s.GetNFTData(nftID)
 	if nft == nil {
 		panic(fmt.Errorf("cannot debit unknown NFT %s", nftID.String()))
@@ -164,10 +165,10 @@ func (s *StateWriter) debitNFTFromAccount(agentID isc.AgentID, nft *isc.NFT) boo
 	return true
 }
 
-func collectNFTIDs(m *collections.ImmutableMap) []isc.NFTID {
-	var ret []isc.NFTID
+func collectNFTIDs(m *collections.ImmutableMap) []sui.ObjectID {
+	var ret []sui.ObjectID
 	m.Iterate(func(idBytes []byte, val []byte) bool {
-		id := isc.NFTID{}
+		id := sui.ObjectID{}
 		copy(id[:], idBytes)
 		ret = append(ret, id)
 		return true
@@ -175,23 +176,23 @@ func collectNFTIDs(m *collections.ImmutableMap) []isc.NFTID {
 	return ret
 }
 
-func (s *StateReader) getAccountNFTs(agentID isc.AgentID) []isc.NFTID {
+func (s *StateReader) getAccountNFTs(agentID isc.AgentID) []sui.ObjectID {
 	return collectNFTIDs(s.accountToNFTsMapR(agentID))
 }
 
-func (s *StateReader) getAccountNFTsInCollection(agentID isc.AgentID, collectionID isc.NFTID) []isc.NFTID {
+func (s *StateReader) getAccountNFTsInCollection(agentID isc.AgentID, collectionID sui.ObjectID) []sui.ObjectID {
 	return collectNFTIDs(s.nftsByCollectionMapR(agentID, kv.Key(collectionID[:])))
 }
 
-func (s *StateReader) getL2TotalNFTs() []isc.NFTID {
+func (s *StateReader) getL2TotalNFTs() []sui.ObjectID {
 	return collectNFTIDs(s.nftToOwnerMapR())
 }
 
 // GetAccountNFTs returns all NFTs belonging to the agentID on the state
-func (s *StateReader) GetAccountNFTs(agentID isc.AgentID) []isc.NFTID {
+func (s *StateReader) GetAccountNFTs(agentID isc.AgentID) []sui.ObjectID {
 	return s.getAccountNFTs(agentID)
 }
 
-func (s *StateReader) GetTotalL2NFTs() []isc.NFTID {
+func (s *StateReader) GetTotalL2NFTs() []sui.ObjectID {
 	return s.getL2TotalNFTs()
 }
