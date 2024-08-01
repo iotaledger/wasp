@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -24,26 +22,29 @@ func (s *StateReader) CheckLedgerConsistency() {
 	}
 }
 
-func (s *StateReader) calcL2TotalFungibleTokens() *isc.Assets {
-	ret := isc.NewEmptyAssets()
-	totalBaseTokens := big.NewInt(0)
+func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
+	ret := isc.CoinBalances{}
+	totalWeiRemainder := big.NewInt(0)
 
 	s.allAccountsMapR().IterateKeys(func(accountKey []byte) bool {
 		// add all native tokens owned by each account
-		s.nativeTokensMapR(kv.Key(accountKey)).Iterate(func(idBytes []byte, val []byte) bool {
-			ret.AddNativeTokens(
-				lo.Must(isc.NativeTokenIDFromBytes(idBytes)),
-				lo.Must(codec.BigIntAbs.Decode(val)),
+		s.coinsMapR(kv.Key(accountKey)).Iterate(func(coinType []byte, val []byte) bool {
+			ret.Add(
+				codec.CoinType.MustDecode(coinType),
+				codec.BigIntAbs.MustDecode(val),
 			)
 			return true
 		})
 		// use the full decimals for each account, so no dust balance is lost in the calculation
-		baseTokensFullDecimals := s.getBaseTokensFullDecimals(kv.Key(accountKey))
-		totalBaseTokens = new(big.Int).Add(totalBaseTokens, baseTokensFullDecimals)
+		totalWeiRemainder.Add(totalWeiRemainder, s.getWeiRemainder(kv.Key(accountKey)))
 		return true
 	})
 
-	// convert from 18 decimals, remainder must be 0
-	ret.BaseTokens = util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalBaseTokens, parameters.Decimals)
+	// convert total remainder from 18 decimals, must be exact
+	ret.Add(
+		isc.BaseTokenType,
+		util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalWeiRemainder, parameters.Decimals),
+	)
+
 	return ret
 }
