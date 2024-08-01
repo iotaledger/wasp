@@ -32,34 +32,29 @@ const (
 	// Covered in: TestFoundries
 	keyAllAccounts = "a"
 
-	// prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
+	// prefixCoins | <accountID> stores a map of <CoinType> => big.Int
 	// Covered in: TestFoundries
-	prefixBaseTokens = "b"
-	// prefixNativeTokens | <accountID> stores a map of <nativeTokenID> => big.Int
-	// Covered in: TestFoundries
-	prefixNativeTokens = "t"
+	prefixCoins = "C"
 
-	// L2TotalsAccount is the special <accountID> storing the total fungible tokens
+	// prefixRemainders | <accountID> stores the wei remainder (big.Int 18 decimals)
+	prefixRemainders = "w"
+
+	// L2TotalsAccount is the special <accountID> storing the total coins
 	// controlled by the chain
 	// Covered in: TestFoundries
 	L2TotalsAccount = "*"
 
-	// prefixNFTs | <agentID> stores a map of <NFTID> => true
+	// prefixObjects | <agentID> stores a map of <ObjectID> => true
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixNFTs = "n"
-	// prefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
+	prefixObjects = "o"
+	// prefixObjectsByCollection | <agentID> | <collectionID> stores a map of <ObjectID> => true
 	// Covered in: TestNFTMint
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixNFTsByCollection = "c"
-	// prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
-	// Covered in: TestNFTMint
-	prefixNewlyMintedNFTs = "N"
-	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
-	// Covered in: TestNFTMint
-	prefixMintIDMap = "M"
-	// prefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
+	prefixObjectsByCollection = "c"
+
+	// prefixTreasuryCaps + <agentID> stores a map of <ObjectID> => true
 	// Covered in: TestFoundries
-	prefixFoundries = "f"
+	prefixTreasuryCaps = "T"
 
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	// Covered in: TestNFTMint
@@ -69,28 +64,19 @@ const (
 	// Covered in: TestNFTMint
 	keyNonce = "m"
 
-	// keyNativeTokenOutputMap stores a map of <nativeTokenID> => nativeTokenOutputRec
+	// keyCoinRecords stores a map of <CoinType> => CoinRecord
 	// Covered in: TestFoundries
-	keyNativeTokenOutputMap = "TO"
-	// keyFoundryOutputRecords stores a map of <foundrySN> => foundryOutputRec
+	keyCoinRecords = "RC"
+	// keyTreasuryCapRecords stores a map of <ObjectID> => TrreasuryCapRecord
 	// Covered in: TestFoundries
-	keyFoundryOutputRecords = "FO"
-	// keyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
+	keyTreasuryCapRecords = "RT"
+	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyNFTOutputRecords = "NO"
-	// keyNFTOwner stores a map of <NFTID> => isc.AgentID
-	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyNFTOwner = "NW"
+	keyObjectRecords = "RO"
 
-	// keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
-	// Covered in: TestFoundries
-	keyNewNativeTokens = "TN"
-	// keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the OutputID
-	// Covered in: TestFoundries
-	keyNewFoundries = "FN"
-	// keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the OutputID
+	// keyObjectOwner stores a map of <ObjectID> => isc.AgentID
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyNewNFTs = "NN"
+	keyObjectOwner = "W"
 )
 
 func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
