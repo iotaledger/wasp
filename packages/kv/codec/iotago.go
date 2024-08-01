@@ -10,6 +10,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var Address = NewCodec(decodeAddress, encodeAddress)
@@ -55,23 +56,24 @@ func encodeTokenScheme(o iotago.TokenScheme) []byte {
 	return lo.Must(o.Serialize(serializer.DeSeriModeNoValidation, nil))
 }
 
-var NativeTokenID = NewCodec(decodeNativeTokenID, encodeNativeTokenID)
+var CoinType = NewCodec(decodeCoinType, encodeCoinType)
 
-func decodeNativeTokenID(b []byte) (ret isc.NativeTokenID, err error) {
+func decodeCoinType(b []byte) (ret isc.CoinType, err error) {
 	if len(b) != len(ret) {
 		return ret, fmt.Errorf("%T: bytes length must be %d", ret, len(ret))
 	}
 
-	return isc.NativeTokenIDFromBytes(b)
+	return isc.CoinTypeFromBytes(b)
 }
 
-func encodeNativeTokenID(nftID isc.NativeTokenID) []byte {
-	return nftID.Bytes()
+func encodeCoinType(coinType isc.CoinType) []byte {
+	return coinType.Bytes()
 }
 
-var NFTID = NewCodec(decodeNFTID, encodeNFTID)
+var ObjectID = NewCodec(decodeObjectID, encodeObjectID)
+var NFTID = ObjectID
 
-func decodeNFTID(b []byte) (ret isc.NFTID, err error) {
+func decodeObjectID(b []byte) (ret sui.ObjectID, err error) {
 	if len(b) != len(ret) {
 		return ret, fmt.Errorf("%T: bytes length must be %d", ret, len(ret))
 	}
@@ -79,6 +81,6 @@ func decodeNFTID(b []byte) (ret isc.NFTID, err error) {
 	return ret, nil
 }
 
-func encodeNFTID(nftID isc.NFTID) []byte {
-	return nftID[:]
+func encodeObjectID(objectID sui.ObjectID) []byte {
+	return objectID[:]
 }

@@ -6,37 +6,41 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
+// TODO: Discuss API structures once we have time for it.
+/**
+	Should we also just return a map of coins similar to isc.Assets, or should we make it "simpler" and keep the current structure of
+     * BaseTokens
+     * Coins []Coin
+*/
 func AssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.Assets, error) {
-	assets := isc.NewEmptyAssets()
-
-	baseTokens, err := iotago.DecodeUint64(assetsResponse.BaseTokens)
+	baseTokens, err := iotago.DecodeUint256(assetsResponse.BaseTokens)
 	if err != nil {
 		return nil, err
 	}
 
-	assets.BaseTokens = baseTokens
+	assets := isc.NewAssets(baseTokens)
+	/*
+		for _, nativeToken := range assetsResponse.NativeTokens {
+			nativeTokenIDHex, err2 := iotago.DecodeHex(nativeToken.Id)
+			if err2 != nil {
+				return nil, err2
+			}
 
-	for _, nativeToken := range assetsResponse.NativeTokens {
-		nativeTokenIDHex, err2 := iotago.DecodeHex(nativeToken.Id)
-		if err2 != nil {
-			return nil, err2
-		}
+			nativeTokenID, err2 := isc.NativeTokenIDFromBytes(nativeTokenIDHex)
+			if err2 != nil {
+				return nil, err2
+			}
 
-		nativeTokenID, err2 := isc.NativeTokenIDFromBytes(nativeTokenIDHex)
-		if err2 != nil {
-			return nil, err2
-		}
+			amount, err2 := iotago.DecodeUint256(nativeToken.Amount)
+			if err2 != nil {
+				return nil, err2
+			}
 
-		amount, err2 := iotago.DecodeUint256(nativeToken.Amount)
-		if err2 != nil {
-			return nil, err2
-		}
-
-		assets.NativeTokens = append(assets.NativeTokens, &iotago.NativeToken{
-			ID:     nativeTokenID,
-			Amount: amount,
-		})
-	}
+			assets.NativeTokens = append(assets.NativeTokens, &iotago.NativeToken{
+				ID:     nativeTokenID,
+				Amount: amount,
+			})
+		}*/
 
 	return assets, err
 }

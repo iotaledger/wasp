@@ -188,7 +188,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "string":
 		return fmt.Sprintf("%q", string(v))
 	case "tokenid":
-		tid, err := codec.NativeTokenID.Decode(v)
+		tid, err := codec.CoinType.Decode(v)
 		log.Check(err)
 		return tid.String()
 	case "uint8":

@@ -80,7 +80,7 @@ var (
 	)
 	ViewBalanceNativeToken = coreutil.NewViewEP21(Contract, "balanceNativeToken",
 		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamNativeTokenID, codec.NativeTokenID),
+		coreutil.FieldWithCodec(ParamNativeTokenID, codec.CoinType),
 		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
 	)
 	ViewNativeToken = coreutil.NewViewEP11(Contract, "nativeToken",
@@ -267,11 +267,11 @@ func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
 type OutputNativeTokenIDs struct{}
 
 func (OutputNativeTokenIDs) Encode(ids []isc.NativeTokenID) dict.Dict {
-	return codec.SliceToDictKeys(codec.NativeTokenID, ids)
+	return codec.SliceToDictKeys(codec.CoinType, ids)
 }
 
 func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]isc.NativeTokenID, error) {
-	return codec.SliceFromDictKeys(codec.NativeTokenID, r)
+	return codec.SliceFromDictKeys(codec.CoinType, r)
 }
 
 type OutputFungibleTokens struct{}
