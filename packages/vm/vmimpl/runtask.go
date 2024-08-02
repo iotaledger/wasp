@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 
@@ -34,6 +35,18 @@ func Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 	return res, err
 }
 
+func newVmContext(
+	task *vm.VMTask,
+	stateDraft state.StateDraft,
+	txbuilder vmtxbuilder.TransactionBuilder,
+) *vmContext {
+	return &vmContext{
+		task:       task,
+		stateDraft: stateDraft,
+		txbuilder:  txbuilder,
+	}
+}
+
 // runTask runs batch of requests on VM
 func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	if len(task.Requests) == 0 {
@@ -50,11 +63,8 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		panic(err)
 	}
 
-	vmctx := &vmContext{
-		task:       task,
-		stateDraft: stateDraft,
-	}
-
+	txbuilder := vmtxbuilder.NewTransactionBuilder()
+	vmctx := newVmContext(task, stateDraft, txbuilder)
 	vmctx.init()
 
 	// run the batch of requests
@@ -135,18 +145,6 @@ func (vmctx *vmContext) init() {
 			}
 		}
 	})
-
-	vmctx.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(
-		vmctx.task.AnchorOutput,
-		vmctx.task.AnchorOutputID,
-		vmctx.getAnchorOutputSD(),
-		vmtxbuilder.AccountsContractRead{
-			NativeTokenOutput:   vmctx.loadNativeTokenOutput,
-			FoundryOutput:       vmctx.loadFoundry,
-			NFTOutput:           vmctx.loadNFT,
-			TotalFungibleTokens: vmctx.loadTotalFungibleTokens,
-		},
-	)
 }
 
 func (vmctx *vmContext) emitEVMEventL1NFTMint(nftID iotago.NFTID, owner *isc.EthereumAddressAgentID) blockCloseCallback {

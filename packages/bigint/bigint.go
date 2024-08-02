@@ -46,3 +46,12 @@ func Inc(a *big.Int) *big.Int {
 	c := new(big.Int)
 	return c.Add(a, big.NewInt(1))
 }
+
+func IsPositive(n *big.Int) bool {
+	return n.Sign() > 0
+}
+
+func IsZero(bi *big.Int) bool {
+	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
+	return len(bi.Bits()) == 0
+}

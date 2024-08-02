@@ -1,0 +1,16 @@
+package vmtxbuilder
+
+import (
+	"math/big"
+
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/sui-go/sui"
+)
+
+type TransactionBuilder interface {
+	Clone() TransactionBuilder
+	ConsumeRequest(req isc.OnLedgerRequest) (storageDepositNeeded *big.Int)
+	SendObject(object sui.Object) (storageDepositReturned *big.Int)
+	BuildTransactionEssence(stateRoot *state.L1Commitment) sui.ProgrammableTransaction // TODO add stateMetadata?
+}

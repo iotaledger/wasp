@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -61,8 +62,8 @@ func ComputeInputsAndRemainder(
 	*iotago.BasicOutput,
 	error,
 ) {
-	//baseTokensIn := uint64(0)
-	//tokensIn := make(map[iotago.NativeTokenID]*big.Int)
+	// baseTokensIn := uint64(0)
+	// tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 	NFTsIn := make(map[iotago.NFTID]bool)
 
 	var remainder *iotago.BasicOutput
@@ -166,7 +167,7 @@ func computeRemainderOutput(_ *cryptolib.Address, inBaseTokens, outBaseTokens ui
 			}
 			// bIn >= bOut
 			s := new(big.Int).Sub(bIn, bOut)
-			if !util.IsZeroBigInt(s) {
+			if !bigint.IsZero(s) {
 				remTokens[nativeTokenID] = s
 			}
 		case !okIn && okOut:
@@ -175,7 +176,7 @@ func computeRemainderOutput(_ *cryptolib.Address, inBaseTokens, outBaseTokens ui
 		case okIn && !okOut:
 			// native token is here by accident. All goes to remainder
 			remTokens[nativeTokenID] = new(big.Int).Set(bIn)
-			if util.IsZeroBigInt(bIn) {
+			if bigint.IsZero(bIn) {
 				panic("bad input")
 			}
 		default:
@@ -225,7 +226,7 @@ func MakeSignatureAndAliasUnlockFeatures(totalInputs int, sig *cryptolib.Signatu
 	for i := range ret {
 		if i == 0 {
 			panic("refactor me: AsIotaSignature")
-			//ret[0] = &iotago.SignatureUnlock{Signature: sig.AsSuiSignature()} // TODO: move SignatureUnlock to isc-private?
+			// ret[0] = &iotago.SignatureUnlock{Signature: sig.AsSuiSignature()} // TODO: move SignatureUnlock to isc-private?
 			continue
 		}
 		ret[i] = &iotago.AliasUnlock{Reference: 0}

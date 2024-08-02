@@ -30,15 +30,6 @@ func MakeRange(from, to int) []int {
 	return a
 }
 
-func IsZeroBigInt(bi *big.Int) bool {
-	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
-	return len(bi.Bits()) == 0
-}
-
-func IsPositiveBigInt(n *big.Int) bool {
-	return n.Sign() > 0
-}
-
 func GetHashValue(obj interface{ Bytes() []byte }) hashing.HashValue {
 	return hashing.HashData(obj.Bytes())
 }
