@@ -12,6 +12,7 @@ var (
 	Big0       = big.NewInt(0)
 	Big1       = big.NewInt(1)
 	MaxUint256 = new(big.Int).Sub(new(big.Int).Lsh(Big1, 256), Big1)
+	MaxUint64  = new(big.Int).Sub(new(big.Int).Lsh(Big1, 64), Big1)
 )
 
 func ExecuteIfNotNil(function func()) {

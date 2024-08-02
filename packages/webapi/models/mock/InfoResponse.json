@@ -21,7 +21,7 @@
       "tickerSymbol": "TEST",
       "unit": "TEST",
       "subunit": "testies",
-      "decimals": 6,
+      "decimals": 9,
       "useMetricPrefix": false
     }
   }

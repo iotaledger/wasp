@@ -36,16 +36,18 @@ const (
 	PrefixMainnet NetworkPrefix = "iota"
 )
 
-const Bech32Hrp = PrefixMainnet
-const Decimals = 6
-const NetworkName = "testnet"
+const (
+	Bech32Hrp   = PrefixMainnet
+	Decimals    = 9
+	NetworkName = "testnet"
+)
 
 var Token = &BaseToken{
 	Name:            "Iota",
 	TickerSymbol:    "MIOTA",
 	Unit:            "MIOTA",
 	Subunit:         "IOTA",
-	Decimals:        6,
+	Decimals:        9,
 	UseMetricPrefix: false,
 	CoinType:        suijsonrpc.SuiCoinType,
 }

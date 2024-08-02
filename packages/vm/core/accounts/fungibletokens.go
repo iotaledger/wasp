@@ -7,119 +7,96 @@ import (
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 // CreditToAccount brings new funds to the on chain ledger
-// NOTE: this function does not take NFTs into account
-func (s *StateWriter) CreditToAccount(agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
-	if assets == nil || assets.IsEmpty() {
+func (s *StateWriter) CreditToAccount(agentID isc.AgentID, coins isc.CoinBalances, chainID isc.ChainID) {
+	if len(coins) == 0 {
 		return
 	}
-	s.creditToAccount(accountKey(agentID, chainID), assets)
-	s.creditToAccount(L2TotalsAccount, assets)
+	s.creditToAccount(accountKey(agentID, chainID), coins)
+	s.creditToAccount(L2TotalsAccount, coins)
 	s.touchAccount(agentID, chainID)
 }
 
-// creditToAccount adds assets to the internal account map
-// NOTE: this function does not take NFTs into account
-func (s *StateWriter) creditToAccount(accountKey kv.Key, assets *isc.Assets) {
-	if assets == nil || assets.IsEmpty() {
+// creditToAccount adds coins to the internal account map
+func (s *StateWriter) creditToAccount(accountKey kv.Key, coins isc.CoinBalances) {
+	if len(coins) == 0 {
 		return
 	}
 
-	if assets.BaseTokens > 0 {
-		incomingTokensFullDecimals := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.Decimals)
-		s.creditToAccountFullDecimals(accountKey, incomingTokensFullDecimals)
-	}
-	for _, nt := range assets.NativeTokens {
-		if nt.Amount.Sign() == 0 {
+	for coinType, amount := range coins {
+		if amount.Sign() == 0 {
 			continue
 		}
-		if nt.Amount.Sign() < 0 {
+		if amount.Sign() < 0 {
 			panic(ErrBadAmount)
 		}
-		balance := s.getNativeTokenAmount(accountKey, nt.ID)
-		balance.Add(balance, nt.Amount)
-		if balance.Cmp(util.MaxUint256) > 0 {
+		balance := s.getCoinBalance(accountKey, coinType)
+		balance.Add(balance, amount)
+		if balance.Cmp(util.MaxUint64) > 0 {
 			panic(ErrOverflow)
 		}
-		s.setNativeTokenAmount(accountKey, nt.ID, balance)
+		s.setCoinBalance(accountKey, coinType, balance)
 	}
 }
 
-func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
-	if !bigint.IsPositive(amount) {
+func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, wei *big.Int, chainID isc.ChainID) {
+	if !bigint.IsPositive(wei) {
 		return
 	}
-	s.creditToAccountFullDecimals(accountKey(agentID, chainID), amount)
-	s.creditToAccountFullDecimals(L2TotalsAccount, amount)
+	s.creditToAccountFullDecimals(accountKey(agentID, chainID), wei)
+	s.creditToAccountFullDecimals(L2TotalsAccount, wei)
 	s.touchAccount(agentID, chainID)
 }
 
-// creditToAccountFullDecimals adds assets to the internal account map
-func (s *StateWriter) creditToAccountFullDecimals(accountKey kv.Key, amount *big.Int) {
-	s.setBaseTokensFullDecimals(accountKey, new(big.Int).Add(s.getBaseTokensFullDecimals(accountKey), amount))
+// creditToAccountFullDecimals adds coins to the internal account map
+func (s *StateWriter) creditToAccountFullDecimals(accountKey kv.Key, wei *big.Int) {
+	s.setBaseTokensFullDecimals(accountKey, new(big.Int).Add(s.getBaseTokensFullDecimals(accountKey), wei))
 }
 
-// DebitFromAccount takes out assets balance the on chain ledger. If not enough it panics
-// NOTE: this function does not take NFTs into account
-func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) {
-	if assets == nil || assets.IsEmpty() {
+// DebitFromAccount takes out coins balance the on chain ledger. If not enough it panics
+func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalances, chainID isc.ChainID) {
+	if len(coins) == 0 {
 		return
 	}
-	if !s.debitFromAccount(accountKey(agentID, chainID), assets) {
-		panic(fmt.Errorf("cannot debit (%s) from %s: %w", assets, agentID, ErrNotEnoughFunds))
+	if !s.debitFromAccount(accountKey(agentID, chainID), coins) {
+		panic(fmt.Errorf("cannot debit (%s) from %s: %w", coins, agentID, ErrNotEnoughFunds))
 	}
-	if !s.debitFromAccount(L2TotalsAccount, assets) {
+	if !s.debitFromAccount(L2TotalsAccount, coins) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
 	s.touchAccount(agentID, chainID)
 }
 
-// debitFromAccount debits assets from the internal accounts map
+// debitFromAccount debits coins from the internal accounts map
 // NOTE: this function does not take NFTs into account
-func (s *StateWriter) debitFromAccount(accountKey kv.Key, assets *isc.Assets) bool {
-	if assets == nil || assets.IsEmpty() {
+func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances) bool {
+	if len(coins) == 0 {
 		return true
 	}
 
 	// first check, then mutate
-	mutateBaseTokens := false
-
-	baseTokensToDebit := util.BaseTokensDecimalsToEthereumDecimals(assets.BaseTokens, parameters.Decimals)
-	var baseTokensToSet *big.Int
-	if assets.BaseTokens > 0 {
-		balance := s.getBaseTokensFullDecimals(accountKey)
-		if baseTokensToDebit.Cmp(balance) > 0 {
-			return false
-		}
-		mutateBaseTokens = true
-		baseTokensToSet = new(big.Int).Sub(balance, baseTokensToDebit)
-	}
-
-	nativeTokensMutations := isc.NewEmptyAssets()
-	for _, nt := range assets.NativeTokens {
-		if nt.Amount.Sign() == 0 {
+	coinMutations := isc.NewCoinBalances()
+	for coinType, amount := range coins {
+		if amount.Sign() == 0 {
 			continue
 		}
-		if nt.Amount.Sign() < 0 {
+		if amount.Sign() < 0 {
 			panic(ErrBadAmount)
 		}
-		balance := s.getNativeTokenAmount(accountKey, nt.ID)
-		balance = balance.Sub(balance, nt.Amount)
+		balance := s.getCoinBalance(accountKey, coinType)
+		balance = balance.Sub(balance, amount)
 		if balance.Sign() < 0 {
 			return false
 		}
-		nativeTokensMutations.AddNativeTokens(nt.ID, balance)
+		coinMutations.Add(coinType, balance)
 	}
 
-	if mutateBaseTokens {
-		s.setBaseTokensFullDecimals(accountKey, baseTokensToSet)
-	}
-	for _, nt := range nativeTokensMutations.NativeTokens {
-		s.setNativeTokenAmount(accountKey, nt.ID, nt.Amount)
+	for coinType, amount := range coinMutations {
+		s.setCoinBalance(accountKey, coinType, amount)
 	}
 	return true
 }
@@ -150,14 +127,12 @@ func (s *StateWriter) debitFromAccountFullDecimals(accountKey kv.Key, amount *bi
 }
 
 // getFungibleTokens returns the fungible tokens owned by an account (base tokens extra decimals will be discarded)
-func (s *StateReader) getFungibleTokens(accountKey kv.Key) *isc.Assets {
-	ret := isc.NewEmptyAssets()
-	bts, _ := s.getBaseTokens(accountKey)
-	ret.AddBaseTokens(bts)
-	s.nativeTokensMapR(accountKey).Iterate(func(idBytes []byte, val []byte) bool {
-		ret.AddNativeTokens(
-			isc.MustNativeTokenIDFromBytes(idBytes),
-			new(big.Int).SetBytes(val),
+func (s *StateReader) getFungibleTokens(accountKey kv.Key) isc.CoinBalances {
+	ret := isc.NewCoinBalances()
+	s.coinsMapR(accountKey).Iterate(func(coinType []byte, val []byte) bool {
+		ret.Add(
+			codec.CoinType.MustDecode(coinType),
+			codec.BigIntAbs.MustDecode(val),
 		)
 		return true
 	})
@@ -165,10 +140,10 @@ func (s *StateReader) getFungibleTokens(accountKey kv.Key) *isc.Assets {
 }
 
 // GetAccountFungibleTokens returns all fungible tokens belonging to the agentID on the state
-func (s *StateReader) GetAccountFungibleTokens(agentID isc.AgentID, chainID isc.ChainID) *isc.Assets {
+func (s *StateReader) GetAccountFungibleTokens(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
 	return s.getFungibleTokens(accountKey(agentID, chainID))
 }
 
-func (s *StateReader) GetTotalL2FungibleTokens() *isc.Assets {
+func (s *StateReader) GetTotalL2FungibleTokens() isc.CoinBalances {
 	return s.getFungibleTokens(L2TotalsAccount)
 }
