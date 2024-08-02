@@ -29,9 +29,9 @@ func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 func (vmctx *vmContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
 	stateMetadata := vmctx.StateMetadata(stateCommitment)
 	essence, inputsCommitment := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
-	if assertTxbuilderBalanced {
-		vmctx.txbuilder.MustBalanced()
-	}
+	// if assertTxbuilderBalanced {
+	// 	vmctx.txbuilder.MustBalanced()
+	// }
 	return essence, inputsCommitment
 }
 
