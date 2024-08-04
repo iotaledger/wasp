@@ -192,8 +192,6 @@ interface ISCSandbox {
      */
     function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
 
-    function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
-
     /**
      * @dev Retrieves the URI of an IRC27 NFT based on its ID.
      * @param id The ID of the IRC27 NFT.
