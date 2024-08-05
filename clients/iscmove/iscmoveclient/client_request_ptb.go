@@ -12,6 +12,8 @@ func NewCreateAndSendRequestPTB(
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
+	allowanceRef *sui.ObjectRef,
+	onchainGasBudget uint64,
 ) sui.ProgrammableTransaction {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
@@ -28,6 +30,8 @@ func NewCreateAndSendRequestPTB(
 					ptb.MustPure(iscContractHname),
 					ptb.MustPure(iscFunctionHname),
 					ptb.MustPure(args),
+					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}),
+					ptb.MustPure(onchainGasBudget),
 				},
 			},
 		},

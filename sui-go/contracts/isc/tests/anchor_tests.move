@@ -70,10 +70,8 @@ module isc::anchor_tests {
 
         // ClientPTB.2 create allowance
         let mut req_allowance = allowance::new(&mut ctx);
-        let allowance_balance = coin::balance(&test_a_coin);
-        req_allowance.add_coin_allowance(allowance_balance);
-        let allowance_balance_1 = coin::balance(&test_a_coin);
-        req_allowance.add_coin_allowance(allowance_balance_1);
+        req_allowance.with_coin_allowance<TEST_A>(100);
+        req_allowance.with_coin_allowance<TEST_A>(111);
 
         // ClientPTB.3 Add the assets to the bag.
         let mut req_assets = assets_bag::new(&mut ctx);
@@ -102,8 +100,10 @@ module isc::anchor_tests {
 
         // ServerPTB.1 Now the Anchor receives off-chain an event that tracks the request and can receive it.
         //let (receipt, req_extracted_assets) = anchor.receive_request(req); // Commented because cannot be executed in this test
-        let (id, mut req_extracted_assets, req_extracted_allowance) = req.destroy(); //this is not part of the PTB
+        let (id, mut req_extracted_assets, mut req_extracted_allowance) = req.destroy(); //this is not part of the PTB
         let receipt = anchor::create_receipt_for_testing(id); //this is not part of the PTB
+        let coin_allowance = req_extracted_allowance.remove_coin_allowance<TEST_A>();
+        assert!(211 == coin_allowance);
         req_extracted_allowance.destroy();
 
         // ServerPTB.2: borrow the asset bag of the anchor

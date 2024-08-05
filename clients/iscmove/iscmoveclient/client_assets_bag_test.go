@@ -320,6 +320,9 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	assetsBagGetObjectRes, err := client.GetObject(context.Background(), suiclient.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
+
+	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner, iscPackageID)
+
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
@@ -329,6 +332,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		allowanceRef,
+		0,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,

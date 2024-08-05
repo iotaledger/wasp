@@ -22,3 +22,14 @@ type MoveBalance struct {
 type MoveUID struct {
 	ID *sui.ObjectID `json:"id"`
 }
+
+type Allowance struct {
+	CoinType        CoinType `json:"coinType"`
+	CoinObjectCount uint64   `json:"coinObjectCount"`
+}
+
+type MoveAllowance struct {
+	ID    *MoveUID
+	Name  *sui.ResourceType
+	Value *BigInt
+}

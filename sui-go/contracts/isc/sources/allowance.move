@@ -3,7 +3,6 @@
 module isc::allowance {
     use std::type_name;
     use sui::{
-        balance::Balance,
         dynamic_field as df,
     };
 
@@ -39,18 +38,17 @@ module isc::allowance {
 
     // === Add values into the Allowance ===
     
-    public fun add_coin_allowance<T>(self: &mut Allowance, allowance_balance: &Balance<T>) {
+    public fun with_coin_allowance<T>(self: &mut Allowance, allowance_balance: u64) {
         let coin_type = type_name::get<T>().into_string();
-        let balance_val = allowance_balance.value();
         if(df::exists_(&self.id, coin_type)) {
             let placed_val = df::borrow_mut<std::ascii::String, u64>(&mut self.id, coin_type);
-            *placed_val = *placed_val + balance_val;
+            *placed_val = *placed_val + allowance_balance;
         } else {
-            df::add(&mut self.id, coin_type, balance_val);
+            df::add(&mut self.id, coin_type, allowance_balance);
         }
     }
 
-    public fun add_object_allowance(self: &mut Allowance, asset_addr: address) {
+    public fun with_object_allowance(self: &mut Allowance, asset_addr: address) {
         df::add(&mut self.id, asset_addr.to_bytes(), true);
     }
 

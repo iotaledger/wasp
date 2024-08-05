@@ -80,6 +80,8 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
+	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner, iscPackageID)
+
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
@@ -89,6 +91,8 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		allowanceRef,
+		0,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
