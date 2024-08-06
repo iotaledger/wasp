@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 //nolint:gocyclo,funlen
@@ -60,8 +61,8 @@ func Encode(v interface{}) []byte {
 		return RequestID.Encode(*vt)
 	case isc.Hname:
 		return vt.Bytes()
-	case isc.NFTID:
-		return NFTID.Encode(vt)
+	case sui.ObjectID:
+		return ObjectID.Encode(vt)
 	case isc.VMErrorCode:
 		return vt.Bytes()
 	case time.Time:

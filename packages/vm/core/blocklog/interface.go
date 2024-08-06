@@ -108,28 +108,28 @@ const (
 
 type OutputRequestIDs struct{}
 
-func (OutputRequestIDs) Encode(reqIDs []isc.RequestID) dict.Dict {
-	return codec.SliceToArray(codec.RequestID, reqIDs, ParamRequestID)
+func (OutputRequestIDs) Encode(reqIDs []isc.RequestID) []byte {
+	return codec.SliceToArray(codec.RequestID, reqIDs)
 }
 
-func (OutputRequestIDs) Decode(r dict.Dict) ([]isc.RequestID, error) {
-	return codec.SliceFromArray(codec.RequestID, r, ParamRequestID)
+func (OutputRequestIDs) Decode(r []byte) ([]isc.RequestID, error) {
+	return codec.SliceFromArray(codec.RequestID, r)
 }
 
 type OutputRequestReceipt struct{}
 
-func (OutputRequestReceipt) Encode(rec *RequestReceipt) dict.Dict {
+func (OutputRequestReceipt) Encode(rec *RequestReceipt) []byte {
 	if rec == nil {
 		return nil
 	}
-	return dict.Dict{
+	return []byte{
 		ParamRequestRecord: rec.Bytes(),
 		ParamBlockIndex:    codec.Uint32.Encode(rec.BlockIndex),
 		ParamRequestIndex:  codec.Uint16.Encode(rec.RequestIndex),
 	}
 }
 
-func (OutputRequestReceipt) Decode(r dict.Dict) (*RequestReceipt, error) {
+func (OutputRequestReceipt) Decode(r []byte) (*RequestReceipt, error) {
 	if r.IsEmpty() {
 		return nil, nil
 	}
@@ -150,7 +150,7 @@ func (OutputRequestReceipt) Decode(r dict.Dict) (*RequestReceipt, error) {
 
 type OutputRequestReceipts struct{}
 
-func (OutputRequestReceipts) Encode(receipts []*RequestReceipt) dict.Dict {
+func (OutputRequestReceipts) Encode(receipts []*RequestReceipt) []byte {
 	ret := dict.New()
 	requestReceipts := collections.NewArray(ret, ParamRequestRecord)
 	for _, receipt := range receipts {
@@ -159,7 +159,7 @@ func (OutputRequestReceipts) Encode(receipts []*RequestReceipt) dict.Dict {
 	return ret
 }
 
-func (OutputRequestReceipts) Decode(r dict.Dict) ([]*RequestReceipt, error) {
+func (OutputRequestReceipts) Decode(r []byte) ([]*RequestReceipt, error) {
 	receipts := collections.NewArrayReadOnly(r, ParamRequestRecord)
 	ret := make([]*RequestReceipt, receipts.Len())
 	var err error
@@ -178,12 +178,12 @@ func (OutputRequestReceipts) Decode(r dict.Dict) ([]*RequestReceipt, error) {
 
 type OutputEvents struct{}
 
-func (OutputEvents) Encode(events []*isc.Event) dict.Dict {
-	return codec.SliceToArray(codec.NewCodecEx(isc.EventFromBytes), events, ParamEvent)
+func (OutputEvents) Encode(events []*isc.Event) []byte {
+	return codec.SliceToArray(codec.NewCodecEx(isc.EventFromBytes), events)
 }
 
-func (OutputEvents) Decode(r dict.Dict) ([]*isc.Event, error) {
-	return codec.SliceFromArray(codec.NewCodecEx(isc.EventFromBytes), r, ParamEvent)
+func (OutputEvents) Decode(r []byte) ([]*isc.Event, error) {
+	return codec.SliceFromArray(codec.NewCodecEx(isc.EventFromBytes), r)
 }
 
 type BlockRange struct {
@@ -198,8 +198,8 @@ type EventsForContractQuery struct {
 
 type InputEventsForContract struct{}
 
-func (InputEventsForContract) Encode(q EventsForContractQuery) dict.Dict {
-	r := dict.Dict{
+func (InputEventsForContract) Encode(q EventsForContractQuery) []byte {
+	r := []byte{
 		ParamContractHname: codec.Hname.Encode(q.Contract),
 	}
 	if q.BlockRange != nil {
@@ -209,7 +209,7 @@ func (InputEventsForContract) Encode(q EventsForContractQuery) dict.Dict {
 	return r
 }
 
-func (InputEventsForContract) Decode(d dict.Dict) (ret EventsForContractQuery, err error) {
+func (InputEventsForContract) Decode(d []byte) (ret EventsForContractQuery, err error) {
 	ret.Contract, err = codec.Hname.Decode(d[ParamContractHname])
 	if err != nil {
 		return

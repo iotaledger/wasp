@@ -91,7 +91,7 @@ func mintParams(
 	immutableMetadata []byte,
 	targetAgentID isc.AgentID,
 	withdrawOnMint bool,
-	collectionID sui.ObjectID{},
+	collectionID sui.ObjectID,
 ) mintParameters {
 	chainAddress := ctx.ChainID().AsAddress()
 	ret := mintParameters{
@@ -100,11 +100,11 @@ func mintParams(
 		issuerAddress:     chainAddress,
 		ownerAgentID:      targetAgentID,
 		withdrawOnMint:    withdrawOnMint,
-		collectionID:      collectionID,
+		//collectionID:      collectionID,
 	}
 
 	state := NewStateReaderFromSandbox(ctx)
-	if !collectionID.Empty() {
+	if collectionID.Length() != 0 {
 		// assert the NFT of collectionID is on-chain and owned by the caller
 		if !state.hasNFT(ctx.Caller(), collectionID) {
 			panic(errCollectionNotAllowed)

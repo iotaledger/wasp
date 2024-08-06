@@ -13,7 +13,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -96,7 +95,7 @@ func (req *OffLedgerRequestData) readEssence(rr *rwutil.Reader) {
 	rr.Read(&req.chainID)
 	rr.Read(&req.msg.Target.Contract)
 	rr.Read(&req.msg.Target.EntryPoint)
-	req.msg.Params = dict.New()
+	req.msg.Params = CallArguments{}
 	rr.Read(&req.msg.Params)
 	req.nonce = rr.ReadAmount64()
 	req.gasBudget = rr.ReadGas64()
@@ -194,7 +193,7 @@ func (req *OffLedgerRequestData) String() string {
 		req.SenderAccount().String(),
 		req.msg.Target.Contract.String(),
 		req.msg.Target.EntryPoint.String(),
-		req.msg.Params.String(),
+		req.msg.Params,
 		req.nonce,
 	)
 }

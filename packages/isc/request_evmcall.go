@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
@@ -72,7 +71,7 @@ func (req *evmOffLedgerCallRequest) Message() Message {
 	return NewMessage(
 		Hn(evmnames.Contract),
 		Hn(evmnames.FuncCallContract),
-		dict.Dict{evmnames.FieldCallMsg: evmtypes.EncodeCallMsg(req.callMsg)},
+		NewCallArguments(evmtypes.EncodeCallMsg(req.callMsg)),
 	)
 }
 

@@ -210,12 +210,12 @@ const (
 
 type OutputAddressList struct{}
 
-func (e OutputAddressList) Encode(addrs []*cryptolib.Address) dict.Dict {
-	return codec.SliceToArray(codec.Address, addrs, ParamAllowedStateControllerAddresses)
+func (e OutputAddressList) Encode(addrs []*cryptolib.Address) []byte {
+	return codec.SliceToArray(codec.Address, addrs)
 }
 
-func (e OutputAddressList) Decode(r dict.Dict) ([]*cryptolib.Address, error) {
-	return codec.SliceFromArray(codec.Address, r, ParamAllowedStateControllerAddresses)
+func (e OutputAddressList) Decode(r []byte) ([]*cryptolib.Address, error) {
+	return codec.SliceFromArray(codec.Address, r)
 }
 
 type OutputChainInfo struct{}

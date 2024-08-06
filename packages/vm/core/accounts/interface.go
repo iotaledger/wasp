@@ -232,29 +232,29 @@ func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, su
 
 type OutputNFTIDs struct{}
 
-func (OutputNFTIDs) Encode(nftIDs []sui.ObjectID) dict.Dict {
+func (OutputNFTIDs) Encode(nftIDs []sui.ObjectID) []byte {
 	// TODO: add pagination?
 	if len(nftIDs) > math.MaxUint16 {
 		panic("too many NFTs")
 	}
-	return codec.SliceToArray(codec.NFTID, nftIDs, ParamNFTIDs)
+	return codec.SliceToArray(codec.NFTID, nftIDs)
 }
 
-func (OutputNFTIDs) Decode(r dict.Dict) ([]sui.ObjectID, error) {
-	return codec.SliceFromArray(codec.NFTID, r, ParamNFTIDs)
+func (OutputNFTIDs) Decode(r []byte) ([]sui.ObjectID, error) {
+	return codec.SliceFromArray(codec.NFTID, r)
 }
 
 type OutputSerialNumberSet struct{}
 
-func (OutputSerialNumberSet) Encode(sns map[uint32]struct{}) dict.Dict {
+func (OutputSerialNumberSet) Encode(sns map[uint32]struct{}) []byte {
 	return codec.SliceToDictKeys(codec.Uint32, lo.Keys(sns))
 }
 
-func (OutputSerialNumberSet) Has(r dict.Dict, sn uint32) bool {
+func (OutputSerialNumberSet) Has(r []byte, sn uint32) bool {
 	return r.Has(kv.Key(codec.Uint32.Encode(sn)))
 }
 
-func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
+func (OutputSerialNumberSet) Decode(r []byte) (map[uint32]struct{}, error) {
 	sns, err := codec.SliceFromDictKeys(codec.Uint32, r)
 	if err != nil {
 		return nil, err
@@ -264,22 +264,22 @@ func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
 
 type OutputNativeTokenIDs struct{}
 
-func (OutputNativeTokenIDs) Encode(ids []isc.CoinType) dict.Dict {
+func (OutputNativeTokenIDs) Encode(ids []isc.CoinType) []byte {
 	return codec.SliceToDictKeys(codec.CoinType, ids)
 }
 
-func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]isc.CoinType, error) {
+func (OutputNativeTokenIDs) Decode(r []byte) ([]isc.CoinType, error) {
 	return codec.SliceFromDictKeys(codec.CoinType, r)
 }
 
 type OutputFungibleTokens struct{}
 
-func (OutputFungibleTokens) Encode(fts *isc.Assets) dict.Dict {
-	return fts.ToDict()
+func (OutputFungibleTokens) Encode(fts *isc.Assets) []byte {
+	return fts.Bytes()
 }
 
-func (OutputFungibleTokens) Decode(r dict.Dict) (*isc.Assets, error) {
-	return isc.AssetsFromDict(r)
+func (OutputFungibleTokens) Decode(r []byte) (*isc.Assets, error) {
+	return isc.AssetsFromBytes(r)
 }
 
 type OutputAccountList struct{ coreutil.RawCallArgsCodec }

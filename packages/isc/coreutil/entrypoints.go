@@ -2,9 +2,9 @@ package coreutil
 
 import (
 	"fmt"
-	
+
 	"github.com/samber/lo"
-	
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
