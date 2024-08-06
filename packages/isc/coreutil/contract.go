@@ -125,7 +125,7 @@ var (
 	_ isc.ProcessorEntryPoint = &EntryPointHandler[isc.SandboxView]{}
 )
 
-func (h *EntryPointHandler[S]) Call(ctx any) isc.CallArguments {
+func (h *EntryPointHandler[S]) Call(ctx isc.SandboxBase) isc.CallArguments {
 	return h.Handler(ctx.(S))
 }
 

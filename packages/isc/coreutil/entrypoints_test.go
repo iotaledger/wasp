@@ -133,7 +133,7 @@ func (m MockSandBox) SchemaVersion() isc.SchemaVersion {
 var TestAgentIDInput = isc.NewRandomAgentID()
 var Contract = NewContract(CoreContractAccounts)
 
-var TestFunc = NewViewEP11(Contract, "getEVMGasRatio", FieldWithCodec("", codec.AgentID), FieldWithCodec("", codec.AgentID)).
+var TestFunc = NewViewEP11(Contract, "getEVMGasRatio", FieldWithCodec(codec.AgentID), FieldWithCodec(codec.AgentID)).
 	WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
 		return id
 	})
