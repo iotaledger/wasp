@@ -61,7 +61,7 @@ var (
 	ViewAccountNFTsInCollection = coreutil.NewViewEP21(Contract, "accountNFTsInCollection",
 		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
 		coreutil.FieldWithCodec(ParamCollectionID, codec.NFTID),
-		OutputNFTIDs{},
+		coreutil.FieldWithCodec(ParamBalance, codec.ObjectID),
 	)
 	ViewNFTIDbyMintID = coreutil.NewViewEP11(Contract, "NFTIDbyMintID",
 		coreutil.FieldWithCodec(ParamMintID, codec.Bytes),
@@ -152,7 +152,7 @@ func (e EPNativeTokenCreate) Message(
 
 func (e EPNativeTokenCreate) WithHandler(f func(isc.Sandbox, *isc.IRC30NativeTokenMetadata, *iotago.TokenScheme) uint32) *coreutil.EntryPointHandler[isc.Sandbox] {
 	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-		params := ctx.Params().Dict
+		params := ctx.Params().Args
 		tokenName := codec.String.MustDecode(params[ParamTokenName])
 		tokenTickerSymbol := codec.String.MustDecode(params[ParamTokenTickerSymbol])
 		tokenDecimals := codec.Uint8.MustDecode(params[ParamTokenDecimals])
@@ -173,10 +173,7 @@ type EPNativeTokenModifySupply struct {
 }
 
 func (e EPNativeTokenModifySupply) MintTokens(foundrySN uint32, delta *big.Int) isc.Message {
-	return e.EntryPointInfo.Message(dict.Dict{
-		ParamFoundrySN:      codec.Uint32.Encode(foundrySN),
-		ParamSupplyDeltaAbs: codec.BigIntAbs.Encode(delta),
-	})
+	return e.EntryPointInfo.Message(isc.NewCallArguments(codec.Uint32.Encode(foundrySN), codec.BigIntAbs.Encode(delta)))
 }
 
 func (e EPNativeTokenModifySupply) DestroyTokens(foundrySN uint32, delta *big.Int) isc.Message {
@@ -186,7 +183,7 @@ func (e EPNativeTokenModifySupply) DestroyTokens(foundrySN uint32, delta *big.In
 
 func (e EPNativeTokenModifySupply) WithHandler(f func(isc.Sandbox, uint32, *big.Int, bool)) *coreutil.EntryPointHandler[isc.Sandbox] {
 	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-		d := ctx.Params().Dict
+		d := ctx.Params().Args
 		sn := lo.Must(codec.Uint32.Decode(d[ParamFoundrySN]))
 		delta := lo.Must(codec.BigIntAbs.Decode(d[ParamSupplyDeltaAbs]))
 		destroy := lo.Must(codec.Bool.Decode(d[ParamDestroyTokens], false))
@@ -222,7 +219,7 @@ func (e EPMintNFT) Message(
 
 func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, sui.ObjectID) []byte) *coreutil.EntryPointHandler[isc.Sandbox] {
 	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-		d := ctx.Params().Dict
+		d := ctx.Params().Args
 		immutableMetadata := lo.Must(codec.Bytes.Decode(d[ParamNFTImmutableData]))
 		target := lo.Must(codec.AgentID.Decode(d[ParamAgentID]))
 		withdraw := lo.Must(codec.Bool.Decode(d[ParamNFTWithdrawOnMint], false))
@@ -285,7 +282,7 @@ func (OutputFungibleTokens) Decode(r dict.Dict) (*isc.Assets, error) {
 	return isc.AssetsFromDict(r)
 }
 
-type OutputAccountList struct{ coreutil.RawDictCodec }
+type OutputAccountList struct{ coreutil.RawCallArgsCodec }
 
 func (OutputAccountList) DecodeAccounts(allAccounts dict.Dict, chainID isc.ChainID) ([]isc.AgentID, error) {
 	return codec.SliceFromDictKeys(

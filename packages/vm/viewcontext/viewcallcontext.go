@@ -23,7 +23,7 @@ func (ctx *ViewContext) pushCallContext(contract isc.Hname, params dict.Dict) {
 		&callContext{
 			contract: contract,
 			params: isc.Params{
-				Dict:      params,
+				Args:      params,
 				KVDecoder: kvdecoder.New(params, ctx.log),
 			},
 		})

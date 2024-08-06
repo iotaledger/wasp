@@ -58,7 +58,7 @@ type SandboxBase interface {
 type SchemaVersion uint32
 
 type Params struct {
-	Dict dict.Dict
+	Args CallArguments
 	KVDecoder
 }
 
@@ -159,12 +159,48 @@ type Privileged interface {
 	CreditToAccount(AgentID, *big.Int)
 }
 
-type Message struct {
-	Target CallTarget `json:"target"`
-	Params dict.Dict  `json:"params"`
+type CallArguments [][]byte
+
+func NewCallArguments(args ...[]byte) CallArguments {
+	callArguments := make(CallArguments, len(args))
+	for i, v := range args {
+		callArguments[i] = make([]byte, len(v))
+		copy(callArguments[i], v)
+	}
+	return callArguments
 }
 
-func NewMessage(contract Hname, ep Hname, params ...dict.Dict) Message {
+func (c CallArguments) Clone() CallArguments {
+	clone := make(CallArguments, len(c))
+	for i, v := range c {
+		clone[i] = make([]byte, len(v))
+		copy(clone[i], v)
+	}
+	return clone
+}
+
+func (c CallArguments) At(index int) ([]byte, error) {
+	if (index < 0) || (index >= len(c)) {
+		return nil, fmt.Errorf("index out of range")
+	}
+
+	return c[index], nil
+}
+
+func (c CallArguments) MustAt(index int) []byte {
+	ret, err := c.At(index)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+type Message struct {
+	Target CallTarget    `json:"target"`
+	Params CallArguments `json:"params"`
+}
+
+func NewMessage(contract Hname, ep Hname, params ...CallArguments) Message {
 	msg := Message{
 		Target: CallTarget{Contract: contract, EntryPoint: ep},
 	}
@@ -178,7 +214,7 @@ func (m Message) String() string {
 	return fmt.Sprintf("Message(%s, %s, %s)", m.Target.Contract, m.Target.EntryPoint, m.Params)
 }
 
-func NewMessageFromNames(contract string, ep string, params ...dict.Dict) Message {
+func NewMessageFromNames(contract string, ep string, params ...CallArguments) Message {
 	return NewMessage(Hn(contract), Hn(ep), params...)
 }
 
