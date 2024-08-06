@@ -3,14 +3,11 @@ package accounts
 import (
 	"math/big"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -26,40 +23,29 @@ func CommonAccount() isc.AgentID {
 var Processor = Contract.Processor(nil,
 	// funcs
 	FuncDeposit.WithHandler(deposit),
-	FuncMintNFT.WithHandler(mintNFT),
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
 
-	// Kept for compatibility
-	FuncFoundryCreateNew.WithHandler(foundryCreateNew),
-	//
-	FuncNativeTokenCreate.WithHandler(nativeTokenCreate),
-	FuncNativeTokenModifySupply.WithHandler(nativeTokenModifySupply),
-	FuncNativeTokenDestroy.WithHandler(nativeTokenDestroy),
-
 	// views
-	ViewAccountNFTs.WithHandler(viewAccountNFTs),
-	ViewAccountNFTAmount.WithHandler(viewAccountNFTAmount),
-	ViewAccountNFTsInCollection.WithHandler(viewAccountNFTsInCollection),
-	ViewAccountNFTAmountInCollection.WithHandler(viewAccountNFTAmountInCollection),
-	ViewNFTIDbyMintID.WithHandler(viewNFTIDbyMintID),
-	ViewAccountFoundries.WithHandler(viewAccountFoundries),
+	ViewAccountObjects.WithHandler(viewAccountObjects),
+	ViewAccountObjectsInCollection.WithHandler(viewAccountObjectsInCollection),
+	ViewAccountTreasuries.WithHandler(viewAccountTreasuries),
 	ViewBalance.WithHandler(viewBalance),
 	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
 	ViewBalanceBaseTokenEVM.WithHandler(viewBalanceBaseTokenEVM),
-	ViewBalanceNativeToken.WithHandler(viewBalanceNativeToken),
-	ViewNativeToken.WithHandler(viewFoundryOutput),
+	ViewBalanceCoin.WithHandler(viewBalanceCoin),
+	ViewTreasuryCapID.WithHandler(viewTreasuryCapID),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
-	ViewGetNativeTokenIDRegistry.WithHandler(viewGetNativeTokenIDRegistry),
-	ViewNFTData.WithHandler(viewNFTData),
+	ViewGetCoinRegistry.WithHandler(viewGetCoinRegistry),
+	ViewObjectBCS.WithHandler(viewObjectBCS),
 	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 
 // this expects the origin amount minus SD
 func (s *StateWriter) SetInitialState(baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	s.CreditToAccount(CommonAccount(), isc.NewAssetsBaseTokens(baseTokensOnAnchor), isc.ChainID{})
+	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(isc.BaseTokenType, new(big.Int).SetUint64(baseTokensOnAnchor)), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -109,9 +95,6 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.withdraw.begin -- %s", allowance)
 	if allowance.IsEmpty() {
 		panic(ErrNotEnoughAllowance)
-	}
-	if len(allowance.NFTs) > 1 {
-		panic(ErrTooManyNFTsInAllowance)
 	}
 
 	caller := ctx.Caller()
@@ -183,9 +166,6 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 	if allowance.IsEmpty() {
 		panic(ErrNotEnoughAllowance)
 	}
-	if len(allowance.NFTs) > 1 {
-		panic(ErrTooManyNFTsInAllowance)
-	}
 
 	caller := ctx.Caller()
 	callerContract, ok := caller.(*isc.ContractAgentID)
@@ -205,10 +185,11 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 
 	// deduct the gas reserve GAS2 from the allowance, if possible
 	gasReserve := coreutil.FromOptional(optionalGasReserve, gas.LimitsDefault.MinGasPerRequest)
-	if allowance.BaseTokens < gasReserve {
+	gasReserveTokens := ctx.ChainInfo().GasFeePolicy.FeeFromGas(gasReserve, nil, 0)
+	if bigint.Less(allowance.BaseTokens(), gasReserveTokens) {
 		panic(ErrNotEnoughAllowance)
 	}
-	allowance.BaseTokens -= gasReserve
+	allowance.Coins.Sub(isc.BaseTokenType, gasReserveTokens)
 
 	// Warning: this will transfer all assets into the accounts core contract's L2 account.
 	// Be sure everything transfers out again, or assets will be stuck forever.
@@ -226,7 +207,7 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 			Message: isc.NewMessage(
 				Contract.Hname(),
 				FuncTransferAllowanceTo.Hname(),
-				dict.Dict{ParamAgentID: callerContract.Bytes()},
+				dict.Dict{"i1": callerContract.Bytes()},
 			),
 			Allowance: allowance,
 			GasBudget: gasReserve,
@@ -237,140 +218,4 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 		allowance.String(),
 	)
 	return nil
-}
-
-func nativeTokenCreate(
-	ctx isc.Sandbox,
-	metadata *isc.IRC30NativeTokenMetadata,
-	optionalTokenScheme *iotago.TokenScheme,
-) uint32 {
-	sn := foundryCreateNewWithMetadata(ctx, optionalTokenScheme, metadata.Bytes())
-	// Register native token as an evm ERC20 token
-	ctx.Privileged().
-		CallOnBehalfOf(ctx.Caller(), evm.FuncRegisterERC20NativeToken.Message(evm.ERC20NativeTokenParams{
-			FoundrySN:    sn,
-			Name:         metadata.Name,
-			TickerSymbol: metadata.Symbol,
-			Decimals:     metadata.Decimals,
-		}), ctx.AllowanceAvailable())
-	return sn
-}
-
-func foundryCreateNewWithMetadata(ctx isc.Sandbox, optionalTokenScheme *iotago.TokenScheme, metadata []byte) uint32 {
-	ctx.Log().Debugf("accounts.foundryCreateNew")
-
-	tokenScheme := coreutil.FromOptional[iotago.TokenScheme](optionalTokenScheme, &iotago.SimpleTokenScheme{})
-	ts := util.MustTokenScheme(tokenScheme)
-	ts.MeltedTokens = util.Big0
-	ts.MintedTokens = util.Big0
-
-	// create UTXO
-	sn, storageDepositConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, metadata)
-	ctx.Requiref(storageDepositConsumed > 0, "storage deposit Consumed > 0: assert failed")
-	// storage deposit for the foundry is taken from the allowance and removed from L2 ledger
-	debitBaseTokensFromAllowance(ctx, storageDepositConsumed, ctx.ChainID())
-
-	// add to the ownership list of the account
-	NewStateWriterFromSandbox(ctx).addFoundryToAccount(ctx.Caller(), sn)
-
-	eventFoundryCreated(ctx, sn)
-
-	return sn
-}
-
-// Params:
-// - token scheme
-// - must be enough allowance for the storage deposit
-func foundryCreateNew(ctx isc.Sandbox, optionalTokenScheme *iotago.TokenScheme) dict.Dict {
-	sn := foundryCreateNewWithMetadata(ctx, optionalTokenScheme, nil)
-
-	return dict.Dict{
-		ParamFoundrySN: codec.Uint32.Encode(sn),
-	}
-}
-
-var errFoundryWithCirculatingSupply = coreerrors.Register("foundry must have zero circulating supply").Create()
-
-// nativeTokenDestroy destroys foundry if that is possible
-func nativeTokenDestroy(ctx isc.Sandbox, sn uint32) dict.Dict {
-	ctx.Log().Debugf("accounts.nativeTokenDestroy")
-	// check if foundry is controlled by the caller
-	state := NewStateWriterFromSandbox(ctx)
-	caller := ctx.Caller()
-	if !state.hasFoundry(caller, sn) {
-		panic(vm.ErrUnauthorized)
-	}
-
-	out, _ := state.GetFoundryOutput(sn, ctx.ChainID())
-	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
-	if !bigint.IsZero(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)) {
-		panic(errFoundryWithCirculatingSupply)
-	}
-
-	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
-
-	state.deleteFoundryFromAccount(caller, sn)
-	state.DeleteFoundryOutput(sn)
-	// the storage deposit goes to the caller's account
-	state.CreditToAccount(
-		caller,
-		&isc.Assets{BaseTokens: storageDepositReleased},
-		ctx.ChainID(),
-	)
-	eventFoundryDestroyed(ctx, sn)
-	return nil
-}
-
-// nativeTokenModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
-func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy bool) {
-	if bigint.IsZero(delta) {
-		return
-	}
-	state := NewStateWriterFromSandbox(ctx)
-	caller := ctx.Caller()
-	// check if foundry is controlled by the caller
-	if !state.hasFoundry(caller, sn) {
-		panic(vm.ErrUnauthorized)
-	}
-
-	out, _ := state.GetFoundryOutput(sn, ctx.ChainID())
-	if out == nil {
-		panic(errFoundryNotFound)
-	}
-
-	nativeTokenID, err := out.NativeTokenID()
-	ctx.RequireNoError(err, "internal")
-
-	// accrue change on the caller's account
-	// update native tokens on L2 ledger and transit foundry UTXO
-	var storageDepositAdjustment int64
-	if deltaAssets := isc.NewEmptyAssets().AddNativeTokens(nativeTokenID, delta); destroy {
-		// take tokens to destroy from allowance
-		accountID := ctx.AccountID()
-		ctx.TransferAllowedFunds(accountID,
-			isc.NewAssets(0, isc.NativeTokens{
-				&isc.NativeToken{
-					ID:     nativeTokenID,
-					Amount: delta,
-				},
-			}),
-		)
-		state.DebitFromAccount(accountID, deltaAssets, ctx.ChainID())
-		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
-	} else {
-		state.CreditToAccount(caller, deltaAssets, ctx.ChainID())
-		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
-	}
-
-	// adjust base tokens on L2 due to the possible change in storage deposit
-	switch {
-	case storageDepositAdjustment < 0:
-		// storage deposit is taken from the allowance of the caller
-		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment), ctx.ChainID())
-	case storageDepositAdjustment > 0:
-		// storage deposit is returned to the caller account
-		state.CreditToAccount(caller, isc.NewAssetsBaseTokens(uint64(storageDepositAdjustment)), ctx.ChainID())
-	}
-	eventFoundryModified(ctx, sn)
-	return
 }
