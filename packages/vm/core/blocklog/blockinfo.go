@@ -5,10 +5,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -22,7 +21,7 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
-	PreviousAliasOutput   *isc.AliasOutputWithID // nil for block #0
+	PreviousAnchorRef     *iscmove.RefWithObject[iscmove.Anchor]
 	GasBurned             uint64
 	GasFeeCharged         uint64
 }
@@ -35,10 +34,10 @@ func (bi *BlockInfo) RequestTimestamp(requestIndex uint16) time.Time {
 }
 
 func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
-	if bi.PreviousAliasOutput == nil {
+	if bi.PreviousAnchorRef == nil {
 		return nil
 	}
-	l1c, err := transaction.L1CommitmentFromAliasOutput(bi.PreviousAliasOutput.GetAliasOutput())
+	l1c, err := state.NewL1CommitmentFromAnchor(bi.PreviousAnchorRef.Object)
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +52,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("\tTotal requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("\toff-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("\tSuccessful requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("\tPrev AliasOutput: %s\n", bi.PreviousAliasOutput.String())
+	ret += fmt.Sprintf("\tPrev AliasOutput: %s\n", bi.PreviousAnchorRef.ObjectID.ShortString())
 	ret += fmt.Sprintf("\tGas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("\tGas fee charged: %d\n", bi.GasFeeCharged)
 	ret += "}\n"
@@ -74,10 +73,10 @@ func BlockInfoKey(index uint32) []byte {
 }
 
 func (bi *BlockInfo) BlockIndex() uint32 {
-	if bi.PreviousAliasOutput == nil {
+	if bi.PreviousAnchorRef == nil {
 		return 0
 	}
-	return bi.PreviousAliasOutput.GetStateIndex() + 1
+	return bi.PreviousAnchorRef.Object.StateIndex + 1
 }
 
 func (bi *BlockInfo) Read(r io.Reader) error {
@@ -89,8 +88,8 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	bi.NumOffLedgerRequests = rr.ReadUint16()
 	hasPreviousAliasOutput := rr.ReadBool()
 	if hasPreviousAliasOutput {
-		bi.PreviousAliasOutput = &isc.AliasOutputWithID{}
-		rr.Read(bi.PreviousAliasOutput)
+		bi.PreviousAnchorRef = &iscmove.RefWithObject[iscmove.Anchor]{}
+		rr.Read(bi.PreviousAnchorRef)
 	}
 	bi.GasBurned = rr.ReadGas64()
 	bi.GasFeeCharged = rr.ReadGas64()
@@ -104,9 +103,9 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	ww.WriteUint16(bi.TotalRequests)
 	ww.WriteUint16(bi.NumSuccessfulRequests)
 	ww.WriteUint16(bi.NumOffLedgerRequests)
-	ww.WriteBool(bi.PreviousAliasOutput != nil)
-	if bi.PreviousAliasOutput != nil {
-		ww.Write(bi.PreviousAliasOutput)
+	ww.WriteBool(bi.PreviousAnchorRef != nil)
+	if bi.PreviousAnchorRef != nil {
+		ww.Write(bi.PreviousAnchorRef)
 	}
 	ww.WriteGas64(bi.GasBurned)
 	ww.WriteGas64(bi.GasFeeCharged)
