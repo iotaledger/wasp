@@ -17,45 +17,45 @@ var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 var (
 	// Funcs
 	FuncRetryUnprocessable = coreutil.NewEP1(Contract, "retryUnprocessable",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
+		coreutil.FieldWithCodec(codec.RequestID),
 	)
 
 	// Views
 	ViewGetBlockInfo = coreutil.NewViewEP12(Contract, "getBlockInfo",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockInfo, codec.NewCodecEx(BlockInfoFromBytes)),
+		coreutil.FieldWithCodecOptional(codec.Uint32),
+		coreutil.FieldWithCodec(codec.Uint32),
+		coreutil.FieldWithCodec(codec.NewCodecEx(BlockInfoFromBytes)),
 	)
 	ViewGetRequestIDsForBlock = coreutil.NewViewEP12(Contract, "getRequestIDsForBlock",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
+		coreutil.FieldWithCodecOptional(codec.Uint32),
+		coreutil.FieldWithCodec(codec.Uint32),
 		OutputRequestIDs{},
 	)
 	ViewGetRequestReceipt = coreutil.NewViewEP11(Contract, "getRequestReceipt",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
+		coreutil.FieldWithCodec(codec.RequestID),
 		OutputRequestReceipt{},
 	)
 	ViewGetRequestReceiptsForBlock = coreutil.NewViewEP12(Contract, "getRequestReceiptsForBlock",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
+		coreutil.FieldWithCodecOptional(codec.Uint32),
+		coreutil.FieldWithCodec(codec.Uint32),
 		OutputRequestReceipts{},
 	)
 	ViewIsRequestProcessed = coreutil.NewViewEP11(Contract, "isRequestProcessed",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-		coreutil.FieldWithCodec(ParamRequestProcessed, codec.Bool),
+		coreutil.FieldWithCodec(codec.RequestID),
+		coreutil.FieldWithCodec(codec.Bool),
 	)
 	ViewGetEventsForRequest = coreutil.NewViewEP11(Contract, "getEventsForRequest",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
+		coreutil.FieldWithCodec(codec.RequestID),
 		OutputEvents{},
 	)
 	ViewGetEventsForBlock = coreutil.NewViewEP12(Contract, "getEventsForBlock",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
+		coreutil.FieldWithCodecOptional(codec.Uint32),
+		coreutil.FieldWithCodec(codec.Uint32),
 		OutputEvents{},
 	)
 	ViewHasUnprocessable = coreutil.NewViewEP11(Contract, "hasUnprocessable",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-		coreutil.FieldWithCodec(ParamUnprocessableRequestExists, codec.Bool),
+		coreutil.FieldWithCodec(codec.RequestID),
+		coreutil.FieldWithCodec(codec.Bool),
 	)
 )
 

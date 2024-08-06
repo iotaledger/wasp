@@ -6,7 +6,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -46,7 +45,6 @@ func (RawCallArgsCodec) Encode(d []byte) []byte {
 
 // Field is a CallArgsCodec that converts a single value into a single dict key
 type Field[T any] struct {
-	Key   kv.Key
 	Codec codec.Codec[T]
 }
 
@@ -62,8 +60,8 @@ func (f Field[T]) Decode(d []byte) (T, error) {
 	return f.Codec.Decode(d)
 }
 
-func FieldWithCodec[T any](key kv.Key, codec codec.Codec[T]) Field[T] {
-	return Field[T]{Key: key, Codec: codec}
+func FieldWithCodec[T any](codec codec.Codec[T]) Field[T] {
+	return Field[T]{Codec: codec}
 }
 
 // OptionalCodec is a Codec that converts to/from an optional value of type T.
@@ -98,8 +96,8 @@ func (c *OptionalCodec[T]) Encode(v *T) []byte {
 }
 
 // FieldWithCodecOptional returns a Field that accepts an optional value
-func FieldWithCodecOptional[T any](key kv.Key, c codec.Codec[T]) Field[*T] {
-	return Field[*T]{Key: key, Codec: &OptionalCodec[T]{Codec: c}}
+func FieldWithCodecOptional[T any](c codec.Codec[T]) Field[*T] {
+	return Field[*T]{Codec: &OptionalCodec[T]{Codec: c}}
 }
 
 // EP0 is a utility type for entry points that receive 0 parameters

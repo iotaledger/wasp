@@ -22,83 +22,83 @@ var (
 	FuncDeposit = coreutil.NewEP0(Contract, "deposit")
 	// Kept for compatibility reasons
 	FuncFoundryCreateNew = coreutil.NewEP1(Contract, "foundryCreateNew",
-		coreutil.FieldWithCodecOptional(ParamTokenScheme, codec.TokenScheme),
+		coreutil.FieldWithCodecOptional(codec.TokenScheme),
 	)
 	// TODO implement grant/claim protocol of moving ownership of the foundry
 	//  Including ownership of the foundry by the common account/chain owner
 	FuncNativeTokenCreate       = EPNativeTokenCreate{EntryPointInfo: Contract.Func("nativeTokenCreate")}
 	FuncNativeTokenModifySupply = EPNativeTokenModifySupply{EntryPointInfo: Contract.Func("nativeTokenModifySupply")}
 	FuncNativeTokenDestroy      = coreutil.NewEP1(Contract, "nativeTokenDestroy",
-		coreutil.FieldWithCodec(ParamFoundrySN, codec.Uint32),
+		coreutil.FieldWithCodec(codec.Uint32),
 	)
 	FuncMintNFT                = EPMintNFT{EntryPointInfo: Contract.Func("mintNFT")}
 	FuncTransferAccountToChain = coreutil.NewEP1(Contract, "transferAccountToChain",
-		coreutil.FieldWithCodecOptional(ParamGasReserve, codec.Uint64),
+		coreutil.FieldWithCodecOptional(codec.Uint64),
 	)
 	FuncTransferAllowanceTo = coreutil.NewEP1(Contract, "transferAllowanceTo",
-		coreutil.FieldWithCodec(ParamAgentID, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	FuncWithdraw = coreutil.NewEP0(Contract, "withdraw")
 
 	// Views
 	ViewAccountFoundries = coreutil.NewViewEP11(Contract, "accountFoundries",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
 		OutputSerialNumberSet{},
 	)
 	ViewAccountNFTAmount = coreutil.NewViewEP11(Contract, "accountNFTAmount",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamNFTAmount, codec.Uint32),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.Uint32),
 	)
 	ViewAccountNFTAmountInCollection = coreutil.NewViewEP21(Contract, "accountNFTAmountInCollection",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamCollectionID, codec.NFTID),
-		coreutil.FieldWithCodec(ParamNFTAmount, codec.Uint32),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.NFTID),
+		coreutil.FieldWithCodec(codec.Uint32),
 	)
 	ViewAccountNFTs = coreutil.NewViewEP11(Contract, "accountNFTs",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
 		OutputNFTIDs{},
 	)
 	ViewAccountNFTsInCollection = coreutil.NewViewEP21(Contract, "accountNFTsInCollection",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamCollectionID, codec.NFTID),
-		coreutil.FieldWithCodec(ParamBalance, codec.ObjectID),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.NFTID),
+		coreutil.FieldWithCodec(codec.ObjectID),
 	)
 	ViewNFTIDbyMintID = coreutil.NewViewEP11(Contract, "NFTIDbyMintID",
-		coreutil.FieldWithCodec(ParamMintID, codec.Bytes),
-		coreutil.FieldWithCodec(ParamNFTID, codec.NFTID),
+		coreutil.FieldWithCodec(codec.Bytes),
+		coreutil.FieldWithCodec(codec.NFTID),
 	)
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
 		OutputFungibleTokens{},
 	)
 	ViewBalanceBaseToken = coreutil.NewViewEP11(Contract, "balanceBaseToken",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.BigIntAbs),
 	)
 	ViewBalanceBaseTokenEVM = coreutil.NewViewEP11(Contract, "balanceBaseTokenEVM",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.BigIntAbs),
 	)
 	ViewBalanceNativeToken = coreutil.NewViewEP21(Contract, "balanceNativeToken",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamNativeTokenID, codec.CoinType),
-		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.CoinType),
+		coreutil.FieldWithCodec(codec.BigIntAbs),
 	)
 	ViewNativeToken = coreutil.NewViewEP11(Contract, "nativeToken",
-		coreutil.FieldWithCodec(ParamFoundrySN, codec.Uint32),
-		coreutil.FieldWithCodec(ParamFoundryOutputBin, codec.ObjectID), // TODO: refactor me (Output was removed and ObjectID used instead)
+		coreutil.FieldWithCodec(codec.Uint32),
+		coreutil.FieldWithCodec(codec.ObjectID), // TODO: refactor me (Output was removed and ObjectID used instead)
 	)
 
 	ViewGetAccountNonce = coreutil.NewViewEP11(Contract, "getAccountNonce",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamAccountNonce, codec.Uint64),
+		coreutil.FieldWithCodecOptional(codec.AgentID),
+		coreutil.FieldWithCodec(codec.Uint64),
 	)
 	ViewGetNativeTokenIDRegistry = coreutil.NewViewEP01(Contract, "getNativeTokenIDRegistry",
 		OutputNativeTokenIDs{},
 	)
 	ViewNFTData = coreutil.NewViewEP11(Contract, "nftData",
-		coreutil.FieldWithCodec(ParamNFTID, codec.NFTID),
-		coreutil.FieldWithCodec(ParamNFTData, codec.NewCodecEx(isc.NFTFromBytes)),
+		coreutil.FieldWithCodec(codec.NFTID),
+		coreutil.FieldWithCodec(codec.NewCodecEx(isc.NFTFromBytes)),
 	)
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",
 		OutputFungibleTokens{},

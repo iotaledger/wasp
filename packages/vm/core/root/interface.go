@@ -15,20 +15,20 @@ var (
 	// Funcs
 	FuncDeployContract        = EPDeployContract{EntryPointInfo: Contract.Func("deployContract")}
 	FuncGrantDeployPermission = coreutil.NewEP1(Contract, "grantDeployPermission",
-		coreutil.FieldWithCodec(ParamDeployer, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	FuncRevokeDeployPermission = coreutil.NewEP1(Contract, "revokeDeployPermission",
-		coreutil.FieldWithCodec(ParamDeployer, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	FuncRequireDeployPermissions = coreutil.NewEP1(Contract, "requireDeployPermissions",
-		coreutil.FieldWithCodec(ParamDeployPermissionsEnabled, codec.Bool),
+		coreutil.FieldWithCodec(codec.Bool),
 	)
 
 	// Views
 	ViewFindContract = coreutil.NewViewEP12(Contract, "findContract",
-		coreutil.FieldWithCodec(ParamHname, codec.Hname),
-		coreutil.FieldWithCodec(ParamContractFound, codec.Bool),
-		coreutil.FieldWithCodec(ParamContractRecData, ContractRegistryCodec),
+		coreutil.FieldWithCodec(codec.Hname),
+		coreutil.FieldWithCodec(codec.Bool),
+		coreutil.FieldWithCodec(ContractRegistryCodec),
 	)
 	ViewGetContractRecords = coreutil.NewViewEP01(Contract, "getContractRecords",
 		OutputContractRecords{},
