@@ -6,7 +6,6 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -265,13 +264,13 @@ func (s *StateReader) getRequestRecordDataByRef(blockIndex uint32, requestIndex 
 	return recBin, true
 }
 
-func (s *StateReader) GetOutputID(stateIndex uint32, outputIndex uint16) (iotago.OutputID, bool) {
-	blockInfo, ok := s.GetBlockInfo(stateIndex + 1)
-	if !ok {
-		return iotago.OutputID{}, false
-	}
-	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), true
-}
+// func (s *StateReader) GetOutputID(stateIndex uint32, outputIndex uint16) (iotago.OutputID, bool) {
+// 	blockInfo, ok := s.GetBlockInfo(stateIndex + 1)
+// 	if !ok {
+// 		return iotago.OutputID{}, false
+// 	}
+// 	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.PreviousAliasOutput.TransactionID(), outputIndex), true
+// }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
 func getBlockIndexParams(ctx isc.SandboxView, blockIndexOptional *uint32) uint32 {
