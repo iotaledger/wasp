@@ -134,7 +134,6 @@ type Settings struct {
 type mempoolImpl struct {
 	chainID                        isc.ChainID
 	tangleTime                     time.Time
-	timePool                       TimePool                         // TODO limit this pool
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
 	offLedgerPool                  *OffLedgerPool
 	distSync                       gpa.GPA
@@ -234,7 +233,6 @@ func New(
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
 		tangleTime:                     time.Time{},
-		timePool:                       NewTimePool(settings.MaxTimedInPool, metrics.SetTimePoolSize, log.Named("TIM")),
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
 		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
 		chainHeadAO:                    nil,
@@ -769,7 +767,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	}
 	//
 	// Check, maybe mempool already has it.
-	if mpi.onLedgerPool.Has(requestRef) || mpi.timePool.Has(requestRef) {
+	if mpi.onLedgerPool.Has(requestRef) {
 		mpi.log.Warnf("request already in the mempool, ID=%v", requestID)
 		return
 	}
@@ -800,13 +798,6 @@ func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerReque
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	oldTangleTime := mpi.tangleTime
 	mpi.tangleTime = tangleTime
-	//
-	// Add requests from time locked pool.
-	reqs := mpi.timePool.TakeTill(tangleTime)
-	for _, req := range reqs {
-		mpi.onLedgerPool.Add(req)
-		mpi.metrics.IncRequestsReceived(req)
-	}
 	//
 	// Notify existing on-ledger requests if that's first time update.
 	if oldTangleTime.IsZero() {
@@ -937,7 +928,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 
 	// periodically try to refresh On-ledger requests that might have been dropped
 	if time.Since(mpi.lastRefreshTimestamp) > mpi.settings.OnLedgerRefreshMinInterval {
-		if mpi.onLedgerPool.ShouldRefreshRequests() || mpi.timePool.ShouldRefreshRequests() {
+		if mpi.onLedgerPool.ShouldRefreshRequests() {
 			mpi.refreshOnLedgerRequests()
 			mpi.lastRefreshTimestamp = time.Now()
 		}
@@ -989,7 +980,6 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
 	mpi.onLedgerPool.Cleanup(unprocessedPredicate[isc.OnLedgerRequest](chainState, mpi.log))
 	mpi.offLedgerPool.Cleanup(unprocessedPredicate[isc.OffLedgerRequest](chainState, mpi.log))
-	mpi.timePool.Cleanup(unprocessedPredicate[isc.OnLedgerRequest](chainState, mpi.log))
 }
 
 func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
