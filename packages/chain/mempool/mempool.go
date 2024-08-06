@@ -97,7 +97,7 @@ type Mempool interface {
 	// It can mean simple advance of the chain, or a rollback or a reorg.
 	// This function is guaranteed to be called in the order, which is
 	// considered the chain block order by the ChainMgr.
-	TrackNewChainHead(st state.State, from, till *iscmove.Anchor, added, removed []state.Block) <-chan bool
+	TrackNewChainHead(st state.State, from, till *iscmove.RefWithObject[iscmove.Anchor], added, removed []state.Block) <-chan bool
 	// Invoked by the chain when a new off-ledger request is received from a node user.
 	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
@@ -134,11 +134,10 @@ type Settings struct {
 type mempoolImpl struct {
 	chainID                        isc.ChainID
 	tangleTime                     time.Time
-	timePool                       TimePool                         // TODO limit this pool
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
 	offLedgerPool                  *OffLedgerPool
 	distSync                       gpa.GPA
-	chainHeadAO                    *iscmove.Anchor
+	chainHeadAO                    *iscmove.RefWithObject[iscmove.Anchor]
 	chainHeadState                 state.State
 	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
 	serverNodes                    []*cryptolib.PublicKey
@@ -191,7 +190,7 @@ type reqConsensusInstancesUpdated struct {
 
 type reqConsensusProposal struct {
 	ctx         context.Context
-	aliasOutput *iscmove.Anchor
+	aliasOutput *iscmove.RefWithObject[iscmove.Anchor]
 	consensusID consGR.ConsensusID
 	responseCh  chan<- []*isc.RequestRef
 }
@@ -209,8 +208,8 @@ type reqConsensusRequests struct {
 
 type reqTrackNewChainHead struct {
 	st         state.State
-	from       *iscmove.Anchor
-	till       *iscmove.Anchor
+	from       *iscmove.RefWithObject[iscmove.Anchor]
+	till       *iscmove.RefWithObject[iscmove.Anchor]
 	added      []state.Block
 	removed    []state.Block
 	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
@@ -234,7 +233,6 @@ func New(
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
 		tangleTime:                     time.Time{},
-		timePool:                       NewTimePool(settings.MaxTimedInPool, metrics.SetTimePoolSize, log.Named("TIM")),
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
 		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
 		chainHeadAO:                    nil,
@@ -300,7 +298,7 @@ func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
-func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *iscmove.Anchor, added, removed []state.Block) <-chan bool {
+func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *iscmove.RefWithObject[iscmove.Anchor], added, removed []state.Block) <-chan bool {
 	responseCh := make(chan bool)
 	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed, responseCh}
 	return responseCh
@@ -338,7 +336,7 @@ func (mpi *mempoolImpl) ConsensusInstancesUpdated(activeConsensusInstances []con
 	}
 }
 
-func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.Anchor, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
+func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.RefWithObject[iscmove.Anchor], consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposal{
 		ctx:         ctx,
@@ -591,7 +589,7 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 // This implementation only tracks a single branch. So, we will only respond
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
-	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
+	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(&mpi.chainHeadAO.ObjectRef) {
 		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.aliasOutput)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
@@ -607,14 +605,8 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 	reqRefs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
 		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
-			if isc.RequestIsExpired(e.req, mpi.tangleTime) {
-				mpi.onLedgerPool.Remove(e.req) // Drop it from the mempool
-				return true
-			}
-			if isc.RequestIsUnlockable(e.req, mpi.chainID.AsAddress(), mpi.tangleTime) {
-				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
-				e.proposedFor = append(e.proposedFor, consensusID)
-			}
+			reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+			e.proposedFor = append(e.proposedFor, consensusID)
 			if len(reqRefs) >= mpi.settings.MaxOnledgerToPropose {
 				return false
 			}
@@ -764,10 +756,10 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	requestRef := isc.RequestRefFromRequest(request)
 	//
 	// TODO: Do not process anything with SDRUC for now.
-	if _, ok := request.Features().ReturnAmount(); ok {
+	/*if _, ok := request.Features().ReturnAmount(); ok {
 		mpi.log.Warnf("dropping request, because it has ReturnAmount, ID=%v", requestID)
 		return
-	}
+	}*/
 	if request.SenderAccount() == nil {
 		// do not process requests without the sender feature
 		mpi.log.Warnf("dropping request, because it has no sender feature, ID=%v", requestID)
@@ -775,7 +767,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	}
 	//
 	// Check, maybe mempool already has it.
-	if mpi.onLedgerPool.Has(requestRef) || mpi.timePool.Has(requestRef) {
+	if mpi.onLedgerPool.Has(requestRef) {
 		mpi.log.Warnf("request already in the mempool, ID=%v", requestID)
 		return
 	}
@@ -793,19 +785,6 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	}
 	//
 	// Add the request either to the onLedger request pool or time-locked request pool.
-	reqUnlockCondSet := request.Output().UnlockConditionSet()
-	timeLock := reqUnlockCondSet.Timelock()
-	if timeLock != nil {
-		expiration := reqUnlockCondSet.Expiration()
-		if expiration != nil && timeLock.UnixTime >= expiration.UnixTime {
-			// can never be processed, just reject
-			return
-		}
-		if mpi.tangleTime.IsZero() || timeLock.UnixTime > uint32(mpi.tangleTime.Unix()) {
-			mpi.timePool.AddRequest(time.Unix(int64(timeLock.UnixTime), 0), request)
-			return
-		}
-	}
 	mpi.onLedgerPool.Add(request)
 	mpi.metrics.IncRequestsReceived(request)
 }
@@ -819,13 +798,6 @@ func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerReque
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	oldTangleTime := mpi.tangleTime
 	mpi.tangleTime = tangleTime
-	//
-	// Add requests from time locked pool.
-	reqs := mpi.timePool.TakeTill(tangleTime)
-	for _, req := range reqs {
-		mpi.onLedgerPool.Add(req)
-		mpi.metrics.IncRequestsReceived(req)
-	}
 	//
 	// Notify existing on-ledger requests if that's first time update.
 	if oldTangleTime.IsZero() {
@@ -903,7 +875,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			if waiting.ctx.Err() != nil {
 				continue // Drop it.
 			}
-			if waiting.aliasOutput.Equals(mpi.chainHeadAO) {
+			if waiting.aliasOutput.Equals(&mpi.chainHeadAO.ObjectRef) {
 				mpi.handleConsensusProposalForChainHead(waiting)
 				continue // Drop it from wait queue.
 			}
@@ -956,7 +928,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 
 	// periodically try to refresh On-ledger requests that might have been dropped
 	if time.Since(mpi.lastRefreshTimestamp) > mpi.settings.OnLedgerRefreshMinInterval {
-		if mpi.onLedgerPool.ShouldRefreshRequests() || mpi.timePool.ShouldRefreshRequests() {
+		if mpi.onLedgerPool.ShouldRefreshRequests() {
 			mpi.refreshOnLedgerRequests()
 			mpi.lastRefreshTimestamp = time.Now()
 		}
@@ -1008,7 +980,6 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
 	mpi.onLedgerPool.Cleanup(unprocessedPredicate[isc.OnLedgerRequest](chainState, mpi.log))
 	mpi.offLedgerPool.Cleanup(unprocessedPredicate[isc.OffLedgerRequest](chainState, mpi.log))
-	mpi.timePool.Cleanup(unprocessedPredicate[isc.OnLedgerRequest](chainState, mpi.log))
 }
 
 func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
