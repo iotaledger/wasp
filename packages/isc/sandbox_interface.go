@@ -174,6 +174,10 @@ func NewCallArguments(args ...[]byte) CallArguments {
 	return callArguments
 }
 
+func (c *CallArguments) Length() int {
+	return len(*c)
+}
+
 func (c *CallArguments) Clone() CallArguments {
 	clone := make(CallArguments, len(*c))
 	for i, v := range *c {
