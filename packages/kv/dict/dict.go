@@ -45,7 +45,7 @@ func FromKVStore(s kv.KVStoreReader) Dict {
 }
 
 func (d Dict) String() string {
-	ret := "         Args:\n"
+	ret := "         Dict:\n"
 	for _, key := range d.KeysSorted() {
 		val := d[key]
 		if len(val) > 80 {
