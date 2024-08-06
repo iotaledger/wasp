@@ -34,28 +34,31 @@ func (reqctx *requestContext) TryLoadContract(programHash hashing.HashValue) err
 
 func (reqctx *requestContext) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	return reqctx.vm.txbuilder.CreateNewFoundry(scheme, metadata)
+	panic("CreateNewFoundry not implemented yet")
+	// return reqctx.vm.txbuilder.CreateNewFoundry(scheme, metadata)
 }
 
 func (reqctx *requestContext) DestroyFoundry(sn uint32) uint64 {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	return reqctx.vm.txbuilder.DestroyFoundry(sn)
+	panic("DestroyFoundry not implemented yet")
+	// return reqctx.vm.txbuilder.DestroyFoundry(sn)
 }
 
 func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
-	out, _ := reqctx.accountsStateWriter(false).GetFoundryOutput(sn, reqctx.ChainID())
-	nativeTokenID, err := out.NativeTokenID()
-	if err != nil {
-		panic(fmt.Errorf("internal: %w", err))
-	}
-	return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
+	panic("ModifyFoundrySupply not implemented yet")
+	// out, _ := reqctx.accountsStateWriter(false).GetFoundryOutput(sn, reqctx.ChainID())
+	// nativeTokenID, err := out.NativeTokenID()
+	// if err != nil {
+	// 	panic(fmt.Errorf("internal: %w", err))
+	// }
+	// return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
 func (reqctx *requestContext) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput) {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
 	panic("refactor me: vmtxbuilder.MintNFT")
-	//return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
+	// return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
 }
 
 func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID sui.ObjectID) {

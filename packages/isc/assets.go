@@ -185,6 +185,19 @@ func (c CoinBalances) MarshalJSON() ([]byte, error) {
 	return json.Marshal(coins)
 }
 
+func (c CoinBalances) Equals(b CoinBalances) bool {
+	if len(c) != len(b) {
+		return false
+	}
+	for coinType, amount := range c {
+		bal := b[coinType]
+		if !bigint.Equal(bal, amount) {
+			return false
+		}
+	}
+	return true
+}
+
 type ObjectIDSet map[sui.ObjectID]struct{}
 
 func NewObjectIDSet() ObjectIDSet {
@@ -251,6 +264,19 @@ func (o *ObjectIDSet) UnmarshalJSON(b []byte) error {
 
 func (o ObjectIDSet) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Sorted())
+}
+
+func (o ObjectIDSet) Equals(b ObjectIDSet) bool {
+	if len(o) != len(b) {
+		return false
+	}
+	for id := range o {
+		_, ok := b[id]
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
 
 type Assets struct {
@@ -328,23 +354,11 @@ func (a *Assets) Equals(b *Assets) bool {
 	if a == b {
 		return true
 	}
-	if len(a.Coins) != len(b.Coins) {
+	if !a.Coins.Equals(b.Coins) {
 		return false
 	}
-	if len(a.Objects) != len(b.Objects) {
+	if !a.Objects.Equals(b.Objects) {
 		return false
-	}
-	for coinType, amount := range a.Coins {
-		bal := b.Coins[coinType]
-		if bal == nil || amount.Cmp(bal) != 0 {
-			return false
-		}
-	}
-	for id := range a.Objects {
-		_, ok := b.Objects[id]
-		if !ok {
-			return false
-		}
 	}
 	return true
 }

@@ -76,7 +76,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	anchorID := tpkg.RandOutputID(0)
 	t.Run("deposits", func(t *testing.T) {
 		mockedAccounts := newMockAccountsContractRead(anchor)
-		txb := NewAnchorTransactionBuilder(
+		txb := NewTransactionBuilder(
 			anchor,
 			anchorID,
 			parameters.L1().Protocol.RentStructure.MinRent(anchor),
@@ -164,7 +164,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	initTest := func(numTokenIDs int) (*AnchorTransactionBuilder, *mockAccountContractRead, []isc.NativeTokenID) {
 		mockedAccounts := newMockAccountsContractRead(anchor)
-		txb := NewAnchorTransactionBuilder(
+		txb := NewTransactionBuilder(
 			anchor,
 			anchorID,
 			parameters.L1().Protocol.RentStructure.MinRent(anchor),
@@ -180,7 +180,6 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	// return deposit in BaseToken
 	consumeUTXO := func(t *testing.T, txb *AnchorTransactionBuilder, id isc.NativeTokenID, amountNative uint64, mockedAccounts *mockAccountContractRead) {
-
 		panic("refactor me: transaction.MakeBasicOutput")
 		var out iotago.Output
 
@@ -398,7 +397,7 @@ func TestFoundries(t *testing.T) {
 	var mockedAccounts *mockAccountContractRead
 	initTest := func() {
 		mockedAccounts = newMockAccountsContractRead(anchor)
-		txb = NewAnchorTransactionBuilder(
+		txb = NewTransactionBuilder(
 			anchor,
 			anchorID,
 			parameters.L1().Protocol.RentStructure.MinRent(anchor),

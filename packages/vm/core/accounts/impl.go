@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -302,7 +303,7 @@ func nativeTokenDestroy(ctx isc.Sandbox, sn uint32) dict.Dict {
 
 	out, _ := state.GetFoundryOutput(sn, ctx.ChainID())
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
-	if !util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)) {
+	if !bigint.IsZero(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)) {
 		panic(errFoundryWithCirculatingSupply)
 	}
 
@@ -322,7 +323,7 @@ func nativeTokenDestroy(ctx isc.Sandbox, sn uint32) dict.Dict {
 
 // nativeTokenModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
 func nativeTokenModifySupply(ctx isc.Sandbox, sn uint32, delta *big.Int, destroy bool) {
-	if util.IsZeroBigInt(delta) {
+	if bigint.IsZero(delta) {
 		return
 	}
 	state := NewStateWriterFromSandbox(ctx)

@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -61,7 +59,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	result, err := reqctx.callTheContract()
 	if err == nil {
-		err = vmctx.checkTransactionSize()
+		err = vmctx.checkTransactionSize() // TODO is this a concern now?
 	}
 	if err != nil {
 		// skip the request / rollback tx builder (no need to rollback the state, because the mutations will never be applied)
@@ -97,13 +95,13 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
-	storageDepositNeeded := reqctx.vm.txbuilder.Consume(req)
+	storageDepositNeeded := reqctx.vm.txbuilder.ConsumeRequest(req)
 
 	// if sender is specified, all assets goes to sender's sender
 	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		if storageDepositNeeded > req.Assets().BaseTokens {
+		if bigint.Larger(storageDepositNeeded, req.Assets().BaseTokens) {
 			panic(vmexceptions.ErrNotEnoughFundsForSD) // if sender is not specified, and extra tokens are needed to pay for SD, the request cannot be processed.
 		}
 		// onleger request with no sender, send all assets to the payoutAddress
@@ -490,10 +488,11 @@ func (vmctx *vmContext) loadChainConfig() {
 
 // checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *vmContext) checkTransactionSize() error {
-	essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
-	tx := transaction.MakeAnchorTransaction(essence, cryptolib.NewEmptySignature())
-	if tx.Size() > parameters.L1().MaxPayloadSize {
-		return vmexceptions.ErrMaxTransactionSizeExceeded
-	}
-	return nil
+	panic("checkTransactionSize not implemented yet")
+	// essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
+	// tx := transaction.MakeAnchorTransaction(essence, cryptolib.NewEmptySignature())
+	// if tx.Size() > parameters.L1().MaxPayloadSize {
+	// 	return vmexceptions.ErrMaxTransactionSizeExceeded
+	// }
+	// return nil
 }

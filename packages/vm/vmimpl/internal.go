@@ -178,34 +178,6 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 	return receipt
 }
 
-func (vmctx *vmContext) storeUnprocessable(chainState kv.KVStore, unprocessable []isc.OnLedgerRequest, lastInternalAssetUTXOIndex uint16) {
-	if len(unprocessable) == 0 {
-		return
-	}
-	blockIndex := vmctx.task.AnchorOutput.StateIndex + 1
-
-	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState))
-	for _, r := range unprocessable {
-		if r.SenderAccount() == nil {
-			continue
-		}
-		txsnapshot := vmctx.createTxBuilderSnapshot()
-		err := panicutil.CatchPanic(func() {
-			position := vmctx.txbuilder.ConsumeUnprocessable(r)
-			outputIndex := position + int(lastInternalAssetUTXOIndex)
-			if blocklogState.HasUnprocessable(r.ID()) {
-				panic("already in unprocessable list")
-			}
-			// save the unprocessable requests and respective output indices onto the state so they can be retried later
-			blocklogState.SaveUnprocessable(r, blockIndex, uint16(outputIndex))
-		})
-		if err != nil {
-			// protocol exception triggered. Rollback
-			vmctx.restoreTxBuilderSnapshot(txsnapshot)
-		}
-	}
-}
-
 func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, payload []byte) {
 	if reqctx.requestEventIndex == math.MaxUint16 {
 		panic(vm.ErrTooManyEvents)

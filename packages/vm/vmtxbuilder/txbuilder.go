@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -60,25 +61,21 @@ type AnchorTransactionBuilder struct {
 	postedOutputs []iotago.Output
 }
 
-// NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
-func NewAnchorTransactionBuilder(
-	anchorOutput *iotago.AliasOutput,
-	anchorOutputID iotago.OutputID,
-	anchorOutputStorageDeposit uint64, // because we don't know what L1 parameters were used to calculate the last AO, we need to infer it from the accounts state
-	accounts AccountsContractRead,
-) *AnchorTransactionBuilder {
-	return &AnchorTransactionBuilder{
-		anchorOutput:               anchorOutput,
-		anchorOutputID:             anchorOutputID,
-		anchorOutputStorageDeposit: anchorOutputStorageDeposit,
-		accountsView:               accounts,
-		consumed:                   make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
-		balanceNativeTokens:        make(map[isc.NativeTokenID]*nativeTokenBalance),
-		postedOutputs:              make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
-		invokedFoundries:           make(map[uint32]*foundryInvoked),
-		nftsIncluded:               make(map[isc.NFTID]*nftIncluded),
-		nftsMinted:                 make([]iotago.Output, 0),
-	}
+// NewTransactionBuilder creates new AnchorTransactionBuilder object
+func NewTransactionBuilder() TransactionBuilder {
+	panic("TODO")
+	// return &AnchorTransactionBuilder{
+	// 	anchorOutput:               anchorOutput,
+	// 	anchorOutputID:             anchorOutputID,
+	// 	anchorOutputStorageDeposit: anchorOutputStorageDeposit,
+	// 	accountsView:               accounts,
+	// 	consumed:                   make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
+	// 	balanceNativeTokens:        make(map[isc.NativeTokenID]*nativeTokenBalance),
+	// 	postedOutputs:              make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
+	// 	invokedFoundries:           make(map[uint32]*foundryInvoked),
+	// 	nftsIncluded:               make(map[isc.NFTID]*nftIncluded),
+	// 	nftsMinted:                 make([]iotago.Output, 0),
+	// }
 }
 
 // Clone clones the AnchorTransactionBuilder object. Used to snapshot/recover
@@ -109,7 +106,7 @@ func (txb *AnchorTransactionBuilder) splitAssetsIntoInternalOutputs(req isc.OnLe
 		// ensure this NT is in the txbuilder, update it
 		nt := txb.ensureNativeTokenBalance(nativeToken.ID)
 		sdBefore := nt.accountingOutput.Amount
-		if util.IsZeroBigInt(nt.getOutValue()) {
+		if bigint.IsZero(nt.getOutValue()) {
 			sdBefore = 0 // accounting output was zero'ed this block, meaning the existing SD was released
 		}
 		nt.add(nativeToken.Amount)
@@ -174,7 +171,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	}
 
 	panic("refactor me: transaction.AssetsFromOutput")
-	//assets := transaction.AssetsFromOutput(o)
+	// assets := transaction.AssetsFromOutput(o)
 	var assets *isc.Assets
 
 	sdAdjustment := int64(0)

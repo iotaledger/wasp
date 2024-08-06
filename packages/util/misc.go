@@ -12,6 +12,7 @@ var (
 	Big0       = big.NewInt(0)
 	Big1       = big.NewInt(1)
 	MaxUint256 = new(big.Int).Sub(new(big.Int).Lsh(Big1, 256), Big1)
+	MaxUint64  = new(big.Int).Sub(new(big.Int).Lsh(Big1, 64), Big1)
 )
 
 func ExecuteIfNotNil(function func()) {
@@ -27,15 +28,6 @@ func MakeRange(from, to int) []int {
 		a[i] = from + i
 	}
 	return a
-}
-
-func IsZeroBigInt(bi *big.Int) bool {
-	// see https://stackoverflow.com/questions/64257065/is-there-another-way-of-testing-if-a-big-int-is-0
-	return len(bi.Bits()) == 0
-}
-
-func IsPositiveBigInt(n *big.Int) bool {
-	return n.Sign() > 0
 }
 
 func GetHashValue(obj interface{ Bytes() []byte }) hashing.HashValue {
