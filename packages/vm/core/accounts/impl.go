@@ -44,7 +44,7 @@ var Processor = Contract.Processor(nil,
 // this expects the origin amount minus SD
 func (s *StateWriter) SetInitialState(baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(isc.BaseTokenType, new(big.Int).SetUint64(baseTokensOnAnchor)), isc.ChainID{})
+	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, new(big.Int).SetUint64(baseTokensOnAnchor)), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -177,7 +177,7 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) {
 	if bigint.Less(allowance.BaseTokens(), gasReserveTokens) {
 		panic(ErrNotEnoughAllowance)
 	}
-	allowance.Coins.Sub(isc.BaseTokenType, gasReserveTokens)
+	allowance.Coins.Sub(coin.BaseTokenType, gasReserveTokens)
 
 	// Warning: this will transfer all assets into the accounts core contract's L2 account.
 	// Be sure everything transfers out again, or assets will be stuck forever.

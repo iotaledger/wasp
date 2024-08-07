@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -11,15 +12,16 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (s *StateReader) CheckLedgerConsistency() {
+func (s *StateReader) CheckLedgerConsistency() error {
 	t := s.GetTotalL2FungibleTokens()
 	c := s.calcL2TotalFungibleTokens()
 	if !t.Equals(c) {
-		panic(fmt.Sprintf(
+		return fmt.Errorf(
 			"inconsistent on-chain account ledger\n total assets: %s\ncalc total: %s\n",
 			t, c,
-		))
+		)
 	}
+	return nil
 }
 
 func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
@@ -31,7 +33,7 @@ func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
 		s.coinsMapR(kv.Key(accountKey)).Iterate(func(coinType []byte, val []byte) bool {
 			ret.Add(
 				codec.CoinType.MustDecode(coinType),
-				codec.BigIntAbs.MustDecode(val),
+				codec.CoinValue.MustDecode(val),
 			)
 			return true
 		})
@@ -42,7 +44,7 @@ func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
 
 	// convert total remainder from 18 decimals, must be exact
 	ret.Add(
-		isc.BaseTokenType,
+		coin.BaseTokenType,
 		util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalWeiRemainder, parameters.Decimals),
 	)
 

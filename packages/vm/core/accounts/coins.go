@@ -1,8 +1,7 @@
 package accounts
 
 import (
-	"math/big"
-
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -21,28 +20,24 @@ func (s *StateWriter) coinsMap(accountKey kv.Key) *collections.Map {
 	return collections.NewMap(s.state, coinsMapKey(accountKey))
 }
 
-func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType isc.CoinType) *big.Int {
-	r := new(big.Int)
+func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType coin.Type) coin.Value {
 	b := s.coinsMapR(accountKey).GetAt(coinType.Bytes())
-	if len(b) > 0 {
-		r.SetBytes(b)
-	}
-	return r
+	return codec.CoinValue.MustDecode(b, 0)
 }
 
-func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType isc.CoinType, n *big.Int) {
-	if n.Sign() == 0 {
+func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n coin.Value) {
+	if n == 0 {
 		s.coinsMap(accountKey).DelAt(coinType.Bytes())
 	} else {
-		s.coinsMap(accountKey).SetAt(coinType.Bytes(), codec.BigIntAbs.Encode(n))
+		s.coinsMap(accountKey).SetAt(coinType.Bytes(), codec.CoinValue.Encode(n))
 	}
 }
 
-func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID isc.CoinType, chainID isc.ChainID) *big.Int {
+func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID coin.Type, chainID isc.ChainID) coin.Value {
 	return s.getCoinBalance(accountKey(agentID, chainID), coinID)
 }
 
-func (s *StateReader) GetCoinBalanceTotal(coinID isc.CoinType) *big.Int {
+func (s *StateReader) GetCoinBalanceTotal(coinID coin.Type) coin.Value {
 	return s.getCoinBalance(L2TotalsAccount, coinID)
 }
 
@@ -51,7 +46,7 @@ func (s *StateReader) GetCoins(agentID isc.AgentID, chainID isc.ChainID) isc.Coi
 	s.coinsMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
 			codec.CoinType.MustDecode(coinType),
-			codec.BigIntAbs.MustDecode(val),
+			codec.CoinValue.MustDecode(val),
 		)
 		return true
 	})

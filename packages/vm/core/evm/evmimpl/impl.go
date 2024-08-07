@@ -316,7 +316,7 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.ERC20NativeTokenPar
 	return addr
 }
 
-func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, coinType isc.CoinType) *common.Address {
+func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, coinType coin.Type) *common.Address {
 	addr, ok := getERC20ExternalNativeTokensAddress(ctx, coinType)
 	if !ok {
 		return nil

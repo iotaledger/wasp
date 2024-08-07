@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -30,7 +30,7 @@ const (
 	// Covered in: TestFoundries
 	keyAllAccounts = "a"
 
-	// prefixCoins | <accountID> stores a map of <CoinType> => big.Int
+	// prefixCoins | <accountID> stores a map of <CoinType> => CoinValue
 	// Covered in: TestFoundries
 	prefixCoins = "C"
 
@@ -118,7 +118,7 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 	}
 	accountKey := accountKey(agentID, chainID)
 	for coinType, amount := range allowance.Coins {
-		if bigint.Less(s.getCoinBalance(accountKey, coinType), amount) {
+		if s.getCoinBalance(accountKey, coinType) < amount {
 			return false
 		}
 	}
@@ -160,11 +160,11 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 
 // debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
 // It takes base tokens from allowance to the common account and then removes them from the L2 ledger
-func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.ChainID) {
+func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount coin.Value, chainID isc.ChainID) {
 	if amount == 0 {
 		return
 	}
-	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
+	storageDepositAssets := isc.NewAssets(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
 	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets.Coins, chainID)
 }

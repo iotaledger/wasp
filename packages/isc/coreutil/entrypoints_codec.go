@@ -2,6 +2,7 @@ package coreutil
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/samber/lo"
 
@@ -97,4 +98,24 @@ func (c *OptionalCodec[T]) Encode(v *T) []byte {
 // FieldWithCodecOptional returns a Field that accepts an optional value
 func FieldWithCodecOptional[T any](c codec.Codec[T]) Field[*T] {
 	return Field[*T]{Codec: &OptionalCodec[T]{Codec: c}}
+}
+
+type FieldArrayOf[T any] struct {
+	codec codec.Codec[T]
+}
+
+// FieldArrayWithCodec returns a Field that encodes a slice of T
+func FieldArrayWithCodec[T any](codec codec.Codec[T]) FieldArrayOf[T] {
+	return FieldArrayOf[T]{codec: codec}
+}
+
+func (a FieldArrayOf[T]) Encode(slice []T) []byte {
+	if len(slice) > math.MaxUint16 {
+		panic("too many values")
+	}
+	return codec.SliceToArray(a.codec, slice)
+}
+
+func (a FieldArrayOf[T]) Decode(r []byte) ([]T, error) {
+	return codec.SliceFromArray(a.codec, r)
 }
