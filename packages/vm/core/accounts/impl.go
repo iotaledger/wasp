@@ -2,12 +2,11 @@ package accounts
 
 import (
 	"math/big"
-
+	
 	"github.com/iotaledger/wasp/packages/bigint"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -51,46 +50,36 @@ func (s *StateWriter) SetInitialState(baseTokensOnAnchor uint64) {
 // deposit is a function to deposit attached assets to the sender's chain account
 // It does nothing because assets are already on the sender's account
 // Allowance is ignored
-func deposit(ctx isc.Sandbox) dict.Dict {
+func deposit(ctx isc.Sandbox) {
 	ctx.Log().Debugf("accounts.deposit")
-	return nil
 }
 
 // transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
 // Can be sent as a request (sender is the caller) or can be called
 // Params:
 // - ParamAgentID. AgentID. Required
-func transferAllowanceTo(ctx isc.Sandbox, targetAccount isc.AgentID) dict.Dict {
+func transferAllowanceTo(ctx isc.Sandbox, targetAccount isc.AgentID) {
 	allowance := ctx.AllowanceAvailable().Clone()
 	ctx.TransferAllowedFunds(targetAccount)
 
 	if targetAccount.Kind() != isc.AgentIDKindEthereumAddress {
-		return nil // done
+		return // done
 	}
 	if !ctx.Caller().Equals(ctx.Request().SenderAccount()) {
-		return nil // only issue "custom EVM tx" when this function is called directly by the request sender
+		return // only issue "custom EVM tx" when this function is called directly by the request sender
 	}
 	// issue a "custom EVM tx" so the funds appear on the explorer
 	ctx.Call(
-		isc.NewMessage(
-			evm.Contract.Hname(),
-			evm.FuncNewL1Deposit.Hname(),
-			dict.Dict{
-				evm.FieldAddress:                  targetAccount.(*isc.EthereumAddressAgentID).EthAddress().Bytes(),
-				evm.FieldAssets:                   allowance.Bytes(),
-				evm.FieldAgentIDDepositOriginator: ctx.Caller().Bytes(),
-			},
-		),
+		evm.FuncNewL1Deposit.Message(ctx.Caller(), targetAccount.(*isc.EthereumAddressAgentID).EthAddress(), allowance),
 		nil,
 	)
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
-	return nil
 }
 
 var errCallerMustHaveL1Address = coreerrors.Register("caller must have L1 address").Create()
 
 // withdraw sends the allowed funds to the caller's L1 address,
-func withdraw(ctx isc.Sandbox) dict.Dict {
+func withdraw(ctx isc.Sandbox) {
 	allowance := ctx.AllowanceAvailable()
 	ctx.Log().Debugf("accounts.withdraw.begin -- %s", allowance)
 	if allowance.IsEmpty() {
@@ -118,7 +107,6 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 		callerAddress.String(),
 		allowance.String(),
 	)
-	return nil
 }
 
 // transferAccountToChain transfers the specified allowance from the sender SC's L2
@@ -160,7 +148,7 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 // GAS1 to guard against unanticipated changes in the fee structure that
 // raise the gas price, otherwise the request could accidentally cannibalize
 // GAS2 or even SD, with potential failure and locked up assets as a result.
-func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Dict {
+func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) {
 	allowance := ctx.AllowanceAvailable()
 	ctx.Log().Debugf("accounts.transferAccountToChain.begin -- %s", allowance)
 	if allowance.IsEmpty() {
@@ -177,7 +165,7 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 	// if the caller contract is on the same chain the transfer would end up
 	// in the same L2 account it is taken from, so we do nothing in that case
 	if callerContract.ChainID().Equals(ctx.ChainID()) {
-		return nil
+		return
 	}
 
 	// save the assets to send to the transfer request, as specified by the allowance
@@ -204,11 +192,7 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 		TargetAddress: callerContract.Address(),
 		Assets:        assets,
 		Metadata: &isc.SendMetadata{
-			Message: isc.NewMessage(
-				Contract.Hname(),
-				FuncTransferAllowanceTo.Hname(),
-				dict.Dict{"i1": callerContract.Bytes()},
-			),
+			Message:   FuncTransferAllowanceTo.Message(callerContract),
 			Allowance: allowance,
 			GasBudget: gasReserve,
 		},
@@ -217,5 +201,4 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) dict.Di
 		callerContract.String(),
 		allowance.String(),
 	)
-	return nil
 }

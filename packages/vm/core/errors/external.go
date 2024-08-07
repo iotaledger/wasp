@@ -13,7 +13,13 @@ func GetMessageFormat(code isc.VMErrorCode, callView ViewCaller) (string, error)
 	if err != nil {
 		return "", err
 	}
-	return ViewGetErrorMessageFormat.Output1.Decode(ret)
+
+	errorMessage, err := ViewGetErrorMessageFormat.DecodeOutput(ret)
+	if err != nil {
+		return "", err
+	}
+
+	return errorMessage, nil
 }
 
 func Resolve(e *isc.UnresolvedVMError, callView ViewCaller) (*isc.VMError, error) {

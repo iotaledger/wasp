@@ -7,11 +7,11 @@ import (
 	"math/big"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // ISCChainID matches the type definition in ISCTypes.sol
@@ -40,43 +40,67 @@ func (c ISCChainID) MustUnwrap() isc.ChainID {
 	return ret
 }
 
-// NativeTokenID matches the struct definition in ISCTypes.sol
-type NativeTokenID struct {
-	Data []byte
+// CoinType matches the struct definition in ISCTypes.sol
+type CoinType struct {
+	Data string
 }
 
-func WrapNativeTokenID(nativeTokenID isc.NativeTokenID) NativeTokenID {
-	return NativeTokenID{Data: nativeTokenID[:]}
+func WrapCoinType(coinType isc.CoinType) CoinType {
+	return CoinType{Data: coinType.String()}
 }
 
-func (a NativeTokenID) Unwrap() (ret isc.NativeTokenID) {
-	copy(ret[:], a.Data)
+func (a CoinType) Unwrap() (ret isc.CoinType) {
+	ret = isc.CoinType(a.Data)
 	return
 }
 
-func (a NativeTokenID) MustUnwrap() (ret isc.NativeTokenID) {
-	copy(ret[:], a.Data)
+func (a CoinType) MustUnwrap() (ret isc.CoinType) {
+	ret = isc.CoinType(a.Data)
 	return
 }
 
-// NativeToken matches the struct definition in ISCTypes.sol
-type NativeToken struct {
-	ID     NativeTokenID
-	Amount *big.Int
+type CoinBalances map[CoinType]*big.Int
+
+func WrapCoinBalances(coinBalances isc.CoinBalances) CoinBalances {
+	newCoinBalances := make(CoinBalances)
+
+	for k, v := range coinBalances {
+		newCoinBalances[WrapCoinType(k)] = v
+	}
+
+	return newCoinBalances
 }
 
-func WrapNativeToken(nativeToken *isc.NativeToken) NativeToken {
-	return NativeToken{
-		ID:     WrapNativeTokenID(nativeToken.ID),
-		Amount: nativeToken.Amount,
+func (c CoinBalances) Unwrap() (isc.CoinBalances, error) {
+	newCoinBalances := make(isc.CoinBalances)
+
+	for k, v := range c {
+		newCoinBalances[k.Unwrap()] = v
 	}
+
+	return newCoinBalances, nil
 }
 
-func (nt NativeToken) Unwrap() *isc.NativeToken {
-	return &isc.NativeToken{
-		ID:     nt.ID.Unwrap(),
-		Amount: nt.Amount,
+type ObjectIDSet map[ObjectID]struct{}
+
+func WrapObjectIDSet(set isc.ObjectIDSet) ObjectIDSet {
+	objectIDSet := make(ObjectIDSet)
+
+	for k, v := range set {
+		objectIDSet[WrapObjectID(k)] = v
 	}
+
+	return objectIDSet
+}
+
+func (c ObjectIDSet) Unwrap() (isc.ObjectIDSet, error) {
+	objectIDSet := make(isc.ObjectIDSet)
+
+	for k, v := range c {
+		objectIDSet[k.Unwrap()] = v
+	}
+
+	return objectIDSet, nil
 }
 
 // L1Address matches the struct definition in ISCTypes.sol
@@ -145,33 +169,33 @@ func (rid ISCRequestID) MustUnwrap() isc.RequestID {
 	return ret
 }
 
-// NFTID matches the type definition in ISCTypes.sol
-type NFTID [isc.NFTIDLength]byte
+// ObjectID matches the type definition in ISCTypes.sol
+type ObjectID [sui.AddressLen]byte
 
 func init() {
-	if isc.NFTIDLength != 32 {
-		panic("static check: NFTID length does not match bytes32 in ISCTypes.sol")
+	if sui.AddressLen != 32 {
+		panic("static check: ObjectID length does not match bytes32 in ISCTypes.sol")
 	}
 }
 
-func WrapNFTID(c isc.NFTID) (ret NFTID) {
+func WrapObjectID(c sui.ObjectID) (ret ObjectID) {
 	copy(ret[:], c[:])
 	return
 }
 
-func (n NFTID) Unwrap() (ret isc.NFTID) {
+func (n ObjectID) Unwrap() (ret sui.ObjectID) {
 	copy(ret[:], n[:])
 	return
 }
 
 // TokenID returns the uint256 tokenID for ERC721
-func (n NFTID) TokenID() *big.Int {
+func (n ObjectID) TokenID() *big.Int {
 	return new(big.Int).SetBytes(n[:])
 }
 
 // ISCNFT matches the struct definition in ISCTypes.sol
 type ISCNFT struct {
-	ID       NFTID
+	ID       ObjectID
 	Issuer   L1Address
 	Metadata []byte
 	Owner    ISCAgentID
@@ -179,7 +203,7 @@ type ISCNFT struct {
 
 func WrapISCNFT(n *isc.NFT) ISCNFT {
 	r := ISCNFT{
-		ID:       WrapNFTID(n.ID),
+		ID:       WrapObjectID(n.ID),
 		Issuer:   WrapL1Address(n.Issuer),
 		Metadata: n.Metadata,
 	}
@@ -239,40 +263,58 @@ type IRC27NFT struct {
 
 // ISCAssets matches the struct definition in ISCTypes.sol
 type ISCAssets struct {
-	BaseTokens   uint64
-	NativeTokens []NativeToken
-	Nfts         []NFTID
+	Coins   CoinBalances
+	Objects ObjectIDSet
 }
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
 	if a == nil {
 		return WrapISCAssets(isc.NewEmptyAssets())
 	}
-	tokens := make([]NativeToken, len(a.NativeTokens))
-	for i, nativeToken := range a.NativeTokens {
-		tokens[i] = WrapNativeToken(nativeToken)
+
+	coins := CoinBalances{}
+	for i, value := range a.Coins {
+		coins[WrapCoinType(i)] = value
 	}
-	nfts := make([]NFTID, len(a.NFTs))
-	for i, id := range a.NFTs {
-		nfts[i] = WrapNFTID(id)
+
+	objects := ObjectIDSet{}
+	for i, value := range a.Objects {
+		objects[WrapObjectID(i)] = value
 	}
+
 	return ISCAssets{
-		BaseTokens:   a.BaseTokens,
-		NativeTokens: tokens,
-		Nfts:         nfts,
+		Coins:   coins,
+		Objects: objects,
 	}
 }
 
+func (a ISCAssets) BaseToken() uint64 {
+	if val, ok := a.Coins[WrapCoinType(isc.BaseTokenType)]; ok {
+		panic("refactor me: return val when changed to Uint64")
+		_ = val
+		return 0
+	}
+
+	return 0
+}
+
 func (a ISCAssets) Unwrap() *isc.Assets {
-	tokens := make(isc.NativeTokens, len(a.NativeTokens))
-	for i, nativeToken := range a.NativeTokens {
-		tokens[i] = nativeToken.Unwrap()
+	coins := isc.CoinBalances{}
+	for k, v := range a.Coins {
+		coins[k.Unwrap()] = v
 	}
-	nfts := make([]isc.NFTID, len(a.Nfts))
-	for i, id := range a.Nfts {
-		nfts[i] = id.Unwrap()
+
+	objects := isc.ObjectIDSet{}
+	for k, v := range a.Objects {
+		objects[k.Unwrap()] = v
 	}
-	return isc.NewAssets(a.BaseTokens, tokens, nfts...)
+
+	panic("refactor me: set base token here when switched to Uint64")
+	return &isc.Assets{
+
+		Coins:   coins,
+		Objects: objects,
+	}
 }
 
 // ISCDictItem matches the struct definition in ISCTypes.sol
@@ -302,10 +344,26 @@ func (d ISCDict) Unwrap() dict.Dict {
 	return ret
 }
 
+type CallArguments struct {
+	Data [][]byte
+}
+
+func WrapCallArguments(a isc.CallArguments) CallArguments {
+	return CallArguments{
+		Data: a[:],
+	}
+}
+
+func (c CallArguments) Unwrap() isc.CallArguments {
+	args := isc.CallArguments{}
+	copy(args, c.Data)
+	return args
+}
+
 type ISCSendMetadata struct {
 	TargetContract uint32
 	Entrypoint     uint32
-	Params         ISCDict
+	Params         CallArguments
 	Allowance      ISCAssets
 	GasBudget      uint64
 }
@@ -315,7 +373,7 @@ func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
 		GasBudget:      metadata.GasBudget,
 		TargetContract: uint32(metadata.Message.Target.Contract),
 		Entrypoint:     uint32(metadata.Message.Target.EntryPoint),
-		Params:         WrapISCDict(metadata.Message.Params),
+		Params:         WrapCallArguments(metadata.Message.Params),
 		Allowance:      WrapISCAssets(metadata.Allowance),
 	}
 
