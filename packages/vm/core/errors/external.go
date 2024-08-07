@@ -2,19 +2,18 @@ package errors
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // ViewCaller is a generic interface for any function that can call views
-type ViewCaller func(msg isc.Message) (dict.Dict, error)
+type ViewCaller func(msg isc.Message) (isc.CallArguments, error)
 
 func GetMessageFormat(code isc.VMErrorCode, callView ViewCaller) (string, error) {
 	ret, err := callView(ViewGetErrorMessageFormat.Message(code))
 	if err != nil {
 		return "", err
 	}
-	return ViewGetErrorMessageFormat.Output.Decode(ret)
+	return ViewGetErrorMessageFormat.Output1.Decode(ret)
 }
 
 func Resolve(e *isc.UnresolvedVMError, callView ViewCaller) (*isc.VMError, error) {

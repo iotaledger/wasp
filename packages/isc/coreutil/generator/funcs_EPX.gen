@@ -1,0 +1,47 @@
+
+{{define "EPx"}}
+// EP{{.Inputs}} is a utility type for entry points that receive {{.Inputs}} parameter(s)
+type EP{{.Inputs}}[S isc.SandboxBase{{range $i := until .Inputs}}, T{{add $i 1}} any{{end}}{{range $i := until .Inputs}}, I{{add $i 1}} CallArgsCodec[T{{add $i 1}}]{{end}}] struct {
+    EntryPointInfo[S]
+    {{range $i := until .Inputs}}Input{{add $i 1}} I{{add $i 1}}
+    {{end}}
+}
+
+func NewEP{{.Inputs}}[{{range $i := until .Inputs}}T{{add $i 1}} any, {{end}}{{range $i := until .Inputs}}I{{add $i 1}} CallArgsCodec[T{{add $i 1}}]{{if not (last $i $.Inputs)}}, {{end}}{{end}}](
+    contract *ContractInfo, name string,
+    {{range $i := until .Inputs}}in{{add $i 1}} I{{add $i 1}},{{end}}
+) EP{{.Inputs}}[isc.Sandbox{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}] {
+    return EP{{.Inputs}}[isc.Sandbox{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]{
+        EntryPointInfo: contract.Func(name),
+        {{range $i := until .Inputs}}Input{{add $i 1}}: in{{add $i 1}},
+        {{end}}
+    }
+}
+
+func NewViewEP{{.Inputs}}[{{range $i := until .Inputs}}T{{add $i 1}} any, {{end}}{{range $i := until .Inputs}}I{{add $i 1}} CallArgsCodec[T{{add $i 1}}]{{if not (last $i $.Inputs)}}, {{end}}{{end}}](
+    contract *ContractInfo, name string,
+    {{range $i := until .Inputs}}in{{add $i 1}} I{{add $i 1}},{{end}}
+) EP{{.Inputs}}[isc.SandboxView{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}] {
+    return EP{{.Inputs}}[isc.SandboxView{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]{
+        EntryPointInfo: contract.ViewFunc(name),
+        {{range $i := until .Inputs}}Input{{add $i 1}}: in{{add $i 1}},
+        {{end}}
+    }
+}
+
+func (e EP{{.Inputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]) WithHandler(f func(ctx S{{range $i := until .Inputs}}, p{{add $i 1}} T{{add $i 1}}{{end}})) *EntryPointHandler[S] {
+    return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+        params := ctx.Params()
+        {{range $i := until .Inputs}}p{{add $i 1}}, err := e.Input{{add $i 1}}.Decode(params.Args.MustAt({{$i}}))
+        ctx.RequireNoError(err)
+        {{end}}
+        f(ctx{{range $i := until .Inputs}}, p{{add $i 1}}{{end}})
+        return isc.NewCallArguments()
+    })
+}
+
+func (e EP{{.Inputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]) Message({{range $i := until .Inputs}}p{{add $i 1}} T{{add $i 1}}{{if not (last $i $.Inputs)}}, {{end}}{{end}}) isc.Message {
+    callArgs := isc.NewCallArguments({{range $i := until .Inputs}}e.Input{{add $i 1}}.Encode(p{{add $i 1}}){{if not (last $i $.Inputs)}}, {{end}}{{end}})
+    return e.EntryPointInfo.Message(callArgs)
+}
+{{end}}

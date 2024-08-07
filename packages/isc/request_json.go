@@ -3,8 +3,6 @@ package isc
 import (
 	"encoding/json"
 	"strconv"
-
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type RequestJSON struct {
@@ -14,7 +12,7 @@ type RequestJSON struct {
 	GasBudget     string         `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM         bool           `json:"isEVM" swagger:"required"`
 	IsOffLedger   bool           `json:"isOffLedger" swagger:"required"`
-	Params        dict.JSONDict  `json:"params" swagger:"required"`
+	Params        CallArguments  `json:"params" swagger:"required"`
 	RequestID     string         `json:"requestId" swagger:"required"`
 	SenderAccount string         `json:"senderAccount" swagger:"required"`
 	TargetAddress string         `json:"targetAddress" swagger:"required"`
@@ -31,7 +29,7 @@ func RequestToJSONObject(request Request) RequestJSON {
 		GasBudget:     strconv.FormatUint(gasBudget, 10),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),
-		Params:        msg.Params.JSONDict(),
+		Params:        msg.Params,
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
 		TargetAddress: request.TargetAddress().String(),

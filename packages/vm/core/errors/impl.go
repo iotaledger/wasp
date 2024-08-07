@@ -2,8 +2,6 @@ package errors
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -16,7 +14,7 @@ func (s *StateWriter) SetInitialState() {
 	// does not do anything
 }
 
-func funcRegisterError(ctx isc.Sandbox, errorMessageFormat string) dict.Dict {
+func funcRegisterError(ctx isc.Sandbox, errorMessageFormat string) isc.VMErrorCode {
 	ctx.Log().Debugf("Registering error")
 
 	if errorMessageFormat == "" {
@@ -27,7 +25,7 @@ func funcRegisterError(ctx isc.Sandbox, errorMessageFormat string) dict.Dict {
 	template, err := e.Register(errorMessageFormat)
 	ctx.RequireNoError(err)
 
-	return dict.Dict{ParamErrorCode: codec.VMErrorCode.Encode(template.Code())}
+	return template.Code()
 }
 
 func funcGetErrorMessageFormat(ctx isc.SandboxView, code isc.VMErrorCode) string {

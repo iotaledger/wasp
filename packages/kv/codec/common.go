@@ -6,8 +6,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type Codec[T any] interface {
@@ -50,28 +50,34 @@ func (c *codec[T]) Encode(v T) []byte {
 	return c.encode(v)
 }
 
-func SliceToArray[T any](c Codec[T], slice []T, arrayKey string) dict.Dict {
-	ret := dict.Dict{}
-	retArr := collections.NewArray(ret, arrayKey)
+func SliceToArray[T any](c Codec[T], slice []T) []byte {
+	w := rwutil.NewBytesWriter()
+	w.WriteSize32(len(slice))
 	for _, v := range slice {
-		retArr.Push(c.Encode(v))
+		value := c.Encode(v)
+		w.WriteBytes(value)
 	}
-	return ret
+	return w.Bytes()
 }
 
-func SliceFromArray[T any](c Codec[T], d dict.Dict, arrayKey string) ([]T, error) {
+func SliceFromArray[T any](c Codec[T], d []byte) ([]T, error) {
 	if len(d) == 0 {
 		return nil, nil
 	}
-	arr := collections.NewArrayReadOnly(d, arrayKey)
-	ret := make([]T, arr.Len())
+
+	r := rwutil.NewBytesReader(d)
+	length := r.ReadSize32()
+
+	ret := make([]T, length)
+
 	for i := range ret {
 		var err error
-		ret[i], err = c.Decode(arr.GetAt(uint32(i)))
+		ret[i], err = c.Decode(r.ReadBytes())
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	return ret, nil
 }
 

@@ -46,7 +46,7 @@ func (b *jsonRPCSoloBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetFeePolicy.Output.Decode(ret)
+	return governance.ViewGetFeePolicy.Output1.Decode(ret)
 }
 
 func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {

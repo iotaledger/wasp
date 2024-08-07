@@ -112,7 +112,7 @@ func (ch *Chain) L2CommonAccountNativeTokens(nativeTokenID iotago.NativeTokenID)
 func (ch *Chain) L2TotalAssets() *isc.Assets {
 	r, err := ch.CallView(accounts.ViewTotalAssets.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(accounts.ViewTotalAssets.Output.Decode(r))
+	return lo.Must(accounts.ViewTotalAssets.Output1.Decode(r))
 }
 
 // L2TotalBaseTokens return total sum of base tokens in L2 (all accounts)
@@ -123,7 +123,7 @@ func (ch *Chain) L2TotalBaseTokens() uint64 {
 func (ch *Chain) GetOnChainTokenIDs() []iotago.NativeTokenID {
 	res, err := ch.CallView(accounts.ViewGetNativeTokenIDRegistry.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(accounts.ViewGetNativeTokenIDRegistry.Output.Decode(res))
+	return lo.Must(accounts.ViewGetNativeTokenIDRegistry.Output1.Decode(res))
 }
 
 func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {

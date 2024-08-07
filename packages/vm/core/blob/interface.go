@@ -17,13 +17,13 @@ var (
 	FuncStoreBlob = Contract.Func("storeBlob")
 
 	ViewGetBlobInfo = coreutil.NewViewEP11(Contract, "getBlobInfo",
-		coreutil.FieldWithCodec(ParamHash, codec.HashValue),
+		coreutil.FieldWithCodec(codec.HashValue),
 		OutputFieldSizesMap{},
 	)
 	ViewGetBlobField = coreutil.NewViewEP21(Contract, "getBlobField",
-		coreutil.FieldWithCodec(ParamHash, codec.HashValue),
-		coreutil.FieldWithCodec(ParamField, codec.Bytes),
-		coreutil.FieldWithCodec(ParamBytes, codec.Bytes),
+		coreutil.FieldWithCodec(codec.HashValue),
+		coreutil.FieldWithCodec(codec.Bytes),
+		coreutil.FieldWithCodec(codec.Bytes),
 	)
 )
 

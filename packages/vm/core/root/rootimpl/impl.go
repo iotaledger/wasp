@@ -52,7 +52,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
-	params.Dict.Iterate("", func(key kv.Key, value []byte) bool {
+	params.Args.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != root.ParamProgramHash && key != root.ParamName {
 			initParams.Set(key, value)
 		}

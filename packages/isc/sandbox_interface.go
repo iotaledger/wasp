@@ -4,10 +4,13 @@
 package isc
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -15,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -57,7 +61,7 @@ type SandboxBase interface {
 type SchemaVersion uint32
 
 type Params struct {
-	Dict dict.Dict
+	Args CallArguments
 	KVDecoder
 }
 
@@ -153,12 +157,88 @@ type Privileged interface {
 	CreditToAccount(AgentID, *big.Int)
 }
 
-type Message struct {
-	Target CallTarget `json:"target"`
-	Params dict.Dict  `json:"params"`
+type CallArguments [][]byte
+
+func NewCallArguments(args ...[]byte) CallArguments {
+	callArguments := make(CallArguments, len(args))
+	for i, v := range args {
+		callArguments[i] = make([]byte, len(v))
+		copy(callArguments[i], v)
+	}
+	return callArguments
 }
 
-func NewMessage(contract Hname, ep Hname, params ...dict.Dict) Message {
+func (c *CallArguments) Length() int {
+	return len(*c)
+}
+
+func (c *CallArguments) Clone() CallArguments {
+	clone := make(CallArguments, len(*c))
+	for i, v := range *c {
+		clone[i] = make([]byte, len(v))
+		copy(clone[i], v)
+	}
+	return clone
+}
+
+func (c *CallArguments) At(index int) ([]byte, error) {
+	if (index < 0) || (index >= len(*c)) {
+		return nil, fmt.Errorf("index out of range")
+	}
+
+	return (*c)[index], nil
+}
+
+func (c *CallArguments) MustAt(index int) []byte {
+	ret, err := c.At(index)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func (c *CallArguments) String() string {
+	return hexutil.Encode(c.Bytes())
+}
+
+func (c *CallArguments) Bytes() []byte {
+	var b bytes.Buffer
+	err := c.Write(&b)
+	if err != nil {
+		panic(err)
+	}
+	return b.Bytes()
+}
+
+func (c *CallArguments) Read(rr io.Reader) error {
+	r := rwutil.NewReader(rr)
+	size := r.ReadSize32()
+
+	*c = make(CallArguments, size)
+	for i := range *c {
+		(*c)[i] = r.ReadBytes()
+	}
+
+	return nil
+}
+
+func (c *CallArguments) Write(ww io.Writer) error {
+	w := rwutil.NewWriter(ww)
+
+	w.WriteSize32(len(*c))
+	for _, v := range *c {
+		w.WriteBytes(v)
+	}
+
+	return nil
+}
+
+type Message struct {
+	Target CallTarget    `json:"target"`
+	Params CallArguments `json:"params"`
+}
+
+func NewMessage(contract Hname, ep Hname, params ...CallArguments) Message {
 	msg := Message{
 		Target: CallTarget{Contract: contract, EntryPoint: ep},
 	}
@@ -172,7 +252,7 @@ func (m Message) String() string {
 	return fmt.Sprintf("Message(%s, %s, %s)", m.Target.Contract, m.Target.EntryPoint, m.Params)
 }
 
-func NewMessageFromNames(contract string, ep string, params ...dict.Dict) Message {
+func NewMessageFromNames(contract string, ep string, params ...CallArguments) Message {
 	return NewMessage(Hn(contract), Hn(ep), params...)
 }
 
@@ -185,7 +265,8 @@ func (m Message) Clone() Message {
 
 func (m Message) WithParam(k kv.Key, v []byte) (r Message) {
 	r = m.Clone()
-	r.Params[k] = v
+	panic("refactor me")
+	//r.Params[k] = v
 	return
 }
 

@@ -11,11 +11,10 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-type Handler[S isc.SandboxBase] func(ctx S) dict.Dict
+type Handler[S isc.SandboxBase] func(ctx S) isc.CallArguments
 
 //********************************* *********************************\\
 
@@ -36,7 +35,7 @@ func CoreContractProgramHash(name string) hashing.HashValue {
 	return hashing.HashStrings(name)
 }
 
-func defaultInitFunc(ctx isc.Sandbox) dict.Dict {
+func defaultInitFunc(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
 	return nil
 }
@@ -107,7 +106,7 @@ func (ep *EntryPointInfo[S]) Hname() isc.Hname {
 	return isc.Hn(ep.Name)
 }
 
-func (ep *EntryPointInfo[S]) Message(params dict.Dict) isc.Message {
+func (ep *EntryPointInfo[S]) Message(params isc.CallArguments) isc.Message {
 	return isc.NewMessage(ep.Contract.Hname(), ep.Hname(), params)
 }
 
@@ -126,7 +125,7 @@ var (
 	_ isc.ProcessorEntryPoint = &EntryPointHandler[isc.SandboxView]{}
 )
 
-func (h *EntryPointHandler[S]) Call(ctx any) dict.Dict {
+func (h *EntryPointHandler[S]) Call(ctx isc.SandboxBase) isc.CallArguments {
 	return h.Handler(ctx.(S))
 }
 

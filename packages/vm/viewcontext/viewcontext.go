@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -207,7 +206,7 @@ func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 	return ctx.gasBurnLog
 }
 
-func (ctx *ViewContext) callView(msg isc.Message) (ret dict.Dict) {
+func (ctx *ViewContext) callView(msg isc.Message) (ret isc.CallArguments) {
 	contractRecord := ctx.GetContractRecord(msg.Target.Contract)
 	if contractRecord == nil {
 		panic(vm.ErrContractNotFound.Create(msg.Target.Contract))
@@ -224,7 +223,7 @@ func (ctx *ViewContext) callView(msg isc.Message) (ret dict.Dict) {
 	return ep.Call(sandbox.NewSandboxView(ctx))
 }
 
-func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret dict.Dict) {
+func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret isc.CallArguments) {
 	ctx.chainInfo = governance.NewStateReader(ctx.contractStateReaderWithGasBurn(governance.Contract.Hname())).
 		GetChainInfo(ctx.chainID)
 	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
@@ -236,7 +235,7 @@ func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret dict.Dict) {
 }
 
 // CallViewExternal calls a view from outside the VM, for example API call
-func (ctx *ViewContext) CallViewExternal(msg isc.Message) (ret dict.Dict, err error) {
+func (ctx *ViewContext) CallViewExternal(msg isc.Message) (ret isc.CallArguments, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = ctx.initAndCallView(msg)
 	}, ctx.log, "CallViewExternal: ")

@@ -10,7 +10,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -252,7 +251,7 @@ func (meta *RequestMetadata) Read(r io.Reader) error {
 	rr.Read(&meta.Message.Target.Contract)
 	rr.Read(&meta.Message.Target.EntryPoint)
 	meta.GasBudget = rr.ReadGas64()
-	meta.Message.Params = dict.New()
+	meta.Message.Params = CallArguments{}
 	rr.Read(&meta.Message.Params)
 	meta.Allowance = NewEmptyAssets()
 	rr.Read(meta.Allowance)

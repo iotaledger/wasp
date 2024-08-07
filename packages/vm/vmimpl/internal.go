@@ -96,16 +96,16 @@ func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeT
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalanceTotal(nativeTokenID isc.CoinType) *big.Int {
+func (reqctx *requestContext) GetNativeTokenBalanceTotal(coinType isc.CoinType) *big.Int {
 	var ret *big.Int
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetNativeTokenBalanceTotal(nativeTokenID)
+		ret = s.GetNativeTokenBalanceTotal(coinType)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) []isc.CoinType {
-	var ret []isc.CoinType
+func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) isc.CoinBalances {
+	var ret isc.CoinBalances
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokens(agentID, reqctx.ChainID())
 	})

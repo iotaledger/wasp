@@ -26,13 +26,13 @@ var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
 var (
 	// state controller (entity that owns the state output via AliasAddress)
 	FuncRotateStateController = coreutil.NewEP1(Contract, coreutil.CoreEPRotateStateController,
-		coreutil.FieldWithCodec(ParamStateControllerAddress, codec.Address),
+		coreutil.FieldWithCodec(codec.Address),
 	)
 	FuncAddAllowedStateControllerAddress = coreutil.NewEP1(Contract, "addAllowedStateControllerAddress",
-		coreutil.FieldWithCodec(ParamStateControllerAddress, codec.Address),
+		coreutil.FieldWithCodec(codec.Address),
 	)
 	FuncRemoveAllowedStateControllerAddress = coreutil.NewEP1(Contract, "removeAllowedStateControllerAddress",
-		coreutil.FieldWithCodec(ParamStateControllerAddress, codec.Address),
+		coreutil.FieldWithCodec(codec.Address),
 	)
 	ViewGetAllowedStateControllerAddresses = coreutil.NewViewEP01(Contract, "getAllowedStateControllerAddresses",
 		OutputAddressList{},
@@ -41,44 +41,44 @@ var (
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.NewEP0(Contract, "claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.NewEP1(Contract, "delegateChainOwnership",
-		coreutil.FieldWithCodec(ParamChainOwner, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	FuncSetPayoutAgentID = coreutil.NewEP1(Contract, "setPayoutAgentID",
-		coreutil.FieldWithCodec(ParamSetPayoutAgentID, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	FuncSetMinCommonAccountBalance = coreutil.NewEP1(Contract, "setMinCommonAccountBalance",
-		coreutil.FieldWithCodec(ParamSetMinCommonAccountBalance, codec.Uint64),
+		coreutil.FieldWithCodec(codec.Uint64),
 	)
 	ViewGetPayoutAgentID = coreutil.NewViewEP01(Contract, "getPayoutAgentID",
-		coreutil.FieldWithCodec(ParamSetPayoutAgentID, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	ViewGetMinCommonAccountBalance = coreutil.NewViewEP01(Contract, "getMinCommonAccountBalance",
-		coreutil.FieldWithCodec(ParamSetMinCommonAccountBalance, codec.Uint64),
+		coreutil.FieldWithCodec(codec.Uint64),
 	)
 	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
-		coreutil.FieldWithCodec(ParamChainOwner, codec.AgentID),
+		coreutil.FieldWithCodec(codec.AgentID),
 	)
 
 	// gas
 	FuncSetFeePolicy = coreutil.NewEP1(Contract, "setFeePolicy",
-		coreutil.FieldWithCodec(ParamFeePolicyBytes, codec.NewCodecEx(gas.FeePolicyFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecEx(gas.FeePolicyFromBytes)),
 	)
 	FuncSetGasLimits = coreutil.NewEP1(Contract, "setGasLimits",
-		coreutil.FieldWithCodec(ParamGasLimitsBytes, codec.NewCodecEx(gas.LimitsFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecEx(gas.LimitsFromBytes)),
 	)
 	ViewGetFeePolicy = coreutil.NewViewEP01(Contract, "getFeePolicy",
-		coreutil.FieldWithCodec(ParamFeePolicyBytes, codec.NewCodecEx(gas.FeePolicyFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecEx(gas.FeePolicyFromBytes)),
 	)
 	ViewGetGasLimits = coreutil.NewViewEP01(Contract, "getGasLimits",
-		coreutil.FieldWithCodec(ParamGasLimitsBytes, codec.NewCodecEx(gas.LimitsFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecEx(gas.LimitsFromBytes)),
 	)
 
 	// evm fees
 	FuncSetEVMGasRatio = coreutil.NewEP1(Contract, "setEVMGasRatio",
-		coreutil.FieldWithCodec(ParamEVMGasRatio, codec.NewCodecEx(util.Ratio32FromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecEx(util.Ratio32FromBytes)),
 	)
 	ViewGetEVMGasRatio = coreutil.NewViewEP01(Contract, "getEVMGasRatio",
-		coreutil.FieldWithCodec(ParamEVMGasRatio, codec.NewCodecEx(util.Ratio32FromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecEx(util.Ratio32FromBytes)),
 	)
 
 	// chain info
@@ -104,17 +104,17 @@ var (
 	FuncStartMaintenance     = coreutil.NewEP0(Contract, "startMaintenance")
 	FuncStopMaintenance      = coreutil.NewEP0(Contract, "stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.NewViewEP01(Contract, "getMaintenanceStatus",
-		coreutil.FieldWithCodec(ParamMaintenanceStatus, codec.Bool),
+		coreutil.FieldWithCodec(codec.Bool),
 	)
 
 	// public chain metadata
 	FuncSetMetadata = coreutil.NewEP2(Contract, "setMetadata",
-		coreutil.FieldWithCodecOptional(ParamPublicURL, codec.String),
-		coreutil.FieldWithCodecOptional(ParamMetadata, codec.NewCodecEx(isc.PublicChainMetadataFromBytes)),
+		coreutil.FieldWithCodecOptional(codec.String),
+		coreutil.FieldWithCodecOptional(codec.NewCodecEx(isc.PublicChainMetadataFromBytes)),
 	)
 	ViewGetMetadata = coreutil.NewViewEP02(Contract, "getMetadata",
-		coreutil.FieldWithCodec(ParamPublicURL, codec.String),
-		coreutil.FieldWithCodec(ParamMetadata, codec.NewCodecEx(isc.PublicChainMetadataFromBytes)),
+		coreutil.FieldWithCodec(codec.String),
+		coreutil.FieldWithCodec(codec.NewCodecEx(isc.PublicChainMetadataFromBytes)),
 	)
 )
 
@@ -210,12 +210,12 @@ const (
 
 type OutputAddressList struct{}
 
-func (e OutputAddressList) Encode(addrs []*cryptolib.Address) dict.Dict {
-	return codec.SliceToArray(codec.Address, addrs, ParamAllowedStateControllerAddresses)
+func (e OutputAddressList) Encode(addrs []*cryptolib.Address) []byte {
+	return codec.SliceToArray(codec.Address, addrs)
 }
 
-func (e OutputAddressList) Decode(r dict.Dict) ([]*cryptolib.Address, error) {
-	return codec.SliceFromArray(codec.Address, r, ParamAllowedStateControllerAddresses)
+func (e OutputAddressList) Decode(r []byte) ([]*cryptolib.Address, error) {
+	return codec.SliceFromArray(codec.Address, r)
 }
 
 type OutputChainInfo struct{}

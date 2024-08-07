@@ -96,7 +96,7 @@ func (e *ChainEnv) getCounterForNode(nodeIndex int) int64 {
 	decodedDict, err := apiextensions.APIJsonDictToDict(*result)
 	require.NoError(e.t, err)
 
-	counter, err := inccounter.ViewGetCounter.Output.Decode(decodedDict)
+	counter, err := inccounter.ViewGetCounter.Output1.Decode(decodedDict)
 	require.NoError(e.t, err)
 
 	return counter

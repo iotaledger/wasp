@@ -26,7 +26,7 @@ func (h *magicContractHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentI
 func (h *magicContractHandler) GetL2BalanceNativeTokens(nativeTokenID iscmagic.NativeTokenID, agentID iscmagic.ISCAgentID) *big.Int {
 	aid := agentID.MustUnwrap()
 	r := h.callView(accounts.ViewBalanceNativeToken.Message(&aid, nativeTokenID.Unwrap()))
-	return lo.Must(accounts.ViewBalanceNativeToken.Output.Decode(r))
+	return lo.Must(accounts.ViewBalanceNativeToken.Output1.Decode(r))
 }
 
 // handler for ISCAccounts::getL2NFTs
@@ -50,7 +50,7 @@ func (h *magicContractHandler) GetL2NFTAmount(agentID iscmagic.ISCAgentID) *big.
 func (h *magicContractHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) []iscmagic.NFTID {
 	aid := agentID.MustUnwrap()
 	r := h.callView(accounts.ViewAccountNFTsInCollection.Message(&aid, collectionID.Unwrap()))
-	return lo.Map(lo.Must(accounts.ViewAccountNFTsInCollection.Output.Decode(r)), func(nftID isc.NFTID, _ int) iscmagic.NFTID {
+	return lo.Map(lo.Must(accounts.ViewAccountNFTsInCollection.Output1.Decode(r)), func(nftID isc.NFTID, _ int) iscmagic.NFTID {
 		return iscmagic.NFTID(nftID)
 	})
 }
@@ -59,7 +59,7 @@ func (h *magicContractHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAgentID
 func (h *magicContractHandler) GetL2NFTAmountInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) *big.Int {
 	aid := agentID.MustUnwrap()
 	r := h.callView(accounts.ViewAccountNFTAmountInCollection.Message(&aid, collectionID.Unwrap()))
-	n := lo.Must(accounts.ViewAccountNFTAmountInCollection.Output.Decode(r))
+	n := lo.Must(accounts.ViewAccountNFTAmountInCollection.Output1.Decode(r))
 	return big.NewInt(int64(n))
 }
 

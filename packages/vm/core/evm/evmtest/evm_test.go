@@ -1347,7 +1347,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	checkCounter := func(c int) {
 		ret, err2 := env.Chain.CallView(inccounter.ViewGetCounter.Message())
 		require.NoError(t, err2)
-		counter := lo.Must(inccounter.ViewGetCounter.Output.Decode(ret))
+		counter := lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret))
 		require.EqualValues(t, c, counter)
 	}
 	checkCounter(0)

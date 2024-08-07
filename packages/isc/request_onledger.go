@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -39,7 +38,7 @@ func OnLedgerFromRequest(request iscmove.Request, anchorAddress *cryptolib.Addre
 					Contract:   Hname(request.Message.Contract),
 					EntryPoint: Hname(request.Message.Function),
 				},
-				Params: dict.New(), // TODO: set request.Message.Params (turn dict to list of args)
+				Params: CallArguments{},
 			},
 			Allowance: NewEmptyAssets(),
 			GasBudget: 0,

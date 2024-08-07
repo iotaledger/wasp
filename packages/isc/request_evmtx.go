@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-
+	
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
-
+	
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
@@ -88,7 +87,7 @@ func (req *evmOffLedgerTxRequest) Message() Message {
 	return NewMessage(
 		Hn(evmnames.Contract),
 		Hn(evmnames.FuncSendTransaction),
-		dict.Dict{evmnames.FieldTransaction: evmtypes.EncodeTransaction(req.tx)},
+		NewCallArguments(evmtypes.EncodeTransaction(req.tx)),
 	)
 }
 

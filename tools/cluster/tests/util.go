@@ -25,7 +25,7 @@ func (e *ChainEnv) checkCoreContracts() {
 		cl := e.Chain.Client(nil, i)
 		ret, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Message())
 		require.NoError(e.t, err)
-		info, err := governance.ViewGetChainInfo.Output.Decode(ret)
+		info, err := governance.ViewGetChainInfo.Output1.Decode(ret)
 		require.NoError(e.t, err)
 
 		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainOwnerID)
@@ -34,7 +34,7 @@ func (e *ChainEnv) checkCoreContracts() {
 			CallView(context.Background(), root.ViewGetContractRecords.Message())
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.ViewGetContractRecords.Output.Decode(records)
+		contractRegistry, err := root.ViewGetContractRecords.Output1.Decode(records)
 		require.NoError(e.t, err)
 		for _, rec := range corecontracts.All {
 			cr := contractRegistry[rec.Hname()]
@@ -185,7 +185,7 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
 		}
-		counter, err := inccounter.ViewGetCounter.Output.Decode(ret)
+		counter, err := inccounter.ViewGetCounter.Output1.Decode(ret)
 		require.NoError(t, err)
 		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected

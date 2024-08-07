@@ -139,7 +139,7 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 
 	d, err := govClient.CallView(context.Background(), governance.ViewGetFeePolicy.Message())
 	require.NoError(t, err)
-	fp2, err := governance.ViewGetFeePolicy.Output.Decode(d)
+	fp2, err := governance.ViewGetFeePolicy.Output1.Decode(d)
 	require.NoError(t, err)
 	require.Equal(t, fp1, fp2)
 	e.TestRPCGetLogs()

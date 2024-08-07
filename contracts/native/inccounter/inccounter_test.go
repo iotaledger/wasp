@@ -132,7 +132,7 @@ func TestSpawn(t *testing.T) {
 
 	res, err := chain.CallView(root.ViewGetContractRecords.Message())
 	require.NoError(t, err)
-	creg := lo.Must(root.ViewGetContractRecords.Output.Decode(res))
+	creg := lo.Must(root.ViewGetContractRecords.Output1.Decode(res))
 	require.True(t, len(creg) == len(corecontracts.All)+2)
 }
 

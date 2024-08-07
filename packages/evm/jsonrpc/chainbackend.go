@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -26,7 +25,7 @@ type ChainBackend interface {
 	EVMTraceTransaction(aliasOutput *isc.AliasOutputWithID, blockTime time.Time, iscRequestsInBlock []isc.Request, txIndex uint64, tracer *tracers.Tracer) error
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID
-	ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error)
+	ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error)
 	ISCLatestAliasOutput() (*isc.AliasOutputWithID, error)
 	ISCLatestState() (state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)

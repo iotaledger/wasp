@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type kvdecoder struct {
@@ -293,35 +294,35 @@ func (p *kvdecoder) MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int {
 	return ret
 }
 
-func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) (iotago.NativeTokenID, error) {
+func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...isc.CoinType) (isc.CoinType, error) {
 	v := p.Get(key)
 	if v == nil {
 		if len(def) != 0 {
 			return def[0], nil
 		}
-		return iotago.NativeTokenID{}, fmt.Errorf("GetNativeTokenID: mandatory parameter %q does not exist", key)
+		return "", fmt.Errorf("GetNativeTokenID: mandatory parameter %q does not exist", key)
 	}
 	return codec.CoinType.Decode(v)
 }
 
-func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) iotago.NativeTokenID {
+func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...isc.CoinType) isc.CoinType {
 	ret, err := p.GetNativeTokenID(key, def...)
 	p.check(err)
 	return ret
 }
 
-func (p *kvdecoder) GetNFTID(key kv.Key, def ...iotago.NFTID) (iotago.NFTID, error) {
+func (p *kvdecoder) GetNFTID(key kv.Key, def ...sui.ObjectID) (sui.ObjectID, error) {
 	v := p.Get(key)
 	if v == nil {
 		if len(def) != 0 {
 			return def[0], nil
 		}
-		return iotago.NFTID{}, fmt.Errorf("GetNFTID: mandatory parameter %q does not exist", key)
+		return sui.ObjectID{}, fmt.Errorf("GetNFTID: mandatory parameter %q does not exist", key)
 	}
 	return codec.NFTID.Decode(v)
 }
 
-func (p *kvdecoder) MustGetNFTID(key kv.Key, def ...iotago.NFTID) iotago.NFTID {
+func (p *kvdecoder) MustGetNFTID(key kv.Key, def ...sui.ObjectID) sui.ObjectID {
 	ret, err := p.GetNFTID(key, def...)
 	p.check(err)
 	return ret

@@ -142,9 +142,9 @@ func TestMetadataBad(t *testing.T) {
 	initParams, err = dict.FromBytes(metadataBin)
 	require.NoError(t, err)
 	require.NotNil(t, initParams)
-	t.Logf("Dict=%v", initParams)
+	t.Logf("Args=%v", initParams)
 	initParams.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
-		t.Logf("Dict, %v ===> %v", key, value)
+		t.Logf("Args, %v ===> %v", key, value)
 		return true
 	})
 

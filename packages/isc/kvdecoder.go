@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // KVDecoder is interface with all kind of utility functions extracting and decoding values from the key/value map
@@ -53,8 +54,8 @@ type KVDecoder interface {
 	MustGetTokenScheme(key kv.Key, def ...iotago.TokenScheme) iotago.TokenScheme
 	GetBigInt(key kv.Key, def ...*big.Int) (*big.Int, error)
 	MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int
-	GetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) (iotago.NativeTokenID, error)
-	MustGetNativeTokenID(key kv.Key, def ...iotago.NativeTokenID) iotago.NativeTokenID
-	GetNFTID(key kv.Key, def ...iotago.NFTID) (iotago.NFTID, error)
-	MustGetNFTID(key kv.Key, def ...iotago.NFTID) iotago.NFTID
+	GetNativeTokenID(key kv.Key, def ...CoinType) (CoinType, error)
+	MustGetNativeTokenID(key kv.Key, def ...CoinType) CoinType
+	GetNFTID(key kv.Key, def ...sui.ObjectID) (sui.ObjectID, error)
+	MustGetNFTID(key kv.Key, def ...sui.ObjectID) sui.ObjectID
 }

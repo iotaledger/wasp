@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -51,7 +50,7 @@ func (b *WaspEVMBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error) {
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetFeePolicy.Output.Decode(ret)
+	return governance.ViewGetFeePolicy.DecodeOutput(ret)
 }
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -101,7 +100,7 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	)
 }
 
-func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error) {
+func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
 	return chainutil.CallView(chainState, b.chain, msg)
 }
 
