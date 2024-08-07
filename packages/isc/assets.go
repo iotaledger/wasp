@@ -28,7 +28,10 @@ const BaseTokenType = CoinType(suijsonrpc.SuiCoinType)
 type CoinType string
 
 func (c CoinType) Write(w io.Writer) error {
-	rt := lo.Must(sui.NewResourceType(string(c)))
+	rt, err := sui.NewResourceType(string(c))
+	if err != nil {
+		return fmt.Errorf("invalid CoinType %q: %w", c, err)
+	}
 	if rt.SubType != nil {
 		panic("cointype with subtype is unsupported")
 	}
@@ -155,6 +158,13 @@ func (c CoinBalances) Get(coinType CoinType) *big.Int {
 		return big.NewInt(0)
 	}
 	return r
+}
+
+func (c CoinBalances) ToAssets() *Assets {
+	return &Assets{
+		Coins:   c,
+		Objects: NewObjectIDSet(),
+	}
 }
 
 type CoinJSON struct {

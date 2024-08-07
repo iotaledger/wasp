@@ -15,11 +15,6 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 
 var (
-	// Funcs
-	FuncRetryUnprocessable = coreutil.NewEP1(Contract, "retryUnprocessable",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-	)
-
 	// Views
 	ViewGetBlockInfo = coreutil.NewViewEP12(Contract, "getBlockInfo",
 		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
@@ -53,26 +48,21 @@ var (
 		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
 		OutputEvents{},
 	)
-	ViewHasUnprocessable = coreutil.NewViewEP11(Contract, "hasUnprocessable",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-		coreutil.FieldWithCodec(ParamUnprocessableRequestExists, codec.Bool),
-	)
 )
 
 // request parameters
 const (
-	ParamBlockIndex                 = "n"
-	ParamBlockInfo                  = "i"
-	ParamContractHname              = "h"
-	ParamFromBlock                  = "f"
-	ParamToBlock                    = "t"
-	ParamRequestID                  = "u"
-	ParamRequestIndex               = "r"
-	ParamRequestProcessed           = "p"
-	ParamRequestRecord              = "d"
-	ParamEvent                      = "e"
-	ParamStateControllerAddress     = "s"
-	ParamUnprocessableRequestExists = "x"
+	ParamBlockIndex             = "n"
+	ParamBlockInfo              = "i"
+	ParamContractHname          = "h"
+	ParamFromBlock              = "f"
+	ParamToBlock                = "t"
+	ParamRequestID              = "u"
+	ParamRequestIndex           = "r"
+	ParamRequestProcessed       = "p"
+	ParamRequestRecord          = "d"
+	ParamEvent                  = "e"
+	ParamStateControllerAddress = "s"
 )
 
 const (
@@ -95,15 +85,6 @@ const (
 	//   EventLookupKey = blockIndex | requestIndex | eventIndex
 	// Covered in: TestGetEvents
 	prefixRequestEvents = "d"
-
-	// Map of requestID => unprocessableRequestRecord
-	// Covered in: TestUnprocessableWithPruning
-	prefixUnprocessableRequests = "u"
-
-	// Array of requestID.
-	// Temporary list of unprocessable requests that need updating the outputID field
-	// Covered in: TestUnprocessableWithPruning
-	prefixNewUnprocessableRequests = "U"
 )
 
 type OutputRequestIDs struct{}

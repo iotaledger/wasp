@@ -11,15 +11,16 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (s *StateReader) CheckLedgerConsistency() {
+func (s *StateReader) CheckLedgerConsistency() error {
 	t := s.GetTotalL2FungibleTokens()
 	c := s.calcL2TotalFungibleTokens()
 	if !t.Equals(c) {
-		panic(fmt.Sprintf(
+		return fmt.Errorf(
 			"inconsistent on-chain account ledger\n total assets: %s\ncalc total: %s\n",
 			t, c,
-		))
+		)
 	}
+	return nil
 }
 
 func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {

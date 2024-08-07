@@ -73,8 +73,10 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 
 	res, err := vmimpl.Run(task)
 	require.NoError(ch.Env.T, err)
-	accounts.NewStateReaderFromChainState(res.StateDraft.SchemaVersion(), res.StateDraft).
+
+	err = accounts.NewStateReaderFromChainState(res.StateDraft.SchemaVersion(), res.StateDraft).
 		CheckLedgerConsistency()
+	require.NoError(ch.Env.T, err)
 	return res
 }
 

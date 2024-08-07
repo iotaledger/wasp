@@ -37,7 +37,7 @@ var (
 		InputRegisterERC20ExteralNativeToken{},
 	)
 	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,
-		coreutil.FieldWithCodec(FieldNFTCollectionID, codec.NFTID),
+		coreutil.FieldWithCodec(FieldNFTCollectionID, codec.ObjectID),
 	)
 	FuncNewL1Deposit = coreutil.NewEP1(Contract, evmnames.FuncNewL1Deposit,
 		InputNewL1Deposit{},
@@ -53,7 +53,7 @@ var (
 	)
 
 	ViewGetERC721CollectionAddress = coreutil.NewViewEP11(Contract, evmnames.ViewGetERC721CollectionAddress,
-		coreutil.FieldWithCodec(FieldNativeTokenID, codec.NFTID),
+		coreutil.FieldWithCodec(FieldNativeTokenID, codec.ObjectID),
 		coreutil.FieldWithCodecOptional(FieldResult, codec.EthereumAddress),
 	)
 )
@@ -78,7 +78,7 @@ const (
 	FieldTokenName          = evmnames.FieldTokenName         // string
 	FieldTokenTickerSymbol  = evmnames.FieldTokenTickerSymbol // string
 	FieldTokenDecimals      = evmnames.FieldTokenDecimals     // uint8
-	FieldNFTCollectionID    = evmnames.FieldNFTCollectionID   // NFTID
+	FieldNFTCollectionID    = evmnames.FieldNFTCollectionID   // ObjectID
 	FieldFoundryTokenScheme = evmnames.FieldFoundryTokenScheme
 	FieldTargetAddress      = evmnames.FieldTargetAddress
 
@@ -167,19 +167,21 @@ type RegisterERC20ExternalNativeTokenRequest struct {
 type InputRegisterERC20ExteralNativeToken struct{}
 
 func (InputRegisterERC20ExteralNativeToken) Encode(p RegisterERC20ExternalNativeTokenRequest) dict.Dict {
+	panic("TODO")
 	d := p.Token.ToDict()
 	d[FieldTargetAddress] = codec.Address.Encode(p.SourceChain)
-	d[FieldFoundryTokenScheme] = codec.TokenScheme.Encode(p.FoundryTokenScheme)
+	// d[FieldFoundryTokenScheme] = codec.TokenScheme.Encode(p.FoundryTokenScheme)
 	return d
 }
 
 func (InputRegisterERC20ExteralNativeToken) Decode(d dict.Dict) (ret RegisterERC20ExternalNativeTokenRequest, err error) {
+	panic("TODO")
 	ret.Token, err = ERC20NativeTokenParamsFromDict(d)
 	if err != nil {
 		return
 	}
 	ret.SourceChain, err = codec.Address.Decode(d[FieldTargetAddress])
-	ret.FoundryTokenScheme, err = codec.TokenScheme.Decode(d[FieldFoundryTokenScheme])
+	// ret.FoundryTokenScheme, err = codec.TokenScheme.Decode(d[FieldFoundryTokenScheme])
 	if err != nil {
 		return
 	}

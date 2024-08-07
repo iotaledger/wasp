@@ -17,9 +17,6 @@ var Processor = Contract.Processor(nil,
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
 	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
-	ViewHasUnprocessable.WithHandler(viewHasUnprocessable),
-
-	FuncRetryUnprocessable.WithHandler(retryUnprocessable),
 )
 
 var ErrBlockNotFound = coreerrors.Register("Block not found").Create()

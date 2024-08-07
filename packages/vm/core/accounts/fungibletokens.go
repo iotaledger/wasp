@@ -92,7 +92,7 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances
 		if balance.Sign() < 0 {
 			return false
 		}
-		coinMutations.Add(coinType, balance)
+		coinMutations[coinType] = balance
 	}
 
 	for coinType, amount := range coinMutations {
