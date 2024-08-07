@@ -120,7 +120,7 @@ func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.Nativ
 	out, err := accounts.ViewNativeToken.Output.Decode(r)
 	h.ctx.RequireNoError(err)
 	nativeTokenID := out.(*iotago.FoundryOutput).MustNativeTokenID()
-	return iscmagic.WrapNativeTokenID(nativeTokenID)
+	return iscmagic.WrapCoinType(nativeTokenID)
 }
 
 var errUnsupportedTokenScheme = coreerrors.Register("unsupported TokenScheme kind").Create()
