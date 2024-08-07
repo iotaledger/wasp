@@ -4,15 +4,11 @@
 package evm
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap/buffer"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
@@ -105,15 +101,6 @@ type ERC20NativeTokenParams struct {
 	Decimals     uint8
 }
 
-func (e ERC20NativeTokenParams) ToDict() dict.Dict {
-	return dict.Dict{
-		FieldFoundrySN:         codec.Uint32.Encode(e.FoundrySN),
-		FieldTokenName:         codec.String.Encode(e.Name),
-		FieldTokenTickerSymbol: codec.String.Encode(e.TickerSymbol),
-		FieldTokenDecimals:     codec.Uint8.Encode(e.Decimals),
-	}
-}
-
 func ERC20NativeTokenParamsFromBytes(d []byte) (ret ERC20NativeTokenParams, err error) {
 	r := rwutil.NewBytesReader(d)
 	ret.FoundrySN = r.ReadUint32()
@@ -136,47 +123,4 @@ func (ERC20NativeTokenParams) Encode(token ERC20NativeTokenParams) []byte {
 
 func (ERC20NativeTokenParams) Decode(d []byte) (ERC20NativeTokenParams, error) {
 	return ERC20NativeTokenParamsFromBytes(d)
-}
-
-type RegisterERC20NativeTokenOnRemoteChainRequest struct {
-	TargetChain *cryptolib.Address
-	Token       ERC20NativeTokenParams
-}
-
-type RegisterERC20ExternalNativeTokenRequest struct {
-	SourceChain        *cryptolib.Address
-	FoundryTokenScheme iotago.TokenScheme
-	Token              ERC20NativeTokenParams
-}
-
-type NewL1DepositRequest struct {
-	DepositOriginator isc.AgentID
-	Receiver          common.Address
-	Assets            *isc.Assets
-}
-
-type InputNewL1Deposit struct{}
-
-func (InputNewL1Deposit) Decode(d dict.Dict) (ret NewL1DepositRequest, err error) {
-	ret.DepositOriginator, err = codec.AgentID.Decode(d[FieldAgentIDDepositOriginator])
-	if err != nil {
-		return
-	}
-	ret.Receiver, err = codec.EthereumAddress.Decode(d[FieldAddress])
-	if err != nil {
-		return
-	}
-	ret.Assets, err = codec.NewCodecEx(isc.AssetsFromBytes).Decode(d[FieldAssets])
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (InputNewL1Deposit) Encode(r NewL1DepositRequest) dict.Dict {
-	return dict.Dict{
-		FieldAddress:                  codec.EthereumAddress.Encode(r.Receiver),
-		FieldAssets:                   codec.NewCodecEx(isc.AssetsFromBytes).Encode(r.Assets),
-		FieldAgentIDDepositOriginator: codec.AgentID.Encode(r.DepositOriginator),
-	}
 }
