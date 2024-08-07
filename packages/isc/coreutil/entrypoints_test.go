@@ -235,10 +235,10 @@ func (m MockSandBox) AllowanceAvailable() *isc.Assets {
 var Contract = NewContract(CoreContractAccounts)
 
 func TestEntryPointViewFunc(t *testing.T) {
-	testViewFunc := NewViewEP11(Contract, "", FieldWithCodec(codec.AgentID), FieldWithCodec(codec.AgentID)).
-		WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
-			return id
-		})
+	testViewFunc := NewViewEP11(Contract, "", FieldWithCodec(codec.AgentID), FieldWithCodec(codec.AgentID))
+	testViewFuncHandler := testViewFunc.WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
+		return id
+	})
 	testAgentIDInput := isc.NewRandomAgentID()
 
 	mock := MockSandBox{
@@ -246,19 +246,24 @@ func TestEntryPointViewFunc(t *testing.T) {
 			codec.AgentID.Encode(testAgentIDInput)),
 	}
 
-	result := testViewFunc.Call(mock)
+	result := testViewFuncHandler.Call(mock)
 	require.Len(t, result, 1)
 
 	agentID, err := codec.AgentID.Decode(result[0])
 	require.NoError(t, err)
 	require.EqualValues(t, testAgentIDInput, agentID)
+
+	// Test auto decoding functionality
+	agentID2, err := testViewFunc.DecodeOutput(result)
+	require.NoError(t, err)
+	require.EqualValues(t, testAgentIDInput, agentID2)
 }
 
 func TestEntryPointMutFunc11(t *testing.T) {
-	testMutFunc := NewEP11(Contract, "", FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32)).
-		WithHandler(func(sandbox isc.Sandbox, u uint32) uint32 {
-			return u * 2
-		})
+	testMutFunc := NewEP11(Contract, "", FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32))
+	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) uint32 {
+		return u * 2
+	})
 
 	testNumber := uint32(1024)
 	mock := MockSandBox{
@@ -266,19 +271,24 @@ func TestEntryPointMutFunc11(t *testing.T) {
 			codec.Uint32.Encode(testNumber)),
 	}
 
-	result := testMutFunc.Call(mock)
+	result := testMutFuncHandler.Call(mock)
 	require.Len(t, result, 1)
 
 	testNumberResult, err := codec.Uint32.Decode(result[0])
 	require.NoError(t, err)
 	require.EqualValues(t, testNumberResult, testNumber*2)
+
+	// Test auto decoding functionality
+	uint32Result, err := testMutFunc.DecodeOutput(result)
+	require.NoError(t, err)
+	require.EqualValues(t, uint32Result, testNumber*2)
 }
 
 func TestEntryPointMutFunc12(t *testing.T) {
-	testMutFunc := NewEP12(Contract, "", FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32)).
-		WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
-			return u * 2, u * 3
-		})
+	testMutFunc := NewEP12(Contract, "", FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32))
+	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
+		return u * 2, u * 3
+	})
 
 	testNumber := uint32(1024)
 	mock := MockSandBox{
@@ -286,7 +296,7 @@ func TestEntryPointMutFunc12(t *testing.T) {
 			codec.Uint32.Encode(testNumber)),
 	}
 
-	result := testMutFunc.Call(mock)
+	result := testMutFuncHandler.Call(mock)
 	require.Len(t, result, 2)
 
 	testNumberResult1, err := codec.Uint32.Decode(result[0])
@@ -296,4 +306,10 @@ func TestEntryPointMutFunc12(t *testing.T) {
 	testNumberResult2, err := codec.Uint32.Decode(result[1])
 	require.NoError(t, err)
 	require.EqualValues(t, testNumberResult2, testNumber*3)
+
+	// Test auto decoding functionality
+	uint32Result2, uint32Result3, err := testMutFunc.DecodeOutput(result)
+	require.NoError(t, err)
+	require.EqualValues(t, uint32Result2, testNumber*2)
+	require.EqualValues(t, uint32Result3, testNumber*3)
 }
