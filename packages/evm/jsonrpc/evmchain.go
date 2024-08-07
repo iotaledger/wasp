@@ -9,7 +9,7 @@ import (
 	"math"
 	"math/big"
 	"path"
-
+	
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/gommon/log"
 	"github.com/samber/lo"
-
+	
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
@@ -136,7 +135,7 @@ func (e *EVMChain) ChainID() uint16 {
 
 func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
 	e.log.Debugf("ViewCaller(chainState=%v)", chainState)
-	return func(msg isc.Message) (dict.Dict, error) {
+	return func(msg isc.Message) (isc.CallArguments, error) {
 		return e.backend.ISCCallView(chainState, msg)
 	}
 }
