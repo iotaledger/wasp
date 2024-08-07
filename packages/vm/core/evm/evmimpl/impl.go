@@ -15,13 +15,13 @@ import (
 	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -104,7 +104,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseToken
 
 var errChainIDMismatch = coreerrors.Register("chainId mismatch").Create()
 
-func applyTransaction(ctx isc.Sandbox) dict.Dict {
+func applyTransaction(ctx isc.Sandbox) {
 	cannotBeCalledFromContracts(ctx)
 
 	// We only want to charge gas for the actual execution of the ethereum tx.
@@ -173,8 +173,6 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 
 	// revert the changes in the state / txbuilder in case of error
 	ctx.RequireNoError(revertErr)
-
-	return nil
 }
 
 var (
@@ -191,7 +189,7 @@ func requireCallerHasFoundry(ctx isc.Sandbox, foundrySN uint32) {
 	}
 }
 
-func registerERC20NativeToken(ctx isc.Sandbox, token evm.ERC20NativeTokenParams) dict.Dict {
+func registerERC20NativeToken(ctx isc.Sandbox, token evm.ERC20NativeTokenParams) {
 	requireCallerHasFoundry(ctx, token.FoundrySN)
 
 	// deploy the contract to the EVM state
@@ -212,8 +210,6 @@ func registerERC20NativeToken(ctx isc.Sandbox, token evm.ERC20NativeTokenParams)
 	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(token.Decimals))
 
 	addToPrivileged(ctx.State(), addr)
-
-	return nil
 }
 
 var (
@@ -221,17 +217,17 @@ var (
 	errOutputMustBeFoundry = coreerrors.Register("expected foundry output")
 )
 
-func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.RegisterERC20NativeTokenOnRemoteChainRequest) dict.Dict {
+func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.ERC20NativeTokenParams, targetChain *cryptolib.Address) {
 	cannotBeCalledFromContracts(ctx)
 
-	/*if r.TargetChain.Type() != iotago.AddressAlias {
+	/*if targetChain.Type() != iotago.AddressAlias {
 		panic(errTargetMustBeAlias)
 	}*/ // TODO: is it needed?
 
-	requireCallerHasFoundry(ctx, r.Token.FoundrySN)
+	requireCallerHasFoundry(ctx, r.FoundrySN)
 
 	tokenScheme := func() iotago.TokenScheme {
-		res := ctx.CallView(accounts.ViewNativeToken.Message(r.Token.FoundrySN))
+		res := ctx.CallView(accounts.ViewNativeToken.Message(r.FoundrySN))
 		o := lo.Must(accounts.ViewNativeToken.Output.Decode(res))
 		foundryOutput, ok := o.(*iotago.FoundryOutput)
 		if !ok {
@@ -241,14 +237,10 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.RegisterERC20N
 	}()
 
 	req := isc.RequestParameters{
-		TargetAddress: r.TargetChain,
+		TargetAddress: targetChain,
 		Assets:        isc.NewEmptyAssets(),
 		Metadata: &isc.SendMetadata{
-			Message: evm.FuncRegisterERC20ExternalNativeToken.Message(evm.RegisterERC20ExternalNativeTokenRequest{
-				SourceChain:        ctx.ChainID().AsAddress(),
-				FoundryTokenScheme: tokenScheme,
-				Token:              r.Token,
-			}),
+			Message: evm.FuncRegisterERC20ExternalNativeToken.Message(r, tokenScheme),
 			// FIXME why does this gas budget is higher than the allowance below
 			GasBudget: 50 * gas.LimitsDefault.MinGasPerRequest,
 		},
@@ -259,8 +251,6 @@ func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.RegisterERC20N
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssetsBaseTokensU64(sd+10*gas.LimitsDefault.MinGasPerRequest))
 	req.Assets.AddBaseTokens(sd + 10*gas.LimitsDefault.MinGasPerRequest)
 	ctx.Send(req)
-
-	return nil
 }
 
 var (
@@ -269,7 +259,7 @@ var (
 	errNativeTokenAlreadyRegistered = coreerrors.Register("native token already registered").Create()
 )
 
-func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.RegisterERC20ExternalNativeTokenRequest) dict.Dict {
+func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.ERC20NativeTokenParams, tokenScheme iotago.TokenScheme) common.Address {
 	caller, ok := ctx.Caller().(*isc.ContractAgentID)
 	if !ok {
 		panic(errSenderMustBeAlias)
@@ -282,13 +272,13 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.RegisterERC20Extern
 	// TODO: We should somehow inspect the real FoundryOutput, but it is on L1.
 	// Here we reproduce it from the given params (which we assume to be correct)
 	// in order to derive the FoundryID
-	simpleTS, ok := r.FoundryTokenScheme.(*iotago.SimpleTokenScheme)
+	simpleTS, ok := tokenScheme.(*iotago.SimpleTokenScheme)
 	if !ok {
 		panic(errUnsupportedTokenScheme)
 	}
 	f := &iotago.FoundryOutput{
-		SerialNumber: r.Token.FoundrySN,
-		TokenScheme:  r.FoundryTokenScheme,
+		SerialNumber: r.FoundrySN,
+		TokenScheme:  tokenScheme,
 		Conditions: []iotago.UnlockCondition{&iotago.ImmutableAliasUnlockCondition{
 			Address: &sourceChainAddress,
 		}},
@@ -313,9 +303,9 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.RegisterERC20Extern
 	evmState.CreateAccount(addr)
 	evmState.SetCode(addr, iscmagic.ERC20ExternalNativeTokensRuntimeBytecode)
 	// see ERC20ExternalNativeTokens_storage.json
-	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(r.Token.Name))
-	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(r.Token.TickerSymbol))
-	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(r.Token.Decimals))
+	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(r.Name))
+	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(r.TickerSymbol))
+	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(r.Decimals))
 	for k, v := range solidity.StorageEncodeBytes(3, nativeTokenID[:]) {
 		evmState.SetState(addr, k, v)
 	}
@@ -323,18 +313,18 @@ func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.RegisterERC20Extern
 
 	addToPrivileged(ctx.State(), addr)
 
-	return result(addr[:])
+	return addr
 }
 
-func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, nativeTokenID isc.NativeTokenID) *common.Address {
-	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
+func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, coinType isc.CoinType) *common.Address {
+	addr, ok := getERC20ExternalNativeTokensAddress(ctx, coinType)
 	if !ok {
 		return nil
 	}
 	return &addr
 }
 
-func viewERC721CollectionAddress(ctx isc.SandboxView, collectionID iotago.NFTID) dict.Dict {
+func viewERC721CollectionAddress(ctx isc.SandboxView, collectionID sui.ObjectID) (bool, common.Address) {
 	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
 
 	exists := emulator.Exist(
@@ -342,10 +332,7 @@ func viewERC721CollectionAddress(ctx isc.SandboxView, collectionID iotago.NFTID)
 		emulator.StateDBSubrealmR(evm.EmulatorStateSubrealmR(ctx.StateR())),
 	)
 
-	return dict.Dict{
-		evm.FieldResult:  codec.Encode(exists),
-		evm.FieldAddress: codec.Encode(addr),
-	}
+	return exists, addr
 }
 
 func registerERC721NFTCollection(ctx isc.Sandbox, collectionID sui.ObjectID) {
@@ -385,7 +372,7 @@ func tryGetRevertError(res *core.ExecutionResult) error {
 
 // callContract is called from the jsonrpc eth_estimateGas and eth_call endpoints.
 // The VM is in estimate gas mode, and any state mutations are discarded.
-func callContract(ctx isc.Sandbox) dict.Dict {
+func callContract(ctx isc.Sandbox) []byte {
 	cannotBeCalledFromContracts(ctx)
 
 	// We only want to charge gas for the actual execution of the ethereum tx.
@@ -417,7 +404,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 		ctx.RequireNoError(gasErr)
 	}
 
-	return result(res.ReturnData)
+	return res.ReturnData
 }
 
 func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {

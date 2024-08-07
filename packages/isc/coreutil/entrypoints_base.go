@@ -9,6 +9,13 @@ type EP0[S isc.SandboxBase] struct{ EntryPointInfo[S] }
 
 func (e EP0[S]) Message() isc.Message { return e.EntryPointInfo.Message(isc.CallArguments{}) }
 
+func (e EP0[S]) WithHandler(f func(ctx S)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+		f(ctx)
+		return isc.NewCallArguments()
+	})
+}
+
 func NewEP0(contract *ContractInfo, name string) EP0[isc.Sandbox] {
 	return EP0[isc.Sandbox]{EntryPointInfo: contract.Func(name)}
 }
