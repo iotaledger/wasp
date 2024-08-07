@@ -35,7 +35,7 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 	return ptb.Finish()
 }
 
-func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
+func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestRefs []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef})
@@ -58,7 +58,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 	)
 	argAnchorAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
 	argAnchorBorrow := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
-	for _, reqObject := range requestObjects {
+	for _, reqObject := range requestRefs {
 		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: &reqObject})
 		argReceiveRequest := ptb.Command(
 			sui.Command{
