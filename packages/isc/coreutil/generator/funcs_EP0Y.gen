@@ -48,4 +48,23 @@ func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{r
         {{end}}
     })
 }
+
+func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) DecodeOutput(arguments isc.CallArguments) ({{range $i := until .Outputs}}T{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}, error) {
+    var err error
+    {{range $i := until .Outputs}}var o{{add $i 1}} T{{add $i 1}}
+    {{end}}
+    {{range $i := until .Outputs}}
+    i{{add $i 1}}, err := arguments.At({{$i}})
+    if err != nil {
+        return {{range $j := until $.Outputs}}o{{add $j 1}}{{if not (last $j $.Outputs)}}, {{end}}{{end}}, err
+    }
+
+    o{{add $i 1}}, err = e.Output{{add $i 1}}.Decode(i{{add $i 1}})
+    if err != nil {
+        return {{range $j := until $.Outputs}}o{{add $j 1}}{{if not (last $j $.Outputs)}}, {{end}}{{end}}, err
+    }
+    {{end}}
+
+    return {{range $i := until .Outputs}}o{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}, nil
+}
 {{end}}

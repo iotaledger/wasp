@@ -265,302 +265,1268 @@ func (e EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]) Message(p1 T1, p2 T2, p3
 	return e.EntryPointInfo.Message(callArgs)
 }
 
-// EP6 is a utility type for entry points that receive 6 parameter(s)
-type EP6[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6]] struct {
-	EntryPointInfo[S]
-	Input1 I1
-	Input2 I2
-	Input3 I3
-	Input4 I4
-	Input5 I5
-	Input6 I6
+// EP01 is a utility type for entry points that receive 0 parameters and return 1 value(s)
+type EP01[S isc.SandboxBase, T1 any, O1 CallArgsCodec[T1]] struct {
+	EP0[S]
+	Output1 O1
 }
 
-func NewEP6[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6]](
+func NewEP01[T1 any, O1 CallArgsCodec[T1]](
 	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6,
-) EP6[isc.Sandbox, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6] {
-	return EP6[isc.Sandbox, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]{
-		EntryPointInfo: contract.Func(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
+	out1 O1,
+) EP01[isc.Sandbox, T1, O1] {
+	return EP01[isc.Sandbox, T1, O1]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
 	}
 }
 
-func NewViewEP6[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6]](
+func NewViewEP01[T1 any, O1 CallArgsCodec[T1]](
 	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6,
-) EP6[isc.SandboxView, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6] {
-	return EP6[isc.SandboxView, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]{
-		EntryPointInfo: contract.ViewFunc(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
+	out1 O1,
+) EP01[isc.SandboxView, T1, O1] {
+	return EP01[isc.SandboxView, T1, O1]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
 	}
 }
 
-func (e EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		f(ctx, p1, p2, p3, p4, p5, p6)
-		return isc.NewCallArguments()
-	})
-}
-
-func (e EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
+func (e EP01[S, T1, O1]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
 	return e.EntryPointInfo.Message(callArgs)
 }
 
-// EP7 is a utility type for entry points that receive 7 parameter(s)
-type EP7[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7]] struct {
-	EntryPointInfo[S]
-	Input1 I1
-	Input2 I2
-	Input3 I3
-	Input4 I4
-	Input5 I5
-	Input6 I6
-	Input7 I7
-}
-
-func NewEP7[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7]](
-	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6, in7 I7,
-) EP7[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7] {
-	return EP7[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]{
-		EntryPointInfo: contract.Func(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
-		Input7:         in7,
-	}
-}
-
-func NewViewEP7[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7]](
-	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6, in7 I7,
-) EP7[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7] {
-	return EP7[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]{
-		EntryPointInfo: contract.ViewFunc(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
-		Input7:         in7,
-	}
-}
-
-func (e EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7)) *EntryPointHandler[S] {
+func (e EP01[S, T1, O1]) WithHandler(f func(S) T1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
 
-		f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		return isc.NewCallArguments()
+		r1 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		return isc.NewCallArguments(output1)
+
 	})
 }
 
-func (e EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
+func (e EP01[S, T1, O1]) DecodeOutput(arguments isc.CallArguments) (T1, error) {
+	var err error
+	var o1 T1
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, err
+	}
+
+	return o1, nil
+}
+
+// EP02 is a utility type for entry points that receive 0 parameters and return 2 value(s)
+type EP02[S isc.SandboxBase, T1 any, T2 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+}
+
+func NewEP02[T1 any, T2 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2,
+) EP02[isc.Sandbox, T1, T2, O1, O2] {
+	return EP02[isc.Sandbox, T1, T2, O1, O2]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+	}
+}
+
+func NewViewEP02[T1 any, T2 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2,
+) EP02[isc.SandboxView, T1, T2, O1, O2] {
+	return EP02[isc.SandboxView, T1, T2, O1, O2]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+	}
+}
+
+func (e EP02[S, T1, T2, O1, O2]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
 	return e.EntryPointInfo.Message(callArgs)
 }
 
-// EP8 is a utility type for entry points that receive 8 parameter(s)
-type EP8[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8]] struct {
-	EntryPointInfo[S]
-	Input1 I1
-	Input2 I2
-	Input3 I3
-	Input4 I4
-	Input5 I5
-	Input6 I6
-	Input7 I7
-	Input8 I8
-}
-
-func NewEP8[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8]](
-	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6, in7 I7, in8 I8,
-) EP8[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8] {
-	return EP8[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]{
-		EntryPointInfo: contract.Func(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
-		Input7:         in7,
-		Input8:         in8,
-	}
-}
-
-func NewViewEP8[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8]](
-	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6, in7 I7, in8 I8,
-) EP8[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8] {
-	return EP8[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]{
-		EntryPointInfo: contract.ViewFunc(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
-		Input7:         in7,
-		Input8:         in8,
-	}
-}
-
-func (e EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8)) *EntryPointHandler[S] {
+func (e EP02[S, T1, T2, O1, O2]) WithHandler(f func(S) (T1, T2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
 
-		f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		return isc.NewCallArguments()
+		r1, r2 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+
+		return isc.NewCallArguments(output1, output2)
+
 	})
 }
 
-func (e EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
+func (e EP02[S, T1, T2, O1, O2]) DecodeOutput(arguments isc.CallArguments) (T1, T2, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	return o1, o2, nil
+}
+
+// EP03 is a utility type for entry points that receive 0 parameters and return 3 value(s)
+type EP03[S isc.SandboxBase, T1 any, T2 any, T3 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+}
+
+func NewEP03[T1 any, T2 any, T3 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3,
+) EP03[isc.Sandbox, T1, T2, T3, O1, O2, O3] {
+	return EP03[isc.Sandbox, T1, T2, T3, O1, O2, O3]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+	}
+}
+
+func NewViewEP03[T1 any, T2 any, T3 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3,
+) EP03[isc.SandboxView, T1, T2, T3, O1, O2, O3] {
+	return EP03[isc.SandboxView, T1, T2, T3, O1, O2, O3]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+	}
+}
+
+func (e EP03[S, T1, T2, T3, O1, O2, O3]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
 	return e.EntryPointInfo.Message(callArgs)
 }
 
-// EP9 is a utility type for entry points that receive 9 parameter(s)
-type EP9[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9]] struct {
-	EntryPointInfo[S]
-	Input1 I1
-	Input2 I2
-	Input3 I3
-	Input4 I4
-	Input5 I5
-	Input6 I6
-	Input7 I7
-	Input8 I8
-	Input9 I9
-}
-
-func NewEP9[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9]](
-	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6, in7 I7, in8 I8, in9 I9,
-) EP9[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9] {
-	return EP9[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]{
-		EntryPointInfo: contract.Func(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
-		Input7:         in7,
-		Input8:         in8,
-		Input9:         in9,
-	}
-}
-
-func NewViewEP9[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9]](
-	contract *ContractInfo, name string,
-	in1 I1, in2 I2, in3 I3, in4 I4, in5 I5, in6 I6, in7 I7, in8 I8, in9 I9,
-) EP9[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9] {
-	return EP9[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]{
-		EntryPointInfo: contract.ViewFunc(name),
-		Input1:         in1,
-		Input2:         in2,
-		Input3:         in3,
-		Input4:         in4,
-		Input5:         in5,
-		Input6:         in6,
-		Input7:         in7,
-		Input8:         in8,
-		Input9:         in9,
-	}
-}
-
-func (e EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9)) *EntryPointHandler[S] {
+func (e EP03[S, T1, T2, T3, O1, O2, O3]) WithHandler(f func(S) (T1, T2, T3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
 
-		f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		return isc.NewCallArguments()
+		r1, r2, r3 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+
+		return isc.NewCallArguments(output1, output2, output3)
+
 	})
 }
 
-func (e EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
+func (e EP03[S, T1, T2, T3, O1, O2, O3]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	return o1, o2, o3, nil
+}
+
+// EP04 is a utility type for entry points that receive 0 parameters and return 4 value(s)
+type EP04[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+	Output4 O4
+}
+
+func NewEP04[T1 any, T2 any, T3 any, T4 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4,
+) EP04[isc.Sandbox, T1, T2, T3, T4, O1, O2, O3, O4] {
+	return EP04[isc.Sandbox, T1, T2, T3, T4, O1, O2, O3, O4]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+	}
+}
+
+func NewViewEP04[T1 any, T2 any, T3 any, T4 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4,
+) EP04[isc.SandboxView, T1, T2, T3, T4, O1, O2, O3, O4] {
+	return EP04[isc.SandboxView, T1, T2, T3, T4, O1, O2, O3, O4]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+	}
+}
+
+func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
 	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) WithHandler(f func(S) (T1, T2, T3, T4)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+
+		return isc.NewCallArguments(output1, output2, output3, output4)
+
+	})
+}
+
+func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	return o1, o2, o3, o4, nil
+}
+
+// EP05 is a utility type for entry points that receive 0 parameters and return 5 value(s)
+type EP05[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+	Output4 O4
+	Output5 O5
+}
+
+func NewEP05[T1 any, T2 any, T3 any, T4 any, T5 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
+) EP05[isc.Sandbox, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5] {
+	return EP05[isc.Sandbox, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+	}
+}
+
+func NewViewEP05[T1 any, T2 any, T3 any, T4 any, T5 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
+) EP05[isc.SandboxView, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5] {
+	return EP05[isc.SandboxView, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+	}
+}
+
+func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
+	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) WithHandler(f func(S) (T1, T2, T3, T4, T5)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4, r5 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+		output5 := e.Output5.Encode(r5)
+
+		return isc.NewCallArguments(output1, output2, output3, output4, output5)
+
+	})
+}
+
+func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, T5, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+	var o5 T5
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
+
+	return o1, o2, o3, o4, o5, nil
+}
+
+// EP06 is a utility type for entry points that receive 0 parameters and return 6 value(s)
+type EP06[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+	Output4 O4
+	Output5 O5
+	Output6 O6
+}
+
+func NewEP06[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
+) EP06[isc.Sandbox, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6] {
+	return EP06[isc.Sandbox, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+	}
+}
+
+func NewViewEP06[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
+) EP06[isc.SandboxView, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6] {
+	return EP06[isc.SandboxView, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+	}
+}
+
+func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
+	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4, r5, r6 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+		output5 := e.Output5.Encode(r5)
+		output6 := e.Output6.Encode(r6)
+
+		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
+
+	})
+}
+
+func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, T5, T6, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+	var o5 T5
+	var o6 T6
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	i6, err := arguments.At(5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	o6, err = e.Output6.Decode(i6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, err
+	}
+
+	return o1, o2, o3, o4, o5, o6, nil
+}
+
+// EP07 is a utility type for entry points that receive 0 parameters and return 7 value(s)
+type EP07[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+	Output4 O4
+	Output5 O5
+	Output6 O6
+	Output7 O7
+}
+
+func NewEP07[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
+) EP07[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7] {
+	return EP07[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+		Output7: out7,
+	}
+}
+
+func NewViewEP07[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
+) EP07[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7] {
+	return EP07[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+		Output7: out7,
+	}
+}
+
+func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
+	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4, r5, r6, r7 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+		output5 := e.Output5.Encode(r5)
+		output6 := e.Output6.Encode(r6)
+		output7 := e.Output7.Encode(r7)
+
+		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
+
+	})
+}
+
+func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, T5, T6, T7, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+	var o5 T5
+	var o6 T6
+	var o7 T7
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	i6, err := arguments.At(5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o6, err = e.Output6.Decode(i6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	i7, err := arguments.At(6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	o7, err = e.Output7.Decode(i7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, err
+	}
+
+	return o1, o2, o3, o4, o5, o6, o7, nil
+}
+
+// EP08 is a utility type for entry points that receive 0 parameters and return 8 value(s)
+type EP08[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+	Output4 O4
+	Output5 O5
+	Output6 O6
+	Output7 O7
+	Output8 O8
+}
+
+func NewEP08[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
+) EP08[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8] {
+	return EP08[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+		Output7: out7,
+		Output8: out8,
+	}
+}
+
+func NewViewEP08[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
+) EP08[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8] {
+	return EP08[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+		Output7: out7,
+		Output8: out8,
+	}
+}
+
+func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
+	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+		output5 := e.Output5.Encode(r5)
+		output6 := e.Output6.Encode(r6)
+		output7 := e.Output7.Encode(r7)
+		output8 := e.Output8.Encode(r8)
+
+		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
+
+	})
+}
+
+func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, T5, T6, T7, T8, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+	var o5 T5
+	var o6 T6
+	var o7 T7
+	var o8 T8
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i6, err := arguments.At(5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o6, err = e.Output6.Decode(i6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i7, err := arguments.At(6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o7, err = e.Output7.Decode(i7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	i8, err := arguments.At(7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	o8, err = e.Output8.Decode(i8)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, err
+	}
+
+	return o1, o2, o3, o4, o5, o6, o7, o8, nil
+}
+
+// EP09 is a utility type for entry points that receive 0 parameters and return 9 value(s)
+type EP09[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9]] struct {
+	EP0[S]
+	Output1 O1
+	Output2 O2
+	Output3 O3
+	Output4 O4
+	Output5 O5
+	Output6 O6
+	Output7 O7
+	Output8 O8
+	Output9 O9
+}
+
+func NewEP09[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
+) EP09[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
+	return EP09[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
+		EP0:     NewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+		Output7: out7,
+		Output8: out8,
+		Output9: out9,
+	}
+}
+
+func NewViewEP09[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
+) EP09[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
+	return EP09[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
+		EP0:     NewViewEP0(contract, name),
+		Output1: out1,
+		Output2: out2,
+		Output3: out3,
+		Output4: out4,
+		Output5: out5,
+		Output6: out6,
+		Output7: out7,
+		Output8: out8,
+		Output9: out9,
+	}
+}
+
+func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
+	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8, T9)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+		output5 := e.Output5.Encode(r5)
+		output6 := e.Output6.Encode(r6)
+		output7 := e.Output7.Encode(r7)
+		output8 := e.Output8.Encode(r8)
+		output9 := e.Output9.Encode(r9)
+
+		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
+
+	})
+}
+
+func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, T5, T6, T7, T8, T9, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+	var o5 T5
+	var o6 T6
+	var o7 T7
+	var o8 T8
+	var o9 T9
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i6, err := arguments.At(5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o6, err = e.Output6.Decode(i6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i7, err := arguments.At(6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o7, err = e.Output7.Decode(i7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i8, err := arguments.At(7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o8, err = e.Output8.Decode(i8)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	i9, err := arguments.At(8)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	o9, err = e.Output9.Decode(i9)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, err
+	}
+
+	return o1, o2, o3, o4, o5, o6, o7, o8, o9, nil
+}
+
+// EP010 is a utility type for entry points that receive 0 parameters and return 10 value(s)
+type EP010[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, T10 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9], O10 CallArgsCodec[T10]] struct {
+	EP0[S]
+	Output1  O1
+	Output2  O2
+	Output3  O3
+	Output4  O4
+	Output5  O5
+	Output6  O6
+	Output7  O7
+	Output8  O8
+	Output9  O9
+	Output10 O10
+}
+
+func NewEP010[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, T10 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9], O10 CallArgsCodec[T10]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9, out10 O10,
+) EP010[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10] {
+	return EP010[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]{
+		EP0:      NewEP0(contract, name),
+		Output1:  out1,
+		Output2:  out2,
+		Output3:  out3,
+		Output4:  out4,
+		Output5:  out5,
+		Output6:  out6,
+		Output7:  out7,
+		Output8:  out8,
+		Output9:  out9,
+		Output10: out10,
+	}
+}
+
+func NewViewEP010[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, T10 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9], O10 CallArgsCodec[T10]](
+	contract *ContractInfo, name string,
+	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9, out10 O10,
+) EP010[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10] {
+	return EP010[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]{
+		EP0:      NewViewEP0(contract, name),
+		Output1:  out1,
+		Output2:  out2,
+		Output3:  out3,
+		Output4:  out4,
+		Output5:  out5,
+		Output6:  out6,
+		Output7:  out7,
+		Output8:  out8,
+		Output9:  out9,
+		Output10: out10,
+	}
+}
+
+func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]) Message() isc.Message {
+	callArgs := isc.NewCallArguments()
+	return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)) *EntryPointHandler[S] {
+	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+
+		r1, r2, r3, r4, r5, r6, r7, r8, r9, r10 := f(ctx)
+		output1 := e.Output1.Encode(r1)
+		output2 := e.Output2.Encode(r2)
+		output3 := e.Output3.Encode(r3)
+		output4 := e.Output4.Encode(r4)
+		output5 := e.Output5.Encode(r5)
+		output6 := e.Output6.Encode(r6)
+		output7 := e.Output7.Encode(r7)
+		output8 := e.Output8.Encode(r8)
+		output9 := e.Output9.Encode(r9)
+		output10 := e.Output10.Encode(r10)
+
+		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9, output10)
+
+	})
+}
+
+func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]) DecodeOutput(arguments isc.CallArguments) (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, error) {
+	var err error
+	var o1 T1
+	var o2 T2
+	var o3 T3
+	var o4 T4
+	var o5 T5
+	var o6 T6
+	var o7 T7
+	var o8 T8
+	var o9 T9
+	var o10 T10
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i6, err := arguments.At(5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o6, err = e.Output6.Decode(i6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i7, err := arguments.At(6)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o7, err = e.Output7.Decode(i7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i8, err := arguments.At(7)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o8, err = e.Output8.Decode(i8)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i9, err := arguments.At(8)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o9, err = e.Output9.Decode(i9)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	i10, err := arguments.At(9)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	o10, err = e.Output10.Decode(i10)
+	if err != nil {
+		return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, err
+	}
+
+	return o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, nil
 }
 
 // EP10 is a utility type for entry points that receive 1 parameters and return 0 value(s)
@@ -651,6 +1617,23 @@ func (e EP11[S, T1, R1, I1, O1]) WithHandler(f func(S, T1) R1) *EntryPointHandle
 	})
 }
 
+func (e EP11[S, T1, R1, I1, O1]) DecodeOutput(arguments isc.CallArguments) (R1, error) {
+	var err error
+	var o1 R1
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, err
+	}
+
+	return o1, nil
+}
+
 // EP12 is a utility type for entry points that receive 1 parameters and return 2 value(s)
 type EP12[S isc.SandboxBase, T1 any, R1 any, R2 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
 	EP1[S, T1, I1]
@@ -700,6 +1683,34 @@ func (e EP12[S, T1, R1, R2, I1, O1, O2]) WithHandler(f func(S, T1) (R1, R2)) *En
 		return isc.NewCallArguments(output1, output2)
 
 	})
+}
+
+func (e EP12[S, T1, R1, R2, I1, O1, O2]) DecodeOutput(arguments isc.CallArguments) (R1, R2, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	return o1, o2, nil
 }
 
 // EP13 is a utility type for entry points that receive 1 parameters and return 3 value(s)
@@ -755,6 +1766,45 @@ func (e EP13[S, T1, R1, R2, R3, I1, O1, O2, O3]) WithHandler(f func(S, T1) (R1, 
 		return isc.NewCallArguments(output1, output2, output3)
 
 	})
+}
+
+func (e EP13[S, T1, R1, R2, R3, I1, O1, O2, O3]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	return o1, o2, o3, nil
 }
 
 // EP14 is a utility type for entry points that receive 1 parameters and return 4 value(s)
@@ -814,6 +1864,56 @@ func (e EP14[S, T1, R1, R2, R3, R4, I1, O1, O2, O3, O4]) WithHandler(f func(S, T
 		return isc.NewCallArguments(output1, output2, output3, output4)
 
 	})
+}
+
+func (e EP14[S, T1, R1, R2, R3, R4, I1, O1, O2, O3, O4]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	return o1, o2, o3, o4, nil
 }
 
 // EP15 is a utility type for entry points that receive 1 parameters and return 5 value(s)
@@ -879,296 +1979,65 @@ func (e EP15[S, T1, R1, R2, R3, R4, R5, I1, O1, O2, O3, O4, O5]) WithHandler(f f
 	})
 }
 
-// EP16 is a utility type for entry points that receive 1 parameters and return 6 value(s)
-type EP16[S isc.SandboxBase, T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP1[S, T1, I1]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
+func (e EP15[S, T1, R1, R2, R3, R4, R5, I1, O1, O2, O3, O4, O5]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, R5, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+	var o5 R5
 
-func NewEP16[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP16[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, I1, O1, O2, O3, O4, O5, O6] {
-	return EP16[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, I1, O1, O2, O3, O4, O5, O6]{
-		EP1:     NewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP16[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP16[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, I1, O1, O2, O3, O4, O5, O6] {
-	return EP16[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, I1, O1, O2, O3, O4, O5, O6]{
-		EP1:     NewViewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP16[S, T1, R1, R2, R3, R4, R5, R6, I1, O1, O2, O3, O4, O5, O6]) Message(p1 T1) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP16[S, T1, R1, R2, R3, R4, R5, R6, I1, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP17 is a utility type for entry points that receive 1 parameters and return 7 value(s)
-type EP17[S isc.SandboxBase, T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP1[S, T1, I1]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP17[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP17[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, R7, I1, O1, O2, O3, O4, O5, O6, O7] {
-	return EP17[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, R7, I1, O1, O2, O3, O4, O5, O6, O7]{
-		EP1:     NewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP17[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP17[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, R7, I1, O1, O2, O3, O4, O5, O6, O7] {
-	return EP17[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, R7, I1, O1, O2, O3, O4, O5, O6, O7]{
-		EP1:     NewViewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP17[S, T1, R1, R2, R3, R4, R5, R6, R7, I1, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP17[S, T1, R1, R2, R3, R4, R5, R6, R7, I1, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP18 is a utility type for entry points that receive 1 parameters and return 8 value(s)
-type EP18[S isc.SandboxBase, T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP1[S, T1, I1]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP18[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP18[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, R7, R8, I1, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP18[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, R7, R8, I1, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP1:     NewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP18[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP18[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, R7, R8, I1, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP18[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, R7, R8, I1, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP1:     NewViewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP18[S, T1, R1, R2, R3, R4, R5, R6, R7, R8, I1, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP18[S, T1, R1, R2, R3, R4, R5, R6, R7, R8, I1, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP19 is a utility type for entry points that receive 1 parameters and return 9 value(s)
-type EP19[S isc.SandboxBase, T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP1[S, T1, I1]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP19[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP19[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP19[isc.Sandbox, T1, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP1:     NewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP19[T1 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP19[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP19[isc.SandboxView, T1, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP1:     NewViewEP1(contract, name, in1),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP19[S, T1, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1))
-	return e.EntryPointInfo.Message(callArgs)
-}
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-func (e EP19[S, T1, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
+	return o1, o2, o3, o4, o5, nil
 }
 
 // EP20 is a utility type for entry points that receive 2 parameters and return 0 value(s)
@@ -1267,6 +2136,23 @@ func (e EP21[S, T1, T2, R1, I1, I2, O1]) WithHandler(f func(S, T1, T2) R1) *Entr
 	})
 }
 
+func (e EP21[S, T1, T2, R1, I1, I2, O1]) DecodeOutput(arguments isc.CallArguments) (R1, error) {
+	var err error
+	var o1 R1
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, err
+	}
+
+	return o1, nil
+}
+
 // EP22 is a utility type for entry points that receive 2 parameters and return 2 value(s)
 type EP22[S isc.SandboxBase, T1 any, T2 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
 	EP2[S, T1, T2, I1, I2]
@@ -1320,6 +2206,34 @@ func (e EP22[S, T1, T2, R1, R2, I1, I2, O1, O2]) WithHandler(f func(S, T1, T2) (
 		return isc.NewCallArguments(output1, output2)
 
 	})
+}
+
+func (e EP22[S, T1, T2, R1, R2, I1, I2, O1, O2]) DecodeOutput(arguments isc.CallArguments) (R1, R2, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	return o1, o2, nil
 }
 
 // EP23 is a utility type for entry points that receive 2 parameters and return 3 value(s)
@@ -1379,6 +2293,45 @@ func (e EP23[S, T1, T2, R1, R2, R3, I1, I2, O1, O2, O3]) WithHandler(f func(S, T
 		return isc.NewCallArguments(output1, output2, output3)
 
 	})
+}
+
+func (e EP23[S, T1, T2, R1, R2, R3, I1, I2, O1, O2, O3]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	return o1, o2, o3, nil
 }
 
 // EP24 is a utility type for entry points that receive 2 parameters and return 4 value(s)
@@ -1442,6 +2395,56 @@ func (e EP24[S, T1, T2, R1, R2, R3, R4, I1, I2, O1, O2, O3, O4]) WithHandler(f f
 		return isc.NewCallArguments(output1, output2, output3, output4)
 
 	})
+}
+
+func (e EP24[S, T1, T2, R1, R2, R3, R4, I1, I2, O1, O2, O3, O4]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	return o1, o2, o3, o4, nil
 }
 
 // EP25 is a utility type for entry points that receive 2 parameters and return 5 value(s)
@@ -1511,312 +2514,65 @@ func (e EP25[S, T1, T2, R1, R2, R3, R4, R5, I1, I2, O1, O2, O3, O4, O5]) WithHan
 	})
 }
 
-// EP26 is a utility type for entry points that receive 2 parameters and return 6 value(s)
-type EP26[S isc.SandboxBase, T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP2[S, T1, T2, I1, I2]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
+func (e EP25[S, T1, T2, R1, R2, R3, R4, R5, I1, I2, O1, O2, O3, O4, O5]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, R5, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+	var o5 R5
 
-func NewEP26[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP26[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, I1, I2, O1, O2, O3, O4, O5, O6] {
-	return EP26[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, I1, I2, O1, O2, O3, O4, O5, O6]{
-		EP2:     NewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP26[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP26[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, I1, I2, O1, O2, O3, O4, O5, O6] {
-	return EP26[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, I1, I2, O1, O2, O3, O4, O5, O6]{
-		EP2:     NewViewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP26[S, T1, T2, R1, R2, R3, R4, R5, R6, I1, I2, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP26[S, T1, T2, R1, R2, R3, R4, R5, R6, I1, I2, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP27 is a utility type for entry points that receive 2 parameters and return 7 value(s)
-type EP27[S isc.SandboxBase, T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP2[S, T1, T2, I1, I2]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP27[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP27[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, R7, I1, I2, O1, O2, O3, O4, O5, O6, O7] {
-	return EP27[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, R7, I1, I2, O1, O2, O3, O4, O5, O6, O7]{
-		EP2:     NewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP27[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP27[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, R7, I1, I2, O1, O2, O3, O4, O5, O6, O7] {
-	return EP27[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, R7, I1, I2, O1, O2, O3, O4, O5, O6, O7]{
-		EP2:     NewViewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP27[S, T1, T2, R1, R2, R3, R4, R5, R6, R7, I1, I2, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP27[S, T1, T2, R1, R2, R3, R4, R5, R6, R7, I1, I2, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP28 is a utility type for entry points that receive 2 parameters and return 8 value(s)
-type EP28[S isc.SandboxBase, T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP2[S, T1, T2, I1, I2]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP28[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP28[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP28[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP2:     NewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP28[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP28[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP28[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP2:     NewViewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP28[S, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP28[S, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP29 is a utility type for entry points that receive 2 parameters and return 9 value(s)
-type EP29[S isc.SandboxBase, T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP2[S, T1, T2, I1, I2]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP29[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP29[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP29[isc.Sandbox, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP2:     NewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP29[T1 any, T2 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP29[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP29[isc.SandboxView, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP2:     NewViewEP2(contract, name, in1, in2),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP29[S, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2))
-	return e.EntryPointInfo.Message(callArgs)
-}
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-func (e EP29[S, T1, T2, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
+	return o1, o2, o3, o4, o5, nil
 }
 
 // EP30 is a utility type for entry points that receive 3 parameters and return 0 value(s)
@@ -1923,6 +2679,23 @@ func (e EP31[S, T1, T2, T3, R1, I1, I2, I3, O1]) WithHandler(f func(S, T1, T2, T
 	})
 }
 
+func (e EP31[S, T1, T2, T3, R1, I1, I2, I3, O1]) DecodeOutput(arguments isc.CallArguments) (R1, error) {
+	var err error
+	var o1 R1
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, err
+	}
+
+	return o1, nil
+}
+
 // EP32 is a utility type for entry points that receive 3 parameters and return 2 value(s)
 type EP32[S isc.SandboxBase, T1 any, T2 any, T3 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
 	EP3[S, T1, T2, T3, I1, I2, I3]
@@ -1980,6 +2753,34 @@ func (e EP32[S, T1, T2, T3, R1, R2, I1, I2, I3, O1, O2]) WithHandler(f func(S, T
 		return isc.NewCallArguments(output1, output2)
 
 	})
+}
+
+func (e EP32[S, T1, T2, T3, R1, R2, I1, I2, I3, O1, O2]) DecodeOutput(arguments isc.CallArguments) (R1, R2, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	return o1, o2, nil
 }
 
 // EP33 is a utility type for entry points that receive 3 parameters and return 3 value(s)
@@ -2043,6 +2844,45 @@ func (e EP33[S, T1, T2, T3, R1, R2, R3, I1, I2, I3, O1, O2, O3]) WithHandler(f f
 		return isc.NewCallArguments(output1, output2, output3)
 
 	})
+}
+
+func (e EP33[S, T1, T2, T3, R1, R2, R3, I1, I2, I3, O1, O2, O3]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	return o1, o2, o3, nil
 }
 
 // EP34 is a utility type for entry points that receive 3 parameters and return 4 value(s)
@@ -2110,6 +2950,56 @@ func (e EP34[S, T1, T2, T3, R1, R2, R3, R4, I1, I2, I3, O1, O2, O3, O4]) WithHan
 		return isc.NewCallArguments(output1, output2, output3, output4)
 
 	})
+}
+
+func (e EP34[S, T1, T2, T3, R1, R2, R3, R4, I1, I2, I3, O1, O2, O3, O4]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	return o1, o2, o3, o4, nil
 }
 
 // EP35 is a utility type for entry points that receive 3 parameters and return 5 value(s)
@@ -2183,328 +3073,65 @@ func (e EP35[S, T1, T2, T3, R1, R2, R3, R4, R5, I1, I2, I3, O1, O2, O3, O4, O5])
 	})
 }
 
-// EP36 is a utility type for entry points that receive 3 parameters and return 6 value(s)
-type EP36[S isc.SandboxBase, T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP3[S, T1, T2, T3, I1, I2, I3]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
+func (e EP35[S, T1, T2, T3, R1, R2, R3, R4, R5, I1, I2, I3, O1, O2, O3, O4, O5]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, R5, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+	var o5 R5
 
-func NewEP36[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP36[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, I1, I2, I3, O1, O2, O3, O4, O5, O6] {
-	return EP36[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, I1, I2, I3, O1, O2, O3, O4, O5, O6]{
-		EP3:     NewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP36[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP36[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, I1, I2, I3, O1, O2, O3, O4, O5, O6] {
-	return EP36[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, I1, I2, I3, O1, O2, O3, O4, O5, O6]{
-		EP3:     NewViewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP36[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, I1, I2, I3, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP36[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, I1, I2, I3, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP37 is a utility type for entry points that receive 3 parameters and return 7 value(s)
-type EP37[S isc.SandboxBase, T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP3[S, T1, T2, T3, I1, I2, I3]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP37[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP37[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7] {
-	return EP37[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7]{
-		EP3:     NewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP37[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP37[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7] {
-	return EP37[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7]{
-		EP3:     NewViewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP37[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP37[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP38 is a utility type for entry points that receive 3 parameters and return 8 value(s)
-type EP38[S isc.SandboxBase, T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP3[S, T1, T2, T3, I1, I2, I3]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP38[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP38[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP38[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP3:     NewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP38[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP38[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP38[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP3:     NewViewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP38[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP38[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP39 is a utility type for entry points that receive 3 parameters and return 9 value(s)
-type EP39[S isc.SandboxBase, T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP3[S, T1, T2, T3, I1, I2, I3]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP39[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP39[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP39[isc.Sandbox, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP3:     NewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP39[T1 any, T2 any, T3 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP39[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP39[isc.SandboxView, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP3:     NewViewEP3(contract, name, in1, in2, in3),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP39[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3))
-	return e.EntryPointInfo.Message(callArgs)
-}
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-func (e EP39[S, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
+	return o1, o2, o3, o4, o5, nil
 }
 
 // EP40 is a utility type for entry points that receive 4 parameters and return 0 value(s)
@@ -2619,6 +3246,23 @@ func (e EP41[S, T1, T2, T3, T4, R1, I1, I2, I3, I4, O1]) WithHandler(f func(S, T
 	})
 }
 
+func (e EP41[S, T1, T2, T3, T4, R1, I1, I2, I3, I4, O1]) DecodeOutput(arguments isc.CallArguments) (R1, error) {
+	var err error
+	var o1 R1
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, err
+	}
+
+	return o1, nil
+}
+
 // EP42 is a utility type for entry points that receive 4 parameters and return 2 value(s)
 type EP42[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
 	EP4[S, T1, T2, T3, T4, I1, I2, I3, I4]
@@ -2680,6 +3324,34 @@ func (e EP42[S, T1, T2, T3, T4, R1, R2, I1, I2, I3, I4, O1, O2]) WithHandler(f f
 		return isc.NewCallArguments(output1, output2)
 
 	})
+}
+
+func (e EP42[S, T1, T2, T3, T4, R1, R2, I1, I2, I3, I4, O1, O2]) DecodeOutput(arguments isc.CallArguments) (R1, R2, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	return o1, o2, nil
 }
 
 // EP43 is a utility type for entry points that receive 4 parameters and return 3 value(s)
@@ -2747,6 +3419,45 @@ func (e EP43[S, T1, T2, T3, T4, R1, R2, R3, I1, I2, I3, I4, O1, O2, O3]) WithHan
 		return isc.NewCallArguments(output1, output2, output3)
 
 	})
+}
+
+func (e EP43[S, T1, T2, T3, T4, R1, R2, R3, I1, I2, I3, I4, O1, O2, O3]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	return o1, o2, o3, nil
 }
 
 // EP44 is a utility type for entry points that receive 4 parameters and return 4 value(s)
@@ -2818,6 +3529,56 @@ func (e EP44[S, T1, T2, T3, T4, R1, R2, R3, R4, I1, I2, I3, I4, O1, O2, O3, O4])
 		return isc.NewCallArguments(output1, output2, output3, output4)
 
 	})
+}
+
+func (e EP44[S, T1, T2, T3, T4, R1, R2, R3, R4, I1, I2, I3, I4, O1, O2, O3, O4]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	return o1, o2, o3, o4, nil
 }
 
 // EP45 is a utility type for entry points that receive 4 parameters and return 5 value(s)
@@ -2895,344 +3656,65 @@ func (e EP45[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, I1, I2, I3, I4, O1, O2, O3, 
 	})
 }
 
-// EP46 is a utility type for entry points that receive 4 parameters and return 6 value(s)
-type EP46[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP4[S, T1, T2, T3, T4, I1, I2, I3, I4]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
+func (e EP45[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, I1, I2, I3, I4, O1, O2, O3, O4, O5]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, R5, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+	var o5 R5
 
-func NewEP46[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP46[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6] {
-	return EP46[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6]{
-		EP4:     NewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP46[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP46[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6] {
-	return EP46[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6]{
-		EP4:     NewViewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP46[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3, p4 T4) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP46[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3, p4)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP47 is a utility type for entry points that receive 4 parameters and return 7 value(s)
-type EP47[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP4[S, T1, T2, T3, T4, I1, I2, I3, I4]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP47[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP47[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7] {
-	return EP47[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7]{
-		EP4:     NewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP47[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP47[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7] {
-	return EP47[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7]{
-		EP4:     NewViewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP47[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3, p4 T4) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP47[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3, p4)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP48 is a utility type for entry points that receive 4 parameters and return 8 value(s)
-type EP48[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP4[S, T1, T2, T3, T4, I1, I2, I3, I4]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP48[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP48[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP48[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP4:     NewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP48[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP48[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP48[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP4:     NewViewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP48[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3, p4 T4) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP48[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3, p4)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP49 is a utility type for entry points that receive 4 parameters and return 9 value(s)
-type EP49[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP4[S, T1, T2, T3, T4, I1, I2, I3, I4]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP49[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP49[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP49[isc.Sandbox, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP4:     NewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP49[T1 any, T2 any, T3 any, T4 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP49[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP49[isc.SandboxView, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP4:     NewViewEP4(contract, name, in1, in2, in3, in4),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP49[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3, p4 T4) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4))
-	return e.EntryPointInfo.Message(callArgs)
-}
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-func (e EP49[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
+	}
 
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3, p4)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
+	return o1, o2, o3, o4, o5, nil
 }
 
 // EP50 is a utility type for entry points that receive 5 parameters and return 0 value(s)
@@ -3355,6 +3837,23 @@ func (e EP51[S, T1, T2, T3, T4, T5, R1, I1, I2, I3, I4, I5, O1]) WithHandler(f f
 	})
 }
 
+func (e EP51[S, T1, T2, T3, T4, T5, R1, I1, I2, I3, I4, I5, O1]) DecodeOutput(arguments isc.CallArguments) (R1, error) {
+	var err error
+	var o1 R1
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, err
+	}
+
+	return o1, nil
+}
+
 // EP52 is a utility type for entry points that receive 5 parameters and return 2 value(s)
 type EP52[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
 	EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]
@@ -3420,6 +3919,34 @@ func (e EP52[S, T1, T2, T3, T4, T5, R1, R2, I1, I2, I3, I4, I5, O1, O2]) WithHan
 		return isc.NewCallArguments(output1, output2)
 
 	})
+}
+
+func (e EP52[S, T1, T2, T3, T4, T5, R1, R2, I1, I2, I3, I4, I5, O1, O2]) DecodeOutput(arguments isc.CallArguments) (R1, R2, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, err
+	}
+
+	return o1, o2, nil
 }
 
 // EP53 is a utility type for entry points that receive 5 parameters and return 3 value(s)
@@ -3491,6 +4018,45 @@ func (e EP53[S, T1, T2, T3, T4, T5, R1, R2, R3, I1, I2, I3, I4, I5, O1, O2, O3])
 		return isc.NewCallArguments(output1, output2, output3)
 
 	})
+}
+
+func (e EP53[S, T1, T2, T3, T4, T5, R1, R2, R3, I1, I2, I3, I4, I5, O1, O2, O3]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, err
+	}
+
+	return o1, o2, o3, nil
 }
 
 // EP54 is a utility type for entry points that receive 5 parameters and return 4 value(s)
@@ -3566,6 +4132,56 @@ func (e EP54[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, I1, I2, I3, I4, I5, O1, O2, 
 		return isc.NewCallArguments(output1, output2, output3, output4)
 
 	})
+}
+
+func (e EP54[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, I1, I2, I3, I4, I5, O1, O2, O3, O4]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, err
+	}
+
+	return o1, o2, o3, o4, nil
 }
 
 // EP55 is a utility type for entry points that receive 5 parameters and return 5 value(s)
@@ -3647,4429 +4263,63 @@ func (e EP55[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, O1, 
 	})
 }
 
-// EP56 is a utility type for entry points that receive 5 parameters and return 6 value(s)
-type EP56[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
+func (e EP55[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5]) DecodeOutput(arguments isc.CallArguments) (R1, R2, R3, R4, R5, error) {
+	var err error
+	var o1 R1
+	var o2 R2
+	var o3 R3
+	var o4 R4
+	var o5 R5
 
-func NewEP56[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP56[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6] {
-	return EP56[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6]{
-		EP5:     NewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	i1, err := arguments.At(0)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP56[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP56[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6] {
-	return EP56[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6]{
-		EP5:     NewViewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
+	o1, err = e.Output1.Decode(i1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP56[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP56[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3, p4, p5)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP57 is a utility type for entry points that receive 5 parameters and return 7 value(s)
-type EP57[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP57[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP57[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7] {
-	return EP57[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7]{
-		EP5:     NewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func NewViewEP57[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP57[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7] {
-	return EP57[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7]{
-		EP5:     NewViewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func (e EP57[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP57[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3, p4, p5)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP58 is a utility type for entry points that receive 5 parameters and return 8 value(s)
-type EP58[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP58[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP58[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP58[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP5:     NewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func NewViewEP58[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP58[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP58[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP5:     NewViewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func (e EP58[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP58[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3, p4, p5)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP59 is a utility type for entry points that receive 5 parameters and return 9 value(s)
-type EP59[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP59[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP59[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP59[isc.Sandbox, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP5:     NewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func NewViewEP59[T1 any, T2 any, T3 any, T4 any, T5 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP59[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP59[isc.SandboxView, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP5:     NewViewEP5(contract, name, in1, in2, in3, in4, in5),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func (e EP59[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP59[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3, p4, p5)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
-}
-
-// EP60 is a utility type for entry points that receive 6 parameters and return 0 value(s)
-type EP60[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-}
-
-func NewEP60[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-
-) EP60[isc.Sandbox, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6] {
-	return EP60[isc.Sandbox, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]{
-		EP6: NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-	}
-}
-
-func NewViewEP60[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-
-) EP60[isc.SandboxView, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6] {
-	return EP60[isc.SandboxView, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]{
-		EP6: NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-	}
-}
-
-func (e EP60[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP60[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		f(ctx, p1, p2, p3, p4, p5, p6)
-		return isc.NewCallArguments()
-
-	})
-}
-
-// EP61 is a utility type for entry points that receive 6 parameters and return 1 value(s)
-type EP61[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-}
-
-func NewEP61[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1,
-) EP61[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, I1, I2, I3, I4, I5, I6, O1] {
-	return EP61[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, I1, I2, I3, I4, I5, I6, O1]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-	}
-}
-
-func NewViewEP61[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1,
-) EP61[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, I1, I2, I3, I4, I5, I6, O1] {
-	return EP61[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, I1, I2, I3, I4, I5, I6, O1]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-	}
-}
-
-func (e EP61[S, T1, T2, T3, T4, T5, T6, R1, I1, I2, I3, I4, I5, I6, O1]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP61[S, T1, T2, T3, T4, T5, T6, R1, I1, I2, I3, I4, I5, I6, O1]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) R1) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		return isc.NewCallArguments(output1)
-
-	})
-}
-
-// EP62 is a utility type for entry points that receive 6 parameters and return 2 value(s)
-type EP62[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-}
-
-func NewEP62[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2,
-) EP62[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, I1, I2, I3, I4, I5, I6, O1, O2] {
-	return EP62[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, I1, I2, I3, I4, I5, I6, O1, O2]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func NewViewEP62[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2,
-) EP62[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, I1, I2, I3, I4, I5, I6, O1, O2] {
-	return EP62[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, I1, I2, I3, I4, I5, I6, O1, O2]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func (e EP62[S, T1, T2, T3, T4, T5, T6, R1, R2, I1, I2, I3, I4, I5, I6, O1, O2]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP62[S, T1, T2, T3, T4, T5, T6, R1, R2, I1, I2, I3, I4, I5, I6, O1, O2]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-
-		return isc.NewCallArguments(output1, output2)
-
-	})
-}
-
-// EP63 is a utility type for entry points that receive 6 parameters and return 3 value(s)
-type EP63[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-}
-
-func NewEP63[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3,
-) EP63[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, I1, I2, I3, I4, I5, I6, O1, O2, O3] {
-	return EP63[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, I1, I2, I3, I4, I5, I6, O1, O2, O3]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func NewViewEP63[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3,
-) EP63[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, I1, I2, I3, I4, I5, I6, O1, O2, O3] {
-	return EP63[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, I1, I2, I3, I4, I5, I6, O1, O2, O3]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func (e EP63[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, I1, I2, I3, I4, I5, I6, O1, O2, O3]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP63[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, I1, I2, I3, I4, I5, I6, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-
-		return isc.NewCallArguments(output1, output2, output3)
-
-	})
-}
-
-// EP64 is a utility type for entry points that receive 6 parameters and return 4 value(s)
-type EP64[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-}
-
-func NewEP64[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP64[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4] {
-	return EP64[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func NewViewEP64[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP64[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4] {
-	return EP64[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func (e EP64[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP64[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3, R4)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-
-		return isc.NewCallArguments(output1, output2, output3, output4)
-
-	})
-}
-
-// EP65 is a utility type for entry points that receive 6 parameters and return 5 value(s)
-type EP65[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-}
-
-func NewEP65[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP65[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5] {
-	return EP65[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func NewViewEP65[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP65[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5] {
-	return EP65[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func (e EP65[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP65[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
-	})
-}
-
-// EP66 is a utility type for entry points that receive 6 parameters and return 6 value(s)
-type EP66[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
-
-func NewEP66[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP66[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6] {
-	return EP66[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func NewViewEP66[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP66[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6] {
-	return EP66[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func (e EP66[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP66[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP67 is a utility type for entry points that receive 6 parameters and return 7 value(s)
-type EP67[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP67[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP67[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7] {
-	return EP67[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func NewViewEP67[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP67[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7] {
-	return EP67[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func (e EP67[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP67[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP68 is a utility type for entry points that receive 6 parameters and return 8 value(s)
-type EP68[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP68[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP68[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP68[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func NewViewEP68[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP68[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP68[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func (e EP68[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP68[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP69 is a utility type for entry points that receive 6 parameters and return 9 value(s)
-type EP69[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP6[S, T1, T2, T3, T4, T5, T6, I1, I2, I3, I4, I5, I6]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP69[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP69[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP69[isc.Sandbox, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP6:     NewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func NewViewEP69[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP69[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP69[isc.SandboxView, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP6:     NewViewEP6(contract, name, in1, in2, in3, in4, in5, in6),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func (e EP69[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP69[S, T1, T2, T3, T4, T5, T6, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3, p4, p5, p6)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
-}
-
-// EP70 is a utility type for entry points that receive 7 parameters and return 0 value(s)
-type EP70[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-}
-
-func NewEP70[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-
-) EP70[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7] {
-	return EP70[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]{
-		EP7: NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-	}
-}
-
-func NewViewEP70[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-
-) EP70[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7] {
-	return EP70[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]{
-		EP7: NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-	}
-}
-
-func (e EP70[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP70[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		return isc.NewCallArguments()
-
-	})
-}
-
-// EP71 is a utility type for entry points that receive 7 parameters and return 1 value(s)
-type EP71[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-}
-
-func NewEP71[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1,
-) EP71[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, I1, I2, I3, I4, I5, I6, I7, O1] {
-	return EP71[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, I1, I2, I3, I4, I5, I6, I7, O1]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-	}
-}
-
-func NewViewEP71[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1,
-) EP71[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, I1, I2, I3, I4, I5, I6, I7, O1] {
-	return EP71[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, I1, I2, I3, I4, I5, I6, I7, O1]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-	}
-}
-
-func (e EP71[S, T1, T2, T3, T4, T5, T6, T7, R1, I1, I2, I3, I4, I5, I6, I7, O1]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP71[S, T1, T2, T3, T4, T5, T6, T7, R1, I1, I2, I3, I4, I5, I6, I7, O1]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) R1) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		return isc.NewCallArguments(output1)
-
-	})
-}
-
-// EP72 is a utility type for entry points that receive 7 parameters and return 2 value(s)
-type EP72[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-}
-
-func NewEP72[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2,
-) EP72[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, I1, I2, I3, I4, I5, I6, I7, O1, O2] {
-	return EP72[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, I1, I2, I3, I4, I5, I6, I7, O1, O2]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func NewViewEP72[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2,
-) EP72[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, I1, I2, I3, I4, I5, I6, I7, O1, O2] {
-	return EP72[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, I1, I2, I3, I4, I5, I6, I7, O1, O2]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func (e EP72[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, I1, I2, I3, I4, I5, I6, I7, O1, O2]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP72[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, I1, I2, I3, I4, I5, I6, I7, O1, O2]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-
-		return isc.NewCallArguments(output1, output2)
-
-	})
-}
-
-// EP73 is a utility type for entry points that receive 7 parameters and return 3 value(s)
-type EP73[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-}
-
-func NewEP73[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3,
-) EP73[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3] {
-	return EP73[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func NewViewEP73[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3,
-) EP73[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3] {
-	return EP73[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func (e EP73[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP73[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-
-		return isc.NewCallArguments(output1, output2, output3)
-
-	})
-}
-
-// EP74 is a utility type for entry points that receive 7 parameters and return 4 value(s)
-type EP74[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-}
-
-func NewEP74[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP74[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4] {
-	return EP74[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func NewViewEP74[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP74[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4] {
-	return EP74[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func (e EP74[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP74[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3, R4)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-
-		return isc.NewCallArguments(output1, output2, output3, output4)
-
-	})
-}
-
-// EP75 is a utility type for entry points that receive 7 parameters and return 5 value(s)
-type EP75[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-}
-
-func NewEP75[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP75[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5] {
-	return EP75[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func NewViewEP75[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP75[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5] {
-	return EP75[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func (e EP75[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP75[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
-	})
-}
-
-// EP76 is a utility type for entry points that receive 7 parameters and return 6 value(s)
-type EP76[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
-
-func NewEP76[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP76[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6] {
-	return EP76[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func NewViewEP76[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP76[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6] {
-	return EP76[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func (e EP76[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP76[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP77 is a utility type for entry points that receive 7 parameters and return 7 value(s)
-type EP77[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP77[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP77[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7] {
-	return EP77[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func NewViewEP77[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP77[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7] {
-	return EP77[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func (e EP77[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP77[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP78 is a utility type for entry points that receive 7 parameters and return 8 value(s)
-type EP78[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP78[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP78[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP78[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func NewViewEP78[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP78[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP78[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func (e EP78[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP78[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP79 is a utility type for entry points that receive 7 parameters and return 9 value(s)
-type EP79[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP7[S, T1, T2, T3, T4, T5, T6, T7, I1, I2, I3, I4, I5, I6, I7]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP79[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP79[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP79[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP7:     NewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func NewViewEP79[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP79[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP79[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP7:     NewViewEP7(contract, name, in1, in2, in3, in4, in5, in6, in7),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func (e EP79[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP79[S, T1, T2, T3, T4, T5, T6, T7, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3, p4, p5, p6, p7)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
-}
-
-// EP80 is a utility type for entry points that receive 8 parameters and return 0 value(s)
-type EP80[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-}
-
-func NewEP80[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-
-) EP80[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8] {
-	return EP80[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]{
-		EP8: NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-	}
-}
-
-func NewViewEP80[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-
-) EP80[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8] {
-	return EP80[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]{
-		EP8: NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-	}
-}
-
-func (e EP80[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP80[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		return isc.NewCallArguments()
-
-	})
-}
-
-// EP81 is a utility type for entry points that receive 8 parameters and return 1 value(s)
-type EP81[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-}
-
-func NewEP81[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1,
-) EP81[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, I1, I2, I3, I4, I5, I6, I7, I8, O1] {
-	return EP81[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, I1, I2, I3, I4, I5, I6, I7, I8, O1]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-	}
-}
-
-func NewViewEP81[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1,
-) EP81[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, I1, I2, I3, I4, I5, I6, I7, I8, O1] {
-	return EP81[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, I1, I2, I3, I4, I5, I6, I7, I8, O1]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-	}
-}
-
-func (e EP81[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, I1, I2, I3, I4, I5, I6, I7, I8, O1]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP81[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, I1, I2, I3, I4, I5, I6, I7, I8, O1]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) R1) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		return isc.NewCallArguments(output1)
-
-	})
-}
-
-// EP82 is a utility type for entry points that receive 8 parameters and return 2 value(s)
-type EP82[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-}
-
-func NewEP82[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2,
-) EP82[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2] {
-	return EP82[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func NewViewEP82[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2,
-) EP82[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2] {
-	return EP82[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func (e EP82[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP82[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-
-		return isc.NewCallArguments(output1, output2)
-
-	})
-}
-
-// EP83 is a utility type for entry points that receive 8 parameters and return 3 value(s)
-type EP83[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-}
-
-func NewEP83[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3,
-) EP83[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3] {
-	return EP83[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func NewViewEP83[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3,
-) EP83[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3] {
-	return EP83[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func (e EP83[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP83[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-
-		return isc.NewCallArguments(output1, output2, output3)
-
-	})
-}
-
-// EP84 is a utility type for entry points that receive 8 parameters and return 4 value(s)
-type EP84[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-}
-
-func NewEP84[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP84[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4] {
-	return EP84[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func NewViewEP84[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP84[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4] {
-	return EP84[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func (e EP84[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP84[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3, R4)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-
-		return isc.NewCallArguments(output1, output2, output3, output4)
-
-	})
-}
-
-// EP85 is a utility type for entry points that receive 8 parameters and return 5 value(s)
-type EP85[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-}
-
-func NewEP85[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP85[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5] {
-	return EP85[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func NewViewEP85[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP85[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5] {
-	return EP85[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func (e EP85[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP85[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
-	})
-}
-
-// EP86 is a utility type for entry points that receive 8 parameters and return 6 value(s)
-type EP86[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
-
-func NewEP86[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP86[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6] {
-	return EP86[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func NewViewEP86[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP86[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6] {
-	return EP86[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func (e EP86[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP86[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP87 is a utility type for entry points that receive 8 parameters and return 7 value(s)
-type EP87[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP87[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP87[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7] {
-	return EP87[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func NewViewEP87[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP87[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7] {
-	return EP87[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func (e EP87[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP87[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP88 is a utility type for entry points that receive 8 parameters and return 8 value(s)
-type EP88[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP88[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP88[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP88[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func NewViewEP88[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP88[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP88[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func (e EP88[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP88[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP89 is a utility type for entry points that receive 8 parameters and return 9 value(s)
-type EP89[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP8[S, T1, T2, T3, T4, T5, T6, T7, T8, I1, I2, I3, I4, I5, I6, I7, I8]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP89[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP89[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP89[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP8:     NewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func NewViewEP89[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP89[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP89[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP8:     NewViewEP8(contract, name, in1, in2, in3, in4, in5, in6, in7, in8),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func (e EP89[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP89[S, T1, T2, T3, T4, T5, T6, T7, T8, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
-}
-
-// EP90 is a utility type for entry points that receive 9 parameters and return 0 value(s)
-type EP90[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-}
-
-func NewEP90[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-
-) EP90[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9] {
-	return EP90[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]{
-		EP9: NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-	}
-}
-
-func NewViewEP90[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-
-) EP90[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9] {
-	return EP90[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]{
-		EP9: NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-	}
-}
-
-func (e EP90[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP90[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		return isc.NewCallArguments()
-
-	})
-}
-
-// EP91 is a utility type for entry points that receive 9 parameters and return 1 value(s)
-type EP91[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-}
-
-func NewEP91[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1,
-) EP91[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1] {
-	return EP91[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-	}
-}
-
-func NewViewEP91[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1,
-) EP91[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1] {
-	return EP91[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-	}
-}
-
-func (e EP91[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP91[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) R1) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		return isc.NewCallArguments(output1)
-
-	})
-}
-
-// EP92 is a utility type for entry points that receive 9 parameters and return 2 value(s)
-type EP92[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-}
-
-func NewEP92[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2,
-) EP92[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2] {
-	return EP92[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func NewViewEP92[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2,
-) EP92[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2] {
-	return EP92[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func (e EP92[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP92[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-
-		return isc.NewCallArguments(output1, output2)
-
-	})
-}
-
-// EP93 is a utility type for entry points that receive 9 parameters and return 3 value(s)
-type EP93[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-}
-
-func NewEP93[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3,
-) EP93[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3] {
-	return EP93[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func NewViewEP93[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3,
-) EP93[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3] {
-	return EP93[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func (e EP93[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP93[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-
-		return isc.NewCallArguments(output1, output2, output3)
-
-	})
-}
-
-// EP94 is a utility type for entry points that receive 9 parameters and return 4 value(s)
-type EP94[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-}
-
-func NewEP94[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP94[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4] {
-	return EP94[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func NewViewEP94[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP94[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4] {
-	return EP94[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func (e EP94[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP94[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3, R4)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-
-		return isc.NewCallArguments(output1, output2, output3, output4)
-
-	})
-}
-
-// EP95 is a utility type for entry points that receive 9 parameters and return 5 value(s)
-type EP95[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-}
-
-func NewEP95[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP95[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5] {
-	return EP95[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func NewViewEP95[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP95[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5] {
-	return EP95[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
+	i2, err := arguments.At(1)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func (e EP95[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP95[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
-	})
-}
-
-// EP96 is a utility type for entry points that receive 9 parameters and return 6 value(s)
-type EP96[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
-
-func NewEP96[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP96[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6] {
-	return EP96[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func NewViewEP96[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP96[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6] {
-	return EP96[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func (e EP96[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP96[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3, R4, R5, R6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP97 is a utility type for entry points that receive 9 parameters and return 7 value(s)
-type EP97[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP97[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP97[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7] {
-	return EP97[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func NewViewEP97[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP97[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7] {
-	return EP97[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func (e EP97[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP97[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3, R4, R5, R6, R7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
-
-// EP98 is a utility type for entry points that receive 9 parameters and return 8 value(s)
-type EP98[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP98[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP98[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP98[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func NewViewEP98[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP98[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP98[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-	}
-}
-
-func (e EP98[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP98[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3, R4, R5, R6, R7, R8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP99 is a utility type for entry points that receive 9 parameters and return 9 value(s)
-type EP99[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]] struct {
-	EP9[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, I1, I2, I3, I4, I5, I6, I7, I8, I9]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP99[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP99[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP99[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP9:     NewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func NewViewEP99[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, R1 any, R2 any, R3 any, R4 any, R5 any, R6 any, R7 any, R8 any, R9 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2], I3 CallArgsCodec[T3], I4 CallArgsCodec[T4], I5 CallArgsCodec[T5], I6 CallArgsCodec[T6], I7 CallArgsCodec[T7], I8 CallArgsCodec[T8], I9 CallArgsCodec[T9], O1 CallArgsCodec[R1], O2 CallArgsCodec[R2], O3 CallArgsCodec[R3], O4 CallArgsCodec[R4], O5 CallArgsCodec[R5], O6 CallArgsCodec[R6], O7 CallArgsCodec[R7], O8 CallArgsCodec[R8], O9 CallArgsCodec[R9]](
-	contract *ContractInfo, name string,
-	in1 I1,
-	in2 I2,
-	in3 I3,
-	in4 I4,
-	in5 I5,
-	in6 I6,
-	in7 I7,
-	in8 I8,
-	in9 I9,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP99[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP99[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP9:     NewViewEP9(contract, name, in1, in2, in3, in4, in5, in6, in7, in8, in9),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
-	}
-}
-
-func (e EP99[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message(p1 T1, p2 T2, p3 T3, p4 T4, p5 T5, p6 T6, p7 T7, p8 T8, p9 T9) isc.Message {
-	callArgs := isc.NewCallArguments(e.Input1.Encode(p1), e.Input2.Encode(p2), e.Input3.Encode(p3), e.Input4.Encode(p4), e.Input5.Encode(p5), e.Input6.Encode(p6), e.Input7.Encode(p7), e.Input8.Encode(p8), e.Input9.Encode(p9))
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP99[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, R1, R2, R3, R4, R5, R6, R7, R8, R9, I1, I2, I3, I4, I5, I6, I7, I8, I9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S, T1, T2, T3, T4, T5, T6, T7, T8, T9) (R1, R2, R3, R4, R5, R6, R7, R8, R9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
-		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
-		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
-		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
-		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
-		ctx.RequireNoError(err)
-		p6, err := e.Input6.Decode(params.Args.MustAt(5))
-		ctx.RequireNoError(err)
-		p7, err := e.Input7.Decode(params.Args.MustAt(6))
-		ctx.RequireNoError(err)
-		p8, err := e.Input8.Decode(params.Args.MustAt(7))
-		ctx.RequireNoError(err)
-		p9, err := e.Input9.Decode(params.Args.MustAt(8))
-		ctx.RequireNoError(err)
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx, p1, p2, p3, p4, p5, p6, p7, p8, p9)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
-}
-
-// EP01 is a utility type for entry points that receive 0 parameters and return 1 value(s)
-type EP01[S isc.SandboxBase, T1 any, O1 CallArgsCodec[T1]] struct {
-	EP0[S]
-	Output1 O1
-}
-
-func NewEP01[T1 any, O1 CallArgsCodec[T1]](
-	contract *ContractInfo, name string,
-	out1 O1,
-) EP01[isc.Sandbox, T1, O1] {
-	return EP01[isc.Sandbox, T1, O1]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-	}
-}
-
-func NewViewEP01[T1 any, O1 CallArgsCodec[T1]](
-	contract *ContractInfo, name string,
-	out1 O1,
-) EP01[isc.SandboxView, T1, O1] {
-	return EP01[isc.SandboxView, T1, O1]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-	}
-}
-
-func (e EP01[S, T1, O1]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP01[S, T1, O1]) WithHandler(f func(S) T1) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		return isc.NewCallArguments(output1)
-
-	})
-}
-
-// EP02 is a utility type for entry points that receive 0 parameters and return 2 value(s)
-type EP02[S isc.SandboxBase, T1 any, T2 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-}
-
-func NewEP02[T1 any, T2 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2,
-) EP02[isc.Sandbox, T1, T2, O1, O2] {
-	return EP02[isc.Sandbox, T1, T2, O1, O2]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func NewViewEP02[T1 any, T2 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2,
-) EP02[isc.SandboxView, T1, T2, O1, O2] {
-	return EP02[isc.SandboxView, T1, T2, O1, O2]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-	}
-}
-
-func (e EP02[S, T1, T2, O1, O2]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP02[S, T1, T2, O1, O2]) WithHandler(f func(S) (T1, T2)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-
-		return isc.NewCallArguments(output1, output2)
-
-	})
-}
-
-// EP03 is a utility type for entry points that receive 0 parameters and return 3 value(s)
-type EP03[S isc.SandboxBase, T1 any, T2 any, T3 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-}
-
-func NewEP03[T1 any, T2 any, T3 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3,
-) EP03[isc.Sandbox, T1, T2, T3, O1, O2, O3] {
-	return EP03[isc.Sandbox, T1, T2, T3, O1, O2, O3]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func NewViewEP03[T1 any, T2 any, T3 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3,
-) EP03[isc.SandboxView, T1, T2, T3, O1, O2, O3] {
-	return EP03[isc.SandboxView, T1, T2, T3, O1, O2, O3]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-	}
-}
-
-func (e EP03[S, T1, T2, T3, O1, O2, O3]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP03[S, T1, T2, T3, O1, O2, O3]) WithHandler(f func(S) (T1, T2, T3)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-
-		return isc.NewCallArguments(output1, output2, output3)
-
-	})
-}
-
-// EP04 is a utility type for entry points that receive 0 parameters and return 4 value(s)
-type EP04[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-}
-
-func NewEP04[T1 any, T2 any, T3 any, T4 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP04[isc.Sandbox, T1, T2, T3, T4, O1, O2, O3, O4] {
-	return EP04[isc.Sandbox, T1, T2, T3, T4, O1, O2, O3, O4]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func NewViewEP04[T1 any, T2 any, T3 any, T4 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4,
-) EP04[isc.SandboxView, T1, T2, T3, T4, O1, O2, O3, O4] {
-	return EP04[isc.SandboxView, T1, T2, T3, T4, O1, O2, O3, O4]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-	}
-}
-
-func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) WithHandler(f func(S) (T1, T2, T3, T4)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-
-		return isc.NewCallArguments(output1, output2, output3, output4)
-
-	})
-}
-
-// EP05 is a utility type for entry points that receive 0 parameters and return 5 value(s)
-type EP05[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-}
-
-func NewEP05[T1 any, T2 any, T3 any, T4 any, T5 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP05[isc.Sandbox, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5] {
-	return EP05[isc.Sandbox, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func NewViewEP05[T1 any, T2 any, T3 any, T4 any, T5 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5,
-) EP05[isc.SandboxView, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5] {
-	return EP05[isc.SandboxView, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-	}
-}
-
-func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) WithHandler(f func(S) (T1, T2, T3, T4, T5)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4, r5 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
-	})
-}
-
-// EP06 is a utility type for entry points that receive 0 parameters and return 6 value(s)
-type EP06[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-}
-
-func NewEP06[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP06[isc.Sandbox, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6] {
-	return EP06[isc.Sandbox, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func NewViewEP06[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6,
-) EP06[isc.SandboxView, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6] {
-	return EP06[isc.SandboxView, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-	}
-}
-
-func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4, r5, r6 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
-	})
-}
-
-// EP07 is a utility type for entry points that receive 0 parameters and return 7 value(s)
-type EP07[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-}
-
-func NewEP07[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP07[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7] {
-	return EP07[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-	}
-}
-
-func NewViewEP07[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7,
-) EP07[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7] {
-	return EP07[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
+	o2, err = e.Output2.Decode(i2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
-
-func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4, r5, r6, r7 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
-	})
-}
 
-// EP08 is a utility type for entry points that receive 0 parameters and return 8 value(s)
-type EP08[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-}
-
-func NewEP08[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP08[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP08[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	i3, err := arguments.At(2)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP08[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8,
-) EP08[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8] {
-	return EP08[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
+	o3, err = e.Output3.Decode(i3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
-
-func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
 
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
-	})
-}
-
-// EP09 is a utility type for entry points that receive 0 parameters and return 9 value(s)
-type EP09[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9]] struct {
-	EP0[S]
-	Output1 O1
-	Output2 O2
-	Output3 O3
-	Output4 O4
-	Output5 O5
-	Output6 O6
-	Output7 O7
-	Output8 O8
-	Output9 O9
-}
-
-func NewEP09[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP09[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP09[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP0:     NewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	i4, err := arguments.At(3)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP09[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9,
-) EP09[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9] {
-	return EP09[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]{
-		EP0:     NewViewEP0(contract, name),
-		Output1: out1,
-		Output2: out2,
-		Output3: out3,
-		Output4: out4,
-		Output5: out5,
-		Output6: out6,
-		Output7: out7,
-		Output8: out8,
-		Output9: out9,
+	o4, err = e.Output4.Decode(i4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
-
-func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
 
-func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8, T9)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
-	})
-}
-
-// EP010 is a utility type for entry points that receive 0 parameters and return 10 value(s)
-type EP010[S isc.SandboxBase, T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, T10 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9], O10 CallArgsCodec[T10]] struct {
-	EP0[S]
-	Output1  O1
-	Output2  O2
-	Output3  O3
-	Output4  O4
-	Output5  O5
-	Output6  O6
-	Output7  O7
-	Output8  O8
-	Output9  O9
-	Output10 O10
-}
-
-func NewEP010[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, T10 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9], O10 CallArgsCodec[T10]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9, out10 O10,
-) EP010[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10] {
-	return EP010[isc.Sandbox, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]{
-		EP0:      NewEP0(contract, name),
-		Output1:  out1,
-		Output2:  out2,
-		Output3:  out3,
-		Output4:  out4,
-		Output5:  out5,
-		Output6:  out6,
-		Output7:  out7,
-		Output8:  out8,
-		Output9:  out9,
-		Output10: out10,
+	i5, err := arguments.At(4)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
 
-func NewViewEP010[T1 any, T2 any, T3 any, T4 any, T5 any, T6 any, T7 any, T8 any, T9 any, T10 any, O1 CallArgsCodec[T1], O2 CallArgsCodec[T2], O3 CallArgsCodec[T3], O4 CallArgsCodec[T4], O5 CallArgsCodec[T5], O6 CallArgsCodec[T6], O7 CallArgsCodec[T7], O8 CallArgsCodec[T8], O9 CallArgsCodec[T9], O10 CallArgsCodec[T10]](
-	contract *ContractInfo, name string,
-	out1 O1, out2 O2, out3 O3, out4 O4, out5 O5, out6 O6, out7 O7, out8 O8, out9 O9, out10 O10,
-) EP010[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10] {
-	return EP010[isc.SandboxView, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]{
-		EP0:      NewViewEP0(contract, name),
-		Output1:  out1,
-		Output2:  out2,
-		Output3:  out3,
-		Output4:  out4,
-		Output5:  out5,
-		Output6:  out6,
-		Output7:  out7,
-		Output8:  out8,
-		Output9:  out9,
-		Output10: out10,
+	o5, err = e.Output5.Decode(i5)
+	if err != nil {
+		return o1, o2, o3, o4, o5, err
 	}
-}
-
-func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]) Message() isc.Message {
-	callArgs := isc.NewCallArguments()
-	return e.EntryPointInfo.Message(callArgs)
-}
-
-func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)) *EntryPointHandler[S] {
-	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
-		r1, r2, r3, r4, r5, r6, r7, r8, r9, r10 := f(ctx)
-		output1 := e.Output1.Encode(r1)
-		output2 := e.Output2.Encode(r2)
-		output3 := e.Output3.Encode(r3)
-		output4 := e.Output4.Encode(r4)
-		output5 := e.Output5.Encode(r5)
-		output6 := e.Output6.Encode(r6)
-		output7 := e.Output7.Encode(r7)
-		output8 := e.Output8.Encode(r8)
-		output9 := e.Output9.Encode(r9)
-		output10 := e.Output10.Encode(r10)
-
-		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9, output10)
 
-	})
+	return o1, o2, o3, o4, o5, nil
 }

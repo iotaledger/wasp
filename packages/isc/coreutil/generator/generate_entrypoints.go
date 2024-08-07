@@ -142,9 +142,9 @@ import "github.com/iotaledger/wasp/packages/isc"
 
 	`
 
-	result += generateX(basePath, 9)
-	result += generateXY(basePath, 9, 9)
-	result += generate0Y(basePath, 9)
+	result += generateX(basePath, 5)
+	result += generate0Y(basePath, 5)
+	result += generateXY(basePath, 5, 5)
 
 	file, err := os.Create(path.Join(basePath, "../generated_entrypoints.go"))
 	if err != nil {
