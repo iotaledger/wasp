@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -47,6 +48,8 @@ func main() {
 
 	migrateAccountsContractState(srcState, destStateDraft)
 	//migrate<Other Contract>State(srcState, destStateDraft)
+
+	migrateAccountsContractState2(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
@@ -118,6 +121,10 @@ func getContactStateReader(chainState kv.KVStoreReader, contractHname isc.Hname)
 	return subrealm.NewReadOnly(chainState, kv.Key(contractHname.Bytes()))
 }
 
+func getContactState(chainState kv.KVStore, contractHname isc.Hname) kv.KVStore {
+	return subrealm.New(chainState, kv.Key(contractHname.Bytes()))
+}
+
 func migrateContractState(chainState kv.KVStoreReader, contractName string, keys []contactKeyInfo, destChainState state.StateDraft) {
 	contractStateReader := getContactStateReader(chainState, coreutil.CoreHname(contractName))
 
@@ -170,8 +177,35 @@ func migrateAccountsContractState(srcChainState kv.KVStoreReader, destChainState
 	migrateContractState(srcChainState, accounts.Contract.Name, keysToMigrate, destChainState)
 }
 
-func parseKey(key kv.Key) (isc.Hname, string) {
-	hname := must2(isc.HnameFromBytes([]byte(key[:4])))
-	postfix := string(key[4:])
-	return hname, postfix
+// func parseKey(key kv.Key) (isc.Hname, string) {
+// 	hname := must2(isc.HnameFromBytes([]byte(key[:4])))
+// 	postfix := string(key[4:])
+// 	return hname, postfix
+// }
+
+func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
+	srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(accounts.Contract.Name))
+	destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
+
+	// Accounts
+	srcAccs := collections.NewMapReadOnly(srcChainState, keyAllAccounts)
+	destAccs := collections.NewMap(destContractState, keyAllAccounts)
+
+	log.Printf("Found %v accounts\n", srcAccs.Len())
+	migrateEntitiesMap(srcAccs, destAccs, migrateAccount)
+
+	// All foundries
+	migrateEntitiesMapByName(srcContractState, destContractState, keyFoundryOutputRecords, migrateFoundryOutput)
+
+	// Account to NFT
+	// mapName := PrefixNFTs + string(agentID.Bytes())
+	// ??
+}
+
+func migrateAccount(srcKey kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
+	return srcKey, srcVal
+}
+
+func migrateFoundryOutput(srcKey kv.Key, srcVal foundryOutputRec) (destKey kv.Key, destVal foundryOutputRec) {
+	return srcKey, srcVal
 }
