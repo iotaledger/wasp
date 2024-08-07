@@ -40,7 +40,7 @@ func (c ISCChainID) MustUnwrap() isc.ChainID {
 	return ret
 }
 
-// NativeTokenID matches the struct definition in ISCTypes.sol
+// CoinType matches the struct definition in ISCTypes.sol
 type CoinType struct {
 	Data string
 }
@@ -102,28 +102,6 @@ func (c ObjectIDSet) Unwrap() (isc.ObjectIDSet, error) {
 
 	return objectIDSet, nil
 }
-
-// TODO: refactor me: refactor or remove?
-/*
-// NativeToken matches the struct definition in ISCTypes.sol
-type NativeToken struct {
-	ID     CoinType
-	Amount *big.Int
-}
-
-func WrapNativeToken(nativeToken *isc.NativeToken) NativeToken {
-	return NativeToken{
-		ID:     WrapCoinType(nativeToken.ID),
-		Amount: nativeToken.Amount,
-	}
-}
-
-func (nt NativeToken) Unwrap() *isc.NativeToken {
-	return &isc.NativeToken{
-		ID:     nt.ID.Unwrap(),
-		Amount: nt.Amount,
-	}
-}*/
 
 // L1Address matches the struct definition in ISCTypes.sol
 type L1Address struct {
