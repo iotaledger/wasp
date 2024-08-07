@@ -8,20 +8,18 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"slices"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
-	"github.com/samber/lo"
 )
 
 func main() {
@@ -32,8 +30,6 @@ func main() {
 	srcChainDBDir := os.Args[1]
 	destChainDBDir := os.Args[2]
 
-	_ = srcChainDBDir
-
 	must(os.MkdirAll(destChainDBDir, 0755))
 
 	entries := must2(os.ReadDir(destChainDBDir))
@@ -41,30 +37,20 @@ func main() {
 		log.Fatalf("destination directory is not empty: %v", destChainDBDir)
 	}
 
-	// srcKVS := connectDB(srcChainDBDir)
-	// srcStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(srcKVS))
-	// srcState, err := srcStore.LatestState()
-	// must(err)
-
 	destKVS := createDB(destChainDBDir)
-
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
+	destStateDraft := destStore.NewOriginStateDraft()
 
-	stateDraft := destStore.NewOriginStateDraft()
+	srcKVS := connectDB(srcChainDBDir)
+	srcStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(srcKVS))
+	srcState := must2(srcStore.LatestState())
 
-	stateDraft.Set(kv.Key("test-key"), []byte("test-value"))
-	newBlock := destStore.Commit(stateDraft)
+	migrateAccountsContractState(srcState, destStateDraft)
+	//migrate<Other Contract>State(srcState, destStateDraft)
+
+	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
 	destKVS.Flush()
-
-	destState := must2(destStore.LatestState())
-
-	log.Printf("Has: %v", destState.Has(kv.Key("test-key")))
-	log.Printf("Get: %v", destState.Get(kv.Key("test-key")))
-
-	// showAnchorStats(srcState)
-	// //showBlocklogContractStats(state)
-	// showAccountsContractStats(srcState)
 }
 
 func createDB(dbDir string) kvstore.KVStore {
@@ -128,72 +114,34 @@ type contactKeyInfo struct {
 	Description string
 }
 
-func getContactState(chainState kv.KVStoreReader, contractHname isc.Hname) kv.KVStoreReader {
+func getContactStateReader(chainState kv.KVStoreReader, contractHname isc.Hname) kv.KVStoreReader {
 	return subrealm.NewReadOnly(chainState, kv.Key(contractHname.Bytes()))
 }
 
-func showContractKeysStats(chainState kv.KVStoreReader, contractHname isc.Hname, keys []contactKeyInfo) {
-	contractState := getContactState(chainState, contractHname)
+func migrateContractState(chainState kv.KVStoreReader, contractName string, keys []contactKeyInfo, destChainState state.StateDraft) {
+	contractStateReader := getContactStateReader(chainState, coreutil.CoreHname(contractName))
 
-	keys = slices.Clone(keys)
-
-	for i := range keys {
-		keyInfo := &keys[i]
-
-		if keyInfo.Description == "" {
-			keyInfo.Description = keyInfo.KeyPrefix
-		} else {
-			keyInfo.Description = keyInfo.Description + " (" + keyInfo.KeyPrefix + ")"
-		}
-	}
-
-	searchResults := make(map[string]bool, len(keys))
+	log.Printf("Migrating contract state for '%v'...\n", coreutil.CoreHname(contractName))
 
 	for _, keyInfo := range keys {
-		log.Printf("Searching for %v...\n", keyInfo.Description)
+		log.Printf("Migrating '%v' ('%v')...\n", keyInfo.Description, keyInfo.KeyPrefix)
 
-		found := false
-		contractState.IterateKeys(kv.Key(keyInfo.KeyPrefix), func(key kv.Key) bool {
-			found = true
-			return false
-		})
-
-		if found {
-			log.Printf("%v: found\n", keyInfo.Description)
-		} else {
-			log.Printf("%v: no entries\n", keyInfo.Description)
-		}
-
-		searchResults[keyInfo.Description] = found
-	}
-
-	log.Printf("Search results:\n")
-	for _, keyInfo := range keys {
-		foundStr := lo.Ternary(searchResults[keyInfo.Description], "FOUND", "NOT FOUND")
-		log.Printf("    %-25v\t%v\n", keyInfo.Description, foundStr)
-	}
-
-	for _, keyInfo := range keys {
-		log.Printf("Counting %v...\n", keyInfo.Description)
-
-		entriesCount := 0
-
-		contractState.IterateKeys(kv.Key(keyInfo.KeyPrefix), func(key kv.Key) bool {
-			entriesCount++
-
-			if entriesCount%1000 == 0 {
-				log.Printf("%v: %v entries\n", keyInfo.Description, entriesCount)
+		count := 0
+		contractStateReader.Iterate(kv.Key(keyInfo.KeyPrefix), func(key kv.Key, value []byte) bool {
+			count++
+			err := getMigrationHandler(keyInfo.KeyPrefix)(key, value, destChainState)
+			if err != nil {
+				panic(fmt.Sprintf("error migrating key '%v' ('%v''%v'): %+v", key.Hex(), keyInfo.Description, keyInfo.KeyPrefix, err))
 			}
-
 			return true
 		})
 
-		log.Printf("Total %v: %v entries\n", keyInfo.Description, entriesCount)
+		log.Printf("Migrated %v keys of '%v' ('%v')\n", count, keyInfo.Description, keyInfo.KeyPrefix)
 	}
 }
 
-func showAccountsContractStats(chainState kv.KVStoreReader) {
-	showContractKeysStats(chainState, accounts.Contract.Hname(), []contactKeyInfo{
+func migrateAccountsContractState(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
+	keysToMigrate := []contactKeyInfo{
 		{keyAllAccounts, "All accounts"},
 		//{prefixBaseTokens + AccountID, "Base tokens by account"},
 		{prefixBaseTokens + L2TotalsAccount, "L2 total base tokens"},
@@ -217,90 +165,9 @@ func showAccountsContractStats(chainState kv.KVStoreReader) {
 		// {VarChainOwnerIDDelegated, "Chain owner ID delegated"},
 		// {VarMinBaseTokensOnCommonAccount, "Min base tokens on common account"},
 		// {VarPayoutAgentID, "Payout agent ID"},
-	})
-}
+	}
 
-// func showAnchorStats(chainState kv.KVStoreReader) {
-// 	contractState := getContactState(chainState, blocklog.Contract.Hname())
-
-// 	if !contractState.Has(kv.Key(PrefixBlockRegistry)) {
-// 		panic("Block registry not found in contract state")
-// 	}
-
-// 	registry := collections.NewArrayReadOnly(contractState, PrefixBlockRegistry)
-// 	if registry.Len() == 0 {
-// 		panic("Block registry is empty")
-// 	}
-
-// 	blockInfoBytes := registry.GetAt(registry.Len() - 1)
-
-// 	var blockInfo blocklog.BlockInfo
-// 	err := blockInfo.Read(bytes.NewReader(blockInfoBytes))
-// 	must(err)
-
-// 	log.Printf("Block index: %d\n", blockInfo.BlockIndex())
-// 	log.Printf("FoundryCounter: %v\n", blockInfo.PreviousAliasOutput.GetAliasOutput().FoundryCounter)
-
-// 	lastBlockWithNonZeroFoundryCounter := -1
-// 	for i := int64(registry.Len()) - 1; i >= 0; i-- {
-// 		blockInfoBytes := registry.GetAt(uint32(i))
-
-// 		var blockInfo blocklog.BlockInfo
-// 		err := blockInfo.Read(bytes.NewReader(blockInfoBytes))
-// 		if err != nil {
-// 			if errors.Is(err, io.EOF) {
-// 				log.Printf("Reached on the blocklog: blockIndex = %d\n", i+1)
-// 				break
-// 			}
-
-// 			must(err)
-// 		}
-
-// 		if blockInfo.PreviousAliasOutput.GetAliasOutput().FoundryCounter != 0 {
-// 			lastBlockWithNonZeroFoundryCounter = int(i)
-// 			break
-// 		}
-// 	}
-
-// 	if lastBlockWithNonZeroFoundryCounter == -1 {
-// 		log.Printf("No blocks with non-zero FoundryCounter found")
-// 	} else {
-// 		log.Printf("Last block with non-zero FoundryCounter: %d", lastBlockWithNonZeroFoundryCounter)
-// 	}
-// }
-
-// func showBlocklogContractStats(chainState kv.KVStoreReader) {
-// 	showContractKeysStats(chainState, blocklog.Contract.Hname(), []contactKeyInfo{
-// 		{PrefixBlockRegistry, "Block registry"},
-// 		{prefixRequestLookupIndex, "Request lookup index"},
-// 		{prefixRequestReceipts, "Request receipts"},
-// 		{prefixRequestEvents, "Request events"},
-// 		{prefixUnprocessableRequests, "Unprocessable requests"},
-// 		{prefixNewUnprocessableRequests, "New unprocessable requests"},
-// 	})
-// }
-
-func iterateChainState(chainState kv.KVStoreReader) {
-	maxIterations := 10
-
-	//s.Iterate(kv.Key(contractHname.Bytes()), func(key kv.Key, value []byte) bool {
-	chainState.IterateSorted("", func(key kv.Key, value []byte) bool {
-		hn, postfix := parseKey(key)
-
-		hns := hn.String()
-		hnType := "(unknown)"
-		if corecontracts.All[hn] != nil {
-			hns = corecontracts.All[hn].Name
-			hnType = "(core contract)"
-			//contractState := subrealm.NewReadOnly(s, kv.Key(hn))
-		}
-
-		log.Printf("%v %v: %v\n", hns, hnType, postfix)
-
-		maxIterations--
-
-		return maxIterations > 0
-	})
+	migrateContractState(srcChainState, accounts.Contract.Name, keysToMigrate, destChainState)
 }
 
 func parseKey(key kv.Key) (isc.Hname, string) {
