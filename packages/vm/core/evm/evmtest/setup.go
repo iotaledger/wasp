@@ -109,7 +109,7 @@ func (e *SoloChainEnv) getCode(addr common.Address) []byte {
 func (e *SoloChainEnv) getEVMGasRatio() util.Ratio32 {
 	ret, err := e.Chain.CallView(governance.ViewGetEVMGasRatio.Message())
 	require.NoError(e.t, err)
-	return lo.Must(governance.ViewGetEVMGasRatio.Output.Decode(ret))
+	return lo.Must(governance.ViewGetEVMGasRatio.Output1.Decode(ret))
 }
 
 func (e *SoloChainEnv) setEVMGasRatio(newGasRatio util.Ratio32, opts ...iscCallOptions) error {

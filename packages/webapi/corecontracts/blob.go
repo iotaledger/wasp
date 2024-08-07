@@ -21,5 +21,5 @@ func GetBlobValue(ch chain.Chain, blobHash hashing.HashValue, key string, blockI
 	if err != nil {
 		return nil, err
 	}
-	return blob.ViewGetBlobField.Output.Decode(ret)
+	return blob.ViewGetBlobField.Output1.Decode(ret)
 }

@@ -138,7 +138,7 @@ func TestSendBack(t *testing.T) {
 	// check counter increments
 	ret, err := ch.CallView(inccounter.ViewGetCounter.Message())
 	require.NoError(t, err)
-	counter := lo.Must(inccounter.ViewGetCounter.Output.Decode(ret))
+	counter := lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret))
 	require.EqualValues(t, 1, counter)
 
 	// send a custom request
@@ -188,7 +188,7 @@ func TestSendBack(t *testing.T) {
 	// check counter is still the same (1)
 	ret, err = ch.CallView(inccounter.ViewGetCounter.Message())
 	require.NoError(t, err)
-	counter = lo.Must(inccounter.ViewGetCounter.Output.Decode(ret))
+	counter = lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret))
 	require.EqualValues(t, 1, counter)
 }
 

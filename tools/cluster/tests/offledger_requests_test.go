@@ -60,7 +60,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
 		})
 	require.NoError(t, err)
-	require.EqualValues(t, 43, lo.Must(inccounter.ViewGetCounter.Output.Decode(ret)))
+	require.EqualValues(t, 43, lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret)))
 }
 
 // executed in cluster_test.go
@@ -86,7 +86,7 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
 		})
 	require.NoError(t, err)
-	require.EqualValues(t, 43, lo.Must(inccounter.ViewGetCounter.Output.Decode(ret)))
+	require.EqualValues(t, 43, lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret)))
 }
 
 // executed in cluster_test.go
@@ -123,7 +123,7 @@ func testOffledgerRequest900KB(t *testing.T, e *ChainEnv) {
 			governance.ViewGetGasLimits.Message(),
 		)
 		require.NoError(t, err1)
-		limits2, err1 := governance.ViewGetGasLimits.Output.Decode(retDict)
+		limits2, err1 := governance.ViewGetGasLimits.Output1.Decode(retDict)
 		require.Equal(t, limits1, *limits2)
 		require.NoError(t, err1)
 	}

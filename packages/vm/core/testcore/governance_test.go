@@ -136,7 +136,7 @@ func TestAccessNodes(t *testing.T) {
 	// Initially the state is empty.
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse := lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
+	getChainNodesResponse := lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
@@ -158,7 +158,7 @@ func TestAccessNodes(t *testing.T) {
 
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[node1KP.GetPublicKey().AsKey()].AccessAPI)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
@@ -177,7 +177,7 @@ func TestAccessNodes(t *testing.T) {
 
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[node1KP.GetPublicKey().AsKey()].AccessAPI)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
@@ -196,7 +196,7 @@ func TestAccessNodes(t *testing.T) {
 
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output.Decode(res))
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 }
@@ -236,7 +236,7 @@ func TestMaintenanceMode(t *testing.T) {
 		// TODO: Add maintenance status to wrapped core contracts
 		ret, err2 := ch.CallView(governance.ViewGetMaintenanceStatus.Message())
 		require.NoError(t, err2)
-		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output.Decode(ret))
+		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output1.Decode(ret))
 		require.False(t, maintenanceStatus)
 	}
 
@@ -262,7 +262,7 @@ func TestMaintenanceMode(t *testing.T) {
 	{
 		ret, err2 := ch.CallView(governance.ViewGetMaintenanceStatus.Message())
 		require.NoError(t, err2)
-		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output.Decode(ret))
+		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output1.Decode(ret))
 		require.True(t, maintenanceStatus)
 	}
 
@@ -677,7 +677,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 
 	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
 	require.NoError(t, err)
-	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output.Decode(retDict))
+	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output1.Decode(retDict))
 	require.Equal(t, userAgentID, retAgentID)
 
 	_, err = ch.PostRequestSync(
@@ -694,7 +694,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	ch := env.NewChain()
 	initRetDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
-	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.Output.Decode(initRetDict))
+	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.Output1.Decode(initRetDict))
 	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
 	minCommonAccountBalance := uint64(123456)
@@ -708,7 +708,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 
 	retDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
-	retMinCommonAccountBalance = lo.Must(governance.ViewGetMinCommonAccountBalance.Output.Decode(retDict))
+	retMinCommonAccountBalance = lo.Must(governance.ViewGetMinCommonAccountBalance.Output1.Decode(retDict))
 	require.NoError(t, err)
 	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
 }
@@ -779,7 +779,7 @@ func TestGasPayout(t *testing.T) {
 	// assert new payoutAddr is correctly set
 	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
 	require.NoError(t, err)
-	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output.Decode(retDict))
+	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output1.Decode(retDict))
 	require.NoError(t, err)
 	require.Equal(t, user1AgentID, retAgentID)
 

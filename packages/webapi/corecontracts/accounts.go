@@ -15,7 +15,7 @@ func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.Assets, e
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewTotalAssets.Output.Decode(ret)
+	return accounts.ViewTotalAssets.Output1.Decode(ret)
 }
 
 func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (*isc.Assets, error) {
@@ -23,7 +23,7 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewTotalAssets.Output.Decode(ret)
+	return accounts.ViewTotalAssets.Output1.Decode(ret)
 }
 
 func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]iotago.NFTID, error) {
@@ -67,7 +67,7 @@ func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]io
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewGetNativeTokenIDRegistry.Output.Decode(ret)
+	return accounts.ViewGetNativeTokenIDRegistry.Output1.Decode(ret)
 }
 
 func GetFoundryOutput(ch chain.Chain, serialNumber uint32, blockIndexOrTrieRoot string) (*iotago.FoundryOutput, error) {

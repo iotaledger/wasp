@@ -343,7 +343,7 @@ func TestRebootDuringTasks(t *testing.T) {
 			})
 		require.NoError(t, err)
 
-		counter, err := inccounter.ViewGetCounter.Output.Decode(ret)
+		counter, err := inccounter.ViewGetCounter.Output1.Decode(ret)
 		require.NoError(t, err)
 		require.Greater(t, counter, lastCounter)
 		lastCounter = counter

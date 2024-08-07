@@ -101,7 +101,7 @@ func TestUploadBlob(t *testing.T) {
 
 			ret, err := ch.CallView(blob.ViewGetBlobField.Message(h, []byte("field")))
 			require.NoError(t, err)
-			v := lo.Must(blob.ViewGetBlobField.Output.Decode(ret))
+			v := lo.Must(blob.ViewGetBlobField.Output1.Decode(ret))
 			require.EqualValues(t, size, len(v))
 		}
 	})

@@ -423,7 +423,7 @@ func callContract(ctx isc.Sandbox) dict.Dict {
 
 func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 	gasRatioViewRes := ctx.CallView(governance.ViewGetEVMGasRatio.Message())
-	return lo.Must(governance.ViewGetEVMGasRatio.Output.Decode(gasRatioViewRes))
+	return lo.Must(governance.ViewGetEVMGasRatio.Output1.Decode(gasRatioViewRes))
 }
 
 func newL1Deposit(ctx isc.Sandbox, r evm.NewL1DepositRequest) dict.Dict {

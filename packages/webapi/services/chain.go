@@ -129,7 +129,7 @@ func (c *ChainService) GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot s
 	if err != nil {
 		return 0, err
 	}
-	return evm.ViewGetChainID.Output.Decode(ret)
+	return evm.ViewGetChainID.Output1.Decode(ret)
 }
 
 func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
@@ -181,7 +181,7 @@ func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot st
 	if err != nil {
 		return nil, err
 	}
-	return root.ViewGetContractRecords.Output.Decode(res)
+	return root.ViewGetContractRecords.Output1.Decode(res)
 }
 
 func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {

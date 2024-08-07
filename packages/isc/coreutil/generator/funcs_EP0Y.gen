@@ -1,0 +1,51 @@
+
+{{define "EP0Y"}}
+// EP0{{.Outputs}} is a utility type for entry points that receive 0 parameters and return {{.Outputs}} value(s)
+type EP0{{.Outputs}}[S isc.SandboxBase{{range $i := until .Outputs}}, T{{add $i 1}} any{{end}}{{range $i := until .Outputs}}, O{{add $i 1}} CallArgsCodec[T{{add $i 1}}]{{end}}] struct {
+    EP0[S]
+    {{range $i := until .Outputs}}Output{{add $i 1}} O{{add $i 1}}
+    {{end}}
+}
+
+func NewEP0{{.Outputs}}[{{range $i := until .Outputs}}T{{add $i 1}} any, {{end}}{{range $i := until .Outputs}}O{{add $i 1}} CallArgsCodec[T{{add $i 1}}]{{if not (last $i $.Outputs)}}, {{end}}{{end}}](
+    contract *ContractInfo, name string,
+    {{range $i := until .Outputs}}out{{add $i 1}} O{{add $i 1}},{{end}}
+) EP0{{.Outputs}}[isc.Sandbox{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}] {
+    return EP0{{.Outputs}}[isc.Sandbox{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]{
+        EP0: NewEP0(contract, name),
+        {{range $i := until .Outputs}}Output{{add $i 1}}: out{{add $i 1}},
+        {{end}}
+    }
+}
+
+func NewViewEP0{{.Outputs}}[{{range $i := until .Outputs}}T{{add $i 1}} any, {{end}}{{range $i := until .Outputs}}O{{add $i 1}} CallArgsCodec[T{{add $i 1}}]{{if not (last $i $.Outputs)}}, {{end}}{{end}}](
+    contract *ContractInfo, name string,
+    {{range $i := until .Outputs}}out{{add $i 1}} O{{add $i 1}},{{end}}
+) EP0{{.Outputs}}[isc.SandboxView{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}] {
+    return EP0{{.Outputs}}[isc.SandboxView{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]{
+        EP0: NewViewEP0(contract, name),
+        {{range $i := until .Outputs}}Output{{add $i 1}}: out{{add $i 1}},
+        {{end}}
+    }
+}
+
+func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Message() isc.Message {
+    callArgs := isc.NewCallArguments()
+    return e.EntryPointInfo.Message(callArgs)
+}
+
+func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) WithHandler(f func(S) {{if gt .Outputs 1}}({{end}}{{range $i := until .Outputs}}T{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}{{if gt .Outputs 1}}){{end}}) *EntryPointHandler[S] {
+    return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
+        {{if eq .Outputs 1}}
+        r1 := f(ctx)
+        output1 := e.Output1.Encode(r1)
+        return isc.NewCallArguments(output1)
+        {{else}}
+        {{range $i := until .Outputs}}r{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}} := f(ctx)
+        {{range $i := until .Outputs}}output{{add $i 1}} := e.Output{{add $i 1}}.Encode(r{{add $i 1}})
+        {{end}}
+        return isc.NewCallArguments({{range $i := until .Outputs}}output{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}})
+        {{end}}
+    })
+}
+{{end}}

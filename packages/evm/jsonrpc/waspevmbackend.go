@@ -51,7 +51,7 @@ func (b *WaspEVMBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error) {
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetFeePolicy.Output.Decode(ret)
+	return governance.ViewGetFeePolicy.Output1.Decode(ret)
 }
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {

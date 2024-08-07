@@ -109,7 +109,7 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.ViewGetFeePolicy.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetFeePolicy.Output.Decode(res))
+	return lo.Must(governance.ViewGetFeePolicy.Output1.Decode(res))
 }
 
 func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
@@ -120,7 +120,7 @@ func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 func (ch *Chain) GetGasLimits() *gas.Limits {
 	res, err := ch.CallView(governance.ViewGetGasLimits.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetGasLimits.Output.Decode(res))
+	return lo.Must(governance.ViewGetGasLimits.Output1.Decode(res))
 }
 
 func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
@@ -203,13 +203,13 @@ func (ch *Chain) GetContractBinary(progHash hashing.HashValue) (string, []byte, 
 	if err != nil {
 		return "", nil, err
 	}
-	vmType := codec.String.MustDecode(lo.Must(blob.ViewGetBlobField.Output.Decode(res)))
+	vmType := codec.String.MustDecode(lo.Must(blob.ViewGetBlobField.Output1.Decode(res)))
 
 	res, err = ch.CallView(blob.ViewGetBlobField.Message(progHash, codec.String.Encode(blob.VarFieldProgramBinary)))
 	if err != nil {
 		return "", nil, err
 	}
-	binary := lo.Must(blob.ViewGetBlobField.Output.Decode(res))
+	binary := lo.Must(blob.ViewGetBlobField.Output1.Decode(res))
 	return vmType, binary, nil
 }
 
@@ -292,13 +292,13 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 	res, err := ch.CallView(governance.ViewGetChainOwner.Message())
 	require.NoError(ch.Env.T, err)
 
-	chainOwnerID, err := governance.ViewGetChainOwner.Output.Decode(res)
+	chainOwnerID, err := governance.ViewGetChainOwner.Output1.Decode(res)
 	require.NoError(ch.Env.T, err)
 
 	res, err = ch.CallView(root.ViewGetContractRecords.Message())
 	require.NoError(ch.Env.T, err)
 
-	contracts, err := root.ViewGetContractRecords.Output.Decode(res)
+	contracts, err := root.ViewGetContractRecords.Output1.Decode(res)
 	require.NoError(ch.Env.T, err)
 	return ch.ChainID, chainOwnerID, contracts
 }
@@ -443,7 +443,7 @@ func (ch *Chain) RemoveAllowedStateController(addr *cryptolib.Address, keyPair *
 func (ch *Chain) GetAllowedStateControllerAddresses() []*cryptolib.Address {
 	res, err := ch.CallView(governance.ViewGetAllowedStateControllerAddresses.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.Output.Decode(res))
+	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.Output1.Decode(res))
 }
 
 // RotateStateController rotates the chain to the new controller address.
