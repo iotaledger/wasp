@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -146,13 +145,8 @@ type Sandbox interface {
 // Privileged is a sub-interface for core contracts. Should not be called by VM plugins
 type Privileged interface {
 	TryLoadContract(programHash hashing.HashValue) error
-	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
-	DestroyFoundry(uint32) uint64
-	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
-	RetryUnprocessable(req Request, outputID sui.ObjectID)
 	OnWriteReceipt(CoreCallbackFunc)
 	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) dict.Dict
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)

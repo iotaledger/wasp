@@ -125,18 +125,19 @@ func (c CoinBalances) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func (c CoinBalances) Add(coinType CoinType, amount *big.Int) {
+func (c CoinBalances) Add(coinType CoinType, amount *big.Int) CoinBalances {
 	if amount.Sign() == 0 {
-		return
+		return c
 	}
 	if _, ok := c[coinType]; !ok {
 		c[coinType] = new(big.Int).Set(amount)
-		return
+		return c
 	}
 	c[coinType].Add(c[coinType], amount)
+	return c
 }
 
-func (c CoinBalances) Sub(coinType CoinType, amount *big.Int) {
+func (c CoinBalances) Sub(coinType CoinType, amount *big.Int) CoinBalances {
 	c[coinType] = bigint.Sub(c[coinType], amount)
 	s := c[coinType].Sign()
 	if s < 0 {
@@ -145,6 +146,7 @@ func (c CoinBalances) Sub(coinType CoinType, amount *big.Int) {
 	if s == 0 {
 		delete(c, coinType)
 	}
+	return c
 }
 
 func (c CoinBalances) Get(coinType CoinType) *big.Int {
