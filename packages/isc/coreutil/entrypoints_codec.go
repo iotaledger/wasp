@@ -42,7 +42,7 @@ func (RawCallArgsCodec) Encode(d []byte) []byte {
 	return d
 }
 
-// Field is a CallArgsCodec that converts a single value into a single dict key
+// Field is a CallArgsCodec that converts a single value of T
 type Field[T any] struct {
 	Codec codec.Codec[T]
 }

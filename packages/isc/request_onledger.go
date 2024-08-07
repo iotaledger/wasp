@@ -38,7 +38,7 @@ func OnLedgerFromRequest(request iscmove.Request, anchorAddress *cryptolib.Addre
 					Contract:   Hname(request.Message.Contract),
 					EntryPoint: Hname(request.Message.Function),
 				},
-				Params: CallArguments{}, // TODO: set request.Message.Params (turn dict to list of args)
+				Params: CallArguments{},
 			},
 			Allowance: NewEmptyAssets(),
 			GasBudget: 0,
