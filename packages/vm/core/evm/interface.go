@@ -37,10 +37,12 @@ var (
 		InputRegisterERC20ExteralNativeToken{},
 	)
 	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,
-		coreutil.FieldWithCodec(codec.NFTID),
+		coreutil.FieldWithCodec(codec.ObjectID),
 	)
-	FuncNewL1Deposit = coreutil.NewEP1(Contract, evmnames.FuncNewL1Deposit,
-		InputNewL1Deposit{},
+	FuncNewL1Deposit = coreutil.NewEP3(Contract, evmnames.FuncNewL1Deposit,
+		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.FieldWithCodec(codec.EthereumAddress),
+		coreutil.FieldWithCodec(codec.NewCodecEx(isc.AssetsFromBytes)),
 	)
 
 	ViewGetChainID = coreutil.NewViewEP01(Contract, evmnames.ViewGetChainID,

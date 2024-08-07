@@ -33,6 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var Processor = evm.Contract.Processor(nil,
@@ -347,19 +348,17 @@ func viewERC721CollectionAddress(ctx isc.SandboxView, collectionID iotago.NFTID)
 	}
 }
 
-func registerERC721NFTCollection(ctx isc.Sandbox, collectionID iotago.NFTID) dict.Dict {
+func registerERC721NFTCollection(ctx isc.Sandbox, collectionID sui.ObjectID) {
 	// The collection NFT must be deposited into the chain before registering. Afterwards it may be
 	// withdrawn to L1.
 	collection := func() *isc.NFT {
 		res := ctx.CallView(accounts.ViewNFTData.Message(collectionID))
-		collection, err := accounts.ViewNFTData.Output.Decode(res)
+		collection, err := accounts.ViewNFTData.Output1.Decode(res)
 		ctx.RequireNoError(err)
 		return collection
 	}()
 
 	registerERC721NFTCollectionByNFTId(ctx.State(), collection)
-
-	return nil
 }
 
 func getChainID(ctx isc.SandboxView) uint16 {
@@ -426,18 +425,12 @@ func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 	return lo.Must(governance.ViewGetEVMGasRatio.Output1.Decode(gasRatioViewRes))
 }
 
-func newL1Deposit(ctx isc.Sandbox, r evm.NewL1DepositRequest) dict.Dict {
+func newL1Deposit(ctx isc.Sandbox, l1DepositOriginatorBytes isc.AgentID, toAddress common.Address, assets *isc.Assets) {
 	// can only be called from the accounts contract
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
-	params := ctx.Params()
-	l1DepositOriginatorBytes := params.MustGetBytes(evm.FieldAgentIDDepositOriginator)
-	toAddress := common.BytesToAddress(params.MustGetBytes(evm.FieldAddress))
-	assets, err := isc.AssetsFromBytes(params.MustGetBytes(evm.FieldAssets))
-	ctx.RequireNoError(err, "unable to parse assets from params")
-	txData := l1DepositOriginatorBytes
 	// create a fake tx so that the operation is visible by the EVM
-	AddDummyTxWithTransferEvents(ctx, toAddress, assets, txData, true)
-	return nil
+	AddDummyTxWithTransferEvents(ctx, toAddress, assets, l1DepositOriginatorBytes.Bytes(), true)
+
 }
 
 func AddDummyTxWithTransferEvents(

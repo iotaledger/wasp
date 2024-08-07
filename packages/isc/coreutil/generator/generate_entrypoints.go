@@ -39,7 +39,6 @@ func generateX(basePath string, maxX int) string {
 	}
 
 	result := ""
-	// Generate EPx for up to 10 inputs
 	for inputs := 1; inputs <= maxX; inputs++ {
 		data := struct {
 			Inputs int
@@ -71,7 +70,6 @@ func generateXY(basePath string, maxX, maxY int) string {
 	}
 
 	result := ""
-	// Generate EPxy for combinations up to 3 inputs and 3 outputs
 	for inputs := 1; inputs <= maxX; inputs++ {
 		for outputs := 0; outputs <= maxY; outputs++ {
 			data := struct {
@@ -156,7 +154,6 @@ import "github.com/iotaledger/wasp/packages/isc"
 
 	formattedCode, err := format.Source([]byte(result))
 	if err != nil {
-		// Handle the error
 		panic(err)
 	}
 
