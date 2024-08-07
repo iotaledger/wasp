@@ -1,12 +1,12 @@
 package isc_test
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -33,8 +33,8 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 
 func TestAssetsSerialization(t *testing.T) {
 	assets := isc.NewEmptyAssets().
-		AddBaseTokens(big.NewInt(42)).
-		AddCoin("0xa1::a::A", big.NewInt(100)).
+		AddBaseTokens(42).
+		AddCoin("0xa1::a::A", 100).
 		AddObject(sui.ObjectID{})
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
@@ -46,51 +46,51 @@ func TestAssetsSpendBudget(t *testing.T) {
 	require.True(t, budget.IsEmpty())
 	require.True(t, budget.IsEmpty())
 
-	budget = isc.NewAssetsBaseTokens(1)
+	budget = isc.NewAssets(1)
 	require.True(t, budget.Spend(toSpend))
 	require.False(t, toSpend.Spend(budget))
 
-	budget = isc.NewAssetsBaseTokens(10)
+	budget = isc.NewAssets(10)
 	require.True(t, budget.Spend(budget))
 	require.True(t, budget.IsEmpty())
 
-	budget = isc.NewAssetsBaseTokens(2)
-	toSpend = isc.NewAssetsBaseTokens(1)
+	budget = isc.NewAssets(2)
+	toSpend = isc.NewAssets(1)
 	require.True(t, budget.Spend(toSpend))
-	require.True(t, budget.Equals(isc.NewAssetsBaseTokens(1)))
+	require.True(t, budget.Equals(isc.NewAssets(1)))
 
-	budget = isc.NewAssetsBaseTokens(1)
-	toSpend = isc.NewAssetsBaseTokens(2)
+	budget = isc.NewAssets(1)
+	toSpend = isc.NewAssets(2)
 	require.False(t, budget.Spend(toSpend))
-	require.True(t, budget.Equals(isc.NewAssetsBaseTokens(1)))
+	require.True(t, budget.Equals(isc.NewAssets(1)))
 
-	coinType1 := isc.CoinType("0xa1::a::A")
-	coinType2 := isc.CoinType("0xa2::b::B")
+	coinType1 := coin.Type("0xa1::a::A")
+	coinType2 := coin.Type("0xa2::b::B")
 
-	budget = isc.NewAssetsBaseTokens(1).AddCoin(coinType1, big.NewInt(5))
+	budget = isc.NewAssets(1).AddCoin(coinType1, 5)
 	toSpend = budget.Clone()
 	require.True(t, budget.Spend(toSpend))
 	require.True(t, budget.IsEmpty())
 
-	budget = isc.NewAssetsBaseTokens(1).AddCoin(coinType1, big.NewInt(5))
+	budget = isc.NewAssets(1).AddCoin(coinType1, 5)
 	cloneBudget := budget.Clone()
-	toSpend = isc.NewAssetsBaseTokens(1).AddCoin(coinType1, big.NewInt(10))
+	toSpend = isc.NewAssets(1).AddCoin(coinType1, 10)
 	require.False(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(cloneBudget))
 
-	budget = isc.NewAssetsBaseTokens(1).
-		AddCoin(coinType1, big.NewInt(5)).
-		AddCoin(coinType2, big.NewInt(1))
-	toSpend = isc.NewAssetsBaseTokens(1).
-		AddCoin(coinType1, big.NewInt(5))
-	expected := isc.NewAssetsBaseTokens(0).
-		AddCoin(coinType2, big.NewInt(1))
+	budget = isc.NewAssets(1).
+		AddCoin(coinType1, 5).
+		AddCoin(coinType2, 1)
+	toSpend = isc.NewAssets(1).
+		AddCoin(coinType1, 5)
+	expected := isc.NewAssets(0).
+		AddCoin(coinType2, 1)
 	require.True(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(expected))
 
-	budget = isc.NewAssetsBaseTokens(10).
-		AddCoin(coinType2, big.NewInt(1))
-	toSpend = isc.NewAssetsBaseTokens(1).
-		AddCoin(coinType1, big.NewInt(5))
+	budget = isc.NewAssets(10).
+		AddCoin(coinType2, 1)
+	toSpend = isc.NewAssets(1).
+		AddCoin(coinType1, 5)
 	require.False(t, budget.Spend(toSpend))
 }

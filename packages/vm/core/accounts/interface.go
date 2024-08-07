@@ -1,13 +1,8 @@
 package accounts
 
 import (
-	"math"
-
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
@@ -33,23 +28,23 @@ var (
 	// TODO: implement pagination
 	ViewAccountTreasuries = coreutil.NewViewEP11(Contract, "accountTreasuries",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
-		FieldArrayOf[isc.CoinType]{codec: codec.CoinType},
+		coreutil.FieldArrayWithCodec(codec.CoinType),
 	)
 	// TODO: implement pagination
 	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
-		FieldArrayOf[sui.ObjectID]{codec: codec.ObjectID},
+		coreutil.FieldArrayWithCodec(codec.ObjectID),
 	)
 	// TODO: implement pagination
 	ViewAccountObjectsInCollection = coreutil.NewViewEP21(Contract, "accountObjectsInCollection",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
 		coreutil.FieldWithCodec(codec.ObjectID),
-		FieldArrayOf[sui.ObjectID]{codec: codec.ObjectID},
+		coreutil.FieldArrayWithCodec(codec.ObjectID),
 	)
 	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
-		OutputCoinBalances{},
+		coreutil.FieldWithCodec(codec.CoinBalances),
 	)
 	ViewBalanceBaseToken = coreutil.NewViewEP11(Contract, "balanceBaseToken",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
@@ -75,7 +70,7 @@ var (
 	)
 	// TODO: implement pagination
 	ViewGetCoinRegistry = coreutil.NewViewEP01(Contract, "getCoinRegistry",
-		FieldArrayOf[isc.CoinType]{codec: codec.CoinType},
+		coreutil.FieldArrayWithCodec(codec.CoinType),
 	)
 	ViewObjectBCS = coreutil.NewViewEP11(Contract, "objectBCS",
 		coreutil.FieldWithCodec(codec.ObjectID),
@@ -83,36 +78,6 @@ var (
 	)
 	// TODO: implement pagination
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",
-		OutputCoinBalances{},
+		coreutil.FieldWithCodec(codec.CoinBalances),
 	)
 )
-
-// TODO: move to coreutil
-// TODO: add pagination
-type FieldArrayOf[T any] struct {
-	codec codec.Codec[T]
-}
-
-func (a FieldArrayOf[T]) Encode(slice []T) []byte {
-	if len(slice) > math.MaxUint16 {
-		panic("too many values")
-	}
-	return codec.SliceToArray(a.codec, slice)
-}
-
-func (a FieldArrayOf[T]) Decode(r []byte) ([]T, error) {
-	return codec.SliceFromArray(a.codec, r)
-}
-
-type OutputCoinBalances struct{}
-
-func (OutputCoinBalances) Encode(fts isc.CoinBalances) []byte {
-	panic("refactor me: serialization CoinBalances")
-	return []byte{}
-}
-
-func (OutputCoinBalances) Decode(r []byte) (isc.CoinBalances, error) {
-	panic("refactor me: serialization CoinBalances")
-	return isc.CoinBalancesFromDict(dict.New())
-
-}

@@ -88,7 +88,7 @@ func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowan
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID isc.CoinType) *big.Int {
+func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID coin.Type) *big.Int {
 	var ret *big.Int
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokenBalance(agentID, nativeTokenID, reqctx.ChainID())
@@ -96,7 +96,7 @@ func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeT
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalanceTotal(coinType isc.CoinType) *big.Int {
+func (reqctx *requestContext) GetNativeTokenBalanceTotal(coinType coin.Type) *big.Int {
 	var ret *big.Int
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokenBalanceTotal(coinType)

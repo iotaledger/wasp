@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/coin"
 )
 
 func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
-	value := uint64(12345678)
+	value := coin.Value(12345678)
 	tests := []struct {
 		decimals          uint32
 		expected          uint64

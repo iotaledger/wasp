@@ -4,7 +4,7 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -12,7 +12,7 @@ import (
 // TreasuryCapRecord represents a L1 TreasuryCap<T> object owned by the chain
 type TreasuryCapRecord struct {
 	ID          sui.ObjectID
-	CoinType    isc.CoinType // transient
+	CoinType    coin.Type // transient
 	TotalSupply *big.Int
 }
 
@@ -20,7 +20,7 @@ func (rec *TreasuryCapRecord) Bytes() []byte {
 	return rwutil.WriteToBytes(rec)
 }
 
-func TreasuryCapRecordFromBytes(data []byte, coinType isc.CoinType) (*TreasuryCapRecord, error) {
+func TreasuryCapRecordFromBytes(data []byte, coinType coin.Type) (*TreasuryCapRecord, error) {
 	return rwutil.ReadFromBytes(data, &TreasuryCapRecord{CoinType: coinType})
 }
 

@@ -294,7 +294,7 @@ func (p *kvdecoder) MustGetBigInt(key kv.Key, def ...*big.Int) *big.Int {
 	return ret
 }
 
-func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...isc.CoinType) (isc.CoinType, error) {
+func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...coin.Type) (coin.Type, error) {
 	v := p.Get(key)
 	if v == nil {
 		if len(def) != 0 {
@@ -305,7 +305,7 @@ func (p *kvdecoder) GetNativeTokenID(key kv.Key, def ...isc.CoinType) (isc.CoinT
 	return codec.CoinType.Decode(v)
 }
 
-func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...isc.CoinType) isc.CoinType {
+func (p *kvdecoder) MustGetNativeTokenID(key kv.Key, def ...coin.Type) coin.Type {
 	ret, err := p.GetNativeTokenID(key, def...)
 	p.check(err)
 	return ret

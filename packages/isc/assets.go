@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -21,76 +21,10 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-// TODO: maybe it is not ok to consider this constant?
-const BaseTokenType = CoinType(suijsonrpc.SuiCoinType)
-
-// CoinType is the string representation of a Sui coin type, e.g. `0x2::sui::SUI`
-type CoinType string
-
-func (c CoinType) Write(w io.Writer) error {
-	rt := lo.Must(sui.NewResourceType(string(c)))
-	if rt.SubType != nil {
-		panic("cointype with subtype is unsupported")
-	}
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(rt.Address[:])
-	ww.WriteString(rt.Module)
-	ww.WriteString(rt.ObjectName)
-	return ww.Err
-}
-
-func (c *CoinType) Read(r io.Reader) error {
-	rt := sui.ResourceType{
-		Address: &sui.Address{},
-	}
-	rr := rwutil.NewReader(r)
-	rr.ReadN(rt.Address[:])
-	rt.Module = rr.ReadString()
-	rt.ObjectName = rr.ReadString()
-	*c = CoinType(rt.ShortString())
-	return rr.Err
-}
-
-func (c CoinType) String() string {
-	return string(c)
-}
-
-func (c CoinType) Bytes() []byte {
-	return rwutil.WriteToBytes(c)
-}
-
-func CoinTypeFromBytes(b []byte) (CoinType, error) {
-	var r CoinType
-	_, err := rwutil.ReadFromBytes(b, &r)
-	return r, err
-}
-
-type CoinBalances map[CoinType]*big.Int
+type CoinBalances map[coin.Type]coin.Value
 
 func NewCoinBalances() CoinBalances {
 	return make(CoinBalances)
-}
-
-func CoinBalancesFromDict(d dict.Dict) (CoinBalances, error) {
-	ret := NewCoinBalances()
-	for key, val := range d {
-		coinType, err := CoinTypeFromBytes([]byte(key))
-		if err != nil {
-			return nil, fmt.Errorf("AssetsFromCoinsDict: %w", err)
-		}
-		ret.Add(coinType, new(big.Int).SetBytes(val))
-	}
-	return ret, nil
-}
-
-func (c CoinBalances) IterateSorted(f func(CoinType, *big.Int) bool) {
-	types := lo.Keys(c)
-	slices.Sort(types)
-	for _, coinType := range types {
-		if !f(coinType, c[coinType]) {
-			return
-		}
-	}
 }
 
 func (c CoinBalances) ToDict() dict.Dict {
@@ -101,15 +35,42 @@ func (c CoinBalances) ToDict() dict.Dict {
 	return ret
 }
 
+func CoinBalancesFromDict(d dict.Dict) (CoinBalances, error) {
+	ret := NewCoinBalances()
+	for key, val := range d {
+		coinType, err := coin.TypeFromBytes([]byte(key))
+		if err != nil {
+			return nil, fmt.Errorf("CoinBalancesFromDict: %w", err)
+		}
+		coinValue, err := coin.ValueFromBytes(val)
+		if err != nil {
+			return nil, fmt.Errorf("CoinBalancesFromDict: %w", err)
+		}
+		ret.Add(coinType, coinValue)
+	}
+	return ret, nil
+}
+
+func (c CoinBalances) IterateSorted(f func(coin.Type, coin.Value) bool) {
+	types := lo.Keys(c)
+	slices.Sort(types)
+	for _, coinType := range types {
+		if !f(coinType, c[coinType]) {
+			return
+		}
+	}
+}
+
 func (c *CoinBalances) Read(r io.Reader) error {
 	*c = NewCoinBalances()
 	rr := rwutil.NewReader(r)
 	n := rr.ReadSize32()
 	for i := 0; i < n; i++ {
-		var coinType CoinType
+		var coinType coin.Type
+		var coinValue coin.Value
 		rr.Read(&coinType)
-		amount := rr.ReadBigUint()
-		c.Add(coinType, amount)
+		rr.Read(&coinValue)
+		c.Add(coinType, coinValue)
 	}
 	return rr.Err
 }
@@ -117,48 +78,70 @@ func (c *CoinBalances) Read(r io.Reader) error {
 func (c CoinBalances) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteSize32(len(c))
-	c.IterateSorted(func(t CoinType, a *big.Int) bool {
+	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		ww.Write(t)
-		ww.WriteBigUint(a)
+		ww.Write(v)
 		return true
 	})
 	return ww.Err
 }
 
-func (c CoinBalances) Add(coinType CoinType, amount *big.Int) CoinBalances {
-	if amount.Sign() == 0 {
+func (c CoinBalances) Bytes() []byte {
+	return rwutil.WriteToBytes(c)
+}
+
+func CoinBalancesFromBytes(b []byte) (CoinBalances, error) {
+	var r CoinBalances
+	_, err := rwutil.ReadFromBytes(b, &r)
+	return r, err
+}
+
+func (c CoinBalances) Add(coinType coin.Type, amount coin.Value) CoinBalances {
+	if amount == 0 {
 		return c
 	}
-	if _, ok := c[coinType]; !ok {
-		c[coinType] = new(big.Int).Set(amount)
-		return c
-	}
-	c[coinType].Add(c[coinType], amount)
+	c[coinType] = c.Get(coinType) + amount
 	return c
 }
 
-func (c CoinBalances) Sub(coinType CoinType, amount *big.Int) CoinBalances {
-	c[coinType] = bigint.Sub(c[coinType], amount)
-	s := c[coinType].Sign()
-	if s < 0 {
+func (c CoinBalances) AddBaseTokens(amount coin.Value) CoinBalances {
+	return c.Add(coin.BaseTokenType, amount)
+}
+
+func (c CoinBalances) Sub(coinType coin.Type, amount coin.Value) CoinBalances {
+	v := c.Get(coinType)
+	switch {
+	case v < amount:
 		panic("negative coin balance")
-	}
-	if s == 0 {
+	case v == amount:
 		delete(c, coinType)
+	default:
+		c[coinType] = v - amount
 	}
 	return c
 }
 
-func (c CoinBalances) Get(coinType CoinType) *big.Int {
-	r := c[coinType]
-	if r == nil {
-		return big.NewInt(0)
+func (c CoinBalances) ToAssets() *Assets {
+	return &Assets{
+		Coins:   c,
+		Objects: NewObjectIDSet(),
 	}
-	return r
+}
+
+func (c CoinBalances) Get(coinType coin.Type) coin.Value {
+	return c[coinType]
+}
+
+func (c CoinBalances) BaseTokens() coin.Value {
+	return c[coin.BaseTokenType]
+}
+
+func (c CoinBalances) IsEmpty() bool {
+	return len(c) == 0
 }
 
 type CoinJSON struct {
-	CoinType CoinType           `json:"coinType" swagger:"required"`
+	CoinType coin.Type          `json:"coinType" swagger:"required"`
 	Balance  *suijsonrpc.BigInt `json:"balance" swagger:"required"`
 }
 
@@ -169,18 +152,18 @@ func (c *CoinBalances) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*c = NewCoinBalances()
-	for _, coin := range coins {
-		c.Add(coin.CoinType, coin.Balance.Int)
+	for _, cc := range coins {
+		c.Add(cc.CoinType, coin.Value(cc.Balance.Int.Uint64()))
 	}
 	return nil
 }
 
 func (c CoinBalances) MarshalJSON() ([]byte, error) {
 	var coins []CoinJSON
-	c.IterateSorted(func(t CoinType, a *big.Int) bool {
+	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		coins = append(coins, CoinJSON{
 			CoinType: t,
-			Balance:  &suijsonrpc.BigInt{Int: a},
+			Balance:  &suijsonrpc.BigInt{Int: new(big.Int).SetUint64(uint64(v))},
 		})
 		return true
 	})
@@ -193,7 +176,7 @@ func (c CoinBalances) Equals(b CoinBalances) bool {
 	}
 	for coinType, amount := range c {
 		bal := b[coinType]
-		if !bigint.Equal(bal, amount) {
+		if bal != amount {
 			return false
 		}
 	}
@@ -295,20 +278,16 @@ func NewEmptyAssets() *Assets {
 	}
 }
 
-func NewAssets(baseTokens *big.Int) *Assets {
-	return NewEmptyAssets().AddCoin(BaseTokenType, baseTokens)
+func NewAssets(baseTokens coin.Value) *Assets {
+	return NewEmptyAssets().AddCoin(coin.BaseTokenType, baseTokens)
 }
 
 func AssetsFromAssetsBag(assetsBag iscmove.AssetsBagWithBalances) *Assets {
 	assets := NewEmptyAssets()
 	for k, v := range assetsBag.Balances {
-		assets.Coins.Add(CoinType(k), v.TotalBalance.Int)
+		assets.Coins.Add(coin.Type(k), coin.Value(v.TotalBalance.Int.Uint64()))
 	}
 	return assets
-}
-
-func NewAssetsBaseTokens(amount uint64) *Assets {
-	return NewAssets(big.NewInt(0).SetUint64(amount))
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {
@@ -324,7 +303,7 @@ func (a *Assets) Clone() *Assets {
 	return r
 }
 
-func (a *Assets) AddCoin(coinType CoinType, amount *big.Int) *Assets {
+func (a *Assets) AddCoin(coinType coin.Type, amount coin.Value) *Assets {
 	a.Coins.Add(coinType, amount)
 	return a
 }
@@ -334,13 +313,13 @@ func (a *Assets) AddObject(id sui.ObjectID) *Assets {
 	return a
 }
 
-func (a *Assets) CoinBalance(coinType CoinType) *big.Int {
+func (a *Assets) CoinBalance(coinType coin.Type) coin.Value {
 	return a.Coins.Get(coinType)
 }
 
 func (a *Assets) String() string {
-	s := lo.MapToSlice(a.Coins, func(coinType CoinType, amount *big.Int) string {
-		return fmt.Sprintf("%s: %s", coinType, amount.Text(10))
+	s := lo.MapToSlice(a.Coins, func(coinType coin.Type, amount coin.Value) string {
+		return fmt.Sprintf("%s: %d", coinType, amount)
 	})
 	s = append(s, lo.MapToSlice(a.Objects, func(id sui.ObjectID, _ struct{}) string {
 		return id.ShortString()
@@ -371,7 +350,7 @@ func (a *Assets) Spend(toSpend *Assets) bool {
 	// check budget
 	for coinType, spendAmount := range toSpend.Coins {
 		available, ok := a.Coins[coinType]
-		if !ok || bigint.Less(available, spendAmount) {
+		if !ok || available < spendAmount {
 			return false
 		}
 	}
@@ -405,13 +384,13 @@ func (a *Assets) IsEmpty() bool {
 	return len(a.Coins) == 0 && len(a.Objects) == 0
 }
 
-func (a *Assets) AddBaseTokens(amount *big.Int) *Assets {
-	a.Coins.Add(BaseTokenType, amount)
+func (a *Assets) AddBaseTokens(amount coin.Value) *Assets {
+	a.Coins.Add(coin.BaseTokenType, amount)
 	return a
 }
 
-func (a *Assets) BaseTokens() *big.Int {
-	return a.Coins.Get(BaseTokenType)
+func (a *Assets) BaseTokens() coin.Value {
+	return a.Coins.Get(coin.BaseTokenType)
 }
 
 func (a *Assets) Read(r io.Reader) error {

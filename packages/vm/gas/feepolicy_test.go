@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -35,7 +36,7 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 	feePolicy.GasPerToken = util.Ratio32{A: 1, B: 110}
 
 	// map of [n tokens] expected gas
-	cases := map[uint64]int{
+	cases := map[coin.Value]int{
 		109: 0,
 		200: 1,
 		219: 1,
@@ -47,7 +48,7 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 
 	// tokens charged for max gas
 	// map of [n tokens] expected tokens charged
-	cases2 := map[uint64]uint64{
+	cases2 := map[coin.Value]coin.Value{
 		109: 0,
 		110: 110,
 		111: 110,

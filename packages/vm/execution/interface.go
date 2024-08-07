@@ -37,7 +37,7 @@ type WaspCallContext interface {
 	Caller() isc.AgentID
 	GetNativeTokens(agentID isc.AgentID) isc.CoinBalances
 	GetBaseTokensBalance(agentID isc.AgentID) (uint64, *big.Int)
-	GetNativeTokenBalance(agentID isc.AgentID, coinType isc.CoinType) *big.Int
+	GetNativeTokenBalance(agentID isc.AgentID, coinType coin.Type) *big.Int
 	Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments
 	ChainID() isc.ChainID
 	ChainOwnerID() isc.AgentID

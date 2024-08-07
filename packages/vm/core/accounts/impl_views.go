@@ -3,6 +3,7 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -29,7 +30,7 @@ func viewBalanceBaseTokenEVM(ctx isc.SandboxView, optionalAgentID *isc.AgentID) 
 	return NewStateReaderFromSandbox(ctx).GetBaseTokensBalanceFullDecimals(aid, ctx.ChainID())
 }
 
-func viewBalanceCoin(ctx isc.SandboxView, optionalAgentID *isc.AgentID, coinID isc.CoinType) *big.Int {
+func viewBalanceCoin(ctx isc.SandboxView, optionalAgentID *isc.AgentID, coinID coin.Type) *big.Int {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getCoinBalance(
 		accountKey(aid, ctx.ChainID()),
@@ -49,9 +50,9 @@ func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint
 	return NewStateReaderFromSandbox(ctx).AccountNonce(account, ctx.ChainID())
 }
 
-func viewGetCoinRegistry(ctx isc.SandboxView) []isc.CoinType {
+func viewGetCoinRegistry(ctx isc.SandboxView) []coin.Type {
 	ntMap := NewStateReaderFromSandbox(ctx).coinRecordsMapR()
-	ret := make([]isc.CoinType, 0, ntMap.Len())
+	ret := make([]coin.Type, 0, ntMap.Len())
 	ntMap.IterateKeys(func(b []byte) bool {
 		ntID := codec.CoinType.MustDecode(b)
 		ret = append(ret, ntID)
@@ -60,8 +61,8 @@ func viewGetCoinRegistry(ctx isc.SandboxView) []isc.CoinType {
 	return ret
 }
 
-func viewAccountTreasuries(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []isc.CoinType {
-	var ret []isc.CoinType
+func viewAccountTreasuries(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []coin.Type {
+	var ret []coin.Type
 	account := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	NewStateReaderFromSandbox(ctx).accountTreasuryCapsMapR(account).IterateKeys(func(b []byte) bool {
 		ret = append(ret, codec.CoinType.MustDecode(b))
@@ -72,7 +73,7 @@ func viewAccountTreasuries(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []
 
 var errTreasuryNotFound = coreerrors.Register("treasury not found").Create()
 
-func viewTreasuryCapID(ctx isc.SandboxView, coinType isc.CoinType) sui.ObjectID {
+func viewTreasuryCapID(ctx isc.SandboxView, coinType coin.Type) sui.ObjectID {
 	rec := NewStateReaderFromSandbox(ctx).GetTreasuryCap(coinType, ctx.ChainID())
 	if rec == nil {
 		panic(errTreasuryNotFound)

@@ -59,7 +59,8 @@ func (rec *RequestReceipt) Read(r io.Reader) error {
 		rec.Error = new(isc.UnresolvedVMError)
 		rr.Read(rec.Error)
 	}
-	if len(rr.Bytes()) != 0 {
+	hasBurnLog := rr.ReadBool()
+	if hasBurnLog {
 		rec.GasBurnLog = new(gas.BurnLog)
 		rr.Read(rec.GasBurnLog)
 	}
@@ -78,6 +79,7 @@ func (rec *RequestReceipt) Write(w io.Writer) error {
 	if rec.Error != nil {
 		ww.Write(rec.Error)
 	}
+	ww.WriteBool(rec.GasBurnLog != nil)
 	if rec.GasBurnLog != nil {
 		ww.Write(rec.GasBurnLog)
 	}
