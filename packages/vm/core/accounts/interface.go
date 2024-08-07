@@ -2,14 +2,9 @@ package accounts
 
 import (
 	"math"
-	"math/big"
 
-	"github.com/samber/lo"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -20,276 +15,101 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 var (
 	// Funcs
 	FuncDeposit = coreutil.NewEP0(Contract, "deposit")
-	// Kept for compatibility reasons
-	FuncFoundryCreateNew = coreutil.NewEP1(Contract, "foundryCreateNew",
-		coreutil.FieldWithCodecOptional(ParamTokenScheme, codec.TokenScheme),
-	)
-	// TODO implement grant/claim protocol of moving ownership of the foundry
-	//  Including ownership of the foundry by the common account/chain owner
-	FuncNativeTokenCreate       = EPNativeTokenCreate{EntryPointInfo: Contract.Func("nativeTokenCreate")}
-	FuncNativeTokenModifySupply = EPNativeTokenModifySupply{EntryPointInfo: Contract.Func("nativeTokenModifySupply")}
-	FuncNativeTokenDestroy      = coreutil.NewEP1(Contract, "nativeTokenDestroy",
-		coreutil.FieldWithCodec(ParamFoundrySN, codec.Uint32),
-	)
-	FuncMintNFT                = EPMintNFT{EntryPointInfo: Contract.Func("mintNFT")}
+	// TODO: adapt to iota-rebased
+	//   FuncFoundryCreateNew
+	//   FuncCoinCreate
+	//   FuncCoinModifySupply
+	//   FuncCoinDestroy
+	//   FuncMintObject
 	FuncTransferAccountToChain = coreutil.NewEP1(Contract, "transferAccountToChain",
-		coreutil.FieldWithCodecOptional(ParamGasReserve, codec.Uint64),
+		coreutil.FieldWithCodecOptional("i1", codec.Uint64),
 	)
 	FuncTransferAllowanceTo = coreutil.NewEP1(Contract, "transferAllowanceTo",
-		coreutil.FieldWithCodec(ParamAgentID, codec.AgentID),
+		coreutil.FieldWithCodec("i1", codec.AgentID),
 	)
 	FuncWithdraw = coreutil.NewEP0(Contract, "withdraw")
 
 	// Views
-	ViewAccountFoundries = coreutil.NewViewEP11(Contract, "accountFoundries",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		OutputSerialNumberSet{},
+	// TODO: implement pagination
+	ViewAccountTreasuries = coreutil.NewViewEP11(Contract, "accountTreasuries",
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		FieldArrayOf[isc.CoinType]{codec: codec.CoinType},
 	)
-	ViewAccountNFTAmount = coreutil.NewViewEP11(Contract, "accountNFTAmount",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamNFTAmount, codec.Uint32),
+	// TODO: implement pagination
+	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		FieldArrayOf[sui.ObjectID]{codec: codec.ObjectID},
 	)
-	ViewAccountNFTAmountInCollection = coreutil.NewViewEP21(Contract, "accountNFTAmountInCollection",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamCollectionID, codec.NFTID),
-		coreutil.FieldWithCodec(ParamNFTAmount, codec.Uint32),
+	// TODO: implement pagination
+	ViewAccountObjectsInCollection = coreutil.NewViewEP21(Contract, "accountObjectsInCollection",
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		coreutil.FieldWithCodec("i2", codec.ObjectID),
+		FieldArrayOf[sui.ObjectID]{codec: codec.ObjectID},
 	)
-	ViewAccountNFTs = coreutil.NewViewEP11(Contract, "accountNFTs",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		OutputNFTIDs{},
-	)
-	ViewAccountNFTsInCollection = coreutil.NewViewEP21(Contract, "accountNFTsInCollection",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamCollectionID, codec.NFTID),
-		OutputNFTIDs{},
-	)
-	ViewNFTIDbyMintID = coreutil.NewViewEP11(Contract, "NFTIDbyMintID",
-		coreutil.FieldWithCodec(ParamMintID, codec.Bytes),
-		coreutil.FieldWithCodec(ParamNFTID, codec.NFTID),
-	)
+	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		OutputFungibleTokens{},
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		OutputCoinBalances{},
 	)
 	ViewBalanceBaseToken = coreutil.NewViewEP11(Contract, "balanceBaseToken",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		coreutil.FieldWithCodec("o1", codec.BigIntAbs),
 	)
 	ViewBalanceBaseTokenEVM = coreutil.NewViewEP11(Contract, "balanceBaseTokenEVM",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		coreutil.FieldWithCodec("o1", codec.BigIntAbs),
 	)
-	ViewBalanceNativeToken = coreutil.NewViewEP21(Contract, "balanceNativeToken",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamNativeTokenID, codec.CoinType),
-		coreutil.FieldWithCodec(ParamBalance, codec.BigIntAbs),
+	ViewBalanceCoin = coreutil.NewViewEP21(Contract, "balanceCoin",
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		coreutil.FieldWithCodec("i2", codec.CoinType),
+		coreutil.FieldWithCodec("o1", codec.BigIntAbs),
 	)
-	ViewNativeToken = coreutil.NewViewEP11(Contract, "nativeToken",
-		coreutil.FieldWithCodec(ParamFoundrySN, codec.Uint32),
-		coreutil.FieldWithCodec(ParamFoundryOutputBin, codec.ObjectID), // TODO: refactor me (Output was removed and ObjectID used instead)
+	ViewTreasuryCapID = coreutil.NewViewEP11(Contract, "treasuryCapID",
+		coreutil.FieldWithCodec("i1", codec.CoinType),
+		coreutil.FieldWithCodec("o1", codec.ObjectID),
 	)
 
 	ViewGetAccountNonce = coreutil.NewViewEP11(Contract, "getAccountNonce",
-		coreutil.FieldWithCodecOptional(ParamAgentID, codec.AgentID),
-		coreutil.FieldWithCodec(ParamAccountNonce, codec.Uint64),
+		coreutil.FieldWithCodecOptional("i1", codec.AgentID),
+		coreutil.FieldWithCodec("o1", codec.Uint64),
 	)
-	ViewGetNativeTokenIDRegistry = coreutil.NewViewEP01(Contract, "getNativeTokenIDRegistry",
-		OutputNativeTokenIDs{},
+	// TODO: implement pagination
+	ViewGetCoinRegistry = coreutil.NewViewEP01(Contract, "getCoinRegistry",
+		FieldArrayOf[isc.CoinType]{codec: codec.CoinType},
 	)
-	ViewNFTData = coreutil.NewViewEP11(Contract, "nftData",
-		coreutil.FieldWithCodec(ParamNFTID, codec.NFTID),
-		coreutil.FieldWithCodec(ParamNFTData, codec.NewCodecEx(isc.NFTFromBytes)),
+	ViewObjectBCS = coreutil.NewViewEP11(Contract, "objectBCS",
+		coreutil.FieldWithCodec("i1", codec.ObjectID),
+		coreutil.FieldWithCodec("o1", codec.Bytes),
 	)
+	// TODO: implement pagination
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",
-		OutputFungibleTokens{},
+		OutputCoinBalances{},
 	)
 )
 
-// request parameters
-const (
-	ParamAccountNonce           = "n"
-	ParamAgentID                = "a"
-	ParamBalance                = "B"
-	ParamCollectionID           = "C"
-	ParamDestroyTokens          = "y"
-	ParamForceMinimumBaseTokens = "f"
-	ParamFoundryOutputBin       = "b"
-	ParamFoundrySN              = "s"
-	ParamTokenName              = "tn"
-	ParamTokenTickerSymbol      = "ts"
-	ParamTokenDecimals          = "td"
-	ParamGasReserve             = "g"
-	ParamNFTAmount              = "A"
-	ParamNFTData                = "e"
-	ParamNFTID                  = "z"
-	ParamNFTIDs                 = "i"
-	ParamNFTImmutableData       = "I"
-	ParamNFTWithdrawOnMint      = "w"
-	ParamMintID                 = "D"
-	ParamNativeTokenID          = "N"
-	ParamSupplyDeltaAbs         = "d"
-	ParamTokenScheme            = "t"
-)
-
-type EPNativeTokenCreate struct {
-	coreutil.EntryPointInfo[isc.Sandbox]
+// TODO: move to coreutil
+// TODO: add pagination
+type FieldArrayOf[T any] struct {
+	codec codec.Codec[T]
 }
 
-func (e EPNativeTokenCreate) Message(
-	metadata *isc.IRC30NativeTokenMetadata,
-	optionalTokenScheme *iotago.TokenScheme,
-) isc.Message {
-	params := dict.Dict{
-		ParamTokenName:         codec.String.Encode(metadata.Name),
-		ParamTokenTickerSymbol: codec.String.Encode(metadata.Symbol),
-		ParamTokenDecimals:     codec.Uint8.Encode(metadata.Decimals),
+func (a FieldArrayOf[T]) Encode(slice []T) dict.Dict {
+	if len(slice) > math.MaxUint16 {
+		panic("too many values")
 	}
-	if optionalTokenScheme != nil {
-		params[ParamTokenScheme] = codec.TokenScheme.Encode(*optionalTokenScheme)
-	}
-	return e.EntryPointInfo.Message(params)
+	return codec.SliceToArray(a.codec, slice, "o1")
 }
 
-func (e EPNativeTokenCreate) WithHandler(f func(isc.Sandbox, *isc.IRC30NativeTokenMetadata, *iotago.TokenScheme) uint32) *coreutil.EntryPointHandler[isc.Sandbox] {
-	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-		params := ctx.Params().Dict
-		tokenName := codec.String.MustDecode(params[ParamTokenName])
-		tokenTickerSymbol := codec.String.MustDecode(params[ParamTokenTickerSymbol])
-		tokenDecimals := codec.Uint8.MustDecode(params[ParamTokenDecimals])
-		metadata := isc.NewIRC30NativeTokenMetadata(tokenName, tokenTickerSymbol, tokenDecimals)
-		var tokenScheme *iotago.TokenScheme
-		if params[ParamTokenScheme] != nil {
-			ts := codec.TokenScheme.MustDecode(params[ParamTokenScheme])
-			tokenScheme = &ts
-		}
-
-		sn := f(ctx, metadata, tokenScheme)
-		return dict.Dict{ParamFoundrySN: codec.Uint32.Encode(sn)}
-	})
+func (a FieldArrayOf[T]) Decode(r dict.Dict) ([]T, error) {
+	return codec.SliceFromArray(a.codec, r, "o1")
 }
 
-type EPNativeTokenModifySupply struct {
-	coreutil.EntryPointInfo[isc.Sandbox]
-}
+type OutputCoinBalances struct{}
 
-func (e EPNativeTokenModifySupply) MintTokens(foundrySN uint32, delta *big.Int) isc.Message {
-	return e.EntryPointInfo.Message(dict.Dict{
-		ParamFoundrySN:      codec.Uint32.Encode(foundrySN),
-		ParamSupplyDeltaAbs: codec.BigIntAbs.Encode(delta),
-	})
-}
-
-func (e EPNativeTokenModifySupply) DestroyTokens(foundrySN uint32, delta *big.Int) isc.Message {
-	return e.MintTokens(foundrySN, delta).
-		WithParam(ParamDestroyTokens, codec.Bool.Encode(true))
-}
-
-func (e EPNativeTokenModifySupply) WithHandler(f func(isc.Sandbox, uint32, *big.Int, bool)) *coreutil.EntryPointHandler[isc.Sandbox] {
-	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-		d := ctx.Params().Dict
-		sn := lo.Must(codec.Uint32.Decode(d[ParamFoundrySN]))
-		delta := lo.Must(codec.BigIntAbs.Decode(d[ParamSupplyDeltaAbs]))
-		destroy := lo.Must(codec.Bool.Decode(d[ParamDestroyTokens], false))
-		f(ctx, sn, delta, destroy)
-		return nil
-	})
-}
-
-type EPMintNFT struct {
-	coreutil.EntryPointInfo[isc.Sandbox]
-}
-
-type EPMintNFTMessage struct{ isc.Message }
-
-func (e EPMintNFT) Message(
-	immutableMetadata []byte,
-	target isc.AgentID,
-	withdrawOnMint *bool,
-	collectionID *sui.ObjectID,
-) isc.Message {
-	params := dict.Dict{
-		ParamNFTImmutableData: immutableMetadata,
-		ParamAgentID:          codec.AgentID.Encode(target),
-	}
-	if withdrawOnMint != nil {
-		params[ParamNFTWithdrawOnMint] = codec.Bool.Encode(*withdrawOnMint)
-	}
-	if collectionID != nil {
-		params[ParamCollectionID] = codec.NFTID.Encode(*collectionID)
-	}
-	return e.EntryPointInfo.Message(params)
-}
-
-func (e EPMintNFT) WithHandler(f func(isc.Sandbox, []byte, isc.AgentID, bool, sui.ObjectID) []byte) *coreutil.EntryPointHandler[isc.Sandbox] {
-	return e.EntryPointInfo.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-		d := ctx.Params().Dict
-		immutableMetadata := lo.Must(codec.Bytes.Decode(d[ParamNFTImmutableData]))
-		target := lo.Must(codec.AgentID.Decode(d[ParamAgentID]))
-		withdraw := lo.Must(codec.Bool.Decode(d[ParamNFTWithdrawOnMint], false))
-		collID := lo.Must(codec.NFTID.Decode(d[ParamCollectionID], sui.ObjectID{}))
-
-		mintID := f(ctx, immutableMetadata, target, withdraw, collID)
-		return dict.Dict{ParamMintID: mintID}
-	})
-}
-
-type OutputNFTIDs struct{}
-
-func (OutputNFTIDs) Encode(nftIDs []sui.ObjectID) dict.Dict {
-	// TODO: add pagination?
-	if len(nftIDs) > math.MaxUint16 {
-		panic("too many NFTs")
-	}
-	return codec.SliceToArray(codec.NFTID, nftIDs, ParamNFTIDs)
-}
-
-func (OutputNFTIDs) Decode(r dict.Dict) ([]sui.ObjectID, error) {
-	return codec.SliceFromArray(codec.NFTID, r, ParamNFTIDs)
-}
-
-type OutputSerialNumberSet struct{}
-
-func (OutputSerialNumberSet) Encode(sns map[uint32]struct{}) dict.Dict {
-	return codec.SliceToDictKeys(codec.Uint32, lo.Keys(sns))
-}
-
-func (OutputSerialNumberSet) Has(r dict.Dict, sn uint32) bool {
-	return r.Has(kv.Key(codec.Uint32.Encode(sn)))
-}
-
-func (OutputSerialNumberSet) Decode(r dict.Dict) (map[uint32]struct{}, error) {
-	sns, err := codec.SliceFromDictKeys(codec.Uint32, r)
-	if err != nil {
-		return nil, err
-	}
-	return lo.SliceToMap(sns, func(sn uint32) (uint32, struct{}) { return sn, struct{}{} }), nil
-}
-
-type OutputNativeTokenIDs struct{}
-
-func (OutputNativeTokenIDs) Encode(ids []isc.CoinType) dict.Dict {
-	return codec.SliceToDictKeys(codec.CoinType, ids)
-}
-
-func (OutputNativeTokenIDs) Decode(r dict.Dict) ([]isc.CoinType, error) {
-	return codec.SliceFromDictKeys(codec.CoinType, r)
-}
-
-type OutputFungibleTokens struct{}
-
-func (OutputFungibleTokens) Encode(fts *isc.Assets) dict.Dict {
+func (OutputCoinBalances) Encode(fts isc.CoinBalances) dict.Dict {
 	return fts.ToDict()
 }
 
-func (OutputFungibleTokens) Decode(r dict.Dict) (*isc.Assets, error) {
-	return isc.AssetsFromDict(r)
-}
-
-type OutputAccountList struct{ coreutil.RawDictCodec }
-
-func (OutputAccountList) DecodeAccounts(allAccounts dict.Dict, chainID isc.ChainID) ([]isc.AgentID, error) {
-	return codec.SliceFromDictKeys(
-		codec.NewCodecEx(func(b []byte) (isc.AgentID, error) { return agentIDFromKey(kv.Key(b), chainID) }),
-		allAccounts,
-	)
+func (OutputCoinBalances) Decode(r dict.Dict) (isc.CoinBalances, error) {
+	return isc.CoinBalancesFromDict(r)
 }
