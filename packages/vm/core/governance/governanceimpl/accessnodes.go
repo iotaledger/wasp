@@ -13,18 +13,17 @@ package governanceimpl
 
 import (
 	"encoding/base64"
-
+	
 	"github.com/samber/lo"
-
+	
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 // Can only be invoked by the access node owner (verified via the Certificate field).
-func addCandidateNode(ctx isc.Sandbox, ani *governance.AccessNodeInfo) dict.Dict {
+func addCandidateNode(ctx isc.Sandbox, ani *governance.AccessNodeInfo) {
 	ani = governance.AccessNodeInfoWithValidatorAddress(ctx, ani)
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
 
@@ -36,8 +35,6 @@ func addCandidateNode(ctx isc.Sandbox, ani *governance.AccessNodeInfo) dict.Dict
 		state.AccessNodesMap().SetAt(ani.NodePubKey, codec.Bool.Encode(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
-
-	return nil
 }
 
 // Can only be invoked by the access node owner (verified via the Certificate field).
@@ -46,17 +43,15 @@ func addCandidateNode(ctx isc.Sandbox, ani *governance.AccessNodeInfo) dict.Dict
 // in the list of validators, and will be absent in the candidate or an access node set.
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
-func revokeAccessNode(ctx isc.Sandbox, ani *governance.AccessNodeInfo) dict.Dict {
+func revokeAccessNode(ctx isc.Sandbox, ani *governance.AccessNodeInfo) {
 	ani = governance.AccessNodeInfoWithValidatorAddress(ctx, ani)
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.AccessNodeCandidatesMap().DelAt(ani.NodePubKey)
 	state.AccessNodesMap().DelAt(ani.NodePubKey)
-
-	return nil
 }
 
 // Can only be invoked by the chain owner.
-func changeAccessNodes(ctx isc.Sandbox, req governance.ChangeAccessNodesRequest) dict.Dict {
+func changeAccessNodes(ctx isc.Sandbox, req governance.ChangeAccessNodesRequest) {
 	ctx.RequireCallerIsChainOwner()
 
 	state := governance.NewStateWriterFromSandbox(ctx)
@@ -80,7 +75,6 @@ func changeAccessNodes(ctx isc.Sandbox, req governance.ChangeAccessNodesRequest)
 			accessNodeCandidates.DelAt(pubKey[:])
 		}
 	}
-	return nil
 }
 
 func getChainNodes(ctx isc.SandboxView) *governance.GetChainNodesResponse {

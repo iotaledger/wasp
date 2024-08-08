@@ -2,7 +2,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -10,7 +9,7 @@ import (
 // Maintenance mode means no requests will be processed except calls to the governance contract
 // NOTE: Maintenance mode is not available if the governing address is a Contract on the chain itself. (otherwise setting maintenance ON will result in a deadlock)
 
-func startMaintenance(ctx isc.Sandbox) dict.Dict {
+func startMaintenance(ctx isc.Sandbox) {
 	ctx.RequireCallerIsChainOwner()
 	// check if caller is a contract from this chain, panic if so.
 	caller := ctx.Caller()
@@ -20,14 +19,12 @@ func startMaintenance(ctx isc.Sandbox) dict.Dict {
 	}
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetMaintenanceStatus(true)
-	return nil
 }
 
-func stopMaintenance(ctx isc.Sandbox) dict.Dict {
+func stopMaintenance(ctx isc.Sandbox) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetMaintenanceStatus(false)
-	return nil
 }
 
 func getMaintenanceStatus(ctx isc.SandboxView) bool {

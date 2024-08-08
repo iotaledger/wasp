@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -68,14 +69,14 @@ func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *r
 	return root.NewStateReaderFromChainState(chainState).FindContract(contractHname)
 }
 
-func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) (bts uint64, remainder *big.Int) {
+func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) (bts coin.Value, remainder *big.Int) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		bts, remainder = s.GetBaseTokensBalance(agentID, reqctx.ChainID())
 	})
 	return
 }
 
-func (reqctx *requestContext) GetBaseTokensBalanceDiscardRemainder(agentID isc.AgentID) (bts uint64) {
+func (reqctx *requestContext) GetBaseTokensBalanceDiscardRemainder(agentID isc.AgentID) (bts coin.Value) {
 	bal, _ := reqctx.GetBaseTokensBalance(agentID)
 	return bal
 }
@@ -88,16 +89,16 @@ func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowan
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID coin.Type) *big.Int {
-	var ret *big.Int
+func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID coin.Type) coin.Value {
+	var ret coin.Value
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetNativeTokenBalance(agentID, nativeTokenID, reqctx.ChainID())
+		ret = s.GetCoinBalance(agentID, nativeTokenID, reqctx.ChainID())
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalanceTotal(coinType coin.Type) *big.Int {
-	var ret *big.Int
+func (reqctx *requestContext) GetNativeTokenBalanceTotal(coinType coin.Type) coin.Value {
+	var ret coin.Value
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetNativeTokenBalanceTotal(coinType)
 	})

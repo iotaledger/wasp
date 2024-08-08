@@ -105,7 +105,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and allowance.
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
-	Call(msg Message, allowance *Assets) dict.Dict
+	Call(msg Message, allowance *Assets) CallArguments
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict)
 	// Event emits an event
@@ -150,7 +150,7 @@ type Privileged interface {
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
 	OnWriteReceipt(CoreCallbackFunc)
-	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) dict.Dict
+	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) CallArguments
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
 
 	// only called from EVM

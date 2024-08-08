@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -66,7 +65,7 @@ func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID sui.O
 	reqctx.unprocessableToRetry = append(reqctx.unprocessableToRetry, retryReq)
 }
 
-func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, allowance *isc.Assets) dict.Dict {
+func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	reqctx.Debugf("CallOnBehalfOf: caller = %s, msg = %s", caller.String(), msg)
 	return reqctx.callProgram(msg, allowance, caller)
 }

@@ -50,7 +50,7 @@ func (h *magicContractHandler) SetAllowanceBaseTokens(
 func (h *magicContractHandler) SetAllowanceNativeTokens(
 	from common.Address,
 	to common.Address,
-	nativeTokenID iscmagic.NativeTokenID,
+	nativeTokenID iscmagic.ObjectID,
 	numTokens *big.Int,
 ) {
 	setAllowanceNativeTokens(h.ctx, from, to, nativeTokenID, numTokens)

@@ -5,7 +5,6 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -13,11 +12,10 @@ import (
 )
 
 // setFeePolicy sets the global fee policy for the chain in serialized form
-func setFeePolicy(ctx isc.Sandbox, fp *gas.FeePolicy) dict.Dict {
+func setFeePolicy(ctx isc.Sandbox, fp *gas.FeePolicy) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetGasFeePolicy(fp)
-	return nil
 }
 
 func getFeePolicy(ctx isc.SandboxView) *gas.FeePolicy {
@@ -27,7 +25,7 @@ func getFeePolicy(ctx isc.SandboxView) *gas.FeePolicy {
 
 var errInvalidGasRatio = coreerrors.Register("invalid gas ratio").Create()
 
-func setEVMGasRatio(ctx isc.Sandbox, ratio util.Ratio32) dict.Dict {
+func setEVMGasRatio(ctx isc.Sandbox, ratio util.Ratio32) {
 	ctx.RequireCallerIsChainOwner()
 	if !ratio.IsValid() {
 		panic(errInvalidGasRatio)
@@ -36,7 +34,6 @@ func setEVMGasRatio(ctx isc.Sandbox, ratio util.Ratio32) dict.Dict {
 	policy := state.GetGasFeePolicy()
 	policy.EVMGasRatio = ratio
 	state.SetGasFeePolicy(policy)
-	return nil
 }
 
 func getEVMGasRatio(ctx isc.SandboxView) util.Ratio32 {
@@ -44,11 +41,10 @@ func getEVMGasRatio(ctx isc.SandboxView) util.Ratio32 {
 	return state.GetGasFeePolicy().EVMGasRatio
 }
 
-func setGasLimits(ctx isc.Sandbox, limits *gas.Limits) dict.Dict {
+func setGasLimits(ctx isc.Sandbox, limits *gas.Limits) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetGasLimits(limits)
-	return nil
 }
 
 func getGasLimits(ctx isc.SandboxView) *gas.Limits {

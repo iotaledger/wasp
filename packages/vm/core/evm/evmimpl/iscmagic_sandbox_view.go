@@ -28,13 +28,13 @@ func (h *magicContractHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 }
 
 // handler for ISCSandbox::getNFTData
-func (h *magicContractHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT {
+func (h *magicContractHandler) GetNFTData(nftID iscmagic.ObjectID) iscmagic.ISCNFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	return iscmagic.WrapISCNFT(nft)
 }
 
 // handler for ISCSandbox::getIRC27NFTData
-func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
+func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.ObjectID) iscmagic.IRC27NFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	h.ctx.RequireNoError(err)
@@ -45,7 +45,7 @@ func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IR
 }
 
 // handler for ISCSandbox::getIRC27TokenURI
-func (h *magicContractHandler) GetIRC27TokenURI(nftID iscmagic.NFTID) string {
+func (h *magicContractHandler) GetIRC27TokenURI(nftID iscmagic.ObjectID) string {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	h.ctx.RequireNoError(err)
@@ -103,7 +103,7 @@ func (h *magicContractHandler) Erc20NativeTokensAddress(foundrySN uint32) common
 }
 
 // handler for ISCSandbox::erc721NFTCollectionAddress
-func (h *magicContractHandler) Erc721NFTCollectionAddress(collectionID iscmagic.NFTID) common.Address {
+func (h *magicContractHandler) Erc721NFTCollectionAddress(collectionID iscmagic.ObjectID) common.Address {
 	return iscmagic.ERC721NFTCollectionAddress(collectionID.Unwrap())
 }
 
@@ -115,7 +115,7 @@ func (h *magicContractHandler) Erc20NativeTokensFoundrySerialNumber(addr common.
 }
 
 // handler for ISCSandbox::getNativeTokenID
-func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.NativeTokenID {
+func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.CoinType {
 	r := h.callView(accounts.ViewNativeToken.Message(foundrySN))
 	out, err := accounts.ViewNativeToken.Output.Decode(r)
 	h.ctx.RequireNoError(err)
