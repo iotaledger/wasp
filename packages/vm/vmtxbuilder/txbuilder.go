@@ -68,6 +68,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateRoot *state.L1
 		onRequestsToRequestRefs(txb.consumed),
 		onRequestsToAssetsBagMap(txb.consumed),
 		stateRoot.TrieRoot().Bytes(),
+		stateRoot.BlockHash().Bytes(),
 	)
 	if err != nil {
 		panic(err)

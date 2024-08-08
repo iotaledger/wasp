@@ -35,7 +35,14 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 	return ptb.Finish()
 }
 
-func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestRefs []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
+func NewReceiveRequestPTB(
+	packageID sui.PackageID,
+	anchorRef *sui.ObjectRef,
+	requestRefs []sui.ObjectRef,
+	reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances,
+	stateRoot []byte,
+	blockHash []byte,
+) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
 	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef})
@@ -75,6 +82,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 
 		assetsBag := reqAssetsBagsMap[reqObject]
 		argAssetsBag := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
+		argAllowance := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 2}}
 		for _, bal := range assetsBag.Balances {
 			typeTag, err := sui.TypeTagFromString(bal.CoinType)
 			if err != nil {
@@ -111,6 +119,17 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 					Function:      "destroy_empty",
 					TypeArguments: []sui.TypeTag{},
 					Arguments:     []sui.Argument{argAssetsBag},
+				},
+			},
+		)
+		ptb.Command(
+			sui.Command{
+				MoveCall: &sui.ProgrammableMoveCall{
+					Package:       &packageID,
+					Module:        iscmove.AllowanceModuleName,
+					Function:      "destroy",
+					TypeArguments: []sui.TypeTag{},
+					Arguments:     []sui.Argument{argAllowance},
 				},
 			},
 		)
@@ -153,6 +172,7 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 				Arguments: []sui.Argument{
 					argAnchor,
 					ptb.MustPure(stateRoot),
+					ptb.MustPure(blockHash),
 					argReceipts,
 				},
 			},
