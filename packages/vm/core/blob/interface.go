@@ -36,13 +36,6 @@ const (
 	VarFieldProgramDescription = "d"
 )
 
-// request parameters
-const (
-	ParamHash  = "hash"
-	ParamField = "field"
-	ParamBytes = "bytes"
-)
-
 // FieldValueKey returns key of the blob field value in the SC state.
 func FieldValueKey(blobHash hashing.HashValue, fieldName string) []byte {
 	return []byte(collections.MapElemKey(valuesMapName(blobHash), []byte(fieldName)))
@@ -60,7 +53,6 @@ func (OutputFieldSizesMap) Encode(sizes map[string]uint32) []byte {
 
 func (OutputFieldSizesMap) Decode(r []byte) (map[string]uint32, error) {
 	result, err := dict.FromBytes(r)
-
 	if err != nil {
 		return nil, err
 	}

@@ -354,3 +354,8 @@ func (rr *Reader) ReadBigUint() (ret *big.Int) {
 	}
 	return ret
 }
+
+func ReadStruct[T IoReader](rr *Reader, v T) T {
+	rr.Read(v)
+	return v
+}

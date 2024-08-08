@@ -134,6 +134,16 @@ func (s *StateReader) getRequestEventsInternal(reqID isc.RequestID) ([][]byte, e
 	}
 }
 
+type BlockRange struct {
+	From uint32
+	To   uint32
+}
+
+type EventsForContractQuery struct {
+	Contract   isc.Hname
+	BlockRange *BlockRange
+}
+
 func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [][]byte {
 	registry := collections.NewArrayReadOnly(s.state, prefixBlockRegistry)
 	latestBlockIndex := registry.Len() - 1

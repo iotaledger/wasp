@@ -119,3 +119,7 @@ func (pkT *PublicKey) Write(w io.Writer) error {
 	ww.WriteN(pkT.key)
 	return ww.Err
 }
+
+func (pkT *PublicKey) Bytes() []byte {
+	return rwutil.WriteToBytes(pkT)
+}

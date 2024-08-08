@@ -24,6 +24,7 @@ var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
 func (s *StateWriter) SetInitialState() {
 	s.SaveNextBlockInfo(&BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
+		BlockIndex:            0,
 		Timestamp:             time.Time{},
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,

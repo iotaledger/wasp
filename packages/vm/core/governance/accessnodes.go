@@ -4,9 +4,9 @@
 package governance
 
 import (
+	"io"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
@@ -37,80 +37,60 @@ func (c NodeOwnershipCertificate) Bytes() []byte {
 	return c
 }
 
-// AccessNodeInfo conveys all the information that is maintained
+// AccessNodeData conveys all the information that is maintained
 // on the governance SC about a specific node.
-type AccessNodeInfo struct {
-	NodePubKey    []byte // Public Key of the node. Stored as a key in the SC State and Params.
-	validatorAddr []byte // Address of the validator owning the node. Not sent via parameters.
-	Certificate   []byte // Proof that Validator owns the Node.
-	ForCommittee  bool   // true, if Node should be a candidate to a committee.
-	AccessAPI     string // API URL, if any.
+type AccessNodeData struct {
+	ValidatorAddr *cryptolib.Address       // Address of the validator owning the node. Not sent via parameters.
+	Certificate   NodeOwnershipCertificate // Proof that Validator owns the Node.
+	ForCommittee  bool                     // true, if Node should be a candidate to a committee.
+	AccessAPI     string                   // API URL, if any.
 }
 
-func AccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
-	rr := rwutil.NewBytesReader(data)
-	return &AccessNodeInfo{
-		NodePubKey:    pubKey,
-		validatorAddr: rr.ReadBytes(),
-		Certificate:   rr.ReadBytes(),
-		ForCommittee:  rr.ReadBool(),
-		AccessAPI:     rr.ReadString(),
-	}, rr.Err
-}
-
-var (
-	errInvalidCertificate      = coreerrors.Register("invalid certificate").Create()
-	errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()
-)
-
-func AccessNodeInfoWithValidatorAddress(ctx isc.Sandbox, ani *AccessNodeInfo) *AccessNodeInfo {
-	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
-	if validatorAddr == nil {
-		panic(errSenderMustHaveL1Address)
-	}
-	ani.validatorAddr = codec.Address.Encode(validatorAddr)
-	if !ani.ValidateCertificate() {
-		panic(errInvalidCertificate)
-	}
-	return ani
-}
-
-func (a *AccessNodeInfo) Bytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteBytes(a.validatorAddr)
+func (a *AccessNodeData) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(a.ValidatorAddr)
 	ww.WriteBytes(a.Certificate)
 	ww.WriteBool(a.ForCommittee)
 	ww.WriteString(a.AccessAPI)
-	return ww.Bytes()
+	return ww.Err
 }
+
+func (a *AccessNodeData) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	a.ValidatorAddr = rwutil.ReadStruct(rr, new(cryptolib.Address))
+	a.Certificate = rr.ReadBytes()
+	a.ForCommittee = rr.ReadBool()
+	a.AccessAPI = rr.ReadString()
+	return rr.Err
+}
+
+// AccessNodeInfo conveys all the information that is maintained
+// on the governance SC about a specific node.
+type AccessNodeInfo struct {
+	NodePubKey *cryptolib.PublicKey // Public Key of the node. Stored as a key in the SC State and Params.
+	AccessNodeData
+}
+
+func (a *AccessNodeInfo) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(a.NodePubKey)
+	ww.Write(&a.AccessNodeData)
+	return ww.Err
+}
+
+func (a *AccessNodeInfo) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.Read(a.NodePubKey)
+	rr.Read(&a.AccessNodeData)
+	return rr.Err
+}
+
+var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()
 
 func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) *AccessNodeInfo {
 	a.Certificate = NewNodeOwnershipCertificate(nodeKeyPair, ownerAddress).Bytes()
 	return a
 }
-
-func (a *AccessNodeInfo) ValidateCertificate() bool {
-	nodePubKey, err := cryptolib.PublicKeyFromBytes(a.NodePubKey)
-	if err != nil {
-		return false
-	}
-	validatorAddr, err := cryptolib.NewAddressFromBytes(a.validatorAddr)
-	if err != nil {
-		return false
-	}
-	cert := NodeOwnershipCertificateFromBytes(a.Certificate)
-	return cert.Verify(nodePubKey, validatorAddr)
-}
-
-// GetChainNodesResponse
-type GetChainNodesResponse struct {
-	AccessNodeCandidates map[cryptolib.PublicKeyKey]*AccessNodeInfo // Application info for the AccessNodes.
-	AccessNodes          map[cryptolib.PublicKeyKey]struct{}        // Public Keys of Access Nodes.
-}
-
-//
-//	ChangeAccessNodesRequest
-//
 
 type ChangeAccessNodeAction byte
 
@@ -121,23 +101,56 @@ const (
 	ChangeAccessNodeActionLast
 )
 
-type ChangeAccessNodesRequest map[cryptolib.PublicKeyKey]ChangeAccessNodeAction
+type ChangeAccessNodeRequests []*ChangeAccessNodeRequest
 
-func NewChangeAccessNodesRequest() ChangeAccessNodesRequest {
-	return ChangeAccessNodesRequest(make(map[cryptolib.PublicKeyKey]ChangeAccessNodeAction))
+func NewChangeAccessNodeRequests() ChangeAccessNodeRequests {
+	return nil
 }
 
-func (req ChangeAccessNodesRequest) Remove(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
-	req[pubKey.AsKey()] = ChangeAccessNodeActionRemove
-	return req
+func (req ChangeAccessNodeRequests) Remove(pubKey *cryptolib.PublicKey) ChangeAccessNodeRequests {
+	return append(req, &ChangeAccessNodeRequest{
+		PublicKey: pubKey,
+		Action:    ChangeAccessNodeActionRemove,
+	})
 }
 
-func (req ChangeAccessNodesRequest) Accept(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
-	req[pubKey.AsKey()] = ChangeAccessNodeActionAccept
-	return req
+func (req ChangeAccessNodeRequests) Accept(pubKey *cryptolib.PublicKey) ChangeAccessNodeRequests {
+	return append(req, &ChangeAccessNodeRequest{
+		PublicKey: pubKey,
+		Action:    ChangeAccessNodeActionAccept,
+	})
 }
 
-func (req ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
-	req[pubKey.AsKey()] = ChangeAccessNodeActionDrop
-	return req
+func (req ChangeAccessNodeRequests) Drop(pubKey *cryptolib.PublicKey) ChangeAccessNodeRequests {
+	return append(req, &ChangeAccessNodeRequest{
+		PublicKey: pubKey,
+		Action:    ChangeAccessNodeActionDrop,
+	})
+}
+
+type ChangeAccessNodeRequest struct {
+	PublicKey *cryptolib.PublicKey
+	Action    ChangeAccessNodeAction
+}
+
+func ChangeAccessNodesRequestFromBytes(b []byte) (*ChangeAccessNodeRequest, error) {
+	return rwutil.ReadFromBytes(b, new(ChangeAccessNodeRequest))
+}
+
+func (c *ChangeAccessNodeRequest) Bytes() []byte {
+	return rwutil.WriteToBytes(c)
+}
+
+func (c *ChangeAccessNodeRequest) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	c.PublicKey = rwutil.ReadStruct(rr, new(cryptolib.PublicKey))
+	c.Action = ChangeAccessNodeAction(rr.ReadByte())
+	return rr.Err
+}
+
+func (c *ChangeAccessNodeRequest) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.Write(c.PublicKey)
+	ww.WriteByte(byte(c.Action))
+	return ww.Err
 }

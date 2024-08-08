@@ -67,14 +67,6 @@ func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 	return res
 }
 
-func (rwo *RefWithObject[any]) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (rwo *RefWithObject[any]) Write(w io.Writer) error {
-	return nil // TODO implement
-}
-
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
 	ID   sui.ObjectID

@@ -192,6 +192,13 @@ func (c CoinBalances) Equals(b CoinBalances) bool {
 	return true
 }
 
+func (c CoinBalances) String() string {
+	s := lo.MapToSlice(c, func(coinType coin.Type, amount coin.Value) string {
+		return fmt.Sprintf("%s: %d", coinType, amount)
+	})
+	return fmt.Sprintf("CoinBalances{%s}", strings.Join(s, ", "))
+}
+
 type ObjectIDSet map[sui.ObjectID]struct{}
 
 func NewObjectIDSet() ObjectIDSet {
