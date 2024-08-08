@@ -104,6 +104,15 @@ func (c CoinBalances) Add(coinType coin.Type, amount coin.Value) CoinBalances {
 	return c
 }
 
+func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
+	if amount == 0 {
+		delete(c, coinType)
+		return c
+	}
+	c[coinType] = amount
+	return c
+}
+
 func (c CoinBalances) AddBaseTokens(amount coin.Value) CoinBalances {
 	return c.Add(coin.BaseTokenType, amount)
 }
@@ -396,6 +405,11 @@ func (a *Assets) IsEmpty() bool {
 
 func (a *Assets) AddBaseTokens(amount coin.Value) *Assets {
 	a.Coins.Add(coin.BaseTokenType, amount)
+	return a
+}
+
+func (a *Assets) SetBaseTokens(amount coin.Value) *Assets {
+	a.Coins.Set(coin.BaseTokenType, amount)
 	return a
 }
 

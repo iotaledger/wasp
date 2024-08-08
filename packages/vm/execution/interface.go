@@ -49,6 +49,6 @@ type WaspCallContext interface {
 	SchemaVersion() isc.SchemaVersion
 	GasBurned() uint64
 	GasBudgetLeft() uint64
-	GetAccountNFTs(agentID isc.AgentID) isc.ObjectIDSet
+	GetAccountNFTs(agentID isc.AgentID) []sui.ObjectID
 	GetNFTData(nftID sui.ObjectID) *isc.NFT
 }

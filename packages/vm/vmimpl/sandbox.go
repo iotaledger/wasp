@@ -80,7 +80,7 @@ func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.reqctx.send(par)
 }
 
-func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
+func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) coin.Value {
 	s.Ctx.GasBurn(gas.BurnCodeEstimateStorageDepositCost)
 	return s.reqctx.estimateRequiredStorageDeposit(par)
 }

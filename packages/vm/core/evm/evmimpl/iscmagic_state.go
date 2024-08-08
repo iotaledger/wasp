@@ -11,14 +11,11 @@ import (
 	gethmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
 // The ISC magic contract stores some data in the ISC state.
@@ -60,7 +57,7 @@ func keyAllowance(from, to common.Address) kv.Key {
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	key := keyAllowance(from, to)
-	return isc.MustAssetsFromBytes(state.Get(key))
+	return lo.Must(isc.AssetsFromBytes(state.Get(key)))
 }
 
 var errBaseTokensMustBeUint64 = coreerrors.Register("base tokens amount must be an uint64").Create()
@@ -75,18 +72,17 @@ func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens 
 				panic(errBaseTokensMustBeUint64)
 			}
 		}
-		allowance.BaseTokens = numTokens.Uint64()
+		allowance.SetBaseTokens(coin.Value(numTokens.Uint64()))
 	})
 }
 
-func setAllowanceNativeTokens(ctx isc.Sandbox, from, to common.Address, nativeTokenID iscmagic.ObjectID, numTokens *big.Int) {
+func setAllowanceNativeTokens(ctx isc.Sandbox, from, to common.Address, coinType coin.Type, numTokens *big.Int) {
+	panic("refactor me: setAllowanceNativeTokens (should numTokens also be uint64 here?)")
+
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
-		ntSet := allowance.NativeTokens.MustSet()
-		ntSet[nativeTokenID.MustUnwrap()] = &isc.NativeToken{
-			ID:     nativeTokenID.MustUnwrap(),
-			Amount: numTokens,
+		allowance.Coins = map[coin.Type]coin.Value{
+			coinType: coin.Value(numTokens.Uint64()), // uint64? => numTokens
 		}
-		allowance.NativeTokens = lo.Values(ntSet)
 	})
 }
 
@@ -99,7 +95,7 @@ func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Assets) {
 func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)) {
 	state := evm.ISCMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
-	allowance := isc.MustAssetsFromBytes(state.Get(key))
+	allowance := lo.Must(isc.AssetsFromBytes(state.Get(key)))
 	f(allowance)
 	state.Set(key, allowance.Bytes())
 }
@@ -109,7 +105,7 @@ var errFundsNotAllowed = coreerrors.Register("remaining allowance insufficient")
 func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.Assets) {
 	state := evm.ISCMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
-	remaining := isc.MustAssetsFromBytes(state.Get(key))
+	remaining := lo.Must(isc.AssetsFromBytes(state.Get(key)))
 	if ok := remaining.Spend(taken); !ok {
 		panic(errFundsNotAllowed)
 	}
@@ -142,15 +138,18 @@ func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID coin
 
 // findERC20NativeTokenContractAddress returns the address of an
 // ERC20NativeTokens or ERC20ExternalNativeTokens contract.
-func findERC20NativeTokenContractAddress(ctx isc.Sandbox, nativeTokenID iotago.NativeTokenID) (common.Address, bool) {
-	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
-	if ok {
-		return addr, true
-	}
-	addr = iscmagic.ERC20NativeTokensAddress(nativeTokenID.FoundrySerialNumber())
-	stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
-	if stateDB.Exist(addr) {
-		return addr, true
-	}
-	return common.Address{}, false
+func findERC20NativeTokenContractAddress(ctx isc.Sandbox, coinType coin.Type) (common.Address, bool) {
+	panic("refactor me: findERC20NativeTokenContractAddress evm (is this still even needed?)")
+	/*
+		addr, ok := getERC20ExternalNativeTokensAddress(ctx, coinType)
+		if ok {
+			return addr, true
+		}
+		addr = iscmagic.ERC20NativeTokensAddress(coinType.FoundrySerialNumber())
+		stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
+		if stateDB.Exist(addr) {
+			return addr, true
+		}
+		return common.Address{}, false
+	*/
 }

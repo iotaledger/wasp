@@ -11,6 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -20,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/samber/lo"
 )
 
 // MintBlock "mints" the Ethereum block after all requests in the ISC
@@ -133,7 +134,7 @@ func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {
 	ctx.WithoutGasBurn(func() {
 		var agentID isc.AgentID = isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr)
 		res := ctx.sandbox.CallView(accounts.ViewBalanceBaseTokenEVM.Message(&agentID))
-		ret = lo.Must(accounts.ViewBalanceBaseTokenEVM.Output.Decode(res))
+		ret = lo.Must(accounts.ViewBalanceBaseTokenEVM.DecodeOutput(res))
 	})
 	return ret
 }

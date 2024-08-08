@@ -3,7 +3,6 @@ package chain
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
@@ -48,12 +47,7 @@ func (c *Controller) executeCallView(e echo.Context) error {
 		}
 	}
 
-	args, err := dict.FromJSONDict(callViewRequest.Arguments)
-	if err != nil {
-		return apierrors.InvalidPropertyError("arguments", err)
-	}
-
-	result, err := common.CallView(ch, isc.NewMessage(contractHName, functionHName, args), callViewRequest.Block)
+	result, err := common.CallView(ch, isc.NewMessage(contractHName, functionHName, callViewRequest.Arguments), callViewRequest.Block)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

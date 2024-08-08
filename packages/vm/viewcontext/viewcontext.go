@@ -121,7 +121,7 @@ func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) isc.CoinBalances {
 	return ctx.accountsStateWithGasBurn().GetCoins(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) isc.ObjectIDSet {
+func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []sui.ObjectID {
 	return ctx.accountsStateWithGasBurn().GetAccountObjects(agentID)
 }
 

@@ -5,6 +5,7 @@ package isc
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/big"
@@ -86,7 +87,7 @@ type Balance interface {
 	// BalanceNativeTokens returns all native tokens owned by the smart contract
 	BalanceNativeTokens() CoinBalances
 	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
-	OwnedNFTs() ObjectIDSet
+	OwnedNFTs() []sui.ObjectID
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }
@@ -125,7 +126,7 @@ type Sandbox interface {
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
-	EstimateRequiredStorageDeposit(r RequestParameters) uint64
+	EstimateRequiredStorageDeposit(r RequestParameters) coin.Value
 	// StateAnchor properties of the anchor request
 	StateAnchor() *StateAnchor
 
@@ -170,28 +171,28 @@ func NewCallArguments(args ...[]byte) CallArguments {
 	return callArguments
 }
 
-func (c *CallArguments) Length() int {
-	return len(*c)
+func (c CallArguments) Length() int {
+	return len(c)
 }
 
-func (c *CallArguments) Clone() CallArguments {
-	clone := make(CallArguments, len(*c))
-	for i, v := range *c {
+func (c CallArguments) Clone() CallArguments {
+	clone := make(CallArguments, len(c))
+	for i, v := range c {
 		clone[i] = make([]byte, len(v))
 		copy(clone[i], v)
 	}
 	return clone
 }
 
-func (c *CallArguments) At(index int) ([]byte, error) {
-	if (index < 0) || (index >= len(*c)) {
+func (c CallArguments) At(index int) ([]byte, error) {
+	if (index < 0) || (index >= len(c)) {
 		return nil, fmt.Errorf("index out of range")
 	}
 
-	return (*c)[index], nil
+	return (c)[index], nil
 }
 
-func (c *CallArguments) MustAt(index int) []byte {
+func (c CallArguments) MustAt(index int) []byte {
 	ret, err := c.At(index)
 	if err != nil {
 		panic(err)
@@ -199,11 +200,11 @@ func (c *CallArguments) MustAt(index int) []byte {
 	return ret
 }
 
-func (c *CallArguments) String() string {
+func (c CallArguments) String() string {
 	return hexutil.Encode(c.Bytes())
 }
 
-func (c *CallArguments) Bytes() []byte {
+func (c CallArguments) Bytes() []byte {
 	var b bytes.Buffer
 	err := c.Write(&b)
 	if err != nil {
@@ -224,13 +225,45 @@ func (c *CallArguments) Read(rr io.Reader) error {
 	return nil
 }
 
-func (c *CallArguments) Write(ww io.Writer) error {
+func (c CallArguments) Write(ww io.Writer) error {
 	w := rwutil.NewWriter(ww)
 
-	w.WriteSize32(len(*c))
-	for _, v := range *c {
+	w.WriteSize32(len(c))
+	for _, v := range c {
 		w.WriteBytes(v)
 	}
+
+	return nil
+}
+
+func (c CallArguments) MarshalJSON() ([]byte, error) {
+	d := make([]string, len(c))
+
+	for i, arg := range c {
+		d[i] = hexutil.Encode(arg)
+	}
+
+	return json.Marshal(d)
+}
+
+func (c *CallArguments) UnmarshalJSON(data []byte) error {
+	var args []string
+	err := json.Unmarshal(data, &args)
+	if err != nil {
+		return err
+	}
+
+	cTemp := make([][]byte, len(args))
+
+	for i, v := range args {
+		(cTemp)[i], err = hexutil.Decode(v)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	*c = cTemp
 
 	return nil
 }

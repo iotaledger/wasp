@@ -11,7 +11,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
@@ -61,14 +60,14 @@ func (h *magicContractHandler) GetTimestampUnixSeconds() int64 {
 func (h *magicContractHandler) CallView(
 	contractHname uint32,
 	entryPoint uint32,
-	params iscmagic.ISCDict,
-) iscmagic.ISCDict {
+	params iscmagic.CallArguments,
+) iscmagic.CallArguments {
 	callRet := h.callView(isc.NewMessage(
 		isc.Hname(contractHname),
 		isc.Hname(entryPoint),
 		params.Unwrap(),
 	))
-	return iscmagic.WrapISCDict(callRet)
+	return iscmagic.WrapCallArguments(callRet)
 }
 
 // handler for ISCSandbox::getAllowanceFrom
@@ -116,23 +115,25 @@ func (h *magicContractHandler) Erc20NativeTokensFoundrySerialNumber(addr common.
 
 // handler for ISCSandbox::getNativeTokenID
 func (h *magicContractHandler) GetNativeTokenID(foundrySN uint32) iscmagic.CoinType {
-	r := h.callView(accounts.ViewNativeToken.Message(foundrySN))
+	panic("refactor me: GetNativeTokenID evm (is this even still required?)")
+	/*r := h.callView(accounts.ViewNativeToken.Message(foundrySN))
 	out, err := accounts.ViewNativeToken.Output.Decode(r)
 	h.ctx.RequireNoError(err)
 	nativeTokenID := out.(*iotago.FoundryOutput).MustNativeTokenID()
-	return iscmagic.WrapCoinType(nativeTokenID)
+	return iscmagic.WrapCoinType(nativeTokenID)*/
 }
 
 var errUnsupportedTokenScheme = coreerrors.Register("unsupported TokenScheme kind").Create()
 
 // handler for ISCSandbox::getNativeTokenScheme
 func (h *magicContractHandler) GetNativeTokenScheme(foundrySN uint32) iotago.SimpleTokenScheme {
-	r := h.callView(accounts.ViewNativeToken.Message(foundrySN))
+	panic("refactor me: GetNativeTokenScheme evm (is this even still required?)")
+	/*r := h.callView(accounts.ViewNativeToken.Message(foundrySN))
 	out, err := accounts.ViewNativeToken.Output.Decode(r)
 	h.ctx.RequireNoError(err)
 	s, ok := out.(*iotago.FoundryOutput).TokenScheme.(*iotago.SimpleTokenScheme)
 	if !ok {
 		panic(errUnsupportedTokenScheme)
 	}
-	return *s
+	return *s*/
 }

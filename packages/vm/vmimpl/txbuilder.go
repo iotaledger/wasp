@@ -2,12 +2,14 @@ package vmimpl
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
@@ -43,15 +45,15 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot vmtxbuilder.Transactio
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID isc.NativeTokenID) (out *iotago.BasicOutput, id iotago.OutputID) {
-	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNativeTokenOutput(nativeTokenID, vmctx.ChainID())
+func (vmctx *vmContext) loadNativeTokenOutput(coinType coin.Type) (out *iotago.BasicOutput, id iotago.OutputID) {
+	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNativeTokenOutput(coinType, vmctx.ChainID())
 }
 
 func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, id iotago.OutputID) {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetFoundryOutput(serNum, vmctx.ChainID())
 }
 
-func (vmctx *vmContext) loadNFT(nftID isc.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
+func (vmctx *vmContext) loadNFT(nftID sui.ObjectID) (out *iotago.NFTOutput, id iotago.OutputID) {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNFTOutput(nftID)
 }
 
