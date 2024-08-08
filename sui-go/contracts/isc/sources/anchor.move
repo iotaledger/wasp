@@ -20,6 +20,7 @@ module isc::anchor {
         assets: Referent<AssetsBag>,
         init_params: vector<u8>,
         state_root: vector<u8>,
+        block_hash: vector<u8>,
         state_index: u32,
     }
 
@@ -37,13 +38,14 @@ module isc::anchor {
             assets: borrow::new(assets_bag::new(ctx), ctx),
             init_params: init_params,
             state_root: vector::empty(),
+            block_hash: vector::empty(),
             state_index: 0,
         }
     }
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor { id, assets, state_root: _, state_index: _, init_params: _ } = self;
+        let Anchor { id, assets, state_root: _, state_index: _, block_hash: _, init_params: _ } = self;
         id.delete();
         assets.destroy()
     }
@@ -69,7 +71,7 @@ module isc::anchor {
         (Receipt { request_id }, assets, allowance)
     }
 
-    public fun update_state_root(self: &mut Anchor, new_state_root: vector<u8>, mut receipts: vector<Receipt>) {
+    public fun update_state_root(self: &mut Anchor, new_state_root: vector<u8>, new_block_hash: vector<u8>, mut receipts: vector<Receipt>) {
         let receipts_len = receipts.length();
         let mut i = 0;
         while (i < receipts_len) {
@@ -80,7 +82,8 @@ module isc::anchor {
             i = i + 1;
         };
         receipts.destroy_empty();
-        self.state_root = new_state_root
+        self.state_root = new_state_root;
+        self.block_hash = new_block_hash;
     }
 
     // === Test Functions ===

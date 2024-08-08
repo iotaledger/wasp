@@ -45,6 +45,7 @@ type L2Client interface {
 		anchorRef *sui.ObjectRef,
 		reqs []sui.ObjectRef,
 		stateRoot []byte,
+		blockHash []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,

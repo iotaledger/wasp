@@ -40,10 +40,14 @@ const (
 
 // Related to: https://github.com/iotaledger/kinesis/tree/isc-suijsonrpc/dapps/isc/sources
 // Might change completely: https://github.com/iotaledger/iota/pull/370#discussion_r1617682560
-type Allowance struct {
+type AllowanceWithVales struct {
 	CoinAmounts []uint64
 	CoinTypes   []suijsonrpc.CoinType
 	NFTs        []sui.ObjectID
+}
+
+type Allowance struct {
+	ID sui.ObjectID
 }
 
 type Referent[T any] struct {
@@ -89,7 +93,7 @@ type Anchor struct {
 	Assets     Referent[AssetsBag]
 	InitParams []byte
 	StateRoot  sui.Bytes
-	BlockHash  sui.Bytes `bcs:"-"` // FIXME
+	BlockHash  sui.Bytes
 	StateIndex uint32
 }
 
@@ -116,14 +120,16 @@ type Receipt struct {
 type Message struct {
 	Contract uint32
 	Function uint32
-	Args     [][]sui.Bytes
+	Args     [][]byte
 }
 
 type Request struct {
 	ID        sui.ObjectID
 	Sender    *cryptolib.Address
-	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
+	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
+	Allowance Referent[Allowance] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *Allowance with `bcs:"optional`
+	GasBudget uint64
 }
 
 // Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move

@@ -111,6 +111,7 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 		&anchor.ObjectRef,
 		[]sui.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
+		[]byte{7, 8, 9},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,

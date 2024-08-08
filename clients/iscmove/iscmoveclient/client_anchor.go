@@ -88,6 +88,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 	anchorRef *sui.ObjectRef,
 	reqs []sui.ObjectRef,
 	stateRoot []byte,
+	blockHash []byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -108,7 +109,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 		reqAssetsBagsMap[reqRef] = assetsBag
 	}
 
-	ptb, err := NewReceiveRequestPTB(packageID, anchorRef, reqs, reqAssetsBagsMap, stateRoot)
+	ptb, err := NewReceiveRequestPTB(packageID, anchorRef, reqs, reqAssetsBagsMap, stateRoot, blockHash)
 	if err != nil {
 		return nil, err
 	}

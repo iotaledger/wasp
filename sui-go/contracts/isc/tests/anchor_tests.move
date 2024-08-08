@@ -139,7 +139,9 @@ module isc::anchor_tests {
         let mut receipts = vector::empty();
         receipts.push_back(receipt);
         // ServerPTB.7.2: update the state root
-        anchor.update_state_root(vector::empty(), receipts);
+        let new_state_root = vector::empty();
+        let new_block_hash = vector::empty();
+        anchor.update_state_root(new_state_root, new_block_hash, receipts);
 
         // !!! END !!!
 

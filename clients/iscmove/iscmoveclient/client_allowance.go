@@ -194,13 +194,13 @@ func (c *Client) AllowanceDestroy(
 func (c *Client) GetAllowance(
 	ctx context.Context,
 	allowanceID *sui.ObjectID,
-) (*iscmove.Allowance, error) {
+) (*iscmove.AllowanceWithVales, error) {
 	fields, err := c.GetDynamicFields(ctx, suiclient.GetDynamicFieldsRequest{ParentObjectID: allowanceID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in Allowance: %w", err)
 	}
 
-	allowance := iscmove.Allowance{
+	allowance := iscmove.AllowanceWithVales{
 		CoinAmounts: []uint64{},
 		CoinTypes:   []suijsonrpc.CoinType{},
 	}
