@@ -220,7 +220,7 @@ func (e OutputAddressList) Decode(r []byte) ([]*cryptolib.Address, error) {
 
 type OutputChainInfo struct{}
 
-func (o OutputChainInfo) Encode(info *isc.ChainInfo) dict.Dict {
+func (o OutputChainInfo) Encode(info *isc.ChainInfo) []byte {
 	ret := dict.Dict{
 		ParamChainID:         codec.ChainID.Encode(info.ChainID),
 		varChainOwnerID:      codec.AgentID.Encode(info.ChainOwnerID),
@@ -234,12 +234,13 @@ func (o OutputChainInfo) Encode(info *isc.ChainInfo) dict.Dict {
 	return ret
 }
 
-func (o OutputChainInfo) Decode(r dict.Dict) (*isc.ChainInfo, error) {
+func (o OutputChainInfo) Decode(r []byte) (*isc.ChainInfo, error) {
 	chainID, err := codec.ChainID.Decode(r[ParamChainID])
 	if err != nil {
 		return nil, err
 	}
-	return NewStateReader(r).GetChainInfo(chainID), nil
+
+	return NewStateReader(d).GetChainInfo(chainID), nil
 }
 
 type InputAddCandidateNode struct{}

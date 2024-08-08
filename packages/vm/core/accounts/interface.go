@@ -48,7 +48,7 @@ var (
 	)
 	ViewBalanceBaseToken = coreutil.NewViewEP11(Contract, "balanceBaseToken",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
-		coreutil.FieldWithCodec(codec.BigIntAbs),
+		coreutil.FieldWithCodec(codec.CoinValue),
 	)
 	ViewBalanceBaseTokenEVM = coreutil.NewViewEP11(Contract, "balanceBaseTokenEVM",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
@@ -57,7 +57,7 @@ var (
 	ViewBalanceCoin = coreutil.NewViewEP21(Contract, "balanceCoin",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
 		coreutil.FieldWithCodec(codec.CoinType),
-		coreutil.FieldWithCodec(codec.BigIntAbs),
+		coreutil.FieldWithCodec(codec.CoinValue),
 	)
 	ViewTreasuryCapID = coreutil.NewViewEP11(Contract, "treasuryCapID",
 		coreutil.FieldWithCodec(codec.CoinType),

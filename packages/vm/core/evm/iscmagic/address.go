@@ -10,8 +10,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -50,7 +50,7 @@ func ERC20NativeTokensAddress(foundrySN uint32) common.Address {
 // from the first 17 bytes of hash(nativeTokenID). In case of a collision, it reapplies the
 // hash and checks for a collision again, repeating until it gives up.
 func ERC20ExternalNativeTokensAddress(
-	coinType isc.CoinType,
+	coinType coin.Type,
 	isTaken func(common.Address) bool,
 ) (common.Address, error) {
 	const maxAttempts = 10

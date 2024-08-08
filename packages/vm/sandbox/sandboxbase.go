@@ -7,14 +7,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/iotaledger/hive.go/lo"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type SandboxBase struct {
@@ -41,22 +40,22 @@ func (s *SandboxBase) Caller() isc.AgentID {
 	return s.Ctx.Caller()
 }
 
-func (s *SandboxBase) BalanceBaseTokens() (bts uint64, remainder *big.Int) {
+func (s *SandboxBase) BalanceBaseTokens() (bts coin.Value, remainder *big.Int) {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())
 }
 
-func (s *SandboxBase) BalanceNativeToken(nativeTokenID isc.NativeTokenID) *big.Int {
+func (s *SandboxBase) BalanceNativeToken(coinType coin.Type) coin.Value {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetNativeTokenBalance(s.AccountID(), nativeTokenID)
+	return s.Ctx.GetNativeTokenBalance(s.AccountID(), coinType)
 }
 
-func (s *SandboxBase) BalanceNativeTokens() isc.NativeTokens {
+func (s *SandboxBase) BalanceNativeTokens() isc.CoinBalances {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetNativeTokens(s.AccountID())
 }
 
-func (s *SandboxBase) OwnedNFTs() []isc.NFTID {
+func (s *SandboxBase) OwnedNFTs() isc.ObjectIDSet {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAccountNFTs(s.AccountID())
 }
@@ -64,14 +63,17 @@ func (s *SandboxBase) OwnedNFTs() []isc.NFTID {
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
-		BaseTokens:   lo.Return1(s.Ctx.GetBaseTokensBalance(agentID)),
-		NativeTokens: s.Ctx.GetNativeTokens(agentID),
-		NFTs:         s.Ctx.GetAccountNFTs(agentID),
+		Coins:   s.Ctx.GetNativeTokens(agentID),
+		Objects: s.Ctx.GetAccountNFTs(agentID),
 	}
+	tokenBalance, remainder := s.Ctx.GetBaseTokensBalance(agentID)
+	_ = remainder
+	panic("refactor me: what are we doing with the remainder here?")
+	accountAssets.AddBaseTokens(tokenBalance)
 	return accountAssets.Spend(assets)
 }
 
-func (s *SandboxBase) GetNFTData(nftID isc.NFTID) *isc.NFT {
+func (s *SandboxBase) GetNFTData(nftID sui.ObjectID) *isc.NFT {
 	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
 	return s.Ctx.GetNFTData(nftID)
 }
@@ -143,10 +145,10 @@ func (s *SandboxBase) RequireNoError(err error, str ...string) {
 	s.assert().RequireNoError(err, str...)
 }
 
-func (s *SandboxBase) CallView(msg isc.Message) dict.Dict {
+func (s *SandboxBase) CallView(msg isc.Message) isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	if msg.Params == nil {
-		msg.Params = make(dict.Dict)
+		msg.Params = isc.CallArguments{}
 	}
 	return s.Ctx.Call(msg, nil)
 }

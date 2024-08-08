@@ -6,14 +6,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -119,31 +117,32 @@ func (ctx *ViewContext) accountsStateWithGasBurn() *accounts.StateReader {
 	return accounts.NewStateReader(ctx.schemaVersion, ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()))
 }
 
-func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) isc.NativeTokens {
-	return ctx.accountsStateWithGasBurn().GetNativeTokens(agentID, ctx.chainID)
+func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) isc.CoinBalances {
+	return ctx.accountsStateWithGasBurn().GetCoins(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []isc.NFTID {
-	return ctx.accountsStateWithGasBurn().GetAccountNFTs(agentID)
+func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) isc.ObjectIDSet {
+	return ctx.accountsStateWithGasBurn().GetAccountObjects(agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID isc.NFTID) *isc.NFT {
-	return ctx.accountsStateWithGasBurn().GetNFTData(nftID)
+func (ctx *ViewContext) GetNFTData(nftID sui.ObjectID) *isc.NFT {
+	panic("refactor me: fix GetNFTData")
+	return nil //return ctx.accountsStateWithGasBurn().GetNFTData(nftID)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {
 	return ctx.stateReader.Timestamp()
 }
 
-func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (uint64, *big.Int) {
+func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (coin.Value, *big.Int) {
 	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID sui.ObjectID) *big.Int {
-	return ctx.accountsStateWithGasBurn().GetNativeTokenBalance(agentID, nativeTokenID, ctx.chainID)
+func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
+	return ctx.accountsStateWithGasBurn().GetCoinBalance(agentID, coinType, ctx.chainID)
 }
 
-func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) dict.Dict {
+func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) isc.CallArguments {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", msg.Target.Contract, msg.Target.EntryPoint)
 	return ctx.callView(msg)
 }
@@ -263,7 +262,11 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie.MerkleProof, err e
 func (ctx *ViewContext) GetBlockProof(blockIndex uint32) (blockInfo *blocklog.BlockInfo, proof *trie.MerkleProof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		r := ctx.initAndCallView(blocklog.ViewGetBlockInfo.Message(&blockIndex))
-		blockInfo = lo.Must(blocklog.ViewGetBlockInfo.Output2.Decode(r))
+		_, blockInfo, err = blocklog.ViewGetBlockInfo.DecodeOutput(r)
+		if err != nil {
+			panic(err)
+		}
+
 		key := blocklog.Contract.FullKey(blocklog.BlockInfoKey(blockIndex))
 		proof = ctx.stateReader.GetMerkleProof(key)
 	}, ctx.log, "GetMerkleProof: ")

@@ -189,6 +189,16 @@ func NewObjectIDSet() ObjectIDSet {
 	return make(map[sui.ObjectID]struct{})
 }
 
+func NewObjectIDSetFromArray(ids []sui.ObjectID) ObjectIDSet {
+	set := NewObjectIDSet()
+
+	for _, id := range ids {
+		set.Add(id)
+	}
+
+	return set
+}
+
 func (o ObjectIDSet) Add(id sui.ObjectID) {
 	o[id] = struct{}{}
 }

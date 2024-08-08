@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
@@ -25,12 +24,11 @@ var errBlobAlreadyExists = coreerrors.Register("blob already exists").Create()
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
-func storeBlob(ctx isc.Sandbox) dict.Dict {
+func storeBlob(ctx isc.Sandbox, blobHashArgs dict.Dict) hashing.HashValue {
 	ctx.Log().Debugf("blob.storeBlob.begin")
 	state := NewStateWriterFromSandbox(ctx)
-	params := ctx.Params()
 	// calculate a deterministic hash of all blob fields
-	blobHash, fieldsSorted, valuesSorted := mustGetBlobHash(params.Args)
+	blobHash, fieldsSorted, valuesSorted := mustGetBlobHash(blobHashArgs)
 
 	directory := state.GetDirectory()
 	if directory.HasAt(blobHash[:]) {
@@ -56,7 +54,7 @@ func storeBlob(ctx isc.Sandbox) dict.Dict {
 
 	eventStore(ctx, blobHash)
 
-	return dict.Dict{ParamHash: codec.HashValue.Encode(blobHash)}
+	return blobHash
 }
 
 // getBlobInfo return lengths of all fields in the blob
