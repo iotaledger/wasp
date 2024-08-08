@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+type Uint128 = BigInt
+
 type BigInt struct {
 	*big.Int
 }

@@ -20,15 +20,15 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			Size: 2,
 		},
 		Balances: iscmove.AssetsBagBalances{
-			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: suijsonrpc.NewBigInt(33)},
-			"0xa1::a::A":           &suijsonrpc.Balance{TotalBalance: suijsonrpc.NewBigInt(11)},
-			"0xa2::b::B":           &suijsonrpc.Balance{TotalBalance: suijsonrpc.NewBigInt(22)},
+			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: 33},
+			"0xa1::a::A":           &suijsonrpc.Balance{TotalBalance: 11},
+			"0xa2::b::B":           &suijsonrpc.Balance{TotalBalance: 22},
 		},
 	}
 	assets := isc.AssetsFromAssetsBag(assetsBag)
-	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance.Int, assets.BaseTokens())
-	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance.Int, assets.CoinBalance("0xa1::a::A"))
-	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance.Int, assets.CoinBalance("0xa2::b::B"))
+	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance, uint64(assets.BaseTokens()))
+	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance("0xa1::a::A")))
+	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance, uint64(assets.CoinBalance("0xa2::b::B")))
 }
 
 func TestAssetsSerialization(t *testing.T) {

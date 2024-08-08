@@ -225,7 +225,7 @@ func (c *Client) GetAssetsBagWithBalances(
 		cointype := suijsonrpc.CoinType("0x" + data.Name.Value.(string))
 		bag.Balances[cointype] = &suijsonrpc.Balance{
 			CoinType:     cointype,
-			TotalBalance: moveBalance.Value,
+			TotalBalance: moveBalance.Value.Uint64(),
 		}
 	}
 
