@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -19,20 +20,42 @@ type DeserializableEntity interface {
 }
 
 func SerializeEntity(entity any) []byte {
-	if serializable, ok := entity.(SerializableEntity); ok {
+	if serializable, isSerializible := entity.(SerializableEntity); isSerializible {
 		return serializable.Bytes()
 	}
 
 	return codec.Encode(entity)
 }
 
+func DeserializeEntity[Dest any](b []byte) (Dest, error) {
+	var v Dest
+
+	if deserializable, isDeserializible := interface{}(v).(DeserializableEntity); isDeserializible {
+		r := bytes.NewReader(b)
+		must(deserializable.Read(r))
+
+		if r.Len() != 0 {
+			leftovers := must2(io.ReadAll(r))
+			panic(fmt.Sprintf("Leftover bytes after reading entity of type %T: initialValue = %x, leftover = %x, leftoverLen = %v", v, b, leftovers, r.Len()))
+		}
+	}
+
+	return Decode[Dest](b)
+}
+
 type EntityMigrationFunc[SrcEntity any, DestEntity any] func(srcKey kv.Key, srcVal SrcEntity) (destKey kv.Key, _ DestEntity)
 
-func migrateEntitiesByPrefix[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, prefix string, migrationFunc EntityMigrationFunc[Src, Dest]) {
+func migrateEntitiesByPrefix[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, prefix string, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+	count := uint32(0)
+
 	srcContractState.Iterate(kv.Key(prefix), func(srcKey kv.Key, srcBytes []byte) bool {
 		migrateEntityState(srcContractState, destContractState, srcKey, migrationFunc)
+		count++
+
 		return true
 	})
+
+	return count
 }
 
 func migrateEntitiesByKV[Src any, Dest any](srcEntities map[kv.Key][]byte, destContractState kv.KVStore, migrationFunc EntityMigrationFunc[Src, Dest]) {
@@ -42,11 +65,17 @@ func migrateEntitiesByKV[Src any, Dest any](srcEntities map[kv.Key][]byte, destC
 	}
 }
 
-func migrateEntitiesMapByName[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, mapName string, migrationFunc EntityMigrationFunc[Src, Dest]) {
-	srcEntities := collections.NewMapReadOnly(srcContractState, mapName)
-	destEntities := collections.NewMap(destContractState, mapName)
+func migrateEntitiesMapByName[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, oldMapName, newMapName string, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+	if newMapName == "" {
+		newMapName = oldMapName
+	}
+
+	srcEntities := collections.NewMapReadOnly(srcContractState, oldMapName)
+	destEntities := collections.NewMap(destContractState, newMapName)
 
 	migrateEntitiesMap(srcEntities, destEntities, migrationFunc)
+
+	return srcEntities.Len()
 }
 
 func migrateEntitiesMap[Src any, Dest any](srcEntities *collections.ImmutableMap, destEntities *collections.Map, migrationFunc EntityMigrationFunc[Src, Dest]) {
@@ -58,6 +87,29 @@ func migrateEntitiesMap[Src any, Dest any](srcEntities *collections.ImmutableMap
 	})
 }
 
+func migrateEntitiesArrayByName[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, oldArrName, newArrName string, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+	if newArrName == "" {
+		newArrName = oldArrName
+	}
+
+	srcEntities := collections.NewArrayReadOnly(srcContractState, oldArrName)
+	destEntities := collections.NewArray(destContractState, newArrName)
+
+	migrateEntitiesArray(srcEntities, destEntities, migrationFunc)
+
+	return srcEntities.Len()
+}
+
+func migrateEntitiesArray[Src any, Dest any](srcEntities *collections.ArrayReadOnly, destEntities *collections.Array, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+	for i := uint32(0); i < srcEntities.Len(); i++ {
+		srcBytes := srcEntities.GetAt(i)
+		_, newV := migrateEntityBytes("", srcBytes, migrationFunc)
+		destEntities.SetAt(i, newV)
+	}
+
+	return srcEntities.Len()
+}
+
 func migrateEntityState[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, srcKey kv.Key, migrationFunc EntityMigrationFunc[Src, Dest]) {
 	srcBytes := srcContractState.Get(srcKey)
 
@@ -67,20 +119,7 @@ func migrateEntityState[Src any, Dest any](srcContractState kv.KVStoreReader, de
 }
 
 func migrateEntityBytes[Src any, Dest any](srcKey kv.Key, srcBytes []byte, migrationFunc EntityMigrationFunc[Src, Dest]) (newKey kv.Key, newVal []byte) {
-
-	var srcEntity Src
-
-	if readableSrcEntity, isReadable := interface{}(srcEntity).(DeserializableEntity); isReadable {
-		r := bytes.NewReader(srcBytes)
-		must(readableSrcEntity.Read(r))
-
-		if r.Len() != 0 {
-			leftovers := must2(io.ReadAll(r))
-			panic(fmt.Sprintf("Leftover bytes after reading entity of type %T: initialValue = %x, leftover = %x, leftoverLen = %v", srcEntity, srcBytes, leftovers, r.Len()))
-		}
-	} else {
-		srcEntity = must2(Decode[Src](srcBytes))
-	}
+	srcEntity := must2(DeserializeEntity[Src](srcBytes))
 
 	destKey, destEntity := migrationFunc(srcKey, srcEntity)
 
@@ -96,4 +135,16 @@ func list(store kv.KVStoreReader, prefix string) map[kv.Key][]byte {
 	})
 
 	return entries
+}
+
+func SplitMapKey(storeKey kv.Key) (mapName, elemKey kv.Key) {
+	const elemSep = "."
+	pos := strings.Index(string(storeKey), elemSep)
+
+	isMap := pos >= 0 && pos < len(storeKey)-1
+	if !isMap {
+		return storeKey, ""
+	}
+
+	return storeKey[:pos], storeKey[pos+1:]
 }
