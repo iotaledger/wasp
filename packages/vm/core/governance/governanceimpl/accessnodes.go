@@ -87,7 +87,7 @@ func revokeAccessNode(
 }
 
 // Can only be invoked by the chain owner.
-func changeAccessNodes(ctx isc.Sandbox, reqs []*governance.ChangeAccessNodeRequest) {
+func changeAccessNodes(ctx isc.Sandbox, reqs []lo.Tuple2[*cryptolib.PublicKey, *governance.ChangeAccessNodeAction]) {
 	ctx.RequireCallerIsChainOwner()
 
 	state := governance.NewStateWriterFromSandbox(ctx)
@@ -96,16 +96,17 @@ func changeAccessNodes(ctx isc.Sandbox, reqs []*governance.ChangeAccessNodeReque
 	ctx.Log().Debugf("changeAccessNodes: actions len: %d", len(reqs))
 
 	for _, req := range reqs {
-		switch req.Action {
+		pubKey, action := req.Unpack()
+		switch *action {
 		case governance.ChangeAccessNodeActionRemove:
-			accessNodes.DelAt(req.PublicKey.Bytes())
+			accessNodes.DelAt(pubKey.Bytes())
 		case governance.ChangeAccessNodeActionAccept:
 			// TODO should the list of candidates be checked? we are just adding any pubkey
-			accessNodes.SetAt(req.PublicKey.Bytes(), codec.Bool.Encode(true))
+			accessNodes.SetAt(pubKey.Bytes(), codec.Bool.Encode(true))
 			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
-			accessNodes.DelAt(req.PublicKey.Bytes())
-			accessNodeCandidates.DelAt(req.PublicKey.Bytes())
+			accessNodes.DelAt(pubKey.Bytes())
+			accessNodeCandidates.DelAt(pubKey.Bytes())
 		default:
 			panic("invalid action")
 		}

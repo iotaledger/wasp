@@ -6,6 +6,8 @@ package governance
 import (
 	"io"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -94,6 +96,18 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 
 type ChangeAccessNodeAction byte
 
+func (a *ChangeAccessNodeAction) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteByte(byte(*a))
+	return ww.Err
+}
+
+func (a *ChangeAccessNodeAction) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	*a = ChangeAccessNodeAction(rr.ReadByte())
+	return rr.Err
+}
+
 const (
 	ChangeAccessNodeActionRemove = ChangeAccessNodeAction(iota)
 	ChangeAccessNodeActionAccept
@@ -101,56 +115,17 @@ const (
 	ChangeAccessNodeActionLast
 )
 
-type ChangeAccessNodeRequests []*ChangeAccessNodeRequest
-
-func NewChangeAccessNodeRequests() ChangeAccessNodeRequests {
-	return nil
+func RemoveAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
+	action := ChangeAccessNodeActionRemove
+	return lo.T2(pubKey, &action)
 }
 
-func (req ChangeAccessNodeRequests) Remove(pubKey *cryptolib.PublicKey) ChangeAccessNodeRequests {
-	return append(req, &ChangeAccessNodeRequest{
-		PublicKey: pubKey,
-		Action:    ChangeAccessNodeActionRemove,
-	})
+func AcceptAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
+	action := ChangeAccessNodeActionAccept
+	return lo.T2(pubKey, &action)
 }
 
-func (req ChangeAccessNodeRequests) Accept(pubKey *cryptolib.PublicKey) ChangeAccessNodeRequests {
-	return append(req, &ChangeAccessNodeRequest{
-		PublicKey: pubKey,
-		Action:    ChangeAccessNodeActionAccept,
-	})
-}
-
-func (req ChangeAccessNodeRequests) Drop(pubKey *cryptolib.PublicKey) ChangeAccessNodeRequests {
-	return append(req, &ChangeAccessNodeRequest{
-		PublicKey: pubKey,
-		Action:    ChangeAccessNodeActionDrop,
-	})
-}
-
-type ChangeAccessNodeRequest struct {
-	PublicKey *cryptolib.PublicKey
-	Action    ChangeAccessNodeAction
-}
-
-func ChangeAccessNodesRequestFromBytes(b []byte) (*ChangeAccessNodeRequest, error) {
-	return rwutil.ReadFromBytes(b, new(ChangeAccessNodeRequest))
-}
-
-func (c *ChangeAccessNodeRequest) Bytes() []byte {
-	return rwutil.WriteToBytes(c)
-}
-
-func (c *ChangeAccessNodeRequest) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	c.PublicKey = rwutil.ReadStruct(rr, new(cryptolib.PublicKey))
-	c.Action = ChangeAccessNodeAction(rr.ReadByte())
-	return rr.Err
-}
-
-func (c *ChangeAccessNodeRequest) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(c.PublicKey)
-	ww.WriteByte(byte(c.Action))
-	return ww.Err
+func DropAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
+	action := ChangeAccessNodeActionDrop
+	return lo.T2(pubKey, &action)
 }

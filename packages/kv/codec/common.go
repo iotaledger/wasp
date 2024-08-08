@@ -40,6 +40,33 @@ func NewCodecFromIoReadWriter[T any, PT interface {
 	return &codec[PT]{decode: decode, encode: encode}
 }
 
+func NewTupleCodec[
+	A, B any,
+	PA interface {
+		rwutil.IoReadWriter
+		*A
+	},
+	PB interface {
+		rwutil.IoReadWriter
+		*B
+	},
+]() Codec[lo.Tuple2[PA, PB]] {
+	encode := func(obj lo.Tuple2[PA, PB]) []byte {
+		ww := rwutil.NewBytesWriter()
+		ww.Write(obj.A)
+		ww.Write(obj.B)
+		return ww.Bytes()
+	}
+	decode := func(b []byte) (lo.Tuple2[PA, PB], error) {
+		rr := rwutil.NewBytesReader(b)
+		ret := lo.Tuple2[PA, PB]{}
+		ret.A = rwutil.ReadStruct(rr, PA(new(A)))
+		ret.B = rwutil.ReadStruct(rr, PB(new(B)))
+		return ret, rr.Err
+	}
+	return NewCodec(decode, encode)
+}
+
 func (c *codec[T]) Decode(b []byte, def ...T) (r T, err error) {
 	if b == nil {
 		if len(def) == 0 {

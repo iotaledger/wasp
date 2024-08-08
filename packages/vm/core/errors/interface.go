@@ -19,12 +19,6 @@ var (
 	)
 )
 
-// request parameters
-const (
-	ParamErrorCode          = "c"
-	ParamErrorMessageFormat = "m"
-)
-
 const (
 	prefixErrorTemplateMap = "a" // covered in: TestSuccessfulRegisterError
 )

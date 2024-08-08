@@ -58,15 +58,3 @@ func (OutputFieldSizesMap) Decode(r []byte) (map[string]uint32, error) {
 	}
 	return decodeSizesMap(result)
 }
-
-type OutputBlobDirectory struct{}
-
-func (OutputBlobDirectory) Encode(d map[hashing.HashValue]uint32) dict.Dict {
-	return lo.MapEntries(d, func(hash hashing.HashValue, size uint32) (kv.Key, []byte) {
-		return kv.Key(codec.HashValue.Encode(hash)), EncodeSize(size)
-	})
-}
-
-func (OutputBlobDirectory) Decode(r dict.Dict) (map[hashing.HashValue]uint32, error) {
-	return decodeDirectory(r)
-}
