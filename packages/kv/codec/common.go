@@ -31,6 +31,15 @@ func NewCodecEx[T interface{ Bytes() []byte }](decode func([]byte) (T, error)) C
 	}}
 }
 
+func NewCodecFromIoReadWriter[T any, PT interface {
+	rwutil.IoReadWriter
+	*T
+}]() Codec[PT] {
+	encode := func(obj PT) []byte { return rwutil.WriteToBytes(obj) }
+	decode := func(b []byte) (PT, error) { return rwutil.ReadFromBytes(b, PT(new(T))) }
+	return &codec[PT]{decode: decode, encode: encode}
+}
+
 func (c *codec[T]) Decode(b []byte, def ...T) (r T, err error) {
 	if b == nil {
 		if len(def) == 0 {

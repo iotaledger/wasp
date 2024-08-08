@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -182,10 +183,7 @@ func (s *StateWriter) SetMaintenanceStatus(status bool) {
 func (s *StateReader) AccessNodes() []*cryptolib.PublicKey {
 	accessNodes := []*cryptolib.PublicKey{}
 	s.AccessNodesMap().IterateKeys(func(pubKeyBytes []byte) bool {
-		pubKey, err := cryptolib.PublicKeyFromBytes(pubKeyBytes)
-		if err != nil {
-			panic(err)
-		}
+		pubKey := lo.Must(cryptolib.PublicKeyFromBytes(pubKeyBytes))
 		accessNodes = append(accessNodes, pubKey)
 		return true
 	})
@@ -194,12 +192,13 @@ func (s *StateReader) AccessNodes() []*cryptolib.PublicKey {
 
 func (s *StateReader) CandidateNodes() []*AccessNodeInfo {
 	candidateNodes := []*AccessNodeInfo{}
-	s.AccessNodeCandidatesMap().Iterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
-		ani, err := AccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
-		if err != nil {
-			panic(err)
-		}
-		candidateNodes = append(candidateNodes, ani)
+	s.AccessNodeCandidatesMap().Iterate(func(pubKeyBytes, accessNodeDataBytes []byte) bool {
+		pubKey := lo.Must(cryptolib.PublicKeyFromBytes(pubKeyBytes))
+		and := lo.Must(rwutil.ReadFromBytes(accessNodeDataBytes, new(AccessNodeData)))
+		candidateNodes = append(candidateNodes, &AccessNodeInfo{
+			NodePubKey:     pubKey,
+			AccessNodeData: *and,
+		})
 		return true
 	})
 	return candidateNodes

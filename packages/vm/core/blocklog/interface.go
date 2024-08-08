@@ -137,13 +137,3 @@ func (OutputRequestReceipts) Decode(r []byte) (*RequestReceiptsResponse, error) 
 		Receipts:   ret,
 	}, nil
 }
-
-type BlockRange struct {
-	From uint32
-	To   uint32
-}
-
-type EventsForContractQuery struct {
-	Contract   isc.Hname
-	BlockRange *BlockRange
-}

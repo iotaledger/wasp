@@ -39,7 +39,7 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 	return isc.NewContractAgentID(chainID, isc.Hname(h))
 }
 
-var dummyAssetID = coin.Type("foo")
+var dummyAssetID = coin.Type("0x1::foo::bar")
 
 func checkLedgerT(t *testing.T, v isc.SchemaVersion, state dict.Dict) isc.CoinBalances {
 	require.NoError(t, accounts.NewStateReader(v, state).CheckLedgerConsistency())
@@ -341,6 +341,7 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 
 	// remove the Object from the chain
 	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID2, object1.ID, isc.ChainID{})
+	accounts.NewStateWriter(v, state).DeleteObject(object1.ID)
 	require.Nil(t, accounts.NewStateReader(v, state).GetObjectBCS(object1.ID))
 }
 
