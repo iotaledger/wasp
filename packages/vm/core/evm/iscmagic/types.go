@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -45,27 +46,27 @@ type CoinType struct {
 	Data string
 }
 
-func WrapCoinType(coinType isc.CoinType) CoinType {
+func WrapCoinType(coinType coin.Type) CoinType {
 	return CoinType{Data: coinType.String()}
 }
 
-func (a CoinType) Unwrap() (ret isc.CoinType) {
-	ret = isc.CoinType(a.Data)
+func (a CoinType) Unwrap() (ret coin.Type) {
+	ret = coin.Type(a.Data)
 	return
 }
 
-func (a CoinType) MustUnwrap() (ret isc.CoinType) {
-	ret = isc.CoinType(a.Data)
+func (a CoinType) MustUnwrap() (ret coin.Type) {
+	ret = coin.Type(a.Data)
 	return
 }
 
-type CoinBalances map[CoinType]*big.Int
+type CoinBalances map[CoinType]uint64
 
 func WrapCoinBalances(coinBalances isc.CoinBalances) CoinBalances {
 	newCoinBalances := make(CoinBalances)
 
 	for k, v := range coinBalances {
-		newCoinBalances[WrapCoinType(k)] = v
+		newCoinBalances[WrapCoinType(k)] = uint64(v)
 	}
 
 	return newCoinBalances
@@ -75,7 +76,7 @@ func (c CoinBalances) Unwrap() (isc.CoinBalances, error) {
 	newCoinBalances := make(isc.CoinBalances)
 
 	for k, v := range c {
-		newCoinBalances[k.Unwrap()] = v
+		newCoinBalances[k.Unwrap()] = coin.Value(v)
 	}
 
 	return newCoinBalances, nil
@@ -274,7 +275,7 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 
 	coins := CoinBalances{}
 	for i, value := range a.Coins {
-		coins[WrapCoinType(i)] = value
+		coins[WrapCoinType(i)] = uint64(value)
 	}
 
 	objects := ObjectIDSet{}
@@ -289,7 +290,7 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 }
 
 func (a ISCAssets) BaseToken() uint64 {
-	if val, ok := a.Coins[WrapCoinType(isc.BaseTokenType)]; ok {
+	if val, ok := a.Coins[WrapCoinType(coin.BaseTokenType)]; ok {
 		panic("refactor me: return val when changed to Uint64")
 		_ = val
 		return 0
@@ -301,7 +302,7 @@ func (a ISCAssets) BaseToken() uint64 {
 func (a ISCAssets) Unwrap() *isc.Assets {
 	coins := isc.CoinBalances{}
 	for k, v := range a.Coins {
-		coins[k.Unwrap()] = v
+		coins[k.Unwrap()] = coin.Value(v)
 	}
 
 	objects := isc.ObjectIDSet{}
@@ -311,7 +312,6 @@ func (a ISCAssets) Unwrap() *isc.Assets {
 
 	panic("refactor me: set base token here when switched to Uint64")
 	return &isc.Assets{
-
 		Coins:   coins,
 		Objects: objects,
 	}

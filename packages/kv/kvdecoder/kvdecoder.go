@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -324,6 +325,23 @@ func (p *kvdecoder) GetNFTID(key kv.Key, def ...sui.ObjectID) (sui.ObjectID, err
 
 func (p *kvdecoder) MustGetNFTID(key kv.Key, def ...sui.ObjectID) sui.ObjectID {
 	ret, err := p.GetNFTID(key, def...)
+	p.check(err)
+	return ret
+}
+
+func (p *kvdecoder) GetObjectID(key kv.Key, def ...sui.ObjectID) (sui.ObjectID, error) {
+	v := p.Get(key)
+	if v == nil {
+		if len(def) != 0 {
+			return def[0], nil
+		}
+		return sui.ObjectID{}, fmt.Errorf("GetObjectID: mandatory parameter %q does not exist", key)
+	}
+	return codec.ObjectID.Decode(v)
+}
+
+func (p *kvdecoder) MustGetObjectID(key kv.Key, def ...sui.ObjectID) sui.ObjectID {
+	ret, err := p.GetObjectID(key, def...)
 	p.check(err)
 	return ret
 }

@@ -14,7 +14,7 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractBlob)
 
 var (
-	FuncStoreBlob = Contract.Func("storeBlob")
+	FuncStoreBlob = coreutil.NewEP11(Contract, "storeBlob", coreutil.FieldWithCodec(codec.Dict), coreutil.FieldWithCodec(codec.HashValue))
 
 	ViewGetBlobInfo = coreutil.NewViewEP11(Contract, "getBlobInfo",
 		coreutil.FieldWithCodec(codec.HashValue),
@@ -50,14 +50,21 @@ func FieldValueKey(blobHash hashing.HashValue, fieldName string) []byte {
 
 type OutputFieldSizesMap struct{}
 
-func (OutputFieldSizesMap) Encode(sizes map[string]uint32) dict.Dict {
-	return lo.MapEntries(sizes, func(field string, size uint32) (kv.Key, []byte) {
+func (OutputFieldSizesMap) Encode(sizes map[string]uint32) []byte {
+	var entries dict.Dict = lo.MapEntries(sizes, func(field string, size uint32) (kv.Key, []byte) {
 		return kv.Key(field), EncodeSize(size)
 	})
+
+	return entries.Bytes()
 }
 
-func (OutputFieldSizesMap) Decode(r dict.Dict) (map[string]uint32, error) {
-	return decodeSizesMap(r)
+func (OutputFieldSizesMap) Decode(r []byte) (map[string]uint32, error) {
+	result, err := dict.FromBytes(r)
+
+	if err != nil {
+		return nil, err
+	}
+	return decodeSizesMap(result)
 }
 
 type OutputBlobDirectory struct{}

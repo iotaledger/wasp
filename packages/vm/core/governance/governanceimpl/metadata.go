@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -14,7 +13,7 @@ const (
 	MaxCustomMetadataLength = iotago.MaxMetadataLength - serializer.OneByte - serializer.UInt32ByteSize - state.L1CommitmentSize - gas.FeePolicyByteSize - serializer.UInt16ByteSize
 )
 
-func setMetadata(ctx isc.Sandbox, publicURLOpt *string, metadataOpt **isc.PublicChainMetadata) dict.Dict {
+func setMetadata(ctx isc.Sandbox, publicURLOpt *string, metadataOpt **isc.PublicChainMetadata) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	n := 0
@@ -27,8 +26,6 @@ func setMetadata(ctx isc.Sandbox, publicURLOpt *string, metadataOpt **isc.Public
 		state.SetMetadata(*metadataOpt)
 	}
 	ctx.Requiref(n <= MaxCustomMetadataLength, "supplied publicURL and metadata is too big (%d>%d)", n, MaxCustomMetadataLength)
-
-	return nil
 }
 
 func getMetadata(ctx isc.SandboxView) (string, *isc.PublicChainMetadata) {

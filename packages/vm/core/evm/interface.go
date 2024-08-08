@@ -5,7 +5,7 @@ package evm
 
 import (
 	"go.uber.org/zap/buffer"
-	
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -34,7 +34,7 @@ var (
 	)
 	FuncRegisterERC20ExternalNativeToken = coreutil.NewEP21(Contract, evmnames.FuncRegisterERC20ExternalNativeToken,
 		ERC20NativeTokenParams{},
-		coreutil.FieldWithCodec(codec.TokenScheme),
+		coreutil.FieldWithCodec(codec.CoinType),
 		coreutil.FieldWithCodec(codec.EthereumAddress),
 	)
 	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,

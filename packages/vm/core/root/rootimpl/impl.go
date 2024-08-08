@@ -10,6 +10,7 @@ package rootimpl
 import (
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -37,22 +38,19 @@ var errInvalidContractName = coreerrors.Register("invalid contract name").Create
 //   - ParamName string, the unique name of the contract in the chain. Later used as Hname
 //   - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples it's an arbitrary unique hash set in the global call examples.AddProcessor
-func deployContract(ctx isc.Sandbox) dict.Dict {
+func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, params dict.Dict) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
 		panic(vm.ErrUnauthorized)
 	}
 
-	params := ctx.Params()
-	progHash := params.MustGetHashValue(root.ParamProgramHash)
-	name := params.MustGetString(root.ParamName)
 	if name == "" || len(name) > 255 {
 		panic(errInvalidContractName)
 	}
 
 	// pass to init function all params not consumed so far
 	initParams := dict.New()
-	params.Args.Iterate("", func(key kv.Key, value []byte) bool {
+	params.Iterate("", func(key kv.Key, value []byte) bool {
 		if key != root.ParamProgramHash && key != root.ParamName {
 			initParams.Set(key, value)
 		}
@@ -68,34 +66,30 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 		ProgramHash: progHash,
 		Name:        name,
 	})
-	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, initParams), nil)
+	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, isc.NewCallArguments(params.Bytes())), nil)
 	eventDeploy(ctx, progHash, name)
-	return nil
 }
 
 // grantDeployPermission grants permission to deploy contracts
-func grantDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) dict.Dict {
+func grantDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) {
 	ctx.RequireCallerIsChainOwner()
 	state := root.NewStateWriterFromSandbox(ctx)
 	state.GetDeployPermissions().SetAt(deployer.Bytes(), []byte{0x01})
 	eventGrant(ctx, deployer)
-	return nil
 }
 
 // revokeDeployPermission revokes permission to deploy contracts
-func revokeDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) dict.Dict {
+func revokeDeployPermission(ctx isc.Sandbox, deployer isc.AgentID) {
 	ctx.RequireCallerIsChainOwner()
 	state := root.NewStateWriterFromSandbox(ctx)
 	state.GetDeployPermissions().DelAt(deployer.Bytes())
 	eventRevoke(ctx, deployer)
-	return nil
 }
 
-func requireDeployPermissions(ctx isc.Sandbox, permissionsEnabled bool) dict.Dict {
+func requireDeployPermissions(ctx isc.Sandbox, permissionsEnabled bool) {
 	ctx.RequireCallerIsChainOwner()
 	state := root.NewStateWriterFromSandbox(ctx)
 	state.SetDeployPermissionsEnabled(permissionsEnabled)
-	return nil
 }
 
 // findContract view finds and returns encoded record of the contract

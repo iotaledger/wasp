@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +32,7 @@ func NewSandbox(reqctx *requestContext) isc.Sandbox {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) dict.Dict {
+func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.Ctx.Call(msg, transfer)
 }
@@ -196,10 +197,10 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.reqctx.gas.maxTokensToSpendForGasFee
-	return isc.NewAssetsBaseTokensU64(amount)
+	return isc.NewAssets(coin.Value(amount))
 }
 
-func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) dict.Dict {
+func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.reqctx.CallOnBehalfOf(caller, msg, transfer)
 }

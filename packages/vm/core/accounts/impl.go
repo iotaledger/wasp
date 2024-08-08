@@ -1,9 +1,7 @@
 package accounts
 
 import (
-	"math/big"
-	
-	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -44,7 +42,7 @@ var Processor = Contract.Processor(nil,
 // this expects the origin amount minus SD
 func (s *StateWriter) SetInitialState(baseTokensOnAnchor uint64) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, new(big.Int).SetUint64(baseTokensOnAnchor)), isc.ChainID{})
+	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, coin.Value(baseTokensOnAnchor)), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -174,7 +172,7 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) {
 	// deduct the gas reserve GAS2 from the allowance, if possible
 	gasReserve := coreutil.FromOptional(optionalGasReserve, gas.LimitsDefault.MinGasPerRequest)
 	gasReserveTokens := ctx.ChainInfo().GasFeePolicy.FeeFromGas(gasReserve, nil, 0)
-	if bigint.Less(allowance.BaseTokens(), gasReserveTokens) {
+	if allowance.BaseTokens() < gasReserveTokens {
 		panic(ErrNotEnoughAllowance)
 	}
 	allowance.Coins.Sub(coin.BaseTokenType, gasReserveTokens)

@@ -14,12 +14,14 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -49,9 +51,9 @@ type SandboxBase interface {
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 	// GetNFTData returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID iotago.NFTID) *NFT
+	GetNFTData(nftID sui.ObjectID) *NFT
 	// CallView calls another contract. Only calls view entry points
-	CallView(Message) dict.Dict
+	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
 	StateR() kv.KVStoreReader
 	// SchemaVersion returns the schema version of the current state
@@ -78,13 +80,13 @@ type Authorize interface {
 
 type Balance interface {
 	// BalanceBaseTokens returns number of base tokens in the balance of the smart contract
-	BalanceBaseTokens() (bts uint64, remainder *big.Int)
+	BalanceBaseTokens() (bts coin.Value, remainder *big.Int)
 	// BalanceNativeToken returns number of native token or nil if it is empty
-	BalanceNativeToken(iotago.NativeTokenID) *big.Int
+	BalanceNativeToken(p coin.Type) coin.Value
 	// BalanceNativeTokens returns all native tokens owned by the smart contract
-	BalanceNativeTokens() iotago.NativeTokens
+	BalanceNativeTokens() CoinBalances
 	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
-	OwnedNFTs() []iotago.NFTID
+	OwnedNFTs() ObjectIDSet
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }
@@ -103,7 +105,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and allowance.
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
-	Call(msg Message, allowance *Assets) dict.Dict
+	Call(msg Message, allowance *Assets) CallArguments
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict)
 	// Event emits an event
@@ -148,7 +150,7 @@ type Privileged interface {
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
 	OnWriteReceipt(CoreCallbackFunc)
-	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) dict.Dict
+	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) CallArguments
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
 
 	// only called from EVM
