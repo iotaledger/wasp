@@ -3,11 +3,12 @@ package vmimpl
 import (
 	"time"
 
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -146,13 +147,14 @@ func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
 func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
 	reqctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
 	// calling root contract from another contract to install contract
-	reqctx.Call(root.FuncDeployContract.Message(name, programHash, initParams), nil)
+	reqctx.Call(root.FuncDeployContract.Message(programHash, name, initParams), nil)
 }
 
 func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
 	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
-	result := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), nil)
-	errorCode := codec.VMErrorCode.MustDecode(result.Get(errors.ParamErrorCode))
+	args := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), nil)
+
+	errorCode := lo.Must(errors.FuncRegisterError.DecodeOutput(args))
 	reqctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
 	return isc.NewVMErrorTemplate(errorCode, messageFormat)
 }
