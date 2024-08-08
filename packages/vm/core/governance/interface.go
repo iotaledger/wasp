@@ -91,7 +91,7 @@ var (
 		coreutil.FieldWithCodec(codec.Bytes),                                           // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
-		coreutil.FieldArrayWithCodec(codec.NewCodecEx(ChangeAccessNodesRequestFromBytes)),
+		coreutil.FieldArrayWithCodec(codec.NewTupleCodec[cryptolib.PublicKey, ChangeAccessNodeAction]()),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
 		coreutil.FieldArrayWithCodec(codec.NewCodecFromIoReadWriter[AccessNodeInfo]()),

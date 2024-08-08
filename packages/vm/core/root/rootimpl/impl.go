@@ -12,9 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -38,7 +36,7 @@ var errInvalidContractName = coreerrors.Register("invalid contract name").Create
 //   - ParamName string, the unique name of the contract in the chain. Later used as Hname
 //   - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples it's an arbitrary unique hash set in the global call examples.AddProcessor
-func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, params dict.Dict) {
+func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, initArgs *isc.CallArguments) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
 		panic(vm.ErrUnauthorized)
@@ -48,14 +46,6 @@ func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, pa
 		panic(errInvalidContractName)
 	}
 
-	// pass to init function all params not consumed so far
-	initParams := dict.New()
-	params.Iterate("", func(key kv.Key, value []byte) bool {
-		if key != root.ParamProgramHash && key != root.ParamName {
-			initParams.Set(key, value)
-		}
-		return true
-	})
 	// call to load VM from binary to check if it loads successfully
 	err := ctx.Privileged().TryLoadContract(progHash)
 	ctx.RequireNoError(err, "root.deployContract.fail 1: ")
@@ -66,7 +56,7 @@ func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, pa
 		ProgramHash: progHash,
 		Name:        name,
 	})
-	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, isc.NewCallArguments(params.Bytes())), nil)
+	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, *initArgs), nil)
 	eventDeploy(ctx, progHash, name)
 }
 
@@ -99,11 +89,13 @@ func findContract(ctx isc.SandboxView, hname isc.Hname) (bool, *root.ContractRec
 	return rec != nil, rec
 }
 
-func getContractRecords(ctx isc.SandboxView) map[isc.Hname]*root.ContractRecord {
-	ret := make(map[isc.Hname]*root.ContractRecord)
+func getContractRecords(ctx isc.SandboxView) []lo.Tuple2[*isc.Hname, *root.ContractRecord] {
+	var ret []lo.Tuple2[*isc.Hname, *root.ContractRecord]
 	state := root.NewStateReaderFromSandbox(ctx)
 	state.GetContractRegistry().Iterate(func(elemKey []byte, value []byte) bool {
-		ret[lo.Must(codec.Hname.Decode(elemKey))] = lo.Must(root.ContractRecordFromBytes(value))
+		hname := codec.Hname.MustDecode(elemKey)
+		rec := lo.Must(root.ContractRecordFromBytes(value))
+		ret = append(ret, lo.T2(&hname, rec))
 		return true
 	})
 	return ret

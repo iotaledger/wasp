@@ -130,19 +130,3 @@ func decodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
 	}
 	return ret, nil
 }
-
-func decodeDirectory(blobs dict.Dict) (map[hashing.HashValue]uint32, error) {
-	ret := make(map[hashing.HashValue]uint32)
-	for hash, size := range blobs {
-		v, err := DecodeSize(size)
-		if err != nil {
-			return nil, err
-		}
-		h, err := codec.HashValue.Decode([]byte(hash))
-		if err != nil {
-			return nil, err
-		}
-		ret[h] = v
-	}
-	return ret, nil
-}
