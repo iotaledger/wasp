@@ -108,7 +108,7 @@ func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
 	if amount == 0 {
 		return c
 	}
-	c[coinType] = c.Get(coinType)
+	c[coinType] = amount
 	return c
 }
 
