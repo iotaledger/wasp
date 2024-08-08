@@ -18,6 +18,9 @@ const (
 	AssetsBagObjectName = "AssetsBag"
 	AssetObjectName     = "Asset"
 
+	AllowanceModuleName = "allowance"
+	AllowanceObjectName = "Allowance"
+
 	RequestModuleName      = "request"
 	RequestObjectName      = "Request"
 	MessageObjectName      = "Message"
@@ -39,7 +42,7 @@ const (
 // Might change completely: https://github.com/iotaledger/iota/pull/370#discussion_r1617682560
 type Allowance struct {
 	CoinAmounts []uint64
-	CoinTypes   []string
+	CoinTypes   []suijsonrpc.CoinType
 	NFTs        []sui.ObjectID
 }
 
@@ -86,7 +89,7 @@ type Anchor struct {
 	Assets     Referent[AssetsBag]
 	InitParams []byte
 	StateRoot  sui.Bytes
-	BlockHash  sui.Bytes
+	BlockHash  sui.Bytes `bcs:"-"` // FIXME
 	StateIndex uint32
 }
 

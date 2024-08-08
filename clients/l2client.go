@@ -31,6 +31,8 @@ type L2Client interface {
 		iscContractName uint32,
 		iscFunctionName uint32,
 		args [][]byte,
+		allowanceRef *sui.ObjectRef,
+		onchainGasBudget uint64,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,

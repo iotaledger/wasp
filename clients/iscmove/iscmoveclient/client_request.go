@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -23,6 +22,8 @@ func (c *Client) CreateAndSendRequest(
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
+	allowanceRef *sui.ObjectRef,
+	onchainGasBudget uint64,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -43,6 +44,8 @@ func (c *Client) CreateAndSendRequest(
 		iscContractHname,
 		iscFunctionHname,
 		args,
+		allowanceRef,
+		onchainGasBudget,
 	)
 
 	if len(gasPayments) == 0 {

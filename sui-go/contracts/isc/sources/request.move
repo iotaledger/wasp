@@ -7,6 +7,7 @@ module isc::request {
         event::Self,
     };
     use isc::assets_bag::AssetsBag;
+    use isc::allowance::Allowance;
 
     // === Main structs ===
 
@@ -29,6 +30,10 @@ module isc::request {
         assets_bag: Referent<AssetsBag>,
         /// The target contract, entry point and arguments
         message: Message,
+        /// The gas_budget of the request on L2
+        allowance: Referent<Allowance>,
+        /// The gas_budget of the request on L2
+        gas_budget: u64,
     }
 
     // === Events ===
@@ -50,6 +55,8 @@ module isc::request {
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
+        allowance: Allowance,
+        gas_budget: u64,
         ctx: &mut TxContext,
     ) {
         send(Request{
@@ -61,20 +68,24 @@ module isc::request {
                 function,
                 args,
             },
+            allowance: borrow::new(allowance, ctx),
+            gas_budget: gas_budget,
         }, anchor)
     }
 
     /// Destroys a Request object and returns its balance and assets bag.
-    public fun destroy(self: Request): (ID, AssetsBag) {
+    public fun destroy(self: Request): (ID, AssetsBag, Allowance) {
         let Request {
             id,
             sender: _,
             assets_bag,
             message: _,
+            allowance,
+            gas_budget: _,
         } = self;
         let inner_id = id.uid_to_inner();
         id.delete();
-        (inner_id, assets_bag.destroy())
+        (inner_id, assets_bag.destroy(), allowance.destroy())
     }
 
     // === Send and receive the Request ===
@@ -100,6 +111,8 @@ module isc::request {
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
+        allowance: Allowance,
+        gas_budget: u64,
         ctx: &mut TxContext,
     ): Request {
         Request{
@@ -111,6 +124,8 @@ module isc::request {
                 function,
                 args,
             },
+            allowance: borrow::new(allowance, ctx),
+            gas_budget: gas_budget,
         }
     }
 }

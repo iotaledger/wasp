@@ -63,6 +63,8 @@ func TestRequestsFeed(t *testing.T) {
 	newRequests := make(chan *iscmove.Request, 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
+	allowanceRef := createEmptyAllowance(t, client, iscOwner, iscPackageID)
+
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
 		ctx,
@@ -73,6 +75,8 @@ func TestRequestsFeed(t *testing.T) {
 		uint32(isc.Hn("dummy_isc_contract")),
 		uint32(isc.Hn("dummy_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		allowanceRef,
+		0,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,

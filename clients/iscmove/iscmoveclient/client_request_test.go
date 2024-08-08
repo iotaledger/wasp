@@ -32,6 +32,19 @@ func TestCreateAndSendRequest(t *testing.T) {
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
+	AllowanceNewRes, err := client.AllowanceNew(
+		context.Background(),
+		cryptolibSigner,
+		iscPackageID,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+	allowanceRef, err := AllowanceNewRes.GetCreatedObjectInfo(iscmove.AllowanceModuleName, iscmove.AllowanceObjectName)
+	require.NoError(t, err)
+
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
@@ -41,6 +54,8 @@ func TestCreateAndSendRequest(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		allowanceRef,
+		0,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
