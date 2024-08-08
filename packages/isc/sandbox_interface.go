@@ -126,7 +126,7 @@ type Sandbox interface {
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
-	EstimateRequiredStorageDeposit(r RequestParameters) uint64
+	EstimateRequiredStorageDeposit(r RequestParameters) coin.Value
 	// StateAnchor properties of the anchor request
 	StateAnchor() *StateAnchor
 

@@ -135,14 +135,14 @@ var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (
 
 func (h *magicContractHandler) adjustStorageDeposit(req isc.RequestParameters) {
 	sd := h.ctx.EstimateRequiredStorageDeposit(req)
-	if uint64(req.Assets.BaseTokens()) < sd {
+	if req.Assets.BaseTokens() < sd {
 		if !req.AdjustToMinimumStorageDeposit {
 			panic(errBaseTokensNotEnoughForStorageDeposit.Create(
 				req.Assets.BaseTokens,
 				sd,
 			))
 		}
-		req.Assets.SetBaseTokens(coin.Value(sd))
+		req.Assets.SetBaseTokens(sd)
 	}
 }
 
