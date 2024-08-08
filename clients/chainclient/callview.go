@@ -11,10 +11,11 @@ import (
 
 // CallView sends a request to call a view function of a given contract, and returns the result of the call
 func (c *Client) CallView(ctx context.Context, msg isc.Message, blockNumberOrHash ...string) (dict.Dict, error) {
+	panic("refactor me: proper args serialization")
 	viewCall := apiclient.ContractCallViewRequest{
 		ContractHName: msg.Target.Contract.String(),
 		FunctionHName: msg.Target.EntryPoint.String(),
-		Arguments:     apiextensions.JSONDictToAPIJSONDict(msg.Params.JSONDict()),
+		// Arguments:     apiextensions.JSONDictToAPIJSONDict(msg.Params.JSONDict()),
 	}
 	if len(blockNumberOrHash) > 0 {
 		viewCall.Block = &blockNumberOrHash[0]

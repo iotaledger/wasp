@@ -2,8 +2,9 @@ package isc
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
-
+	
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/buffer"
 )
@@ -29,4 +30,18 @@ func TestCallArgsSerialization(t *testing.T) {
 	require.Equal(t, testBuffer1, callArgs2.MustAt(0))
 	require.Equal(t, testBuffer2, callArgs2.MustAt(1))
 	require.Equal(t, testBuffer3, callArgs2.MustAt(2))
+}
+
+func TestCallArgsJSON(t *testing.T) {
+	callArgs := NewCallArguments([]byte{1, 2, 3, 4}, []byte{9, 8, 7, 6})
+
+	jsonStr, err := json.Marshal(&callArgs)
+	require.NoError(t, err)
+
+	newCallArgs := NewCallArguments()
+	err = json.Unmarshal(jsonStr, &newCallArgs)
+
+	require.NoError(t, err)
+
+	require.EqualValues(t, callArgs[:], newCallArgs[:])
 }

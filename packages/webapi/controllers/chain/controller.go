@@ -8,7 +8,7 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -90,9 +90,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
 
-	dictExample := dict.Dict{
-		"key1": []byte("value1"),
-	}.JSONDict()
+	dictExample := isc.NewCallArguments([]byte{1, 0, 7, 4})
 
 	publicAPI.POST("chains/:chainID/callview", c.executeCallView).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -50,10 +51,10 @@ func (h *magicContractHandler) SetAllowanceBaseTokens(
 func (h *magicContractHandler) SetAllowanceNativeTokens(
 	from common.Address,
 	to common.Address,
-	nativeTokenID iscmagic.ObjectID,
+	coinType coin.Type,
 	numTokens *big.Int,
 ) {
-	setAllowanceNativeTokens(h.ctx, from, to, nativeTokenID, numTokens)
+	setAllowanceNativeTokens(h.ctx, from, to, coinType, numTokens)
 }
 
 // handler for ISCPrivileged::moveAllowedFunds

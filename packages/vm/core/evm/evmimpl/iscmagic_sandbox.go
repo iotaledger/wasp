@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -59,7 +60,7 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 
 var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
 
-func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) uint64 {
+func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Value {
 	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.Decimals)
 
 	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
@@ -69,7 +70,7 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) uint64 {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
 		evmAddr,
 		caller,
-		isc.NewAssetsBaseTokensU64(adjustedTxValue),
+		isc.NewAssets(adjustedTxValue),
 	)
 
 	return adjustedTxValue
@@ -93,7 +94,7 @@ func (h *magicContractHandler) Send(
 
 	if h.callValue.BitLen() > 0 {
 		additionalCallValue := h.handleCallValue(h.callValue)
-		req.Assets.BaseTokens += additionalCallValue
+		req.Assets.AddBaseTokens(additionalCallValue)
 	}
 
 	h.adjustStorageDeposit(req)
@@ -120,28 +121,28 @@ func (h *magicContractHandler) Send(
 func (h *magicContractHandler) Call(
 	contractHname uint32,
 	entryPoint uint32,
-	params iscmagic.ISCDict,
+	params iscmagic.CallArguments,
 	allowance iscmagic.ISCAssets,
-) iscmagic.ISCDict {
+) iscmagic.CallArguments {
 	callRet := h.call(
 		isc.NewMessage(isc.Hname(contractHname), isc.Hname(entryPoint), params.Unwrap()),
 		allowance.Unwrap(),
 	)
-	return iscmagic.WrapISCDict(callRet)
+	return iscmagic.WrapCallArguments(callRet)
 }
 
 var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (%d) not enough to cover storage deposit (%d)")
 
 func (h *magicContractHandler) adjustStorageDeposit(req isc.RequestParameters) {
 	sd := h.ctx.EstimateRequiredStorageDeposit(req)
-	if req.Assets.BaseTokens < sd {
+	if uint64(req.Assets.BaseTokens()) < sd {
 		if !req.AdjustToMinimumStorageDeposit {
 			panic(errBaseTokensNotEnoughForStorageDeposit.Create(
 				req.Assets.BaseTokens,
 				sd,
 			))
 		}
-		req.Assets.BaseTokens = sd
+		req.Assets.SetBaseTokens(coin.Value(sd))
 	}
 }
 

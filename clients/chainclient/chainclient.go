@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -146,8 +147,9 @@ func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 		ContractCallViewRequest(apiclient.ContractCallViewRequest{
 			ContractHName: accounts.Contract.Hname().String(),
 			FunctionHName: accounts.ViewGetAccountNonce.Hname().String(),
-			Arguments: apiextensions.JSONDictToAPIJSONDict(dict.Dict{
-				accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
+			Arguments:     apiextensions.JSONDictToAPIJSONDict(dict.Dict{
+				// TODO: Fix all msg conversions here..
+				//accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
 			}.JSONDict()),
 		}).Execute()
 	if err != nil {
@@ -157,7 +159,7 @@ func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return codec.Uint64.Decode(resultDict.Get(accounts.ParamAccountNonce))
+	return codec.Uint64.Decode(resultDict.Get("nonce"))
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
@@ -192,9 +194,9 @@ func (c *Client) PostOffLedgerRequest(ctx context.Context,
 	return signed, err
 }
 
-func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
+func (c *Client) DepositFunds(n coin.Value) (*iotago.Transaction, error) {
 	return c.PostRequest(accounts.FuncDeposit.Message(), PostRequestParams{
-		Transfer: isc.NewAssets(n, nil),
+		Transfer: isc.NewAssets(n),
 	})
 }
 
@@ -210,7 +212,7 @@ func (par *PostRequestParams) WithTransfer(transfer *isc.Assets) *PostRequestPar
 	return par
 }
 
-func (par *PostRequestParams) WithBaseTokens(i uint64) *PostRequestParams {
+func (par *PostRequestParams) WithBaseTokens(i coin.Value) *PostRequestParams {
 	par.Transfer.AddBaseTokens(i)
 	return par
 }
