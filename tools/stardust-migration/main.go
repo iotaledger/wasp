@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"runtime"
 
@@ -16,10 +17,13 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 func main() {
@@ -49,6 +53,7 @@ func main() {
 	//migrate<Other Contract>State(srcState, destStateDraft)
 
 	migrateAccountsContractState2(srcState, destStateDraft)
+	migrateOtherContractStates(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
@@ -111,11 +116,6 @@ func must2[RetVal any](retVal RetVal, err error) RetVal {
 	return retVal
 }
 
-type contactKeyInfo struct {
-	KeyPrefix   string
-	Description string
-}
-
 func getContactStateReader(chainState kv.KVStoreReader, contractHname isc.Hname) kv.KVStoreReader {
 	return subrealm.NewReadOnly(chainState, kv.Key(contractHname.Bytes()))
 }
@@ -124,67 +124,11 @@ func getContactState(chainState kv.KVStore, contractHname isc.Hname) kv.KVStore 
 	return subrealm.New(chainState, kv.Key(contractHname.Bytes()))
 }
 
-func migrateContractState(chainState kv.KVStoreReader, contractName string, keys []contactKeyInfo, destChainState state.StateDraft) {
-	contractStateReader := getContactStateReader(chainState, coreutil.CoreHname(contractName))
-
-	log.Printf("Migrating contract state for '%v'...\n", coreutil.CoreHname(contractName))
-
-	for _, keyInfo := range keys {
-		log.Printf("Migrating '%v' ('%v')...\n", keyInfo.Description, keyInfo.KeyPrefix)
-
-		count := 0
-		contractStateReader.Iterate(kv.Key(keyInfo.KeyPrefix), func(key kv.Key, value []byte) bool {
-			count++
-			err := getMigrationHandler(keyInfo.KeyPrefix)(key, value, destChainState)
-			if err != nil {
-				panic(fmt.Sprintf("error migrating key '%v' ('%v''%v'): %+v", key.Hex(), keyInfo.Description, keyInfo.KeyPrefix, err))
-			}
-			return true
-		})
-
-		log.Printf("Migrated %v keys of '%v' ('%v')\n", count, keyInfo.Description, keyInfo.KeyPrefix)
-	}
-}
-
-func migrateAccountsContractState(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
-	keysToMigrate := []contactKeyInfo{
-		{keyAllAccounts, "All accounts"},
-		//{prefixBaseTokens + AccountID, "Base tokens by account"},
-		{prefixBaseTokens + L2TotalsAccount, "L2 total base tokens"},
-		//{PrefixNativeTokens + AccountID, "Native tokens by account"},
-		{PrefixNativeTokens + L2TotalsAccount, "L2 total native tokens"},
-		{PrefixNFTs, "NFTs per account"},
-		{PrefixNFTsByCollection, "NFTs by collection"},
-		{prefixNewlyMintedNFTs, "Newly minted NFTs"},
-		{prefixMintIDMap, "Mint ID map"},
-		{keyNFTOwner, "NFT owner"},
-		{PrefixFoundries, "Foundries of accounts"},
-		{noCollection, "No collection"},
-		{keyNonce, "Nonce"},
-		{keyNativeTokenOutputMap, "Native token output map"},
-		{keyFoundryOutputRecords, "Foundry output records"},
-		{keyNFTOutputRecords, "NFT output records"},
-		{keyNewNativeTokens, "New native tokens"},
-		{prefixUnprocessableRequests, "Unprocessable requests"},
-		{prefixNewUnprocessableRequests, "New unprocessable requests"},
-		// {VarChainOwnerID, "Chain owner ID"},
-		// {VarChainOwnerIDDelegated, "Chain owner ID delegated"},
-		// {VarMinBaseTokensOnCommonAccount, "Min base tokens on common account"},
-		// {VarPayoutAgentID, "Payout agent ID"},
-	}
-
-	migrateContractState(srcChainState, accounts.Contract.Name, keysToMigrate, destChainState)
-}
-
-// func parseKey(key kv.Key) (isc.Hname, string) {
-// 	hname := must2(isc.HnameFromBytes([]byte(key[:4])))
-// 	postfix := string(key[4:])
-// 	return hname, postfix
-// }
-
 func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
 	srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(accounts.Contract.Name))
 	destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
+
+	log.Print("Migrating accounts contract state...\n")
 
 	// Accounts
 	log.Printf("Migrating accounts...\n")
@@ -213,6 +157,9 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	count = 0
 	migrateFoundriesOfAccount := p(migrateFoundriesOfAccount)
 	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+
+		// in theory oldAgentID and newAgentID might not contain chainID because it's stored as 'accounts.AgentIDFromKey(key, ch.ChainID)'
+		// if this is the case - we need to add chainID to the key manually (where to get it?) because other maps are stored with chainID
 		oldMapName := PrefixFoundries + string(oldAgentID)
 		newMapName := PrefixFoundries + string(newAgentID)
 
@@ -284,6 +231,66 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	count = migrateEntitiesMapByName(srcContractState, destContractState, keyNativeTokenOutputMap, "", p(migrateNativeTokenOutput))
 
 	log.Printf("Migrated %v native token outputs\n", count)
+
+	// Native token total balance
+	log.Printf("Migrating native token total balance...\n")
+
+	count = migrateEntitiesMapByName(srcContractState, destContractState, PrefixNativeTokens+L2TotalsAccount, "", p(migrateNativeTokenBalanceTotal))
+
+	log.Printf("Migrated %v native token total balance\n", count)
+
+	// All minted NFTs
+	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID>
+	log.Printf("Migrating All minted NFTs...\n")
+
+	count = migrateEntitiesMapByName(srcContractState, destContractState, prefixMintIDMap, "", p(migrateAllMintedNfts))
+
+	log.Printf("Migrated %v All minted NFTs\n", count)
+
+	log.Print("Migrated accounts contract state\n")
+}
+
+func migrateOtherContractStates(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
+
+	//srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(blocklog.Contract.Name))
+	// destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
+
+	log.Print("Migrating other contracts states\n")
+
+	// Unprocessable Requests (blocklog contract)
+	// No need to migrate. Just print a warning if there are any
+	log.Printf("Listing Unprocessable Requests...\n")
+
+	count := 0
+	collections.NewMapReadOnly(getContactStateReader(srcChainState, coreutil.CoreHname(blocklog.Contract.Name)), prefixUnprocessableRequests).Iterate(func(srcKey, srcBytes []byte) bool {
+		reqID := must2(DeserializeEntity[isc.RequestID](srcKey))
+		log.Printf("Warning: unprocessable request found %v", reqID.String())
+		count++
+		return true
+	})
+	log.Printf("Listing Unprocessable Requests completed (found %v entities)\n", count)
+
+	// Chain Owner
+	log.Printf("Migrating chain owner...\n")
+	migrateEntityState(srcChainState, destChainState, governance.VarChainOwnerID, migrateAsIs)
+	log.Printf("Migrated chain owner\n")
+
+	// Chain Owner delegated
+	log.Printf("Migrating chain owner delegated...\n")
+	migrateEntityState(srcChainState, destChainState, governance.VarChainOwnerIDDelegated, migrateAsIs)
+	log.Printf("Migrated chain owner delegated\n")
+
+	// Payout agent
+	log.Printf("Migrating Payout agent...\n")
+	migrateEntityState(srcChainState, destChainState, governance.VarPayoutAgentID, migrateAsIs)
+	log.Printf("Migrated Payout agent\n")
+
+	// Min Base Tokens On Common Account
+	log.Printf("Migrating Min Base Tokens On Common Account...\n")
+	migrateEntityState(srcChainState, destChainState, governance.VarMinBaseTokensOnCommonAccount, migrateAsIs)
+	log.Printf("Migrated Min Base Tokens On Common Account\n")
+
+	log.Print("Migrated other contracts states\n")
 }
 
 func migrateAsIs(srcKey kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
@@ -340,4 +347,13 @@ func migrateNFTByCollection(oldKey kv.Key, srcVal bool, oldAgentID, newAgentID k
 
 func migrateNativeTokenOutput(srcKey kv.Key, srcVal nativeTokenOutputRec) (destKey kv.Key, destVal nativeTokenOutputRec) {
 	return srcKey, srcVal
+}
+
+func migrateNativeTokenBalanceTotal(srcKey kv.Key, srcVal *big.Int) (destKey kv.Key, destVal []byte) {
+	// TODO: new amount format (if not big.Int)
+	return srcKey, []byte{0}
+}
+
+func migrateAllMintedNfts(srcKey kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+	return srcKey, []byte{0}
 }
