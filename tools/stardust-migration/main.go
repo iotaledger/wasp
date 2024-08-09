@@ -132,13 +132,16 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 
 	// Accounts
 	log.Printf("Migrating accounts...\n")
-	oldAgentIDToNewAgentID := map[kv.Key]kv.Key{}
+	oldAgentIDToNewAgentID := map[isc.AgentID]isc.AgentID{}
 
-	count := migrateEntitiesMapByName(srcContractState, destContractState, keyAllAccounts, "", p(func(oldAgentID kv.Key, srcVal bool) (kv.Key, bool) {
+	chainID := must2(isc.ChainIDFromBytes([]byte("Where to find it?")))
+
+	count := migrateEntitiesMapByName(srcContractState, destContractState, keyAllAccounts, "", p(func(oldAccountKey kv.Key, srcVal bool) (kv.Key, bool) {
+		oldAgentID := must2(accounts.AgentIDFromKey(oldAccountKey, chainID))
 		newAgentID, newV := migrateAccount(oldAgentID, srcVal)
 		oldAgentIDToNewAgentID[oldAgentID] = newAgentID
 
-		return newAgentID, newV
+		return accountKey(newAgentID, chainID), newV
 	}))
 
 	log.Printf("Migrated %v accounts\n", count)
@@ -157,11 +160,8 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	count = 0
 	migrateFoundriesOfAccount := p(migrateFoundriesOfAccount)
 	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-
-		// in theory oldAgentID and newAgentID might not contain chainID because it's stored as 'accounts.AgentIDFromKey(key, ch.ChainID)'
-		// if this is the case - we need to add chainID to the key manually (where to get it?) because other maps are stored with chainID
-		oldMapName := PrefixFoundries + string(oldAgentID)
-		newMapName := PrefixFoundries + string(newAgentID)
+		oldMapName := PrefixFoundries + string(oldAgentID.Bytes())
+		newMapName := PrefixFoundries + string(newAgentID.Bytes())
 
 		count += migrateEntitiesMapByName(srcContractState, destContractState, oldMapName, newMapName, migrateFoundriesOfAccount)
 	}
@@ -182,8 +182,8 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	count = 0
 	migrateNativeTokenBalance := p(migrateNativeTokenBalance)
 	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-		oldMapName := PrefixNativeTokens + string(oldAgentID)
-		newMapName := PrefixNativeTokens + string(newAgentID)
+		oldMapName := PrefixNativeTokens + string(accountKey(oldAgentID, chainID))
+		newMapName := PrefixNativeTokens + string(accountKey(newAgentID, chainID))
 		count += migrateEntitiesMapByName(srcContractState, destContractState, oldMapName, newMapName, migrateNativeTokenBalance)
 	}
 
@@ -196,8 +196,8 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	count = 0
 	migrateNFT := p(migrateNFT)
 	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-		oldMapName := PrefixNFTs + string(oldAgentID)
-		newMapName := PrefixNFTs + string(newAgentID)
+		oldMapName := PrefixNFTs + string(oldAgentID.Bytes())
+		newMapName := PrefixNFTs + string(newAgentID.Bytes())
 		count += migrateEntitiesMapByName(srcContractState, destContractState, oldMapName, newMapName, migrateNFT)
 	}
 
@@ -217,7 +217,7 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	// NOTE: There is no easy way to retrieve list of referenced collections
 	count = 0
 	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-		oldPrefix := PrefixNFTsByCollection + string(oldAgentID)
+		oldPrefix := PrefixNFTsByCollection + string(oldAgentID.Bytes())
 		count += migrateEntitiesByPrefix(srcContractState, destContractState, oldPrefix, func(oldKey kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
 			return migrateNFTByCollection(oldKey, srcVal, oldAgentID, newAgentID)
 		})
@@ -300,8 +300,8 @@ func migrateAsIs(srcKey kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) 
 	return srcKey, srcVal
 }
 
-func migrateAccount(srcKey kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
-	return srcKey, srcVal
+func migrateAccount(oldAgentID isc.AgentID, srcVal bool) (newAgentID isc.AgentID, destVal bool) {
+	return oldAgentID, srcVal
 }
 
 func migrateFoundryOutput(srcKey kv.Key, srcVal foundryOutputRec) (destKey kv.Key, destVal string) {
@@ -328,13 +328,13 @@ func migrateNFTOwners(srcKey kv.Key, srcVal []byte) (destKey kv.Key, destVal []b
 	return srcKey + "dummy new key", append(srcVal, []byte("dummy new value")...)
 }
 
-func migrateNFTByCollection(oldKey kv.Key, srcVal bool, oldAgentID, newAgentID kv.Key) (destKey kv.Key, destVal bool) {
+func migrateNFTByCollection(oldKey kv.Key, srcVal bool, oldAgentID, newAgentID isc.AgentID) (destKey kv.Key, destVal bool) {
 	oldMapName, oldMapElemKey := SplitMapKey(oldKey)
 
-	oldPrefix := PrefixNFTsByCollection + string(oldAgentID)
-	collectionID := oldMapName[len(oldPrefix):]
+	oldPrefix := PrefixNFTsByCollection + string(oldAgentID.Bytes())
+	collectionIDBytes := oldMapName[len(oldPrefix):]
 
-	newMapName := PrefixNFTsByCollection + string(newAgentID) + string(collectionID)
+	newMapName := PrefixNFTsByCollection + string(newAgentID.Bytes()) + string(collectionIDBytes)
 
 	newKey := newMapName
 

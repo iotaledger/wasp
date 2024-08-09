@@ -1,5 +1,10 @@
 package main
 
+import (
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+)
+
 const (
 	// keyAllAccounts stores a map of <agentID> => true
 	// Covered in: TestFoundries
@@ -96,3 +101,11 @@ const (
 	// Covered in: TestUnprocessableWithPruning
 	prefixNewUnprocessableRequests = "U"
 )
+
+func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
+	if agentID.BelongsToChain(chainID) {
+		// save bytes by skipping the chainID bytes on agentIDs for this chain
+		return kv.Key(agentID.BytesWithoutChainID())
+	}
+	return kv.Key(agentID.Bytes())
+}
