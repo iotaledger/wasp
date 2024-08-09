@@ -181,7 +181,7 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 	}
 	for _, f := range reqctx.onWriteReceipt {
 		reqctx.callCore(corecontracts.All[f.contract], func(s kv.KVStore) {
-			f.callback(s, receipt.GasBurned)
+			f.callback(s, receipt.GasBurned, vmError)
 		})
 	}
 	return receipt

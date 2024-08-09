@@ -156,7 +156,7 @@ type Privileged interface {
 	CreditToAccount(AgentID, *big.Int)
 }
 
-type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
+type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64, vmError *VMError)
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
 type RequestParameters struct {
