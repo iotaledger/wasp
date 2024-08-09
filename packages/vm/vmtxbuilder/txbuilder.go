@@ -93,11 +93,9 @@ func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[sui.ObjectRef]*isc
 		}
 		assets := req.Assets()
 		for k, v := range assets.Coins {
-			panic("refactor me: Change BigInt to coin.Value (aka uint64)")
-
 			assetsBagWithBalances.Balances[suijsonrpc.CoinType(k)] = &suijsonrpc.Balance{
 				CoinType:     suijsonrpc.CoinType(k),
-				TotalBalance: &suijsonrpc.BigInt{big.NewInt(0).SetUint64(uint64(v))},
+				TotalBalance: uint64(v),
 			}
 
 		}
