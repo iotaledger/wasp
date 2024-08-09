@@ -255,6 +255,9 @@ func migrateOtherContractStates(srcChainState kv.KVStoreReader, destChainState s
 	//srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(blocklog.Contract.Name))
 	// destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
 
+	governanceContractStateSrc := getContactStateReader(srcChainState, coreutil.CoreHname(governance.Contract.Name))
+	governanceContractStateDest := getContactState(destChainState, coreutil.CoreHname(governance.Contract.Name))
+
 	log.Print("Migrating other contracts states\n")
 
 	// Unprocessable Requests (blocklog contract)
@@ -272,22 +275,22 @@ func migrateOtherContractStates(srcChainState kv.KVStoreReader, destChainState s
 
 	// Chain Owner
 	log.Printf("Migrating chain owner...\n")
-	migrateEntityState(srcChainState, destChainState, governance.VarChainOwnerID, migrateAsIs)
+	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, governance.VarChainOwnerID, migrateAsIs)
 	log.Printf("Migrated chain owner\n")
 
 	// Chain Owner delegated
 	log.Printf("Migrating chain owner delegated...\n")
-	migrateEntityState(srcChainState, destChainState, governance.VarChainOwnerIDDelegated, migrateAsIs)
+	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, governance.VarChainOwnerIDDelegated, migrateAsIs)
 	log.Printf("Migrated chain owner delegated\n")
 
 	// Payout agent
 	log.Printf("Migrating Payout agent...\n")
-	migrateEntityState(srcChainState, destChainState, governance.VarPayoutAgentID, migrateAsIs)
+	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, governance.VarPayoutAgentID, migrateAsIs)
 	log.Printf("Migrated Payout agent\n")
 
 	// Min Base Tokens On Common Account
 	log.Printf("Migrating Min Base Tokens On Common Account...\n")
-	migrateEntityState(srcChainState, destChainState, governance.VarMinBaseTokensOnCommonAccount, migrateAsIs)
+	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, governance.VarMinBaseTokensOnCommonAccount, migrateAsIs)
 	log.Printf("Migrated Min Base Tokens On Common Account\n")
 
 	log.Print("Migrated other contracts states\n")
