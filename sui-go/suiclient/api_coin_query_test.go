@@ -20,7 +20,7 @@ func TestGetAllBalances(t *testing.T) {
 		t.Logf(
 			"Coin Name: %v, Count: %v, Total: %v, Locked: %v",
 			balance.CoinType, balance.CoinObjectCount,
-			balance.TotalBalance.String(), balance.LockedBalance,
+			balance.TotalBalance, balance.LockedBalance,
 		)
 	}
 }
@@ -90,7 +90,7 @@ func TestGetBalance(t *testing.T) {
 	t.Logf(
 		"Coin Name: %v, Count: %v, Total: %v, Locked: %v",
 		balance.CoinType, balance.CoinObjectCount,
-		balance.TotalBalance.String(), balance.LockedBalance,
+		balance.TotalBalance, balance.LockedBalance,
 	)
 }
 
