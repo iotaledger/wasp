@@ -85,7 +85,7 @@ type AssetsBagBalances map[suijsonrpc.CoinType]*suijsonrpc.Balance
 
 type AssetsBagWithBalances struct {
 	AssetsBag
-	Balances AssetsBagBalances
+	Balances AssetsBagBalances `bcs:"-"`
 }
 
 type Anchor struct {
@@ -124,9 +124,10 @@ type Message struct {
 }
 
 type Request struct {
-	ID        sui.ObjectID
-	Sender    *cryptolib.Address
-	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	ID     sui.ObjectID
+	Sender *cryptolib.Address
+	// XXX balances are empty if we don't fetch the dynamic fields
+	AssetsBag Referent[AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
 	Allowance Referent[Allowance] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *Allowance with `bcs:"optional`
 	GasBudget uint64

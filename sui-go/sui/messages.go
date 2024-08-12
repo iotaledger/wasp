@@ -155,6 +155,21 @@ func (o ObjectArg) id() *ObjectID {
 		return o.ImmOrOwnedObject.ObjectID
 	case o.SharedObject != nil:
 		return o.SharedObject.Id
+	case o.Receiving != nil:
+		return o.Receiving.ObjectID
+	default:
+		return &ObjectID{}
+	}
+}
+
+func (o ObjectArg) ID() *ObjectID {
+	switch {
+	case o.ImmOrOwnedObject != nil:
+		return o.ImmOrOwnedObject.ObjectID
+	case o.SharedObject != nil:
+		return o.SharedObject.Id
+	case o.Receiving != nil:
+		return o.Receiving.ObjectID
 	default:
 		return &ObjectID{}
 	}

@@ -25,7 +25,7 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			"0xa2::b::B":           &suijsonrpc.Balance{TotalBalance: 22},
 		},
 	}
-	assets := isc.AssetsFromAssetsBag(assetsBag)
+	assets := isc.AssetsFromAssetsBagWithBalances(assetsBag)
 	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance, uint64(assets.BaseTokens()))
 	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance("0xa1::a::A")))
 	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance, uint64(assets.CoinBalance("0xa2::b::B")))
