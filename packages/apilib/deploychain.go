@@ -29,6 +29,8 @@ type CreateChainParams struct {
 	Textout              io.Writer
 	Prefix               string
 	InitParams           dict.Dict
+	StateRoot            []byte
+	BlockHash            []byte
 	GovernanceController *cryptolib.Address
 	PackageID            sui.PackageID
 }
@@ -47,7 +49,18 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	anchor, err := par.Layer1Client.L2().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
+	anchor, err := par.Layer1Client.L2().StartNewChain(
+		ctx,
+		par.OriginatorKeyPair,
+		par.PackageID,
+		par.InitParams.Bytes(),
+		par.StateRoot,
+		par.BlockHash,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
 	if err != nil {
 		return isc.ChainID{}, err
 	}

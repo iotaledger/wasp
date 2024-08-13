@@ -24,10 +24,12 @@ func TestStartNewChain(t *testing.T) {
 		context.Background(),
 		signer,
 		iscPackageID,
+		[]byte{1, 2, 3, 4},
+		[]byte{5, 6, 7, 8},
+		[]byte{9, 10, 11, 12},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
@@ -44,10 +46,12 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 		context.Background(),
 		signer,
 		iscPackageID,
+		[]byte{1, 2, 3, 4},
+		[]byte{5, 6, 7, 8},
+		[]byte{9, 10, 11, 12},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
@@ -125,10 +129,12 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 		context.Background(),
 		signer,
 		iscPackageID,
+		[]byte{1, 2, 3, 4},
+		[]byte{5, 6, 7, 8},
+		[]byte{9, 10, 11, 12},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
