@@ -128,13 +128,13 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(accounts.Contract.Name))
 	destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
 
+	chainID := isc.ChainID(GetAnchorOutput(srcChainState).AliasID)
+
 	log.Print("Migrating accounts contract state...\n")
 
 	// Accounts
 	log.Printf("Migrating accounts...\n")
 	oldAgentIDToNewAgentID := map[isc.AgentID]isc.AgentID{}
-
-	chainID := must2(isc.ChainIDFromBytes([]byte("Where to find it?")))
 
 	count := migrateEntitiesMapByName(srcContractState, destContractState, keyAllAccounts, "", p(func(oldAccountKey kv.Key, srcVal bool) (kv.Key, bool) {
 		oldAgentID := must2(accounts.AgentIDFromKey(oldAccountKey, chainID))
