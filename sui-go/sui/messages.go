@@ -1,6 +1,8 @@
 package sui
 
-import "github.com/iotaledger/wasp/sui-go/sui/serialization"
+import (
+	"github.com/iotaledger/wasp/sui-go/sui/serialization"
+)
 
 type TransactionData struct {
 	V1 *TransactionDataV1

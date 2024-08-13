@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 // ncChain is responsible for maintaining the information related to a single chain.
@@ -36,7 +37,7 @@ type ncChain struct {
 
 type publishTxTask struct {
 	ctx context.Context
-	tx  chain.SignedTx
+	tx  suisigner.SignedTransaction
 	cb  chain.TxPostHandler
 }
 
