@@ -3,6 +3,7 @@ package sui
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )
@@ -50,13 +51,6 @@ func (id ObjectID) Key() ObjectIDKey {
 	return result
 }
 
-// ObjectRef for BCS, need to keep this order
-type ObjectRef struct {
-	ObjectID *ObjectID      `json:"objectId"`
-	Version  SequenceNumber `json:"version"`
-	Digest   *ObjectDigest  `json:"digest"`
-}
-
 type ObjectInfo struct {
 	Ref  *ObjectRef
 	Type *ResourceType
@@ -70,6 +64,31 @@ func NewObjectInfo(ref *ObjectRef, objType *ResourceType) *ObjectInfo {
 }
 
 type ObjectRefKey [AddressLen + 8]byte
+
+// ObjectRef for BCS, need to keep this order
+type ObjectRef struct {
+	ObjectID *ObjectID      `json:"objectId"`
+	Version  SequenceNumber `json:"version"`
+	Digest   *ObjectDigest  `json:"digest"`
+}
+
+func ObjectRefFromBytes(b []byte) *ObjectRef {
+	var ref ObjectRef
+	ref.Version = binary.LittleEndian.Uint64(b[:8])
+	var arr [AddressLen]byte
+	copy(arr[:], b[8:])
+	ref.ObjectID = AddressFromArray(arr)
+	// TODO: Why Digest is not read here?
+	return &ref
+}
+
+func (or *ObjectRef) Read(r io.Reader) error {
+	return nil // TODO implement
+}
+
+func (or *ObjectRef) Write(w io.Writer) error {
+	return nil // TODO implement
+}
 
 func (or *ObjectRef) Equals(other *ObjectRef) bool {
 	if or == nil {
@@ -91,15 +110,6 @@ func (or *ObjectRef) Bytes() []byte {
 	result = append(result, version...)
 	// TODO maybe we should add digest here too
 	return result
-}
-
-func ObjectRefFromBytes(b []byte) *ObjectRef {
-	var ref ObjectRef
-	ref.Version = binary.LittleEndian.Uint64(b[:8])
-	var arr [AddressLen]byte
-	copy(arr[:], b[8:])
-	ref.ObjectID = AddressFromArray(arr)
-	return &ref
 }
 
 func (or *ObjectRef) Key() ObjectRefKey {
