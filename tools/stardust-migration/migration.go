@@ -22,6 +22,11 @@ type DeserializableEntity interface {
 func SerializeEntity(entity any) []byte {
 	if serializable, isSerializible := entity.(SerializableEntity); isSerializible {
 		return serializable.Bytes()
+	} else {
+		var ep any = &entity
+		if serializable, isSerializible := ep.(SerializableEntity); isSerializible {
+			return serializable.Bytes()
+		}
 	}
 
 	return codec.Encode(entity)
@@ -29,15 +34,26 @@ func SerializeEntity(entity any) []byte {
 
 func DeserializeEntity[Dest any](b []byte) (Dest, error) {
 	var v Dest
+	vp := &v
 
-	if deserializable, isDeserializible := interface{}(v).(DeserializableEntity); isDeserializible {
+	f := func(de DeserializableEntity) (Dest, error) {
 		r := bytes.NewReader(b)
-		must(deserializable.Read(r))
+		must(de.Read(r))
 
 		if r.Len() != 0 {
 			leftovers := must2(io.ReadAll(r))
 			panic(fmt.Sprintf("Leftover bytes after reading entity of type %T: initialValue = %x, leftover = %x, leftoverLen = %v", v, b, leftovers, r.Len()))
 		}
+
+		return v, nil
+	}
+
+	if deserializable, isDeserializible := interface{}(v).(DeserializableEntity); isDeserializible {
+		return f(deserializable)
+	}
+
+	if deserializable, isDeserializible := interface{}(vp).(DeserializableEntity); isDeserializible {
+		return f(deserializable)
 	}
 
 	return Decode[Dest](b)
