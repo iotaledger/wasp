@@ -53,16 +53,14 @@ package cons
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"time"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/fardream/go-bcs/bcs"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
@@ -75,12 +73,13 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type Cons interface {
@@ -114,11 +113,11 @@ type Output struct {
 	//
 	// Requests for other components.
 	NeedMempoolProposal       *iscmove.RefWithObject[iscmove.Anchor] // Requests for the mempool are needed for this Base Alias Output.
-	NeedMempoolRequests       []*isc.RequestRef                  // Request payloads are needed from mempool for this IDs/Hash.
+	NeedMempoolRequests       []*isc.RequestRef                      // Request payloads are needed from mempool for this IDs/Hash.
 	NeedStateMgrStateProposal *iscmove.RefWithObject[iscmove.Anchor] // Query for a proposal for Virtual State (it will go to the batch proposal).
 	NeedStateMgrDecidedState  *iscmove.RefWithObject[iscmove.Anchor] // Query for a decided Virtual State to be used by VM.
-	NeedStateMgrSaveBlock     state.StateDraft                   // Ask StateMgr to save the produced block.
-	NeedVMResult              *vm.VMTask                         // VM Result is needed for this (agreed) batch.
+	NeedStateMgrSaveBlock     state.StateDraft                       // Ask StateMgr to save the produced block.
+	NeedVMResult              *vm.VMTask                             // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
@@ -126,19 +125,19 @@ type Output struct {
 }
 
 type Result struct {
-	Transaction     *sui.ProgrammableTransaction // The TX for committing the block.
-	BaseAliasOutput sui.ObjectID                 // AO consumed in the TX.
-	NextAliasOutput *iscmove.Anchor              // AO produced in the TX.
-	Block           state.Block                  // The state diff produced.
+	Transaction *suisigner.SignedTransaction // The TX for committing the block.
+	Block       state.Block                  // The state diff produced.
 }
 
 func (r *Result) String() string {
-	/*txID, err := r.Transaction.ID()
-	if err != nil {
-		txID = iotago.TransactionID{}
-	}*/
-	txID := 5 // TODO: refactor
-	return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseAliasOutput.ToHex(), r.NextAliasOutput)
+	panic("TODO: Implement cons.Result.String") // TODO: refactor
+	/*
+		txID, err := r.Transaction.ID()
+		if err != nil {
+			txID = iotago.TransactionID{}
+		}
+		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseAliasOutput.ToHex(), r.NextAliasOutput)
+	*/
 }
 
 type consImpl struct {
@@ -586,36 +585,26 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		panic("refactor me: rotate.MakeRotateStateControllerTransaction")
-		var essence *iotago.TransactionEssence
-		err := errors.New("refactor me: uponVMOutputReceived")
+		rotationTX, err := vmtxbuilder.NewRotationTransaction(vmResult.RotationAddress.AsSuiAddress())
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
 			c.term.haveOutputProduced()
 			return nil
 		}
-		vmResult.TransactionEssence = essence
+		vmResult.UnsignedTransaction = rotationTX
 		vmResult.StateDraft = nil
 	}
 
 	// Make sure all the fields in the TX are ordered properly.
-	essenceBin, err := vmResult.TransactionEssence.Serialize(serializer.DeSeriModePerformValidation|serializer.DeSeriModePerformLexicalOrdering, nil)
+	unsignedTX := vmResult.UnsignedTransaction
+	signingMsg, err := bcs.Marshal(unsignedTX)
 	if err != nil {
-		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the essence for lex ordering: %w", err))
-	}
-	_, err = vmResult.TransactionEssence.Deserialize(essenceBin, serializer.DeSeriModePerformValidation, nil)
-	if err != nil {
-		panic(fmt.Errorf("uponVMOutputReceived: cannot deserialize the essence for lex ordering: %w", err))
-	}
-
-	signingMsg, err := vmResult.TransactionEssence.SigningMessage()
-	if err != nil {
-		panic(fmt.Errorf("uponVMOutputReceived: cannot obtain signing message: %w", err))
+		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.VMResultReceived(vmResult)).
+		AddAll(c.subTX.UnsignedTXReceived(unsignedTX)).
 		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }
 
@@ -623,30 +612,15 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 // TX
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages {
-	resultTxEssence := vmResult.TransactionEssence
-	publicKey := c.dkShare.GetSharedPublic()
-	signatureForUnlock := cryptolib.NewSignature(publicKey, signature)
-	tx := &iotago.Transaction{
-		Essence: resultTxEssence,
-		Unlocks: transaction.MakeSignatureAndAliasUnlockFeatures(len(resultTxEssence.Inputs), signatureForUnlock),
-	}
-	txID, err := tx.ID()
-	if err != nil {
-		panic(fmt.Errorf("cannot get ID from the produced TX: %w", err))
-	}
-	chained, err := isc.AliasOutputWithIDFromTx(tx, c.chainID.AsAddress())
-	if err != nil {
-		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
-	}
+func (c *consImpl) uponTXInputsReady(unsignedTX *sui.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
+	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsSuiSignature()
+	signedTX := suisigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
-		// Transaction:     tx,								// TODO: Refactor
-		// BaseAliasOutput: vmResult.Task.AnchorOutputID,
-		// NextAliasOutput: chained,
-		Block: block,
+		Transaction: signedTX,
+		Block:       block,
 	}
 	c.output.Status = Completed
-	c.log.Infof("Terminating consensus with status=Completed, produced tx.ID=%v, nextAO=%v, baseAO.ID=%v", txID.ToHex(), chained, vmResult.Task.AnchorOutputID.ToHex())
+	c.log.Infof("Terminating consensus with status=Completed")
 	c.term.haveOutputProduced()
 	return nil
 }

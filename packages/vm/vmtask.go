@@ -47,10 +47,9 @@ type VMTaskResult struct {
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress *cryptolib.Address
-	// TransactionEssence is the transaction essence for the next block,
+	// UnsignedTransaction is the transaction data for the next block,
 	// or nil if the task does not produce a normal block
-	// TODO: Check TransactionEssence relevance
-	// TransactionEssence *iotago.TransactionEssence
+	UnsignedTransaction *sui.TransactionData
 	// InputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
 	InputsCommitment []byte
 	StateMetadata    []byte

@@ -54,7 +54,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
@@ -113,12 +112,7 @@ type RequestHandler = func(req *iscmove.Request)
 // is the current one.
 type AnchorHandler = func(anchor *iscmove.RefWithObject[iscmove.Anchor])
 
-type SignedTx struct {
-	Data       *sui.TransactionData
-	Signatures []*suisigner.Signature
-}
-
-type TxPostHandler = func(tx SignedTx, err error)
+type TxPostHandler = func(tx suisigner.SignedTransaction, err error)
 
 type chainNodeImpl struct {
 	me                  gpa.NodeID

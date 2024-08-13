@@ -104,3 +104,7 @@ func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[sui.ObjectRef]*isc
 	}
 	return m
 }
+
+func NewRotationTransaction(rotationAddress *sui.Address) (*sui.TransactionData, error) {
+	panic("txbuilder.NewRotationTransaction -- implement") // TODO: Implement.
+}

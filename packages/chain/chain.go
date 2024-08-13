@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type ChainNodeConn interface {
@@ -41,7 +42,7 @@ type ChainNodeConn interface {
 	PublishTX(
 		ctx context.Context,
 		chainID isc.ChainID,
-		tx SignedTx,
+		tx suisigner.SignedTransaction,
 		callback TxPostHandler,
 	) error
 	// RefreshOnLedgerRequests synchronously fetches all owned requests by the

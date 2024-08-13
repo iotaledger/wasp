@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 const (
@@ -179,7 +180,7 @@ func (nc *nodeConnection) getChain(chainID isc.ChainID) (*ncChain, error) {
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
 	chainID isc.ChainID,
-	tx chain.SignedTx,
+	tx suisigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	// check if the chain exists
