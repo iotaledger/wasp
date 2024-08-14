@@ -74,13 +74,13 @@ func (s *StateWriter) setObjectOwner(objectID sui.ObjectID, agentID isc.AgentID)
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
-func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, object *ObjectRecord, chainID isc.ChainID) {
+func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, object *isc.ObjectRecord, chainID isc.ChainID) {
 	s.creditObjectToAccount(agentID, object)
 	s.touchAccount(agentID, chainID)
 	s.SaveObject(object)
 }
 
-func (s *StateWriter) creditObjectToAccount(agentID isc.AgentID, object *ObjectRecord) {
+func (s *StateWriter) creditObjectToAccount(agentID isc.AgentID, object *isc.ObjectRecord) {
 	s.setObjectOwner(object.ID, agentID)
 
 	collectionKey := object.CollectionKey()
@@ -102,7 +102,7 @@ func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID sui.O
 }
 
 // DebitObjectFromAccount removes an Object from the internal map of an account
-func (s *StateWriter) debitObjectFromAccount(agentID isc.AgentID, object *ObjectRecord) bool {
+func (s *StateWriter) debitObjectFromAccount(agentID isc.AgentID, object *isc.ObjectRecord) bool {
 	if !s.removeObjectOwner(object.ID, agentID) {
 		return false
 	}

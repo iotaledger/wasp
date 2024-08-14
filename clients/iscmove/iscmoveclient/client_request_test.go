@@ -63,6 +63,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
-	require.NoError(t, err)
+	mod, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	mod.
+		require.NoError(t, err)
 }

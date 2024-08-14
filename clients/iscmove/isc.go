@@ -90,7 +90,7 @@ type AssetsBagWithBalances struct {
 
 type Anchor struct {
 	ID         sui.ObjectID
-	Assets     Referent[AssetsBag]
+	Assets     Referent[AssetsBagWithBalances]
 	InitParams []byte
 	StateRoot  sui.Bytes
 	BlockHash  sui.Bytes

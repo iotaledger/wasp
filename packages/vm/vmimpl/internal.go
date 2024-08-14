@@ -24,7 +24,7 @@ import (
 
 // creditToAccount credits assets to the chain ledger
 func (reqctx *requestContext) creditToAccount(agentID isc.AgentID, ftokens *isc.Assets) {
-	reqctx.accountsStateWriter(false).CreditToAccount(agentID, ftokens, reqctx.ChainID())
+	reqctx.accountsStateWriter(false).CreditToAccount(agentID, ftokens.Coins, reqctx.ChainID())
 }
 
 // creditToAccountFullDecimals credits assets to the chain ledger
@@ -43,12 +43,12 @@ func (reqctx *requestContext) creditNFTToAccount(agentID isc.AgentID) {
 	if nftOutput.NFTID.Empty() {
 		nftOutput.NFTID = util.NFTIDFromNFTOutput(nftOutput, req.RequestID()) // handle NFTs that were minted diractly to the chain
 	}
-	reqctx.accountsStateWriter(false).CreditNFTToAccount(agentID, nftOutput, reqctx.ChainID())
+	reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, nftOutput, reqctx.ChainID())
 }
 
 // debitFromAccount subtracts tokens from account if there are enough.
 func (reqctx *requestContext) debitFromAccount(agentID isc.AgentID, transfer *isc.Assets, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitFromAccount(agentID, transfer, reqctx.ChainID())
+	reqctx.accountsStateWriter(gasBurn).DebitFromAccount(agentID, transfer.Coins, reqctx.ChainID())
 }
 
 // debitFromAccountFullDecimals subtracts basetokens tokens from account if there are enough.
@@ -57,8 +57,8 @@ func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, 
 }
 
 // debitNFTFromAccount removes a NFT from an account.
-func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, nftID sui.ObjectID, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitNFTFromAccount(agentID, nftID, reqctx.ChainID())
+func (reqctx *requestContext) debitNFTFromAccount(agentID isc.AgentID, objectID sui.ObjectID, gasBurn bool) {
+	reqctx.accountsStateWriter(gasBurn).DebitObjectFromAccount(agentID, objectID, reqctx.ChainID())
 }
 
 func (reqctx *requestContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, gasBurn bool) {
@@ -89,45 +89,45 @@ func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowan
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID coin.Type) coin.Value {
+func (reqctx *requestContext) GetCoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
 	var ret coin.Value
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetCoinBalance(agentID, nativeTokenID, reqctx.ChainID())
+		ret = s.GetCoinBalance(agentID, coinType, reqctx.ChainID())
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokenBalanceTotal(coinType coin.Type) coin.Value {
+func (reqctx *requestContext) GetCoinBalanceTotal(coinType coin.Type) coin.Value {
 	var ret coin.Value
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetNativeTokenBalanceTotal(coinType)
+		ret = s.GetCoinBalanceTotal(coinType)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNativeTokens(agentID isc.AgentID) isc.CoinBalances {
+func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
 	var ret isc.CoinBalances
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetNativeTokens(agentID, reqctx.ChainID())
+		ret = s.GetCoins(agentID, reqctx.ChainID())
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountNFTs(agentID isc.AgentID) (ret []sui.ObjectID) {
+func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []sui.ObjectID) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetAccountNFTs(agentID)
+		ret = s.GetAccountObjects(agentID)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetNFTData(nftID sui.ObjectID) (ret *isc.NFT) {
+func (reqctx *requestContext) GetNFTData(objectID sui.ObjectID) (ret *isc.ObjectRecord) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetNFTData(nftID)
+		ret = s.GetObject(objectID)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetSenderTokenBalanceForFees() uint64 {
+func (reqctx *requestContext) GetSenderTokenBalanceForFees() coin.Value {
 	sender := reqctx.req.SenderAccount()
 	if sender == nil {
 		return 0
@@ -206,7 +206,7 @@ func (reqctx *requestContext) updateOffLedgerRequestNonce() {
 }
 
 // adjustL2BaseTokensIfNeeded adjust L2 ledger for base tokens if the L1 changed because of storage deposit changes
-func (reqctx *requestContext) adjustL2BaseTokensIfNeeded(adjustment int64, account isc.AgentID) {
+func (reqctx *requestContext) adjustL2BaseTokensIfNeeded(adjustment coin.Value, account isc.AgentID) {
 	if adjustment == 0 {
 		return
 	}

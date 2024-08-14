@@ -370,7 +370,7 @@ type ISCSendMetadata struct {
 
 func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
 	ret := ISCSendMetadata{
-		GasBudget:      metadata.GasBudget,
+		GasBudget:      uint64(metadata.GasBudget),
 		TargetContract: uint32(metadata.Message.Target.Contract),
 		Entrypoint:     uint32(metadata.Message.Target.EntryPoint),
 		Params:         WrapCallArguments(metadata.Message.Params),
@@ -388,7 +388,7 @@ func (i ISCSendMetadata) Unwrap() *isc.SendMetadata {
 			i.Params.Unwrap(),
 		),
 		Allowance: i.Allowance.Unwrap(),
-		GasBudget: i.GasBudget,
+		GasBudget: coin.Value(i.GasBudget),
 	}
 
 	return &ret

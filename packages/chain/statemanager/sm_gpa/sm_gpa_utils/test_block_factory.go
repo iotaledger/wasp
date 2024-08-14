@@ -20,11 +20,12 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 type anchorData struct {
 	ref          *sui.ObjectRef
-	assets       iscmove.Referent[iscmove.AssetsBag]
+	assets       iscmove.Referent[iscmove.AssetsBagWithBalances]
 	l1Commitment *state.L1Commitment
 	stateIndex   uint32
 }
@@ -53,11 +54,12 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 			Version:  0,
 			Digest:   nil, // TODO
 		},
-		assets: iscmove.Referent[iscmove.AssetsBag]{
+		assets: iscmove.Referent[iscmove.AssetsBagWithBalances]{
 			//ID: nil, // TODO
-			Value: &iscmove.AssetsBag{
+
+			Value: &iscmove.AssetsBagWithBalances{
 				//ID:   nil, // TODO
-				Size: 0,
+				Balances: map[suijsonrpc.CoinType]*suijsonrpc.Balance{},
 			},
 		},
 		l1Commitment: originCommitment,

@@ -81,7 +81,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -91,6 +91,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 var ErrNotInCommittee = errors.New("ErrNotInCommittee")
@@ -144,7 +145,7 @@ type NeedPublishTX struct {
 	CommitteeAddr     cryptolib.Address
 	LogIndex          cmt_log.LogIndex
 	TxID              sui.ObjectID
-	Tx                *iotago.Transaction
+	Tx                *suisigner.SignedTransaction
 	BaseAliasOutputID sui.ObjectID    // The consumed AliasOutput.
 	NextAliasOutput   *iscmove.Anchor // The next one (produced by the TX.)
 }
