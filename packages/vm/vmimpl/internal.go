@@ -105,7 +105,7 @@ func (reqctx *requestContext) GetCoinBalanceTotal(coinType coin.Type) coin.Value
 	return ret
 }
 
-func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
+func (reqctx *requestContext) GetCoins(agentID isc.AgentID) isc.CoinBalances {
 	var ret isc.CoinBalances
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetCoins(agentID, reqctx.ChainID())
