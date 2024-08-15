@@ -75,7 +75,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	}
 
 	// start in the active state of the block to cache
-	activeStateToCache, err := c.stateByTrieRoot(nextBlockInfo.PreviousL1Commitment().TrieRoot())
+	activeStateToCache, err := c.stateByTrieRoot(nextBlockInfo.PreviousL1Commitment.TrieRoot())
 	if err != nil {
 		panic(err)
 	}
@@ -104,7 +104,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 			// nothing more to cache, don't try to walk back further
 			break
 		}
-		activeStateToCache, err = c.stateByTrieRoot(blockinfo.PreviousL1Commitment().TrieRoot())
+		activeStateToCache, err = c.stateByTrieRoot(blockinfo.PreviousL1Commitment.TrieRoot())
 		if err != nil {
 			panic(err)
 		}

@@ -52,7 +52,7 @@ type SandboxBase interface {
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 	// GetNFTData returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID sui.ObjectID) *NFT
+	GetObjectData(nftID sui.ObjectID) ObjectRecord
 	// CallView calls another contract. Only calls view entry points
 	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
@@ -334,14 +334,14 @@ type Gas interface {
 type StateAnchor struct {
 	ChainID              ChainID
 	Sender               *cryptolib.Address
-	OutputID             iotago.OutputID
+	OutputID             sui.ObjectID
 	IsOrigin             bool
 	StateController      *cryptolib.Address
 	GovernanceController *cryptolib.Address
 	StateIndex           uint32
 	StateData            []byte
-	Deposit              uint64
-	NativeTokens         iotago.NativeTokens
+	Deposit              coin.Value
+	NativeTokens         CoinBalances
 }
 
 type SendOptions struct {
@@ -358,7 +358,7 @@ type Expiration struct {
 type SendMetadata struct {
 	Message   Message
 	Allowance *Assets
-	GasBudget uint64
+	GasBudget coin.Value
 }
 
 // Utils provides various utilities that are faster on host side than on VM

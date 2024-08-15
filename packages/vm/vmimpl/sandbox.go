@@ -5,14 +5,13 @@ package vmimpl
 
 import (
 	"math/big"
-
+	
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -39,7 +38,7 @@ func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) isc.CallAr
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
+func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams *isc.CallArguments) {
 	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
 	s.reqctx.deployContract(programHash, name, initParams)
 }
