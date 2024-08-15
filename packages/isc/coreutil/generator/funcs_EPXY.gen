@@ -39,7 +39,7 @@ func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{
 func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, R{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) WithHandler(f func(S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}) {{if gt .Outputs 1}}({{end}}{{range $i := until .Outputs}}R{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}{{if gt .Outputs 1}}){{end}}) *EntryPointHandler[S] {
     return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
         params := ctx.Params()
-        {{range $i := until .Inputs}}p{{add $i 1}}, err := e.Input{{add $i 1}}.Decode(params.Args.MustAt({{$i}}))
+        {{range $i := until .Inputs}}p{{add $i 1}}, err := e.Input{{add $i 1}}.Decode(params.MustAt({{$i}}))
         ctx.RequireNoError(err)
         {{end}}
 

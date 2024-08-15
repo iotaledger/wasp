@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -78,7 +79,7 @@ func (ch *Chain) L2AssetsAtStateIndex(agentID isc.AgentID, stateIndex uint32) *i
 	return assets
 }
 
-func (ch *Chain) L2BaseTokens(agentID isc.AgentID) uint64 {
+func (ch *Chain) L2BaseTokens(agentID isc.AgentID) coin.Value {
 	return ch.L2Assets(agentID).BaseTokens
 }
 

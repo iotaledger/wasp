@@ -8,10 +8,15 @@ import "./ISCAccounts.sol";
 import "./ISCPrivileged.sol";
 
 /**
- * @title ERC20NativeTokens
- * @dev The ERC20 contract native tokens (on-chain foundry).
+ * @title ERC20Coin
+ * @dev The ERC20 contract for a Sui coin.
  */
-contract ERC20NativeTokens {
+contract ERC20Coin {
+    using ISCTypes for CoinBalance[];
+
+    uint256 private constant MAX_UINT64 = type(uint64).max;
+
+    string private _suiCoinType;
     string private _name;
     string private _tickerSymbol;
     uint8 private _decimals;
@@ -35,27 +40,6 @@ contract ERC20NativeTokens {
      * @param tokens The amount of tokens transferred.
      */
     event Transfer(address indexed from, address indexed to, uint256 tokens);
-
-    /**
-     * @dev Returns the foundry serial number of the native token.
-     * @return The foundry serial number.
-     */
-    function foundrySerialNumber() internal view returns (uint32) {
-        return __iscSandbox.erc20NativeTokensFoundrySerialNumber(address(this));
-    }
-
-    /**
-     * @dev Returns the native token ID of the native token.
-     * @return The native token ID.
-     */
-    function nativeTokenID()
-        public
-        view
-        virtual
-        returns (NativeTokenID memory)
-    {
-        return __iscSandbox.getNativeTokenID(foundrySerialNumber());
-    }
 
     /**
      * @dev Returns the name of the native token.
@@ -86,10 +70,7 @@ contract ERC20NativeTokens {
      * @return The total supply of the token.
      */
     function totalSupply() public view virtual returns (uint256) {
-        return
-            __iscSandbox
-                .getNativeTokenScheme(foundrySerialNumber())
-                .maximumSupply;
+        return __iscSandbox.getCoinInfo(_suiCoinType).totalSupply;
     }
 
     /**
@@ -98,16 +79,11 @@ contract ERC20NativeTokens {
      * @return The balance of the token owner.
      */
     function balanceOf(address tokenOwner) public view returns (uint256) {
-        ISCChainID chainID = __iscSandbox.getChainID();
         ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
             tokenOwner,
-            chainID
+            __iscSandbox.getChainID()
         );
-        return
-            __iscAccounts.getL2BalanceNativeTokens(
-                nativeTokenID(),
-                ownerAgentID
-            );
+        return __iscAccounts.getL2BalanceCoin(_suiCoinType, ownerAgentID);
     }
 
     /**
@@ -120,10 +96,11 @@ contract ERC20NativeTokens {
         address receiver,
         uint256 numTokens
     ) public returns (bool) {
+        require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
-        assets.nativeTokens = new NativeToken[](1);
-        assets.nativeTokens[0].ID = nativeTokenID();
-        assets.nativeTokens[0].amount = numTokens;
+        assets.coins = new CoinBalance[](1);
+        assets.coins[0].coinType = _suiCoinType;
+        assets.coins[0].amount = uint64(numTokens);
         __iscPrivileged.moveBetweenAccounts(msg.sender, receiver, assets);
         emit Transfer(msg.sender, receiver, numTokens);
         return true;
@@ -139,11 +116,12 @@ contract ERC20NativeTokens {
         address delegate,
         uint256 numTokens
     ) public returns (bool) {
-        __iscPrivileged.setAllowanceNativeTokens(
+        require(numTokens <= MAX_UINT64, "amount is too large");
+        __iscPrivileged.setAllowanceCoin(
             msg.sender,
             delegate,
-            nativeTokenID(),
-            numTokens
+            _suiCoinType,
+            uint64(numTokens)
         );
         emit Approval(msg.sender, delegate, numTokens);
         return true;
@@ -160,29 +138,7 @@ contract ERC20NativeTokens {
         address delegate
     ) public view returns (uint256) {
         ISCAssets memory assets = __iscSandbox.getAllowance(owner, delegate);
-        NativeTokenID memory myID = nativeTokenID();
-        for (uint256 i = 0; i < assets.nativeTokens.length; i++) {
-            if (bytesEqual(assets.nativeTokens[i].ID.data, myID.data))
-                return assets.nativeTokens[i].amount;
-        }
-        return 0;
-    }
-
-    /**
-     * @dev Compares two byte arrays for equality.
-     * @param a The first byte array.
-     * @param b The second byte array.
-     * @return A boolean indicating whether the byte arrays are equal or not.
-     */
-    function bytesEqual(
-        bytes memory a,
-        bytes memory b
-    ) internal pure returns (bool) {
-        if (a.length != b.length) return false;
-        for (uint256 i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) return false;
-        }
-        return true;
+        return assets.coins.getCoinAmount(_suiCoinType);
     }
 
     /**
@@ -197,10 +153,11 @@ contract ERC20NativeTokens {
         address buyer,
         uint256 numTokens
     ) public returns (bool) {
+        require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
-        assets.nativeTokens = new NativeToken[](1);
-        assets.nativeTokens[0].ID = nativeTokenID();
-        assets.nativeTokens[0].amount = numTokens;
+        assets.coins = new CoinBalance[](1);
+        assets.coins[0].coinType = _suiCoinType;
+        assets.coins[0].amount = uint64(numTokens);
         __iscPrivileged.moveAllowedFunds(owner, msg.sender, assets);
         if (buyer != msg.sender) {
             __iscPrivileged.moveBetweenAccounts(msg.sender, buyer, assets);

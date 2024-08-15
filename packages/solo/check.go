@@ -11,6 +11,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type tHelper interface {
@@ -37,7 +39,7 @@ func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.
 	)
 }
 
-func (ch *Chain) AssertL2BaseTokens(agentID isc.AgentID, bal uint64) {
+func (ch *Chain) AssertL2BaseTokens(agentID isc.AgentID, bal coin.Value) {
 	if h, ok := ch.Env.T.(tHelper); ok {
 		h.Helper()
 	}
@@ -128,7 +130,7 @@ func (env *Solo) AssertL1NativeTokens(addr *cryptolib.Address, nativeTokenID iot
 	require.True(env.T, env.L1NativeTokens(addr, nativeTokenID).Cmp(expected) == 0)
 }
 
-func (env *Solo) HasL1NFT(addr *cryptolib.Address, id *iotago.NFTID) bool {
+func (env *Solo) HasL1NFT(addr *cryptolib.Address, id sui.ObjectID) bool {
 	accountNFTs := env.L1NFTs(addr)
 	for outputID, nftOutput := range accountNFTs {
 		nftID := nftOutput.NFTID

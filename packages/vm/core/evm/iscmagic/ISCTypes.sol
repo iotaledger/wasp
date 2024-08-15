@@ -16,42 +16,21 @@ address constant ISC_ERC20BASETOKENS_ADDRESS = 0x1074010000000000000000000000000
 // The ERC721 contract for NFTs is at this address:
 address constant ISC_ERC721_ADDRESS = 0x1074030000000000000000000000000000000000;
 
-// An L1 IOTA address
-struct L1Address {
-    bytes data;
-}
+// A L1 address
+type SuiAddress is bytes32;
 
-uint8 constant L1AddressTypeEd25519 = 0;
-uint8 constant L1AddressTypeAlias = 8;
-uint8 constant L1AddressTypeNFT = 16;
+// A Sui ObjectID
+type SuiObjectID is bytes32;
 
-// An IOTA native token ID
-struct NativeTokenID {
-    bytes data;
-}
-
-// An amount of some IOTA native token
-struct NativeToken {
-    NativeTokenID ID;
-    uint256 amount;
-}
-
-// The scheme used to create an IOTA native token (corresponds to iotago.SimpleTokenScheme)
-struct NativeTokenScheme {
-    uint256 mintedTokens;
-    uint256 meltedTokens;
-    uint256 maximumSupply;
-}
-
-// An IOTA NFT ID
-type NFTID is bytes32;
-
-// Information about an on-chain NFT
-struct ISCNFT {
-    NFTID ID;
-    L1Address issuer;
-    bytes metadata;
-    ISCAgentID owner;
+// Information about a given L1 coin
+struct SuiCoinInfo {
+    string coinType;
+    uint8 decimals;
+    string name;
+    string symbol;
+    string description;
+    string iconUrl;
+    uint64 totalSupply;
 }
 
 struct IRC27NFTMetadata {
@@ -62,15 +41,6 @@ struct IRC27NFTMetadata {
     string name;
     string description;
 }
-
-// Information about an on-chain IRC27 NFT
-struct IRC27NFT {
-    ISCNFT nft;
-    IRC27NFTMetadata metadata;
-}
-
-// An ISC transaction ID
-type ISCTransactionID is bytes32;
 
 // An ISC hname
 type ISCHname is uint32;
@@ -89,9 +59,7 @@ uint8 constant ISCAgentIDKindContract = 2;
 uint8 constant ISCAgentIDKindEthereumAddress = 3;
 
 // An ISC request ID
-struct ISCRequestID {
-    bytes data;
-}
+type ISCRequestID is bytes32;
 
 // A single key-value pair
 struct ISCDictItem {
@@ -104,20 +72,21 @@ struct ISCDict {
     ISCDictItem[] items;
 }
 
-// Parameters for building an on-ledger request
-struct ISCSendMetadata {
-    ISCHname targetContract;
-    ISCHname entrypoint;
-    ISCDict params;
-    ISCAssets allowance;
-    uint64 gasBudget;
+struct ISCTarget {
+    ISCHname contractHname;
+    ISCHname entryPoint;
 }
 
-// The specifies an amount of funds (tokens) for an ISC call.
-struct ISCAssets {
-    uint64 baseTokens;
-    NativeToken[] nativeTokens;
-    NFTID[] nfts;
+struct ISCMessage {
+    ISCTarget target;
+    bytes[] params;
+}
+
+// Parameters for building an on-ledger request
+struct ISCSendMetadata {
+    ISCMessage message;
+    ISCAssets allowance;
+    uint64 gasBudget;
 }
 
 // Parameters for building an on-ledger request
@@ -129,24 +98,23 @@ struct ISCSendOptions {
 // Expiration of an on-ledger request
 struct ISCExpiration {
     int64 time;
-    L1Address returnAddress;
+    SuiAddress returnAddress;
 }
 
-// Properties of an ISC base/native token
-struct ISCTokenProperties {
-    string name;
-    string tickerSymbol;
-    uint8 decimals;
-    uint256 totalSupply;
+
+// A collection of coins and object IDs
+struct ISCAssets {
+    CoinBalance[] coins;
+    SuiObjectID[] objects;
+}
+
+// An amount of some Sui coin
+struct CoinBalance {
+    string coinType;
+    uint64 amount;
 }
 
 library ISCTypes {
-    function L1AddressType(
-        L1Address memory addr
-    ) internal pure returns (uint8) {
-        return uint8(addr.data[0]);
-    }
-
     function newEthereumAgentID(
         address addr,
         ISCChainID iscChainID
@@ -155,34 +123,34 @@ library ISCTypes {
         bytes memory addrBytes = abi.encodePacked(addr);
         ISCAgentID memory r;
         r.data = new bytes(1 + addrBytes.length + chainIDBytes.length);
+
+        // write agentID kind
         r.data[0] = bytes1(ISCAgentIDKindEthereumAddress);
 
-        //write chainID
+        // write chainID
         for (uint i = 0; i < chainIDBytes.length; i++) {
             r.data[i + 1] = chainIDBytes[i];
         }
 
-        //write eth addr
+        // write eth addr
         for (uint i = 0; i < addrBytes.length; i++) {
             r.data[i + 1 + chainIDBytes.length] = addrBytes[i];
         }
         return r;
     }
 
-    function newL1AgentID(
-        bytes memory l1Addr
-    ) internal pure returns (ISCAgentID memory) {
-        if (l1Addr.length != 32) {
-            revert("bad address length");
-        }
-        ISCAgentID memory r;
-        r.data = new bytes(2 + 32); // 2 for the kind + The hash size of BLAKE2b-256 in bytes.
-        r.data[0] = bytes1(ISCAgentIDKindAddress); // isc agentID kind
-        r.data[1] = bytes1(0); // iota go AddressEd25519 AddressType = 0
+    function newL1AgentID(SuiAddress addr) internal pure returns (ISCAgentID memory) {
+        bytes memory addrBytes = abi.encodePacked(addr);
 
-        //write l1 address
-        for (uint i = 0; i < l1Addr.length; i++) {
-            r.data[i + 2] = l1Addr[i];
+        ISCAgentID memory r;
+        r.data = new bytes(1 + addrBytes.length);
+
+        // write agentID kind
+        r.data[0] = bytes1(ISCAgentIDKindAddress); // isc agentID kind
+
+        // write l1 address
+        for (uint i = 0; i < addrBytes.length; i++) {
+            r.data[i + 1] = addrBytes[i];
         }
         return r;
     }
@@ -192,39 +160,67 @@ library ISCTypes {
     }
 
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
+        require(isEthereum(a));
         bytes memory b = new bytes(20);
-        //offset of 33 (kind byte + chainID)
+        // offset of 33 (kind byte + chainID)
         for (uint i = 0; i < 20; i++) b[i] = a.data[i + 33];
         return address(uint160(bytes20(b)));
     }
 
     function chainID(ISCAgentID memory a) internal pure returns (ISCChainID) {
+        require(isEthereum(a));
         bytes32 out;
         for (uint i = 0; i < 32; i++) {
-            //offset of 1 (kind byte)
+            // offset of 1 (kind byte)
             out |= bytes32(a.data[1 + i] & 0xFF) >> (i * 8);
         }
         return ISCChainID.wrap(out);
     }
 
-    function asNFTID(uint256 tokenID) internal pure returns (NFTID) {
-        return NFTID.wrap(bytes32(tokenID));
+    function asObjectID(uint256 tokenID) internal pure returns (SuiObjectID) {
+        return SuiObjectID.wrap(bytes32(tokenID));
     }
 
     function isInCollection(
-        ISCNFT memory nft,
-        NFTID collectionId
+        ISCNFT memory,
+        SuiObjectID
     ) internal pure returns (bool) {
-        if (L1AddressType(nft.issuer) != L1AddressTypeNFT) {
+        assert(false); // TODO
+        // return nft.issuer == collectionId;
+        return false;
+    }
+
+    function getCoinAmount(
+        CoinBalance[] memory coins,
+        string memory coinType
+    ) internal pure returns (uint64) {
+        for (uint i = 0; i < coins.length; i++) {
+            if (stringsEqual(coins[i].coinType, coinType)) {
+                return coins[i].amount;
+            }
+        }
+        return 0;
+    }
+
+    function bytesEqual(
+        bytes memory a,
+        bytes memory b
+    ) internal pure returns (bool) {
+        if (a.length != b.length) {
             return false;
         }
-        assert(nft.issuer.data.length == 33);
-        bytes memory collectionIdBytes = abi.encodePacked(collectionId);
-        for (uint i = 0; i < 32; i++) {
-            if (collectionIdBytes[i] != nft.issuer.data[i + 1]) {
+        for (uint i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
                 return false;
             }
         }
         return true;
+    }
+
+    function stringsEqual(
+        string memory a,
+        string memory b
+    ) internal pure returns (bool) {
+        return bytesEqual(bytes(a), bytes(b));
     }
 }

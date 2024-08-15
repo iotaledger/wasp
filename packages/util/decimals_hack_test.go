@@ -12,7 +12,7 @@ import (
 func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
 	value := coin.Value(12345678)
 	tests := []struct {
-		decimals          uint32
+		decimals          uint8
 		expected          uint64
 		expectedRemainder uint64
 	}{
@@ -34,7 +34,7 @@ func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
 func TestEthereumDecimalsToBaseTokenDecimals(t *testing.T) {
 	value := uint64(123456789123456789)
 	tests := []struct {
-		decimals          uint32
+		decimals          uint8
 		expected          uint64
 		expectedRemainder uint64
 	}{

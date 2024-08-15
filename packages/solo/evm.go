@@ -15,6 +15,7 @@ import (
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -177,7 +178,7 @@ func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := NewEthereumAccount()
 	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr

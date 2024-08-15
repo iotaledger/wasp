@@ -34,7 +34,7 @@ func NewViewEP1[T1 any, I1 CallArgsCodec[T1]](
 func (e EP1[S, T1, I1]) WithHandler(f func(ctx S, p1 T1)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1)
@@ -79,9 +79,9 @@ func NewViewEP2[T1 any, T2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2]](
 func (e EP2[S, T1, T2, I1, I2]) WithHandler(f func(ctx S, p1 T1, p2 T2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2)
@@ -129,11 +129,11 @@ func NewViewEP3[T1 any, T2 any, T3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T
 func (e EP3[S, T1, T2, T3, I1, I2, I3]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2, p3)
@@ -184,13 +184,13 @@ func NewViewEP4[T1 any, T2 any, T3 any, T4 any, I1 CallArgsCodec[T1], I2 CallArg
 func (e EP4[S, T1, T2, T3, T4, I1, I2, I3, I4]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3, p4 T4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2, p3, p4)
@@ -244,15 +244,15 @@ func NewViewEP5[T1 any, T2 any, T3 any, T4 any, T5 any, I1 CallArgsCodec[T1], I2
 func (e EP5[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]) WithHandler(f func(ctx S, p1 T1, p2 T2, p3 T3, p4 T4, p5 T5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2, p3, p4, p5)
@@ -1562,7 +1562,7 @@ func (e EP10[S, T1, I1]) Message(p1 T1) isc.Message {
 func (e EP10[S, T1, I1]) WithHandler(f func(S, T1)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1)
@@ -1607,7 +1607,7 @@ func (e EP11[S, T1, R1, I1, O1]) Message(p1 T1) isc.Message {
 func (e EP11[S, T1, R1, I1, O1]) WithHandler(f func(S, T1) R1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		r1 := f(ctx, p1)
@@ -1673,7 +1673,7 @@ func (e EP12[S, T1, R1, R2, I1, O1, O2]) Message(p1 T1) isc.Message {
 func (e EP12[S, T1, R1, R2, I1, O1, O2]) WithHandler(f func(S, T1) (R1, R2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		r1, r2 := f(ctx, p1)
@@ -1755,7 +1755,7 @@ func (e EP13[S, T1, R1, R2, R3, I1, O1, O2, O3]) Message(p1 T1) isc.Message {
 func (e EP13[S, T1, R1, R2, R3, I1, O1, O2, O3]) WithHandler(f func(S, T1) (R1, R2, R3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3 := f(ctx, p1)
@@ -1852,7 +1852,7 @@ func (e EP14[S, T1, R1, R2, R3, R4, I1, O1, O2, O3, O4]) Message(p1 T1) isc.Mess
 func (e EP14[S, T1, R1, R2, R3, R4, I1, O1, O2, O3, O4]) WithHandler(f func(S, T1) (R1, R2, R3, R4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4 := f(ctx, p1)
@@ -1964,7 +1964,7 @@ func (e EP15[S, T1, R1, R2, R3, R4, R5, I1, O1, O2, O3, O4, O5]) Message(p1 T1) 
 func (e EP15[S, T1, R1, R2, R3, R4, R5, I1, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4, r5 := f(ctx, p1)
@@ -2075,9 +2075,9 @@ func (e EP20[S, T1, T2, I1, I2]) Message(p1 T1, p2 T2) isc.Message {
 func (e EP20[S, T1, T2, I1, I2]) WithHandler(f func(S, T1, T2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2)
@@ -2124,9 +2124,9 @@ func (e EP21[S, T1, T2, R1, I1, I2, O1]) Message(p1 T1, p2 T2) isc.Message {
 func (e EP21[S, T1, T2, R1, I1, I2, O1]) WithHandler(f func(S, T1, T2) R1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		r1 := f(ctx, p1, p2)
@@ -2194,9 +2194,9 @@ func (e EP22[S, T1, T2, R1, R2, I1, I2, O1, O2]) Message(p1 T1, p2 T2) isc.Messa
 func (e EP22[S, T1, T2, R1, R2, I1, I2, O1, O2]) WithHandler(f func(S, T1, T2) (R1, R2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		r1, r2 := f(ctx, p1, p2)
@@ -2280,9 +2280,9 @@ func (e EP23[S, T1, T2, R1, R2, R3, I1, I2, O1, O2, O3]) Message(p1 T1, p2 T2) i
 func (e EP23[S, T1, T2, R1, R2, R3, I1, I2, O1, O2, O3]) WithHandler(f func(S, T1, T2) (R1, R2, R3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3 := f(ctx, p1, p2)
@@ -2381,9 +2381,9 @@ func (e EP24[S, T1, T2, R1, R2, R3, R4, I1, I2, O1, O2, O3, O4]) Message(p1 T1, 
 func (e EP24[S, T1, T2, R1, R2, R3, R4, I1, I2, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2) (R1, R2, R3, R4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4 := f(ctx, p1, p2)
@@ -2497,9 +2497,9 @@ func (e EP25[S, T1, T2, R1, R2, R3, R4, R5, I1, I2, O1, O2, O3, O4, O5]) Message
 func (e EP25[S, T1, T2, R1, R2, R3, R4, R5, I1, I2, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4, r5 := f(ctx, p1, p2)
@@ -2612,11 +2612,11 @@ func (e EP30[S, T1, T2, T3, I1, I2, I3]) Message(p1 T1, p2 T2, p3 T3) isc.Messag
 func (e EP30[S, T1, T2, T3, I1, I2, I3]) WithHandler(f func(S, T1, T2, T3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2, p3)
@@ -2665,11 +2665,11 @@ func (e EP31[S, T1, T2, T3, R1, I1, I2, I3, O1]) Message(p1 T1, p2 T2, p3 T3) is
 func (e EP31[S, T1, T2, T3, R1, I1, I2, I3, O1]) WithHandler(f func(S, T1, T2, T3) R1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		r1 := f(ctx, p1, p2, p3)
@@ -2739,11 +2739,11 @@ func (e EP32[S, T1, T2, T3, R1, R2, I1, I2, I3, O1, O2]) Message(p1 T1, p2 T2, p
 func (e EP32[S, T1, T2, T3, R1, R2, I1, I2, I3, O1, O2]) WithHandler(f func(S, T1, T2, T3) (R1, R2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		r1, r2 := f(ctx, p1, p2, p3)
@@ -2829,11 +2829,11 @@ func (e EP33[S, T1, T2, T3, R1, R2, R3, I1, I2, I3, O1, O2, O3]) Message(p1 T1, 
 func (e EP33[S, T1, T2, T3, R1, R2, R3, I1, I2, I3, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3 := f(ctx, p1, p2, p3)
@@ -2934,11 +2934,11 @@ func (e EP34[S, T1, T2, T3, R1, R2, R3, R4, I1, I2, I3, O1, O2, O3, O4]) Message
 func (e EP34[S, T1, T2, T3, R1, R2, R3, R4, I1, I2, I3, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3, R4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4 := f(ctx, p1, p2, p3)
@@ -3054,11 +3054,11 @@ func (e EP35[S, T1, T2, T3, R1, R2, R3, R4, R5, I1, I2, I3, O1, O2, O3, O4, O5])
 func (e EP35[S, T1, T2, T3, R1, R2, R3, R4, R5, I1, I2, I3, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3)
@@ -3173,13 +3173,13 @@ func (e EP40[S, T1, T2, T3, T4, I1, I2, I3, I4]) Message(p1 T1, p2 T2, p3 T3, p4
 func (e EP40[S, T1, T2, T3, T4, I1, I2, I3, I4]) WithHandler(f func(S, T1, T2, T3, T4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2, p3, p4)
@@ -3230,13 +3230,13 @@ func (e EP41[S, T1, T2, T3, T4, R1, I1, I2, I3, I4, O1]) Message(p1 T1, p2 T2, p
 func (e EP41[S, T1, T2, T3, T4, R1, I1, I2, I3, I4, O1]) WithHandler(f func(S, T1, T2, T3, T4) R1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		r1 := f(ctx, p1, p2, p3, p4)
@@ -3308,13 +3308,13 @@ func (e EP42[S, T1, T2, T3, T4, R1, R2, I1, I2, I3, I4, O1, O2]) Message(p1 T1, 
 func (e EP42[S, T1, T2, T3, T4, R1, R2, I1, I2, I3, I4, O1, O2]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		r1, r2 := f(ctx, p1, p2, p3, p4)
@@ -3402,13 +3402,13 @@ func (e EP43[S, T1, T2, T3, T4, R1, R2, R3, I1, I2, I3, I4, O1, O2, O3]) Message
 func (e EP43[S, T1, T2, T3, T4, R1, R2, R3, I1, I2, I3, I4, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3 := f(ctx, p1, p2, p3, p4)
@@ -3511,13 +3511,13 @@ func (e EP44[S, T1, T2, T3, T4, R1, R2, R3, R4, I1, I2, I3, I4, O1, O2, O3, O4])
 func (e EP44[S, T1, T2, T3, T4, R1, R2, R3, R4, I1, I2, I3, I4, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3, R4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4 := f(ctx, p1, p2, p3, p4)
@@ -3635,13 +3635,13 @@ func (e EP45[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, I1, I2, I3, I4, O1, O2, O3, 
 func (e EP45[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, I1, I2, I3, I4, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3, T4) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3, p4)
@@ -3758,15 +3758,15 @@ func (e EP50[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]) Message(p1 T1, p2 T2, p
 func (e EP50[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]) WithHandler(f func(S, T1, T2, T3, T4, T5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		f(ctx, p1, p2, p3, p4, p5)
@@ -3819,15 +3819,15 @@ func (e EP51[S, T1, T2, T3, T4, T5, R1, I1, I2, I3, I4, I5, O1]) Message(p1 T1, 
 func (e EP51[S, T1, T2, T3, T4, T5, R1, I1, I2, I3, I4, I5, O1]) WithHandler(f func(S, T1, T2, T3, T4, T5) R1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		r1 := f(ctx, p1, p2, p3, p4, p5)
@@ -3901,15 +3901,15 @@ func (e EP52[S, T1, T2, T3, T4, T5, R1, R2, I1, I2, I3, I4, I5, O1, O2]) Message
 func (e EP52[S, T1, T2, T3, T4, T5, R1, R2, I1, I2, I3, I4, I5, O1, O2]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		r1, r2 := f(ctx, p1, p2, p3, p4, p5)
@@ -3999,15 +3999,15 @@ func (e EP53[S, T1, T2, T3, T4, T5, R1, R2, R3, I1, I2, I3, I4, I5, O1, O2, O3])
 func (e EP53[S, T1, T2, T3, T4, T5, R1, R2, R3, I1, I2, I3, I4, I5, O1, O2, O3]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3 := f(ctx, p1, p2, p3, p4, p5)
@@ -4112,15 +4112,15 @@ func (e EP54[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, I1, I2, I3, I4, I5, O1, O2, 
 func (e EP54[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, I1, I2, I3, I4, I5, O1, O2, O3, O4]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3, R4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4 := f(ctx, p1, p2, p3, p4, p5)
@@ -4240,15 +4240,15 @@ func (e EP55[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, O1, 
 func (e EP55[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, O1, O2, O3, O4, O5]) WithHandler(f func(S, T1, T2, T3, T4, T5) (R1, R2, R3, R4, R5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
 		params := ctx.Params()
-		p1, err := e.Input1.Decode(params.Args.MustAt(0))
+		p1, err := e.Input1.Decode(params.MustAt(0))
 		ctx.RequireNoError(err)
-		p2, err := e.Input2.Decode(params.Args.MustAt(1))
+		p2, err := e.Input2.Decode(params.MustAt(1))
 		ctx.RequireNoError(err)
-		p3, err := e.Input3.Decode(params.Args.MustAt(2))
+		p3, err := e.Input3.Decode(params.MustAt(2))
 		ctx.RequireNoError(err)
-		p4, err := e.Input4.Decode(params.Args.MustAt(3))
+		p4, err := e.Input4.Decode(params.MustAt(3))
 		ctx.RequireNoError(err)
-		p5, err := e.Input5.Decode(params.Args.MustAt(4))
+		p5, err := e.Input5.Decode(params.MustAt(4))
 		ctx.RequireNoError(err)
 
 		r1, r2, r3, r4, r5 := f(ctx, p1, p2, p3, p4, p5)

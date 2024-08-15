@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/minio/blake2b-simd"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -160,7 +159,7 @@ func (req *OffLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 // note that request needs to have been signed before this value is
 // considered valid
 func (req *OffLedgerRequestData) ID() (requestID RequestID) {
-	return NewRequestID(iotago.TransactionID(hashing.HashData(req.Bytes())), 0)
+	return RequestID(hashing.HashData(req.Bytes()))
 }
 
 func (req *OffLedgerRequestData) IsOffLedger() bool {

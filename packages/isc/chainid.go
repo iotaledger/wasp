@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-const ChainIDLength = iotago.AliasIDLength
+const ChainIDLength = sui.AddressLen
 
 var emptyChainID = ChainID{}
 

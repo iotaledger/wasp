@@ -64,7 +64,7 @@ contract ERC721NFTs {
     function _balanceOf(
         ISCAgentID memory owner
     ) internal view virtual returns (uint256) {
-        return __iscAccounts.getL2NFTAmount(owner);
+        return __iscAccounts.getL2ObjectsCount(owner);
     }
 
     // virtual function meant to be overridden. ERC721NFTs manages all NFTs, regardless of
@@ -91,10 +91,9 @@ contract ERC721NFTs {
      * @return The address of the owner of the token.
      */
     function ownerOf(uint256 tokenId) public view returns (address) {
-        try __iscSandbox.getNFTData(tokenId.asNFTID()) returns (
+        try __iscSandbox.getNFTData(tokenId.asObjectID()) returns (
             ISCNFT memory nft
         ) {
-            require(nft.owner.isEthereum());
             require(_isManagedByThisContract(nft));
             return nft.owner.ethAddress();
         } catch {
@@ -239,8 +238,8 @@ contract ERC721NFTs {
         _clearApproval(tokenId);
 
         ISCAssets memory allowance;
-        allowance.nfts = new NFTID[](1);
-        allowance.nfts[0] = tokenId.asNFTID();
+        allowance.objects = new SuiObjectID[](1);
+        allowance.objects[0] = tokenId.asObjectID();
 
         __iscPrivileged.moveBetweenAccounts(from, to, allowance);
 
@@ -311,7 +310,7 @@ contract ERC721NFTs {
     // IERC721Metadata
     function tokenURI(uint256 tokenId) external view returns (string memory) {
         _requireNftExists(tokenId);
-        string memory uri = __iscSandbox.getIRC27TokenURI(tokenId.asNFTID());
+        string memory uri = __iscSandbox.getIRC27TokenURI(tokenId.asObjectID());
         return uri;
     }
 }

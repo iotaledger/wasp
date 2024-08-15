@@ -96,44 +96,46 @@ func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, a
 // TODO: Refactor me:
 // RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
 func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error) {
-	txid, err := tx.ID()
-	if err != nil {
-		return nil, err
-	}
-	if tx.Essence == nil {
-		return nil, fmt.Errorf("malformed transaction")
-	}
-
-	ret := make(map[ChainID][]Request)
-	_ = txid
 	panic("refactor me")
-	/*for i, output := range tx.Essence.Outputs {
-		switch output.(type) {
-		case *iotago.BasicOutput, *iotago.NFTOutput:
-			// process it
-		default:
-			// only BasicOutputs and NFTs are interpreted right now, // TODO other outputs
-			continue
-		}
-
-		// wrap request into the isc.Request
-		odata, err := OnLedgerFromUTXO(output, iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i)))
+	/*
+		txid, err := tx.ID()
 		if err != nil {
-			return nil, err // TODO: maybe log the error and keep processing?
+			return nil, err
+		}
+		if tx.Essence == nil {
+			return nil, fmt.Errorf("malformed transaction")
 		}
 
-		addr := odata.TargetAddress()
+		ret := make(map[ChainID][]Request)
+		_ = txid
+		for i, output := range tx.Essence.Outputs {
+			switch output.(type) {
+			case *iotago.BasicOutput, *iotago.NFTOutput:
+				// process it
+			default:
+				// only BasicOutputs and NFTs are interpreted right now, // TODO other outputs
+				continue
+			}
+
+			// wrap request into the isc.Request
+			odata, err := OnLedgerFromUTXO(output, iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i)))
+			if err != nil {
+				return nil, err // TODO: maybe log the error and keep processing?
+			}
+
+			addr := odata.TargetAddress()
 
 
-		chainID := ChainIDFromAddress(addr)
+			chainID := ChainIDFromAddress(addr)
 
-		if odata.IsInternalUTXO(chainID) {
-			continue
+			if odata.IsInternalUTXO(chainID) {
+				continue
+			}
+
+			ret[chainID] = append(ret[chainID], odata)
 		}
-
-		ret[chainID] = append(ret[chainID], odata)
-	}*/
-	return ret, nil
+		return ret, nil
+	*/
 }
 
 // TODO: Clarify if we want to keep expiry dates.

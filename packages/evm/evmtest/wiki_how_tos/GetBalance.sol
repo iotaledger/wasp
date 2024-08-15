@@ -7,7 +7,7 @@ import "@iscmagic/ISC.sol";
 contract GetBalance {
     event GotAgentID(bytes agentID);
     event GotBaseBalance(uint64 baseBalance);
-    event GotNativeTokenBalance(uint256 nativeTokenBalance);
+    event GotCoinBalance(uint64 nativeTokenBalance);
     event GotNFTIDs(uint256 nftBalance);
 
     function getBalanceBaseTokens() public {
@@ -16,19 +16,17 @@ contract GetBalance {
         emit GotBaseBalance(baseBalance);
     }
 
-    function getBalanceNativeTokens(bytes memory nativeTokenID) public {
+    function getBalanceCoin(string memory coinType) public {
         ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
-        NativeTokenID memory id = NativeTokenID({data: nativeTokenID});
-        uint256 nativeTokens = ISC.accounts.getL2BalanceNativeTokens(
-            id,
+        emit GotCoinBalance(ISC.accounts.getL2BalanceCoin(
+            coinType,
             agentID
-        );
-        emit GotNativeTokenBalance(nativeTokens);
+        ));
     }
 
     function getBalanceNFTs() public {
         ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
-        uint256 nfts = ISC.accounts.getL2NFTAmount(agentID);
+        uint256 nfts = ISC.accounts.getL2ObjectsCount(agentID);
         emit GotNFTIDs(nfts);
     }
 

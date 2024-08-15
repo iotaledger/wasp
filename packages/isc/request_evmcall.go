@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -84,7 +83,7 @@ func (req *evmOffLedgerCallRequest) GasBudget() (gas uint64, isEVM bool) {
 }
 
 func (req *evmOffLedgerCallRequest) ID() RequestID {
-	return NewRequestID(iotago.TransactionID(hashing.HashData(req.Bytes())), 0)
+	return RequestID(hashing.HashData(req.Bytes()))
 }
 
 func (req *evmOffLedgerCallRequest) IsOffLedger() bool {

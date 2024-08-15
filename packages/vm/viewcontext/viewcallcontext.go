@@ -5,8 +5,8 @@ import (
 )
 
 type callContext struct {
-	contract isc.Hname  // called contract
-	params   isc.Params // params passed
+	contract isc.Hname         // called contract
+	params   isc.CallArguments // params passed
 }
 
 func (ctx *ViewContext) getCallContext() *callContext {
@@ -20,9 +20,7 @@ func (ctx *ViewContext) pushCallContext(contract isc.Hname, params isc.CallArgum
 	ctx.callStack = append(ctx.callStack,
 		&callContext{
 			contract: contract,
-			params: isc.Params{
-				Args: params,
-			},
+			params:   params,
 		})
 }
 

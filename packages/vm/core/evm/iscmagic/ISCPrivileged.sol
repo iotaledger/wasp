@@ -20,14 +20,14 @@ interface ISCPrivileged {
     function setAllowanceBaseTokens(
         address from,
         address to,
-        uint256 numTokens
+        uint64 amount
     ) external;
 
-    function setAllowanceNativeTokens(
+    function setAllowanceCoin(
         address from,
         address to,
-        NativeTokenID memory nativeTokenID,
-        uint256 numTokens
+        string memory coinType,
+        uint64 amount
     ) external;
 
     function moveAllowedFunds(

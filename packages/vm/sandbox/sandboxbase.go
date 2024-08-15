@@ -40,22 +40,22 @@ func (s *SandboxBase) Caller() isc.AgentID {
 	return s.Ctx.Caller()
 }
 
-func (s *SandboxBase) BalanceBaseTokens() (bts coin.Value, remainder *big.Int) {
+func (s *SandboxBase) BaseTokensBalance() (bts coin.Value, remainder *big.Int) {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())
 }
 
-func (s *SandboxBase) BalanceNativeToken(coinType coin.Type) coin.Value {
+func (s *SandboxBase) CoinBalance(coinType coin.Type) coin.Value {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetNativeTokenBalance(s.AccountID(), coinType)
+	return s.Ctx.GetCoinBalance(s.AccountID(), coinType)
 }
 
-func (s *SandboxBase) BalanceNativeTokens() isc.CoinBalances {
+func (s *SandboxBase) CoinBalances() isc.CoinBalances {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetNativeTokens(s.AccountID())
+	return s.Ctx.GetCoinBalances(s.AccountID())
 }
 
-func (s *SandboxBase) OwnedNFTs() []sui.ObjectID {
+func (s *SandboxBase) OwnedObjects() []sui.ObjectID {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAccountNFTs(s.AccountID())
 }
@@ -63,19 +63,21 @@ func (s *SandboxBase) OwnedNFTs() []sui.ObjectID {
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
-		Coins:   s.Ctx.GetNativeTokens(agentID),
+		Coins:   s.Ctx.GetCoinBalances(agentID),
 		Objects: isc.NewObjectIDSetFromArray(s.Ctx.GetAccountNFTs(agentID)),
 	}
-	tokenBalance, remainder := s.Ctx.GetBaseTokensBalance(agentID)
-	_ = remainder
-	panic("refactor me: what are we doing with the remainder here?")
+	tokenBalance, _ := s.Ctx.GetBaseTokensBalance(agentID)
 	accountAssets.AddBaseTokens(tokenBalance)
 	return accountAssets.Spend(assets)
 }
 
-func (s *SandboxBase) GetNFTData(nftID sui.ObjectID) *isc.NFT {
+func (s *SandboxBase) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
 	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
-	return s.Ctx.GetNFTData(nftID)
+	return s.Ctx.GetObjectBCS(id)
+}
+
+func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+	panic("TODO")
 }
 
 func (s *SandboxBase) ChainID() isc.ChainID {
@@ -107,7 +109,7 @@ func (s *SandboxBase) Log() isc.LogInterface {
 	return s.Ctx
 }
 
-func (s *SandboxBase) Params() *isc.Params {
+func (s *SandboxBase) Params() isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.Params()
 }

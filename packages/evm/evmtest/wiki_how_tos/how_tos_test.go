@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
@@ -42,7 +43,7 @@ func TestBaseBalance(t *testing.T) {
 
 	balance, _ := env.Chain.EVM().Balance(deployer, nil)
 	decimals := env.Chain.EVM().BaseToken().Decimals
-	var value uint64
+	var value coin.Value
 	instance.CallFnExpectEvent(nil, "GotBaseBalance", &value, "getBalanceBaseTokens")
 	realBalance := util.BaseTokensDecimalsToEthereumDecimals(value, decimals)
 	assert.Equal(t, balance, realBalance)

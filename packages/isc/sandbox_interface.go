@@ -30,7 +30,7 @@ type SandboxBase interface {
 	Helpers
 	Balance
 	// Params returns the parameters of the current call
-	Params() *Params
+	Params() CallArguments
 	// ChainID returns the chain ID
 	ChainID() ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
@@ -51,8 +51,10 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
-	// GetNFTData returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID sui.ObjectID) *NFT
+	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
+	GetObjectBCS(id sui.ObjectID) ([]byte, bool)
+	// GetCoinInfo returns information about a coin known by the chain
+	GetCoinInfo(coinType coin.Type) (*SuiCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
 	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
@@ -62,11 +64,6 @@ type SandboxBase interface {
 }
 
 type SchemaVersion uint32
-
-type Params struct {
-	Args CallArguments
-	KVDecoder
-}
 
 type Helpers interface {
 	Requiref(cond bool, format string, args ...interface{})
@@ -81,13 +78,13 @@ type Authorize interface {
 
 type Balance interface {
 	// BalanceBaseTokens returns number of base tokens in the balance of the smart contract
-	BalanceBaseTokens() (bts coin.Value, remainder *big.Int)
-	// BalanceNativeToken returns number of native token or nil if it is empty
-	BalanceNativeToken(p coin.Type) coin.Value
-	// BalanceNativeTokens returns all native tokens owned by the smart contract
-	BalanceNativeTokens() CoinBalances
-	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
-	OwnedNFTs() []sui.ObjectID
+	BaseTokensBalance() (bts coin.Value, remainder *big.Int)
+	// CoinBalance returns the balance of the given coin
+	CoinBalance(p coin.Type) coin.Value
+	// CoinBalances returns the balance of all coins owned by the smart contract
+	CoinBalances() CoinBalances
+	// OwnedObjects returns the ids of objects owned by the smart contract
+	OwnedObjects() []sui.ObjectID
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }
@@ -257,7 +254,6 @@ func (c *CallArguments) UnmarshalJSON(data []byte) error {
 
 	for i, v := range args {
 		(cTemp)[i], err = hexutil.Decode(v)
-
 		if err != nil {
 			return err
 		}
@@ -296,13 +292,6 @@ func (m Message) Clone() Message {
 		Target: m.Target,
 		Params: m.Params.Clone(),
 	}
-}
-
-func (m Message) WithParam(k kv.Key, v []byte) (r Message) {
-	r = m.Clone()
-	panic("refactor me")
-	//r.Params[k] = v
-	return
 }
 
 type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
@@ -390,4 +379,14 @@ type BLS interface {
 type EVMTracer struct {
 	Tracer  *tracers.Tracer
 	TxIndex uint64
+}
+
+type SuiCoinInfo struct {
+	CoinType    coin.Type
+	Decimals    uint8
+	Name        string
+	Symbol      string
+	Description string
+	IconURL     string
+	TotalSupply coin.Value
 }

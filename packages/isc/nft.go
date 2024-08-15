@@ -47,3 +47,10 @@ func (nft *NFT) Write(w io.Writer) error {
 	AgentIDToWriter(ww, nft.Owner)
 	return ww.Err
 }
+
+// CollectionNFTObjectID returns the address of the collection NFT, if the NFT
+// belongs to a collection.
+func (nft *NFT) CollectionNFTObjectID() (sui.ObjectID, bool) {
+	// TODO implement me
+	return sui.ObjectID{}, false
+}

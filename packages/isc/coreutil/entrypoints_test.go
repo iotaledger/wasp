@@ -7,12 +7,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var _ isc.SandboxBase = MockSandBox{}
@@ -22,102 +23,102 @@ type MockSandBox struct {
 }
 
 func (m MockSandBox) RequireCaller(agentID isc.AgentID) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) RequireCallerAnyOf(agentID []isc.AgentID) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) RequireCallerIsChainOwner() {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) State() kv.KVStore {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Request() isc.Calldata {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Call(msg isc.Message, allowance *isc.Assets) dict.Dict {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Event(topic string, payload []byte) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) RegisterError(messageFormat string) *isc.VMErrorTemplate {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) GetEntropy() hashing.HashValue {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Assets) *isc.Assets {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Send(metadata isc.RequestParameters) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) EstimateRequiredStorageDeposit(r isc.RequestParameters) uint64 {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) StateAnchor() *isc.StateAnchor {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) RequestIndex() uint16 {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) EVMTracer() *isc.EVMTracer {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) TakeStateSnapshot() int {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) RevertToStateSnapshot(i int) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Privileged() isc.Privileged {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Requiref(cond bool, format string, args ...interface{}) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -127,104 +128,107 @@ func (m MockSandBox) RequireNoError(err error, str ...string) {
 	}
 }
 
-func (m MockSandBox) BalanceBaseTokens() (bts uint64, remainder *big.Int) {
-	//TODO implement me
+func (m MockSandBox) BaseTokensBalance() (bts coin.Value, remainder *big.Int) {
+	// TODO implement me
 	panic("implement me")
 }
 
-func (m MockSandBox) BalanceNativeToken(id iotago.NativeTokenID) *big.Int {
-	//TODO implement me
+func (m MockSandBox) CoinBalance(coinType coin.Type) coin.Value {
+	// TODO implement me
 	panic("implement me")
 }
 
-func (m MockSandBox) BalanceNativeTokens() iotago.NativeTokens {
-	//TODO implement me
+func (m MockSandBox) CoinBalances() isc.CoinBalances {
+	// TODO implement me
 	panic("implement me")
 }
 
-func (m MockSandBox) OwnedNFTs() []iotago.NFTID {
-	//TODO implement me
+func (m MockSandBox) OwnedObjects() []sui.ObjectID {
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) HasInAccount(id isc.AgentID, assets *isc.Assets) bool {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
-func (m MockSandBox) Params() *isc.Params {
-	return &isc.Params{
-		Args: m.MockParams,
-	}
+func (m MockSandBox) Params() isc.CallArguments {
+	return m.MockParams
 }
 
 func (m MockSandBox) ChainID() isc.ChainID {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) ChainOwnerID() isc.AgentID {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) ChainInfo() *isc.ChainInfo {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Contract() isc.Hname {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) AccountID() isc.AgentID {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Caller() isc.AgentID {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Timestamp() time.Time {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Log() isc.LogInterface {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Utils() isc.Utils {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) Gas() isc.Gas {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
-func (m MockSandBox) GetNFTData(nftID iotago.NFTID) *isc.NFT {
-	//TODO implement me
+func (m MockSandBox) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
+	// TODO implement me
 	panic("implement me")
 }
 
-func (m MockSandBox) CallView(message isc.Message) dict.Dict {
-	//TODO implement me
+func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (m MockSandBox) CallView(message isc.Message) isc.CallArguments {
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) StateR() kv.KVStoreReader {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (m MockSandBox) SchemaVersion() isc.SchemaVersion {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

@@ -8,13 +8,14 @@ import (
 	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // handler for ISCSandbox::getEntropy
@@ -29,8 +30,8 @@ func (h *magicContractHandler) TriggerEvent(s string) {
 }
 
 // handler for ISCSandbox::getRequestID
-func (h *magicContractHandler) GetRequestID() iscmagic.ISCRequestID {
-	return iscmagic.WrapISCRequestID(h.ctx.Request().ID())
+func (h *magicContractHandler) GetRequestID() isc.RequestID {
+	return h.ctx.Request().ID()
 }
 
 // handler for ISCSandbox::getSenderAccount
@@ -78,18 +79,18 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 
 // handler for ISCSandbox::send
 func (h *magicContractHandler) Send(
-	targetAddress iscmagic.L1Address,
+	targetAddress sui.Address,
 	assets iscmagic.ISCAssets,
 	adjustMinimumStorageDeposit bool,
 	metadata iscmagic.ISCSendMetadata,
-	sendOptions iscmagic.ISCSendOptions,
+	sendOptions isc.SendOptions,
 ) {
 	req := isc.RequestParameters{
-		TargetAddress:                 targetAddress.MustUnwrap(),
+		TargetAddress:                 cryptolib.NewAddressFromSui(&targetAddress),
 		Assets:                        assets.Unwrap(),
 		AdjustToMinimumStorageDeposit: adjustMinimumStorageDeposit,
 		Metadata:                      metadata.Unwrap(),
-		Options:                       sendOptions.Unwrap(),
+		Options:                       sendOptions,
 	}
 
 	if h.callValue.BitLen() > 0 {
@@ -119,16 +120,10 @@ func (h *magicContractHandler) Send(
 
 // handler for ISCSandbox::call
 func (h *magicContractHandler) Call(
-	contractHname uint32,
-	entryPoint uint32,
-	params iscmagic.CallArguments,
+	msg iscmagic.ISCMessage,
 	allowance iscmagic.ISCAssets,
-) iscmagic.CallArguments {
-	callRet := h.call(
-		isc.NewMessage(isc.Hname(contractHname), isc.Hname(entryPoint), params.Unwrap()),
-		allowance.Unwrap(),
-	)
-	return iscmagic.WrapCallArguments(callRet)
+) isc.CallArguments {
+	return h.call(msg.Unwrap(), allowance.Unwrap())
 }
 
 var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (%d) not enough to cover storage deposit (%d)")
@@ -153,19 +148,5 @@ func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		h.ctx.AccountID(),
 		assets,
-	)
-}
-
-// handler for ISCSandbox::registerERC20NativeToken
-func (h *magicContractHandler) RegisterERC20NativeToken(foundrySN uint32, name, symbol string, decimals uint8, allowance iscmagic.ISCAssets) {
-	h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
-		evm.FuncRegisterERC20NativeToken.Message(evm.ERC20NativeTokenParams{
-			FoundrySN:    foundrySN,
-			Name:         name,
-			TickerSymbol: symbol,
-			Decimals:     decimals,
-		}),
-		allowance.Unwrap(),
 	)
 }
