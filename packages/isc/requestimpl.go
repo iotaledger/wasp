@@ -133,19 +133,13 @@ func (ref *RequestRef) Write(w io.Writer) error {
 // if it was never seen
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
-func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
-	panic("refactor me: removal of Iota.go types")
-	return RequestID{}
-	// return RequestID(iotago.OutputIDFromTransactionIDAndIndex(txid, index))
-}
-
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
 	_, err = rwutil.ReadFromBytes(data, &ret)
 	return ret, err
 }
 
 func RequestIDFromEVMTxHash(txHash common.Hash) RequestID {
-	return NewRequestID(iotago.TransactionID(txHash), 0)
+	return RequestID(txHash)
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
@@ -161,11 +155,6 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 	requestID := RequestID{}
 	copy(requestID[:], data)
 	return requestID, nil
-}
-
-func (rid RequestID) OutputID() iotago.OutputID {
-	panic("refactor me: Removal of Iota.go types")
-	return iotago.OutputID(rid.Bytes())
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {

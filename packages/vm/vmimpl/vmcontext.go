@@ -91,9 +91,9 @@ type coreCallbackFunc struct {
 var _ execution.WaspCallContext = &requestContext{}
 
 type callContext struct {
-	caller   isc.AgentID // calling agent
-	contract isc.Hname   // called contract
-	params   isc.Params  // params passed
+	caller   isc.AgentID       // calling agent
+	contract isc.Hname         // called contract
+	params   isc.CallArguments // params passed
 	// MUTABLE: allowance budget left after TransferAllowedFunds
 	// TODO: should be in requestContext?
 	allowanceAvailable *isc.Assets

@@ -385,7 +385,7 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 }
 
 // CallView calls a view entry point of a smart contract.
-func (ch *Chain) CallView(msg isc.Message) (dict.Dict, error) {
+func (ch *Chain) CallView(msg isc.Message) (isc.CallArguments, error) {
 	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err

@@ -205,7 +205,7 @@ func (ctx *context) SubBaseTokensBalance(addr common.Address, amount *big.Int) {
 	ctx.bal[addr] = new(big.Int).Sub(ctx.bal[addr], amount)
 }
 
-func (*context) BaseTokensDecimals() uint32 {
+func (*context) BaseTokensDecimals() uint8 {
 	return 18 // same as ether decimals
 }
 

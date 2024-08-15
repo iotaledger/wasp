@@ -4,11 +4,7 @@
 package evmimpl
 
 import (
-	"math"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
-	gethmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/coin"
@@ -30,7 +26,7 @@ const (
 	prefixAllowance = "a"
 	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
 	// registered by calling ISC.registerERC20NativeToken() from solidity.
-	// Covered in: TestERC20NativeTokensWithExternalFoundry
+	// Covered in: TestERC20CoinWithExternalFoundry
 	prefixERC20ExternalNativeTokens = "e"
 )
 
@@ -62,27 +58,15 @@ func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 
 var errBaseTokensMustBeUint64 = coreerrors.Register("base tokens amount must be an uint64").Create()
 
-func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens *big.Int) {
+func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, amount coin.Value) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
-		if !numTokens.IsUint64() {
-			// Calling `approve(MAX_UINT256)` is semantically equivalent to an "infinite" allowance
-			if numTokens.Cmp(gethmath.MaxBig256) == 0 {
-				numTokens = big.NewInt(0).SetUint64(math.MaxUint64)
-			} else {
-				panic(errBaseTokensMustBeUint64)
-			}
-		}
-		allowance.SetBaseTokens(coin.Value(numTokens.Uint64()))
+		allowance.SetBaseTokens(amount)
 	})
 }
 
-func setAllowanceNativeTokens(ctx isc.Sandbox, from, to common.Address, coinType coin.Type, numTokens *big.Int) {
-	panic("refactor me: setAllowanceNativeTokens (should numTokens also be uint64 here?)")
-
+func setAllowanceCoin(ctx isc.Sandbox, from, to common.Address, coinType coin.Type, amount coin.Value) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
-		allowance.Coins = map[coin.Type]coin.Value{
-			coinType: coin.Value(numTokens.Uint64()), // uint64? => numTokens
-		}
+		allowance.Coins.Set(coinType, amount)
 	})
 }
 
@@ -137,7 +121,7 @@ func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID coin
 }
 
 // findERC20NativeTokenContractAddress returns the address of an
-// ERC20NativeTokens or ERC20ExternalNativeTokens contract.
+// ERC20Coin or ERC20ExternalNativeTokens contract.
 func findERC20NativeTokenContractAddress(ctx isc.Sandbox, coinType coin.Type) (common.Address, bool) {
 	panic("refactor me: findERC20NativeTokenContractAddress evm (is this still even needed?)")
 	/*
@@ -145,7 +129,7 @@ func findERC20NativeTokenContractAddress(ctx isc.Sandbox, coinType coin.Type) (c
 		if ok {
 			return addr, true
 		}
-		addr = iscmagic.ERC20NativeTokensAddress(coinType.FoundrySerialNumber())
+		addr = iscmagic.ERC20CoinAddress(coinType.FoundrySerialNumber())
 		stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
 		if stateDB.Exist(addr) {
 			return addr, true

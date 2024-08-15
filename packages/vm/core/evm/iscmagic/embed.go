@@ -44,24 +44,14 @@ var (
 	ERC20BaseTokensAddress = packMagicAddress(addressKindERC20BaseTokens, nil)
 )
 
-//go:generate sh -c "solc --abi --bin-runtime --storage-layout --overwrite @iscmagic=`realpath .` ERC20NativeTokens.sol -o ."
+//go:generate sh -c "solc --abi --bin-runtime --storage-layout --overwrite @iscmagic=`realpath .` ERC20Coin.sol -o ."
 var (
-	//go:embed ERC20NativeTokens.abi
-	ERC20NativeTokensABI string
+	//go:embed ERC20Coin.abi
+	ERC20CoinABI string
 
-	//go:embed ERC20NativeTokens.bin-runtime
-	erc20NativeTokensRuntimeBytecodeHex string
-	ERC20NativeTokensRuntimeBytecode    = common.FromHex(strings.TrimSpace(erc20NativeTokensRuntimeBytecodeHex))
-)
-
-//go:generate sh -c "solc --abi --bin-runtime --storage-layout --overwrite @iscmagic=`realpath .` ERC20ExternalNativeTokens.sol -o ."
-var (
-	//go:embed ERC20ExternalNativeTokens.abi
-	ERC20ExternalNativeTokensABI string
-
-	//go:embed ERC20ExternalNativeTokens.bin-runtime
-	erc20ExternalNativeTokensRuntimeBytecodeHex string
-	ERC20ExternalNativeTokensRuntimeBytecode    = common.FromHex(strings.TrimSpace(erc20ExternalNativeTokensRuntimeBytecodeHex))
+	//go:embed ERC20Coin.bin-runtime
+	ERC20CoinRuntimeBytecodeHex string
+	ERC20CoinRuntimeBytecode    = common.FromHex(strings.TrimSpace(ERC20CoinRuntimeBytecodeHex))
 )
 
 //go:generate sh -c "solc --abi --bin-runtime --overwrite @iscmagic=`realpath .` ERC721NFTs.sol -o ."

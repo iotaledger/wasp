@@ -52,11 +52,9 @@ const traceStack = false
 
 func (reqctx *requestContext) pushCallContext(contract isc.Hname, args isc.CallArguments, allowance *isc.Assets, caller isc.AgentID) {
 	ctx := &callContext{
-		caller:   caller,
-		contract: contract,
-		params: isc.Params{
-			Args: args,
-		},
+		caller:             caller,
+		contract:           contract,
+		params:             args,
 		allowanceAvailable: allowance.Clone(), // we have to clone it because it will be mutated by TransferAllowedFunds
 	}
 	if traceStack {

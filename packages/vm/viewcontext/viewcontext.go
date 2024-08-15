@@ -117,7 +117,7 @@ func (ctx *ViewContext) accountsStateWithGasBurn() *accounts.StateReader {
 	return accounts.NewStateReader(ctx.schemaVersion, ctx.contractStateReaderWithGasBurn(accounts.Contract.Hname()))
 }
 
-func (ctx *ViewContext) GetNativeTokens(agentID isc.AgentID) isc.CoinBalances {
+func (ctx *ViewContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
 	return ctx.accountsStateWithGasBurn().GetCoins(agentID, ctx.chainID)
 }
 
@@ -125,9 +125,12 @@ func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []sui.ObjectID {
 	return ctx.accountsStateWithGasBurn().GetAccountObjects(agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID sui.ObjectID) *isc.NFT {
-	panic("refactor me: fix GetNFTData")
-	return nil //return ctx.accountsStateWithGasBurn().GetNFTData(nftID)
+func (ctx *ViewContext) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
+	panic("refactor me")
+}
+
+func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+	panic("TODO")
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {
@@ -138,7 +141,7 @@ func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (coin.Value, *
 	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
+func (ctx *ViewContext) GetCoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
 	return ctx.accountsStateWithGasBurn().GetCoinBalance(agentID, coinType, ctx.chainID)
 }
 
@@ -163,8 +166,8 @@ func (ctx *ViewContext) CurrentContractHname() isc.Hname {
 	return ctx.getCallContext().contract
 }
 
-func (ctx *ViewContext) Params() *isc.Params {
-	return &ctx.getCallContext().params
+func (ctx *ViewContext) Params() isc.CallArguments {
+	return ctx.getCallContext().params
 }
 
 func (ctx *ViewContext) ContractStateReaderWithGasBurn() kv.KVStoreReader {

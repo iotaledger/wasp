@@ -1,6 +1,10 @@
 package isc
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/iotaledger/wasp/sui-go/sui"
+)
 
 // IRC27NFTMetadata represents an NFT metadata according to IRC27.
 // See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
@@ -44,4 +48,12 @@ func IRC27NFTMetadataFromBytes(b []byte) (*IRC27NFTMetadata, error) {
 		return nil, err
 	}
 	return &m, nil
+}
+
+func IRC27NFTMetadataFromBCS(bcs []byte) (*IRC27NFTMetadata, error) {
+	panic("implement me")
+}
+
+func IRC27NFTCollectionIDFromBCS(bcs []byte) (sui.ObjectID, bool, error) {
+	panic("implement me")
 }

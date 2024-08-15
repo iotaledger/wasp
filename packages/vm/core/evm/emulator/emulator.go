@@ -44,7 +44,7 @@ type Context interface {
 	TakeSnapshot() int
 	RevertToSnapshot(int)
 
-	BaseTokensDecimals() uint32
+	BaseTokensDecimals() uint8
 	GetBaseTokensBalance(addr common.Address) *big.Int
 	AddBaseTokensBalance(addr common.Address, amount *big.Int)
 	SubBaseTokensBalance(addr common.Address, amount *big.Int)

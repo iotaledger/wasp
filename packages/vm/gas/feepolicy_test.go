@@ -43,7 +43,7 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 		220: 2,
 	}
 	for tokens, expectedGas := range cases {
-		require.EqualValues(t, expectedGas, feePolicy.GasBudgetFromTokens(tokens, nil, parameters.L1ForTesting.BaseToken.Decimals))
+		require.EqualValues(t, expectedGas, feePolicy.GasBudgetFromTokens(tokens))
 	}
 
 	// tokens charged for max gas
@@ -55,8 +55,8 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 	}
 	for tokens, expected := range cases2 {
 		require.EqualValues(t, expected, feePolicy.FeeFromGas(
-			feePolicy.GasBudgetFromTokens(tokens, nil, parameters.L1ForTesting.BaseToken.Decimals),
-			nil, parameters.L1ForTesting.BaseToken.Decimals,
+			feePolicy.GasBudgetFromTokens(tokens),
+			nil, parameters.Decimals,
 		))
 	}
 }

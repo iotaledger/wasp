@@ -13,13 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
 func (i *iscTestContractInstance) getChainID() isc.ChainID {
-	var v iscmagic.ISCChainID
+	var v isc.ChainID
 	require.NoError(i.chain.t, i.callView("getChainID", nil, &v))
-	return v.MustUnwrap()
+	return v
 }
 
 func (i *iscTestContractInstance) triggerEvent(s string) (res CallFnResult, err error) {

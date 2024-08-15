@@ -6,8 +6,8 @@ package evmimpl
 import (
 	"encoding/hex"
 	"math/big"
-	"runtime/debug"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,8 +15,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -39,17 +37,11 @@ import (
 var Processor = evm.Contract.Processor(nil,
 	evm.FuncSendTransaction.WithHandler(applyTransaction),
 	evm.FuncCallContract.WithHandler(callContract),
-
-	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
-	evm.FuncRegisterERC20NativeTokenOnRemoteChain.WithHandler(registerERC20NativeTokenOnRemoteChain),
-	evm.FuncRegisterERC20ExternalNativeToken.WithHandler(registerERC20ExternalNativeToken),
+	evm.FuncRegisterERC20Coin.WithHandler(registerERC20Coin),
 	evm.FuncRegisterERC721NFTCollection.WithHandler(registerERC721NFTCollection),
-
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
 
 	// views
-	evm.ViewGetERC20ExternalNativeTokenAddress.WithHandler(viewERC20ExternalNativeTokenAddress),
-	evm.ViewGetERC721CollectionAddress.WithHandler(viewERC721CollectionAddress),
 	evm.ViewGetChainID.WithHandler(getChainID),
 )
 
@@ -104,16 +96,13 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseToken
 
 var errChainIDMismatch = coreerrors.Register("chainId mismatch").Create()
 
-func applyTransaction(ctx isc.Sandbox) {
+func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {
 	cannotBeCalledFromContracts(ctx)
 
 	// We only want to charge gas for the actual execution of the ethereum tx.
 	// ISC magic calls enable gas burning temporarily when called.
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
-
-	tx, err := evmtypes.DecodeTransaction(ctx.Params().Get(evm.FieldTransaction))
-	ctx.RequireNoError(err)
 
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(ctx.ChainID(), evmutil.MustGetSender(tx)))
 
@@ -176,197 +165,61 @@ func applyTransaction(ctx isc.Sandbox) {
 }
 
 var (
-	errFoundryNotOwnedByCaller      = coreerrors.Register("foundry with serial number %d not owned by caller")
-	errEVMAccountAlreadyExists      = coreerrors.Register("cannot register ERC20NativeTokens contract: EVM account already exists").Create()
+	errEVMAccountAlreadyExists      = coreerrors.Register("cannot register ERC20Coin contract: EVM account already exists").Create()
 	errEVMCanNotDecodeERC27Metadata = coreerrors.Register("cannot decode IRC27 collection NFT metadata")
+	errUnknownCoin                  = coreerrors.Register("unknown coin")
+	errUnknownObject                = coreerrors.Register("unknown object")
 )
 
-func requireCallerHasFoundry(ctx isc.Sandbox, foundrySN uint32) {
-	/*caller := ctx.Caller()
-	res := ctx.CallView(accounts.ViewAccountTreasuries.Message(&caller))
-	out, err := accounts.ViewAccountTreasuries.DecodeOutput(res)
-	if err != nil {
-		panic(err)
-	}
-
-	lo.Find(out, func(item coin.Type) bool {
-		return true
-	})
-
-	if !out.Has(res, foundrySN) {
-		panic(errFoundryNotOwnedByCaller.Create(foundrySN))
-	}*/
-
-	panic("refactor me: handle new foundry caps")
-}
-
-func registerERC20NativeToken(ctx isc.Sandbox, token evm.ERC20NativeTokenParams) {
-	requireCallerHasFoundry(ctx, token.FoundrySN)
-
+func registerERC20Coin(ctx isc.Sandbox, coinType coin.Type) {
 	// deploy the contract to the EVM state
-	addr := iscmagic.ERC20NativeTokensAddress(token.FoundrySN)
+	addr := iscmagic.ERC20CoinAddress(coinType)
 	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
-	println("\n\n" + addr.String() + "\n\n")
 	if evmState.Exist(addr) {
 		panic(errEVMAccountAlreadyExists)
-	} else {
-		debug.PrintStack()
 	}
 	evmState.CreateAccount(addr)
-	evmState.SetCode(addr, iscmagic.ERC20NativeTokensRuntimeBytecode)
-	// see ERC20NativeTokens_storage.json
-	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(token.Name))
-	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(token.TickerSymbol))
-	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(token.Decimals))
+	evmState.SetCode(addr, iscmagic.ERC20CoinRuntimeBytecode)
+	// see ERC20Coin_storage.json
+	info, ok := ctx.GetCoinInfo(coinType)
+	if !ok {
+		panic(errUnknownCoin)
+	}
+	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(string(coinType)))
+	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(info.Name))
+	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeShortString(info.Symbol))
+	evmState.SetState(addr, solidity.StorageSlot(3), solidity.StorageEncodeUint8(info.Decimals))
 
 	addToPrivileged(ctx.State(), addr)
-}
-
-var (
-	errTargetMustBeAlias   = coreerrors.Register("target must be alias address")
-	errOutputMustBeFoundry = coreerrors.Register("expected foundry output")
-)
-
-func registerERC20NativeTokenOnRemoteChain(ctx isc.Sandbox, r evm.ERC20NativeTokenParams, targetChain *cryptolib.Address) {
-	cannotBeCalledFromContracts(ctx)
-
-	/*if targetChain.Type() != iotago.AddressAlias {
-		panic(errTargetMustBeAlias)
-	}*/ // TODO: is it needed?
-
-	requireCallerHasFoundry(ctx, r.FoundrySN)
-	panic("refactor me: handle native token registration")
-	/*
-		tokenScheme := func() iotago.TokenScheme {
-			res := ctx.CallView(accounts.ViewNativeToken.Message(r.FoundrySN))
-			o := lo.Must(accounts.ViewNativeToken.Output.Decode(res))
-			foundryOutput, ok := o.(*iotago.FoundryOutput)
-			if !ok {
-				panic(errOutputMustBeFoundry)
-			}
-			return foundryOutput.TokenScheme
-		}()
-
-		req := isc.RequestParameters{
-			TargetAddress: targetChain,
-			Assets:        isc.NewEmptyAssets(),
-			Metadata: &isc.SendMetadata{
-				Message: evm.FuncRegisterERC20ExternalNativeToken.Message(r, tokenScheme),
-				// FIXME why does this gas budget is higher than the allowance below
-				GasBudget: 50 * gas.LimitsDefault.MinGasPerRequest,
-			},
-		}
-
-
-		sd := ctx.EstimateRequiredStorageDeposit(req)
-		// this request is sent by contract account,
-		// so we move enough allowance for the gas fee below in the req.Assets.AddBaseTokens() function call
-		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(coin.Value(sd+10*gas.LimitsDefault.MinGasPerRequest)))
-		req.Assets.AddBaseTokens(coin.Value(sd + 10*gas.LimitsDefault.MinGasPerRequest))
-		ctx.Send(req)
-	*/
-}
-
-var (
-	errSenderMustBeAlias            = coreerrors.Register("sender must be alias address").Create()
-	errFoundryMustBeOffChain        = coreerrors.Register("foundry must be off-chain").Create()
-	errNativeTokenAlreadyRegistered = coreerrors.Register("native token already registered").Create()
-)
-
-func registerERC20ExternalNativeToken(ctx isc.Sandbox, r evm.ERC20NativeTokenParams, coinType coin.Type) common.Address {
-	caller, ok := ctx.Caller().(*isc.ContractAgentID)
-	if !ok {
-		panic(errSenderMustBeAlias)
-	}
-	if ctx.ChainID().Equals(caller.ChainID()) {
-		panic(errFoundryMustBeOffChain)
-	}
-
-	panic("refactor me: handle token registration ")
-	/*
-		sourceChainAddress := caller.ChainID().AsAliasAddress()
-
-		// TODO: We should somehow inspect the real FoundryOutput, but it is on L1.
-		// Here we reproduce it from the given params (which we assume to be correct)
-		// in order to derive the FoundryID
-		simpleTS, ok := tokenScheme.(*iotago.SimpleTokenScheme)
-		if !ok {
-			panic(errUnsupportedTokenScheme)
-		}
-		f := &iotago.FoundryOutput{
-			SerialNumber: r.FoundrySN,
-			TokenScheme:  tokenScheme,
-			Conditions: []iotago.UnlockCondition{&iotago.ImmutableAliasUnlockCondition{
-				Address: &sourceChainAddress,
-			}},
-		}
-		nativeTokenID, err := f.ID()
-		ctx.RequireNoError(err)
-
-		_, ok = getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
-		if ok {
-			panic(errNativeTokenAlreadyRegistered)
-		}
-
-		emu := createEmulator(ctx)
-		evmState := emu.StateDB()
-
-		addr, err := iscmagic.ERC20ExternalNativeTokensAddress(nativeTokenID, evmState.Exist)
-		ctx.RequireNoError(err)
-
-		addERC20ExternalNativeTokensAddress(ctx, nativeTokenID, addr)
-
-		// deploy the contract to the EVM state
-		evmState.CreateAccount(addr)
-		evmState.SetCode(addr, iscmagic.ERC20ExternalNativeTokensRuntimeBytecode)
-		// see ERC20ExternalNativeTokens_storage.json
-		evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(r.Name))
-		evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(r.TickerSymbol))
-		evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(r.Decimals))
-		for k, v := range solidity.StorageEncodeBytes(3, nativeTokenID[:]) {
-			evmState.SetState(addr, k, v)
-		}
-		evmState.SetState(addr, solidity.StorageSlot(4), solidity.StorageEncodeUint256(simpleTS.MaximumSupply))
-
-		addToPrivileged(ctx.State(), addr)
-	*/
-	return common.MaxAddress
-}
-
-func viewERC20ExternalNativeTokenAddress(ctx isc.SandboxView, coinType coin.Type) *common.Address {
-	addr, ok := getERC20ExternalNativeTokensAddress(ctx, coinType)
-	if !ok {
-		return nil
-	}
-	return &addr
-}
-
-func viewERC721CollectionAddress(ctx isc.SandboxView, collectionID sui.ObjectID) (bool, common.Address) {
-	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
-
-	exists := emulator.Exist(
-		addr,
-		emulator.StateDBSubrealmR(evm.EmulatorStateSubrealmR(ctx.StateR())),
-	)
-
-	return exists, addr
 }
 
 func registerERC721NFTCollection(ctx isc.Sandbox, collectionID sui.ObjectID) {
 	// The collection NFT must be deposited into the chain before registering. Afterwards it may be
 	// withdrawn to L1.
-	panic("refactor me: Add ViewObjectData(?)")
-	/*
-		collection := func() *isc.NFT {
-			res := ctx.CallView(accounts.ViewNFTData.Message(collectionID))
-			collection, err := accounts.ViewNFTData.Output1.Decode(res)
-			ctx.RequireNoError(err)
-			return collection
-		}()
+	bcs, ok := ctx.GetObjectBCS(collectionID)
+	if !ok {
+		panic(errUnknownObject)
+	}
+	nft, err := isc.IRC27NFTMetadataFromBCS(bcs)
+	if err != nil {
+		panic(errEVMCanNotDecodeERC27Metadata)
+	}
+	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
+	state := emulator.NewStateDBFromKVStore(evm.EmulatorStateSubrealm(ctx.State()))
+	if state.Exist(addr) {
+		panic(errEVMAccountAlreadyExists)
+	}
 
-		registerERC721NFTCollectionByNFTId(ctx.State(), collection)
-	*/
+	state.CreateAccount(addr)
+	state.SetCode(addr, iscmagic.ERC721NFTCollectionRuntimeBytecode)
+	// see ERC721NFTCollection_storage.json
+	state.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeBytes32(collectionID[:]))
+	for k, v := range solidity.StorageEncodeString(3, nft.Name) {
+		state.SetState(addr, k, v)
+	}
+
+	addToPrivileged(ctx.State(), addr)
 }
 
 func getChainID(ctx isc.SandboxView) uint16 {
@@ -393,7 +246,7 @@ func tryGetRevertError(res *core.ExecutionResult) error {
 
 // callContract is called from the jsonrpc eth_estimateGas and eth_call endpoints.
 // The VM is in estimate gas mode, and any state mutations are discarded.
-func callContract(ctx isc.Sandbox) []byte {
+func callContract(ctx isc.Sandbox, callMsg ethereum.CallMsg) []byte {
 	cannotBeCalledFromContracts(ctx)
 
 	// We only want to charge gas for the actual execution of the ethereum tx.
@@ -401,8 +254,6 @@ func callContract(ctx isc.Sandbox) []byte {
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
 
-	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().Get(evm.FieldCallMsg))
-	ctx.RequireNoError(err)
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(ctx.ChainID(), callMsg.From))
 
 	emu := createEmulator(ctx)
@@ -440,7 +291,6 @@ func newL1Deposit(ctx isc.Sandbox, l1DepositOriginatorBytes isc.AgentID, toAddre
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
 	// create a fake tx so that the operation is visible by the EVM
 	AddDummyTxWithTransferEvents(ctx, toAddress, assets, l1DepositOriginatorBytes.Bytes(), true)
-
 }
 
 func AddDummyTxWithTransferEvents(
@@ -460,7 +310,7 @@ func AddDummyTxWithTransferEvents(
 
 	nonce := uint64(0)
 	chainInfo := ctx.ChainInfo()
-	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
@@ -506,40 +356,42 @@ func makeTransferEvents(
 	assets *isc.Assets,
 ) []*types.Log {
 	logs := make([]*types.Log, 0)
-	panic("refactor me: makeTransferEvents")
-	/*for coinType, value := range assets.Coins {
-		if value.Sign() == 0 {
+	stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
+	for coinType, value := range assets.Coins {
+		if value == 0 {
 			continue
 		}
-		// emit a Transfer event from the ERC20NativeTokens / ERC20ExternalNativeTokens contract
-		erc20Address, ok := findERC20NativeTokenContractAddress(ctx, nt.ID)
-		if !ok {
-			continue
+		// emit a Transfer event from the ERC20Coin / ERC20ExternalCoins contract
+		erc20Address := iscmagic.ERC20CoinAddress(coinType)
+		if stateDB.Exist(erc20Address) {
+			logs = append(logs, makeTransferEventERC20(erc20Address, fromAddress, toAddress, value))
 		}
-		logs = append(logs, makeTransferEventERC20(erc20Address, fromAddress, toAddress, nt.Amount))
 	}
-	for nftID, _ := range assets.Objects {
+	for nftID := range assets.Objects {
 		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
-		if nft := ctx.GetNFTData(nftID); nft != nil {
-			if collectionNFTAddress, ok := nft.Issuer.(*iotago.NFTAddress); ok {
-				collectionID := collectionNFTAddress.NFTID()
+		if bcs, ok := ctx.GetObjectBCS(nftID); ok {
+			collectionID, ok, err := isc.IRC27NFTCollectionIDFromBCS(bcs)
+			if err != nil {
+				// cannot parse IRC27 metadata; ignore
+				continue
+			}
+			if ok {
 				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
-				stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
 				if stateDB.Exist(erc721CollectionContractAddress) {
-					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, fromAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
+					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, fromAddress, toAddress, iscmagic.TokenIDFromSuiObjectID(nftID)))
 					continue
 				}
 			}
 		}
 		// otherwise, emit a Transfer event from the ERC721NFTs contract
-		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.WrapNFTID(nftID).TokenID()))
-	}*/
+		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.TokenIDFromSuiObjectID(nftID)))
+	}
 	return logs
 }
 
 var transferEventTopic = crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
 
-func makeTransferEventERC20(contractAddress, from, to common.Address, amount *big.Int) *types.Log {
+func makeTransferEventERC20(contractAddress, from, to common.Address, amount coin.Value) *types.Log {
 	return &types.Log{
 		Address: contractAddress,
 		Topics: []common.Hash{
@@ -547,7 +399,7 @@ func makeTransferEventERC20(contractAddress, from, to common.Address, amount *bi
 			evmutil.AddressToIndexedTopic(from),
 			evmutil.AddressToIndexedTopic(to),
 		},
-		Data: evmutil.PackUint256(amount),
+		Data: evmutil.PackUint256(new(big.Int).SetUint64(uint64(amount))),
 	}
 }
 

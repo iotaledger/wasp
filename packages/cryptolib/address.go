@@ -9,7 +9,6 @@ import (
 	"io"
 	"strings"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -65,17 +64,9 @@ func NewAddressFromKey(key AddressKey) *Address {
 	return &result
 }
 
-// TODO: remove when not needed
-func NewAddressFromIotago(addr iotago.Address) *Address {
-	addrBytes, err := addr.Serialize(0, nil)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to obtain byte array from iotago address: %s", err))
-	}
-	address, err := NewAddressFromBytes(addrBytes[1:])
-	if err != nil {
-		panic(fmt.Sprintf("Failed to obtain address from byte array: %s", err))
-	}
-	return address
+func NewAddressFromSui(addr *sui.Address) *Address {
+	a := Address(addr[:])
+	return &a
 }
 
 // TODO: remove when not needed

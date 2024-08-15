@@ -23,7 +23,7 @@ type BaseToken struct {
 	TickerSymbol    string              `json:"tickerSymbol" swagger:"desc(The ticker symbol),required"`
 	Unit            string              `json:"unit" swagger:"desc(The token unit),required"`
 	Subunit         string              `json:"subunit" swagger:"desc(The token subunit),required"`
-	Decimals        uint32              `json:"decimals" swagger:"desc(The token decimals),required"`
+	Decimals        uint8               `json:"decimals" swagger:"desc(The token decimals),required"`
 	UseMetricPrefix bool                `json:"useMetricPrefix" swagger:"desc(Whether or not the token uses a metric prefix),required"`
 	CoinType        suijsonrpc.CoinType `json:"coinType"`
 }

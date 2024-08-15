@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -75,13 +74,6 @@ func timestamp(t time.Time) uint64 {
 	return uint64(t.Unix())
 }
 
-func result(value []byte) dict.Dict {
-	if value == nil {
-		return nil
-	}
-	return dict.Dict{evm.FieldResult: value}
-}
-
 type emulatorContext struct {
 	sandbox isc.Sandbox
 }
@@ -124,7 +116,7 @@ func (ctx *emulatorContext) Timestamp() uint64 {
 	return timestamp(ctx.sandbox.Timestamp())
 }
 
-func (*emulatorContext) BaseTokensDecimals() uint32 {
+func (*emulatorContext) BaseTokensDecimals() uint8 {
 	return parameters.Decimals
 }
 

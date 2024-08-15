@@ -32,7 +32,7 @@ func NewViewEP{{.Inputs}}[{{range $i := until .Inputs}}T{{add $i 1}} any, {{end}
 func (e EP{{.Inputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]) WithHandler(f func(ctx S{{range $i := until .Inputs}}, p{{add $i 1}} T{{add $i 1}}{{end}})) *EntryPointHandler[S] {
     return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
         params := ctx.Params()
-        {{range $i := until .Inputs}}p{{add $i 1}}, err := e.Input{{add $i 1}}.Decode(params.Args.MustAt({{$i}}))
+        {{range $i := until .Inputs}}p{{add $i 1}}, err := e.Input{{add $i 1}}.Decode(params.MustAt({{$i}}))
         ctx.RequireNoError(err)
         {{end}}
         f(ctx{{range $i := until .Inputs}}, p{{add $i 1}}{{end}})

@@ -49,8 +49,8 @@ func (reqctx *requestContext) CurrentContractHname() isc.Hname {
 	return reqctx.getCallContext().contract
 }
 
-func (reqctx *requestContext) Params() *isc.Params {
-	return &reqctx.getCallContext().params
+func (reqctx *requestContext) Params() isc.CallArguments {
+	return reqctx.getCallContext().params
 }
 
 func (reqctx *requestContext) Caller() isc.AgentID {
