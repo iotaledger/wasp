@@ -192,7 +192,7 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) {
 		Metadata: &isc.SendMetadata{
 			Message:   FuncTransferAllowanceTo.Message(callerContract),
 			Allowance: allowance,
-			GasBudget: coin.Value(gasReserve),
+			GasBudget: gasReserve,
 		},
 	})
 	ctx.Log().Debugf("accounts.transferAccountToChain.success. Sent to contract %s: %s",

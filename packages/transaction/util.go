@@ -18,34 +18,31 @@ var ErrNoAliasOutputAtIndex0 = errors.New("origin AliasOutput not found at index
 
 // GetAnchorFromTransaction analyzes the output at index 0 and extracts anchor information. Otherwise error
 func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago.AliasOutput, error) {
-	panic("refactor me: GetAnchroFromTransaction (Still needed?)")
-	return nil, nil, nil
-	/*
-		anchorOutput, ok := tx.Essence.Outputs[0].(*iotago.AliasOutput)
-		if !ok {
-			return nil, nil, ErrNoAliasOutputAtIndex0
-		}
-		txid, err := tx.ID()
-		if err != nil {
-			return nil, anchorOutput, fmt.Errorf("GetAnchorFromTransaction: %w", err)
-		}
-		aliasID := anchorOutput.AliasID
-		isOrigin := false
+	anchorOutput, ok := tx.Essence.Outputs[0].(*iotago.AliasOutput)
+	if !ok {
+		return nil, nil, ErrNoAliasOutputAtIndex0
+	}
+	txid, err := tx.ID()
+	if err != nil {
+		return nil, anchorOutput, fmt.Errorf("GetAnchorFromTransaction: %w", err)
+	}
+	aliasID := anchorOutput.AliasID
+	isOrigin := false
 
-		if aliasID.Empty() {
-			isOrigin = true
-			aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0))
-		}
-		return &isc.StateAnchor{
-			IsOrigin:             isOrigin,
-			OutputID:             iotago.OutputIDFromTransactionIDAndIndex(txid, 0),
-			ChainID:              isc.ChainIDFromAliasID(aliasID),
-			StateController:      cryptolib.NewAddressFromIotago(anchorOutput.StateController()),
-			GovernanceController: cryptolib.NewAddressFromIotago(anchorOutput.GovernorAddress()),
-			StateIndex:           anchorOutput.StateIndex,
-			StateData:            anchorOutput.StateMetadata,
-			Deposit:              anchorOutput.Amount,
-		}, anchorOutput, nil*/
+	if aliasID.Empty() {
+		isOrigin = true
+		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0))
+	}
+	return &isc.StateAnchor{
+		IsOrigin:             isOrigin,
+		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(txid, 0),
+		ChainID:              isc.ChainIDFromAliasID(aliasID),
+		StateController:      cryptolib.NewAddressFromIotago(anchorOutput.StateController()),
+		GovernanceController: cryptolib.NewAddressFromIotago(anchorOutput.GovernorAddress()),
+		StateIndex:           anchorOutput.StateIndex,
+		StateData:            anchorOutput.StateMetadata,
+		Deposit:              anchorOutput.Amount,
+	}, anchorOutput, nil
 }
 
 // computeInputsAndRemainder computes inputs and remainder for given outputs balances.

@@ -6,7 +6,7 @@ package sandbox
 import (
 	"math/big"
 	"time"
-	
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
@@ -47,12 +47,12 @@ func (s *SandboxBase) BalanceBaseTokens() (bts coin.Value, remainder *big.Int) {
 
 func (s *SandboxBase) BalanceNativeToken(coinType coin.Type) coin.Value {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetCoinBalance(s.AccountID(), coinType)
+	return s.Ctx.GetNativeTokenBalance(s.AccountID(), coinType)
 }
 
 func (s *SandboxBase) BalanceNativeTokens() isc.CoinBalances {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetCoins(s.AccountID())
+	return s.Ctx.GetNativeTokens(s.AccountID())
 }
 
 func (s *SandboxBase) OwnedNFTs() []sui.ObjectID {
@@ -63,7 +63,7 @@ func (s *SandboxBase) OwnedNFTs() []sui.ObjectID {
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
-		Coins:   s.Ctx.GetCoins(agentID),
+		Coins:   s.Ctx.GetNativeTokens(agentID),
 		Objects: isc.NewObjectIDSetFromArray(s.Ctx.GetAccountNFTs(agentID)),
 	}
 	tokenBalance, remainder := s.Ctx.GetBaseTokensBalance(agentID)
@@ -73,9 +73,9 @@ func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool
 	return accountAssets.Spend(assets)
 }
 
-func (s *SandboxBase) GetObjectData(objectID sui.ObjectID) isc.ObjectRecord {
+func (s *SandboxBase) GetNFTData(nftID sui.ObjectID) *isc.NFT {
 	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
-	return s.Ctx.GetObjectData(objectID)
+	return s.Ctx.GetNFTData(nftID)
 }
 
 func (s *SandboxBase) ChainID() isc.ChainID {

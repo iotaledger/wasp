@@ -27,14 +27,14 @@ func (h *magicContractHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 }
 
 // handler for ISCSandbox::getNFTData
-func (h *magicContractHandler) GetObjectData(objectID iscmagic.ObjectID) iscmagic.ISCNFT {
-	nft := h.ctx.GetObjectData(objectID.Unwrap())
+func (h *magicContractHandler) GetNFTData(nftID iscmagic.ObjectID) iscmagic.ISCNFT {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	return iscmagic.WrapISCNFT(nft)
 }
 
 // handler for ISCSandbox::getIRC27NFTData
-func (h *magicContractHandler) GetIRC27NFTData(objectID iscmagic.ObjectID) iscmagic.IRC27NFT {
-	nft := h.ctx.GetObjectData(objectID.Unwrap())
+func (h *magicContractHandler) GetIRC27NFTData(nftID iscmagic.ObjectID) iscmagic.IRC27NFT {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	h.ctx.RequireNoError(err)
 	return iscmagic.IRC27NFT{
@@ -44,8 +44,8 @@ func (h *magicContractHandler) GetIRC27NFTData(objectID iscmagic.ObjectID) iscma
 }
 
 // handler for ISCSandbox::getIRC27TokenURI
-func (h *magicContractHandler) GetIRC27TokenURI(objectID iscmagic.ObjectID) string {
-	nft := h.ctx.GetObjectData(objectID.Unwrap())
+func (h *magicContractHandler) GetIRC27TokenURI(nftID iscmagic.ObjectID) string {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	metadata, err := isc.IRC27NFTMetadataFromBytes(nft.Metadata)
 	h.ctx.RequireNoError(err)
 	return evm.EncodePackedNFTURI(metadata)
