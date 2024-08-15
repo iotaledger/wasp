@@ -126,7 +126,7 @@ func (c *Client) post1RequestWithOutputs(
 				Metadata: &isc.SendMetadata{
 					Message:   msg,
 					Allowance: par.Allowance,
-					GasBudget: coin.Value(par.GasBudget()),
+					GasBudget: par.GasBudget(),
 				},
 			},
 			NFT: par.NFT,

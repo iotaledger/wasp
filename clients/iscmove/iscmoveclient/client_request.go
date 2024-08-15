@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -77,6 +76,7 @@ func (c *Client) CreateAndSendRequest(
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	}
+
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
 		signer,

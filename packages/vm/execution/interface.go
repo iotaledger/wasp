@@ -3,7 +3,7 @@ package execution
 import (
 	"math/big"
 	"time"
-	
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -36,9 +36,9 @@ type WaspCallContext interface {
 	Timestamp() time.Time
 	CurrentContractAccountID() isc.AgentID
 	Caller() isc.AgentID
-	GetCoins(agentID isc.AgentID) isc.CoinBalances
+	GetNativeTokens(agentID isc.AgentID) isc.CoinBalances
 	GetBaseTokensBalance(agentID isc.AgentID) (coin.Value, *big.Int)
-	GetCoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value
+	GetNativeTokenBalance(agentID isc.AgentID, coinType coin.Type) coin.Value
 	Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments
 	ChainID() isc.ChainID
 	ChainOwnerID() isc.AgentID
@@ -50,5 +50,5 @@ type WaspCallContext interface {
 	GasBurned() uint64
 	GasBudgetLeft() uint64
 	GetAccountNFTs(agentID isc.AgentID) []sui.ObjectID
-	GetObjectData(objectID sui.ObjectID) isc.ObjectRecord
+	GetNFTData(nftID sui.ObjectID) *isc.NFT
 }

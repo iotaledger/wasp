@@ -3,7 +3,6 @@ package accounts
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -16,7 +15,7 @@ func (s *StateReader) objectRecordsMapR() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, keyObjectRecords)
 }
 
-func (s *StateWriter) SaveObject(rec *isc.ObjectRecord) {
+func (s *StateWriter) SaveObject(rec *ObjectRecord) {
 	s.objectRecordsMap().SetAt(rec.ID[:], rec.Bytes())
 }
 
@@ -24,12 +23,12 @@ func (s *StateWriter) DeleteObject(id sui.ObjectID) {
 	s.objectRecordsMap().DelAt(id[:])
 }
 
-func (s *StateReader) GetObject(id sui.ObjectID) *isc.ObjectRecord {
+func (s *StateReader) GetObject(id sui.ObjectID) *ObjectRecord {
 	data := s.objectRecordsMapR().GetAt(id[:])
 	if data == nil {
 		return nil
 	}
-	return lo.Must(isc.ObjectRecordFromBytes(data, id))
+	return lo.Must(ObjectRecordFromBytes(data, id))
 }
 
 func (s *StateReader) GetObjectBCS(objectID sui.ObjectID) []byte {

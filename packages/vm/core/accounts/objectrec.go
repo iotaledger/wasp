@@ -1,4 +1,4 @@
-package isc
+package accounts
 
 import (
 	"io"
@@ -41,5 +41,5 @@ func (rec *ObjectRecord) Write(w io.Writer) error {
 
 func (rec *ObjectRecord) CollectionKey() kv.Key {
 	// TODO: parse NFT data and determine the NFT's collection
-	return "-"
+	return noCollection
 }
