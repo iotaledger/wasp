@@ -178,7 +178,7 @@ L1ReplacedBaseAliasOutput(n) ==
 
 L1ConfirmedAliasOutput(n) ==
     \E li \in LI :
-        /\  ConsensusDecided(li) \* Should be at least decided by the consensus.
+        /\  \E v \in Values : hasConsensusDecidedValue(li, n, v) \* Should be at least decided by the consensus.
         /\  LET tmpL1RepAO == QCSetAndTrySend(qcL1RepAO[n], n, li)
             IN  /\  qcL1RepAO' = [qcL1RepAO EXCEPT ![n] = tmpL1RepAO.qc]
                 /\  msgs'      = msgs \cup tmpL1RepAO.msgs

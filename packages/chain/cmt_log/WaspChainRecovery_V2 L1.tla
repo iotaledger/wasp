@@ -40,7 +40,7 @@ VARIABLE ledgerCnf  \* The L1 Ledger: Confirmed till this index (inclusive).
 VARIABLE ledgerRcv  \* Per-node: received till this index (exclusive).
 VARIABLE ledgerExt  \* For each AO -- is it external or internal ("E", "I", "?").
 VARIABLE msgs
-vars == <<storage, logIndex, ledgerCnf, ledgerRcv, msgs>>
+vars == <<ledgerCnf, ledgerRcv, msgs>>
 
 
 Msg == UNION {
@@ -54,8 +54,6 @@ MsgConsIn(n, li) == [t |-> "CONS_IN", src |-> n, li |-> li]
 MsgQuorum(t, q, li) == \A qn \in q : \E m \in msgs : m.t = t /\ m.src = qn /\ m.li = li
 
 TypeOK ==
-    /\ storage   \in [CN -> OptLogIndex]
-    /\ logIndex  \in [CN -> OptLogIndex]
     /\ msgs \subseteq Msg
 
 
@@ -92,7 +90,7 @@ LedgerRcv(n, chainIdx) ==
 TX confirmed in L1, posted by the current committee.
 *)
 LedgerCnfInternal ==
-    \E ci \n ChainIdx, li \in LogIndex :
+    \E ci \in ChainIdx, li \in LogIndex :
         /\ ci = ledgerCnf+1
         /\ \E q \in QNF:
                \A n \in QNF :
@@ -111,7 +109,7 @@ NOTE: This covers also the LedgerCnfInternal, because
 LedgerCnfInternal => LedgerCnfExternal, if ledgerExt would be dropped.
 *)
 LedgerCnfExternal ==
-    \E ci \n ChainIdx, li \in LogIndex :
+    \E ci \in ChainIdx, li \in LogIndex :
         /\ ci = ledgerCnf+1
         /\ ledgerCnf' = ci
         /\ ledgerExt' = [ledgerExt EXCEPT ![ci] = "E"]
