@@ -1,6 +1,10 @@
 package sui
 
 import (
+	"fmt"
+
+	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )
 
@@ -9,6 +13,18 @@ type TransactionData struct {
 }
 
 func (t TransactionData) IsBcsEnum() {}
+
+// Generates the transaction digest of the current TransactionData
+func (t TransactionData) Digest() (Digest, error) {
+	buf := []byte("TransactionData::")
+	txnBytes, err := bcs.Marshal(t)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode into BCS: %w", err)
+	}
+	buf = append(buf, txnBytes...)
+	h := hashing.HashDataBlake2b(buf)
+	return Digest(h.Bytes()), nil
+}
 
 type TransactionDataV1 struct {
 	Kind       TransactionKind
