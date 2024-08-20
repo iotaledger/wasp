@@ -42,7 +42,7 @@ module isc::anchor_tests {
         let mut ctx = tx_context::dummy();
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), vector::empty(), vector::empty(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
         let iota = coin::mint_for_testing<SUI>(initial_iota_in_request, &mut ctx);

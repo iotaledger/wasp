@@ -32,13 +32,13 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(init_params: vector<u8>, ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(init_params: vector<u8>, state_root: vector<u8>, block_hash: vector<u8>, ctx: &mut TxContext): Anchor {
         Anchor{
             id: object::new(ctx),
             assets: borrow::new(assets_bag::new(ctx), ctx),
             init_params: init_params,
-            state_root: vector::empty(),
-            block_hash: vector::empty(),
+            state_root: state_root,
+            block_hash: block_hash,
             state_index: 0,
         }
     }

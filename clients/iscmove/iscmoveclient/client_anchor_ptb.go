@@ -8,7 +8,13 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddress *cryptolib.Address) sui.ProgrammableTransaction {
+func NewStartNewChainPTB(
+	packageID sui.PackageID,
+	initParams []byte,
+	stateRoot []byte,
+	blockHash []byte,
+	ownerAddress *cryptolib.Address,
+) sui.ProgrammableTransaction {
 	ptb := sui.NewProgrammableTransactionBuilder()
 	arg1 := ptb.Command(
 		sui.Command{

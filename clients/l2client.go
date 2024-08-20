@@ -16,10 +16,12 @@ type L2Client interface {
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
+		initParams []byte,
+		stateRoot []byte,
+		blockHash []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		initParams []byte,
 		devMode bool,
 	) (*iscmove.RefWithObject[iscmove.Anchor], error)
 	CreateAndSendRequest(

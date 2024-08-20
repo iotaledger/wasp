@@ -17,16 +17,18 @@ func (c *Client) StartNewChain(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
+	initParams []byte,
+	stateRoot []byte,
+	blockHash []byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	initParams []byte,
 	devMode bool,
 ) (*iscmove.RefWithObject[iscmove.Anchor], error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewStartNewChainPTB(packageID, initParams, cryptolibSigner.Address())
+	ptb := NewStartNewChainPTB(packageID, initParams, stateRoot, blockHash, cryptolibSigner.Address())
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
