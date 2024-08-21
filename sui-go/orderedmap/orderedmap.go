@@ -1,6 +1,8 @@
 package orderedmap
 
-import "github.com/mitchellh/hashstructure/v2"
+import (
+	"github.com/mitchellh/hashstructure/v2"
+)
 
 type OrderedMap[K comparable, V any] struct {
 	m           map[uint64]V

@@ -32,7 +32,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
-		assetsBag:     request.Object.AssetsBag.Value,
+		assetsBag:     &request.Object.AssetsBag.Value.AssetsBag,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
@@ -45,6 +45,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 			Allowance: NewEmptyAssets(),
 			GasBudget: 0,
 		},
+		assets: AssetsFromAssetsBagWithBalances(*request.Object.AssetsBag.Value),
 	}
 
 	return r, nil

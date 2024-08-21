@@ -25,6 +25,8 @@ func NewStartNewChainPTB(
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
 					ptb.MustPure(initParams),
+					ptb.MustPure(stateRoot),
+					ptb.MustPure(blockHash),
 				},
 			},
 		},
@@ -72,6 +74,7 @@ func NewReceiveRequestPTB(
 	argAnchorAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
 	argAnchorBorrow := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
 	for _, reqObject := range requestRefs {
+		reqObject := reqObject
 		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: &reqObject})
 		argReceiveRequest := ptb.Command(
 			sui.Command{
