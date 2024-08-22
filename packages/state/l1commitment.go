@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -25,21 +24,6 @@ func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 		trieRoot:  c,
 		blockHash: blockHash,
 	}
-}
-
-func NewL1CommitmentFromAnchor(anchor *iscmove.Anchor) (*L1Commitment, error) {
-	trieRoot, err := trie.HashFromBytes(anchor.StateRoot)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create trie root: %w", err)
-	}
-	blockHash, err := NewBlockHash(anchor.BlockHash)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create block hash: %w", err)
-	}
-	return &L1Commitment{
-		trieRoot:  trieRoot,
-		blockHash: blockHash,
-	}, nil
 }
 
 func NewL1CommitmentFromBytes(data []byte) (*L1Commitment, error) {

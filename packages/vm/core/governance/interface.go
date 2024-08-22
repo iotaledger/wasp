@@ -40,13 +40,13 @@ var (
 		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	FuncSetMinCommonAccountBalance = coreutil.NewEP1(Contract, "setMinCommonAccountBalance",
-		coreutil.FieldWithCodec(codec.Uint64),
+		coreutil.FieldWithCodec(codec.CoinValue),
 	)
 	ViewGetPayoutAgentID = coreutil.NewViewEP01(Contract, "getPayoutAgentID",
 		coreutil.FieldWithCodec(codec.AgentID),
 	)
 	ViewGetMinCommonAccountBalance = coreutil.NewViewEP01(Contract, "getMinCommonAccountBalance",
-		coreutil.FieldWithCodec(codec.Uint64),
+		coreutil.FieldWithCodec(codec.CoinValue),
 	)
 	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
 		coreutil.FieldWithCodec(codec.AgentID),
@@ -167,7 +167,7 @@ const (
 // contract constants
 const (
 	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
-	DefaultMinBaseTokensOnCommonAccount = uint64(3000)
+	DefaultMinBaseTokensOnCommonAccount = 3000
 
 	BlockKeepAll           = -1
 	DefaultBlockKeepAmount = 10_000

@@ -1,6 +1,7 @@
 package vmimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
@@ -17,7 +18,7 @@ func (reqctx *requestContext) GasBurnEnabled() bool {
 	return reqctx.gas.burnEnabled
 }
 
-func (reqctx *requestContext) gasSetBudget(gasBudget, maxTokensToSpendForGasFee uint64) {
+func (reqctx *requestContext) gasSetBudget(gasBudget uint64, maxTokensToSpendForGasFee coin.Value) {
 	reqctx.gas.budgetAdjusted = gasBudget
 	reqctx.gas.maxTokensToSpendForGasFee = maxTokensToSpendForGasFee
 	reqctx.gas.burned = 0

@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -61,14 +60,14 @@ func (txb *AnchorTransactionBuilder) ConsumeRequest(req isc.OnLedgerRequest) {
 func (txb *AnchorTransactionBuilder) SendObject(object sui.Object) (storageDepositReturned *big.Int) {
 	return nil
 }
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateRoot *state.L1Commitment) sui.ProgrammableTransaction {
+
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte) sui.ProgrammableTransaction {
 	ptb, err := iscmoveclient.NewReceiveRequestPTB(
 		txb.iscPackage,
 		&txb.anchor.ObjectRef,
 		onRequestsToRequestRefs(txb.consumed),
 		onRequestsToAssetsBagMap(txb.consumed),
-		stateRoot.TrieRoot().Bytes(),
-		stateRoot.BlockHash().Bytes(),
+		stateMetadata,
 	)
 	if err != nil {
 		panic(err)
@@ -97,7 +96,6 @@ func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[sui.ObjectRef]*isc
 				CoinType:     suijsonrpc.CoinType(k),
 				TotalBalance: uint64(v),
 			}
-
 		}
 		m[req.RequestRef()] = assetsBagWithBalances
 

@@ -57,14 +57,14 @@ func (s *SandboxBase) CoinBalances() isc.CoinBalances {
 
 func (s *SandboxBase) OwnedObjects() []sui.ObjectID {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetAccountNFTs(s.AccountID())
+	return s.Ctx.GetAccountObjects(s.AccountID())
 }
 
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
 		Coins:   s.Ctx.GetCoinBalances(agentID),
-		Objects: isc.NewObjectIDSetFromArray(s.Ctx.GetAccountNFTs(agentID)),
+		Objects: isc.NewObjectIDSetFromArray(s.Ctx.GetAccountObjects(agentID)),
 	}
 	tokenBalance, _ := s.Ctx.GetBaseTokensBalance(agentID)
 	accountAssets.AddBaseTokens(tokenBalance)

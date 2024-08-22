@@ -8,6 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -57,12 +58,12 @@ func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 	return ret
 }
 
-func (s *StateReader) GetMinCommonAccountBalance() uint64 {
-	return lo.Must(codec.Uint64.Decode(s.state.Get(varMinBaseTokensOnCommonAccount)))
+func (s *StateReader) GetMinCommonAccountBalance() coin.Value {
+	return lo.Must(codec.CoinValue.Decode(s.state.Get(varMinBaseTokensOnCommonAccount)))
 }
 
-func (s *StateWriter) SetMinCommonAccountBalance(m uint64) {
-	s.state.Set(varMinBaseTokensOnCommonAccount, codec.Uint64.Encode(m))
+func (s *StateWriter) SetMinCommonAccountBalance(m coin.Value) {
+	s.state.Set(varMinBaseTokensOnCommonAccount, codec.CoinValue.Encode(m))
 }
 
 func (s *StateReader) GetChainOwnerID() isc.AgentID {

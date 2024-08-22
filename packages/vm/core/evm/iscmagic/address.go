@@ -18,8 +18,8 @@ import (
 type addressKind uint8
 
 const (
-	addressKindISCMagic = addressKind(iota)
-	addressKindERC20BaseTokens
+	addressKindISCMagic        = addressKind(iota)
+	addressKindERC20BaseTokens // deprecated
 	addressKindERC20Coin
 	addressKindERC721NFTs
 	addressKindERC721NFTCollection
@@ -38,9 +38,6 @@ var (
 // ERC20CoinAddress returns the Ethereum address of the ERC20 contract for
 // the given coin.
 func ERC20CoinAddress(coinType coin.Type) common.Address {
-	if coinType == coin.BaseTokenType {
-		return ERC20BaseTokensAddress
-	}
 	hash := hashing.HashKeccak([]byte(coinType))
 	return packMagicAddress(addressKindERC20Coin, hash[:maxPayloadLength])
 }

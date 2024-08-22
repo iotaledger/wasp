@@ -47,7 +47,7 @@ var Processor = evm.Contract.Processor(nil,
 
 // SetInitialState initializes the evm core contract and the Ethereum genesis
 // block on a newly created ISC chain.
-func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseTokenMagicWrap bool) {
+func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	// Ethereum genesis block configuration
 	genesisAlloc := types.GenesisAlloc{}
 
@@ -59,16 +59,6 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16, createBaseToken
 		Code:    common.Hex2Bytes("600180808053f3"),
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
-	}
-
-	if createBaseTokenMagicWrap {
-		// add the ERC20BaseTokens contract at address 0x10740100...00
-		genesisAlloc[iscmagic.ERC20BaseTokensAddress] = types.Account{
-			Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
-			Storage: map[common.Hash]common.Hash{},
-			Balance: nil,
-		}
-		addToPrivileged(evmPartition, iscmagic.ERC20BaseTokensAddress)
 	}
 
 	// add the ERC721NFTs contract at address 0x10740300...00
@@ -315,7 +305,7 @@ func AddDummyTxWithTransferEvents(
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData = append(txData, assets.Bytes()...)
-	txData = append(txData, codec.Encode(ctx.StateAnchor().StateIndex+1)...) // +1 because "current block = anchor state index +1"
+	txData = append(txData, codec.Encode(ctx.StateAnchor().Ref.Object.StateIndex+1)...) // +1 because "current block = anchor state index +1"
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 
 	tx := types.NewTx(

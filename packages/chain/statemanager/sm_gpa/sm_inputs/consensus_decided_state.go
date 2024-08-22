@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 type ConsensusDecidedState struct {
@@ -18,7 +19,7 @@ type ConsensusDecidedState struct {
 var _ gpa.Input = &ConsensusDecidedState{}
 
 func NewConsensusDecidedState(ctx context.Context, anchor *iscmove.RefWithObject[iscmove.Anchor]) (*ConsensusDecidedState, <-chan state.State) {
-	commitment, err := state.NewL1CommitmentFromAnchor(anchor.Object)
+	commitment, err := transaction.L1CommitmentFromAnchor(anchor.Object)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")
 	}

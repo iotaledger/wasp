@@ -6,19 +6,19 @@ import (
 
 	"github.com/fardream/go-bcs/bcs"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTxBuilderBasic(t *testing.T) {
@@ -31,15 +31,13 @@ func TestTxBuilderBasic(t *testing.T) {
 		signer,
 		iscPackage,
 		[]byte{1, 2, 3, 4},
-		trie.RandomHash().Bytes(),
-		state.RandomBlockHash().Bytes(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
-	commitment, err := state.NewL1CommitmentFromAnchor(anchor.Object)
+	commitment, err := transaction.L1CommitmentFromAnchor(anchor.Object)
 	require.NoError(t, err)
 
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor)
