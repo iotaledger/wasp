@@ -63,6 +63,10 @@ type WithOptionalSlice struct {
 	A *[]int `wbf:"optional"`
 }
 
+type WithArray struct {
+	A [3]int
+}
+
 type WithBigIntPtr struct {
 	A *big.Int
 }
@@ -114,7 +118,7 @@ type WithWBFOptsOverride struct {
 type WitUnexported struct {
 	A int
 	b int
-	c int `wbf:"optional"`
+	c int `wbf:""`
 	D int `wbf:"-"`
 }
 
@@ -172,6 +176,9 @@ func TestEncoder(t *testing.T) {
 
 	r = must2(wbf.Encode(WithOptionalSlice{A: &[]int{42, 43}}))
 	require.Equal(t, []byte{1, 2, 42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0}, r)
+
+	r = must2(wbf.Encode(WithArray{A: [3]int{42, 43, 44}}))
+	require.Equal(t, []byte{42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0}, r)
 
 	r = must2(wbf.Encode(WithBigIntPtr{A: big.NewInt(42)}))
 	require.Equal(t, []byte{1, 42}, r)

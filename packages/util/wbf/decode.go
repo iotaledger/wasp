@@ -122,7 +122,11 @@ func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 		d.decodeInt(v, Value8Bytes, typeOptions.Bytes)
 	case reflect.String:
 		v.SetString(d.r.ReadString())
-	case reflect.Array, reflect.Slice:
+	case reflect.Slice:
+		if err := d.decodeSlice(v, typeOptions); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
+	case reflect.Array:
 		if err := d.decodeArray(v, typeOptions); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
@@ -230,7 +234,7 @@ func (d *Decoder) decodeUint(v reflect.Value, origSize, customSize ValueBytesCou
 	}
 }
 
-func (d *Decoder) decodeArray(v reflect.Value, typOpts *TypeOptions) error {
+func (d *Decoder) decodeSlice(v reflect.Value, typOpts *TypeOptions) error {
 	var length int
 
 	switch typOpts.LenBytes {
@@ -242,7 +246,11 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts *TypeOptions) error {
 		return fmt.Errorf("invalid array size type: %v", typOpts.LenBytes)
 	}
 
-	elems := reflect.New(reflect.SliceOf(v.Type().Elem())).Elem()
+	if length == 0 {
+		return nil
+	}
+
+	elems := reflect.MakeSlice(v.Type(), length, length)
 
 	for i := 0; i < length; i++ {
 		elem := reflect.New(v.Type().Elem()).Elem()
@@ -251,10 +259,26 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts *TypeOptions) error {
 			return fmt.Errorf("[%v]: %w", i, err)
 		}
 
-		elems = reflect.Append(elems, elem)
+		elems.Index(i).Set(elem)
 	}
 
 	v.Set(elems)
+
+	return nil
+}
+
+func (d *Decoder) decodeArray(v reflect.Value, typOpts *TypeOptions) error {
+	elemType := v.Type().Elem()
+
+	for i := 0; i < v.Type().Len(); i++ {
+		elem := reflect.New(elemType).Elem()
+
+		if err := d.decodeValue(elem, nil); err != nil {
+			return fmt.Errorf("[%v]: %w", i, err)
+		}
+
+		v.Index(i).Set(elem)
+	}
 
 	return nil
 }
@@ -271,9 +295,12 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts *TypeOptions) error {
 		return fmt.Errorf("invalid map size type: %v", typOpts.LenBytes)
 	}
 
+	keyType := v.Type().Key()
+	valueType := v.Type().Elem()
+
 	for i := 0; i < length; i++ {
-		key := reflect.New(v.Type().Key()).Elem()
-		value := reflect.New(v.Type().Elem()).Elem()
+		key := reflect.New(keyType).Elem()
+		value := reflect.New(valueType).Elem()
 
 		if err := d.decodeValue(key, nil); err != nil {
 			return fmt.Errorf("key: %w", err)

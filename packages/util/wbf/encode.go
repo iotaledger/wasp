@@ -113,8 +113,12 @@ func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 		e.encodeInt(v, Value8Bytes, typeOptions.Bytes)
 	case reflect.String:
 		e.w.WriteString(v.String())
-	case reflect.Array, reflect.Slice:
-		if err := e.encodeArray(v, typeOptions); err != nil {
+	case reflect.Slice:
+		if err := e.encodeSlice(v, typeOptions); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
+	case reflect.Array:
+		if err := e.encodeArray(v); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.Map:
@@ -217,7 +221,7 @@ func (e *Encoder) encodeUint(v reflect.Value, origSize, customSize ValueBytesCou
 	}
 }
 
-func (e *Encoder) encodeArray(v reflect.Value, typOpts *TypeOptions) error {
+func (e *Encoder) encodeSlice(v reflect.Value, typOpts *TypeOptions) error {
 	switch typOpts.LenBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
@@ -227,6 +231,16 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts *TypeOptions) error {
 		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
 	}
 
+	for i := 0; i < v.Len(); i++ {
+		if err := e.encodeValue(v.Index(i), nil); err != nil {
+			return fmt.Errorf("[%v]: %w", i, err)
+		}
+	}
+
+	return nil
+}
+
+func (e *Encoder) encodeArray(v reflect.Value) error {
 	for i := 0; i < v.Len(); i++ {
 		if err := e.encodeValue(v.Index(i), nil); err != nil {
 			return fmt.Errorf("[%v]: %w", i, err)

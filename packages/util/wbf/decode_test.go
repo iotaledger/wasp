@@ -34,6 +34,7 @@ func TestDecoder(t *testing.T) {
 	testCodec(t, WithSlice{A: nil})
 	testCodec(t, WithShortSlice{A: []int{42, 43}})
 	testCodec(t, WithOptionalSlice{A: &[]int{42, 43}})
+	testCodec(t, WithArray{A: [3]int{42, 43, 44}})
 	testCodec(t, WithBigIntPtr{A: big.NewInt(42)})
 	testCodec(t, WithBigIntVal{A: *big.NewInt(42)})
 	testCodec(t, WithCustomCodec{})
