@@ -40,9 +40,9 @@ var Processor = Contract.Processor(nil,
 )
 
 // this expects the origin amount minus SD
-func (s *StateWriter) SetInitialState(baseTokensOnAnchor uint64) {
+func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
-	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, coin.Value(baseTokensOnAnchor)), isc.ChainID{})
+	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor), isc.ChainID{})
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account

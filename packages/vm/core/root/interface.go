@@ -13,7 +13,7 @@ var (
 	FuncDeployContract = coreutil.NewEP3(Contract, "deployContract",
 		coreutil.FieldWithCodec(codec.HashValue),
 		coreutil.FieldWithCodec(codec.String),
-		coreutil.FieldWithCodec(codec.NewCodecFromIoReadWriter[isc.CallArguments]()),
+		coreutil.FieldWithCodec(codec.CallArguments),
 	)
 
 	FuncGrantDeployPermission = coreutil.NewEP1(Contract, "grantDeployPermission",

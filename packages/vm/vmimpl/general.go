@@ -5,11 +5,8 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -22,7 +19,7 @@ func (reqctx *requestContext) ChainID() isc.ChainID {
 }
 
 func (vmctx *vmContext) ChainID() isc.ChainID {
-	return isc.ChainID(vmctx.task.AnchorOutput.ID)
+	return isc.ChainID(*vmctx.task.Anchor.Ref.ObjectID)
 }
 
 func (reqctx *requestContext) ChainInfo() *isc.ChainInfo {
@@ -58,7 +55,7 @@ func (reqctx *requestContext) Caller() isc.AgentID {
 }
 
 func (reqctx *requestContext) Timestamp() time.Time {
-	return reqctx.vm.task.TimeAssumption
+	return reqctx.vm.task.Timestamp
 }
 
 func (reqctx *requestContext) CurrentContractAccountID() isc.AgentID {
@@ -122,29 +119,11 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 }
 
 func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
-	var nilAliasID iotago.AliasID
-	blockset := vmctx.task.AnchorOutput.FeatureSet()
-	senderBlock := blockset.SenderFeature()
-	var sender *cryptolib.Address
-	if senderBlock != nil {
-		sender = cryptolib.NewAddressFromIotago(senderBlock.Address)
-	}
-	return &isc.StateAnchor{
-		ChainID:              vmctx.ChainID(),
-		Sender:               sender,
-		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
-		StateController:      cryptolib.NewAddressFromIotago(vmctx.task.AnchorOutput.StateController()),
-		GovernanceController: cryptolib.NewAddressFromIotago(vmctx.task.AnchorOutput.GovernorAddress()),
-		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
-		OutputID:             vmctx.task.AnchorOutputID,
-		StateData:            vmctx.task.AnchorOutput.StateMetadata,
-		Deposit:              vmctx.task.AnchorOutput.Amount,
-		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
-	}
+	return vmctx.task.Anchor
 }
 
 // DeployContract deploys contract by its program hash with the name specific to the instance
-func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
+func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams isc.CallArguments) {
 	reqctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
 	// calling root contract from another contract to install contract
 	reqctx.Call(root.FuncDeployContract.Message(programHash, name, initParams), nil)

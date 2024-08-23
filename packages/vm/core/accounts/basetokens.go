@@ -42,13 +42,11 @@ func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, wei *big.Int)
 }
 
 func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value, chainID isc.ChainID) {
-	b := isc.NewCoinBalances()
+	b := isc.NewCoinBalances().AddBaseTokens(adjustment)
 	switch {
 	case adjustment > 0:
-		b.AddBaseTokens(adjustment)
 		s.CreditToAccount(account, b, chainID)
 	case adjustment < 0:
-		b.Sub(coin.BaseTokenType, adjustment)
 		s.DebitFromAccount(account, b, chainID)
 	}
 }

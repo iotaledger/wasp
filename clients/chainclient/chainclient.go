@@ -77,34 +77,36 @@ func (c *Client) PostNRequests(
 	params ...PostRequestParams,
 ) ([]*iotago.Transaction, error) {
 	panic("refactor me: l1connection.OutputMap")
-	err := errors.New("refactor me: PostNRequests")
-	var outputs iotago.OutputSet
+	/*
+		err := errors.New("refactor me: PostNRequests")
+		var outputs iotago.OutputSet
 
-	transactions := make([]*iotago.Transaction, requestsCount)
-	for i := 0; i < requestsCount; i++ {
-		transactions[i], err = c.post1RequestWithOutputs(msg, outputs, params...)
-		if err != nil {
-			return nil, err
-		}
-		txID, err := transactions[i].ID()
-		if err != nil {
-			return nil, err
-		}
-		for _, input := range transactions[i].Essence.Inputs {
-			if utxoInput, ok := input.(*iotago.UTXOInput); ok {
-				delete(outputs, utxoInput.ID())
+		transactions := make([]*iotago.Transaction, requestsCount)
+		for i := 0; i < requestsCount; i++ {
+			transactions[i], err = c.post1RequestWithOutputs(msg, outputs, params...)
+			if err != nil {
+				return nil, err
 			}
-		}
-		for index, output := range transactions[i].Essence.Outputs {
-			if basicOutput, ok := output.(*iotago.BasicOutput); ok {
-				if cryptolib.NewAddressFromIotago(basicOutput.Ident()).Equals(c.KeyPair.Address()) {
-					outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
-					outputs[outputID] = transactions[i].Essence.Outputs[index]
+			txID, err := transactions[i].ID()
+			if err != nil {
+				return nil, err
+			}
+			for _, input := range transactions[i].Essence.Inputs {
+				if utxoInput, ok := input.(*iotago.UTXOInput); ok {
+					delete(outputs, utxoInput.ID())
+				}
+			}
+			for index, output := range transactions[i].Essence.Outputs {
+				if basicOutput, ok := output.(*iotago.BasicOutput); ok {
+					if cryptolib.NewAddressFromIotago(basicOutput.Ident()).Equals(c.KeyPair.Address()) {
+						outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
+						outputs[outputID] = transactions[i].Essence.Outputs[index]
+					}
 				}
 			}
 		}
-	}
-	return transactions, nil
+		return transactions, nil
+	*/
 }
 
 func (c *Client) post1RequestWithOutputs(
@@ -149,7 +151,7 @@ func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 			FunctionHName: accounts.ViewGetAccountNonce.Hname().String(),
 			Arguments:     apiextensions.JSONDictToAPIJSONDict(dict.Dict{
 				// TODO: Fix all msg conversions here..
-				//accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
+				// accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
 			}.JSONDict()),
 		}).Execute()
 	if err != nil {

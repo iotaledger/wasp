@@ -7,14 +7,13 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -31,7 +30,6 @@ import (
 // runRequest processes a single isc.Request in the batch, returning an error means the request will be skipped
 func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, maintenanceMode bool) (
 	res *vm.RequestResult,
-	unprocessableToRetry []isc.OnLedgerRequest,
 	err error,
 ) {
 	reqctx := vmctx.newRequestContext(req, requestIndex)
@@ -49,7 +47,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 	)
 
 	if err = reqctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	vmctx.loadChainConfig()
 
@@ -66,11 +64,11 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		vmctx.blockGas.burned = initialGasBurnedTotal
 		vmctx.blockGas.feeCharged = initialGasFeeChargedTotal
-		return nil, nil, err
+		return nil, err
 	}
 
 	reqctx.uncommittedState.Mutations().ApplyTo(vmctx.stateDraft)
-	return result, reqctx.unprocessableToRetry, nil
+	return result, nil
 }
 
 func (vmctx *vmContext) newRequestContext(req isc.Request, requestIndex uint16) *requestContext {
@@ -94,40 +92,28 @@ func (reqctx *requestContext) creditAssetsToChain() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	// Consume the output. Adjustment in L2 is needed because of storage deposit in the internal UTXOs
-	storageDepositNeeded := reqctx.vm.txbuilder.ConsumeRequest(req)
+	reqctx.vm.txbuilder.ConsumeRequest(req)
 
 	// if sender is specified, all assets goes to sender's sender
 	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		if bigint.Larger(big.NewInt(0).SetUint64(storageDepositNeeded), req.Assets().BaseTokens()) {
-			panic(vmexceptions.ErrNotEnoughFundsForSD) // if sender is not specified, and extra tokens are needed to pay for SD, the request cannot be processed.
-		}
 		// onleger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
-		reqctx.creditNFTToAccount(payoutAgentID)
-		reqctx.creditToAccount(payoutAgentID, req.Assets())
-		if storageDepositNeeded > 0 {
-			reqctx.debitFromAccount(payoutAgentID, isc.NewAssetsBaseTokensU64(storageDepositNeeded), false)
-		}
+		reqctx.creditObjectsToAccount(payoutAgentID, req.Assets().Objects.Sorted())
+		reqctx.creditToAccount(payoutAgentID, req.Assets().Coins)
 		return
 	}
 
-	senderBaseTokens := req.Assets().BaseTokens + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
+	senderBaseTokens := req.Assets().BaseTokens() + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
 	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(reqctx.txGasPrice(), parameters.Decimals)
-	if senderBaseTokens < storageDepositNeeded+minReqCost {
-		// user doesn't have enough funds to pay for the SD needs of this request
-		panic(vmexceptions.ErrNotEnoughFundsForSD)
+	if senderBaseTokens < minReqCost {
+		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
 	}
 
-	reqctx.creditToAccount(sender, req.Assets())
-	reqctx.creditNFTToAccount(sender)
-	if storageDepositNeeded > 0 {
-		reqctx.sdCharged = storageDepositNeeded
-		reqctx.debitFromAccount(sender, isc.NewAssetsBaseTokensU64(storageDepositNeeded), false)
-	}
+	reqctx.creditObjectsToAccount(sender, req.Assets().Objects.Sorted())
+	reqctx.creditToAccount(sender, req.Assets().Coins)
 }
 
 // txGasPrice returns:
@@ -289,7 +275,7 @@ func recoverFromExecutionError(r interface{}) *isc.VMError {
 }
 
 // callFromRequest is the call itself. Assumes sc exists
-func (reqctx *requestContext) callFromRequest() dict.Dict {
+func (reqctx *requestContext) callFromRequest() isc.CallArguments {
 	req := reqctx.req
 	reqctx.Debugf("callFromRequest: %s", req.ID().String())
 
@@ -318,7 +304,7 @@ func (reqctx *requestContext) getGasBudget() uint64 {
 // Affordable gas budget is calculated from gas budget provided in the request by the user and taking into account
 // how many tokens the sender has in its account and how many are allowed for the target.
 // Safe arithmetics is used
-func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensToSpendForGasFee uint64) {
+func (reqctx *requestContext) calculateAffordableGasBudget() (budget uint64, maxTokensToSpendForGasFee coin.Value) {
 	gasBudget := reqctx.getGasBudget()
 
 	if reqctx.vm.task.EstimateGasMode && gasBudget == 0 {
@@ -351,11 +337,16 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 	)
 	maxTokensToSpendForGasFee = f1 + f2
 	// calculate affordableGas gas budget
-	affordableGas := reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(
-		guaranteedFeeTokens,
-		reqctx.txGasPrice(),
-		parameters.Decimals,
-	)
+	var affordableGas uint64
+	if reqctx.txGasPrice() != nil {
+		affordableGas = reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokensWithGasPrice(
+			guaranteedFeeTokens,
+			reqctx.txGasPrice(),
+			parameters.Decimals,
+		)
+	} else {
+		affordableGas = reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
+	}
 	// adjust gas budget to what is affordable
 	affordableGas = min(gasBudget, affordableGas)
 	// cap gas to the maximum allowed per tx
@@ -364,15 +355,14 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget, maxTokensT
 
 // calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
-func (reqctx *requestContext) calcGuaranteedFeeTokens() uint64 {
+func (reqctx *requestContext) calcGuaranteedFeeTokens() coin.Value {
 	tokensGuaranteed := reqctx.GetBaseTokensBalanceDiscardRemainder(reqctx.req.SenderAccount())
 	// safely subtract the allowed from the sender to the target
-	if allowed := reqctx.req.Allowance(); allowed != nil {
-		if tokensGuaranteed < allowed.BaseTokens {
-			tokensGuaranteed = 0
-		} else {
-			tokensGuaranteed -= allowed.BaseTokens
-		}
+	allowed := reqctx.req.Allowance().BaseTokens()
+	if tokensGuaranteed < allowed {
+		tokensGuaranteed = 0
+	} else {
+		tokensGuaranteed -= allowed
 	}
 	return tokensGuaranteed
 }
@@ -424,12 +414,10 @@ func (reqctx *requestContext) chargeGasFee() {
 
 	sender := reqctx.req.SenderAccount()
 	if sendToValidator != 0 {
-		transferToValidator := &isc.Assets{}
-		transferToValidator.BaseTokens = sendToValidator
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			reqctx.vm.task.ValidatorFeeTarget,
-			transferToValidator,
+			isc.NewAssets(sendToValidator),
 			false,
 		)
 	}
@@ -450,7 +438,7 @@ func (reqctx *requestContext) chargeGasFee() {
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),
-			isc.NewAssetsBaseTokensU64(transferToCommonAcc),
+			isc.NewAssets(transferToCommonAcc),
 			false,
 		)
 	}
@@ -459,7 +447,7 @@ func (reqctx *requestContext) chargeGasFee() {
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			payoutAgentID,
-			isc.NewAssetsBaseTokensU64(sendToPayout),
+			isc.NewAssets(sendToPayout),
 			false,
 		)
 	}

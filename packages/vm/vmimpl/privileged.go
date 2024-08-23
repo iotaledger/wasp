@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (reqctx *requestContext) mustBeCalledFromContract(contract *coreutil.ContractInfo) {
@@ -58,11 +57,6 @@ func (reqctx *requestContext) MintNFT(addr *cryptolib.Address, immutableMetadata
 	reqctx.mustBeCalledFromContract(accounts.Contract)
 	panic("refactor me: vmtxbuilder.MintNFT")
 	// return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
-}
-
-func (reqctx *requestContext) RetryUnprocessable(req isc.Request, outputID sui.ObjectID) {
-	retryReq := isc.NewRetryOnLedgerRequest(req.(isc.OnLedgerRequest), outputID)
-	reqctx.unprocessableToRetry = append(reqctx.unprocessableToRetry, retryReq)
 }
 
 func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, allowance *isc.Assets) isc.CallArguments {

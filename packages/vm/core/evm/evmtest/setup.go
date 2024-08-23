@@ -19,9 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -50,7 +47,7 @@ type ethCallOptions struct {
 	gasPrice *big.Int
 }
 
-func InitEVM(t testing.TB, deployMagicWrap bool, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
+func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
 		AutoAdjustStorageDeposit: true,
 		Debug:                    true,
@@ -60,11 +57,11 @@ func InitEVM(t testing.TB, deployMagicWrap bool, nativeContracts ...*coreutil.Co
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
-	return InitEVMWithSolo(t, env, deployMagicWrap)
+	return InitEVMWithSolo(t, env)
 }
 
-func InitEVMWithSolo(t testing.TB, env *solo.Solo, deployMagicWrap bool) *SoloChainEnv {
-	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", dict.Dict{origin.ParamDeployBaseTokenMagicWrap: codec.Encode(deployMagicWrap)})
+func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain")
 	return &SoloChainEnv{
 		t:          t,
 		solo:       env,
@@ -160,19 +157,6 @@ func (e *SoloChainEnv) ISCMagicAccounts(defaultSender *ecdsa.PrivateKey) *IscCon
 
 func (e *SoloChainEnv) ISCMagicPrivileged(defaultSender *ecdsa.PrivateKey) *IscContractInstance {
 	return e.contractFromABI(iscmagic.Address, iscmagic.PrivilegedABI, defaultSender)
-}
-
-func (e *SoloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *IscContractInstance {
-	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20BaseTokensABI))
-	require.NoError(e.t, err)
-	return &IscContractInstance{
-		EVMContractInstance: &EVMContractInstance{
-			chain:         e,
-			defaultSender: defaultSender,
-			address:       iscmagic.ERC20BaseTokensAddress,
-			abi:           erc20BaseABI,
-		},
-	}
 }
 
 func (e *SoloChainEnv) ERC20Coin(defaultSender *ecdsa.PrivateKey, coinType coin.Type) *IscContractInstance {

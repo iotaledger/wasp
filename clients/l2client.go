@@ -16,9 +16,7 @@ type L2Client interface {
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
-		initParams []byte,
-		stateRoot []byte,
-		blockHash []byte,
+		stateMetadata []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
@@ -40,14 +38,13 @@ type L2Client interface {
 		gasBudget uint64,
 		devMode bool,
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	ReceiveAndUpdateStateRootRequest(
+	ReceiveRequestAndTransition(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		anchorRef *sui.ObjectRef,
 		reqs []sui.ObjectRef,
-		stateRoot []byte,
-		blockHash []byte,
+		stateMetadata []byte,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,

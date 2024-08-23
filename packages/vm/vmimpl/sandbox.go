@@ -12,11 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type contractSandbox struct {
@@ -39,7 +37,7 @@ func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) isc.CallAr
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
+func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams isc.CallArguments) {
 	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
 	s.reqctx.deployContract(programHash, name, initParams)
 }
@@ -78,11 +76,6 @@ func (s *contractSandbox) Request() isc.Calldata {
 func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.reqctx.numPostedOutputs))
 	s.reqctx.send(par)
-}
-
-func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) coin.Value {
-	s.Ctx.GasBurn(gas.BurnCodeEstimateStorageDepositCost)
-	return s.reqctx.estimateRequiredStorageDeposit(par)
 }
 
 func (s *contractSandbox) State() kv.KVStore {
@@ -186,10 +179,6 @@ func (s *contractSandbox) checkRemainingTokens(debitedAccount isc.AgentID) {
 
 func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, amount *big.Int) {
 	s.reqctx.creditToAccountFullDecimals(agentID, amount, true)
-}
-
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, outputID sui.ObjectID) {
-	s.reqctx.RetryUnprocessable(req, outputID)
 }
 
 func (s *contractSandbox) totalGasTokens() *isc.Assets {

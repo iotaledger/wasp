@@ -6,14 +6,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -51,22 +50,19 @@ func TestNFTDepositNoIssuer(t *testing.T) {
 	require.Nil(t, res.RequestResults[0].Receipt.Error)
 }
 
-func simulateRunOutput(t *testing.T, output iotago.Output) *vm.VMTaskResult {
-	// setup a test DB
-	chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl("")
-	require.NoError(t, err)
-	chainStateDatabaseManager, err := database.NewChainStateDatabaseManager(chainRecordRegistryProvider, database.WithEngine(hivedb.EngineMapDB))
-	require.NoError(t, err)
-	db, mu, err := chainStateDatabaseManager.ChainStateKVStore(isc.EmptyChainID())
-	require.NoError(t, err)
+func simulateRunOutput(
+	t *testing.T,
+	request *iscmove.RefWithObject[iscmove.Request],
+	anchorAddress *cryptolib.Address,
+) *vm.VMTaskResult {
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 
-	// parse request from output
-	outputID := iotago.OutputID{}
-	req, err := isc.OnLedgerFromUTXO(output, outputID)
+	req, err := isc.OnLedgerFromRequest(request, anchorAddress)
 	require.NoError(t, err)
 
 	// create the AO for a new chain
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("foobar")))
+	originBlock := origin.InitChain(0, store, nil)
 	_, chainAO, _, err := origin.NewChainOriginTransaction(
 		chainCreator,
 		chainCreator.Address(),
@@ -85,16 +81,17 @@ func simulateRunOutput(t *testing.T, output iotago.Output) *vm.VMTaskResult {
 		0,
 	)
 	require.NoError(t, err)
-	chainAOID := iotago.OutputID{}
 
 	// create task and run it
 	task := &vm.VMTask{
-		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
-		AnchorOutput:         chainAO,
-		AnchorOutputID:       chainAOID,
-		Store:                indexedstore.New(state.NewStore(db, mu)),
+		Processors: processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
+		Anchor: &isc.StateAnchor{
+			Ref:   &iscmove.RefWithObject[iscmove.Anchor]{},
+			Owner: chainCreator.Address(),
+		},
+		Store:                store,
 		Requests:             []isc.Request{req},
-		TimeAssumption:       time.Now(),
+		Timestamp:            time.Time{},
 		Entropy:              [32]byte{},
 		ValidatorFeeTarget:   nil,
 		EstimateGasMode:      false,

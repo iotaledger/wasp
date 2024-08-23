@@ -4,11 +4,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
@@ -21,11 +19,10 @@ import (
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
 	Processors         *processors.Cache
-	AnchorOutput       *iscmove.Anchor
-	AnchorOutputID     sui.ObjectID
+	Anchor             *isc.StateAnchor
 	Store              state.Store
 	Requests           []isc.Request
-	TimeAssumption     time.Time
+	Timestamp          time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget isc.AgentID
 	// If EstimateGasMode is enabled, signature and nonce checks will be skipped
@@ -61,7 +58,7 @@ type RequestResult struct {
 	// Request is the corresponding request in the task
 	Request isc.Request
 	// Return is the return value of the call
-	Return dict.Dict
+	Return isc.CallArguments
 	// Receipt is the receipt produced after executing the request
 	Receipt *blocklog.RequestReceipt
 }
@@ -71,5 +68,5 @@ func (task *VMTask) WillProduceBlock() bool {
 }
 
 func (task *VMTask) FinalStateTimestamp() time.Time {
-	return task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
+	return task.Timestamp.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 }

@@ -32,18 +32,6 @@ var (
 	PrivilegedABI string
 )
 
-//go:generate sh -c "solc --abi --bin-runtime --overwrite @iscmagic=`realpath .` ERC20BaseTokens.sol -o ."
-var (
-	//go:embed ERC20BaseTokens.abi
-	ERC20BaseTokensABI string
-
-	//go:embed ERC20BaseTokens.bin-runtime
-	erc20BaseRuntimeBytecodeHex    string
-	ERC20BaseTokensRuntimeBytecode = common.FromHex(strings.TrimSpace(erc20BaseRuntimeBytecodeHex))
-
-	ERC20BaseTokensAddress = packMagicAddress(addressKindERC20BaseTokens, nil)
-)
-
 //go:generate sh -c "solc --abi --bin-runtime --storage-layout --overwrite @iscmagic=`realpath .` ERC20Coin.sol -o ."
 var (
 	//go:embed ERC20Coin.abi

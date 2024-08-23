@@ -1,7 +1,6 @@
 package transaction
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -11,34 +10,28 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-const (
-	// L1Commitment calculation has changed from version 0 to version 1.
-	// The structure is actually the same, but the L1 commitment in V0
-	// refers to an empty state, and in V1 refers to the first initialized
-	// state.
-	StateMetadataSupportedVersion byte = 1
-)
-
+// StateMetadata contains the information stored in the Anchor object on L1
 type StateMetadata struct {
-	Version       byte
+	SchemaVersion isc.SchemaVersion
 	L1Commitment  *state.L1Commitment
 	GasFeePolicy  *gas.FeePolicy
-	SchemaVersion isc.SchemaVersion
+	InitParams    isc.CallArguments
 	PublicURL     string
 }
 
 func NewStateMetadata(
+	schemaVersion isc.SchemaVersion,
 	l1Commitment *state.L1Commitment,
 	gasFeePolicy *gas.FeePolicy,
-	schemaVersion isc.SchemaVersion,
+	initParams isc.CallArguments,
 	publicURL string,
 ) *StateMetadata {
 	return &StateMetadata{
-		Version:       StateMetadataSupportedVersion,
+		SchemaVersion: schemaVersion,
 		L1Commitment:  l1Commitment,
 		GasFeePolicy:  gasFeePolicy,
-		SchemaVersion: schemaVersion,
 		PublicURL:     publicURL,
+		InitParams:    initParams,
 	}
 }
 
@@ -52,43 +45,31 @@ func (s *StateMetadata) Bytes() []byte {
 
 func (s *StateMetadata) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
-	s.Version = rr.ReadByte()
-	if s.Version > StateMetadataSupportedVersion && rr.Err == nil {
-		return fmt.Errorf("unsupported state metadata version: %d", s.Version)
-	}
 	s.SchemaVersion = isc.SchemaVersion(rr.ReadUint32())
 	s.L1Commitment = new(state.L1Commitment)
 	rr.Read(s.L1Commitment)
 	s.GasFeePolicy = new(gas.FeePolicy)
 	rr.Read(s.GasFeePolicy)
+	s.InitParams = make(isc.CallArguments, 0)
+	rr.Read(&s.InitParams)
 	s.PublicURL = rr.ReadString()
 	return rr.Err
 }
 
 func (s *StateMetadata) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
-	ww.WriteByte(StateMetadataSupportedVersion)
 	ww.WriteUint32(uint32(s.SchemaVersion))
 	ww.Write(s.L1Commitment)
 	ww.Write(s.GasFeePolicy)
+	ww.Write(s.InitParams)
 	ww.WriteString(s.PublicURL)
 	return ww.Err
 }
 
-/////////////// avoiding circular imports: state <-> transaction //////////////////
-
-func L1CommitmentFromAliasOutput(ao *iscmove.Anchor) (*state.L1Commitment, error) {
-	s, err := StateMetadataFromBytes(ao.StateRoot)
+func L1CommitmentFromAnchor(anchor *iscmove.Anchor) (*state.L1Commitment, error) {
+	stateMetadata, err := StateMetadataFromBytes(anchor.StateMetadata)
 	if err != nil {
 		return nil, err
 	}
-	return s.L1Commitment, nil
-}
-
-func MustL1CommitmentFromAliasOutput(ao *iscmove.Anchor) *state.L1Commitment {
-	l1c, err := L1CommitmentFromAliasOutput(ao)
-	if err != nil {
-		panic(err)
-	}
-	return l1c
+	return stateMetadata.L1Commitment, nil
 }

@@ -4,6 +4,7 @@
 package governanceimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -55,13 +56,13 @@ func getPayoutAgentID(ctx isc.SandboxView) isc.AgentID {
 	return state.GetPayoutAgentID()
 }
 
-func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance uint64) {
+func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance coin.Value) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetMinCommonAccountBalance(minCommonAccountBalance)
 }
 
-func getMinCommonAccountBalance(ctx isc.SandboxView) uint64 {
+func getMinCommonAccountBalance(ctx isc.SandboxView) coin.Value {
 	state := governance.NewStateReaderFromSandbox(ctx)
 	return state.GetMinCommonAccountBalance()
 }

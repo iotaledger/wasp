@@ -10,9 +10,7 @@ import (
 
 func NewStartNewChainPTB(
 	packageID sui.PackageID,
-	initParams []byte,
-	stateRoot []byte,
-	blockHash []byte,
+	stateMetadata []byte,
 	ownerAddress *cryptolib.Address,
 ) sui.ProgrammableTransaction {
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -24,9 +22,7 @@ func NewStartNewChainPTB(
 				Function:      "start_new_chain",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
-					ptb.MustPure(initParams),
-					ptb.MustPure(stateRoot),
-					ptb.MustPure(blockHash),
+					ptb.MustPure(stateMetadata),
 				},
 			},
 		},
@@ -48,8 +44,7 @@ func NewReceiveRequestPTB(
 	anchorRef *sui.ObjectRef,
 	requestRefs []sui.ObjectRef,
 	reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances,
-	stateRoot []byte,
-	blockHash []byte,
+	stateMetadata []byte,
 ) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
@@ -176,12 +171,11 @@ func NewReceiveRequestPTB(
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
-				Function:      "update_state_root",
+				Function:      "transition",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
 					argAnchor,
-					ptb.MustPure(stateRoot),
-					ptb.MustPure(blockHash),
+					ptb.MustPure(stateMetadata),
 					argReceipts,
 				},
 			},

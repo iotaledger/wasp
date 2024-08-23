@@ -49,7 +49,7 @@ type WaspCallContext interface {
 	SchemaVersion() isc.SchemaVersion
 	GasBurned() uint64
 	GasBudgetLeft() uint64
-	GetAccountNFTs(agentID isc.AgentID) []sui.ObjectID
+	GetAccountObjects(agentID isc.AgentID) []sui.ObjectID
 	GetObjectBCS(id sui.ObjectID) ([]byte, bool)
 	GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool)
 }

@@ -88,13 +88,12 @@ type AssetsBagWithBalances struct {
 	Balances AssetsBagBalances `bcs:"-"`
 }
 
+// Anchor is the BCS equivalent for the move type Anchor
 type Anchor struct {
-	ID         sui.ObjectID
-	Assets     Referent[AssetsBag]
-	InitParams []byte
-	StateRoot  sui.Bytes
-	BlockHash  sui.Bytes
-	StateIndex uint32
+	ID            sui.ObjectID
+	Assets        Referent[AssetsBag]
+	StateMetadata []byte
+	StateIndex    uint32
 }
 
 func (a *Anchor) GetStateIndex() uint32 {

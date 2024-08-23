@@ -3,12 +3,16 @@ package vmimpl
 import (
 	"time"
 
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -40,7 +44,7 @@ type blockCloseCallback func(requestIndex uint16)
 
 type blockGas struct {
 	burned     uint64
-	feeCharged uint64
+	feeCharged coin.Value
 }
 
 type requestContext struct {
@@ -55,16 +59,12 @@ type requestContext struct {
 	entropy           hashing.HashValue
 	onWriteReceipt    []coreCallbackFunc
 	gas               requestGas
-	// SD charged to consume the current request
-	sdCharged uint64
-	// requests that the sender asked to retry
-	unprocessableToRetry []isc.OnLedgerRequest
 	// snapshots taken via ctx.TakeStateSnapshot()
 	snapshots []stateSnapshot
 }
 
 type stateSnapshot struct {
-	txb   *vmtxbuilder.AnchorTransactionBuilder
+	txb   vmtxbuilder.TransactionBuilder
 	state *buffered.BufferedKVStore
 }
 
@@ -72,13 +72,13 @@ type requestGas struct {
 	// is gas burn enabled
 	burnEnabled bool
 	// max tokens that can be charged for gas fee
-	maxTokensToSpendForGasFee uint64
+	maxTokensToSpendForGasFee coin.Value
 	// final gas budget set for the run
 	budgetAdjusted uint64
 	// gas already burned
 	burned uint64
 	// tokens charged
-	feeCharged uint64
+	feeCharged coin.Value
 	// burn history. If disabled, it is nil
 	burnLog *gas.BurnLog
 }
@@ -109,14 +109,12 @@ func (vmctx *vmContext) withStateUpdate(f func(chainState kv.KVStore)) {
 // return nil for normal block and rotation address for rotation block
 func (vmctx *vmContext) extractBlock(
 	numRequests, numSuccess, numOffLedger uint16,
-	unprocessable []isc.OnLedgerRequest,
 ) (uint32, *state.L1Commitment, time.Time, *cryptolib.Address) {
 	var rotationAddr *cryptolib.Address
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.TimeAssumption)
+		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.Timestamp)
 		panic("we need to re-think how transaction effects get saved to the state. something like saveInternalUTXOs is probably not necessary for the first PoC version")
-		vmctx.saveInternalUTXOs(unprocessable)
 	})
 
 	block := vmctx.task.Store.ExtractBlock(vmctx.stateDraft)
@@ -149,14 +147,14 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
-		PreviousAliasOutput:   isc.NewAliasOutputWithID(vmctx.task.AnchorOutput, vmctx.task.AnchorOutputID),
+		PreviousL1Commitment:  lo.Must(transaction.L1CommitmentFromAnchor(vmctx.task.Anchor.Ref.Object)),
 		GasBurned:             vmctx.blockGas.burned,
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}
 
 	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(vmctx.stateDraft))
 	blocklogState.SaveNextBlockInfo(blockInfo)
-	blocklogState.Prune(blockInfo.BlockIndex(), vmctx.chainInfo.BlockKeepAmount)
+	blocklogState.Prune(blockInfo.BlockIndex, vmctx.chainInfo.BlockKeepAmount)
 	vmctx.task.Log.Debugf("saved blockinfo:\n%s", blockInfo)
 	return nil
 }
@@ -168,8 +166,7 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 // 2. Foundries
 // 3. NFTs
 // 4. produced outputs
-// 5. unprocessable requests
-func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
+func (vmctx *vmContext) saveInternalUTXOs() {
 	panic("saveInternalUTXOs deprecated")
 	// // create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
 	// mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
@@ -237,12 +234,9 @@ func (vmctx *vmContext) saveInternalUTXOs(unprocessable []isc.OnLedgerRequest) {
 	// }
 }
 
-func (vmctx *vmContext) removeUnprocessable(reqID isc.RequestID) {
-	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(vmctx.stateDraft)).RemoveUnprocessable(reqID)
-}
-
 func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestResult) {
-	var sumGasBurned, sumGasFeeCharged uint64
+	var sumGasBurned uint64
+	var sumGasFeeCharged coin.Value
 
 	for _, r := range requestResults {
 		sumGasBurned += r.Receipt.GasBurned
