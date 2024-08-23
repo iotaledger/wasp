@@ -66,9 +66,7 @@ func (e *Encoder) Encode(v any) error {
 		return fmt.Errorf("cannot encode a nil value")
 	}
 
-	vR := reflect.ValueOf(v)
-
-	return e.encodeValue(vR, nil)
+	return e.encodeValue(reflect.ValueOf(v), nil)
 }
 
 func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) error {

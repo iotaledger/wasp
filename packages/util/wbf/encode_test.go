@@ -1,6 +1,7 @@
 package wbf_test
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -69,17 +70,30 @@ type WithBigIntVal struct {
 	A big.Int
 }
 
-type WithCustomEncoder struct {
+type WithCustomCodec struct {
 }
 
-func (w WithCustomEncoder) WBFEncode(e *wbf.Encoder) error {
+func (w WithCustomCodec) WBFEncode(e *wbf.Encoder) error {
 	e.Write([]byte{1, 2, 3})
 	return nil
 }
 
-type WithNestedCustomEncoder struct {
+func (w *WithCustomCodec) WBFDecode(d *wbf.Decoder) error {
+	b, err := d.Read(3)
+	if err != nil {
+		return err
+	}
+
+	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
+		return fmt.Errorf("invalid value: %v", b)
+	}
+
+	return nil
+}
+
+type WithNestedCustomCodec struct {
 	A int `wbf:"bytes=1"`
-	B WithCustomEncoder
+	B WithCustomCodec
 }
 
 type ShortInt int
@@ -142,6 +156,9 @@ func TestEncoder(t *testing.T) {
 	r = must2(wbf.Encode(WithSlice{A: []int{}}))
 	require.Equal(t, []byte{0}, r)
 
+	r = must2(wbf.Encode(WithSlice{A: nil}))
+	require.Equal(t, []byte{0}, r)
+
 	r = must2(wbf.Encode(WithShortSlice{A: []int{42, 43}}))
 	require.Equal(t, []byte{2, 42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0}, r)
 
@@ -154,10 +171,10 @@ func TestEncoder(t *testing.T) {
 	r = must2(wbf.Encode(WithBigIntVal{A: *big.NewInt(42)}))
 	require.Equal(t, []byte{1, 42}, r)
 
-	r = must2(wbf.Encode(WithCustomEncoder{}))
+	r = must2(wbf.Encode(WithCustomCodec{}))
 	require.Equal(t, []byte{1, 2, 3}, r)
 
-	r = must2(wbf.Encode(WithNestedCustomEncoder{A: 43, B: WithCustomEncoder{}}))
+	r = must2(wbf.Encode(WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}))
 	require.Equal(t, []byte{43, 1, 2, 3}, r)
 
 	r = must2(wbf.Encode(WithWBFOpts{A: 42}))
