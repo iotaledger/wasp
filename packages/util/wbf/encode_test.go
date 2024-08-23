@@ -210,12 +210,6 @@ func TestEncoder(t *testing.T) {
 	require.Equal(t, []byte{42, 0, 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0}, r)
 }
 
-func must(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func must2[Res any](v Res, err error) Res {
 	if err != nil {
 		panic(err)
