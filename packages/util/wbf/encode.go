@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"unsafe"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
@@ -264,12 +265,34 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
 
-		fieldOpts, err := FieldOptionsFromAnnotation(fieldType.Tag.Get(e.cfg.TagName), *e.cfg.DefaultTypeOptions)
+		fieldOpts, hasTag, err := e.fieldOptsFromTag(fieldType)
 		if err != nil {
 			return fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
 		}
 
+		if fieldOpts.Skip {
+			continue
+		}
+
 		fieldVal := v.Field(i)
+
+		if !fieldType.IsExported() {
+			if !hasTag {
+				continue
+			}
+
+			if !fieldVal.CanAddr() {
+				vc := reflect.New(t).Elem()
+				vc.Set(v)
+				v = vc
+				fieldVal = v.Field(i)
+			}
+
+			// The field is unexported, but it has a tag, so we need to serialize it.
+
+			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
+			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
+		}
 
 		if fieldVal.Kind() == reflect.Ptr || fieldVal.Kind() == reflect.Interface {
 			isNil := fieldVal.IsNil()
@@ -295,6 +318,17 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 	}
 
 	return nil
+}
+
+func (e *Encoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions, bool, error) {
+	a, hasTag := fieldType.Tag.Lookup(e.cfg.TagName)
+
+	fieldOpts, err := FieldOptionsFromTag(a, *e.cfg.DefaultTypeOptions)
+	if err != nil {
+		return FieldOptions{}, false, fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
+	}
+
+	return fieldOpts, hasTag, nil
 }
 
 // func (e *Encoder) Writer() *rwutil.Writer {

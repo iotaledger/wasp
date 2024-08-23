@@ -40,4 +40,16 @@ func TestDecoder(t *testing.T) {
 	testCodec(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}})
 	testCodec(t, WithWBFOpts{A: 42})
 	testCodec(t, WithWBFOptsOverride{A: 42})
+
+	{
+		v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
+		vEnc := must2(wbf.Encode(v))
+		vDec := must2(wbf.Decode[WitUnexported](vEnc))
+		require.NotEqual(t, v, vDec)
+		require.Equal(t, 0, vDec.b)
+		require.Equal(t, 0, vDec.D)
+		vDec.b = 43
+		vDec.D = 45
+		require.Equal(t, v, vDec)
+	}
 }

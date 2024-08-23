@@ -49,7 +49,7 @@ func (o *FieldOptions) Validate() error {
 	return nil
 }
 
-func FieldOptionsFromAnnotation(a string, defTypOpts TypeOptions) (FieldOptions, error) {
+func FieldOptionsFromTag(a string, defTypOpts TypeOptions) (_ FieldOptions, _ error) {
 	if a == "" {
 		return FieldOptions{TypeOptions: defTypOpts}, nil
 	}
@@ -91,6 +91,10 @@ func FieldOptionsFromAnnotation(a string, defTypOpts TypeOptions) (FieldOptions,
 			opts.LenBytes = LenBytesCount(bytes)
 		case "optional":
 			opts.Optional = true
+		case "":
+			return FieldOptions{}, fmt.Errorf("empty field tag")
+		default:
+			return FieldOptions{}, fmt.Errorf("unknown field tag: %s", key)
 		}
 	}
 

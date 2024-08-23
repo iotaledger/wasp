@@ -12,6 +12,7 @@ import (
 type BasicStruct struct {
 	A int
 	B string
+	C int `wbf:"-"`
 }
 
 type IntWithLessBytes struct {
@@ -110,10 +111,17 @@ type WithWBFOptsOverride struct {
 	A ShortInt `wbf:"bytes=1"`
 }
 
+type WitUnexported struct {
+	A int
+	b int
+	c int `wbf:"optional"`
+	D int `wbf:"-"`
+}
+
 func TestEncoder(t *testing.T) {
 	var err error
 
-	r := must2(wbf.Encode(BasicStruct{A: 42, B: "aaa"}))
+	r := must2(wbf.Encode(BasicStruct{A: 42, B: "aaa", C: 5}))
 	require.Equal(t, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97}, r)
 
 	r = must2(wbf.Encode(IntWithLessBytes{A: 42}))
@@ -182,6 +190,9 @@ func TestEncoder(t *testing.T) {
 
 	r = must2(wbf.Encode(WithWBFOptsOverride{A: 42}))
 	require.Equal(t, []byte{42}, r)
+
+	r = must2(wbf.Encode(WitUnexported{A: 42, b: 43, c: 44, D: 45}))
+	require.Equal(t, []byte{42, 0, 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0}, r)
 }
 
 func must(err error) {
