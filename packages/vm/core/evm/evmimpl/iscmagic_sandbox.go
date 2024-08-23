@@ -98,8 +98,6 @@ func (h *magicContractHandler) Send(
 		req.Assets.AddBaseTokens(additionalCallValue)
 	}
 
-	h.adjustStorageDeposit(req)
-
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
 	if !req.Assets.Clone().Spend(req.Metadata.Allowance) {
@@ -127,19 +125,6 @@ func (h *magicContractHandler) Call(
 }
 
 var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (%d) not enough to cover storage deposit (%d)")
-
-func (h *magicContractHandler) adjustStorageDeposit(req isc.RequestParameters) {
-	sd := h.ctx.EstimateRequiredStorageDeposit(req)
-	if req.Assets.BaseTokens() < sd {
-		if !req.AdjustToMinimumStorageDeposit {
-			panic(errBaseTokensNotEnoughForStorageDeposit.Create(
-				req.Assets.BaseTokens,
-				sd,
-			))
-		}
-		req.Assets.SetBaseTokens(sd)
-	}
-}
 
 // moveAssetsToCommonAccount moves the assets from the caller's L2 account to the common
 // account before sending to L1

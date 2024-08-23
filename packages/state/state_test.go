@@ -16,6 +16,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -141,7 +142,7 @@ func TestOriginBlock(t *testing.T) {
 
 func TestOriginBlockDeterminism(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		deposit := rapid.Uint64().Draw(t, "deposit")
+		deposit := coin.Value(rapid.Uint64().Draw(t, "deposit"))
 		db := mapdb.NewMapDB()
 		st := state.NewStoreWithUniqueWriteMutex(db)
 		require.True(t, st.IsEmpty())

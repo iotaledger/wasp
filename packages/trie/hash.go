@@ -1,6 +1,7 @@
 package trie
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"io"
 
@@ -75,4 +76,10 @@ func (h *Hash) Read(r io.Reader) error {
 
 func (h Hash) Write(w io.Writer) error {
 	return rwutil.WriteN(w, h[:])
+}
+
+func RandomHash() Hash {
+	var h Hash
+	_, _ = rand.Read(h[:])
+	return h
 }

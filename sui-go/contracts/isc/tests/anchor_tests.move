@@ -42,7 +42,7 @@ module isc::anchor_tests {
         let mut ctx = tx_context::dummy();
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), vector::empty(), vector::empty(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
         let iota = coin::mint_for_testing<SUI>(initial_iota_in_request, &mut ctx);
@@ -139,9 +139,8 @@ module isc::anchor_tests {
         let mut receipts = vector::empty();
         receipts.push_back(receipt);
         // ServerPTB.7.2: update the state root
-        let new_state_root = vector::empty();
-        let new_block_hash = vector::empty();
-        anchor.update_state_root(new_state_root, new_block_hash, receipts);
+        let new_state_metadata = vector::empty();
+        anchor.transition(new_state_metadata, receipts);
 
         // !!! END !!!
 

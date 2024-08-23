@@ -85,16 +85,15 @@ type AssetsBagBalances map[suijsonrpc.CoinType]*suijsonrpc.Balance
 
 type AssetsBagWithBalances struct {
 	AssetsBag
-	Balances AssetsBagBalances
+	Balances AssetsBagBalances `bcs:"-"`
 }
 
+// Anchor is the BCS equivalent for the move type Anchor
 type Anchor struct {
-	ID         sui.ObjectID
-	Assets     Referent[AssetsBag]
-	InitParams []byte
-	StateRoot  sui.Bytes
-	BlockHash  sui.Bytes
-	StateIndex uint32
+	ID            sui.ObjectID
+	Assets        Referent[AssetsBag]
+	StateMetadata []byte
+	StateIndex    uint32
 }
 
 func (a *Anchor) GetStateIndex() uint32 {
@@ -124,9 +123,10 @@ type Message struct {
 }
 
 type Request struct {
-	ID        sui.ObjectID
-	Sender    *cryptolib.Address
-	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	ID     sui.ObjectID
+	Sender *cryptolib.Address
+	// XXX balances are empty if we don't fetch the dynamic fields
+	AssetsBag Referent[AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
 	Allowance Referent[Allowance] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *Allowance with `bcs:"optional`
 	GasBudget uint64

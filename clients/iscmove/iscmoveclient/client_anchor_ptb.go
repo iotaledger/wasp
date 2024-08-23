@@ -8,7 +8,11 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddress *cryptolib.Address) sui.ProgrammableTransaction {
+func NewStartNewChainPTB(
+	packageID sui.PackageID,
+	stateMetadata []byte,
+	ownerAddress *cryptolib.Address,
+) sui.ProgrammableTransaction {
 	ptb := sui.NewProgrammableTransactionBuilder()
 	arg1 := ptb.Command(
 		sui.Command{
@@ -18,7 +22,7 @@ func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddres
 				Function:      "start_new_chain",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
-					ptb.MustPure(initParams),
+					ptb.MustPure(stateMetadata),
 				},
 			},
 		},
@@ -40,8 +44,7 @@ func NewReceiveRequestPTB(
 	anchorRef *sui.ObjectRef,
 	requestRefs []sui.ObjectRef,
 	reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances,
-	stateRoot []byte,
-	blockHash []byte,
+	stateMetadata []byte,
 ) (sui.ProgrammableTransaction, error) {
 	ptb := sui.NewProgrammableTransactionBuilder()
 
@@ -66,6 +69,7 @@ func NewReceiveRequestPTB(
 	argAnchorAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
 	argAnchorBorrow := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
 	for _, reqObject := range requestRefs {
+		reqObject := reqObject
 		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: &reqObject})
 		argReceiveRequest := ptb.Command(
 			sui.Command{
@@ -167,12 +171,11 @@ func NewReceiveRequestPTB(
 			MoveCall: &sui.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
-				Function:      "update_state_root",
+				Function:      "transition",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
 					argAnchor,
-					ptb.MustPure(stateRoot),
-					ptb.MustPure(blockHash),
+					ptb.MustPure(stateMetadata),
 					argReceipts,
 				},
 			},

@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -28,7 +27,9 @@ type CreateChainParams struct {
 	OriginatorKeyPair    cryptolib.Signer
 	Textout              io.Writer
 	Prefix               string
-	InitParams           dict.Dict
+	InitParams           isc.CallArguments
+	StateRoot            []byte
+	BlockHash            []byte
 	GovernanceController *cryptolib.Address
 	PackageID            sui.PackageID
 }
@@ -47,7 +48,18 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	anchor, err := par.Layer1Client.L2().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
+	anchor, err := par.Layer1Client.L2().StartNewChain(
+		ctx,
+		par.OriginatorKeyPair,
+		par.PackageID,
+		par.InitParams.Bytes(),
+		par.StateRoot,
+		par.BlockHash,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
 	if err != nil {
 		return isc.ChainID{}, err
 	}

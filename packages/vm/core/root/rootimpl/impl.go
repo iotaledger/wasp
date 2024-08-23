@@ -36,7 +36,7 @@ var errInvalidContractName = coreerrors.Register("invalid contract name").Create
 //   - ParamName string, the unique name of the contract in the chain. Later used as Hname
 //   - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples it's an arbitrary unique hash set in the global call examples.AddProcessor
-func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, initArgs *isc.CallArguments) {
+func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, initArgs isc.CallArguments) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
 		panic(vm.ErrUnauthorized)
@@ -56,7 +56,7 @@ func deployContract(ctx isc.Sandbox, progHash hashing.HashValue, name string, in
 		ProgramHash: progHash,
 		Name:        name,
 	})
-	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, *initArgs), nil)
+	ctx.Call(isc.NewMessage(isc.Hn(name), isc.EntryPointInit, initArgs), nil)
 	eventDeploy(ctx, progHash, name)
 }
 

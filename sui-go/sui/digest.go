@@ -1,5 +1,7 @@
 package sui
 
+import "crypto/rand"
+
 type Digest = Base58
 type ObjectDigest = Digest
 type TransactionDigest = Digest
@@ -19,4 +21,12 @@ func MustNewDigest(str string) *Digest {
 		panic(err)
 	}
 	return digest
+}
+
+func RandomDigest() *Digest {
+	var b [32]byte
+	var d Digest
+	_, _ = rand.Read(b[:])
+	d = b[:]
+	return &d
 }

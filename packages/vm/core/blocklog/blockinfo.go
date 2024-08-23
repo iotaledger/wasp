@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -23,7 +24,7 @@ type BlockInfo struct {
 	NumOffLedgerRequests  uint16
 	PreviousL1Commitment  *state.L1Commitment
 	GasBurned             uint64
-	GasFeeCharged         uint64
+	GasFeeCharged         coin.Value
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index
@@ -74,7 +75,7 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 		rr.Read(bi.PreviousL1Commitment)
 	}
 	bi.GasBurned = rr.ReadGas64()
-	bi.GasFeeCharged = rr.ReadGas64()
+	bi.GasFeeCharged = coin.Value(rr.ReadAmount64())
 	return rr.Err
 }
 
@@ -90,6 +91,6 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 		ww.Write(bi.PreviousL1Commitment)
 	}
 	ww.WriteGas64(bi.GasBurned)
-	ww.WriteGas64(bi.GasFeeCharged)
+	ww.WriteAmount64(uint64(bi.GasFeeCharged))
 	return ww.Err
 }

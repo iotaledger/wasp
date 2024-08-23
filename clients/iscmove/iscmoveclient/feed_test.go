@@ -96,14 +96,13 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
 
-	_, err = client.ReceiveAndUpdateStateRootRequest(
+	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
 		chainOwner,
 		iscPackageID,
 		&anchor.ObjectRef,
 		[]sui.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
-		[]byte{7, 8, 9},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -112,5 +111,5 @@ func TestRequestsFeed(t *testing.T) {
 	require.NoError(t, err)
 
 	upd := <-anchorUpdates
-	require.EqualValues(t, []byte{1, 2, 3}, upd.Object.StateRoot)
+	require.EqualValues(t, []byte{1, 2, 3}, upd.Object.StateMetadata)
 }

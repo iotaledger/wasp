@@ -85,7 +85,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 		if !ok {
 			return trie.Hash{}, fmt.Errorf("iterating the chain: blocklog missing block index %d on active state %d", earliestAvailableBlockIndex, state.BlockIndex())
 		}
-		state, err = s.StateByTrieRoot(bi.PreviousL1Commitment().TrieRoot())
+		state, err = s.StateByTrieRoot(bi.PreviousL1Commitment.TrieRoot())
 		if err != nil {
 			return trie.Hash{}, err
 		}
@@ -94,7 +94,7 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 	if !ok {
 		return trie.Hash{}, fmt.Errorf("blocklog missing block index %d on active state %d", targetBlockIndex, state.BlockIndex())
 	}
-	return nextBlockInfo.PreviousL1Commitment().TrieRoot(), nil
+	return nextBlockInfo.PreviousL1Commitment.TrieRoot(), nil
 }
 
 // TODO this can probably be removed, since we do the search on the "regular" impl

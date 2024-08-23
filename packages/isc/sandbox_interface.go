@@ -15,11 +15,11 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -105,7 +105,7 @@ type Sandbox interface {
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(msg Message, allowance *Assets) CallArguments
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict)
+	DeployContract(programHash hashing.HashValue, name string, initParams CallArguments)
 	// Event emits an event
 	Event(topic string, payload []byte)
 	// RegisterError registers an error
@@ -122,8 +122,6 @@ type Sandbox interface {
 	TransferAllowedFunds(target AgentID, transfer ...*Assets) *Assets
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
-	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
-	EstimateRequiredStorageDeposit(r RequestParameters) coin.Value
 	// StateAnchor properties of the anchor request
 	StateAnchor() *StateAnchor
 
@@ -197,6 +195,14 @@ func (c CallArguments) MustAt(index int) []byte {
 	return ret
 }
 
+func (c CallArguments) OrNil(index int) []byte {
+	ret, err := c.At(index)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func (c CallArguments) String() string {
 	return hexutil.Encode(c.Bytes())
 }
@@ -208,6 +214,12 @@ func (c CallArguments) Bytes() []byte {
 		panic(err)
 	}
 	return b.Bytes()
+}
+
+func CallArgumentsFromBytes(b []byte) (CallArguments, error) {
+	var ret CallArguments
+	_, err := rwutil.ReadFromBytes(b, &ret)
+	return ret, err
 }
 
 func (c *CallArguments) Read(rr io.Reader) error {
@@ -321,16 +333,9 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	ChainID              ChainID
-	Sender               *cryptolib.Address
-	OutputID             iotago.OutputID
-	IsOrigin             bool
-	StateController      *cryptolib.Address
-	GovernanceController *cryptolib.Address
-	StateIndex           uint32
-	StateData            []byte
-	Deposit              uint64
-	NativeTokens         iotago.NativeTokens
+	Ref        *iscmove.RefWithObject[iscmove.Anchor]
+	Owner      *cryptolib.Address
+	ISCPackage sui.Address
 }
 
 type SendOptions struct {

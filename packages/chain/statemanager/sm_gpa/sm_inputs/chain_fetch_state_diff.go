@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 type ChainFetchStateDiff struct {
@@ -25,11 +26,11 @@ func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *iscmove
 		// Only the current state is needed, if prevAO is unknown.
 		prevAnchor = nextAnchor
 	}
-	oldCommitment, err := state.NewL1CommitmentFromAnchor(prevAnchor.Object)
+	oldCommitment, err := transaction.L1CommitmentFromAnchor(prevAnchor.Object)
 	if err != nil {
 		panic(fmt.Errorf("Cannot make L1 commitment from previous anchor, error: %w", err))
 	}
-	newCommitment, err := state.NewL1CommitmentFromAnchor(nextAnchor.Object)
+	newCommitment, err := transaction.L1CommitmentFromAnchor(nextAnchor.Object)
 	if err != nil {
 		panic(fmt.Errorf("Cannot make L1 commitment from next anchor, error: %w", err))
 	}

@@ -17,16 +17,16 @@ func (c *Client) StartNewChain(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
+	stateMetadata []byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	initParams []byte,
 	devMode bool,
 ) (*iscmove.RefWithObject[iscmove.Anchor], error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewStartNewChainPTB(packageID, initParams, cryptolibSigner.Address())
+	ptb := NewStartNewChainPTB(packageID, stateMetadata, cryptolibSigner.Address())
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -81,14 +81,13 @@ func (c *Client) StartNewChain(
 	return anchor, nil
 }
 
-func (c *Client) ReceiveAndUpdateStateRootRequest(
+func (c *Client) ReceiveRequestAndTransition(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
 	anchorRef *sui.ObjectRef,
 	reqs []sui.ObjectRef,
-	stateRoot []byte,
-	blockHash []byte,
+	stateMetadata []byte,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -109,7 +108,7 @@ func (c *Client) ReceiveAndUpdateStateRootRequest(
 		reqAssetsBagsMap[reqRef] = assetsBag
 	}
 
-	ptb, err := NewReceiveRequestPTB(packageID, anchorRef, reqs, reqAssetsBagsMap, stateRoot, blockHash)
+	ptb, err := NewReceiveRequestPTB(packageID, anchorRef, reqs, reqAssetsBagsMap, stateMetadata)
 	if err != nil {
 		return nil, err
 	}

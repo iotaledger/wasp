@@ -21,7 +21,6 @@ type RequestReceipt struct {
 	GasBudget     uint64                 `json:"gasBudget"`
 	GasBurned     uint64                 `json:"gasBurned"`
 	GasFeeCharged coin.Value             `json:"gasFeeCharged"`
-	SDCharged     coin.Value             `json:"storageDepositCharged"`
 	// not persistent
 	BlockIndex   uint32       `json:"blockIndex"`
 	RequestIndex uint16       `json:"requestIndex"`
@@ -53,7 +52,6 @@ func (rec *RequestReceipt) Read(r io.Reader) error {
 	rec.GasBudget = rr.ReadGas64()
 	rec.GasBurned = rr.ReadGas64()
 	rec.GasFeeCharged = coin.Value(rr.ReadAmount64())
-	rec.SDCharged = coin.Value(rr.ReadAmount64())
 	rec.Request = isc.RequestFromReader(rr)
 	hasError := rr.ReadBool()
 	if hasError {
@@ -74,7 +72,6 @@ func (rec *RequestReceipt) Write(w io.Writer) error {
 	ww.WriteGas64(rec.GasBudget)
 	ww.WriteGas64(rec.GasBurned)
 	ww.WriteAmount64(uint64(rec.GasFeeCharged))
-	ww.WriteAmount64(uint64(rec.SDCharged))
 	ww.Write(rec.Request)
 	ww.WriteBool(rec.Error != nil)
 	if rec.Error != nil {
@@ -92,7 +89,6 @@ func (rec *RequestReceipt) String() string {
 	ret += fmt.Sprintf("Err: %v\n", rec.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", rec.BlockIndex, rec.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", rec.GasBudget, rec.GasBurned, rec.GasFeeCharged)
-	ret += fmt.Sprintf("Storage deposit charged: %d\n", rec.SDCharged)
 	ret += fmt.Sprintf("Call data: %s\n", rec.Request)
 	ret += fmt.Sprintf("burn log: %s\n", rec.GasBurnLog)
 	return ret

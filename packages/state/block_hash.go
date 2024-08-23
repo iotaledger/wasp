@@ -1,6 +1,7 @@
 package state
 
 import (
+	"crypto/rand"
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -47,4 +48,10 @@ func (bh BlockHash) String() string {
 
 func (bh BlockHash) Equals(other BlockHash) bool {
 	return bh == other
+}
+
+func RandomBlockHash() BlockHash {
+	var b BlockHash
+	_, _ = rand.Read(b[:])
+	return b
 }

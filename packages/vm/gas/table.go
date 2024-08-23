@@ -16,7 +16,6 @@ const (
 	BurnCodeDeployContract
 	BurnCodeEmitEvent1P
 	BurnCodeTransferAllowance
-	BurnCodeEstimateStorageDepositCost
 	BurnCodeSendL1Request
 
 	// Sandbox util codes
@@ -49,7 +48,6 @@ var burnTable = BurnTable{
 	BurnCodeEmitEvent1P:                {"event", linear(1)}, // 1 gas per byte
 	BurnCodeGetAllowance:               {"allowance", constValue(10)},
 	BurnCodeTransferAllowance:          {"transfer", constValue(10)},
-	BurnCodeEstimateStorageDepositCost: {"storage deposit estimate", constValue(5)},
 	BurnCodeSendL1Request:              {"send", linear(Coef1Send)},
 	BurnCodeDeployContract:             {"deploy", constValue(10)},
 	BurnCodeStorage1P:                  {"storage", linear(55)}, // 55 gas per byte

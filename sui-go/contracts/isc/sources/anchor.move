@@ -18,9 +18,7 @@ module isc::anchor {
     public struct Anchor has key, store {
         id: UID,
         assets: Referent<AssetsBag>,
-        init_params: vector<u8>,
-        state_root: vector<u8>,
-        block_hash: vector<u8>,
+        state_metadata: vector<u8>,
         state_index: u32,
     }
 
@@ -32,20 +30,18 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(init_params: vector<u8>, ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(state_metadata: vector<u8>, ctx: &mut TxContext): Anchor {
         Anchor{
             id: object::new(ctx),
             assets: borrow::new(assets_bag::new(ctx), ctx),
-            init_params: init_params,
-            state_root: vector::empty(),
-            block_hash: vector::empty(),
+            state_metadata: state_metadata,
             state_index: 0,
         }
     }
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor { id, assets, state_root: _, state_index: _, block_hash: _, init_params: _ } = self;
+        let Anchor { id, assets, state_index: _, state_metadata: _ } = self;
         id.delete();
         assets.destroy()
     }
@@ -71,7 +67,7 @@ module isc::anchor {
         (Receipt { request_id }, assets, allowance)
     }
 
-    public fun update_state_root(self: &mut Anchor, new_state_root: vector<u8>, new_block_hash: vector<u8>, mut receipts: vector<Receipt>) {
+    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
         let receipts_len = receipts.length();
         let mut i = 0;
         while (i < receipts_len) {
@@ -82,8 +78,7 @@ module isc::anchor {
             i = i + 1;
         };
         receipts.destroy_empty();
-        self.state_root = new_state_root;
-        self.block_hash = new_block_hash;
+        self.state_metadata = new_state_metadata;
     }
 
     // === Test Functions ===

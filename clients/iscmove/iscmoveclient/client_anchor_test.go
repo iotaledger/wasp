@@ -24,10 +24,10 @@ func TestStartNewChain(t *testing.T) {
 		context.Background(),
 		signer,
 		iscPackageID,
+		[]byte{1, 2, 3, 4},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
@@ -44,10 +44,10 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 		context.Background(),
 		signer,
 		iscPackageID,
+		[]byte{1, 2, 3, 4},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 	require.Equal(t, anchor1, anchor2)
 }
 
-func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
+func TestReceiveRequestAndTransition(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	chainSigner := newSignerWithFunds(t, testSeed, 1)
@@ -104,14 +104,13 @@ func TestReceiveAndUpdateStateRootRequest(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	_, err = client.ReceiveAndUpdateStateRootRequest(
+	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
 		chainSigner,
 		iscPackageID,
 		&anchor.ObjectRef,
 		[]sui.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
-		[]byte{7, 8, 9},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -125,10 +124,10 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 		context.Background(),
 		signer,
 		iscPackageID,
+		[]byte{1, 2, 3, 4},
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
-		[]byte{},
 		false,
 	)
 	require.NoError(t, err)
