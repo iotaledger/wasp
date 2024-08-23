@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -37,8 +36,8 @@ func TestTxBuilderBasic(t *testing.T) {
 		false,
 	)
 	require.NoError(t, err)
-	commitment, err := transaction.L1CommitmentFromAnchor(anchor.Object)
-	require.NoError(t, err)
+	// commitment, err := transaction.L1CommitmentFromAnchor(anchor.Object)
+	// require.NoError(t, err)
 
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor)
 
@@ -46,7 +45,10 @@ func TestTxBuilderBasic(t *testing.T) {
 	txb.ConsumeRequest(req1)
 	req2 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb.ConsumeRequest(req2)
-	ptb := txb.BuildTransactionEssence(commitment)
+	// stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(1), commitment, &gas.FeePolicy{}, isc.CallArguments{}, "http://dummy")
+	// ptb := txb.BuildTransactionEssence(stateMetadata.Bytes())
+	stateMetadata := []byte("dummy stateMetadata")
+	ptb := txb.BuildTransactionEssence(stateMetadata)
 
 	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsSuiAddress(), suiclient.DefaultGasBudget)
 	require.NoError(t, err)
