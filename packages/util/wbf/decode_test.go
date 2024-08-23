@@ -3,6 +3,7 @@ package wbf_test
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/util/wbf"
 	"github.com/stretchr/testify/require"
@@ -37,6 +38,7 @@ func TestDecoder(t *testing.T) {
 	testCodec(t, WithArray{A: [3]int{42, 43, 44}})
 	testCodec(t, WithBigIntPtr{A: big.NewInt(42)})
 	testCodec(t, WithBigIntVal{A: *big.NewInt(42)})
+	testCodec(t, WithTime{A: time.Unix(12345, 6789)})
 	testCodec(t, WithCustomCodec{})
 	testCodec(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}})
 	testCodec(t, WithWBFOpts{A: 42})

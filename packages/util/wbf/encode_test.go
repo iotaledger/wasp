@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/util/wbf"
 	"github.com/stretchr/testify/require"
@@ -73,6 +74,10 @@ type WithBigIntPtr struct {
 
 type WithBigIntVal struct {
 	A big.Int
+}
+
+type WithTime struct {
+	A time.Time
 }
 
 type WithCustomCodec struct {
@@ -185,6 +190,9 @@ func TestEncoder(t *testing.T) {
 
 	r = must2(wbf.Encode(WithBigIntVal{A: *big.NewInt(42)}))
 	require.Equal(t, []byte{1, 42}, r)
+
+	r = must2(wbf.Encode(WithTime{A: time.Unix(0, 42)}))
+	require.Equal(t, []byte{42, 0, 0, 0, 0, 0, 0, 0}, r)
 
 	r = must2(wbf.Encode(WithCustomCodec{}))
 	require.Equal(t, []byte{1, 2, 3}, r)
