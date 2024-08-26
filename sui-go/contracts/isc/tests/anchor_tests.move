@@ -42,7 +42,7 @@ module isc::anchor_tests {
         let mut ctx = tx_context::dummy();
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(vector::empty(), vector::empty(), vector::empty(), &mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
         let iota = coin::mint_for_testing<SUI>(initial_iota_in_request, &mut ctx);
@@ -99,7 +99,7 @@ module isc::anchor_tests {
         );
 
         // ServerPTB.1 Now the Anchor receives off-chain an event that tracks the request and can receive it.
-        //let (receipt, req_extracted_assets) = anchor.receive_request(req); // Commented because cannot be executed in this test
+        // let (receipt, req_extracted_assets, req_extracted_allowance) = anchor.receive_request(req); // Commented because cannot be executed in this test
         let (id, mut req_extracted_assets, mut req_extracted_allowance) = req.destroy(); //this is not part of the PTB
         let receipt = anchor::create_receipt_for_testing(id); //this is not part of the PTB
         let coin_allowance = req_extracted_allowance.remove_coin_allowance<TEST_A>();
