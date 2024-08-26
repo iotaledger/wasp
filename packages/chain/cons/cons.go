@@ -60,6 +60,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
@@ -554,14 +555,16 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
 	// The decided base alias output can be different from that we have proposed!
+	panic("refactor me: uponVMInputsReceived (Replaced AnchorOutput -> Anchor, Timestamp")
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
-		Processors:           c.processorCache,
-		AnchorOutput:         decidedBaseAliasOutput.Object,
-		AnchorOutputID:       decidedBaseAliasOutput.Object.ID,
+		Processors: c.processorCache,
+		Anchor: &isc.StateAnchor{
+			Ref: decidedBaseAliasOutput,
+		},
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
-		TimeAssumption:       aggregatedProposals.AggregatedTime(),
+		Timestamp:            aggregatedProposals.AggregatedTime(),
 		Entropy:              *randomness,
 		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(*randomness),
 		EstimateGasMode:      false,

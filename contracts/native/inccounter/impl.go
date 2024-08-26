@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 var Contract = coreutil.NewContract("inccounter")
@@ -46,6 +45,8 @@ func InitParams(initialValue int64) dict.Dict {
 }
 
 const (
+	incCounterKey = "incCounter"
+
 	VarNumRepeats = "numRepeats"
 	VarCounter    = "counter"
 	VarName       = "name"
@@ -53,8 +54,9 @@ const (
 
 func initialize(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
+
 	params := ctx.Params()
-	val := codec.Int64.MustDecode(params.Get(VarCounter), 0)
+	val := codec.Int64.MustDecode(params.MustAt(0), 0)
 	ctx.State().Set(VarCounter, codec.Int64.Encode(val))
 	eventCounter(ctx, val)
 
@@ -65,10 +67,9 @@ func incCounter(ctx isc.Sandbox, incOpt *int64) {
 	inc := coreutil.FromOptional(incOpt, 1)
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
 
-	state := kvdecoder.New(ctx.State(), ctx.Log())
-	val := state.MustGetInt64(VarCounter, 0)
-	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor index: #%d",
-		val, inc, ctx.StateAnchor().StateIndex)
+	val := codec.Int64.MustDecode(ctx.State().Get(VarCounter))
+	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor version: #%d",
+		val, inc, ctx.StateAnchor().Ref.Version)
 	tra := "(empty)"
 	if ctx.AllowanceAvailable() != nil {
 		tra = ctx.AllowanceAvailable().String()
@@ -144,13 +145,10 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 func spawn(ctx isc.Sandbox, name string) {
 	ctx.Log().Debugf("inccounter.spawn")
 
-	state := kvdecoder.New(ctx.State(), ctx.Log())
-	val := state.MustGetInt64(VarCounter)
+	val := codec.Int64.MustDecode(ctx.State().Get(VarCounter))
 
-	callPar := dict.New()
-	callPar.Set(VarCounter, codec.Int64.Encode(val+1))
 	eventCounter(ctx, val+1)
-	ctx.DeployContract(Contract.ProgramHash, name, callPar)
+	ctx.DeployContract(Contract.ProgramHash, name, isc.NewCallArguments(codec.Int64.Encode(val+1)))
 
 	// increase counter in newly spawned contract
 	ctx.Call(FuncIncCounter.Message(nil), nil)

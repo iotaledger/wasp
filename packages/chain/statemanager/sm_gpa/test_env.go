@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -68,11 +67,10 @@ func newTestEnvNoNodes(
 ) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
 	var parameters StateManagerParameters
-	var chainInitParameters dict.Dict
+	var chainInitParameters isc.CallArguments
 	if len(parametersOpt) > 0 {
 		parameters = parametersOpt[0]
-		chainInitParameters = dict.New()
-		chainInitParameters.Set(origin.ParamBlockKeepAmount, codec.Int32.Encode(int32(parameters.PruningMinStatesToKeep)))
+		chainInitParameters = isc.NewCallArguments(codec.Int32.Encode(int32(parameters.PruningMinStatesToKeep)))
 	} else {
 		parameters = NewStateManagerParameters()
 		chainInitParameters = nil
