@@ -6,23 +6,23 @@ package solo
 import (
 	"errors"
 	"math"
-	"math/big"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type CallParams struct {
@@ -60,35 +60,41 @@ func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddAllowanceBaseTokens(amount uint64) *CallParams {
-	return r.AddAllowance(isc.NewAssetsBaseTokensU64(amount))
+func (r *CallParams) AddAllowanceBaseTokens(amount coin.Value) *CallParams {
+	return r.AddAllowanceNativeTokens(coin.BaseTokenType, amount)
 }
 
-func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
+// func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
+// 	if r.allowance == nil {
+// 		r.allowance = isc.NewEmptyAssets()
+// 	}
+
+// 	r.allowance.Add(&isc.Assets{
+// 		NativeTokens: nativeTokens,
+// 	})
+// 	return r
+// }
+
+func (r *CallParams) AddAllowanceNativeTokens(coinType coin.Type, amount coin.Value) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
-	r.allowance.Add(&isc.Assets{
-		NativeTokens: nativeTokens,
-	})
+
+	r.allowance.AddCoin(coinType, amount)
+
 	return r
 }
 
-func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID, amount *big.Int) *CallParams {
+func (r *CallParams) AddAllowanceNFTs(nftIDs ...sui.ObjectID) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
-	r.allowance.Add(&isc.Assets{
-		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
-			ID:     nativeTokenID,
-			Amount: amount,
-		}},
-	})
-	return r
-}
 
-func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
-	return r.AddAllowance(isc.NewEmptyAssets().AddNFTs(nfts...))
+	for _, nftId := range nftIDs {
+		r.allowance.AddObject(nftId)
+	}
+
+	return r
 }
 
 func (r *CallParams) WithFungibleTokens(assets *isc.Assets) *CallParams {
@@ -105,23 +111,21 @@ func (r *CallParams) AddFungibleTokens(assets *isc.Assets) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddBaseTokens(amount uint64) *CallParams {
-	return r.AddFungibleTokens(isc.NewAssets(amount, nil))
+func (r *CallParams) AddBaseTokens(amount coin.Value) *CallParams {
+	return r.AddFungibleTokens(isc.NewAssets(amount))
 }
 
-func (r *CallParams) AddNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
-	return r.AddFungibleTokens(&isc.Assets{
-		NativeTokens: nativeTokens,
-	})
-}
+// func (r *CallParams) AddNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
+// 	return r.AddFungibleTokens(&isc.Assets{
+// 		NativeTokens: nativeTokens,
+// 	})
+// }
 
-func (r *CallParams) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount *big.Int) *CallParams {
-	return r.AddFungibleTokens(&isc.Assets{
-		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
-			ID:     nativeTokenID,
-			Amount: amount,
-		}},
-	})
+func (r *CallParams) AddNativeTokens(cType coin.Type, amount coin.Value) *CallParams {
+	asset := isc.NewEmptyAssets()
+	asset.AddCoin(cType, amount)
+
+	return r.AddFungibleTokens(asset)
 }
 
 // Adds an nft to be sent (only applicable when the call is made via on-ledger request)
@@ -282,12 +286,12 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair cryptolib.Si
 // Unlike the real Wasp environment, the 'solo' environment makes PostRequestSync a synchronous call.
 // It makes it possible step-by-step debug of the smart contract logic.
 // The call should be used only from the main thread (goroutine)
-func (ch *Chain) PostRequestSync(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, error) {
+func (ch *Chain) PostRequestSync(req *CallParams, keyPair cryptolib.Signer) (isc.CallArguments, error) {
 	_, ret, err := ch.PostRequestSyncTx(req, keyPair)
 	return ret, err
 }
 
-func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, error) {
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair cryptolib.Signer) (isc.CallArguments, error) {
 	/* if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
 	}*/ // TODO: is it still needed
@@ -295,7 +299,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair cryptolib.Signer)
 	return ch.RunOffLedgerRequest(r)
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, isc.CallArguments, error) {
 	tx, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
 		return tx, res, err
@@ -313,7 +317,7 @@ func (ch *Chain) LastReceipt() *isc.Receipt {
 	return blocklogReceipt.ToISCReceipt(ch.ResolveVMError(blocklogReceipt.Error))
 }
 
-func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
+func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair cryptolib.Signer) (*iotago.Transaction, *blocklog.RequestReceipt, isc.CallArguments, error) {
 	defer ch.logRequestLastBlock()
 
 	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
@@ -332,7 +336,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair cryptolib.Signer) (
 // any changes in the ledger. It returns the amount of gas consumed.
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 // TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
-func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, *blocklog.RequestReceipt, error) {
+func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.Signer) (isc.CallArguments, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
 	r, err := ch.requestFromParams(&reqCopy, keyPair)
 	if err != nil {
@@ -347,7 +351,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair cryptolib.Signer) 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
-func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.Signer) (dict.Dict, *blocklog.RequestReceipt, error) {
+func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair cryptolib.Signer) (isc.CallArguments, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
 	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
 		keyPair = ch.OriginatorPrivateKey
@@ -394,21 +398,21 @@ func (ch *Chain) CallView(msg isc.Message) (isc.CallArguments, error) {
 }
 
 // CallViewEx is a shortcut for CallView
-func (ch *Chain) CallViewEx(c, ep string, params ...any) (dict.Dict, error) {
+func (ch *Chain) CallViewEx(c, ep string, params ...any) (isc.CallArguments, error) {
 	return ch.CallView(isc.NewMessageFromNames(c, ep, codec.DictFromSlice(params)))
 }
 
-func (ch *Chain) CallViewAtState(chainState state.State, msg isc.Message) (dict.Dict, error) {
+func (ch *Chain) CallViewAtState(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
 	return ch.callViewByHnameAtState(chainState, msg)
 }
 
-func (ch *Chain) CallViewByHname(msg isc.Message) (dict.Dict, error) {
+func (ch *Chain) CallViewByHname(msg isc.Message) (isc.CallArguments, error) {
 	latestState, err := ch.store.LatestState()
 	require.NoError(ch.Env.T, err)
 	return ch.callViewByHnameAtState(latestState, msg)
 }
 
-func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message) (dict.Dict, error) {
+func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
 	ch.Log().Debugf("callView: %s::%s", msg.Target.Contract, msg.Target.EntryPoint)
 
 	ch.runVMMutex.Lock()
