@@ -285,11 +285,10 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	cmi.log.Debugf("handleInputAliasOutputConfirmed: %+v", input)
 	//
 	// >     Set LatestConfirmedAO <- ConfirmedAO
-	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.aliasOutput)
-	cmi.latestConfirmedAO = input.aliasOutput
+	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor)
+	cmi.latestConfirmedAO = input.anchor
 	msgs := gpa.NoMessages()
-	committeeAddr := cryptolib.NewAddressFromIotago(input.aliasOutput.GetAliasOutput().StateController())
-	committeeLog, err := cmi.ensureCmtLog(*committeeAddr)
+	committeeLog, err := cmi.ensureCmtLog(*input.stateController) // TODO: input.stateController.Key()
 	if errors.Is(err, ErrNotInCommittee) {
 		// >     IF this node is in the committee THEN ... ELSE
 		// >         IF LatestActiveCmt != nil THEN
@@ -306,7 +305,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 			cmi.log.Debugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
 			cmi.trackActiveStateCB(vsaTip)
 		}
-		cmi.log.Debugf("This node is not in the committee for aliasOutput: %v", input.aliasOutput)
+		cmi.log.Debugf("This node is not in the committee for aliasOutput: %v", input.anchor)
 		return msgs
 	}
 	if err != nil {
@@ -317,7 +316,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.handleCmtLogOutput(
 		committeeLog,
-		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.aliasOutput)),
+		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.anchor)),
 	))
 	return msgs
 }
@@ -534,8 +533,8 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
-		cmi.output.LatestConfirmedAliasOutput().String(),
-		cmi.output.LatestActiveAliasOutput().String(),
+		cmi.output.LatestConfirmedAliasOutput().ID.String(),
+		cmi.output.LatestActiveAliasOutput().ID.String(),
 	)
 }
 
