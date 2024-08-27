@@ -80,7 +80,4 @@ var (
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",
 		coreutil.FieldWithCodec(codec.CoinBalances),
 	)
-
-	// TODO: implement. This is a mock just to get stuff compiling
-	FuncNativeTokenCreate = coreutil.NewEP0(Contract, "funcNativeTokenCreate")
 )

@@ -13,9 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // L2Accounts returns all accounts on the chain with non-zero balances
@@ -210,34 +208,34 @@ const (
 	allowanceForModifySupply          = 1 * isc.Million
 )
 
-func (fp *NewNativeTokenParams) CreateFoundry() (uint32, sui.ObjectID, error) {
-	// var sch *iotago.TokenScheme
-	// if fp.sch != nil {
-	// 	sch = &fp.sch
-	// }
+// func (fp *NewNativeTokenParams) CreateFoundry() (uint32, sui.ObjectID, error) {
+// 	var sch *iotago.TokenScheme
+// 	if fp.sch != nil {
+// 		sch = &fp.sch
+// 	}
 
-	// metadata := isc.NewIRC30NativeTokenMetadata(fp.tokenName, fp.tokenSymbol, fp.tokenDecimals)
+// 	metadata := isc.NewIRC30NativeTokenMetadata(fp.tokenName, fp.tokenSymbol, fp.tokenDecimals)
 
-	// TODO add parameters when contract function is ready
-	req := NewCallParams(accounts.FuncNativeTokenCreate.Message()).
-		WithAllowance(isc.NewEmptyAssets().SetBaseTokens(allowanceForFoundryStorageDeposit)).
-		AddBaseTokens(allowanceForFoundryStorageDeposit).
-		WithMaxAffordableGasBudget()
+// 	// TODO add parameters when contract function is ready
+// 	req := NewCallParams(accounts.FuncNativeTokenCreate.Message()).
+// 		WithAllowance(isc.NewEmptyAssets().SetBaseTokens(allowanceForFoundryStorageDeposit)).
+// 		AddBaseTokens(allowanceForFoundryStorageDeposit).
+// 		WithMaxAffordableGasBudget()
 
-	_, estimate, err := fp.ch.EstimateGasOnLedger(req, fp.user)
-	if err != nil {
-		return 0, sui.ObjectID{}, err
-	}
-	req.WithGasBudget(estimate.GasBurned)
-	res, err := fp.ch.PostRequestSync(req, fp.user)
-	if err != nil {
-		return 0, sui.ObjectID{}, err
-	}
-	resDeco := kvdecoder.New(res)
-	retSN := resDeco.MustGetUint32(accounts.ParamFoundrySN)
-	nativeTokenID, err := fp.ch.GetNativeTokenIDByFoundrySN(retSN)
-	return retSN, nativeTokenID, err
-}
+// 	_, estimate, err := fp.ch.EstimateGasOnLedger(req, fp.user)
+// 	if err != nil {
+// 		return 0, sui.ObjectID{}, err
+// 	}
+// 	req.WithGasBudget(estimate.GasBurned)
+// 	res, err := fp.ch.PostRequestSync(req, fp.user)
+// 	if err != nil {
+// 		return 0, sui.ObjectID{}, err
+// 	}
+// 	resDeco := kvdecoder.New(res)
+// 	retSN := resDeco.MustGetUint32(accounts.ParamFoundrySN)
+// 	nativeTokenID, err := fp.ch.GetNativeTokenIDByFoundrySN(retSN)
+// 	return retSN, nativeTokenID, err
+// }
 
 func (ch *Chain) DestroyFoundry(sn uint32, user cryptolib.Signer) error {
 	req := NewCallParams(accounts.FuncNativeTokenDestroy.Message(sn)).
