@@ -87,7 +87,7 @@ type VarLocalView interface {
 	//
 	// Corresponds to the `tx_posted` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
-	ConsensusOutputDone(logIndex LogIndex, consumed sui.ObjectID, published *iscmove.Anchor) (*iscmove.Anchor, bool) // TODO: Recheck, if consumed AO is the decided one.
+	ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*iscmove.Anchor, bool) // TODO: Recheck, if consumed AO is the decided one.
 	//
 	// Corresponds to the `ao_received` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
@@ -145,48 +145,49 @@ func (lvi *varLocalViewImpl) Value() *iscmove.Anchor {
 	return lvi.findLatestPending()
 }
 
-func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed sui.ObjectID, published *iscmove.Anchor) (*iscmove.Anchor, bool) {
-	lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.Ref=%s, published=%v", logIndex, consumed.String(), published)
-	stateIndex := published.GetStateIndex()
-	prevLatest := lvi.findLatestPending()
-	//
-	// Check, if not outdated.
-	if lvi.confirmed == nil {
-		lvi.log.Debugf("⊳ Ignoring it, have no confirmed AO.")
-		return prevLatest, false
-	}
-	confirmedStateIndex := lvi.confirmed.GetStateIndex()
-	if stateIndex <= confirmedStateIndex {
-		lvi.log.Debugf("⊳ Ignoring it, outdated, current confirmed=%v", lvi.confirmed)
-		return prevLatest, false
-	}
-	//
-	// Add it to the pending list.
-	var entries []*varLocalViewEntry
-	entries, ok := lvi.pending.Get(stateIndex)
-	if !ok {
-		entries = []*varLocalViewEntry{}
-	}
-	if lo.ContainsBy(entries, func(e *varLocalViewEntry) bool { return e.output.Equals(published) }) {
-		lvi.log.Debugf("⊳ Ignoring it, duplicate.")
-		return prevLatest, false
-	}
-	entries = append(entries, &varLocalViewEntry{
-		output:   published,
-		consumed: consumed,
-		rejected: false,
-		logIndex: logIndex,
-	})
-	lvi.pending.Set(stateIndex, entries)
-	//
-	// Check, if the added AO is a new tip for the chain.
-	if published.Equals(lvi.findLatestPending()) {
-		lvi.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, lvi.confirmed)
-		lvi.tipUpdatedCB(published)
-		return published, true
-	}
-	lvi.log.Debugf("⊳ That's not a tip.")
-	return lvi.Value(), false
+func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*iscmove.Anchor, bool) {
+	panic("implement: varLocalViewImpl.ConsensusOutputDone") // TODO:
+	// lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.Ref=%s, published=%v", logIndex, consumed.String())
+	// stateIndex := published.GetStateIndex()
+	// prevLatest := lvi.findLatestPending()
+	// //
+	// // Check, if not outdated.
+	// if lvi.confirmed == nil {
+	// 	lvi.log.Debugf("⊳ Ignoring it, have no confirmed AO.")
+	// 	return prevLatest, false
+	// }
+	// confirmedStateIndex := lvi.confirmed.GetStateIndex()
+	// if stateIndex <= confirmedStateIndex {
+	// 	lvi.log.Debugf("⊳ Ignoring it, outdated, current confirmed=%v", lvi.confirmed)
+	// 	return prevLatest, false
+	// }
+	// //
+	// // Add it to the pending list.
+	// var entries []*varLocalViewEntry
+	// entries, ok := lvi.pending.Get(stateIndex)
+	// if !ok {
+	// 	entries = []*varLocalViewEntry{}
+	// }
+	// if lo.ContainsBy(entries, func(e *varLocalViewEntry) bool { return e.output.Equals(published) }) {
+	// 	lvi.log.Debugf("⊳ Ignoring it, duplicate.")
+	// 	return prevLatest, false
+	// }
+	// entries = append(entries, &varLocalViewEntry{
+	// 	output:   published,
+	// 	consumed: consumed,
+	// 	rejected: false,
+	// 	logIndex: logIndex,
+	// })
+	// lvi.pending.Set(stateIndex, entries)
+	// //
+	// // Check, if the added AO is a new tip for the chain.
+	// if published.Equals(lvi.findLatestPending()) {
+	// 	lvi.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, lvi.confirmed)
+	// 	lvi.tipUpdatedCB(published)
+	// 	return published, true
+	// }
+	// lvi.log.Debugf("⊳ That's not a tip.")
+	// return lvi.Value(), false
 }
 
 // A confirmed AO is received from L1. Base on that, we either truncate our local

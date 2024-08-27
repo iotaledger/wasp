@@ -314,7 +314,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOu
 // > ON ConsensusOutput/DONE (CD)
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput)
+	cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAnchorRef)
 	return cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
 }
 

@@ -81,17 +81,18 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 var ErrNotInCommittee = errors.New("ErrNotInCommittee")
@@ -108,7 +109,7 @@ func (o *Output) LatestActiveAliasOutput() *iscmove.Anchor {
 }
 func (o *Output) LatestConfirmedAliasOutput() *iscmove.Anchor { return o.cmi.latestConfirmedAO }
 func (o *Output) NeedConsensus() *NeedConsensus               { return o.cmi.needConsensus }
-func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[sui.ObjectID, *NeedPublishTX] {
+func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] {
 	return o.cmi.needPublishTX
 }
 
@@ -142,12 +143,10 @@ func (nc *NeedConsensus) String() string {
 }
 
 type NeedPublishTX struct {
-	CommitteeAddr     cryptolib.Address
-	LogIndex          cmt_log.LogIndex
-	TxID              sui.ObjectID
-	Tx                *iotago.Transaction
-	BaseAliasOutputID sui.ObjectID    // The consumed AliasOutput.
-	NextAliasOutput   *iscmove.Anchor // The next one (produced by the TX.)
+	CommitteeAddr cryptolib.Address
+	LogIndex      cmt_log.LogIndex
+	Tx            *suisigner.SignedTransaction
+	BaseAnchorRef *sui.ObjectRef // The consumed Anchor object/version.
 }
 
 type ChainMgr interface {
@@ -162,19 +161,19 @@ type cmtLogInst struct {
 }
 
 type chainMgrImpl struct {
-	chainID                    isc.ChainID                                              // This instance is responsible for this chain.
-	chainStore                 state.Store                                              // Store of the chain state.
-	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                     // All the committee log instances for this chain.
-	consensusStateRegistry     cmt_log.ConsensusStateRegistry                           // Persistent store for log indexes.
-	latestActiveCmt            *cryptolib.Address                                       // The latest active committee.
-	latestConfirmedAO          *iscmove.Anchor                                          // The latest confirmed AO (follows Active AO).
-	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)  // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *iscmove.Anchor)                                 // We will call this to set new AO for the active state.
-	savePreliminaryBlockCB     func(block state.Block)                                  // We will call this, when a preliminary block matching the tx signatures is received.
-	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                            // Will be called, when a committee changes.
-	needConsensus              *NeedConsensus                                           // Query for a consensus.
-	needPublishTX              *shrinkingmap.ShrinkingMap[sui.ObjectID, *NeedPublishTX] // Query to post TXes.
-	dkShareRegistryProvider    registry.DKShareRegistryProvider                         // Source for DKShares.
+	chainID                    isc.ChainID                                                   // This instance is responsible for this chain.
+	chainStore                 state.Store                                                   // Store of the chain state.
+	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                          // All the committee log instances for this chain.
+	consensusStateRegistry     cmt_log.ConsensusStateRegistry                                // Persistent store for log indexes.
+	latestActiveCmt            *cryptolib.Address                                            // The latest active committee.
+	latestConfirmedAO          *iscmove.Anchor                                               // The latest confirmed AO (follows Active AO).
+	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)       // All the nodes authorized for being access nodes (for the ActiveAO).
+	trackActiveStateCB         func(ao *iscmove.Anchor)                                      // We will call this to set new AO for the active state.
+	savePreliminaryBlockCB     func(block state.Block)                                       // We will call this, when a preliminary block matching the tx signatures is received.
+	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                 // Will be called, when a committee changes.
+	needConsensus              *NeedConsensus                                                // Query for a consensus.
+	needPublishTX              *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] // Query to post TXes.
+	dkShareRegistryProvider    registry.DKShareRegistryProvider                              // Source for DKShares.
 	varAccessNodeState         VarAccessNodeState
 	output                     *Output
 	asGPA                      gpa.GPA
@@ -219,7 +218,7 @@ func New(
 		savePreliminaryBlockCB:     savePreliminaryBlockCB,
 		committeeUpdatedCB:         committeeUpdatedCB,
 		needConsensus:              nil,
-		needPublishTX:              shrinkingmap.New[sui.ObjectID, *NeedPublishTX](),
+		needPublishTX:              shrinkingmap.New[hashing.HashValue, *NeedPublishTX](),
 		dkShareRegistryProvider:    dkShareRegistryProvider,
 		varAccessNodeState:         NewVarAccessNodeState(chainID, log.Named("VAS")),
 		me:                         me,
@@ -330,7 +329,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPublishResult) gpa.OutMessages {
 	cmi.log.Debugf("handleInputChainTxPublishResult: %+v", input)
 	// >     Clear the TX from the NeedPublishTX variable.
-	cmi.needPublishTX.Delete(input.txID)
+	cmi.needPublishTX.Delete(input.txHash)
 	if input.confirmed {
 		// >     If result.confirmed = false THEN ... ELSE
 		// >         NOP // AO has to be received as Confirmed AO. // TODO: Not true, anymore.
@@ -353,17 +352,23 @@ func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPubl
 func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
 	cmi.log.Debugf("handleInputConsensusOutputDone: %+v", input)
 	msgs := gpa.NoMessages()
+
+	baseAnchorRef := input.consensusResult.Transaction.FindInputByID(cmi.chainID.AsObjectID())
+	if baseAnchorRef == nil {
+		panic("produced tx is not consuming the anchor")
+	}
+
 	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
 	if true { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
-		txID := input.consensusResult.NextAliasOutput.ID
-		if !cmi.needPublishTX.Has(txID) && input.consensusResult.Block != nil {
+		txHash := input.consensusResult.Transaction.Hash()
+		if !cmi.needPublishTX.Has(txHash) && input.consensusResult.Block != nil {
 			// Inform the access nodes on new block produced.
 			block := input.consensusResult.Block
 			activeAccessNodes, activeCommitteeNodes := cmi.activeNodesCB()
 			cmi.log.Debugf(
-				"Sending MsgBlockProduced (stateIndex=%v, l1Commitment=%v, txID=%v) to access nodes: %v except committeeNodes %v",
-				block.StateIndex(), block.L1Commitment(), txID.ToHex(), activeAccessNodes, activeCommitteeNodes,
+				"Sending MsgBlockProduced (stateIndex=%v, l1Commitment=%v, txHash=%v) to access nodes: %v except committeeNodes %v",
+				block.StateIndex(), block.L1Commitment(), txHash.Hex(), activeAccessNodes, activeCommitteeNodes,
 			)
 			for i := range activeAccessNodes {
 				if lo.Contains(activeCommitteeNodes, activeAccessNodes[i]) {
@@ -372,19 +377,19 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 				msgs.Add(NewMsgBlockProduced(cmi.nodeIDFromPubKey(activeAccessNodes[i]), input.consensusResult.Transaction, block))
 			}
 		}
-		cmi.needPublishTX.Set(txID, &NeedPublishTX{
-			CommitteeAddr:     input.committeeAddr,
-			LogIndex:          input.logIndex,
-			TxID:              txID,
-			Tx:                input.consensusResult.Transaction,
-			BaseAliasOutputID: input.consensusResult.BaseAliasOutput,
-			NextAliasOutput:   input.consensusResult.NextAliasOutput,
-		})
+		if !cmi.needPublishTX.Has(txHash) {
+			cmi.needPublishTX.Set(txHash, &NeedPublishTX{
+				CommitteeAddr: input.committeeAddr,
+				LogIndex:      input.logIndex,
+				Tx:            input.consensusResult.Transaction,
+				BaseAnchorRef: baseAnchorRef,
+			})
+		}
 	}
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult.BaseAliasOutput, input.consensusResult.NextAliasOutput))
+		return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, baseAnchorRef))
 	}))
 	return msgs
 }
@@ -507,15 +512,14 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 		// Not changed, keep it.
 		return
 	}
-	committeeAddress := output.GetBaseAliasOutput().GetStateAddress()
-	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(cryptolib.NewAddressFromIotago(committeeAddress))
+	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(&cli.committeeAddr)
 	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
 		// Rotated to other nodes, so we don't need to start the next consensus.
 		cmi.needConsensus = nil
 		return
 	}
 	if err != nil {
-		panic(fmt.Errorf("ensureNeedConsensus cannot load DKShare for %v: %w", committeeAddress, err))
+		panic(fmt.Errorf("ensureNeedConsensus cannot load DKShare for %v: %w", cli.committeeAddr, err))
 	}
 	cmi.needConsensus = &NeedConsensus{
 		CommitteeAddr:   cli.committeeAddr,
