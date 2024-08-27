@@ -20,6 +20,12 @@ type BatchProposal struct {
 	timeData                time.Time                              // Our view of time.
 	validatorFeeDestination isc.AgentID                            // Proposed destination for fees.
 	requestRefs             []*isc.RequestRef                      // Requests we propose to include into the execution.
+	//
+	// TODO: Add these fields? How to aggregate them?
+	//
+	// - gasPayments []*sui.ObjectRef, // optional
+	// - gasPrice uint64,
+	// - gasBudget uint64,
 }
 
 func NewBatchProposal(
