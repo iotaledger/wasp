@@ -2800,3 +2800,42 @@ func TestDisableMagicWrap(t *testing.T) {
 	envWithMagicWrap := InitEVM(t, true)
 	require.NotNil(t, envWithMagicWrap.getCode(envWithMagicWrap.ERC20BaseTokens(nil).address))
 }
+
+func TestEVMEventOnFailedL1Deposit(t *testing.T) {
+	env := InitEVM(t, false)
+	_, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
+
+	// set gas policy to a higher price (so that it can fails when charging ISC gas)
+	{
+		feePolicy := env.Chain.GetGasFeePolicy()
+		feePolicy.GasPerToken.A = 1
+		feePolicy.GasPerToken.B = 10
+		err := env.setFeePolicy(*feePolicy)
+		require.NoError(t, err)
+	}
+	// mint an NFT and send it to the chain
+	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
+	metadata := []byte("foobar")
+	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
+	require.NoError(t, err)
+	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
+
+	callParams := solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, codec.Encode(ethAgentID)).
+		AddBaseTokens(1_000_000).
+		WithNFT(nft).
+		WithAllowance(isc.NewEmptyAssets().AddNFTs(nft.ID)).
+		WithMaxAffordableGasBudget()
+
+	// do not include enough gas budget (but just enough to execute until the end)
+	_, estimatedReceipt, err := env.Chain.EstimateGasOnLedger(callParams, issuerWallet)
+	require.NoError(t, err)
+	callParams.WithGasBudget(estimatedReceipt.GasBurned - 1)
+
+	_, err = env.Chain.PostRequestSync(callParams, issuerWallet)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "gas budget exceeded")
+
+	// assert NO event is issued
+	logs := env.LastBlockEVMLogs()
+	require.Len(t, logs, 0)
+}
