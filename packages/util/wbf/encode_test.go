@@ -68,6 +68,10 @@ type WithArray struct {
 	A [3]int
 }
 
+type WithMap struct {
+	A map[int16]bool
+}
+
 type WithBigIntPtr struct {
 	A *big.Int
 }
@@ -184,6 +188,15 @@ func TestEncoder(t *testing.T) {
 
 	r = must2(wbf.Encode(WithArray{A: [3]int{42, 43, 44}}))
 	require.Equal(t, []byte{42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0}, r)
+
+	r = must2(wbf.Encode(WithMap{A: map[int16]bool{1: true, 2: false, 3: true}}))
+	require.Equal(t, []byte{3, 1, 0, 1, 2, 0, 0, 3, 0, 1}, r)
+
+	r = must2(wbf.Encode(WithMap{A: map[int16]bool{2: true, 3: false, 1: true}}))
+	require.Equal(t, []byte{3, 1, 0, 1, 2, 0, 1, 3, 0, 0}, r)
+
+	r = must2(wbf.Encode(WithMap{A: nil}))
+	require.Equal(t, []byte{0}, r)
 
 	r = must2(wbf.Encode(WithBigIntPtr{A: big.NewInt(42)}))
 	require.Equal(t, []byte{1, 42}, r)

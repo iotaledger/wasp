@@ -40,6 +40,7 @@ func TestCodec(t *testing.T) {
 	testCodec(t, WithShortSlice{A: []int{42, 43}})
 	testCodec(t, WithOptionalSlice{A: &[]int{42, 43}})
 	testCodec(t, WithArray{A: [3]int{42, 43, 44}})
+	testCodec(t, WithMap{A: map[int16]bool{3: true, 1: false, 2: true}})
 	testCodec(t, WithBigIntPtr{A: big.NewInt(42)})
 	testCodec(t, WithBigIntVal{A: *big.NewInt(42)})
 	testCodec(t, WithTime{A: time.Unix(12345, 6789)})

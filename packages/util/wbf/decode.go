@@ -295,6 +295,8 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts *TypeOptions) error {
 		return fmt.Errorf("invalid map size type: %v", typOpts.LenBytes)
 	}
 
+	v.Set(reflect.MakeMap(v.Type()))
+
 	keyType := v.Type().Key()
 	valueType := v.Type().Elem()
 

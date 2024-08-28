@@ -260,12 +260,19 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts *TypeOptions) error {
 		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
 	}
 
-	for elem := v.MapRange(); elem.Next(); {
-		if err := e.encodeValue(elem.Key(), nil); err != nil {
+	sortedKeys := v.MapKeys()
+	sortSlice(sortedKeys)
+
+	fmt.Println("XXX", lo.Map(sortedKeys, func(v reflect.Value, _ int) interface{} { return v.Interface() }))
+
+	for _, key := range sortedKeys {
+		val := v.MapIndex(key)
+
+		if err := e.encodeValue(key, nil); err != nil {
 			return fmt.Errorf("key: %w", err)
 		}
 
-		if err := e.encodeValue(elem.Value(), nil); err != nil {
+		if err := e.encodeValue(val, nil); err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
 	}
