@@ -1,4 +1,4 @@
-package wbf
+package bcs
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 )
 
 type Encodable interface {
-	WBFEncode(e *Encoder) error
+	MarshalBCS(e *Encoder) error
 }
 
 type EncoderConfig struct {
@@ -26,7 +26,7 @@ type EncoderConfig struct {
 
 func (c *EncoderConfig) InitializeDefaults() {
 	if c.TagName == "" {
-		c.TagName = "wbf"
+		c.TagName = "bcs"
 	}
 	if c.DefaultTypeOptions == nil {
 		c.DefaultTypeOptions = &DefaultTypeOptions
@@ -71,7 +71,10 @@ func (e *Encoder) Encode(v any) error {
 }
 
 func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) error {
-	v, customEncoder, typeOptions := e.dereferenceValue(v)
+	v, customEncoder, typeOptions, err := e.dereferenceValue(v)
+	if err != nil {
+		return fmt.Errorf("%v: %w", v.Type(), err)
+	}
 
 	if customEncoder != nil {
 		if err := customEncoder(e, v); err != nil {
@@ -140,30 +143,30 @@ func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 	return nil
 }
 
-func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, customEncoder CustomEncoder, typeOptions *TypeOptions) {
+func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, customEncoder CustomEncoder, typeOptions *TypeOptions, _ error) {
 	if (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) && v.IsNil() {
-		return v, nil, nil
+		return v, nil, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
 	}
 
 	customEncoder, typeOptions = e.retrieveTypeInfo(v)
 	if customEncoder != nil || typeOptions != nil {
-		return v, customEncoder, typeOptions
+		return v, customEncoder, typeOptions, nil
 	}
 
 	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
 		if v.IsNil() {
-			return v, nil, nil
+			return v, nil, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
 		}
 
 		v = v.Elem()
 
 		customEncoder, typeOptions = e.retrieveTypeInfo(v)
 		if customEncoder != nil || typeOptions != nil {
-			return v, customEncoder, typeOptions
+			return v, customEncoder, typeOptions, nil
 		}
 	}
 
-	return v, nil, nil
+	return v, nil, nil, nil
 }
 
 func (e *Encoder) retrieveTypeInfo(v reflect.Value) (customEncoder CustomEncoder, _ *TypeOptions) {
@@ -175,12 +178,12 @@ func (e *Encoder) retrieveTypeInfo(v reflect.Value) (customEncoder CustomEncoder
 
 	if encodable, ok := vI.(Encodable); ok {
 		return func(e *Encoder, v reflect.Value) error {
-			return encodable.WBFEncode(e)
+			return encodable.MarshalBCS(e)
 		}, nil
 	}
 
-	if wbfType, ok := vI.(WBFType); ok {
-		o := wbfType.WBFOptions()
+	if bcsType, ok := vI.(BCSType); ok {
+		o := bcsType.BCSOptions()
 		return nil, &o
 	}
 
@@ -251,6 +254,10 @@ func (e *Encoder) encodeArray(v reflect.Value) error {
 }
 
 func (e *Encoder) encodeMap(v reflect.Value, typOpts *TypeOptions) error {
+	if v.IsNil() {
+		return fmt.Errorf("attemp to encode non-optional nil-map")
+	}
+
 	switch typOpts.LenBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
@@ -262,8 +269,6 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts *TypeOptions) error {
 
 	sortedKeys := v.MapKeys()
 	sortSlice(sortedKeys)
-
-	fmt.Println("XXX", lo.Map(sortedKeys, func(v reflect.Value, _ int) interface{} { return v.Interface() }))
 
 	for _, key := range sortedKeys {
 		val := v.MapIndex(key)
@@ -302,20 +307,24 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 				continue
 			}
 
+			// The field is unexported, but it has a tag, so we need to serialize it.
+
 			if !fieldVal.CanAddr() {
-				vc := reflect.New(t).Elem()
-				vc.Set(v)
-				v = vc
+				// Field is not addresable yet - making it addressable
+				addressableV := reflect.New(t).Elem()
+				addressableV.Set(v)
+				v = addressableV
 				fieldVal = v.Field(i)
 			}
 
-			// The field is unexported, but it has a tag, so we need to serialize it.
-
+			// Accesing unexported field
 			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
 		}
 
-		if fieldVal.Kind() == reflect.Ptr || fieldVal.Kind() == reflect.Interface {
+		fieldKind := fieldVal.Kind()
+
+		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
 			isNil := fieldVal.IsNil()
 
 			if isNil && !fieldOpts.Optional {
@@ -329,8 +338,6 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 			if isNil {
 				continue
 			}
-
-			//fieldVal = fieldVal.Elem()
 		}
 
 		if err := e.encodeValue(fieldVal, &fieldOpts.TypeOptions); err != nil {
@@ -360,7 +367,7 @@ func (e *Encoder) Write(b []byte) {
 	e.w.WriteN(b)
 }
 
-func Encode(v any) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	var buf bytes.Buffer
 
 	if err := NewEncoder(&buf, EncoderConfig{}).Encode(v); err != nil {

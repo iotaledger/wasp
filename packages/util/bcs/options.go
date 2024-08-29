@@ -1,4 +1,4 @@
-package wbf
+package bcs
 
 import (
 	"fmt"
@@ -135,6 +135,6 @@ func (s ValueBytesCount) Validate() error {
 	}
 }
 
-type WBFType interface {
-	WBFOptions() TypeOptions
+type BCSType interface {
+	BCSOptions() TypeOptions
 }

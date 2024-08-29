@@ -1,4 +1,4 @@
-package wbf
+package bcs
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 )
 
 type Decodable interface {
-	WBFDecode(e *Decoder) error
+	UnmarshalBCS(e *Decoder) error
 }
 
 type DecoderConfig struct {
@@ -23,7 +23,7 @@ type DecoderConfig struct {
 
 func (c *DecoderConfig) InitializeDefaults() {
 	if c.TagName == "" {
-		c.TagName = "wbf"
+		c.TagName = "bcs"
 	}
 	if c.DefaultTypeOptions == nil {
 		c.DefaultTypeOptions = &DefaultTypeOptions
@@ -127,7 +127,7 @@ func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.Array:
-		if err := d.decodeArray(v, typeOptions); err != nil {
+		if err := d.decodeArray(v); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.Map:
@@ -150,26 +150,28 @@ func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 }
 
 func (d *Decoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, customDecoder CustomDecoder, typeOptions *TypeOptions) {
-	if (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) && v.IsNil() {
-		return v, nil, nil
-	}
-
-	customDecoder, typeOptions = d.retrieveTypeInfo(v)
-	if customDecoder != nil || typeOptions != nil {
-		return v, customDecoder, typeOptions
-	}
-
-	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
-		if v.IsNil() {
-			return v, nil, nil
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Map {
+		if v.Kind() == reflect.Ptr && v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		} else if v.Kind() == reflect.Map && v.IsNil() {
+			v.Set(reflect.MakeMap(v.Type()))
 		}
-
-		v = v.Elem()
 
 		customDecoder, typeOptions = d.retrieveTypeInfo(v)
 		if customDecoder != nil || typeOptions != nil {
 			return v, customDecoder, typeOptions
 		}
+
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		} else {
+			return v, nil, nil
+		}
+	}
+
+	customDecoder, typeOptions = d.retrieveTypeInfo(v)
+	if customDecoder != nil || typeOptions != nil {
+		return v, customDecoder, typeOptions
 	}
 
 	return v, nil, nil
@@ -184,7 +186,7 @@ func (d *Decoder) retrieveTypeInfo(v reflect.Value) (customDecoder CustomDecoder
 
 	if decodable, ok := vI.(Decodable); ok {
 		return func(e *Decoder) (reflect.Value, error) {
-			if err := decodable.WBFDecode(e); err != nil {
+			if err := decodable.UnmarshalBCS(e); err != nil {
 				return reflect.Value{}, err
 			}
 
@@ -192,8 +194,8 @@ func (d *Decoder) retrieveTypeInfo(v reflect.Value) (customDecoder CustomDecoder
 		}, nil
 	}
 
-	if wbfType, ok := vI.(WBFType); ok {
-		o := wbfType.WBFOptions()
+	if bcsType, ok := vI.(BCSType); ok {
+		o := bcsType.BCSOptions()
 		return nil, &o
 	}
 
@@ -267,7 +269,7 @@ func (d *Decoder) decodeSlice(v reflect.Value, typOpts *TypeOptions) error {
 	return nil
 }
 
-func (d *Decoder) decodeArray(v reflect.Value, typOpts *TypeOptions) error {
+func (d *Decoder) decodeArray(v reflect.Value) error {
 	elemType := v.Type().Elem()
 
 	for i := 0; i < v.Type().Len(); i++ {
@@ -341,12 +343,13 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 			}
 
 			// The field is unexported, but it has a tag, so we need to serialize it.
-
 			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
 		}
 
-		if fieldVal.Kind() == reflect.Ptr || fieldVal.Kind() == reflect.Interface {
+		fieldKind := fieldVal.Kind()
+
+		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
 			if fieldOpts.Optional {
 				present := d.r.ReadByte()
 
@@ -354,8 +357,6 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 					continue
 				}
 			}
-
-			fieldVal.Set(reflect.New(fieldVal.Type().Elem()))
 		}
 
 		if err := d.decodeValue(fieldVal, &fieldOpts.TypeOptions); err != nil {
@@ -388,7 +389,7 @@ func (d *Decoder) Read(n int) ([]byte, error) {
 	return b, d.r.Err
 }
 
-func Decode[T any](b []byte) (T, error) {
+func Unmarshal[T any](b []byte) (T, error) {
 	var t T
 	if err := NewDecoder(bytes.NewReader(b), DecoderConfig{}).Decode(&t); err != nil {
 		return t, err
