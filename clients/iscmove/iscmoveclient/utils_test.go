@@ -2,17 +2,26 @@ package iscmoveclient_test
 
 import (
 	"context"
+	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/sui-go/contracts"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	stv := l1starter.Start(context.Background(), l1starter.DefaultConfig)
+	defer stv.Stop()
+	m.Run()
+}
 
 func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) sui.PackageID {
 	suiSigner := cryptolib.SignerToSuiSigner(signer)

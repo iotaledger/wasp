@@ -1,12 +1,13 @@
-package privtangle_sui
+package l1starter_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func TestStart(t *testing.T) {
@@ -14,20 +15,17 @@ func TestStart(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
 
-	pt := Start(ctx, "/tmp/sui_test", 5000, func(format string, args ...interface{}) {
-		fmt.Printf(format+"\n", args...)
-	})
+	stv := l1starter.Start(ctx, l1starter.DefaultConfig)
+	defer stv.Stop()
 
-	client := pt.nodeClient(0)
+	client := stv.Client()
 	state, err := client.GetLatestSuiSystemState(ctx)
 	require.NoError(t, err)
-	require.Equal(t, state.Jsonrpc, "2.0")
-	require.Equal(t, state.Result.PendingActiveValidatorsSize, "0")
+	require.EqualValues(t, 0, state.PendingActiveValidatorsSize.Uint64())
 
 	w, _ := context.WithTimeout(context.Background(), time.Second*2)
 	<-w.Done()
-
-	pt.Stop()
 }

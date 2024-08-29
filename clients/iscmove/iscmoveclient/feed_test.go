@@ -57,7 +57,10 @@ func TestRequestsFeed(t *testing.T) {
 		*anchor.ObjectID,
 		log,
 	)
-	defer chainFeed.WaitUntilStopped()
+	defer func() {
+		cancel()
+		chainFeed.WaitUntilStopped()
+	}()
 
 	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
 	newRequests := make(chan *iscmove.Request, 10)
