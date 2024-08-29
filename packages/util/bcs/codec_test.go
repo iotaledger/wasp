@@ -268,10 +268,22 @@ func TestArrayCodec(t *testing.T) {
 }
 
 func TestMapCodec(t *testing.T) {
-	mapEnc := []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1}
-	testCodecNoRef(t, map[int16]bool{3: true, 1: false, 2: true}, mapEnc)
-	testCodecNoRef(t, map[int16]bool{2: true, 1: false, 3: true}, mapEnc)
+	intMapEnc := []byte{0x3, 0x0, 0x0, 0x0, 0x3, 0x0, 0x1, 0xfd, 0xff, 0x1}
+	testCodecNoRef(t, map[int16]bool{-3: true, 0: false, 3: true}, intMapEnc)
+	testCodecNoRef(t, map[int16]bool{3: true, 0: false, -3: true}, intMapEnc)
 	testCodecNoRef(t, map[int16]bool{}, []byte{0x0})
+
+	uintMapEnc := []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1}
+	testCodecNoRef(t, map[uint16]bool{3: true, 1: false, 2: true}, uintMapEnc)
+	testCodecNoRef(t, map[uint16]bool{2: true, 1: false, 3: true}, uintMapEnc)
+	testCodecNoRef(t, map[uint16]bool{}, []byte{0x0})
+
+	strMapEnc := []byte{0x3, 0x2, 0x61, 0x61, 0x0, 0x2, 0x62, 0x62, 0x1, 0x2, 0x63, 0x63, 0x1}
+	testCodecNoRef(t, map[string]bool{"cc": true, "aa": false, "bb": true}, strMapEnc)
+	testCodecNoRef(t, map[string]bool{"bb": true, "aa": false, "cc": true}, strMapEnc)
+
+	intMapOfMapsEnc := []byte{0x2, 0x1, 0x0, 0x2, 0x2, 0x0, 0x1, 0x3, 0x0, 0x0, 0x2, 0x0, 0x1, 0x1, 0x0, 0x1}
+	testCodecNoRef(t, map[int16]map[int16]bool{1: {2: true, 3: false}, 2: {1: true}}, intMapOfMapsEnc)
 }
 
 func TestCollectionSizeCodec(t *testing.T) {

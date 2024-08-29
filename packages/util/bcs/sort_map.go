@@ -10,6 +10,10 @@ import (
 )
 
 func sortMap(entries []*lo.Entry[reflect.Value, reflect.Value]) {
+	// NOTE: Map is sorted to ensure deterministic encoding.
+	// It is sorted by the actual value, although by BCS spec it should be sorted by encoded bytes of key.
+	// This should not be an issue, because sorting of ints and strings in Go already happen by its bytes.
+
 	if len(entries) < 2 {
 		return
 	}
@@ -18,27 +22,29 @@ func sortMap(entries []*lo.Entry[reflect.Value, reflect.Value]) {
 
 	var cmp func(i, j int) bool
 
+	//NOTE: We use unsigned types fo signed values to ensure that they are sorted by its byte representation.
+
 	switch keyType.Kind() {
 	case reflect.Int:
-		cmp = cmpIntKeys[int](entries)
-	case reflect.Int8:
-		cmp = cmpIntKeys[int8](entries)
-	case reflect.Int16:
-		cmp = cmpIntKeys[int16](entries)
-	case reflect.Int32:
-		cmp = cmpIntKeys[int32](entries)
-	case reflect.Int64:
-		cmp = cmpIntKeys[int64](entries)
-	case reflect.Uint:
 		cmp = cmpIntKeys[uint](entries)
-	case reflect.Uint8:
+	case reflect.Int8:
 		cmp = cmpIntKeys[uint8](entries)
-	case reflect.Uint16:
+	case reflect.Int16:
 		cmp = cmpIntKeys[uint16](entries)
-	case reflect.Uint32:
+	case reflect.Int32:
 		cmp = cmpIntKeys[uint32](entries)
-	case reflect.Uint64:
+	case reflect.Int64:
 		cmp = cmpIntKeys[uint64](entries)
+	case reflect.Uint:
+		cmp = cmpUintKeys[uint](entries)
+	case reflect.Uint8:
+		cmp = cmpUintKeys[uint8](entries)
+	case reflect.Uint16:
+		cmp = cmpUintKeys[uint16](entries)
+	case reflect.Uint32:
+		cmp = cmpUintKeys[uint32](entries)
+	case reflect.Uint64:
+		cmp = cmpUintKeys[uint64](entries)
 	case reflect.String:
 		cmp = cmpStringKeys(entries)
 	default:
@@ -48,10 +54,10 @@ func sortMap(entries []*lo.Entry[reflect.Value, reflect.Value]) {
 	sort.Slice(entries, cmp)
 }
 
-func cmpIntKeys[Int constraints.Integer](entries []*lo.Entry[reflect.Value, reflect.Value]) func(i, j int) bool {
+// NOTE: Uint constraints.Unsigned is not a typo. See comment in sortMap.
+func cmpIntKeys[Uint constraints.Unsigned](entries []*lo.Entry[reflect.Value, reflect.Value]) func(i, j int) bool {
 	return func(i, j int) bool {
-		// TODO: Maybe it is more optimal to create new slice of real type + orig idx, sort it, and then rearrange original slice?
-		return Int(entries[i].Key.Int()) < Int(entries[j].Key.Int())
+		return Uint(entries[i].Key.Int()) < Uint(entries[j].Key.Int())
 	}
 }
 
