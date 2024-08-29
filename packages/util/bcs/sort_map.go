@@ -9,13 +9,13 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-func sortMap(entries []*lo.Entry[reflect.Value, reflect.Value]) {
+func sortMap(entries []*lo.Entry[reflect.Value, reflect.Value]) error {
 	// NOTE: Map is sorted to ensure deterministic encoding.
 	// It is sorted by the actual value, although by BCS spec it should be sorted by encoded bytes of key.
 	// This should not be an issue, because sorting of ints and strings in Go already happen by its bytes.
 
 	if len(entries) < 2 {
-		return
+		return nil
 	}
 
 	keyType := entries[0].Key.Type()
@@ -48,10 +48,12 @@ func sortMap(entries []*lo.Entry[reflect.Value, reflect.Value]) {
 	case reflect.String:
 		cmp = cmpStringKeys(entries)
 	default:
-		panic(fmt.Errorf("unsupported slice elem type: %v", keyType))
+		return fmt.Errorf("unsupported map key type: %v", keyType)
 	}
 
 	sort.Slice(entries, cmp)
+
+	return nil
 }
 
 // NOTE: Uint constraints.Unsigned is not a typo. See comment in sortMap.

@@ -272,7 +272,9 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts *TypeOptions) error {
 		entries = append(entries, &lo.Entry[reflect.Value, reflect.Value]{Key: elem.Key(), Value: elem.Value()})
 	}
 
-	sortMap(entries)
+	if err := sortMap(entries); err != nil {
+		return fmt.Errorf("sorting map: %w", err)
+	}
 
 	for i := range entries {
 		if err := e.encodeValue(entries[i].Key, nil); err != nil {
