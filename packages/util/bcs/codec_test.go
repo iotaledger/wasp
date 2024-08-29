@@ -181,7 +181,7 @@ func testCodecNoRef[V any](t *testing.T, v V, expectedEnc []byte) {
 	require.Equal(t, expectedEnc, vEnc)
 }
 
-func TestCodecBasic(t *testing.T) {
+func TestBasicTypesCodec(t *testing.T) {
 	// Boolean	                         t/f    01/00
 	// 8-bit signed                       -1    FF
 	// 8-bit unsigned                      1    01
@@ -232,7 +232,7 @@ func TestCodecBasic(t *testing.T) {
 	testCodec(t, uint64(18446744073709551615), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 }
 
-func TestCodecMultiRef(t *testing.T) {
+func TestMultiPtrCodec(t *testing.T) {
 	var vI int16 = 4660
 	var pVI *int16 = &vI
 	var ppVI **int16 = &pVI
@@ -247,7 +247,7 @@ func TestCodecMultiRef(t *testing.T) {
 	testCodecNoRef(t, ppVM, []byte{0x3, 0x1, 0x0, 0x1, 0x2, 0x0, 0x0, 0x3, 0x0, 0x1})
 }
 
-func TestCodecString(t *testing.T) {
+func TestStringCodec(t *testing.T) {
 	testCodec(t, "", []byte{0x0})
 	testCodec(t, "qwerty", []byte{0x6, 0x71, 0x77, 0x65, 0x72, 0x74, 0x79})
 	testCodec(t, "çå∞≠¢õß∂ƒ∫", []byte{24, 0xc3, 0xa7, 0xc3, 0xa5, 0xe2, 0x88, 0x9e, 0xe2, 0x89, 0xa0, 0xc2, 0xa2, 0xc3, 0xb5, 0xc3, 0x9f, 0xe2, 0x88, 0x82, 0xc6, 0x92, 0xe2, 0x88, 0xab})
@@ -257,7 +257,7 @@ func TestCodecString(t *testing.T) {
 	testCodec(t, strings.Repeat("a", 16384), append([]byte{0x80, 0x80, 0x1}, bytes.Repeat([]byte{0x61}, 16384)...))
 }
 
-func TestCodecCollections(t *testing.T) {
+func TestArrayCodec(t *testing.T) {
 	testCodec(t, []int64{42, 43}, []byte{0x2, 0x2A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 	testCodec(t, []int64(nil), []byte{0x0})
 
@@ -265,14 +265,16 @@ func TestCodecCollections(t *testing.T) {
 
 	testCodec(t, []string{"aaa", "bbb"}, []byte{0x2, 0x3, 0x61, 0x61, 0x61, 0x3, 0x62, 0x62, 0x62})
 	testCodec(t, [][]int16{{1, 2}, {3, 4, 5}}, []byte{0x2, 0x2, 0x1, 0x0, 0x2, 0x0, 0x3, 0x3, 0x0, 0x4, 0x0, 0x5, 0x0})
+}
 
+func TestMapCodec(t *testing.T) {
 	mapEnc := []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1}
 	testCodecNoRef(t, map[int16]bool{3: true, 1: false, 2: true}, mapEnc)
 	testCodecNoRef(t, map[int16]bool{2: true, 1: false, 3: true}, mapEnc)
 	testCodecNoRef(t, map[int16]bool{}, []byte{0x0})
 }
 
-func TestCodecArraySize(t *testing.T) {
+func TestCollectionSizeCodec(t *testing.T) {
 	testSizeCodec(t, 0, []byte{0x0})
 	testSizeCodec(t, 1, []byte{0x1})
 	testSizeCodec(t, 127, []byte{0x7F})
@@ -301,15 +303,15 @@ func testSizeCodec(t *testing.T, v int, expectedEnc []byte) {
 	require.Equal(t, refBcsEnc, rwutilEnc)
 }
 
-func TestCustom(t *testing.T) {
-	testUint128(t, "10", true)
-	testUint128(t, "1770887431076116955186", true)
-	testUint128(t, "999999999999999999999999999999999999999999999999999", false)
+func TestCustomTypesCodec(t *testing.T) {
+	testUint128Codec(t, "10", true)
+	testUint128Codec(t, "1770887431076116955186", true)
+	testUint128Codec(t, "999999999999999999999999999999999999999999999999999", false)
 
 	testCodecNoRef(t, time.Unix(12345, 6789), []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
 }
 
-func testUint128(t *testing.T, v string, expectSuccess bool) {
+func testUint128Codec(t *testing.T, v string, expectSuccess bool) {
 	var bi big.Int
 	_, ok := bi.SetString(v, 10)
 	require.True(t, ok)
@@ -328,7 +330,7 @@ func testUint128(t *testing.T, v string, expectSuccess bool) {
 	}
 }
 
-func TestStruct(t *testing.T) {
+func TestStructCodec(t *testing.T) {
 	testCodec(t, BasicStruct{A: 42, B: "aaa"}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
 	testCodecNoRef(t, IntWithLessBytes{A: 42}, []byte{42, 0})
 	testCodecNoRef(t, IntWithMoreBytes{A: 42}, []byte{42, 0, 0, 0})
@@ -370,7 +372,7 @@ func TestStruct(t *testing.T) {
 	testCodecNoRef(t, WithTime{A: time.Unix(12345, 6789)}, []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
 }
 
-func TestCodecStructUnexported(t *testing.T) {
+func TestUnexportedFieldsCodec(t *testing.T) {
 	v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
 	vEnc := lo.Must1(bcs.Marshal(v))
 	vDec := lo.Must1(bcs.Unmarshal[WitUnexported](vEnc))
@@ -382,13 +384,13 @@ func TestCodecStructUnexported(t *testing.T) {
 	require.Equal(t, v, vDec)
 }
 
-type ExampleStruct struct {
+type StructWithRwUtilSupport struct {
 	A int
 	B int `bcs:"bytes=2"`
-	C ExampleNestedStruct
+	C NestedStructWithRwUtilSupport
 }
 
-func (s *ExampleStruct) Write(dest io.Writer) error {
+func (s *StructWithRwUtilSupport) Write(dest io.Writer) error {
 	w := rwutil.NewWriter(dest)
 
 	w.WriteInt64(int64(s.A))
@@ -398,7 +400,7 @@ func (s *ExampleStruct) Write(dest io.Writer) error {
 	return nil
 }
 
-func (s *ExampleStruct) Read(src io.Reader) error {
+func (s *StructWithRwUtilSupport) Read(src io.Reader) error {
 	r := rwutil.NewReader(src)
 
 	s.A = int(r.ReadInt64())
@@ -408,12 +410,12 @@ func (s *ExampleStruct) Read(src io.Reader) error {
 	return r.Err
 }
 
-type ExampleNestedStruct struct {
+type NestedStructWithRwUtilSupport struct {
 	C int
 	D []string `bcs:"len_bytes=2"`
 }
 
-func (s *ExampleNestedStruct) Write(dest io.Writer) error {
+func (s *NestedStructWithRwUtilSupport) Write(dest io.Writer) error {
 	w := rwutil.NewWriter(dest)
 
 	w.WriteInt64(int64(s.C))
@@ -425,7 +427,7 @@ func (s *ExampleNestedStruct) Write(dest io.Writer) error {
 	return nil
 }
 
-func (s *ExampleNestedStruct) Read(src io.Reader) error {
+func (s *NestedStructWithRwUtilSupport) Read(src io.Reader) error {
 	r := rwutil.NewReader(src)
 
 	s.C = int(r.ReadInt64())
@@ -438,28 +440,28 @@ func (s *ExampleNestedStruct) Read(src io.Reader) error {
 	return r.Err
 }
 
-func TestVsRwutil(t *testing.T) {
-	v := ExampleStruct{
+func TestCompatibilityWithRwUtil(t *testing.T) {
+	v := StructWithRwUtilSupport{
 		A: 42,
 		B: 43,
-		C: ExampleNestedStruct{
+		C: NestedStructWithRwUtilSupport{
 			C: 44,
 			D: []string{"aaa", "bbb"},
 		},
 	}
 
 	vEnc := lo.Must1(bcs.Marshal(v))
-	vDec := lo.Must1(bcs.Unmarshal[ExampleStruct](vEnc))
+	vDec := lo.Must1(bcs.Unmarshal[StructWithRwUtilSupport](vEnc))
 	require.Equal(t, v, vDec)
 
 	written := rwutil.WriteToBytes(&v)
 	require.Equal(t, written, vEnc)
 
-	var read ExampleStruct
+	var read StructWithRwUtilSupport
 	rwutil.ReadFromBytes(written, &read)
 	require.Equal(t, v, read)
 
-	var readFromEnc ExampleStruct
+	var readFromEnc StructWithRwUtilSupport
 	rwutil.ReadFromBytes(vEnc, &readFromEnc)
 	require.Equal(t, v, readFromEnc)
 }
