@@ -16,8 +16,7 @@ type Encodable interface {
 }
 
 type EncoderConfig struct {
-	TagName            string
-	DefaultTypeOptions *TypeOptions
+	TagName string
 	// IncludeUnexported bool
 	// IncludeUntaggedUnexported bool
 	// ExcludeUntagged           bool
@@ -28,28 +27,13 @@ func (c *EncoderConfig) InitializeDefaults() {
 	if c.TagName == "" {
 		c.TagName = "bcs"
 	}
-	if c.DefaultTypeOptions == nil {
-		c.DefaultTypeOptions = &DefaultTypeOptions
-	}
 	if c.CustomEncoders == nil {
 		c.CustomEncoders = CustomEncoders
 	}
 }
 
-func (c *EncoderConfig) Validate() error {
-	if err := c.DefaultTypeOptions.Validate(); err != nil {
-		return fmt.Errorf("default array len size: %w", err)
-	}
-
-	return nil
-}
-
 func NewEncoder(dest io.Writer, cfg EncoderConfig) *Encoder {
 	cfg.InitializeDefaults()
-
-	if err := cfg.Validate(); err != nil {
-		panic(err)
-	}
 
 	return &Encoder{
 		cfg: cfg,
@@ -70,8 +54,8 @@ func (e *Encoder) Encode(v any) error {
 	return e.encodeValue(reflect.ValueOf(v), nil)
 }
 
-func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) error {
-	v, customEncoder, typeOptions, err := e.dereferenceValue(v)
+func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) error {
+	v, typeOptions, enumVariantIdx, customEncoder, err := e.dereferenceValue(v)
 	if err != nil {
 		return fmt.Errorf("%v: %w", v.Type(), err)
 	}
@@ -84,36 +68,49 @@ func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 		return nil
 	}
 
-	if typeOptions == nil {
-		o := *e.cfg.DefaultTypeOptions
-		typeOptions = &o
-	}
-
-	if customTypeOptions != nil {
-		typeOptions.Update(*customTypeOptions)
+	if typeOptionsFromTag != nil {
+		typeOptions.Update(*typeOptionsFromTag)
 	}
 
 	switch v.Kind() {
 	case reflect.Bool:
 		e.w.WriteBool(v.Bool())
 	case reflect.Int8:
-		e.encodeInt(v, Value1Byte, typeOptions.Bytes)
+		if err := e.encodeInt(v, Value1Byte, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint8:
-		e.encodeUint(v, Value1Byte, typeOptions.Bytes)
+		if err := e.encodeUint(v, Value1Byte, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int16:
-		e.encodeInt(v, Value2Bytes, typeOptions.Bytes)
+		if err := e.encodeInt(v, Value2Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint16:
-		e.encodeUint(v, Value2Bytes, typeOptions.Bytes)
+		if err := e.encodeUint(v, Value2Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int32:
-		e.encodeInt(v, Value4Bytes, typeOptions.Bytes)
+		if err := e.encodeInt(v, Value4Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint32:
-		e.encodeUint(v, Value4Bytes, typeOptions.Bytes)
+		if err := e.encodeUint(v, Value4Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int64:
-		e.encodeInt(v, Value8Bytes, typeOptions.Bytes)
+		if err := e.encodeInt(v, Value8Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint64:
-		e.encodeUint(v, Value8Bytes, typeOptions.Bytes)
+		if err := e.encodeUint(v, Value8Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int:
-		e.encodeInt(v, Value8Bytes, typeOptions.Bytes)
+		if err := e.encodeInt(v, Value8Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.String:
 		e.w.WriteString(v.String())
 	case reflect.Slice:
@@ -132,6 +129,12 @@ func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 		if err := e.encodeStruct(v); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
+	case reflect.Interface:
+		e.w.WriteSize32(enumVariantIdx)
+
+		if err := e.encodeValue(v.Elem(), nil); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	default:
 		return fmt.Errorf("%v: cannot encode unknown type type", v.Type())
 	}
@@ -143,54 +146,95 @@ func (e *Encoder) encodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 	return nil
 }
 
-func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, customEncoder CustomEncoder, typeOptions *TypeOptions, _ error) {
-	if (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) && v.IsNil() {
-		return v, nil, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
-	}
-
-	customEncoder, typeOptions = e.retrieveTypeInfo(v)
-	if customEncoder != nil || typeOptions != nil {
-		return v, customEncoder, typeOptions, nil
-	}
-
+func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, _ TypeOptions, enumVariantIdx int, _ CustomEncoder, _ error) {
 	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
 		if v.IsNil() {
-			return v, nil, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
+			return v, TypeOptions{}, -1, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
+		}
+
+		typeOptions, enumVariantIdx, customEncoder, err := e.retrieveTypeInfo(v)
+		if err != nil || typeOptions != nil || enumVariantIdx != -1 || customEncoder != nil {
+			if typeOptions == nil {
+				typeOptions = &TypeOptions{}
+			}
+			return v, *typeOptions, enumVariantIdx, customEncoder, err
 		}
 
 		v = v.Elem()
-
-		customEncoder, typeOptions = e.retrieveTypeInfo(v)
-		if customEncoder != nil || typeOptions != nil {
-			return v, customEncoder, typeOptions, nil
-		}
 	}
 
-	return v, nil, nil, nil
+	typeOptions, enumVariantIdx, customEncoder, err := e.retrieveTypeInfo(v)
+	if typeOptions == nil {
+		typeOptions = &TypeOptions{}
+	}
+
+	return v, *typeOptions, enumVariantIdx, customEncoder, err
 }
 
-func (e *Encoder) retrieveTypeInfo(v reflect.Value) (customEncoder CustomEncoder, _ *TypeOptions) {
-	vI := v.Interface()
+func (e *Encoder) retrieveTypeInfo(v reflect.Value) (_ *TypeOptions, enumVariantIdx int, _ CustomEncoder, _ error) {
+	t := v.Type()
 
-	if customEncoder, ok := e.cfg.CustomEncoders[v.Type()]; ok {
-		return customEncoder, nil
+	enumVariantIdx = -1
+
+	if v.Kind() == reflect.Interface {
+		var err error
+
+		enumVariantIdx, err = e.getEnumVariantIdx(v)
+		if err != nil {
+			return nil, -1, nil, err
+		}
+
+		v = v.Elem()
+		t = v.Type()
 	}
 
+	if customEncoder, ok := e.cfg.CustomEncoders[t]; ok {
+		return nil, enumVariantIdx, customEncoder, nil
+	}
+
+	vI := v.Interface()
+
 	if encodable, ok := vI.(Encodable); ok {
-		return func(e *Encoder, v reflect.Value) error {
+		customEncoder := func(e *Encoder, v reflect.Value) error {
 			return encodable.MarshalBCS(e)
-		}, nil
+		}
+
+		return nil, enumVariantIdx, customEncoder, nil
 	}
 
 	if bcsType, ok := vI.(BCSType); ok {
-		o := bcsType.BCSOptions()
-		return nil, &o
+		typeOptions := bcsType.BCSOptions()
+
+		return &typeOptions, enumVariantIdx, nil, nil
 	}
 
-	return nil, nil
+	return nil, enumVariantIdx, nil, nil
 }
 
-func (e *Encoder) encodeInt(v reflect.Value, origSize, customSize ValueBytesCount) {
+func (e *Encoder) getEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ error) {
+	t := v.Type()
+
+	enumVariants, registered := EnumTypes[t]
+	if !registered {
+		return -1, fmt.Errorf("interface %v is not registered as enum type", t)
+	}
+
+	valT := v.Elem().Type()
+
+	for i, variant := range enumVariants {
+		if valT == variant {
+			enumVariantIdx = i
+		}
+	}
+
+	if enumVariantIdx == -1 {
+		return -1, fmt.Errorf("variant %v is not registered as part of enum type %v", valT, t)
+	}
+
+	return enumVariantIdx, nil
+}
+
+func (e *Encoder) encodeInt(v reflect.Value, origSize, customSize ValueBytesCount) error {
 	size := lo.Ternary(customSize != 0, customSize, origSize)
 
 	switch size {
@@ -203,11 +247,13 @@ func (e *Encoder) encodeInt(v reflect.Value, origSize, customSize ValueBytesCoun
 	case Value8Bytes:
 		e.w.WriteInt64(v.Int())
 	default:
-		panic(fmt.Errorf("invalid value size: %v", size))
+		return fmt.Errorf("invalid value size: %v", size)
 	}
+
+	return e.w.Err
 }
 
-func (e *Encoder) encodeUint(v reflect.Value, origSize, customSize ValueBytesCount) {
+func (e *Encoder) encodeUint(v reflect.Value, origSize, customSize ValueBytesCount) error {
 	size := lo.Ternary(customSize != 0, customSize, origSize)
 
 	switch size {
@@ -220,15 +266,17 @@ func (e *Encoder) encodeUint(v reflect.Value, origSize, customSize ValueBytesCou
 	case Value8Bytes:
 		e.w.WriteUint64(v.Uint())
 	default:
-		panic(fmt.Errorf("invalid value size: %v", size))
+		return fmt.Errorf("invalid value size: %v", size)
 	}
+
+	return e.w.Err
 }
 
-func (e *Encoder) encodeSlice(v reflect.Value, typOpts *TypeOptions) error {
+func (e *Encoder) encodeSlice(v reflect.Value, typOpts TypeOptions) error {
 	switch typOpts.LenBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
-	case Len4Bytes:
+	case Len4Bytes, 0:
 		e.w.WriteSize32(v.Len())
 	default:
 		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
@@ -253,7 +301,7 @@ func (e *Encoder) encodeArray(v reflect.Value) error {
 	return nil
 }
 
-func (e *Encoder) encodeMap(v reflect.Value, typOpts *TypeOptions) error {
+func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 	if v.IsNil() {
 		return fmt.Errorf("attemp to encode non-optional nil-map")
 	}
@@ -261,7 +309,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts *TypeOptions) error {
 	switch typOpts.LenBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
-	case Len4Bytes:
+	case Len4Bytes, 0:
 		e.w.WriteSize32(v.Len())
 	default:
 		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
@@ -355,7 +403,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 func (e *Encoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions, bool, error) {
 	a, hasTag := fieldType.Tag.Lookup(e.cfg.TagName)
 
-	fieldOpts, err := FieldOptionsFromTag(a, *e.cfg.DefaultTypeOptions)
+	fieldOpts, err := FieldOptionsFromTag(a)
 	if err != nil {
 		return FieldOptions{}, false, fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
 	}

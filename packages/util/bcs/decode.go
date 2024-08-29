@@ -16,37 +16,21 @@ type Decodable interface {
 }
 
 type DecoderConfig struct {
-	TagName            string
-	DefaultTypeOptions *TypeOptions
-	CustomDecoders     map[reflect.Type]CustomDecoder
+	TagName        string
+	CustomDecoders map[reflect.Type]CustomDecoder
 }
 
 func (c *DecoderConfig) InitializeDefaults() {
 	if c.TagName == "" {
 		c.TagName = "bcs"
 	}
-	if c.DefaultTypeOptions == nil {
-		c.DefaultTypeOptions = &DefaultTypeOptions
-	}
 	if c.CustomDecoders == nil {
 		c.CustomDecoders = CustomDecoders
 	}
 }
 
-func (c *DecoderConfig) Validate() error {
-	if err := c.DefaultTypeOptions.Validate(); err != nil {
-		return fmt.Errorf("default array len size: %w", err)
-	}
-
-	return nil
-}
-
 func NewDecoder(src io.Reader, cfg DecoderConfig) *Decoder {
 	cfg.InitializeDefaults()
-
-	if err := cfg.Validate(); err != nil {
-		panic(err)
-	}
 
 	return &Decoder{
 		cfg: cfg,
@@ -76,13 +60,13 @@ func (d *Decoder) Decode(v any) error {
 	return d.decodeValue(vR.Elem(), nil)
 }
 
-func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) error {
-	v, customDecoder, typeOptions := d.dereferenceValue(v)
+func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) error {
+	v, typeOptions, customDecoder := d.dereferenceValue(v)
 
 	if customDecoder != nil {
 		dec, err := customDecoder(d)
 		if err != nil {
-			return fmt.Errorf("%v: custom Decoder: %w", v.Type(), err)
+			return fmt.Errorf("%v: custom decoder: %w", v.Type(), err)
 		}
 
 		v.Set(dec)
@@ -90,36 +74,49 @@ func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 		return nil
 	}
 
-	if typeOptions == nil {
-		o := *d.cfg.DefaultTypeOptions
-		typeOptions = &o
-	}
-
-	if customTypeOptions != nil {
-		typeOptions.Update(*customTypeOptions)
+	if typeOptionsFromTag != nil {
+		typeOptions.Update(*typeOptionsFromTag)
 	}
 
 	switch v.Kind() {
 	case reflect.Bool:
 		v.SetBool(d.r.ReadBool())
 	case reflect.Int8:
-		d.decodeInt(v, Value1Byte, typeOptions.Bytes)
+		if err := d.decodeInt(v, Value1Byte, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint8:
-		d.decodeUint(v, Value1Byte, typeOptions.Bytes)
+		if err := d.decodeUint(v, Value1Byte, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int16:
-		d.decodeInt(v, Value2Bytes, typeOptions.Bytes)
+		if err := d.decodeInt(v, Value2Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint16:
-		d.decodeUint(v, Value2Bytes, typeOptions.Bytes)
+		if err := d.decodeUint(v, Value2Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int32:
-		d.decodeInt(v, Value4Bytes, typeOptions.Bytes)
+		if err := d.decodeInt(v, Value4Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint32:
-		d.decodeUint(v, Value4Bytes, typeOptions.Bytes)
+		if err := d.decodeUint(v, Value4Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int64:
-		d.decodeInt(v, Value8Bytes, typeOptions.Bytes)
+		if err := d.decodeInt(v, Value8Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Uint64:
-		d.decodeUint(v, Value8Bytes, typeOptions.Bytes)
+		if err := d.decodeUint(v, Value8Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.Int:
-		d.decodeInt(v, Value8Bytes, typeOptions.Bytes)
+		if err := d.decodeInt(v, Value8Bytes, typeOptions.Bytes); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	case reflect.String:
 		v.SetString(d.r.ReadString())
 	case reflect.Slice:
@@ -138,8 +135,12 @@ func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 		if err := d.decodeStruct(v); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
+	case reflect.Interface:
+		if err := d.decodeEnum(v); err != nil {
+			return fmt.Errorf("%v: %w", v.Type(), err)
+		}
 	default:
-		return fmt.Errorf("%v: cannot Decode unknown type type", v.Type())
+		return fmt.Errorf("%v: cannot decode unknown type", v.Type())
 	}
 
 	if d.r.Err != nil {
@@ -149,60 +150,73 @@ func (d *Decoder) decodeValue(v reflect.Value, customTypeOptions *TypeOptions) e
 	return nil
 }
 
-func (d *Decoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, customDecoder CustomDecoder, typeOptions *TypeOptions) {
-	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Map {
-		if v.Kind() == reflect.Ptr && v.IsNil() {
+func (d *Decoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, _ TypeOptions, _ CustomDecoder) {
+loop:
+	for {
+		switch v.Kind() {
+		case reflect.Ptr:
 			v.Set(reflect.New(v.Type().Elem()))
-		} else if v.Kind() == reflect.Map && v.IsNil() {
+		case reflect.Map:
 			v.Set(reflect.MakeMap(v.Type()))
+			break loop
+		default:
+			break loop
 		}
 
-		customDecoder, typeOptions = d.retrieveTypeInfo(v)
-		if customDecoder != nil || typeOptions != nil {
-			return v, customDecoder, typeOptions
+		typeOptions, customDecoder := d.retrieveTypeInfo(v)
+		if typeOptions != nil || customDecoder != nil {
+			if typeOptions == nil {
+				typeOptions = &TypeOptions{}
+			}
+
+			return v, *typeOptions, customDecoder
 		}
 
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		} else {
-			return v, nil, nil
-		}
+		v = v.Elem()
 	}
 
-	customDecoder, typeOptions = d.retrieveTypeInfo(v)
-	if customDecoder != nil || typeOptions != nil {
-		return v, customDecoder, typeOptions
+	typeOptions, customDecoder := d.retrieveTypeInfo(v)
+	if typeOptions == nil {
+		typeOptions = &TypeOptions{}
 	}
 
-	return v, nil, nil
+	return v, *typeOptions, customDecoder
 }
 
-func (d *Decoder) retrieveTypeInfo(v reflect.Value) (customDecoder CustomDecoder, _ *TypeOptions) {
-	vI := v.Interface()
-
+func (d *Decoder) retrieveTypeInfo(v reflect.Value) (*TypeOptions, CustomDecoder) {
 	if customDecoder, ok := d.cfg.CustomDecoders[v.Type()]; ok {
-		return customDecoder, nil
+		return nil, customDecoder
 	}
 
+	if v.Kind() == reflect.Interface {
+		// This is enum and we dont know its type yet, so we cant use any of its methods.
+		return nil, nil
+	}
+
+	vI := v.Interface()
+
 	if decodable, ok := vI.(Decodable); ok {
-		return func(e *Decoder) (reflect.Value, error) {
+		customDecoder := func(e *Decoder) (reflect.Value, error) {
 			if err := decodable.UnmarshalBCS(e); err != nil {
 				return reflect.Value{}, err
 			}
 
 			return reflect.ValueOf(decodable), nil
-		}, nil
+		}
+
+		return nil, customDecoder
 	}
 
 	if bcsType, ok := vI.(BCSType); ok {
-		o := bcsType.BCSOptions()
-		return nil, &o
+		typeOptions := bcsType.BCSOptions()
+
+		return &typeOptions, nil
 	}
 
 	return nil, nil
 }
 
-func (d *Decoder) decodeInt(v reflect.Value, origSize, customSize ValueBytesCount) {
+func (d *Decoder) decodeInt(v reflect.Value, origSize, customSize ValueBytesCount) error {
 	size := lo.Ternary(customSize != 0, customSize, origSize)
 
 	switch size {
@@ -215,11 +229,13 @@ func (d *Decoder) decodeInt(v reflect.Value, origSize, customSize ValueBytesCoun
 	case Value8Bytes:
 		v.SetInt(d.r.ReadInt64())
 	default:
-		panic(fmt.Errorf("invalid value size: %v", size))
+		return fmt.Errorf("invalid value size: %v", size)
 	}
+
+	return nil
 }
 
-func (d *Decoder) decodeUint(v reflect.Value, origSize, customSize ValueBytesCount) {
+func (d *Decoder) decodeUint(v reflect.Value, origSize, customSize ValueBytesCount) error {
 	size := lo.Ternary(customSize != 0, customSize, origSize)
 
 	switch size {
@@ -232,17 +248,19 @@ func (d *Decoder) decodeUint(v reflect.Value, origSize, customSize ValueBytesCou
 	case Value8Bytes:
 		v.SetUint(d.r.ReadUint64())
 	default:
-		panic(fmt.Errorf("invalid value size: %v", size))
+		return fmt.Errorf("invalid value size: %v", size)
 	}
+
+	return nil
 }
 
-func (d *Decoder) decodeSlice(v reflect.Value, typOpts *TypeOptions) error {
+func (d *Decoder) decodeSlice(v reflect.Value, typOpts TypeOptions) error {
 	var length int
 
 	switch typOpts.LenBytes {
 	case Len2Bytes:
 		length = int(d.r.ReadSize16())
-	case Len4Bytes:
+	case Len4Bytes, 0:
 		length = int(d.r.ReadSize32())
 	default:
 		return fmt.Errorf("invalid array size type: %v", typOpts.LenBytes)
@@ -285,13 +303,13 @@ func (d *Decoder) decodeArray(v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) decodeMap(v reflect.Value, typOpts *TypeOptions) error {
+func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 	var length int
 
 	switch typOpts.LenBytes {
 	case Len2Bytes:
 		length = int(d.r.ReadSize16())
-	case Len4Bytes:
+	case Len4Bytes, 0:
 		length = int(d.r.ReadSize32())
 	default:
 		return fmt.Errorf("invalid map size type: %v", typOpts.LenBytes)
@@ -370,12 +388,38 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 func (d *Decoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions, bool, error) {
 	a, hasTag := fieldType.Tag.Lookup(d.cfg.TagName)
 
-	fieldOpts, err := FieldOptionsFromTag(a, *d.cfg.DefaultTypeOptions)
+	fieldOpts, err := FieldOptionsFromTag(a)
 	if err != nil {
 		return FieldOptions{}, false, fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
 	}
 
 	return fieldOpts, hasTag, nil
+}
+
+func (d *Decoder) decodeEnum(v reflect.Value) error {
+	variants, registered := EnumTypes[v.Type()]
+	if !registered {
+		return fmt.Errorf("interface type %v is not registered as enum", v.Type())
+	}
+
+	variantIdx := d.r.ReadByte()
+	if d.r.Err != nil {
+		return d.r.Err
+	}
+
+	if int(variantIdx) >= len(variants) {
+		return fmt.Errorf("invalid variant index %v for enum %v", variantIdx, v.Type())
+	}
+
+	variant := reflect.New(variants[variantIdx]).Elem()
+
+	if err := d.decodeValue(variant, nil); err != nil {
+		return fmt.Errorf("%v: %w", variants[variantIdx], err)
+	}
+
+	v.Set(variant)
+
+	return nil
 }
 
 // func (d *Decoder) Writer() *rwutil.Writer {

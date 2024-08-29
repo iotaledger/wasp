@@ -29,10 +29,6 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	}
 }
 
-var DefaultTypeOptions = TypeOptions{
-	LenBytes: Len4Bytes,
-}
-
 type FieldOptions struct {
 	TypeOptions
 	Skip     bool
@@ -49,15 +45,15 @@ func (o *FieldOptions) Validate() error {
 	return nil
 }
 
-func FieldOptionsFromTag(a string, defTypOpts TypeOptions) (_ FieldOptions, _ error) {
+func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 	if a == "" {
-		return FieldOptions{TypeOptions: defTypOpts}, nil
+		return FieldOptions{}, nil
 	}
 	if a == "-" {
 		return FieldOptions{Skip: true}, nil
 	}
 
-	opts := FieldOptions{TypeOptions: defTypOpts}
+	opts := FieldOptions{}
 
 	parts := strings.Split(a, ",")
 

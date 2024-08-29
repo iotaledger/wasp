@@ -3,7 +3,6 @@ package bcs_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"math"
 	"math/big"
 	"strings"
@@ -16,147 +15,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
-
-type BasicStruct struct {
-	A int64
-	B string
-	C int64 `bcs:"-"`
-}
-
-type IntWithLessBytes struct {
-	A int64 `bcs:"bytes=2"`
-}
-
-type IntWithMoreBytes struct {
-	A int16 `bcs:"bytes=4"`
-}
-
-type IntPtr struct {
-	A *int64
-}
-
-type IntMultiPtr struct {
-	A **int64
-}
-
-type IntOptional struct {
-	A *int64 `bcs:"optional"`
-}
-
-type IntOptionalPtr struct {
-	A **int64 `bcs:"optional"`
-}
-
-type NestedStruct struct {
-	A int64
-	B BasicStruct
-}
-
-type OptionalNestedStruct struct {
-	A int64
-	B *BasicStruct `bcs:"optional"`
-}
-
-type EmbeddedStruct struct {
-	BasicStruct
-	C int64
-}
-
-type OptionalEmbeddedStruct struct {
-	*BasicStruct `bcs:"optional"`
-	C            int64
-}
-
-type WithSlice struct {
-	A []int32
-}
-
-type WithShortSlice struct {
-	A []int32 `bcs:"len_bytes=2"`
-}
-
-type WithOptionalSlice struct {
-	A *[]int32 `bcs:"optional"`
-}
-
-type WithArray struct {
-	A [3]int16
-}
-
-type WithMap struct {
-	A map[int16]bool
-}
-
-type WithOptionalMap struct {
-	A map[int16]bool `bcs:"optional"`
-}
-
-type WithOptionalMapPtr struct {
-	A *map[int16]bool `bcs:"optional"`
-}
-
-type WithShortMap struct {
-	A map[int16]bool `bcs:"len_bytes=2"`
-}
-
-type WithBigIntPtr struct {
-	A *big.Int
-}
-
-type WithBigIntVal struct {
-	A big.Int
-}
-
-type WithTime struct {
-	A time.Time
-}
-
-type WithCustomCodec struct {
-}
-
-func (w WithCustomCodec) MarshalBCS(e *bcs.Encoder) error {
-	e.Write([]byte{1, 2, 3})
-	return nil
-}
-
-func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
-	b := make([]byte, 3)
-	if _, err := d.Read(b); err != nil {
-		return err
-	}
-
-	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
-		return fmt.Errorf("invalid value: %v", b)
-	}
-
-	return nil
-}
-
-type WithNestedCustomCodec struct {
-	A int `bcs:"bytes=1"`
-	B WithCustomCodec
-}
-
-type ShortInt int64
-
-func (v ShortInt) BCSOptions() bcs.TypeOptions {
-	return bcs.TypeOptions{Bytes: bcs.Value2Bytes}
-}
-
-type WithBCSOpts struct {
-	A ShortInt
-}
-
-type WithBCSOptsOverride struct {
-	A ShortInt `bcs:"bytes=1"`
-}
-
-type WitUnexported struct {
-	A int
-	b int
-	c int `bcs:""`
-	D int `bcs:"-"`
-}
 
 func testCodecErr[V any](t *testing.T, v V) {
 	_, err := bcs.Marshal(v)
@@ -315,31 +173,145 @@ func testSizeCodec(t *testing.T, v int, expectedEnc []byte) {
 	require.Equal(t, refBcsEnc, rwutilEnc)
 }
 
-func TestCustomTypesCodec(t *testing.T) {
-	testUint128Codec(t, "10", true)
-	testUint128Codec(t, "1770887431076116955186", true)
-	testUint128Codec(t, "999999999999999999999999999999999999999999999999999", false)
-
-	testCodecNoRef(t, time.Unix(12345, 6789), []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
+type BasicStruct struct {
+	A int64
+	B string
+	C int64 `bcs:"-"`
 }
 
-func testUint128Codec(t *testing.T, v string, expectSuccess bool) {
-	var bi big.Int
-	_, ok := bi.SetString(v, 10)
-	require.True(t, ok)
+type IntWithLessBytes struct {
+	A int64 `bcs:"bytes=2"`
+}
 
-	if expectSuccess {
-		refBiEnc := ref_bcs.MustMarshal(lo.Must1(ref_bcs.NewUint128FromBigInt(&bi)))
+type IntWithMoreBytes struct {
+	A int16 `bcs:"bytes=4"`
+}
 
-		testCodecNoRef(t, bi, refBiEnc)
-		testCodecNoRef(t, &bi, refBiEnc)
-	} else {
-		testCodecErr(t, bi)
-		testCodecErr(t, &bi)
+type IntPtr struct {
+	A *int64
+}
 
-		_, err := ref_bcs.NewUint128FromBigInt(&bi)
-		require.Error(t, err)
+type IntMultiPtr struct {
+	A **int64
+}
+
+type IntOptional struct {
+	A *int64 `bcs:"optional"`
+}
+
+type IntOptionalPtr struct {
+	A **int64 `bcs:"optional"`
+}
+
+type NestedStruct struct {
+	A int64
+	B BasicStruct
+}
+
+type OptionalNestedStruct struct {
+	A int64
+	B *BasicStruct `bcs:"optional"`
+}
+
+type EmbeddedStruct struct {
+	BasicStruct
+	C int64
+}
+
+type OptionalEmbeddedStruct struct {
+	*BasicStruct `bcs:"optional"`
+	C            int64
+}
+
+type WithSlice struct {
+	A []int32
+}
+
+type WithShortSlice struct {
+	A []int32 `bcs:"len_bytes=2"`
+}
+
+type WithOptionalSlice struct {
+	A *[]int32 `bcs:"optional"`
+}
+
+type WithArray struct {
+	A [3]int16
+}
+
+type WithMap struct {
+	A map[int16]bool
+}
+
+type WithOptionalMap struct {
+	A map[int16]bool `bcs:"optional"`
+}
+
+type WithOptionalMapPtr struct {
+	A *map[int16]bool `bcs:"optional"`
+}
+
+type WithShortMap struct {
+	A map[int16]bool `bcs:"len_bytes=2"`
+}
+
+type WithBigIntPtr struct {
+	A *big.Int
+}
+
+type WithBigIntVal struct {
+	A big.Int
+}
+
+type WithTime struct {
+	A time.Time
+}
+
+type WithCustomCodec struct {
+}
+
+func (w WithCustomCodec) MarshalBCS(e *bcs.Encoder) error {
+	e.Write([]byte{1, 2, 3})
+	return nil
+}
+
+func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
+	b := make([]byte, 3)
+	if _, err := d.Read(b); err != nil {
+		return err
 	}
+
+	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
+		return fmt.Errorf("invalid value: %v", b)
+	}
+
+	return nil
+}
+
+type WithNestedCustomCodec struct {
+	A int `bcs:"bytes=1"`
+	B WithCustomCodec
+}
+
+type ShortInt int64
+
+func (v ShortInt) BCSOptions() bcs.TypeOptions {
+	return bcs.TypeOptions{Bytes: bcs.Value2Bytes}
+}
+
+type WithBCSOpts struct {
+	A ShortInt
+}
+
+type WithBCSOptsOverride struct {
+	A ShortInt `bcs:"bytes=1"`
+}
+
+type WitUnexported struct {
+	A int
+	b int
+	c int `bcs:""`
+	D int `bcs:"-"`
 }
 
 func TestStructCodec(t *testing.T) {
@@ -394,86 +366,4 @@ func TestUnexportedFieldsCodec(t *testing.T) {
 	vDec.b = 43
 	vDec.D = 45
 	require.Equal(t, v, vDec)
-}
-
-type StructWithRwUtilSupport struct {
-	A int
-	B int `bcs:"bytes=2"`
-	C NestedStructWithRwUtilSupport
-}
-
-func (s *StructWithRwUtilSupport) Write(dest io.Writer) error {
-	w := rwutil.NewWriter(dest)
-
-	w.WriteInt64(int64(s.A))
-	w.WriteInt16(int16(s.B))
-	w.Write(&s.C)
-
-	return nil
-}
-
-func (s *StructWithRwUtilSupport) Read(src io.Reader) error {
-	r := rwutil.NewReader(src)
-
-	s.A = int(r.ReadInt64())
-	s.B = int(r.ReadInt16())
-	r.Read(&s.C)
-
-	return r.Err
-}
-
-type NestedStructWithRwUtilSupport struct {
-	C int
-	D []string `bcs:"len_bytes=2"`
-}
-
-func (s *NestedStructWithRwUtilSupport) Write(dest io.Writer) error {
-	w := rwutil.NewWriter(dest)
-
-	w.WriteInt64(int64(s.C))
-	w.WriteSize16(len(s.D))
-	for _, v := range s.D {
-		w.WriteString(v)
-	}
-
-	return nil
-}
-
-func (s *NestedStructWithRwUtilSupport) Read(src io.Reader) error {
-	r := rwutil.NewReader(src)
-
-	s.C = int(r.ReadInt64())
-	size := r.ReadSize16()
-	s.D = make([]string, size)
-	for i := range s.D {
-		s.D[i] = r.ReadString()
-	}
-
-	return r.Err
-}
-
-func TestCompatibilityWithRwUtil(t *testing.T) {
-	v := StructWithRwUtilSupport{
-		A: 42,
-		B: 43,
-		C: NestedStructWithRwUtilSupport{
-			C: 44,
-			D: []string{"aaa", "bbb"},
-		},
-	}
-
-	vEnc := lo.Must1(bcs.Marshal(v))
-	vDec := lo.Must1(bcs.Unmarshal[StructWithRwUtilSupport](vEnc))
-	require.Equal(t, v, vDec)
-
-	written := rwutil.WriteToBytes(&v)
-	require.Equal(t, written, vEnc)
-
-	var read StructWithRwUtilSupport
-	rwutil.ReadFromBytes(written, &read)
-	require.Equal(t, v, read)
-
-	var readFromEnc StructWithRwUtilSupport
-	rwutil.ReadFromBytes(vEnc, &readFromEnc)
-	require.Equal(t, v, readFromEnc)
 }

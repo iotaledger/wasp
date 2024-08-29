@@ -7,6 +7,21 @@ import (
 	"math/big"
 )
 
+func init() {
+	AddCustomEncoder(func(e *Encoder, v big.Int) error {
+		return EncodeUint128(&v, e)
+	})
+
+	AddCustomDecoder(func(d *Decoder) (big.Int, error) {
+		v, err := DecodeUint128(d)
+		if err != nil {
+			return big.Int{}, err
+		}
+
+		return *v, nil
+	})
+}
+
 func EncodeUint128(v *big.Int, w io.Writer) error {
 	if err := checkUint128(v); err != nil {
 		return fmt.Errorf("checking Uint128 validity: %w", err)
