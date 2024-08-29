@@ -363,8 +363,9 @@ func (e *Encoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions,
 // 	return &e.w
 // }
 
-func (e *Encoder) Write(b []byte) {
+func (e *Encoder) Write(b []byte) (n int, err error) {
 	e.w.WriteN(b)
+	return len(b), e.w.Err
 }
 
 func Marshal(v any) ([]byte, error) {
@@ -375,6 +376,15 @@ func Marshal(v any) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func MustMarshal(v any) []byte {
+	b, err := Marshal(v)
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
+	}
+
+	return b
 }
 
 type CustomEncoder func(e *Encoder, v reflect.Value) error

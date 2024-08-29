@@ -120,8 +120,8 @@ func (w WithCustomCodec) MarshalBCS(e *bcs.Encoder) error {
 }
 
 func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
-	b, err := d.Read(3)
-	if err != nil {
+	b := make([]byte, 3)
+	if _, err := d.Read(b); err != nil {
 		return err
 	}
 
@@ -302,9 +302,30 @@ func testSizeCodec(t *testing.T, v int, expectedEnc []byte) {
 }
 
 func TestCustom(t *testing.T) {
-	testCodecNoRef(t, big.NewInt(42), []byte{0x1, 0x2a})
-	testCodecNoRef(t, *big.NewInt(42), []byte{0x1, 0x2a})
+	testUint128(t, "10", true)
+	testUint128(t, "1770887431076116955186", true)
+	testUint128(t, "999999999999999999999999999999999999999999999999999", false)
+
 	testCodecNoRef(t, time.Unix(12345, 6789), []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
+}
+
+func testUint128(t *testing.T, v string, expectSuccess bool) {
+	var bi big.Int
+	_, ok := bi.SetString(v, 10)
+	require.True(t, ok)
+
+	if expectSuccess {
+		refBiEnc := ref_bcs.MustMarshal(lo.Must1(ref_bcs.NewUint128FromBigInt(&bi)))
+
+		testCodecNoRef(t, bi, refBiEnc)
+		testCodecNoRef(t, &bi, refBiEnc)
+	} else {
+		testCodecErr(t, bi)
+		testCodecErr(t, &bi)
+
+		_, err := ref_bcs.NewUint128FromBigInt(&bi)
+		require.Error(t, err)
+	}
 }
 
 func TestStruct(t *testing.T) {
@@ -344,8 +365,8 @@ func TestStruct(t *testing.T) {
 	testCodecNoRef(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
 	testCodecNoRef(t, WithBCSOpts{A: 42}, []byte{0x2A, 0x0})
 	testCodecNoRef(t, WithBCSOptsOverride{A: 42}, []byte{0x2A})
-	testCodecNoRef(t, WithBigIntPtr{A: big.NewInt(42)}, []byte{0x1, 0x2a})
-	testCodecNoRef(t, WithBigIntVal{A: *big.NewInt(42)}, []byte{0x1, 0x2a})
+	testCodecNoRef(t, WithBigIntPtr{A: big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	testCodecNoRef(t, WithBigIntVal{A: *big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 	testCodecNoRef(t, WithTime{A: time.Unix(12345, 6789)}, []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
 }
 

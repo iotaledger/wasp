@@ -6,24 +6,17 @@ import (
 )
 
 func init() {
-	// AddCustomEncoder(func(e *Encoder, v *big.Int) error {
-	// 	e.w.WriteBigUint(v)
-	// 	return e.w.Err
-	// })
-
 	AddCustomEncoder(func(e *Encoder, v big.Int) error {
-		e.w.WriteBigUint(&v)
-		return e.w.Err
+		return EncodeUint128(&v, e)
 	})
 
-	// AddCustomDecoder(func(d *Decoder) (*big.Int, error) {
-	// 	v := d.r.ReadBigUint()
-	// 	return v, d.r.Err
-	// })
-
 	AddCustomDecoder(func(d *Decoder) (big.Int, error) {
-		v := d.r.ReadBigUint()
-		return *v, d.r.Err
+		v, err := DecodeUint128(d)
+		if err != nil {
+			return big.Int{}, err
+		}
+
+		return *v, nil
 	})
 
 	AddCustomEncoder(func(e *Encoder, v time.Time) error {

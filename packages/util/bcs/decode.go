@@ -382,11 +382,9 @@ func (d *Decoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions,
 // 	return &d.w
 // }
 
-func (d *Decoder) Read(n int) ([]byte, error) {
-	b := make([]byte, n)
+func (d *Decoder) Read(b []byte) (n int, err error) {
 	d.r.ReadN(b)
-
-	return b, d.r.Err
+	return len(b), d.r.Err
 }
 
 func Unmarshal[T any](b []byte) (T, error) {
@@ -396,6 +394,15 @@ func Unmarshal[T any](b []byte) (T, error) {
 	}
 
 	return t, nil
+}
+
+func MustUnmarshal[T any](b []byte) T {
+	v, err := Unmarshal[T](b)
+	if err != nil {
+		panic(fmt.Errorf("failed to unmarshal object of type %T from BCS: %w", v, err))
+	}
+
+	return v
 }
 
 type CustomDecoder func(e *Decoder) (reflect.Value, error)
