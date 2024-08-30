@@ -15,6 +15,10 @@ type Encodable interface {
 	MarshalBCS(e *Encoder) error
 }
 
+type Writable interface {
+	Write(w io.Writer) error
+}
+
 type EncoderConfig struct {
 	TagName string
 	// IncludeUnexported bool
@@ -197,6 +201,14 @@ func (e *Encoder) retrieveTypeInfo(v reflect.Value) (_ *TypeOptions, enumVariant
 	if encodable, ok := vI.(Encodable); ok {
 		customEncoder := func(e *Encoder, v reflect.Value) error {
 			return encodable.MarshalBCS(e)
+		}
+
+		return nil, enumVariantIdx, customEncoder, nil
+	}
+
+	if writable, ok := vI.(Writable); ok {
+		customEncoder := func(e *Encoder, v reflect.Value) error {
+			return writable.Write(e)
 		}
 
 		return nil, enumVariantIdx, customEncoder, nil
