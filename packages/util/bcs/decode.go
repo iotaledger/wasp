@@ -15,6 +15,8 @@ type Decodable interface {
 	UnmarshalBCS(e *Decoder) error
 }
 
+var decodableT = reflect.TypeOf((*Decodable)(nil)).Elem()
+
 type DecoderConfig struct {
 	TagName        string
 	CustomDecoders map[reflect.Type]CustomDecoder
@@ -61,7 +63,7 @@ func (d *Decoder) Decode(v any) error {
 }
 
 func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) error {
-	v, typeOptions, customDecoder := d.dereferenceValue(v)
+	v, typeOptions, isEnum, customDecoder := d.dereferenceValue(v)
 
 	if customDecoder != nil {
 		dec, err := customDecoder(d)
@@ -132,11 +134,17 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.Struct:
-		if err := d.decodeStruct(v); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
+		if isEnum {
+			if err := d.decodeStructEnum(v); err != nil {
+				return fmt.Errorf("%v: %w", v.Type(), err)
+			}
+		} else {
+			if err := d.decodeStruct(v); err != nil {
+				return fmt.Errorf("%v: %w", v.Type(), err)
+			}
 		}
 	case reflect.Interface:
-		if err := d.decodeEnum(v); err != nil {
+		if err := d.decodeInterfaceEnum(v); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	default:
@@ -150,7 +158,8 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 	return nil
 }
 
-func (d *Decoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, _ TypeOptions, _ CustomDecoder) {
+func (d *Decoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, _ TypeOptions, isEnum bool, _ CustomDecoder) {
+	// Getting rid of redundant pointers AND creating a new value to be able to set it.
 loop:
 	for {
 		switch v.Kind() {
@@ -163,57 +172,74 @@ loop:
 			break loop
 		}
 
-		typeOptions, customDecoder := d.retrieveTypeInfo(v)
-		if typeOptions != nil || customDecoder != nil {
+		typeOptions, isEnum, customDecoder := d.retrieveTypeInfo(v)
+		if typeOptions != nil || isEnum || customDecoder != nil {
 			if typeOptions == nil {
 				typeOptions = &TypeOptions{}
 			}
 
-			return v, *typeOptions, customDecoder
+			return v, *typeOptions, isEnum, customDecoder
 		}
 
 		v = v.Elem()
 	}
 
-	typeOptions, customDecoder := d.retrieveTypeInfo(v)
+	typeOptions, isEnum, customDecoder := d.retrieveTypeInfo(v)
 	if typeOptions == nil {
 		typeOptions = &TypeOptions{}
 	}
 
-	return v, *typeOptions, customDecoder
+	return v, *typeOptions, isEnum, customDecoder
 }
 
-func (d *Decoder) retrieveTypeInfo(v reflect.Value) (*TypeOptions, CustomDecoder) {
-	if customDecoder, ok := d.cfg.CustomDecoders[v.Type()]; ok {
-		return nil, customDecoder
+func (d *Decoder) retrieveTypeInfo(v reflect.Value) (_ *TypeOptions, isEnum bool, _ CustomDecoder) {
+	if customDecoder := d.getCustomDecoder(v); customDecoder != nil {
+		return nil, false, customDecoder
 	}
 
-	if v.Kind() == reflect.Interface {
-		// This is enum and we dont know its type yet, so we cant use any of its methods.
-		return nil, nil
+	switch v.Kind() {
+	case reflect.Interface:
+		// This is enum - we can't retrieve any type info, because we don't know enum variant type.
+		return nil, true, nil
+	case reflect.Struct:
+		if v.Type().Implements(enumT) {
+			return nil, true, nil
+		}
 	}
 
 	vI := v.Interface()
 
-	if decodable, ok := vI.(Decodable); ok {
-		customDecoder := func(e *Decoder) (reflect.Value, error) {
-			if err := decodable.UnmarshalBCS(e); err != nil {
-				return reflect.Value{}, err
-			}
-
-			return reflect.ValueOf(decodable), nil
-		}
-
-		return nil, customDecoder
-	}
-
+	// Check if this type provides decoding options
 	if bcsType, ok := vI.(BCSType); ok {
 		typeOptions := bcsType.BCSOptions()
 
-		return &typeOptions, nil
+		return &typeOptions, false, nil
 	}
 
-	return nil, nil
+	return nil, false, nil
+}
+
+func (d *Decoder) getCustomDecoder(v reflect.Value) CustomDecoder {
+	t := v.Type()
+
+	if customDecoder, ok := d.cfg.CustomDecoders[t]; ok {
+		return customDecoder
+	}
+
+	// We skip interfaces, because alhgouth they can have custom decoders set for them as global option,
+	// they still can't providate them through methods, because their actual type is unknown.
+	if t.Kind() != reflect.Interface && t.Implements(decodableT) {
+		decodable := v.Interface().(Decodable)
+
+		customDecoder := func(e *Decoder) (reflect.Value, error) {
+			err := decodable.UnmarshalBCS(e)
+			return reflect.ValueOf(decodable), err
+		}
+
+		return customDecoder
+	}
+
+	return nil
 }
 
 func (d *Decoder) decodeInt(v reflect.Value, origSize, customSize ValueBytesCount) error {
@@ -396,13 +422,13 @@ func (d *Decoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions,
 	return fieldOpts, hasTag, nil
 }
 
-func (d *Decoder) decodeEnum(v reflect.Value) error {
+func (d *Decoder) decodeInterfaceEnum(v reflect.Value) error {
 	variants, registered := EnumTypes[v.Type()]
 	if !registered {
 		return fmt.Errorf("interface type %v is not registered as enum", v.Type())
 	}
 
-	variantIdx := d.r.ReadByte()
+	variantIdx := d.r.ReadSize32()
 	if d.r.Err != nil {
 		return d.r.Err
 	}
@@ -420,6 +446,18 @@ func (d *Decoder) decodeEnum(v reflect.Value) error {
 	v.Set(variant)
 
 	return nil
+}
+
+func (d *Decoder) decodeStructEnum(v reflect.Value) error {
+	variantIdx := d.r.ReadSize32()
+
+	t := v.Type()
+
+	if t.NumField() <= int(variantIdx) {
+		return fmt.Errorf("invalid variant index %v for enum %v with %v options", variantIdx, t, t.NumField())
+	}
+
+	return d.decodeValue(v.Field(int(variantIdx)), nil)
 }
 
 // func (d *Decoder) Writer() *rwutil.Writer {

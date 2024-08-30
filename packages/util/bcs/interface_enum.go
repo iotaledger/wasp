@@ -11,7 +11,6 @@ var EnumTypes = make(map[reflect.Type][]reflect.Type)
 func RegisterEnumType[EnumType any](variant any, variants ...any) {
 	variants = append([]any{variant}, variants...)
 
-	fmt.Println("XXX", variants)
 	enumT := reflect.TypeOf((*EnumType)(nil)).Elem()
 
 	if enumT.Kind() != reflect.Interface {
@@ -85,4 +84,27 @@ func RegisterEnumType6[EnumType any, Variant1 any, Variant2 any, Variant3 any, V
 	var variant5 Variant5
 	var variant6 Variant6
 	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6)
+}
+
+func RegisterEnumType7[EnumType any, Variant1 any, Variant2 any, Variant3 any, Variant4 any, Variant5 any, Variant6 any, Variant7 any]() {
+	var variant1 Variant1
+	var variant2 Variant2
+	var variant3 Variant3
+	var variant4 Variant4
+	var variant5 Variant5
+	var variant6 Variant6
+	var variant7 Variant7
+	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7)
+}
+
+func RegisterEnumType8[EnumType any, Variant1 any, Variant2 any, Variant3 any, Variant4 any, Variant5 any, Variant6 any, Variant7 any, Variant8 any]() {
+	var variant1 Variant1
+	var variant2 Variant2
+	var variant3 Variant3
+	var variant4 Variant4
+	var variant5 Variant5
+	var variant6 Variant6
+	var variant7 Variant7
+	var variant8 Variant8
+	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7, variant8)
 }

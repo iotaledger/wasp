@@ -15,6 +15,8 @@ type Encodable interface {
 	MarshalBCS(e *Encoder) error
 }
 
+var encodableT = reflect.TypeOf((*Encodable)(nil)).Elem()
+
 type EncoderConfig struct {
 	TagName string
 	// IncludeUnexported bool
@@ -126,13 +128,17 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.Struct:
-		if err := e.encodeStruct(v); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
+		if enumVariantIdx == -1 {
+			if err := e.encodeStruct(v); err != nil {
+				return fmt.Errorf("%v: %w", v.Type(), err)
+			}
+		} else {
+			if err := e.encodeEnum(v.Field(enumVariantIdx), enumVariantIdx); err != nil {
+				return fmt.Errorf("%v: %w", v.Type(), err)
+			}
 		}
 	case reflect.Interface:
-		e.w.WriteSize32(enumVariantIdx)
-
-		if err := e.encodeValue(v.Elem(), nil); err != nil {
+		if err := e.encodeEnum(v.Elem(), enumVariantIdx); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	default:
@@ -147,11 +153,14 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 }
 
 func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, _ TypeOptions, enumVariantIdx int, _ CustomEncoder, _ error) {
-	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+	// Removing all redundant pointers
+
+	for v.Kind() == reflect.Ptr {
 		if v.IsNil() {
 			return v, TypeOptions{}, -1, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
 		}
 
+		// Before dereferencing pointer, we should check if maybe current type is already the type we should encode.
 		typeOptions, enumVariantIdx, customEncoder, err := e.retrieveTypeInfo(v)
 		if err != nil || typeOptions != nil || enumVariantIdx != -1 || customEncoder != nil {
 			if typeOptions == nil {
@@ -172,46 +181,69 @@ func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value,
 }
 
 func (e *Encoder) retrieveTypeInfo(v reflect.Value) (_ *TypeOptions, enumVariantIdx int, _ CustomEncoder, _ error) {
-	t := v.Type()
+	// Detecting enum variant index might return error, so we
+	// should first check for existance of custom encoder.
+	if customEncoder := e.getCustomEncoder(v); customEncoder != nil {
+		return nil, -1, customEncoder, nil
+	}
 
-	enumVariantIdx = -1
+	kind := v.Kind()
 
-	if v.Kind() == reflect.Interface {
-		var err error
+	switch {
+	case kind == reflect.Interface:
+		// Interface Enum
+		enumVariantIdx, err := e.getInterfaceEnumVariantIdx(v)
+		// // Rechecking for existance of custom encoder after we found type of enum variant.
+		// // Maybe there was no custom encoder for enum type itself, but there could be for its variant.
+		// customEncoder := e.getCustomEncoder(v.Elem())
+		return nil, enumVariantIdx, nil, err
+	case kind == reflect.Struct && v.Type().Implements(enumT):
+		// Struct enum
+		enumVariantIdx, err := e.getStructEnumVariantIdx(v)
+		return nil, enumVariantIdx, nil, err
+	default:
+		vI := v.Interface()
 
-		enumVariantIdx, err = e.getEnumVariantIdx(v)
-		if err != nil {
-			return nil, -1, nil, err
+		// This type does not have custom encoder, but it might provide encoding options.
+		if bcsType, ok := vI.(BCSType); ok {
+			typeOptions := bcsType.BCSOptions()
+
+			return &typeOptions, -1, nil, nil
 		}
 
-		v = v.Elem()
-		t = v.Type()
+		return nil, -1, nil, nil
 	}
+}
 
+func (e *Encoder) getCustomEncoder(v reflect.Value) CustomEncoder {
+	t := v.Type()
+
+	// Check if this type has custom encoder func
 	if customEncoder, ok := e.cfg.CustomEncoders[t]; ok {
-		return nil, enumVariantIdx, customEncoder, nil
+		return customEncoder
 	}
 
-	vI := v.Interface()
+	// Check if this type implements custom encoding interface.
+	// Although we could allow encoding of interfaces, which implement Encodable, still
+	// we exclude them here to ensure symetric behaviour with decoding.
+	if t.Kind() != reflect.Interface && t.Implements(encodableT) {
+		encodable := v.Interface().(Encodable)
 
-	if encodable, ok := vI.(Encodable); ok {
 		customEncoder := func(e *Encoder, v reflect.Value) error {
 			return encodable.MarshalBCS(e)
 		}
 
-		return nil, enumVariantIdx, customEncoder, nil
+		return customEncoder
 	}
 
-	if bcsType, ok := vI.(BCSType); ok {
-		typeOptions := bcsType.BCSOptions()
-
-		return &typeOptions, enumVariantIdx, nil, nil
-	}
-
-	return nil, enumVariantIdx, nil, nil
+	return nil
 }
 
-func (e *Encoder) getEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ error) {
+func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ error) {
+	if v.IsNil() {
+		return -1, fmt.Errorf("attemp to encode non-optional nil interface")
+	}
+
 	t := v.Type()
 
 	enumVariants, registered := EnumTypes[t]
@@ -229,6 +261,40 @@ func (e *Encoder) getEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ erro
 
 	if enumVariantIdx == -1 {
 		return -1, fmt.Errorf("variant %v is not registered as part of enum type %v", valT, t)
+	}
+
+	return enumVariantIdx, nil
+}
+
+func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ error) {
+	enumVariantIdx = -1
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+
+		k := field.Kind()
+		switch k {
+		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
+			if field.IsNil() {
+				continue
+			}
+
+			if enumVariantIdx != -1 {
+				prevSetField := v.Type().Field(enumVariantIdx)
+				currentField := v.Type().Field(i)
+				return -1, fmt.Errorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
+			}
+
+			enumVariantIdx = i
+			// We do not break here to check if there are multiple options set
+		default:
+			fieldType := v.Type().Field(i)
+			return -1, fmt.Errorf("field %v of enum %v is of non-nullable type %v", fieldType.Name, v.Type(), fieldType.Type)
+		}
+	}
+
+	if enumVariantIdx == -1 {
+		return -1, fmt.Errorf("no options are set in enum struct %v", v.Type())
 	}
 
 	return enumVariantIdx, nil
@@ -320,6 +386,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 		entries = append(entries, &lo.Entry[reflect.Value, reflect.Value]{Key: elem.Key(), Value: elem.Value()})
 	}
 
+	// Need to sort map entries to ensure deterministic encoding
 	if err := sortMap(entries); err != nil {
 		return fmt.Errorf("sorting map: %w", err)
 	}
@@ -356,10 +423,9 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 
 		if !fieldType.IsExported() {
 			if !hasTag {
+				// Unexported fields without tags are skipped
 				continue
 			}
-
-			// The field is unexported, but it has a tag, so we need to serialize it.
 
 			if !fieldVal.CanAddr() {
 				// Field is not addresable yet - making it addressable
@@ -377,6 +443,8 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		fieldKind := fieldVal.Kind()
 
 		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
+			// The field is nullable
+
 			isNil := fieldVal.IsNil()
 
 			if isNil && !fieldOpts.Optional {
@@ -385,16 +453,26 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 
 			if fieldOpts.Optional {
 				e.w.WriteByte(lo.Ternary[byte](isNil, 0, 1))
-			}
 
-			if isNil {
-				continue
+				if isNil {
+					continue
+				}
 			}
 		}
 
 		if err := e.encodeValue(fieldVal, &fieldOpts.TypeOptions); err != nil {
 			return fmt.Errorf("%v: %w", fieldType.Name, err)
 		}
+	}
+
+	return nil
+}
+
+func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
+	e.w.WriteSize32(variantIdx)
+
+	if err := e.encodeValue(v, nil); err != nil {
+		return fmt.Errorf("%v: %w", v.Type(), err)
 	}
 
 	return nil
