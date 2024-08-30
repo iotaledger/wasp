@@ -267,36 +267,15 @@ type WithTime struct {
 	A time.Time
 }
 
-type EncodableDecodable struct {
+type WithCustomCodec struct {
 }
 
-func (w EncodableDecodable) MarshalBCS(e *bcs.Encoder) error {
+func (w WithCustomCodec) MarshalBCS(e *bcs.Encoder) error {
 	e.Write([]byte{1, 2, 3})
 	return nil
 }
 
-func (w *EncodableDecodable) UnmarshalBCS(d *bcs.Decoder) error {
-	b := make([]byte, 3)
-	if _, err := d.Read(b); err != nil {
-		return err
-	}
-
-	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
-		return fmt.Errorf("invalid value: %v", b)
-	}
-
-	return nil
-}
-
-type ReadableWritable struct {
-}
-
-func (w ReadableWritable) MarshalBCS(e *bcs.Encoder) error {
-	e.Write([]byte{1, 2, 3})
-	return nil
-}
-
-func (w *ReadableWritable) UnmarshalBCS(d *bcs.Decoder) error {
+func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	b := make([]byte, 3)
 	if _, err := d.Read(b); err != nil {
 		return err
@@ -311,7 +290,7 @@ func (w *ReadableWritable) UnmarshalBCS(d *bcs.Decoder) error {
 
 type WithNestedCustomCodec struct {
 	A int `bcs:"bytes=1"`
-	B EncodableDecodable
+	B WithCustomCodec
 }
 
 type ShortInt int64
@@ -368,9 +347,8 @@ func TestStructCodec(t *testing.T) {
 	testCodecNoRef(t, WithOptionalMapPtr{A: &map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
 	var m map[int16]bool
 	testCodecErr(t, WithOptionalMapPtr{A: &m})
-	testCodecNoRef(t, EncodableDecodable{}, []byte{0x1, 0x2, 0x3})
-	testCodecNoRef(t, ReadableWritable{}, []byte{0x1, 0x2, 0x3})
-	testCodecNoRef(t, WithNestedCustomCodec{A: 43, B: EncodableDecodable{}}, []byte{0x2b, 0x1, 0x2, 0x3})
+	testCodecNoRef(t, WithCustomCodec{}, []byte{0x1, 0x2, 0x3})
+	testCodecNoRef(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
 	testCodecNoRef(t, WithBCSOpts{A: 42}, []byte{0x2A, 0x0})
 	testCodecNoRef(t, WithBCSOptsOverride{A: 42}, []byte{0x2A})
 	testCodecNoRef(t, WithBigIntPtr{A: big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})

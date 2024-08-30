@@ -15,10 +15,6 @@ type Decodable interface {
 	UnmarshalBCS(e *Decoder) error
 }
 
-type Readable interface {
-	Read(r io.Reader) error
-}
-
 type DecoderConfig struct {
 	TagName        string
 	CustomDecoders map[reflect.Type]CustomDecoder
@@ -206,18 +202,6 @@ func (d *Decoder) retrieveTypeInfo(v reflect.Value) (*TypeOptions, CustomDecoder
 			}
 
 			return reflect.ValueOf(decodable), nil
-		}
-
-		return nil, customDecoder
-	}
-
-	if readable, ok := vI.(Readable); ok {
-		customDecoder := func(e *Decoder) (reflect.Value, error) {
-			if err := readable.Read(e); err != nil {
-				return reflect.Value{}, err
-			}
-
-			return reflect.ValueOf(readable), nil
 		}
 
 		return nil, customDecoder
