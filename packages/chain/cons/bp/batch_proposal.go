@@ -14,12 +14,12 @@ import (
 )
 
 type BatchProposal struct {
-	nodeIndex               uint16                                 // Just for a double-check.
-	baseAliasOutput         *iscmove.RefWithObject[iscmove.Anchor] // Proposed Base AliasOutput to use.
-	dssIndexProposal        util.BitVector                         // DSS Index proposal.
-	timeData                time.Time                              // Our view of time.
-	validatorFeeDestination isc.AgentID                            // Proposed destination for fees.
-	requestRefs             []*isc.RequestRef                      // Requests we propose to include into the execution.
+	nodeIndex               uint16                                 `bcs:""` // Just for a double-check.
+	baseAliasOutput         *iscmove.RefWithObject[iscmove.Anchor] `bcs:""` // Proposed Base AliasOutput to use.
+	dssIndexProposal        util.BitVector                         `bcs:""` // DSS Index proposal.
+	timeData                time.Time                              `bcs:""` // Our view of time.
+	validatorFeeDestination isc.AgentID                            `bcs:""` // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef                      `bcs:""` // Requests we propose to include into the execution.
 }
 
 func NewBatchProposal(
