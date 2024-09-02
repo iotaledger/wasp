@@ -6,19 +6,23 @@ package chainmanager
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputAliasOutputConfirmed struct {
-	aliasOutput *iscmove.Anchor
+	stateController *cryptolib.Address
+	anchor          *iscmove.Anchor
 }
 
-func NewInputAliasOutputConfirmed(aliasOutput *iscmove.Anchor) gpa.Input {
+func NewInputAliasOutputConfirmed(stateController *cryptolib.Address, anchor *iscmove.Anchor) gpa.Input {
 	return &inputAliasOutputConfirmed{
-		aliasOutput: aliasOutput,
+		stateController: stateController,
+		anchor:          anchor,
 	}
 }
 
 func (inp *inputAliasOutputConfirmed) String() string {
-	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, %v}", inp.aliasOutput)
+	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, %v}", inp.anchor.ID.ShortString())
 }

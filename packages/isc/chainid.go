@@ -80,6 +80,10 @@ func RandomChainID(seed ...[]byte) ChainID {
 	return chainID
 }
 
+func (id ChainID) AsObjectID() sui.ObjectID {
+	return sui.ObjectID(id)
+}
+
 func (id ChainID) AsAddress() *cryptolib.Address {
 	addr := cryptolib.Address(id)
 	return &addr

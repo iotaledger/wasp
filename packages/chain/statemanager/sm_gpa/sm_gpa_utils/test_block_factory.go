@@ -16,9 +16,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -33,13 +34,13 @@ type BlockFactory struct {
 	t                   require.TestingT
 	store               state.Store
 	chainID             isc.ChainID
-	chainInitParams     dict.Dict
+	chainInitParams     isc.CallArguments
 	lastBlockCommitment *state.L1Commitment
 	anchorData          map[state.BlockHash]anchorData
 }
 
-func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *BlockFactory {
-	var chainInitParams dict.Dict
+func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...isc.CallArguments) *BlockFactory {
+	var chainInitParams isc.CallArguments
 	if len(chainInitParamsOpt) > 0 {
 		chainInitParams = chainInitParamsOpt[0]
 	} else {
@@ -117,7 +118,7 @@ func (bfT *BlockFactory) GetChainID() isc.ChainID {
 	return bfT.chainID
 }
 
-func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
+func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 	return bfT.chainInitParams
 }
 
@@ -218,15 +219,22 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.RefWithObject[iscmove.Anchor] {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
+
+	metadata := transaction.StateMetadata{
+		SchemaVersion: 0,
+		L1Commitment:  commitment,
+		GasFeePolicy:  gas.DefaultFeePolicy(),
+		InitParams:    bfT.chainInitParams,
+		PublicURL:     "",
+	}
+
 	return &iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: *anchorData.ref,
 		Object: &iscmove.Anchor{
-			ID:         *anchorData.ref.ObjectID,
-			Assets:     anchorData.assets,
-			InitParams: bfT.chainInitParams.Bytes(),
-			StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
-			BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
-			StateIndex: anchorData.stateIndex,
+			ID:            *anchorData.ref.ObjectID,
+			Assets:        anchorData.assets,
+			StateMetadata: metadata.Bytes(),
+			StateIndex:    anchorData.stateIndex,
 		},
 	}
 }

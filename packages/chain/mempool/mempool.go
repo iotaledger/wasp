@@ -828,9 +828,6 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		for _, receipt := range blockReceipts {
-			if blocklog.HasUnprocessableRequestBeenRemovedInBlock(block, receipt.Request.ID()) {
-				continue // do not add unprocessable requests that were successfully retried back into the mempool in case of a reorg
-			}
 			mpi.tryReAddRequest(receipt.Request)
 		}
 	}
@@ -847,15 +844,8 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)
 		}
-		unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
-		if err != nil {
-			panic(fmt.Errorf("cannot extract unprocessable requests from block: %w", err))
-		}
-		for _, req := range unprocessableRequests {
-			mpi.metrics.IncRequestsProcessed()
-			mpi.tryRemoveRequest(req)
-		}
 	}
+
 	//
 	// Cleanup processed requests, if that's the first time we received the state.
 	if mpi.chainHeadState == nil {

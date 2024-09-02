@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -23,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
-func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
+func (ch *Chain) RunOffLedgerRequest(r isc.Request) (isc.CallArguments, error) {
 	defer ch.logRequestLastBlock()
 	results := ch.RunRequestsSync([]isc.Request{r}, "off-ledger")
 	if len(results) == 0 {
