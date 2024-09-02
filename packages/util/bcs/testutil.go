@@ -14,6 +14,7 @@ import (
 //   - encoded value is equal to the result of reference library
 func TestCodec[V any](t *testing.T, v V) []byte {
 	vEnc := TestCodecNoRef(t, v)
+	require.NotEmpty(t, vEnc)
 
 	vEncExternal := lo.Must1(ref_bcs.Marshal(v))
 	require.Equal(t, vEncExternal, vEnc)
@@ -28,6 +29,7 @@ func TestCodecNoRef[V any](t *testing.T, v V) []byte {
 	vEnc := lo.Must1(Marshal(&v))
 	vDec := lo.Must1(Unmarshal[V](vEnc))
 	require.Equal(t, v, vDec)
+	require.NotEmpty(t, vEnc)
 
 	return vEnc
 }

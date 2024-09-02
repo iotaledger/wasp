@@ -355,7 +355,11 @@ func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount)
 		// Optimization for decoding of byte/uint8 slices
 		b := make([]byte, v.Len())
 		d.r.ReadN(b)
-		v.SetBytes(b)
+		if v.Kind() == reflect.Slice {
+			v.SetBytes(b)
+		} else {
+			v.Set(reflect.ValueOf(b).Convert(v.Type()))
+		}
 	case Value2Bytes:
 		for i := 0; i < v.Len(); i++ {
 			v.Index(i).SetUint(uint64(d.r.ReadUint16()))
