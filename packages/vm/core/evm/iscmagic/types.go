@@ -352,7 +352,7 @@ func (i *ISCExpiration) Unwrap() *isc.Expiration {
 
 	ret := isc.Expiration{
 		ReturnAddress: address,
-		Time:          time.UnixMilli(i.Time),
+		Time:          time.Unix(i.Time, 0),
 	}
 
 	return &ret
@@ -367,7 +367,7 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	var timeLock time.Time
 
 	if i.Timelock > 0 {
-		timeLock = time.UnixMilli(i.Timelock)
+		timeLock = time.Unix(i.Timelock, 0)
 	}
 
 	ret := isc.SendOptions{
