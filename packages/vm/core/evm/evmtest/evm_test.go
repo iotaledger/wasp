@@ -855,9 +855,6 @@ func TestSendTimelock(t *testing.T) {
 	require.EqualValues(t, senderInitialBalance-valueInBaseTokens-res.ISCReceipt.GasFeeCharged, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress)))
 }
 
-func TestFooBar(t *testing.T) {
-}
-
 func TestSendBaseTokens(t *testing.T) {
 	env := InitEVM(t, true)
 
