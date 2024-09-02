@@ -817,6 +817,47 @@ func TestSendPayableValueTX(t *testing.T) {
 	require.EqualValues(t, valueInBaseTokens, env.solo.L1BaseTokens(receiver))
 }
 
+func TestSendTimelock(t *testing.T) {
+	env := InitEVM(t, false)
+
+	ethKey, senderEthAddress := env.Chain.NewEthereumAccountWithL2Funds()
+	_, receiver := env.solo.NewKeyPair()
+
+	require.Zero(t, env.solo.L1BaseTokens(receiver))
+	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress))
+
+	value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
+
+	res, err := env.ISCMagicSandbox(ethKey).CallFn(
+		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
+		"send", iscmagic.WrapL1Address(receiver),
+		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
+		false, // auto adjust SD
+		iscmagic.ISCSendMetadata{},
+		iscmagic.ISCSendOptions{
+			Timelock: 1,
+			Expiration: iscmagic.ISCExpiration{
+				Time:          0,
+				ReturnAddress: iscmagic.L1Address{},
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	decimals := parameters.L1().BaseToken.Decimals
+	valueInBaseTokens, bigRemainder := util.EthereumDecimalsToBaseTokenDecimals(
+		value,
+		decimals,
+	)
+	require.Zero(t, bigRemainder.BitLen())
+
+	// L2 balance of sender is: initial - value sent in tx - gas fee
+	require.EqualValues(t, senderInitialBalance-valueInBaseTokens-res.ISCReceipt.GasFeeCharged, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress)))
+}
+
+func TestFooBar(t *testing.T) {
+}
+
 func TestSendBaseTokens(t *testing.T) {
 	env := InitEVM(t, true)
 
