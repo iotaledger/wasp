@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	ref_bcs "github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
@@ -23,11 +24,11 @@ func testUint128Codec(t *testing.T, v string, expectSuccess bool) {
 	if expectSuccess {
 		refBiEnc := ref_bcs.MustMarshal(lo.Must1(ref_bcs.NewUint128FromBigInt(&bi)))
 
-		testCodecNoRef(t, bi, refBiEnc)
-		testCodecNoRef(t, &bi, refBiEnc)
+		bcs.TestCodecAndBytesNoRef(t, bi, refBiEnc)
+		bcs.TestCodecAndBytesNoRef(t, &bi, refBiEnc)
 	} else {
-		testCodecErr(t, bi)
-		testCodecErr(t, &bi)
+		bcs.TestEncodeErr(t, bi)
+		bcs.TestEncodeErr(t, &bi)
 
 		_, err := ref_bcs.NewUint128FromBigInt(&bi)
 		require.Error(t, err)

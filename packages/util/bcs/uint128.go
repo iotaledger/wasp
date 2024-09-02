@@ -12,13 +12,15 @@ func init() {
 		return EncodeUint128(&v, e)
 	})
 
-	AddCustomDecoder(func(d *Decoder) (big.Int, error) {
+	AddCustomDecoder(func(d *Decoder, pV *big.Int) error {
 		v, err := DecodeUint128(d)
 		if err != nil {
-			return big.Int{}, err
+			return err
 		}
 
-		return *v, nil
+		*pV = *v
+
+		return nil
 	})
 }
 
