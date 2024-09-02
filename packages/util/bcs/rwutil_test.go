@@ -76,7 +76,7 @@ func TestCompatibilityWithRwUtil(t *testing.T) {
 		},
 	}
 
-	vEnc := lo.Must1(bcs.Marshal(v))
+	vEnc := lo.Must1(bcs.Marshal(&v))
 	vDec := lo.Must1(bcs.Unmarshal[StructWithRwUtilSupport](vEnc))
 	require.Equal(t, v, vDec)
 

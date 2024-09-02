@@ -8,8 +8,8 @@ func init() {
 		return e.w.Err
 	})
 
-	AddCustomDecoder(func(d *Decoder) (time.Time, error) {
-		v := time.Unix(0, d.r.ReadInt64())
-		return v, d.r.Err
+	AddCustomDecoder(func(d *Decoder, v *time.Time) error {
+		*v = time.Unix(0, d.r.ReadInt64())
+		return d.r.Err
 	})
 }

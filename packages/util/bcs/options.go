@@ -2,6 +2,7 @@ package bcs
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -131,6 +132,23 @@ func (s ValueBytesCount) Validate() error {
 	}
 }
 
+func defaultValueSize(k reflect.Kind) ValueBytesCount {
+	switch k {
+	case reflect.Int8, reflect.Uint8:
+		return Value1Byte
+	case reflect.Int16, reflect.Uint16:
+		return Value2Bytes
+	case reflect.Int32, reflect.Uint32:
+		return Value4Bytes
+	case reflect.Int64, reflect.Uint64, reflect.Int, reflect.Uint:
+		return Value8Bytes
+	default:
+		panic(fmt.Errorf("unexpected kind: %v", k))
+	}
+}
+
 type BCSType interface {
 	BCSOptions() TypeOptions
 }
+
+var bcsTypeT = reflect.TypeOf((*BCSType)(nil)).Elem()

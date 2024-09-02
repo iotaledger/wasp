@@ -16,29 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testCodecErr[V any](t *testing.T, v V) {
-	_, err := bcs.Marshal(v)
-	require.Error(t, err)
-}
-
-func testCodec[V any](t *testing.T, v V, expectedEnc []byte) {
-	vEnc := lo.Must1(bcs.Marshal(v))
-	vDec := lo.Must1(bcs.Unmarshal[V](vEnc))
-	require.Equal(t, v, vDec)
-	require.Equal(t, expectedEnc, vEnc)
-
-	vEncExternal := lo.Must1(ref_bcs.Marshal(v))
-	require.Equal(t, vEncExternal, vEnc)
-}
-
-// Does not use reference implementation for encoding
-func testCodecNoRef[V any](t *testing.T, v V, expectedEnc []byte) {
-	vEnc := lo.Must1(bcs.Marshal(v))
-	vDec := lo.Must1(bcs.Unmarshal[V](vEnc))
-	require.Equal(t, v, vDec)
-	require.Equal(t, expectedEnc, vEnc)
-}
-
 func TestBasicTypesCodec(t *testing.T) {
 	// Boolean	                         t/f    01/00
 	// 8-bit signed                       -1    FF
@@ -50,98 +27,121 @@ func TestBasicTypesCodec(t *testing.T) {
 	// 64-bit signed    -1311768467750121216	00 11 32 54 87 A9 CB ED
 	// 64-bit unsigned   1311768467750121216	00 EF CD AB 78 56 34 12
 
-	testCodec(t, true, []byte{0x01})
-	testCodec(t, false, []byte{0x00})
+	bcs.TestCodecAndBytes(t, true, []byte{0x01})
+	bcs.TestCodecAndBytes(t, false, []byte{0x00})
 
-	testCodec(t, int8(-1), []byte{0xFF})
-	testCodec(t, int8(-128), []byte{0x80})
-	testCodec(t, int8(127), []byte{0x7f})
+	bcs.TestCodecAndBytes(t, int8(-1), []byte{0xFF})
+	bcs.TestCodecAndBytes(t, int8(-128), []byte{0x80})
+	bcs.TestCodecAndBytes(t, int8(127), []byte{0x7f})
 
-	testCodec(t, uint8(0), []byte{0x00})
-	testCodec(t, uint8(1), []byte{0x01})
-	testCodec(t, uint8(255), []byte{0xFF})
+	bcs.TestCodecAndBytes(t, uint8(0), []byte{0x00})
+	bcs.TestCodecAndBytes(t, uint8(1), []byte{0x01})
+	bcs.TestCodecAndBytes(t, uint8(255), []byte{0xFF})
 
-	testCodec(t, int16(-4660), []byte{0xCC, 0xED})
-	testCodec(t, int16(-32768), []byte{0x00, 0x80})
-	testCodec(t, int16(32767), []byte{0xFF, 0x7F})
+	bcs.TestCodecAndBytes(t, int16(-4660), []byte{0xCC, 0xED})
+	bcs.TestCodecAndBytes(t, int16(-32768), []byte{0x00, 0x80})
+	bcs.TestCodecAndBytes(t, int16(32767), []byte{0xFF, 0x7F})
 
-	testCodec(t, uint16(4660), []byte{0x34, 0x12})
-	testCodec(t, uint16(0), []byte{0x00, 0x00})
-	testCodec(t, uint16(65535), []byte{0xFF, 0xFF})
+	bcs.TestCodecAndBytes(t, uint16(4660), []byte{0x34, 0x12})
+	bcs.TestCodecAndBytes(t, uint16(0), []byte{0x00, 0x00})
+	bcs.TestCodecAndBytes(t, uint16(65535), []byte{0xFF, 0xFF})
 
-	testCodec(t, int32(-305419896), []byte{0x88, 0xA9, 0xCB, 0xED})
-	testCodec(t, int32(-2147483648), []byte{0x0, 0x0, 0x0, 0x80})
-	testCodec(t, int32(2147483647), []byte{0xFF, 0xFF, 0xFF, 0x7F})
+	bcs.TestCodecAndBytes(t, int32(-305419896), []byte{0x88, 0xA9, 0xCB, 0xED})
+	bcs.TestCodecAndBytes(t, int32(-2147483648), []byte{0x0, 0x0, 0x0, 0x80})
+	bcs.TestCodecAndBytes(t, int32(2147483647), []byte{0xFF, 0xFF, 0xFF, 0x7F})
 
-	testCodec(t, uint32(305419896), []byte{0x78, 0x56, 0x34, 0x12})
-	testCodec(t, uint32(0), []byte{0x00, 0x00, 0x00, 0x00})
-	testCodec(t, uint32(4294967295), []byte{0xFF, 0xFF, 0xFF, 0xFF})
+	bcs.TestCodecAndBytes(t, uint32(305419896), []byte{0x78, 0x56, 0x34, 0x12})
+	bcs.TestCodecAndBytes(t, uint32(0), []byte{0x00, 0x00, 0x00, 0x00})
+	bcs.TestCodecAndBytes(t, uint32(4294967295), []byte{0xFF, 0xFF, 0xFF, 0xFF})
 
-	testCodec(t, int64(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
-	testCodec(t, int64(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
-	testCodec(t, int64(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
+	bcs.TestCodecAndBytes(t, int64(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
+	bcs.TestCodecAndBytes(t, int64(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
+	bcs.TestCodecAndBytes(t, int64(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
 
-	testCodecNoRef(t, int(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
-	testCodecNoRef(t, int(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
-	testCodecNoRef(t, int(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
+	bcs.TestCodecAndBytesNoRef(t, int(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
+	bcs.TestCodecAndBytesNoRef(t, int(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
+	bcs.TestCodecAndBytesNoRef(t, int(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
 
-	testCodec(t, uint64(1311768467750121216), []byte{0x00, 0xEF, 0xCD, 0xAB, 0x78, 0x56, 0x34, 0x12})
-	testCodec(t, uint64(0), []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-	testCodec(t, uint64(18446744073709551615), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
+	bcs.TestCodecAndBytes(t, uint64(1311768467750121216), []byte{0x00, 0xEF, 0xCD, 0xAB, 0x78, 0x56, 0x34, 0x12})
+	bcs.TestCodecAndBytes(t, uint64(0), []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+	bcs.TestCodecAndBytes(t, uint64(18446744073709551615), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
+
+	bcs.TestCodecAndBytesNoRef(t, BaseWithCustomCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
+	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[BaseWithCustomPtrCodec]("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 }
 
 func TestMultiPtrCodec(t *testing.T) {
 	var vI int16 = 4660
 	var pVI *int16 = &vI
 	var ppVI **int16 = &pVI
-	testCodec(t, ppVI, []byte{0x34, 0x12})
+	bcs.TestCodecAndBytes(t, ppVI, []byte{0x34, 0x12})
 
 	pVI = nil
-	testCodecErr(t, ppVI)
+	bcs.TestEncodeErr(t, ppVI)
 
 	var vM map[int16]bool = map[int16]bool{1: true, 2: false, 3: true}
 	var pVM *map[int16]bool = &vM
 	var ppVM **map[int16]bool = &pVM
-	testCodecNoRef(t, ppVM, []byte{0x3, 0x1, 0x0, 0x1, 0x2, 0x0, 0x0, 0x3, 0x0, 0x1})
+	bcs.TestCodecAndBytesNoRef(t, ppVM, []byte{0x3, 0x1, 0x0, 0x1, 0x2, 0x0, 0x0, 0x3, 0x0, 0x1})
 }
 
 func TestStringCodec(t *testing.T) {
-	testCodec(t, "", []byte{0x0})
-	testCodec(t, "qwerty", []byte{0x6, 0x71, 0x77, 0x65, 0x72, 0x74, 0x79})
-	testCodec(t, "çå∞≠¢õß∂ƒ∫", []byte{24, 0xc3, 0xa7, 0xc3, 0xa5, 0xe2, 0x88, 0x9e, 0xe2, 0x89, 0xa0, 0xc2, 0xa2, 0xc3, 0xb5, 0xc3, 0x9f, 0xe2, 0x88, 0x82, 0xc6, 0x92, 0xe2, 0x88, 0xab})
-	testCodec(t, strings.Repeat("a", 127), append([]byte{0x7f}, bytes.Repeat([]byte{0x61}, 127)...))
-	testCodec(t, strings.Repeat("a", 128), append([]byte{0x80, 0x1}, bytes.Repeat([]byte{0x61}, 128)...))
-	testCodec(t, strings.Repeat("a", 16383), append([]byte{0xff, 0x7f}, bytes.Repeat([]byte{0x61}, 16383)...))
-	testCodec(t, strings.Repeat("a", 16384), append([]byte{0x80, 0x80, 0x1}, bytes.Repeat([]byte{0x61}, 16384)...))
+	bcs.TestCodecAndBytes(t, "", []byte{0x0})
+	bcs.TestCodecAndBytes(t, "qwerty", []byte{0x6, 0x71, 0x77, 0x65, 0x72, 0x74, 0x79})
+	bcs.TestCodecAndBytes(t, "çå∞≠¢õß∂ƒ∫", []byte{24, 0xc3, 0xa7, 0xc3, 0xa5, 0xe2, 0x88, 0x9e, 0xe2, 0x89, 0xa0, 0xc2, 0xa2, 0xc3, 0xb5, 0xc3, 0x9f, 0xe2, 0x88, 0x82, 0xc6, 0x92, 0xe2, 0x88, 0xab})
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 127), append([]byte{0x7f}, bytes.Repeat([]byte{0x61}, 127)...))
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 128), append([]byte{0x80, 0x1}, bytes.Repeat([]byte{0x61}, 128)...))
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 16383), append([]byte{0xff, 0x7f}, bytes.Repeat([]byte{0x61}, 16383)...))
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 16384), append([]byte{0x80, 0x80, 0x1}, bytes.Repeat([]byte{0x61}, 16384)...))
 }
 
 func TestArrayCodec(t *testing.T) {
-	testCodec(t, []int64{42, 43}, []byte{0x2, 0x2A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
-	testCodec(t, []int64(nil), []byte{0x0})
+	bcs.TestCodecAndBytes(t, []int64{42, 43}, []byte{0x2, 0x2A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, []int8{42, 43}, []byte{0x2, 0x2A, 0x2B})
+	bcs.TestCodecAndBytes(t, []uint8{42, 43}, []byte{0x2, 0x2A, 0x2B})
+	bcs.TestCodecAndBytes(t, []int64(nil), []byte{0x0})
 
-	testCodec(t, [3]int64{42, 43, 44}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2c, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, []*int16{lo.ToPtr[int16](1), lo.ToPtr[int16](2), lo.ToPtr[int16](3)}, []byte{0x3, 0x1, 0x0, 0x2, 0x0, 0x3, 0x0})
+	bcs.TestCodecAndBytes(t, []*byte{lo.ToPtr[byte](42), lo.ToPtr[byte](43)}, []byte{0x2, 0x2A, 0x2B})
+	bcs.TestCodecAndBytes(t, []*int8{lo.ToPtr[int8](42), lo.ToPtr[int8](43)}, []byte{0x2, 0x2A, 0x2B})
 
-	testCodec(t, []string{"aaa", "bbb"}, []byte{0x2, 0x3, 0x61, 0x61, 0x61, 0x3, 0x62, 0x62, 0x62})
-	testCodec(t, [][]int16{{1, 2}, {3, 4, 5}}, []byte{0x2, 0x2, 0x1, 0x0, 0x2, 0x0, 0x3, 0x3, 0x0, 0x4, 0x0, 0x5, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, []BaseWithCustomCodec{"a", "b"}, []byte{0x2, 0x1, 0x2, 0x3, 0x1, 0x61, 0x1, 0x2, 0x3, 0x1, 0x62})
+	bcs.TestCodecAndBytesNoRef(t, []*BaseWithCustomCodec{lo.ToPtr[BaseWithCustomCodec]("a"), lo.ToPtr[BaseWithCustomCodec]("b")}, []byte{0x2, 0x1, 0x2, 0x3, 0x1, 0x61, 0x1, 0x2, 0x3, 0x1, 0x62})
+	bcs.TestCodecAndBytesNoRef(t, []BaseWithCustomPtrCodec{"a", "b"}, []byte{0x2, 0x1, 0x2, 0x3, 0x1, 0x61, 0x1, 0x2, 0x3, 0x1, 0x62})
+
+	bcs.TestCodecAndBytes(t, [3]int64{42, 43, 44}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2c, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+
+	bcs.TestCodecAndBytes(t, []string{"aaa", "bbb"}, []byte{0x2, 0x3, 0x61, 0x61, 0x61, 0x3, 0x62, 0x62, 0x62})
+	bcs.TestCodecAndBytes(t, [][]int16{{1, 2}, {3, 4, 5}}, []byte{0x2, 0x2, 0x1, 0x0, 0x2, 0x0, 0x3, 0x3, 0x0, 0x4, 0x0, 0x5, 0x0})
 }
 
 func TestMapCodec(t *testing.T) {
 	intMapEnc := []byte{0x3, 0x0, 0x0, 0x0, 0x3, 0x0, 0x1, 0xfd, 0xff, 0x1}
-	testCodecNoRef(t, map[int16]bool{-3: true, 0: false, 3: true}, intMapEnc)
-	testCodecNoRef(t, map[int16]bool{3: true, 0: false, -3: true}, intMapEnc)
-	testCodecNoRef(t, map[int16]bool{}, []byte{0x0})
+	bcs.TestCodecAndBytesNoRef(t, map[int16]bool{-3: true, 0: false, 3: true}, intMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[int16]bool{3: true, 0: false, -3: true}, intMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[int16]bool{}, []byte{0x0})
 
 	uintMapEnc := []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1}
-	testCodecNoRef(t, map[uint16]bool{3: true, 1: false, 2: true}, uintMapEnc)
-	testCodecNoRef(t, map[uint16]bool{2: true, 1: false, 3: true}, uintMapEnc)
-	testCodecNoRef(t, map[uint16]bool{}, []byte{0x0})
+	bcs.TestCodecAndBytesNoRef(t, map[uint16]bool{3: true, 1: false, 2: true}, uintMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[uint16]bool{2: true, 1: false, 3: true}, uintMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[uint16]bool{}, []byte{0x0})
 
 	strMapEnc := []byte{0x3, 0x2, 0x61, 0x61, 0x0, 0x2, 0x62, 0x62, 0x1, 0x2, 0x63, 0x63, 0x1}
-	testCodecNoRef(t, map[string]bool{"cc": true, "aa": false, "bb": true}, strMapEnc)
-	testCodecNoRef(t, map[string]bool{"bb": true, "aa": false, "cc": true}, strMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[string]bool{"cc": true, "aa": false, "bb": true}, strMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[string]bool{"bb": true, "aa": false, "cc": true}, strMapEnc)
 
 	intMapOfMapsEnc := []byte{0x2, 0x1, 0x0, 0x2, 0x2, 0x0, 0x1, 0x3, 0x0, 0x0, 0x2, 0x0, 0x1, 0x1, 0x0, 0x1}
-	testCodecNoRef(t, map[int16]map[int16]bool{1: {2: true, 3: false}, 2: {1: true}}, intMapOfMapsEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[int16]map[int16]bool{1: {2: true, 3: false}, 2: {1: true}}, intMapOfMapsEnc)
+
+	customMapEnc := []byte{0x2, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61, 0x1, 0x2, 0x3, 0x1, 0x2, 0x3, 0x2, 0x62, 0x62, 0x1, 0x2, 0x3}
+	bcs.TestCodecAndBytesNoRef(t, map[BaseWithCustomCodec]WithCustomCodec{"bb": {}, "aa": {}}, customMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[BaseWithCustomCodec]WithCustomCodec{"aa": {}, "bb": {}}, customMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[BaseWithCustomCodec]*WithCustomCodec{"bb": {}, "aa": {}}, customMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[BaseWithCustomCodec]*WithCustomCodec{"aa": {}, "bb": {}}, customMapEnc)
+	bcs.TestCodecAndBytesNoRef(t, map[BaseWithCustomPtrCodec]*WithCustomCodec{"aa": {}, "bb": {}}, customMapEnc)
+
+	customMapEnc = []byte{0x2, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61, 0x1, 0x2, 0x3, 0x2, 0x63, 0x63, 0x1, 0x2, 0x3, 0x2, 0x62, 0x62, 0x1, 0x2, 0x3, 0x2, 0x64, 0x64}
+	bcs.TestCodecAndBytesNoRef(t, map[BaseWithCustomPtrCodec]BaseWithCustomPtrCodec{"aa": "cc", "bb": "dd"}, customMapEnc)
 }
 
 func TestCollectionSizeCodec(t *testing.T) {
@@ -288,9 +288,75 @@ func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	return nil
 }
 
+type BaseWithCustomCodec string
+
+func (w BaseWithCustomCodec) MarshalBCS(e *bcs.Encoder) error {
+	e.Write([]byte{1, 2, 3})
+	e.Encode(string(w))
+	return nil
+}
+
+func (w *BaseWithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
+	b := make([]byte, 3)
+	if _, err := d.Read(b); err != nil {
+		return err
+	}
+
+	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
+		return fmt.Errorf("invalid value: %v", b)
+	}
+
+	var s string
+	if err := d.Decode(&s); err != nil {
+		return err
+	}
+
+	*w = BaseWithCustomCodec(s)
+
+	return nil
+}
+
+type BaseWithCustomPtrCodec string
+
+func (w *BaseWithCustomPtrCodec) MarshalBCS(e *bcs.Encoder) error {
+	e.Write([]byte{1, 2, 3})
+	e.Encode(string(*w))
+	return nil
+}
+
+func (w *BaseWithCustomPtrCodec) UnmarshalBCS(d *bcs.Decoder) error {
+	b := make([]byte, 3)
+	if _, err := d.Read(b); err != nil {
+		return err
+	}
+
+	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
+		return fmt.Errorf("invalid value: %v", b)
+	}
+
+	var s string
+	if err := d.Decode(&s); err != nil {
+		return err
+	}
+
+	*w = BaseWithCustomPtrCodec(s)
+
+	return nil
+}
+
 type WithNestedCustomCodec struct {
 	A int `bcs:"bytes=1"`
 	B WithCustomCodec
+}
+
+type WithNestedCustomPtrCodec struct {
+	A int `bcs:"bytes=1"`
+	B BaseWithCustomPtrCodec
+}
+
+type WithNestedPtrCustomPtrCodec struct {
+	A int `bcs:"bytes=1"`
+	B *BaseWithCustomPtrCodec
 }
 
 type ShortInt int64
@@ -315,50 +381,60 @@ type WitUnexported struct {
 }
 
 func TestStructCodec(t *testing.T) {
-	testCodec(t, BasicStruct{A: 42, B: "aaa"}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
-	testCodecNoRef(t, IntWithLessBytes{A: 42}, []byte{42, 0})
-	testCodecNoRef(t, IntWithMoreBytes{A: 42}, []byte{42, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, BasicStruct{A: 42, B: "aaa"}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
+	bcs.TestCodecAndBytesNoRef(t, IntWithLessBytes{A: 42}, []byte{42, 0})
+	bcs.TestCodecAndBytesNoRef(t, IntWithMoreBytes{A: 42}, []byte{42, 0, 0, 0})
 	vI := int64(42)
 	pVI := &vI
-	testCodec(t, IntPtr{A: &vI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
-	testCodecErr(t, IntPtr{A: nil})
-	testCodec(t, IntMultiPtr{A: &pVI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
-	testCodecErr(t, IntMultiPtr{A: nil})
-	testCodec(t, IntOptional{A: &vI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})
-	testCodec(t, IntOptionalPtr{A: &pVI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})
-	testCodec(t, NestedStruct{A: 42, B: BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
-	testCodec(t, OptionalNestedStruct{A: 42, B: &BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 1, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
-	testCodec(t, OptionalNestedStruct{A: 42, B: nil}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 0})
-	testCodec(t, EmbeddedStruct{BasicStruct: BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
-	testCodec(t, OptionalEmbeddedStruct{BasicStruct: &BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
-	testCodec(t, OptionalEmbeddedStruct{BasicStruct: nil, C: 43}, []byte{0, 43, 0, 0, 0, 0, 0, 0, 0})
-	testCodec(t, WithSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
-	testCodec(t, WithSlice{A: nil}, []byte{0x0})
-	testCodec(t, WithOptionalSlice{A: &[]int32{42, 43}}, []byte{1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
-	testCodec(t, WithOptionalSlice{A: nil}, []byte{0x0})
-	testCodecNoRef(t, WithShortSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
-	testCodec(t, WithArray{A: [3]int16{42, 43, 44}}, []byte{0x2a, 0x0, 0x2b, 0x0, 0x2c, 0x0})
-	testCodecNoRef(t, WithMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
-	testCodecNoRef(t, WithMap{A: map[int16]bool{}}, []byte{0x0})
-	testCodecErr(t, WithMap{A: nil})
-	testCodecNoRef(t, WithOptionalMap{A: map[int16]bool{}}, []byte{0x1, 0x0})
-	testCodecNoRef(t, WithOptionalMap{A: nil}, []byte{0x0})
-	testCodecNoRef(t, WithOptionalMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
-	testCodecNoRef(t, WithOptionalMapPtr{A: &map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
+	bcs.TestCodecAndBytes(t, IntPtr{A: &vI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestEncodeErr(t, IntPtr{A: nil})
+	bcs.TestCodecAndBytes(t, IntMultiPtr{A: &pVI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestEncodeErr(t, IntMultiPtr{A: nil})
+	bcs.TestCodecAndBytes(t, IntOptional{A: &vI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, IntOptionalPtr{A: &pVI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, NestedStruct{A: 42, B: BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
+	bcs.TestCodecAndBytes(t, OptionalNestedStruct{A: 42, B: &BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 1, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
+	bcs.TestCodecAndBytes(t, &OptionalNestedStruct{A: 42, B: &BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 1, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
+	bcs.TestCodecAndBytes(t, OptionalNestedStruct{A: 42, B: nil}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, EmbeddedStruct{BasicStruct: BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, OptionalEmbeddedStruct{BasicStruct: &BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, OptionalEmbeddedStruct{BasicStruct: nil, C: 43}, []byte{0, 43, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, WithSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, WithSlice{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: &[]int32{42, 43}}, []byte{1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithShortSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, WithArray{A: [3]int16{42, 43, 44}}, []byte{0x2a, 0x0, 0x2b, 0x0, 0x2c, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
+	bcs.TestCodecAndBytesNoRef(t, WithMap{A: map[int16]bool{}}, []byte{0x0})
+	bcs.TestEncodeErr(t, WithMap{A: nil})
+	bcs.TestCodecAndBytesNoRef(t, WithOptionalMap{A: map[int16]bool{}}, []byte{0x1, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithOptionalMap{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithOptionalMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
+	bcs.TestCodecAndBytesNoRef(t, WithOptionalMapPtr{A: &map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
 	var m map[int16]bool
-	testCodecErr(t, WithOptionalMapPtr{A: &m})
-	testCodecNoRef(t, WithCustomCodec{}, []byte{0x1, 0x2, 0x3})
-	testCodecNoRef(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
-	testCodecNoRef(t, WithBCSOpts{A: 42}, []byte{0x2A, 0x0})
-	testCodecNoRef(t, WithBCSOptsOverride{A: 42}, []byte{0x2A})
-	testCodecNoRef(t, WithBigIntPtr{A: big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
-	testCodecNoRef(t, WithBigIntVal{A: *big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
-	testCodecNoRef(t, WithTime{A: time.Unix(12345, 6789)}, []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
+	bcs.TestEncodeErr(t, WithOptionalMapPtr{A: &m})
+	bcs.TestCodecAndBytesNoRef(t, WithCustomCodec{}, []byte{0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytesNoRef(t, &WithCustomCodec{}, []byte{0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytesNoRef(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytesNoRef(t, &WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytesNoRef(t, WithNestedCustomPtrCodec{A: 43, B: BaseWithCustomPtrCodec("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})
+	bcs.TestCodecAndBytesNoRef(t, &WithNestedCustomPtrCodec{A: 43, B: BaseWithCustomPtrCodec("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})
+	bcs.TestCodecAndBytesNoRef(t, WithNestedPtrCustomPtrCodec{A: 43, B: lo.ToPtr[BaseWithCustomPtrCodec]("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})
+	bcs.TestCodecAndBytesNoRef(t, &WithNestedPtrCustomPtrCodec{A: 43, B: lo.ToPtr[BaseWithCustomPtrCodec]("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})
+	bcs.TestCodecAndBytesNoRef(t, WithBCSOpts{A: 42}, []byte{0x2A, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, &WithBCSOpts{A: 42}, []byte{0x2A, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithBCSOptsOverride{A: 42}, []byte{0x2A})
+	bcs.TestCodecAndBytesNoRef(t, &WithBCSOptsOverride{A: 42}, []byte{0x2A})
+	bcs.TestCodecAndBytesNoRef(t, WithBigIntPtr{A: big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, &WithBigIntPtr{A: big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithBigIntVal{A: *big.NewInt(42)}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, WithTime{A: time.Unix(12345, 6789)}, []byte{0x85, 0x14, 0x57, 0x4b, 0x3a, 0xb, 0x0, 0x0})
 }
 
 func TestUnexportedFieldsCodec(t *testing.T) {
 	v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
-	vEnc := lo.Must1(bcs.Marshal(v))
+	vEnc := lo.Must1(bcs.Marshal(&v))
 	vDec := lo.Must1(bcs.Unmarshal[WitUnexported](vEnc))
 	require.NotEqual(t, v, vDec)
 	require.Equal(t, 0, vDec.b)

@@ -48,28 +48,61 @@ type Encoder struct {
 	w   rwutil.Writer
 }
 
-func (e *Encoder) Encode(v any) error {
-	if v == nil {
+func (e *Encoder) Encode(val any) error {
+	if val == nil {
 		return fmt.Errorf("cannot encode a nil value")
 	}
 
-	return e.encodeValue(reflect.ValueOf(v), nil)
+	v := reflect.ValueOf(val)
+	if v.Kind() != reflect.Ptr {
+		// Value was passed instaed of pointer - copying it to make it addressable
+		// We need addressable value because some of the types might require
+		// pointer receiver for custom encoding.
+		v = reflect.New(v.Type())
+		v.Elem().Set(reflect.ValueOf(val))
+	}
+
+	return e.encodeValue(v, nil, nil)
 }
 
-func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) error {
-	v, typeOptions, enumVariantIdx, customEncoder, err := e.dereferenceValue(v)
+// This structure is used to store result of parsing type to reuse it for each of element of collection.
+type typeInfo struct {
+	RefLevelsCount int
+	Customization  typeCustomization
+	CustomEncoder  CustomEncoder
+	CustomDecoder  CustomDecoder
+}
+
+func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, typeParsingHint *typeInfo) error {
+	var t typeInfo
+
+	if typeParsingHint != nil {
+		// Hint about type customization is provided by caller when encoding collections.
+		// This is done to avoid parsing type for each element of collection.
+		// This is an optimization for encoding of large amount of small elements.
+		// Otherwise even elements of collection of custom int8-based type each would require parsing of type.
+		t = *typeParsingHint
+	} else {
+		t = e.getEncodedTypeInfo(v.Type())
+	}
+
+	v, err := e.getEncodedValue(v, t.RefLevelsCount)
 	if err != nil {
 		return fmt.Errorf("%v: %w", v.Type(), err)
 	}
 
-	if customEncoder != nil {
-		if err := customEncoder(e, v); err != nil {
+	if t.Customization == typeCustomizationHasCustomCodec {
+		if err := t.CustomEncoder(e, v); err != nil {
 			return fmt.Errorf("%v: custom encoder: %w", v.Type(), err)
 		}
 
 		return nil
 	}
 
+	var typeOptions TypeOptions
+	if t.Customization == typeCustomizationHasTypeOptions {
+		typeOptions = v.Interface().(BCSType).BCSOptions()
+	}
 	if typeOptionsFromTag != nil {
 		typeOptions.Update(*typeOptionsFromTag)
 	}
@@ -77,40 +110,12 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 	switch v.Kind() {
 	case reflect.Bool:
 		e.w.WriteBool(v.Bool())
-	case reflect.Int8:
-		if err := e.encodeInt(v, Value1Byte, typeOptions.Bytes); err != nil {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if err := e.encodeInt(v, defaultValueSize(v.Kind()), typeOptions.Bytes); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
-	case reflect.Uint8:
-		if err := e.encodeUint(v, Value1Byte, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Int16:
-		if err := e.encodeInt(v, Value2Bytes, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Uint16:
-		if err := e.encodeUint(v, Value2Bytes, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Int32:
-		if err := e.encodeInt(v, Value4Bytes, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Uint32:
-		if err := e.encodeUint(v, Value4Bytes, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Int64:
-		if err := e.encodeInt(v, Value8Bytes, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Uint64:
-		if err := e.encodeUint(v, Value8Bytes, typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
-	case reflect.Int:
-		if err := e.encodeInt(v, Value8Bytes, typeOptions.Bytes); err != nil {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if err := e.encodeUint(v, defaultValueSize(v.Kind()), typeOptions.Bytes); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.String:
@@ -128,17 +133,21 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	case reflect.Struct:
-		if enumVariantIdx == -1 {
-			if err := e.encodeStruct(v); err != nil {
+		if t.Customization == typeCustomizationIsStructEnum {
+			if err := e.encodeStructEnum(v); err != nil {
 				return fmt.Errorf("%v: %w", v.Type(), err)
 			}
 		} else {
-			if err := e.encodeEnum(v.Field(enumVariantIdx), enumVariantIdx); err != nil {
+			if err := e.encodeStruct(v); err != nil {
 				return fmt.Errorf("%v: %w", v.Type(), err)
 			}
 		}
 	case reflect.Interface:
-		if err := e.encodeEnum(v.Elem(), enumVariantIdx); err != nil {
+		if t.Customization != typeCustomizationIsInterfaceEnum {
+			panic(fmt.Errorf("unexpected type customization for type %v: %v", v.Type(), t.Customization))
+		}
+
+		if err := e.encodeInterfaceEnum(v); err != nil {
 			return fmt.Errorf("%v: %w", v.Type(), err)
 		}
 	default:
@@ -152,72 +161,102 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions) 
 	return nil
 }
 
-func (e *Encoder) dereferenceValue(v reflect.Value) (dereferenced reflect.Value, _ TypeOptions, enumVariantIdx int, _ CustomEncoder, _ error) {
-	// Removing all redundant pointers
+// Finds actual type we want to encode from the current type of value.
+// Possible cases:
+// 1. Type has multiple layers of pointers. We need to remove them all or until first type with custom encoder.
+// 2. Type is not a pointer but its pointer type has custom encoder. In this case we need to use pointer to value instead of value itself.
+func (e *Encoder) getEncodedTypeInfo(t reflect.Type) typeInfo {
+	refLevelsCount := 0
 
-	for v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			return v, TypeOptions{}, -1, nil, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
+	if t.Kind() != reflect.Ptr {
+		// Type is not a pointer but value. But there could be custom encoder for
+		// its pointer type, so need to check it. And if there is, we need to use
+		// pointer to value instead of value itself.
+		// If value is not addressable, we need to copy it to make it addressable.
+
+		customEncoder := e.getCustomEncoder(reflect.PointerTo(t))
+		if customEncoder != nil {
+			return typeInfo{-1, typeCustomizationHasCustomCodec, customEncoder, nil}
+		}
+	} else {
+		// Value is a pointer
+
+		// Removing all redundant pointers
+		for t.Kind() == reflect.Ptr {
+			// Before removing pointer, we need to check if maybe current type is already the type we should encode.
+			customEncoder := e.getCustomEncoder(t)
+			if customEncoder != nil {
+				return typeInfo{refLevelsCount, typeCustomizationHasCustomCodec, customEncoder, nil}
+			}
+
+			refLevelsCount++
+			t = t.Elem()
+		}
+	}
+
+	customization, customEncoder := e.checkTypeCustomizations(t)
+
+	return typeInfo{refLevelsCount, customization, customEncoder, nil}
+}
+
+func (e *Encoder) getEncodedValue(v reflect.Value, refsCount int) (valToEncode reflect.Value, _ error) {
+	if refsCount == -1 {
+		// Custom encoder for pointer type is found, so we need to encode pointer to value instead of value itself.
+		if v.CanAddr() {
+			return v.Addr(), nil
 		}
 
-		// Before dereferencing pointer, we should check if maybe current type is already the type we should encode.
-		typeOptions, enumVariantIdx, customEncoder, err := e.retrieveTypeInfo(v)
-		if err != nil || typeOptions != nil || enumVariantIdx != -1 || customEncoder != nil {
-			if typeOptions == nil {
-				typeOptions = &TypeOptions{}
-			}
-			return v, *typeOptions, enumVariantIdx, customEncoder, err
+		// Value is not addressable - copying it to make it addressable
+		copied := reflect.New(v.Type())
+		copied.Elem().Set(v)
+
+		return copied, nil
+	}
+
+	// Removing all found redundant pointers
+	for i := 0; i < refsCount; i++ {
+		if v.IsNil() {
+			return v, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
 		}
 
 		v = v.Elem()
 	}
 
-	typeOptions, enumVariantIdx, customEncoder, err := e.retrieveTypeInfo(v)
-	if typeOptions == nil {
-		typeOptions = &TypeOptions{}
-	}
-
-	return v, *typeOptions, enumVariantIdx, customEncoder, err
+	return v, nil
 }
 
-func (e *Encoder) retrieveTypeInfo(v reflect.Value) (_ *TypeOptions, enumVariantIdx int, _ CustomEncoder, _ error) {
+type typeCustomization int
+
+const (
+	typeCustomizationNone typeCustomization = iota
+	typeCustomizationHasCustomCodec
+	typeCustomizationIsInterfaceEnum
+	typeCustomizationIsStructEnum
+	typeCustomizationHasTypeOptions
+)
+
+func (e *Encoder) checkTypeCustomizations(t reflect.Type) (typeCustomization, CustomEncoder) {
 	// Detecting enum variant index might return error, so we
 	// should first check for existance of custom encoder.
-	if customEncoder := e.getCustomEncoder(v); customEncoder != nil {
-		return nil, -1, customEncoder, nil
+	if customEncoder := e.getCustomEncoder(t); customEncoder != nil {
+		return typeCustomizationHasCustomCodec, customEncoder
 	}
 
-	kind := v.Kind()
+	kind := t.Kind()
 
 	switch {
 	case kind == reflect.Interface:
-		// Interface Enum
-		enumVariantIdx, err := e.getInterfaceEnumVariantIdx(v)
-		// // Rechecking for existance of custom encoder after we found type of enum variant.
-		// // Maybe there was no custom encoder for enum type itself, but there could be for its variant.
-		// customEncoder := e.getCustomEncoder(v.Elem())
-		return nil, enumVariantIdx, nil, err
-	case kind == reflect.Struct && v.Type().Implements(enumT):
-		// Struct enum
-		enumVariantIdx, err := e.getStructEnumVariantIdx(v)
-		return nil, enumVariantIdx, nil, err
-	default:
-		vI := v.Interface()
-
-		// This type does not have custom encoder, but it might provide encoding options.
-		if bcsType, ok := vI.(BCSType); ok {
-			typeOptions := bcsType.BCSOptions()
-
-			return &typeOptions, -1, nil, nil
-		}
-
-		return nil, -1, nil, nil
+		return typeCustomizationIsInterfaceEnum, nil
+	case kind == reflect.Struct && t.Implements(enumT):
+		return typeCustomizationIsStructEnum, nil
+	case t.Implements(bcsTypeT):
+		return typeCustomizationHasTypeOptions, nil
 	}
+
+	return typeCustomizationNone, nil
 }
 
-func (e *Encoder) getCustomEncoder(v reflect.Value) CustomEncoder {
-	t := v.Type()
-
+func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 	// Check if this type has custom encoder func
 	if customEncoder, ok := e.cfg.CustomEncoders[t]; ok {
 		return customEncoder
@@ -227,10 +266,8 @@ func (e *Encoder) getCustomEncoder(v reflect.Value) CustomEncoder {
 	// Although we could allow encoding of interfaces, which implement Encodable, still
 	// we exclude them here to ensure symetric behaviour with decoding.
 	if t.Kind() != reflect.Interface && t.Implements(encodableT) {
-		encodable := v.Interface().(Encodable)
-
 		customEncoder := func(e *Encoder, v reflect.Value) error {
-			return encodable.MarshalBCS(e)
+			return v.Interface().(Encodable).MarshalBCS(e)
 		}
 
 		return customEncoder
@@ -348,8 +385,35 @@ func (e *Encoder) encodeSlice(v reflect.Value, typOpts TypeOptions) error {
 		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
 	}
 
+	return e.encodeArray(v)
+}
+
+func (e *Encoder) encodeArray(v reflect.Value) error {
+	elemType := v.Type().Elem()
+
+	t := e.getEncodedTypeInfo(elemType)
+
+	if t.Customization == typeCustomizationNone {
+		// The type does not have any customizations. So we can use
+		// some optimizations for encoding of basic types
+		switch elemType.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if err := e.encodeIntArray(v, defaultValueSize(elemType.Kind())); err != nil {
+				return fmt.Errorf("%v: %w", elemType, err)
+			}
+
+			return nil
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if err := e.encodeUintArray(v, defaultValueSize(elemType.Kind())); err != nil {
+				return fmt.Errorf("%v: %w", elemType, err)
+			}
+
+			return nil
+		}
+	}
+
 	for i := 0; i < v.Len(); i++ {
-		if err := e.encodeValue(v.Index(i), nil); err != nil {
+		if err := e.encodeValue(v.Index(i), nil, &t); err != nil {
 			return fmt.Errorf("[%v]: %w", i, err)
 		}
 	}
@@ -357,14 +421,53 @@ func (e *Encoder) encodeSlice(v reflect.Value, typOpts TypeOptions) error {
 	return nil
 }
 
-func (e *Encoder) encodeArray(v reflect.Value) error {
-	for i := 0; i < v.Len(); i++ {
-		if err := e.encodeValue(v.Index(i), nil); err != nil {
-			return fmt.Errorf("[%v]: %w", i, err)
+func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount) error {
+	switch bytesPerElem {
+	case Value1Byte:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteInt8(int8(v.Index(i).Int()))
 		}
+	case Value2Bytes:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteInt16(int16(v.Index(i).Int()))
+		}
+	case Value4Bytes:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteInt32(int32(v.Index(i).Int()))
+		}
+	case Value8Bytes:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteInt64(v.Index(i).Int())
+		}
+	default:
+		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
 	}
 
-	return nil
+	return e.w.Err
+}
+
+func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount) error {
+	switch bytesPerElem {
+	case Value1Byte:
+		// Optimization for encoding of byte/uint8 slices
+		e.w.WriteN(v.Bytes())
+	case Value2Bytes:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteUint16(uint16(v.Index(i).Uint()))
+		}
+	case Value4Bytes:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteUint32(uint32(v.Index(i).Uint()))
+		}
+	case Value8Bytes:
+		for i := 0; i < v.Len(); i++ {
+			e.w.WriteUint64(v.Index(i).Uint())
+		}
+	default:
+		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
+	}
+
+	return e.w.Err
 }
 
 func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
@@ -391,12 +494,17 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 		return fmt.Errorf("sorting map: %w", err)
 	}
 
+	t := v.Type()
+
+	keyTypeInfo := e.getEncodedTypeInfo(t.Key())
+	valTypeInfo := e.getEncodedTypeInfo(t.Elem())
+
 	for i := range entries {
-		if err := e.encodeValue(entries[i].Key, nil); err != nil {
+		if err := e.encodeValue(entries[i].Key, nil, &keyTypeInfo); err != nil {
 			return fmt.Errorf("key: %w", err)
 		}
 
-		if err := e.encodeValue(entries[i].Value, nil); err != nil {
+		if err := e.encodeValue(entries[i].Value, nil, &valTypeInfo); err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
 	}
@@ -460,9 +568,35 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 			}
 		}
 
-		if err := e.encodeValue(fieldVal, &fieldOpts.TypeOptions); err != nil {
+		if err := e.encodeValue(fieldVal, &fieldOpts.TypeOptions, nil); err != nil {
 			return fmt.Errorf("%v: %w", fieldType.Name, err)
 		}
+	}
+
+	return nil
+}
+
+func (e *Encoder) encodeStructEnum(v reflect.Value) error {
+	enumVariantIdx, err := e.getStructEnumVariantIdx(v)
+	if err != nil {
+		return err
+	}
+
+	if err := e.encodeEnum(v.Field(enumVariantIdx), enumVariantIdx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Encoder) encodeInterfaceEnum(v reflect.Value) error {
+	enumVariantIdx, err := e.getInterfaceEnumVariantIdx(v)
+	if err != nil {
+		return err
+	}
+
+	if err := e.encodeEnum(v.Elem(), enumVariantIdx); err != nil {
+		return err
 	}
 
 	return nil
@@ -471,7 +605,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
 	e.w.WriteSize32(variantIdx)
 
-	if err := e.encodeValue(v, nil); err != nil {
+	if err := e.encodeValue(v, nil, nil); err != nil {
 		return fmt.Errorf("%v: %w", v.Type(), err)
 	}
 
