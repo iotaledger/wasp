@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -35,6 +36,10 @@ type AgentID interface {
 	Read(r io.Reader) error
 	String() string
 	Write(w io.Writer) error
+}
+
+func init() {
+	bcs.RegisterEnumType4[AgentID, *NilAgentID, *AddressAgentID, *ContractAgentID, *EthereumAddressAgentID]()
 }
 
 // AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).
