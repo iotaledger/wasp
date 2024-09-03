@@ -23,6 +23,28 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+func EncodeInitParams(
+	chainOwner isc.AgentID,
+	evmChainID uint16,
+	blockKeepAmount int32,
+) isc.CallArguments {
+	return isc.CallArguments{
+		codec.AgentID.Encode(chainOwner),
+		codec.Uint16.Encode(evmChainID),
+		codec.Int32.Encode(blockKeepAmount),
+	}
+}
+
+func DecodeInitParams(initParams isc.CallArguments) (isc.AgentID, uint16, int32, error) {
+	if len(initParams) > 3 {
+		return nil, 0, 0, fmt.Errorf("invalid init params")
+	}
+	chainOwner := codec.AgentID.MustDecode(initParams.MustAt(0))
+	evmChainID := codec.Uint16.MustDecode(initParams.OrNil(1), evm.DefaultChainID)
+	blockKeepAmount := codec.Int32.MustDecode(initParams.OrNil(2), governance.DefaultBlockKeepAmount)
+	return chainOwner, evmChainID, blockKeepAmount, nil
+}
+
 // L1Commitment calculates the L1 commitment for the origin state
 // originDeposit must exclude the minSD for the AliasOutput
 func L1Commitment(v isc.SchemaVersion, initParams isc.CallArguments, originDeposit coin.Value) *state.L1Commitment {
@@ -31,13 +53,14 @@ func L1Commitment(v isc.SchemaVersion, initParams isc.CallArguments, originDepos
 }
 
 func InitChain(v isc.SchemaVersion, store state.Store, initParams isc.CallArguments, originDeposit coin.Value) state.Block {
+	chainOwner, evmChainID, blockKeepAmount, err := DecodeInitParams(initParams)
+	if err != nil {
+		panic(err)
+	}
+
 	d := store.NewOriginStateDraft()
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Time.Encode(time.Unix(0, 0)))
-
-	chainOwner := codec.AgentID.MustDecode(initParams.MustAt(0))
-	evmChainID := codec.Uint16.MustDecode(initParams.OrNil(1), evm.DefaultChainID)
-	blockKeepAmount := codec.Int32.MustDecode(initParams.OrNil(2), governance.DefaultBlockKeepAmount)
 
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, []*coreutil.ContractInfo{

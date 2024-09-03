@@ -303,7 +303,8 @@ func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
 	initBaseTokens uint64,
 	name string,
-	originParams ...dict.Dict,
+	evmChainID uint16,
+	blockKeepAmount int32,
 ) (chainData, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
@@ -314,16 +315,11 @@ func (env *Solo) deployChain(
 		require.NoError(env.T, err)
 	}
 
-	initParams := dict.Dict{
-		origin.ParamChainOwner: isc.NewAgentID(chainOriginator.Address()).Bytes(),
-		// FIXME this will cause import cycle
-		// origin.ParamWaspVersion: codec.String.Encode(app.Version),
-	}
-	if len(originParams) > 0 {
-		for k, v := range originParams[0] {
-			initParams[k] = v
-		}
-	}
+	initParams := origin.EncodeInitParams(
+		isc.NewAgentID(chainOriginator.Address()),
+		evmChainID,
+		blockKeepAmount,
+	)
 
 	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
 	stateControllerAddr := stateControllerKey.GetPublicKey().AsAddress()
@@ -362,7 +358,7 @@ func (env *Solo) deployChain(
 
 	panic("refactor me: parameters.L1() / RentStructure")
 	originAOMinSD := uint64(0)
-	//originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
+	// originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
 
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 	origin.InitChain(0, store, initParams, originAO.Amount-originAOMinSD)
@@ -626,7 +622,6 @@ func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target *cryptolib.Address
 	_ = allOuts
 	_ = allOutIDs
 	err := errors.New("refactor me: MintNFTsL1")
-
 	if err != nil {
 		return nil, nil, err
 	}
