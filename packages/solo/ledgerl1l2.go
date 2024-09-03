@@ -30,16 +30,6 @@ func (ch *Chain) L2Accounts() []isc.AgentID {
 	return ret
 }
 
-// func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *isc.Assets {
-// 	require.NoError(ch.Env.T, err)
-// 	if d.IsEmpty() {
-// 		return isc.NewEmptyAssets()
-// 	}
-// 	ret, err := isc.AssetsFromDict(d)
-// 	require.NoError(ch.Env.T, err)
-// 	return ret
-// }
-
 func (ch *Chain) L2Ledger() map[string]*isc.Assets {
 	accs := ch.L2Accounts()
 	ret := make(map[string]*isc.Assets)
@@ -66,22 +56,24 @@ func (ch *Chain) L2LedgerString() string {
 
 // L2Assets return all tokens contained in the on-chain account controlled by the 'agentID'
 func (ch *Chain) L2Assets(agentID isc.AgentID) *isc.Assets {
-	return ch.L2AssetsAtStateIndex(agentID, ch.LatestBlockIndex())
+	cb := ch.L2AssetsAtStateIndex(agentID, ch.LatestBlockIndex())
+
+	assets := isc.NewEmptyAssets()
+	assets.Coins = cb
+
+	return assets
 }
 
-func (ch *Chain) L2AssetsAtStateIndex(agentID isc.AgentID, stateIndex uint32) *isc.Assets {
+func (ch *Chain) L2AssetsAtStateIndex(agentID isc.AgentID, stateIndex uint32) isc.CoinBalances {
 	chainState, err := ch.store.StateByIndex(stateIndex)
 	require.NoError(ch.Env.T, err)
 
 	res, err := ch.CallViewAtState(chainState, accounts.ViewBalance.Message(&agentID))
 	require.NoError(ch.Env.T, err)
 
-	balances := lo.Must(accounts.ViewBalance.DecodeOutput(res))
+	cb := lo.Must(accounts.ViewBalance.DecodeOutput(res))
 
-	assets := isc.NewEmptyAssets()
-	assets.Coins = balances
-
-	return assets
+	return cb
 }
 
 func (ch *Chain) L2BaseTokens(agentID isc.AgentID) coin.Value {
@@ -131,32 +123,6 @@ func (ch *Chain) L2TotalAssets() *isc.Assets {
 func (ch *Chain) L2TotalBaseTokens() coin.Value {
 	return ch.L2TotalAssets().BaseTokens()
 }
-
-// func (ch *Chain) GetOnChainTokenIDs() []coin.Type {
-// 	res, err := ch.CallView(accounts.ViewGetNativeTokenIDRegistry.Message())
-// 	require.NoError(ch.Env.T, err)
-// 	return lo.Must(accounts.ViewGetNativeTokenIDRegistry.Output1.Decode(res))
-// }
-
-// func (ch *Chain) GetFoundryOutput(sn uint32) (*iotago.FoundryOutput, error) {
-// 	res, err := ch.CallView(accounts.ViewNativeToken.Message(sn))
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	out, err := accounts.ViewNativeToken.Output.Decode(res)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return out.(*iotago.FoundryOutput), nil
-// }
-
-// func (ch *Chain) GetNativeTokenIDByFoundrySN(sn uint32) (iotago.NativeTokenID, error) {
-// 	o, err := ch.GetFoundryOutput(sn)
-// 	if err != nil {
-// 		return iotago.NativeTokenID{}, err
-// 	}
-// 	return o.MustNativeTokenID(), nil
-// }
 
 type NewNativeTokenParams struct {
 	ch            *Chain
