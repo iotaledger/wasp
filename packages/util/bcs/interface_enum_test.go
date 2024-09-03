@@ -109,6 +109,9 @@ func TestBasicInterfaceEnumCodec(t *testing.T) {
 	e = EnumVariant2{A: "bar"}
 	bcs.TestCodecAndBytesNoRef(t, StructWithEnum(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
 	bcs.TestCodecAndBytesNoRef(t, &e, []byte{0x1, 0x3, 0x62, 0x61, 0x72})
+
+	bcs.TestEncodeErr(t, InfEnum1(int8(42)))
+	bcs.TestEncodeErr(t, InfEnum2(int(42)))
 }
 
 func TestInterfaceEnumVariantWithCustomCodec(t *testing.T) {

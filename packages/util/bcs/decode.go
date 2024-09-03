@@ -43,23 +43,45 @@ func NewDecoder(src io.Reader, cfg DecoderConfig) *Decoder {
 type Decoder struct {
 	cfg DecoderConfig
 	r   rwutil.Reader
+	err error
+}
+
+func (d *Decoder) Err() error {
+	return d.err
+}
+
+func (d *Decoder) MustDecode(v any) {
+	if err := d.Decode(v); err != nil {
+		panic(err)
+	}
 }
 
 func (d *Decoder) Decode(v any) error {
+	if d.err != nil {
+		return d.err
+	}
 	if v == nil {
-		return fmt.Errorf("cannot Decode a nil value")
+		d.err = fmt.Errorf("cannot Decode a nil value")
+		return d.err
 	}
 
 	vR := reflect.ValueOf(v)
 
 	if vR.Kind() != reflect.Ptr {
-		return fmt.Errorf("Decode destination must be a pointer")
+		d.err = fmt.Errorf("Decode destination must be a pointer")
+		return d.err
 	}
 	if vR.IsNil() {
-		return fmt.Errorf("Decode destination cannot be nil")
+		d.err = fmt.Errorf("Decode destination cannot be nil")
+		return d.err
 	}
 
-	return d.decodeValue(vR, nil, nil)
+	d.err = d.decodeValue(vR, nil, nil)
+	if d.err != nil {
+		d.err = fmt.Errorf("decoding %T: %w", v, d.err)
+	}
+
+	return d.err
 }
 
 func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, typeParsingHint *typeInfo) error {
@@ -487,7 +509,7 @@ func (d *Decoder) decodeInterfaceEnum(v reflect.Value) error {
 	}
 
 	if int(variantIdx) >= len(variants) {
-		return fmt.Errorf("invalid variant index %v for enum %v", variantIdx, v.Type())
+		return fmt.Errorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, v.Type(), len(variants))
 	}
 
 	variant := reflect.New(variants[variantIdx]).Elem()
@@ -507,7 +529,7 @@ func (d *Decoder) decodeStructEnum(v reflect.Value) error {
 	t := v.Type()
 
 	if t.NumField() <= int(variantIdx) {
-		return fmt.Errorf("invalid variant index %v for enum %v with %v options", variantIdx, t, t.NumField())
+		return fmt.Errorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, t, t.NumField())
 	}
 
 	return d.decodeValue(v.Field(int(variantIdx)), nil, nil)
@@ -522,19 +544,44 @@ func (d *Decoder) Read(b []byte) (n int, err error) {
 	return len(b), d.r.Err
 }
 
-func Unmarshal[T any](b []byte) (T, error) {
-	var t T
-	if err := NewDecoder(bytes.NewReader(b), DecoderConfig{}).Decode(&t); err != nil {
-		return t, err
+func Decode[V any](dec *Decoder) (V, error) {
+	var v V
+	err := dec.Decode(&v)
+
+	return v, err
+}
+
+func MustDecode[V any](dec *Decoder) V {
+	v, err := Decode[V](dec)
+	if err != nil {
+		panic(fmt.Errorf("failed to decode object of type %T: %w", v, err))
 	}
 
-	return t, nil
+	return v
+}
+
+func UnmarshalStream[T any](r io.Reader) (T, error) {
+	dec := NewDecoder(r, DecoderConfig{})
+	return Decode[T](dec)
+}
+
+func MustUnmarshalStream[T any](r io.Reader) T {
+	v, err := UnmarshalStream[T](r)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func Unmarshal[T any](b []byte) (T, error) {
+	return UnmarshalStream[T](bytes.NewReader(b))
 }
 
 func MustUnmarshal[T any](b []byte) T {
 	v, err := Unmarshal[T](b)
 	if err != nil {
-		panic(fmt.Errorf("failed to unmarshal object of type %T from BCS: %w", v, err))
+		panic(err)
 	}
 
 	return v

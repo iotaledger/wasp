@@ -46,11 +46,27 @@ func NewEncoder(dest io.Writer, cfg EncoderConfig) *Encoder {
 type Encoder struct {
 	cfg EncoderConfig
 	w   rwutil.Writer
+	err error
+}
+
+func (e *Encoder) Err() error {
+	return e.w.Err
+}
+
+func (e *Encoder) MustEncode(val any) {
+	if err := e.Encode(val); err != nil {
+		panic(err)
+	}
 }
 
 func (e *Encoder) Encode(val any) error {
+	if e.err != nil {
+		return e.err
+	}
+
 	if val == nil {
-		return fmt.Errorf("cannot encode a nil value")
+		e.err = fmt.Errorf("cannot encode a nil value")
+		return e.err
 	}
 
 	v := reflect.ValueOf(val)
@@ -62,7 +78,12 @@ func (e *Encoder) Encode(val any) error {
 		v.Elem().Set(reflect.ValueOf(val))
 	}
 
-	return e.encodeValue(v, nil, nil)
+	e.err = e.encodeValue(v, nil, nil)
+	if e.err != nil {
+		e.err = fmt.Errorf("encoding %T: %w", v, e.err)
+	}
+
+	return e.err
 }
 
 // This structure is used to store result of parsing type to reuse it for each of element of collection.
@@ -289,6 +310,7 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx in
 	}
 
 	valT := v.Elem().Type()
+	enumVariantIdx = -1
 
 	for i, variant := range enumVariants {
 		if valT == variant {
@@ -638,14 +660,28 @@ func (e *Encoder) Write(b []byte) (n int, err error) {
 	return len(b), e.w.Err
 }
 
-func Marshal[V any](v *V) ([]byte, error) {
+func MarshalStream[V any](v *V, dest io.Writer) error {
 	// Forcing pointer here for two reasons:
 	//  - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
 	//  - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
 
+	if err := NewEncoder(dest, EncoderConfig{}).Encode(v); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func MustMarshalStream[V any](v *V, dest io.Writer) {
+	if err := MarshalStream(v, dest); err != nil {
+		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
+	}
+}
+
+func Marshal[V any](v *V) ([]byte, error) {
 	var buf bytes.Buffer
 
-	if err := NewEncoder(&buf, EncoderConfig{}).Encode(v); err != nil {
+	if err := MarshalStream(v, &buf); err != nil {
 		return nil, err
 	}
 
