@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type artifficialTimeProvider struct {
+type artificialTimeProvider struct {
 	now    time.Time
 	timers []*timer
 	mutex  sync.Mutex
@@ -16,23 +16,23 @@ type timer struct {
 	channel chan time.Time
 }
 
-var _ TimeProvider = &artifficialTimeProvider{}
+var _ TimeProvider = &artificialTimeProvider{}
 
-func NewArtifficialTimeProvider(nowOpt ...time.Time) TimeProvider {
+func NewArtificialTimeProvider(nowOpt ...time.Time) TimeProvider {
 	var now time.Time
 	if len(nowOpt) > 0 {
 		now = nowOpt[0]
 	} else {
 		now = time.Now()
 	}
-	return &artifficialTimeProvider{
+	return &artificialTimeProvider{
 		now:    now,
 		timers: make([]*timer, 0),
 		mutex:  sync.Mutex{},
 	}
 }
 
-func (atpT *artifficialTimeProvider) SetNow(now time.Time) {
+func (atpT *artificialTimeProvider) SetNow(now time.Time) {
 	atpT.mutex.Lock()
 	defer atpT.mutex.Unlock()
 
@@ -45,14 +45,14 @@ func (atpT *artifficialTimeProvider) SetNow(now time.Time) {
 	atpT.timers = atpT.timers[i:]
 }
 
-func (atpT *artifficialTimeProvider) GetNow() time.Time {
+func (atpT *artificialTimeProvider) GetNow() time.Time {
 	atpT.mutex.Lock()
 	defer atpT.mutex.Unlock()
 
 	return atpT.now
 }
 
-func (atpT *artifficialTimeProvider) After(d time.Duration) <-chan time.Time {
+func (atpT *artificialTimeProvider) After(d time.Duration) <-chan time.Time {
 	channel := make(chan time.Time, 1)
 	if d == 0 {
 		channel <- atpT.now

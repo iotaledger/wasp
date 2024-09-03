@@ -81,7 +81,7 @@ func newTestEnvNoNodes(
 
 	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	log := testlogger.NewLogger(t)
-	parameters.TimeProvider = time_util.NewArtifficialTimeProvider()
+	parameters.TimeProvider = time_util.NewArtificialTimeProvider()
 	return &testEnv{
 		t:          t,
 		bf:         bf,

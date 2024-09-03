@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestArtifficialTimeProvider(t *testing.T) {
+func TestArtificialTimeProvider(t *testing.T) {
 	now := time.Now()
-	tp := NewArtifficialTimeProvider(now)
+	tp := NewArtificialTimeProvider(now)
 	ch30s := tp.After(30 * time.Second)
 	ch40s := tp.After(40 * time.Second)
 	ch20s := tp.After(20 * time.Second)

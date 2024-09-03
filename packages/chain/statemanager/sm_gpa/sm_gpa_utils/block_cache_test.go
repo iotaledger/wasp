@@ -144,7 +144,7 @@ func TestBlockCacheCleanUp(t *testing.T) {
 	blocks := factory.GetBlocks(16, 2)
 	now := time.Now()
 	wal := NewEmptyTestBlockWAL()
-	tp := time_util.NewArtifficialTimeProvider(now)
+	tp := time_util.NewArtificialTimeProvider(now)
 	blockCache, err := NewBlockCache(tp, 5, wal, mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	setNowAddBlockFun := func(d time.Duration, b state.Block) {
@@ -220,7 +220,7 @@ func TestBlockCacheFull(t *testing.T) {
 	blocks := factory.GetBlocks(5, 2)
 	now := time.Now()
 	wal := NewMockedTestBlockWAL()
-	tp := time_util.NewArtifficialTimeProvider(now)
+	tp := time_util.NewArtificialTimeProvider(now)
 	blockCache, err := NewBlockCache(tp, 100, wal, mockStateManagerMetrics(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0]) // Will be dropped from cache AND WAL
