@@ -69,4 +69,6 @@ func TestStructEnumWithInfEnumVariant(t *testing.T) {
 	bcs.TestCodecAndBytesNoRef(t, StructEnumWithNullableVariants{A: lo.ToPtr[int32](10)}, []byte{0x0, 0xa, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytesNoRef(t, StructEnumWithNullableVariants{C: []byte{4, 5, 6}}, []byte{0x2, 0x3, 0x4, 0x5, 0x6})
 	bcs.TestCodecAndBytesNoRef(t, StructEnumWithNullableVariants{D: map[string]int32{"a": 1, "b": 2}}, []byte{0x3, 0x2, 0x1, 0x61, 0x1, 0x0, 0x0, 0x0, 0x1, 0x62, 0x2, 0x0, 0x0, 0x0})
+
+	bcs.TestEncodeErr(t, StructEnumWithNullableVariants{B: 123})
 }

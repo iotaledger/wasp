@@ -108,3 +108,61 @@ func RegisterEnumType8[EnumType any, Variant1 any, Variant2 any, Variant3 any, V
 	var variant8 Variant8
 	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7, variant8)
 }
+
+func RegisterEnumType9[EnumType any, Variant1 any, Variant2 any, Variant3 any, Variant4 any, Variant5 any, Variant6 any, Variant7 any, Variant8 any, Variant9 any]() {
+	var variant1 Variant1
+	var variant2 Variant2
+	var variant3 Variant3
+	var variant4 Variant4
+	var variant5 Variant5
+	var variant6 Variant6
+	var variant7 Variant7
+	var variant8 Variant8
+	var variant9 Variant9
+	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7, variant8, variant9)
+}
+
+func RegisterEnumType10[EnumType any, Variant1 any, Variant2 any, Variant3 any, Variant4 any, Variant5 any, Variant6 any, Variant7 any, Variant8 any, Variant9 any, Variant10 any]() {
+	var variant1 Variant1
+	var variant2 Variant2
+	var variant3 Variant3
+	var variant4 Variant4
+	var variant5 Variant5
+	var variant6 Variant6
+	var variant7 Variant7
+	var variant8 Variant8
+	var variant9 Variant9
+	var variant10 Variant10
+	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7, variant8, variant9, variant10)
+}
+
+func RegisterEnumType11[EnumType any, Variant1 any, Variant2 any, Variant3 any, Variant4 any, Variant5 any, Variant6 any, Variant7 any, Variant8 any, Variant9 any, Variant10 any, Variant11 any]() {
+	var variant1 Variant1
+	var variant2 Variant2
+	var variant3 Variant3
+	var variant4 Variant4
+	var variant5 Variant5
+	var variant6 Variant6
+	var variant7 Variant7
+	var variant8 Variant8
+	var variant9 Variant9
+	var variant10 Variant10
+	var variant11 Variant11
+	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7, variant8, variant9, variant10, variant11)
+}
+
+func RegisterEnumType12[EnumType any, Variant1 any, Variant2 any, Variant3 any, Variant4 any, Variant5 any, Variant6 any, Variant7 any, Variant8 any, Variant9 any, Variant10 any, Variant11 any, Variant12 any]() {
+	var variant1 Variant1
+	var variant2 Variant2
+	var variant3 Variant3
+	var variant4 Variant4
+	var variant5 Variant5
+	var variant6 Variant6
+	var variant7 Variant7
+	var variant8 Variant8
+	var variant9 Variant9
+	var variant10 Variant10
+	var variant11 Variant11
+	var variant12 Variant12
+	RegisterEnumType[EnumType](variant1, variant2, variant3, variant4, variant5, variant6, variant7, variant8, variant9, variant10, variant11, variant12)
+}
