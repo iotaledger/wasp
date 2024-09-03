@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"math/rand/v2"
+	"math/rand"
 
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )

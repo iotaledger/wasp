@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -68,16 +67,16 @@ func newTestEnvNoNodes(
 ) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
 	var parameters StateManagerParameters
-	var chainInitParameters isc.CallArguments
+	var chainInitParameters sm_gpa_utils.BlockFactoryCallArguments
 	if len(parametersOpt) > 0 {
 		parameters = parametersOpt[0]
-		chainInitParameters = isc.NewCallArguments(codec.Int32.Encode(int32(parameters.PruningMinStatesToKeep)))
+		chainInitParameters = sm_gpa_utils.BlockFactoryCallArguments{BlockKeepAmount: int32(parameters.PruningMinStatesToKeep)}
+		bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	} else {
 		parameters = NewStateManagerParameters()
-		chainInitParameters = nil
+		bf = sm_gpa_utils.NewBlockFactory(t)
 	}
 
-	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	log := testlogger.NewLogger(t)
 	parameters.TimeProvider = time_util.NewArtificialTimeProvider()
 	return &testEnv{
