@@ -15,9 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/time_util"
 )
 
-var newEmptySnapshotManagerFun = func(_, _ state.Store, _ sm_gpa_utils.TimeProvider, _ *logger.Logger) sm_snapshots.SnapshotManager {
+var newEmptySnapshotManagerFun = func(_, _ state.Store, _ time_util.TimeProvider, _ *logger.Logger) sm_snapshots.SnapshotManager {
 	return sm_snapshots.NewEmptySnapshotManager()
 }
 
@@ -320,7 +321,7 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 
 	nodeIDs := gpa.MakeTestNodeIDs(3)
 	newMockedTestBlockWALFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL { return sm_gpa_utils.NewMockedTestBlockWAL() }
-	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
+	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		var snapshotToLoad sm_snapshots.SnapshotInfo
 		if nodeID.Equals(nodeIDs[0]) {
 			snapshotToLoad = nil
@@ -485,7 +486,7 @@ func TestSnapshots(t *testing.T) {
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	nodeID := nodeIDs[0]
-	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
+	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, snapshotDelayPeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
 	}
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newMockedSnapshotManagerFun)
