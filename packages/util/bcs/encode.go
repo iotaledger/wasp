@@ -450,7 +450,13 @@ func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount)
 	switch bytesPerElem {
 	case Value1Byte:
 		// Optimization for encoding of byte/uint8 slices
-		e.w.WriteN(v.Bytes())
+		if v.Kind() == reflect.Slice || v.CanAddr() {
+			e.w.WriteN(v.Bytes())
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				e.w.WriteUint8(uint8(v.Index(i).Uint()))
+			}
+		}
 	case Value2Bytes:
 		for i := 0; i < v.Len(); i++ {
 			e.w.WriteUint16(uint16(v.Index(i).Uint()))
@@ -632,7 +638,11 @@ func (e *Encoder) Write(b []byte) (n int, err error) {
 	return len(b), e.w.Err
 }
 
-func Marshal(v any) ([]byte, error) {
+func Marshal[V any](v *V) ([]byte, error) {
+	// Forcing pointer here for two reasons:
+	//  - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
+	//  - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
+
 	var buf bytes.Buffer
 
 	if err := NewEncoder(&buf, EncoderConfig{}).Encode(v); err != nil {
@@ -642,7 +652,7 @@ func Marshal(v any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func MustMarshal(v any) []byte {
+func MustMarshal[V any](v *V) []byte {
 	b, err := Marshal(v)
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
