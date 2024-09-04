@@ -21,7 +21,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	state.Store,
 	*stateManagerGPA,
 ) {
-	bf := sm_gpa_utils.NewBlockFactory(t, nil)
+	bf := sm_gpa_utils.NewBlockFactory(t)
 	log := testlogger.NewLogger(t)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	smGPA, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())

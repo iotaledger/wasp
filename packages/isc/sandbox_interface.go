@@ -196,11 +196,10 @@ func (c CallArguments) MustAt(index int) []byte {
 }
 
 func (c CallArguments) OrNil(index int) []byte {
-	ret, err := c.At(index)
-	if err != nil {
-		panic(err)
+	if (index < 0) || (index >= len(c)) {
+		return nil
 	}
-	return ret
+	return c[index]
 }
 
 func (c CallArguments) String() string {

@@ -8,9 +8,10 @@ import (
 
 func DummyStateMetadata(commitment *state.L1Commitment) *transaction.StateMetadata {
 	return transaction.NewStateMetadata(
+		0,
 		commitment,
 		gas.DefaultFeePolicy(),
-		0,
+		[][]byte{},
 		"",
 	)
 }

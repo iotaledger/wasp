@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -39,15 +40,22 @@ type BlockFactory struct {
 	anchorData          map[state.BlockHash]anchorData
 }
 
-func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...isc.CallArguments) *BlockFactory {
+type BlockFactoryCallArguments struct {
+	BlockKeepAmount int32
+}
+
+func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallArguments) *BlockFactory {
 	var chainInitParams isc.CallArguments
+	agentId := isc.NewRandomAgentID()
 	if len(chainInitParamsOpt) > 0 {
-		chainInitParams = chainInitParamsOpt[0]
+		chainInitParams = isc.NewCallArguments(agentId.Bytes(), codec.Uint16.Encode(evm.DefaultChainID), codec.Int32.Encode(int32(chainInitParamsOpt[0].BlockKeepAmount)))
 	} else {
-		chainInitParams = nil
+		chainInitParams = isc.NewCallArguments(agentId.Bytes())
 	}
 	chainID := isc.RandomChainID()
-	originCommitment := origin.L1Commitment(0, chainInitParams, 0)
+	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	originBlock := origin.InitChain(0, chainStore, chainInitParams, 0)
+	originCommitment := originBlock.L1Commitment()
 	originAnchorData := anchorData{
 		ref: &sui.ObjectRef{
 			ObjectID: sui.ObjectIDFromArray(chainID),
@@ -64,8 +72,6 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...isc.CallArguments
 		l1Commitment: originCommitment,
 		stateIndex:   0,
 	}
-	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	origin.InitChain(0, chainStore, chainInitParams, 0)
 	return &BlockFactory{
 		t:                   t,
 		store:               chainStore,
