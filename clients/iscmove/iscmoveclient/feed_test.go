@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -21,8 +22,7 @@ func TestRequestsFeed(t *testing.T) {
 	iscOwner := newSignerWithFunds(t, testSeed, 0)
 	chainOwner := newSignerWithFunds(t, testSeed, 1)
 
-	iscPackageID := buildAndDeployISCContracts(t, client, iscOwner)
-	anchor := startNewChain(t, client, chainOwner, iscPackageID)
+	anchor := startNewChain(t, client, chainOwner)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -31,7 +31,7 @@ func TestRequestsFeed(t *testing.T) {
 	txnResponse, err := client.AssetsBagNew(
 		ctx,
 		iscOwner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -53,7 +53,7 @@ func TestRequestsFeed(t *testing.T) {
 	chainFeed := iscmoveclient.NewChainFeed(
 		ctx,
 		wsClient,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		*anchor.ObjectID,
 		log,
 	)
@@ -66,13 +66,13 @@ func TestRequestsFeed(t *testing.T) {
 	newRequests := make(chan *iscmove.Request, 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
-	allowanceRef := createEmptyAllowance(t, client, iscOwner, iscPackageID)
+	allowanceRef := createEmptyAllowance(t, client, iscOwner)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
 		ctx,
 		iscOwner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		anchor.ObjectID,
 		assetsBagRef,
 		uint32(isc.Hn("dummy_isc_contract")),
@@ -102,7 +102,7 @@ func TestRequestsFeed(t *testing.T) {
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
 		chainOwner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,
 		[]sui.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},

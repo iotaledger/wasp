@@ -6,10 +6,8 @@ package solo
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"math/big"
+	"math"
 	"math/rand"
 	"slices"
 	"sync"
@@ -19,18 +17,21 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/fardream/go-bcs/bcs"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -38,15 +39,21 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suiconn"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -60,9 +67,7 @@ type Solo struct {
 	T                               Context
 	logger                          *logger.Logger
 	chainStateDatabaseManager       *database.ChainStateDatabaseManager
-	utxoDB                          *utxodb.UtxoDB
 	chainsMutex                     sync.RWMutex
-	ledgerMutex                     sync.RWMutex
 	chains                          map[isc.ChainID]*Chain
 	processorConfig                 *processors.Config
 	disableAutoAdjustStorageDeposit bool
@@ -70,6 +75,8 @@ type Solo struct {
 	seed                            cryptolib.Seed
 	publisher                       *publisher.Publisher
 	ctx                             context.Context
+
+	l1Config L1Config
 }
 
 // data to be persisted in the snapshot
@@ -102,9 +109,8 @@ type chainData struct {
 type Chain struct {
 	chainData
 
-	StateControllerAddress *cryptolib.Address
-	OriginatorAddress      *cryptolib.Address
-	OriginatorAgentID      isc.AgentID
+	OriginatorAddress *cryptolib.Address
+	OriginatorAgentID isc.AgentID
 
 	// Env is a pointer to the global structure of the 'solo' test
 	Env *Solo
@@ -130,6 +136,7 @@ type Chain struct {
 var _ chain.ChainCore = &Chain{}
 
 type InitOptions struct {
+	L1Config                 L1Config
 	AutoAdjustStorageDeposit bool
 	Debug                    bool
 	PrintStackTrace          bool
@@ -138,8 +145,19 @@ type InitOptions struct {
 	Log                      *logger.Logger
 }
 
+type L1Config struct {
+	SuiRPCURL    string
+	SuiFaucetURL string
+	ISCPackageID sui.PackageID
+}
+
 func DefaultInitOptions() *InitOptions {
 	return &InitOptions{
+		L1Config: L1Config{
+			SuiRPCURL:    suiconn.LocalnetEndpointURL,
+			SuiFaucetURL: suiconn.LocalnetFaucetURL,
+			ISCPackageID: l1starter.ISCPackageID(),
+		},
 		Debug:                    false,
 		PrintStackTrace:          false,
 		Seed:                     cryptolib.Seed{},
@@ -172,14 +190,14 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		panic(err)
 	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams()
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
+
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
 		chainStateDatabaseManager:       chainStateDatabaseManager,
-		utxoDB:                          utxodb.New(utxoDBinitParams),
+		l1Config:                        opt.L1Config,
 		chains:                          make(map[isc.ChainID]*Chain),
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
@@ -188,16 +206,11 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		publisher:                       publisher.New(opt.Log.Named("publisher")),
 		ctx:                             ctx,
 	}
-	globalTime := ret.utxoDB.GlobalTime()
-	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
-		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
-
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
 
 	go ret.publisher.Run(ctx)
-
 	go ret.batchLoop()
 
 	return ret
@@ -290,29 +303,32 @@ func (env *Solo) WithVMProcessor(vmType string, constructor processors.VMConstru
 
 // NewChain deploys new default chain instance.
 func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
-	ret, _ := env.NewChainExt(nil, 0, "chain1")
+	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(5*isc.Million), nil)
+		err := ret.DepositAssetsToL2(isc.NewAssets(5*isc.Million), nil)
 		require.NoError(env.T, err)
 	}
 	return ret
 }
 
+func (env *Solo) ISCPackageID() sui.PackageID {
+	return env.l1Config.ISCPackageID
+}
+
 func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens uint64,
+	initBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (chainData, *iotago.Transaction) {
+) (chainData, *iscmove.RefWithObject[iscmove.Anchor]) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
 		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
-		require.NoError(env.T, err)
+		env.GetFundsFromFaucet(originatorAddr)
 	}
 
 	initParams := origin.EncodeInitParams(
@@ -321,63 +337,62 @@ func (env *Solo) deployChain(
 		blockKeepAmount,
 	)
 
-	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
-	stateControllerAddr := stateControllerKey.GetPublicKey().AsAddress()
-
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 	originatorAgentID := isc.NewAgentID(originatorAddr)
 
-	initialL1Balance := env.L1BaseTokens(originatorAddr)
-
-	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
-	panic("refactor me: origin.NewChainOriginTransaction")
-	var originTx *iotago.Transaction
-	var chainID isc.ChainID
-	var originAO *iotago.AliasOutput
-
-	err := errors.New("refactor me: deployChain")
-	_ = outs
-	_ = outIDs
-
+	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
+	originCommitment := origin.L1Commitment(
+		schemaVersion,
+		initParams,
+		initBaseTokens,
+	)
+	stateMetadata := transaction.NewStateMetadata(
+		schemaVersion,
+		originCommitment,
+		gas.DefaultFeePolicy(),
+		initParams,
+		"",
+	)
+	anchorRef, err := env.ISCMoveClient().StartNewChain(
+		env.ctx,
+		chainOriginator,
+		env.ISCPackageID(),
+		stateMetadata.Bytes(),
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
 	require.NoError(env.T, err)
 
-	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
-	require.NoError(env.T, err)
-
-	err = env.utxoDB.AddToLedger(originTx)
-	require.NoError(env.T, err)
-	env.AssertL1BaseTokens(originatorAddr, initialL1Balance-anchor.Deposit)
-
-	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateControllerAddr.String())
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.String())
-	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.String())
+	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
 	db, writeMutex, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 
-	panic("refactor me: parameters.L1() / RentStructure")
-	originAOMinSD := uint64(0)
-	// originAOMinSD := parameters.L1().Protocol.RentStructure.MinRent(originAO)
-
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	origin.InitChain(0, store, initParams, originAO.Amount-originAOMinSD)
-
-	{
-		block, err2 := store.LatestBlock()
-		require.NoError(env.T, err2)
-		env.logger.Infof("     chain '%s'. origin trie root: %s", chainID, block.TrieRoot())
-	}
+	block := origin.InitChain(
+		schemaVersion,
+		store,
+		initParams,
+		initBaseTokens,
+	)
+	env.logger.Infof(
+		"deployed chain '%s' - ID: %s - state controller address: %s - origin trie root: %s",
+		name,
+		chainID,
+		originatorAddr,
+		block.TrieRoot(),
+	)
 
 	return chainData{
-		Name:                   name,
-		ChainID:                chainID,
-		StateControllerKeyPair: stateControllerKey,
-		OriginatorPrivateKey:   chainOriginator,
-		ValidatorFeeTarget:     originatorAgentID,
-		db:                     db,
-		writeMutex:             writeMutex,
-	}, originTx
+		Name:                 name,
+		ChainID:              chainID,
+		OriginatorPrivateKey: chainOriginator,
+		ValidatorFeeTarget:   originatorAgentID,
+		db:                   db,
+		writeMutex:           writeMutex,
+	}, anchorRef
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
@@ -396,43 +411,36 @@ func (env *Solo) deployChain(
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChainExt(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens uint64,
+	initBaseTokens coin.Value,
 	name string,
-	originParams ...dict.Dict,
-) (*Chain, *iotago.Transaction) {
-	chData, originTx := env.deployChain(chainOriginator, initBaseTokens, name, originParams...)
+	evmChainID uint16,
+	blockKeepAmount int32,
+) (*Chain, *iscmove.RefWithObject[iscmove.Anchor]) {
+	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
 
 	env.chainsMutex.Lock()
 	defer env.chainsMutex.Unlock()
 	ch := env.addChain(chData)
 
 	ch.log.Infof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
-	return ch, originTx
+	return ch, anchorRef
 }
 
 func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
-		chainData:              chData,
-		StateControllerAddress: chData.StateControllerKeyPair.GetPublicKey().AsAddress(),
-		OriginatorAddress:      chData.OriginatorPrivateKey.GetPublicKey().AsAddress(),
-		OriginatorAgentID:      isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
-		Env:                    env,
-		store:                  indexedstore.New(state.NewStore(chData.db, chData.writeMutex)),
-		proc:                   processors.MustNew(env.processorConfig),
-		log:                    env.logger.Named(chData.Name),
-		metrics:                metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
-		mempool:                newMempool(env.utxoDB.GlobalTime, chData.ChainID),
-		migrationScheme:        chData.migrationScheme,
+		chainData:         chData,
+		OriginatorAddress: chData.OriginatorPrivateKey.GetPublicKey().AsAddress(),
+		OriginatorAgentID: isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
+		Env:               env,
+		store:             indexedstore.New(state.NewStore(chData.db, chData.writeMutex)),
+		proc:              processors.MustNew(env.processorConfig),
+		log:               env.logger.Named(chData.Name),
+		metrics:           metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
+		mempool:           newMempool(env.GlobalTime, chData.ChainID),
+		migrationScheme:   chData.migrationScheme,
 	}
 	env.chains[chData.ChainID] = ch
 	return ch
-}
-
-// AddToLedger adds (synchronously confirms) transaction to the UTXODB ledger. Return error if it is
-// invalid or double spend
-func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
-	env.logger.Debugf("posting tx to L1: %s", lo.Must(json.Marshal(tx)))
-	return env.utxoDB.AddToLedger(tx)
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
@@ -477,13 +485,10 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorOutputFromL1() *isc.AliasOutputWithID {
-	outputs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
-	require.EqualValues(ch.Env.T, 1, len(outputs))
-	for outputID, aliasOutput := range outputs {
-		return isc.NewAliasOutputWithID(aliasOutput, outputID)
-	}
-	panic("unreachable")
+func (ch *Chain) GetAnchorFromL1() *iscmove.RefWithObject[iscmove.Anchor] {
+	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsSuiAddress())
+	require.NoError(ch.Env.T, err)
+	return anchor
 }
 
 // collateBatch selects requests which are not time locked
@@ -556,38 +561,55 @@ func (ch *Chain) EnqueueAliasOutput(_ *isc.AliasOutputWithID) {
 
 // ---------------------------------------------
 
-func (env *Solo) UnspentOutputs(addr *cryptolib.Address) (iotago.OutputSet, iotago.OutputIDs) {
-	allOuts, _ := env.utxoDB.GetUnspentOutputs(addr)
-	ids := make(iotago.OutputIDs, len(allOuts))
-	i := 0
-	for id := range allOuts {
-		ids[i] = id
-		i++
-	}
-	return allOuts, ids
+func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
+	return env.L1Coins(addr, coin.BaseTokenType)
 }
 
-func (env *Solo) L1NFTs(addr *cryptolib.Address) map[iotago.OutputID]*iotago.NFTOutput {
-	return env.utxoDB.GetAddressNFTs(addr)
+func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
+	r, err := env.SuiClient().GetCoins(env.ctx, suiclient.GetCoinsRequest{
+		Owner: addr.AsSuiAddress(),
+		Limit: math.MaxUint,
+	})
+	require.NoError(env.T, err)
+	return r.Data
 }
 
-// L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
-func (env *Solo) L1NativeTokens(addr *cryptolib.Address, nativeTokenID iotago.NativeTokenID) *big.Int {
-	assets := env.L1Assets(addr)
-	return assets.AmountNativeToken(nativeTokenID)
+func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*suijsonrpc.Coin {
+	r, err := env.SuiClient().GetCoins(env.ctx, suiclient.GetCoinsRequest{
+		Owner:    addr.AsSuiAddress(),
+		CoinType: (*string)(&coinType),
+		Limit:    math.MaxUint,
+	})
+	require.NoError(env.T, err)
+	return r.Data
 }
 
-func (env *Solo) L1BaseTokens(addr *cryptolib.Address) uint64 {
-	return env.utxoDB.GetAddressBalances(addr).BaseTokens
+func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
+	return env.L1CoinBalance(addr, coin.BaseTokenType)
+}
+
+func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
+	r, err := env.SuiClient().GetBalance(env.ctx, suiclient.GetBalanceRequest{
+		Owner:    addr.AsSuiAddress(),
+		CoinType: string(coinType),
+	})
+	require.NoError(env.T, err)
+	return coin.Value(r.TotalBalance)
+}
+
+func (env *Solo) L1NFTs(addr *cryptolib.Address) []sui.ObjectID {
+	panic("TODO")
 }
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
-func (env *Solo) L1Assets(addr *cryptolib.Address) *isc.Assets {
-	return env.utxoDB.GetAddressBalances(addr)
-}
-
-func (env *Solo) L1Ledger() *utxodb.UtxoDB {
-	return env.utxoDB
+func (env *Solo) L1Assets(addr *cryptolib.Address) isc.CoinBalances {
+	r, err := env.SuiClient().GetAllBalances(env.ctx, addr.AsSuiAddress())
+	require.NoError(env.T, err)
+	cb := isc.NewCoinBalances()
+	for _, b := range r {
+		cb.Add(coin.Type(b.CoinType), coin.Value(b.TotalBalance))
+	}
+	return cb
 }
 
 type NFTMintedInfo struct {
@@ -606,71 +628,99 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address,
 	return nfts[0], infos[0], nil
 }
 
-// MintNFTsL1 mints len(immutableMetadata) NFTs with the `issuer` account and sends them
+// MintNFTsL1 mints len(metadata) NFTs with the `issuer` account and sends them
 // to a `target` account.
 //
-// If collectionOutputID is not nil, it must be an outputID of an NFTOutput owned by the issuer.
+// If collectionID is not nil, it must be the ID of an NFT owned by the issuer.
 // All minted NFTs will belong to the given collection.
 // See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
 //
 // Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
-	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
-
-	panic("refactor me: transaction.NewMintNFTsTransaction")
-	var tx *iotago.Transaction
-	_ = allOuts
-	_ = allOutIDs
-	err := errors.New("refactor me: MintNFTsL1")
-	if err != nil {
-		return nil, nil, err
-	}
-	err = env.AddToLedger(tx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	outSet, err := tx.OutputsSet()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var nfts []*isc.NFT
-	var infos []*NFTMintedInfo
-	for id, out := range outSet {
-		if out, ok := out.(*iotago.NFTOutput); ok { //nolint:gocritic // false positive
-			nftID := util.NFTIDFromNFTOutput(out, id)
-			info := &NFTMintedInfo{
-				OutputID: id,
-				Output:   out,
-				NFTID:    nftID,
-			}
-			nft := &isc.NFT{
-				ID:       info.NFTID,
-				Issuer:   cryptolib.NewAddressFromIotago(out.ImmutableFeatureSet().IssuerFeature().Address),
-				Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
-			}
-			nfts = append(nfts, nft)
-			infos = append(infos, info)
+func (env *Solo) MintNFTsL1(
+	issuer *cryptolib.KeyPair,
+	target *cryptolib.Address,
+	collectionID *sui.ObjectID,
+	metadata [][]byte,
+) ([]*isc.NFT, []*NFTMintedInfo, error) {
+	panic("TODO")
+	/*
+		err := errors.New("refactor me: MintNFTsL1")
+		if err != nil {
+			return nil, nil, err
 		}
-	}
-	return nfts, infos, nil
+		err = env.AddToLedger(tx)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		outSet, err := tx.OutputsSet()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		var nfts []*isc.NFT
+		var infos []*NFTMintedInfo
+		for id, out := range outSet {
+			if out, ok := out.(*iotago.NFTOutput); ok { //nolint:gocritic // false positive
+				nftID := util.NFTIDFromNFTOutput(out, id)
+				info := &NFTMintedInfo{
+					OutputID: id,
+					Output:   out,
+					NFTID:    nftID,
+				}
+				nft := &isc.NFT{
+					ID:       info.NFTID,
+					Issuer:   cryptolib.NewAddressFromIotago(out.ImmutableFeatureSet().IssuerFeature().Address),
+					Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
+				}
+				nfts = append(nfts, nft)
+				infos = append(infos, info)
+			}
+		}
+		return nfts, infos, nil
+	*/
 }
 
-// SendL1 sends base or native tokens to another L1 address
-func (env *Solo) SendL1(targetAddress *cryptolib.Address, assets *isc.Assets, wallet *cryptolib.KeyPair) {
-	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(wallet.Address())
-	tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
-		DisableAutoAdjustStorageDeposit: env.disableAutoAdjustStorageDeposit,
-		FungibleTokens:                  assets,
-		SendOptions:                     isc.SendOptions{},
-		SenderAddress:                   wallet.Address(),
-		SenderKeyPair:                   wallet,
-		TargetAddress:                   targetAddress,
-		UnspentOutputs:                  allOuts,
-		UnspentOutputIDs:                allOutIDs,
+// SendL1 sends coins to another L1 address
+func (env *Solo) SendL1(targetAddress *cryptolib.Address, coins isc.CoinBalances, wallet *cryptolib.KeyPair) {
+	ptb := sui.NewProgrammableTransactionBuilder()
+	allCoins := env.L1AllCoins(wallet.Address())
+	coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
+		ptb.Pay(
+			lo.Map(
+				lo.Filter(allCoins, func(c *suijsonrpc.Coin, _ int) bool {
+					return c.CoinType == string(coinType)
+				}),
+				func(c *suijsonrpc.Coin, _ int) *sui.ObjectRef {
+					return c.Ref()
+				},
+			),
+			[]*sui.Address{targetAddress.AsSuiAddress()},
+			[]uint64{uint64(amount)},
+		)
+		return true
 	})
+
+	tx := sui.NewProgrammable(
+		wallet.Address().AsSuiAddress(),
+		ptb.Finish(),
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+	)
+
+	txnBytes, err := bcs.Marshal(tx)
 	require.NoError(env.T, err)
-	err = env.AddToLedger(tx)
+
+	execRes, err := env.SuiClient().SignAndExecuteTransaction(
+		env.ctx,
+		cryptolib.SignerToSuiSigner(wallet),
+		txnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
 	require.NoError(env.T, err)
+	require.True(env.T, execRes.Effects.Data.IsSuccess())
 }
