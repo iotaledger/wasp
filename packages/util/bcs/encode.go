@@ -34,18 +34,22 @@ func (c *EncoderConfig) InitializeDefaults() {
 	}
 }
 
-func NewEncoder(dest io.Writer, cfg EncoderConfig) *Encoder {
+func NewEncoder(dest io.Writer) *Encoder {
+	return NewEncoderWithOpts(dest, EncoderConfig{})
+}
+
+func NewEncoderWithOpts(dest io.Writer, cfg EncoderConfig) *Encoder {
 	cfg.InitializeDefaults()
 
 	return &Encoder{
 		cfg: cfg,
-		w:   *rwutil.NewWriter(dest),
+		w:   rwutil.NewWriter(dest),
 	}
 }
 
 type Encoder struct {
 	cfg EncoderConfig
-	w   rwutil.Writer
+	w   *rwutil.Writer
 	err error
 }
 
@@ -132,49 +136,36 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	case reflect.Bool:
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if err := e.encodeInt(v, defaultValueSize(v.Kind()), typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = e.encodeInt(v, defaultValueSize(v.Kind()), typeOptions.Bytes)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		if err := e.encodeUint(v, defaultValueSize(v.Kind()), typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = e.encodeUint(v, defaultValueSize(v.Kind()), typeOptions.Bytes)
 	case reflect.String:
 		e.w.WriteString(v.String())
 	case reflect.Slice:
-		if err := e.encodeSlice(v, typeOptions); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = e.encodeSlice(v, typeOptions)
 	case reflect.Array:
-		if err := e.encodeArray(v); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = e.encodeArray(v)
 	case reflect.Map:
-		if err := e.encodeMap(v, typeOptions); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = e.encodeMap(v, typeOptions)
 	case reflect.Struct:
 		if t.Customization == typeCustomizationIsStructEnum {
-			if err := e.encodeStructEnum(v); err != nil {
-				return fmt.Errorf("%v: %w", v.Type(), err)
-			}
+			err = e.encodeStructEnum(v)
 		} else {
-			if err := e.encodeStruct(v); err != nil {
-				return fmt.Errorf("%v: %w", v.Type(), err)
-			}
+			err = e.encodeStruct(v)
 		}
 	case reflect.Interface:
-		if t.Customization != typeCustomizationIsInterfaceEnum {
-			panic(fmt.Errorf("unexpected type customization for type %v: %v", v.Type(), t.Customization))
-		}
-
-		if err := e.encodeInterfaceEnum(v); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
+		if typeOptions.InterfaceIsNotEnum {
+			err = e.encodeValue(v.Elem(), nil, nil)
+		} else {
+			err = e.encodeInterfaceEnum(v)
 		}
 	default:
 		return fmt.Errorf("%v: cannot encode unknown type type", v.Type())
 	}
 
+	if err != nil {
+		return fmt.Errorf("%v: %w", v.Type(), err)
+	}
 	if e.w.Err != nil {
 		return fmt.Errorf("%v: %w", v.Type(), e.w.Err)
 	}
@@ -251,7 +242,6 @@ type typeCustomization int
 const (
 	typeCustomizationNone typeCustomization = iota
 	typeCustomizationHasCustomCodec
-	typeCustomizationIsInterfaceEnum
 	typeCustomizationIsStructEnum
 	typeCustomizationHasTypeOptions
 )
@@ -267,7 +257,7 @@ func (e *Encoder) checkTypeCustomizations(t reflect.Type) (typeCustomization, Cu
 
 	switch {
 	case kind == reflect.Interface:
-		return typeCustomizationIsInterfaceEnum, nil
+		return typeCustomizationNone, nil
 	case kind == reflect.Struct && t.Implements(enumT):
 		return typeCustomizationIsStructEnum, nil
 	case t.Implements(bcsTypeT):
@@ -297,7 +287,7 @@ func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 	return nil
 }
 
-func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ error) {
+func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumVariantID, _ error) {
 	if v.IsNil() {
 		return -1, fmt.Errorf("attemp to encode non-optional nil interface")
 	}
@@ -312,9 +302,9 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx in
 	valT := v.Elem().Type()
 	enumVariantIdx = -1
 
-	for i, variant := range enumVariants {
+	for id, variant := range enumVariants {
 		if valT == variant {
-			enumVariantIdx = i
+			enumVariantIdx = id
 		}
 	}
 
@@ -325,7 +315,7 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx in
 	return enumVariantIdx, nil
 }
 
-func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx int, _ error) {
+func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumVariantID, _ error) {
 	enumVariantIdx = -1
 
 	for i := 0; i < v.NumField(); i++ {
@@ -339,7 +329,7 @@ func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx int, 
 			}
 
 			if enumVariantIdx != -1 {
-				prevSetField := v.Type().Field(enumVariantIdx)
+				prevSetField := v.Type().Field(int(enumVariantIdx))
 				currentField := v.Type().Field(i)
 				return -1, fmt.Errorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
 			}
@@ -543,6 +533,9 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 func (e *Encoder) encodeStruct(v reflect.Value) error {
 	t := v.Type()
 
+	origStream := e.w
+	defer func() { e.w = origStream }() // for case of panic/error
+
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
 
@@ -552,7 +545,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		}
 
 		if fieldOpts.Skip {
-			continue
+			return nil
 		}
 
 		fieldVal := v.Field(i)
@@ -560,14 +553,14 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		if !fieldType.IsExported() {
 			if !hasTag {
 				// Unexported fields without tags are skipped
-				continue
+				return nil
 			}
 
 			if !fieldVal.CanAddr() {
 				// Field is not addresable yet - making it addressable
-				addressableV := reflect.New(t).Elem()
-				addressableV.Set(v)
-				v = addressableV
+				vCopy := reflect.New(t).Elem()
+				vCopy.Set(v)
+				v = vCopy
 				fieldVal = v.Field(i)
 			}
 
@@ -596,8 +589,28 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 			}
 		}
 
+		if fieldOpts.AsByteArray {
+			// This value needs to be written as variable bytes array. For that, we need to first
+			// encode it in a separate buffer and then write it as array to original stream.
+			e.w = rwutil.NewBytesWriter()
+		}
+
 		if err := e.encodeValue(fieldVal, &fieldOpts.TypeOptions, nil); err != nil {
 			return fmt.Errorf("%v: %w", fieldType.Name, err)
+		}
+
+		if fieldOpts.AsByteArray {
+			// The value need to be written as byte array. It was already encoded into temporary buffer,
+			// so now we need to write it as byte array to original stream.
+			var encodedVal []byte = e.w.Bytes()
+
+			e.w = origStream
+			e.w.WriteSize32(len(encodedVal))
+			e.w.WriteN(encodedVal)
+
+			if e.w.Err != nil {
+				return fmt.Errorf("%v: bytearr: %w", v.Type(), e.w.Err)
+			}
 		}
 	}
 
@@ -665,7 +678,7 @@ func MarshalStream[V any](v *V, dest io.Writer) error {
 	//  - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
 	//  - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
 
-	if err := NewEncoder(dest, EncoderConfig{}).Encode(v); err != nil {
+	if err := NewEncoder(dest).Encode(v); err != nil {
 		return err
 	}
 

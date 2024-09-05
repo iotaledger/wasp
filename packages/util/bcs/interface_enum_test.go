@@ -1,13 +1,14 @@
 package bcs_test
 
 import (
-	"reflect"
+	"bytes"
 	"testing"
 
 	ref_bcs "github.com/fardream/go-bcs/bcs"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 )
 
 type InfEnum1 interface{}
@@ -31,9 +32,7 @@ type EnumVariant2 struct {
 func (e EnumVariant2) Dummy() {}
 
 func TestEnumRegister(t *testing.T) {
-	t.Cleanup(func() {
-		bcs.EnumTypes = make(map[reflect.Type][]reflect.Type)
-	})
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
 
 	require.Panics(t, func() {
 		bcs.RegisterEnumType2[struct{}, int, string]()
@@ -53,6 +52,13 @@ func TestEnumRegister(t *testing.T) {
 
 	require.Panics(t, func() {
 		bcs.RegisterEnumType2[InfEnumWithMethods, EnumVariant1, string]()
+	})
+
+	require.Panics(t, func() {
+		bcs.RegisterEnumTypeWithIDs[InfEnumWithMethods](map[bcs.EnumVariantID]any{
+			1:  EnumVariant1{},
+			-2: EnumVariant2{},
+		})
 	})
 
 	bcs.RegisterEnumType2[InfEnum1, int, string]()
@@ -84,9 +90,7 @@ func StructWithEnum[EnumType any](v EnumType) structWithEnum[EnumType] {
 }
 
 func TestBasicInterfaceEnumCodec(t *testing.T) {
-	t.Cleanup(func() {
-		bcs.EnumTypes = make(map[reflect.Type][]reflect.Type)
-	})
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
 
 	bcs.RegisterEnumType2[InfEnum1, int, string]()
 	bcs.RegisterEnumType3[InfEnum2, int64, int32, int8]()
@@ -115,9 +119,7 @@ func TestBasicInterfaceEnumCodec(t *testing.T) {
 }
 
 func TestInterfaceEnumVariantWithCustomCodec(t *testing.T) {
-	t.Cleanup(func() {
-		bcs.EnumTypes = make(map[reflect.Type][]reflect.Type)
-	})
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
 
 	bcs.RegisterEnumType2[InfEnum1, WithCustomCodec, string]()
 
@@ -126,13 +128,58 @@ func TestInterfaceEnumVariantWithCustomCodec(t *testing.T) {
 }
 
 func TestIntEnumWithStructEnumVariant(t *testing.T) {
-	t.Cleanup(func() {
-		bcs.EnumTypes = make(map[reflect.Type][]reflect.Type)
-	})
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
 
 	bcs.RegisterEnumType3[InfEnum1, BasicStructEnum, WithCustomCodec, string]()
 
 	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](BasicStructEnum{A: lo.ToPtr[int32](10)}), []byte{0x0, 0x0, 0xa, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](BasicStructEnum{B: lo.ToPtr("aaa")}), []byte{0x0, 0x1, 0x3, 0x61, 0x61, 0x61})
 	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](WithCustomCodec{}), []byte{0x1, 0x1, 0x2, 0x3})
+}
+
+type NonEnumInf interface{}
+
+type WithNonEnumInf struct {
+	A NonEnumInf `bcs:"not_enum"`
+}
+
+func (s *WithNonEnumInf) UnmarshalBCS(d *bcs.Decoder) error {
+	var a int
+	d.MustDecode(&a)
+	s.A = a
+	return nil
+}
+
+type WithNonEnumInfNoDecode WithNonEnumInf
+
+type WithNonEnumByteArrInf struct {
+	A NonEnumInf `bcs:"not_enum,bytearr"`
+}
+
+func (s *WithNonEnumByteArrInf) UnmarshalBCS(d *bcs.Decoder) error {
+	var b []byte
+	d.MustDecode(&b)
+
+	s.A = bcs.MustUnmarshal[int](b)
+	return nil
+}
+
+func TestInfNotEnum(t *testing.T) {
+	bcs.TestCodecAndBytesNoRef(t, &WithNonEnumInf{A: 42}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+
+	vEnc := bcs.MustMarshal(&WithNonEnumInfNoDecode{A: 42})
+	_, err := bcs.Unmarshal[WithNonEnumInfNoDecode](vEnc)
+	require.Error(t, err)
+
+	vEnc = bcs.MustMarshal(&WithNonEnumInfNoDecode{A: 42})
+	v := &WithNonEnumInfNoDecode{A: int(0)}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&v)
+	require.Equal(t, 42, v.A)
+
+	vEnc = bcs.MustMarshal(&WithNonEnumInfNoDecode{A: lo.ToPtr(43)})
+	v = &WithNonEnumInfNoDecode{A: lo.ToPtr(0)}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&v)
+	require.Equal(t, lo.ToPtr(43), v.A)
+
+	bcs.TestCodecAndBytesNoRef(t, &WithNonEnumByteArrInf{A: 42}, []byte{0x8, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 }

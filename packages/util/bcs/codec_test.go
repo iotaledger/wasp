@@ -98,6 +98,7 @@ func TestStringCodec(t *testing.T) {
 func TestArrayCodec(t *testing.T) {
 	bcs.TestCodecAndBytes(t, []int64{42, 43}, []byte{0x2, 0x2A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytes(t, []int8{42, 43}, []byte{0x2, 0x2A, 0x2B})
+	bcs.TestCodecAndBytes(t, []int8(nil), []byte{0x0})
 	bcs.TestCodecAndBytes(t, []uint8{42, 43}, []byte{0x2, 0x2A, 0x2B})
 	bcs.TestCodecAndBytes(t, []int64(nil), []byte{0x0})
 
@@ -222,6 +223,10 @@ type EmbeddedStruct struct {
 type OptionalEmbeddedStruct struct {
 	*BasicStruct `bcs:"optional"`
 	C            int64
+}
+
+type WithByteArr struct {
+	A int64 `bcs:"bytes=4,bytearr"`
 }
 
 type WithSlice struct {
@@ -400,6 +405,7 @@ func TestStructCodec(t *testing.T) {
 	bcs.TestCodecAndBytes(t, EmbeddedStruct{BasicStruct: BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestCodecAndBytes(t, OptionalEmbeddedStruct{BasicStruct: &BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestCodecAndBytes(t, OptionalEmbeddedStruct{BasicStruct: nil, C: 43}, []byte{0, 43, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytesNoRef(t, WithByteArr{A: 42}, []byte{4, 42, 0, 0, 0})
 	bcs.TestCodecAndBytes(t, WithSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytes(t, WithSlice{A: nil}, []byte{0x0})
 	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: &[]int32{42, 43}}, []byte{1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
@@ -443,4 +449,127 @@ func TestUnexportedFieldsCodec(t *testing.T) {
 	vDec.b = 43
 	vDec.D = 45
 	require.Equal(t, v, vDec)
+}
+
+func TestDecodingWithPresetMap(t *testing.T) {
+	vEnc := bcs.MustMarshal(&WithMap{
+		A: map[int16]bool{1: true, 2: false},
+	})
+
+	vDecMap := map[int16]bool{3: true}
+	vDec := WithMap{
+		A: vDecMap,
+	}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+
+	// NOTE: Preset maps are overriden, preset value is ignored, preset collection is not altered.
+	require.Equal(t, map[int16]bool{1: true, 2: false}, vDec.A)
+	require.Equal(t, map[int16]bool{3: true}, vDecMap)
+}
+
+func TestDecodingWithPresetSlice(t *testing.T) {
+	vEnc := bcs.MustMarshal(&WithSlice{
+		A: []int32{1, 2},
+	})
+
+	vDecArr := []int32{3}
+	vDec := WithSlice{
+		A: vDecArr,
+	}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+
+	// NOTE: Preset slices are overriden, preset value is ignored, preset collection is not altered.
+	require.Equal(t, []int32{1, 2}, vDec.A)
+	require.Equal(t, []int32{3}, vDecArr)
+}
+
+func TestDecodingWithPresetPtr(t *testing.T) {
+	vEnc := bcs.MustMarshal(&IntPtr{
+		A: lo.ToPtr[int64](42),
+	})
+
+	pv := lo.ToPtr[int64](43)
+	vDec := IntPtr{
+		A: pv,
+	}
+
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+	require.Equal(t, lo.ToPtr[int64](42), vDec.A)
+
+	// NOTE: Preset field pointers are KEPT. Their values ARE altered upon decoding.
+	*pv = 10
+	require.Equal(t, lo.ToPtr[int64](10), vDec.A)
+}
+
+func TestDecodingWithPresetOptional(t *testing.T) {
+	vEnc := bcs.MustMarshal(&IntOptional{
+		A: lo.ToPtr[int64](42),
+	})
+
+	vDecA := lo.ToPtr[int64](43)
+	vDec := IntOptional{
+		A: vDecA,
+	}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+	require.Equal(t, lo.ToPtr[int64](42), vDec.A)
+	require.Equal(t, lo.ToPtr[int64](42), vDecA)
+
+	vEnc = bcs.MustMarshal(&IntOptional{
+		A: nil,
+	})
+
+	vDec = IntOptional{
+		A: lo.ToPtr[int64](43),
+	}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+
+	// NOTE: Preset field pointers are KEPT. Their values ARE altered upon decoding, but ONLY if present.
+	require.Equal(t, lo.ToPtr[int64](43), vDec.A)
+}
+
+func TestDecodingWithPresetNestedPtr(t *testing.T) {
+	vEnc := bcs.MustMarshal(&OptionalNestedStruct{
+		A: 42,
+		B: &BasicStruct{A: 43, B: "aaa"},
+	})
+
+	pv := lo.ToPtr(BasicStruct{C: 20})
+	vDec := OptionalNestedStruct{
+		A: 45,
+		B: pv,
+	}
+
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+	require.Equal(t, &BasicStruct{A: 43, B: "aaa", C: 20}, vDec.B)
+
+	// NOTE: Preset field pointers are KEPT. Their values ARE altered upon decoding, but ONLY if present.
+	// This might be useful to preset some fields in decoded structure and pass it to other place where is decoded.
+	pv.A = 10
+	require.Equal(t, &BasicStruct{A: 10, B: "aaa", C: 20}, vDec.B)
+
+	vEnc = bcs.MustMarshal(&OptionalNestedStruct{
+		A: 42,
+		B: nil,
+	})
+
+	pv = lo.ToPtr(BasicStruct{C: 20})
+	vDec = OptionalNestedStruct{
+		A: 45,
+		B: pv,
+	}
+
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+	require.Equal(t, &BasicStruct{C: 20}, vDec.B)
+	pv.A = 10
+	require.Equal(t, &BasicStruct{A: 10, C: 20}, vDec.B)
+}
+
+func TestDecodingWithPresetStructEnumVariant(t *testing.T) {
+	vEnc := bcs.MustMarshal(&BasicStructEnum{B: lo.ToPtr("aaa")})
+
+	vDecB := lo.ToPtr("bbb")
+	vDec := BasicStructEnum{A: lo.ToPtr[int32](42), B: vDecB}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+	// NOTE: Preset struct enum variants are KEPT - for a performance reason.
+	require.Equal(t, BasicStructEnum{A: lo.ToPtr[int32](42), B: lo.ToPtr("aaa")}, vDec)
 }

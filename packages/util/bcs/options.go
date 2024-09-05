@@ -9,8 +9,9 @@ import (
 
 type TypeOptions struct {
 	//IncludeUnexported bool
-	LenBytes LenBytesCount
-	Bytes    ValueBytesCount
+	LenBytes           LenBytesCount
+	Bytes              ValueBytesCount
+	InterfaceIsNotEnum bool
 }
 
 func (o *TypeOptions) Validate() error {
@@ -28,6 +29,9 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	if other.Bytes != 0 {
 		o.Bytes = other.Bytes
 	}
+	if other.InterfaceIsNotEnum {
+		o.InterfaceIsNotEnum = true
+	}
 }
 
 type FieldOptions struct {
@@ -36,6 +40,7 @@ type FieldOptions struct {
 	Optional bool
 	//OmitEmpty bool
 	//ByteOrder    binary.ByteOrder
+	AsByteArray bool
 }
 
 func (o *FieldOptions) Validate() error {
@@ -88,6 +93,10 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 			opts.LenBytes = LenBytesCount(bytes)
 		case "optional":
 			opts.Optional = true
+		case "bytearr":
+			opts.AsByteArray = true
+		case "not_enum":
+			opts.InterfaceIsNotEnum = true
 		case "":
 			return FieldOptions{}, fmt.Errorf("empty field tag")
 		default:

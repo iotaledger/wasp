@@ -31,18 +31,22 @@ func (c *DecoderConfig) InitializeDefaults() {
 	}
 }
 
-func NewDecoder(src io.Reader, cfg DecoderConfig) *Decoder {
+func NewDecoder(src io.Reader) *Decoder {
+	return NewDecoderWithOpts(src, DecoderConfig{})
+}
+
+func NewDecoderWithOpts(src io.Reader, cfg DecoderConfig) *Decoder {
 	cfg.InitializeDefaults()
 
 	return &Decoder{
 		cfg: cfg,
-		r:   *rwutil.NewReader(src),
+		r:   rwutil.NewReader(src),
 	}
 }
 
 type Decoder struct {
 	cfg DecoderConfig
-	r   rwutil.Reader
+	r   *rwutil.Reader
 	err error
 }
 
@@ -97,7 +101,7 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		t = d.getEncodedType(v.Type())
 	}
 
-	v = d.getEncodedValue(v, t.RefLevelsCount)
+	v = d.getDecodedValueStorage(v, t.RefLevelsCount)
 
 	if t.Customization == typeCustomizationHasCustomCodec {
 		if err := t.CustomDecoder(d, v.Addr()); err != nil {
@@ -115,53 +119,42 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		typeOptions.Update(*typeOptionsFromTag)
 	}
 
+	var err error
+
 	switch v.Kind() {
 	case reflect.Bool:
 		v.SetBool(d.r.ReadBool())
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		if err := d.decodeInt(v, defaultValueSize(v.Kind()), typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = d.decodeInt(v, defaultValueSize(v.Kind()), typeOptions.Bytes)
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		if err := d.decodeUint(v, defaultValueSize(v.Kind()), typeOptions.Bytes); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = d.decodeUint(v, defaultValueSize(v.Kind()), typeOptions.Bytes)
 	case reflect.String:
 		v.SetString(d.r.ReadString())
 	case reflect.Slice:
-		if err := d.decodeSlice(v, typeOptions); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = d.decodeSlice(v, typeOptions)
 	case reflect.Array:
-		if err := d.decodeArray(v); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = d.decodeArray(v)
 	case reflect.Map:
-		if err := d.decodeMap(v, typeOptions); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
-		}
+		err = d.decodeMap(v, typeOptions)
 	case reflect.Struct:
 		if t.Customization == typeCustomizationIsStructEnum {
-			if err := d.decodeStructEnum(v); err != nil {
-				return fmt.Errorf("%v: %w", v.Type(), err)
-			}
+			err = d.decodeStructEnum(v)
 		} else {
-			if err := d.decodeStruct(v); err != nil {
-				return fmt.Errorf("%v: %w", v.Type(), err)
-			}
+			err = d.decodeStruct(v)
 		}
 	case reflect.Interface:
-		if t.Customization != typeCustomizationIsInterfaceEnum {
-			panic(fmt.Errorf("unexpected type customization %v", v.Type()))
-		}
-
-		if err := d.decodeInterfaceEnum(v); err != nil {
-			return fmt.Errorf("%v: %w", v.Type(), err)
+		if typeOptions.InterfaceIsNotEnum {
+			err = d.decodeInterface(v)
+		} else {
+			err = d.decodeInterfaceEnum(v)
 		}
 	default:
 		return fmt.Errorf("%v: cannot decode unknown type", v.Type())
 	}
 
+	if err != nil {
+		return fmt.Errorf("%v: %w", v.Type(), err)
+	}
 	if d.r.Err != nil {
 		return fmt.Errorf("%v: %w", v.Type(), d.r.Err)
 	}
@@ -180,7 +173,7 @@ func (e *Decoder) checkTypeCustomizations(t reflect.Type) (typeCustomization, Cu
 
 	switch {
 	case kind == reflect.Interface:
-		return typeCustomizationIsInterfaceEnum, nil
+		return typeCustomizationNone, nil
 	case kind == reflect.Struct && t.Implements(enumT):
 		return typeCustomizationIsStructEnum, nil
 	case t.Implements(bcsTypeT):
@@ -210,7 +203,7 @@ func (e *Decoder) getEncodedType(t reflect.Type) typeInfo {
 	return typeInfo{refLevelsCount, customization, nil, customDecoder}
 }
 
-func (d *Decoder) getEncodedValue(v reflect.Value, refLevelsCount int) (dereferenced reflect.Value) {
+func (d *Decoder) getDecodedValueStorage(v reflect.Value, refLevelsCount int) (dereferenced reflect.Value) {
 	// Getting rid of found redundant pointers AND creating a new value to be able to set it.
 
 	for i := 0; i < refLevelsCount; i++ {
@@ -227,9 +220,9 @@ func (d *Decoder) getEncodedValue(v reflect.Value, refLevelsCount int) (derefere
 			v.Set(reflect.New(v.Type().Elem()))
 		}
 	case reflect.Map:
-		if v.IsNil() {
-			v.Set(reflect.MakeMap(v.Type()))
-		}
+		// NOTE: Always creating new map even if it is not nil.
+		// Collection should have exactly those elements that are encoded.
+		v.Set(reflect.MakeMap(v.Type()))
 	}
 
 	return v
@@ -413,8 +406,6 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 		return fmt.Errorf("invalid map size type: %v", typOpts.LenBytes)
 	}
 
-	v.Set(reflect.MakeMap(v.Type()))
-
 	keyType := v.Type().Key()
 	valueType := v.Type().Elem()
 
@@ -441,6 +432,9 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 
 func (d *Decoder) decodeStruct(v reflect.Value) error {
 	t := v.Type()
+
+	origStream := d.r
+	defer func() { d.r = origStream }() // for case of panic/error
 
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
@@ -473,14 +467,35 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 				present := d.r.ReadByte()
 
 				if present == 0 {
+					// TODO: should we "clean" the field?
+					// I'm not doing it to allow presetting it and keeping even if it was missing.
 					continue
 				}
 			}
 		}
 
+		if fieldOpts.AsByteArray {
+			// This value was written as variable array of bytes.
+			// Bytes of array are same as of value but they also have length prepended to them. So in theory we could just
+			// skip length and continue reading. But that may result in confusing decoding errors in case of corrupted data.
+			// So more reliable way is to separate those bytes and decode from them.
+
+			b := make([]byte, int(d.r.ReadSize32()))
+			d.r.ReadN(b)
+
+			if d.r.Err != nil {
+				return fmt.Errorf("%v:bytearr:  %w", v.Type(), d.r.Err)
+			}
+
+			fmt.Println("XXX", b)
+			d.r = rwutil.NewBytesReader(b)
+		}
+
 		if err := d.decodeValue(fieldVal, &fieldOpts.TypeOptions, nil); err != nil {
 			return fmt.Errorf("%v: %w", fieldType.Name, err)
 		}
+
+		d.r = origStream
 	}
 
 	return nil
@@ -495,6 +510,36 @@ func (d *Decoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions,
 	}
 
 	return fieldOpts, hasTag, nil
+}
+
+func (d *Decoder) decodeInterface(v reflect.Value) error {
+	if v.IsNil() {
+		return fmt.Errorf("cannot decode interface which is not enum and has nil value")
+	}
+
+	e := v.Elem()
+
+	if e.Kind() == reflect.Ptr {
+		fmt.Println("XXX 1")
+		return d.decodeValue(e, nil, nil)
+	}
+
+	fmt.Println("XXX 2")
+
+	// Interface is not nil and contains non-pointer value.
+	// This means the value is not addressable - we cannot decode into it.
+	// So we need to create a copy of the value and decode into it.
+	eCopy := reflect.New(e.Type()).Elem()
+	eCopy.Set(e)
+	e = eCopy
+
+	if err := d.decodeValue(e, nil, nil); err != nil {
+		return err
+	}
+
+	v.Set(e)
+
+	return nil
 }
 
 func (d *Decoder) decodeInterfaceEnum(v reflect.Value) error {
@@ -561,7 +606,7 @@ func MustDecode[V any](dec *Decoder) V {
 }
 
 func UnmarshalStream[T any](r io.Reader) (T, error) {
-	dec := NewDecoder(r, DecoderConfig{})
+	dec := NewDecoder(r)
 	return Decode[T](dec)
 }
 
