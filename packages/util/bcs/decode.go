@@ -487,7 +487,6 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 				return fmt.Errorf("%v:bytearr:  %w", v.Type(), d.r.Err)
 			}
 
-			fmt.Println("XXX", b)
 			d.r = rwutil.NewBytesReader(b)
 		}
 
@@ -520,11 +519,8 @@ func (d *Decoder) decodeInterface(v reflect.Value) error {
 	e := v.Elem()
 
 	if e.Kind() == reflect.Ptr {
-		fmt.Println("XXX 1")
 		return d.decodeValue(e, nil, nil)
 	}
-
-	fmt.Println("XXX 2")
 
 	// Interface is not nil and contains non-pointer value.
 	// This means the value is not addressable - we cannot decode into it.
