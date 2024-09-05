@@ -26,8 +26,10 @@ func TestCodec[V any](t *testing.T, v V) []byte {
 //   - encoding and decoding succeed
 //   - decoded value is equal to the original
 func TestCodecNoRef[V any](t *testing.T, v V) []byte {
-	vEnc := lo.Must1(Marshal(&v))
-	vDec := lo.Must1(Unmarshal[V](vEnc))
+	vEnc, err := Marshal(&v)
+	require.NoError(t, err, "%#v", v)
+	vDec, err := Unmarshal[V](vEnc)
+	require.NoError(t, err, "%#v", vEnc)
 	require.Equal(t, v, vDec, vEnc)
 	require.NotEmpty(t, vEnc)
 

@@ -68,7 +68,7 @@ func RegisterEnumTypeWithIDs[EnumType any](variants map[EnumVariantID]any) struc
 	}()
 
 	for id, v := range variants {
-		return RegisterEnumTypeVariant[EnumType](id, v)
+		RegisterEnumTypeVariant[EnumType](id, v)
 	}
 
 	registeredSuccessufly = true
