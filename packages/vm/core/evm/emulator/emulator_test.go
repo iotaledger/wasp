@@ -368,8 +368,6 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	}, emu)
 	require.NoError(t, err)
 
-	require.NoError(t, err)
-
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, txValue, gasLimit, gasPrice, data),
 		emu.Signer(),
