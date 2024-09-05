@@ -28,7 +28,7 @@ func TestCodec[V any](t *testing.T, v V) []byte {
 func TestCodecNoRef[V any](t *testing.T, v V) []byte {
 	vEnc := lo.Must1(Marshal(&v))
 	vDec := lo.Must1(Unmarshal[V](vEnc))
-	require.Equal(t, v, vDec)
+	require.Equal(t, v, vDec, vEnc)
 	require.NotEmpty(t, vEnc)
 
 	return vEnc

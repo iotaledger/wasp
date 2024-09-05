@@ -1,11 +1,11 @@
 package bcs_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
+	"golang.org/x/exp/maps"
 )
 
 type BasicStructEnum struct {
@@ -58,9 +58,7 @@ type StructEnumWithNullableVariants struct {
 func (StructEnumWithNullableVariants) IsBcsEnum() {}
 
 func TestStructEnumWithInfEnumVariant(t *testing.T) {
-	t.Cleanup(func() {
-		bcs.EnumTypes = make(map[reflect.Type][]reflect.Type)
-	})
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
 
 	bcs.RegisterEnumType2[InfEnum1, WithCustomCodec, string]()
 
