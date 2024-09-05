@@ -154,13 +154,16 @@ type WithNonEnumInfNoDecode WithNonEnumInf
 
 type WithNonEnumByteArrInf struct {
 	A NonEnumInf `bcs:"not_enum,bytearr"`
+	B int
 }
 
 func (s *WithNonEnumByteArrInf) UnmarshalBCS(d *bcs.Decoder) error {
 	var b []byte
 	d.MustDecode(&b)
-
 	s.A = bcs.MustUnmarshal[int](b)
+
+	d.MustDecode(&s.B)
+
 	return nil
 }
 
@@ -181,5 +184,5 @@ func TestInfNotEnum(t *testing.T) {
 	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&v)
 	require.Equal(t, lo.ToPtr(43), v.A)
 
-	bcs.TestCodecAndBytesNoRef(t, &WithNonEnumByteArrInf{A: 42}, []byte{0x8, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytesNoRef(t, &WithNonEnumByteArrInf{A: 42, B: 10}, []byte{0x8, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 }

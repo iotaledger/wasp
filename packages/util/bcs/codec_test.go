@@ -226,7 +226,9 @@ type OptionalEmbeddedStruct struct {
 }
 
 type WithByteArr struct {
-	A int64 `bcs:"bytes=4,bytearr"`
+	A string
+	B int64 `bcs:"bytes=4,bytearr"`
+	C string
 }
 
 type WithSlice struct {
@@ -405,7 +407,7 @@ func TestStructCodec(t *testing.T) {
 	bcs.TestCodecAndBytes(t, EmbeddedStruct{BasicStruct: BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestCodecAndBytes(t, OptionalEmbeddedStruct{BasicStruct: &BasicStruct{A: 42, B: "aaa"}, C: 43}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97, 43, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestCodecAndBytes(t, OptionalEmbeddedStruct{BasicStruct: nil, C: 43}, []byte{0, 43, 0, 0, 0, 0, 0, 0, 0})
-	bcs.TestCodecAndBytesNoRef(t, WithByteArr{A: 42}, []byte{4, 42, 0, 0, 0})
+	bcs.TestCodecAndBytesNoRef(t, WithByteArr{A: "aaa", B: 42, C: "ccc"}, []byte{0x3, 0x61, 0x61, 0x61, 0x4, 0x2a, 0x0, 0x0, 0x0, 0x3, 0x63, 0x63, 0x63})
 	bcs.TestCodecAndBytes(t, WithSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytes(t, WithSlice{A: nil}, []byte{0x0})
 	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: &[]int32{42, 43}}, []byte{1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
@@ -442,6 +444,7 @@ func TestStructCodec(t *testing.T) {
 func TestUnexportedFieldsCodec(t *testing.T) {
 	v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
 	vEnc := lo.Must1(bcs.Marshal(&v))
+	require.Equal(t, []byte{42, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 44, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, vEnc)
 	vDec := lo.Must1(bcs.Unmarshal[WitUnexported](vEnc))
 	require.NotEqual(t, v, vDec)
 	require.Equal(t, 0, vDec.b)

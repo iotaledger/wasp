@@ -545,7 +545,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		}
 
 		if fieldOpts.Skip {
-			return nil
+			continue
 		}
 
 		fieldVal := v.Field(i)
@@ -553,7 +553,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		if !fieldType.IsExported() {
 			if !hasTag {
 				// Unexported fields without tags are skipped
-				return nil
+				continue
 			}
 
 			if !fieldVal.CanAddr() {

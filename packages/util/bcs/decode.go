@@ -484,7 +484,7 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 			d.r.ReadN(b)
 
 			if d.r.Err != nil {
-				return fmt.Errorf("%v:bytearr:  %w", v.Type(), d.r.Err)
+				return fmt.Errorf("%v: bytearr:  %w", v.Type(), d.r.Err)
 			}
 
 			d.r = rwutil.NewBytesReader(b)
