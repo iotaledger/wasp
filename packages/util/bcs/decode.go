@@ -133,7 +133,7 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	case reflect.Slice:
 		err = d.decodeSlice(v, typeOptions)
 	case reflect.Array:
-		err = d.decodeArray(v)
+		err = d.decodeArray(v, typeOptions)
 	case reflect.Map:
 		err = d.decodeMap(v, typeOptions)
 	case reflect.Struct:
@@ -302,10 +302,10 @@ func (d *Decoder) decodeSlice(v reflect.Value, typOpts TypeOptions) error {
 
 	v.Set(reflect.MakeSlice(v.Type(), length, length))
 
-	return d.decodeArray(v)
+	return d.decodeArray(v, typOpts)
 }
 
-func (d *Decoder) decodeArray(v reflect.Value) error {
+func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
 	elemType := v.Type().Elem()
 
 	// We take pointer because elements of array are addressable and
@@ -316,13 +316,13 @@ func (d *Decoder) decodeArray(v reflect.Value) error {
 		// Optimizations for decoding of basic types
 		switch elemType.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if err := d.decodeIntArray(v, defaultValueSize(elemType.Kind())); err != nil {
+			if err := d.decodeIntArray(v, defaultValueSize(elemType.Kind()), typOpts); err != nil {
 				return fmt.Errorf("%v: %w", elemType, err)
 			}
 
 			return nil
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			if err := d.decodeUintArray(v, defaultValueSize(elemType.Kind())); err != nil {
+			if err := d.decodeUintArray(v, defaultValueSize(elemType.Kind()), typOpts); err != nil {
 				return fmt.Errorf("%v: %w", elemType, err)
 			}
 
@@ -330,32 +330,80 @@ func (d *Decoder) decodeArray(v reflect.Value) error {
 		}
 	}
 
-	for i := 0; i < v.Len(); i++ {
-		if err := d.decodeValue(v.Index(i).Addr(), nil, &t); err != nil {
-			return fmt.Errorf("[%v]: %w", i, err)
+	if typOpts.ElemAsByteArray {
+		// Elements are encoded as byte arrays.
+		for i := 0; i < v.Len(); i++ {
+			err := d.decodeAsByteArray(func() error {
+				return d.decodeValue(v.Index(i).Addr(), nil, &t)
+			})
+			if err != nil {
+				return fmt.Errorf("[%v]: %w", i, err)
+			}
+		}
+	} else {
+		for i := 0; i < v.Len(); i++ {
+			if err := d.decodeValue(v.Index(i).Addr(), nil, &t); err != nil {
+				return fmt.Errorf("[%v]: %w", i, err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount) error {
+func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
 	switch bytesPerElem {
 	case Value1Byte:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetInt(int64(d.r.ReadInt8()))
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(1); err != nil {
+					return err
+				}
+				v.Index(i).SetInt(int64(d.r.ReadInt8()))
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetInt(int64(d.r.ReadInt8()))
+			}
 		}
 	case Value2Bytes:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetInt(int64(d.r.ReadInt16()))
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(2); err != nil {
+					return err
+				}
+				v.Index(i).SetInt(int64(d.r.ReadInt16()))
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetInt(int64(d.r.ReadInt16()))
+			}
 		}
 	case Value4Bytes:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetInt(int64(d.r.ReadInt32()))
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(4); err != nil {
+					return err
+				}
+				v.Index(i).SetInt(int64(d.r.ReadInt32()))
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetInt(int64(d.r.ReadInt32()))
+			}
 		}
 	case Value8Bytes:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetInt(d.r.ReadInt64())
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(8); err != nil {
+					return err
+				}
+				v.Index(i).SetInt(d.r.ReadInt64())
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetInt(d.r.ReadInt64())
+			}
 		}
 	default:
 		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
@@ -364,34 +412,80 @@ func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount) 
 	return d.r.Err
 }
 
-func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount) error {
+func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
 	switch bytesPerElem {
 	case Value1Byte:
-		// Optimization for decoding of byte/uint8 slices
-		b := make([]byte, v.Len())
-		d.r.ReadN(b)
-		if v.Kind() == reflect.Slice {
-			v.SetBytes(b)
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(1); err != nil {
+					return err
+				}
+				v.Index(i).SetUint(uint64(d.r.ReadUint8()))
+			}
 		} else {
-			v.Set(reflect.ValueOf(b).Convert(v.Type()))
+			// Optimization for decoding of byte/uint8 slices
+			b := make([]byte, v.Len())
+			d.r.ReadN(b)
+
+			if v.Kind() == reflect.Slice {
+				v.SetBytes(b)
+			} else {
+				v.Set(reflect.ValueOf(b).Convert(v.Type()))
+			}
 		}
 	case Value2Bytes:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetUint(uint64(d.r.ReadUint16()))
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(2); err != nil {
+					return err
+				}
+				v.Index(i).SetUint(uint64(d.r.ReadUint16()))
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetUint(uint64(d.r.ReadUint16()))
+			}
 		}
 	case Value4Bytes:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetUint(uint64(d.r.ReadUint32()))
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(4); err != nil {
+					return err
+				}
+				v.Index(i).SetUint(uint64(d.r.ReadUint32()))
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetUint(uint64(d.r.ReadUint32()))
+			}
 		}
 	case Value8Bytes:
-		for i := 0; i < v.Len(); i++ {
-			v.Index(i).SetUint(d.r.ReadUint64())
+		if typOpts.ElemAsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				if err := d.readAndCheckByteArraySize(8); err != nil {
+					return err
+				}
+				v.Index(i).SetUint(d.r.ReadUint64())
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				v.Index(i).SetUint(d.r.ReadUint64())
+			}
 		}
 	default:
 		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
 	}
 
 	return d.r.Err
+}
+
+func (d *Decoder) readAndCheckByteArraySize(expected uint8) error {
+	size := d.r.ReadUint8()
+	if size != expected {
+		return fmt.Errorf("invalid byte array length: expected %v, got %v", expected, size)
+	}
+
+	return nil
 }
 
 func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
@@ -412,16 +506,32 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 	keyTypeDeref := d.getEncodedType(keyType)
 	valueTypeDeref := d.getEncodedType(valueType)
 
+	var err error
+
 	for i := 0; i < length; i++ {
 		key := reflect.New(keyType).Elem()
 		value := reflect.New(valueType).Elem()
 
-		if err := d.decodeValue(key, nil, &keyTypeDeref); err != nil {
-			return fmt.Errorf("key: %w", err)
+		dec := func() error {
+			if err := d.decodeValue(key, nil, &keyTypeDeref); err != nil {
+				return fmt.Errorf("key: %w", err)
+			}
+
+			if err := d.decodeValue(value, nil, &valueTypeDeref); err != nil {
+				return fmt.Errorf("value: %w", err)
+			}
+
+			return nil
 		}
 
-		if err := d.decodeValue(value, nil, &valueTypeDeref); err != nil {
-			return fmt.Errorf("value: %w", err)
+		if typOpts.ElemAsByteArray {
+			err = d.decodeAsByteArray(dec)
+		} else {
+			err = dec()
+		}
+
+		if err != nil {
+			return fmt.Errorf("[%v]: %w", i, err)
 		}
 
 		v.SetMapIndex(key, value)
@@ -432,9 +542,6 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 
 func (d *Decoder) decodeStruct(v reflect.Value) error {
 	t := v.Type()
-
-	origStream := d.r
-	defer func() { d.r = origStream }() // for case of panic/error
 
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
@@ -475,26 +582,16 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 		}
 
 		if fieldOpts.AsByteArray {
-			// This value was written as variable array of bytes.
-			// Bytes of array are same as of value but they also have length prepended to them. So in theory we could just
-			// skip length and continue reading. But that may result in confusing decoding errors in case of corrupted data.
-			// So more reliable way is to separate those bytes and decode from them.
-
-			b := make([]byte, int(d.r.ReadSize32()))
-			d.r.ReadN(b)
-
-			if d.r.Err != nil {
-				return fmt.Errorf("%v: bytearr:  %w", v.Type(), d.r.Err)
-			}
-
-			d.r = rwutil.NewBytesReader(b)
+			err = d.decodeAsByteArray(func() error {
+				return d.decodeValue(fieldVal, &fieldOpts.TypeOptions, nil)
+			})
+		} else {
+			err = d.decodeValue(fieldVal, &fieldOpts.TypeOptions, nil)
 		}
 
-		if err := d.decodeValue(fieldVal, &fieldOpts.TypeOptions, nil); err != nil {
+		if err != nil {
 			return fmt.Errorf("%v: %w", fieldType.Name, err)
 		}
-
-		d.r = origStream
 	}
 
 	return nil
@@ -574,6 +671,27 @@ func (d *Decoder) decodeStructEnum(v reflect.Value) error {
 	}
 
 	return d.decodeValue(v.Field(int(variantIdx)), nil, nil)
+}
+
+func (d *Decoder) decodeAsByteArray(dec func() error) error {
+	// This value was written as variable array of bytes.
+	// Bytes of array are same as of value but they also have length prepended to them. So in theory we could just
+	// skip length and continue reading. But that may result in confusing decoding errors in case of corrupted data.
+	// So more reliable way is to separate those bytes and decode from them.
+
+	b := make([]byte, int(d.r.ReadSize32()))
+	d.r.ReadN(b)
+
+	if d.r.Err != nil {
+		return fmt.Errorf("bytearr: %w", d.r.Err)
+	}
+
+	origStream := d.r
+	defer func() { d.r = origStream }() // for case of panic/error
+
+	d.r = rwutil.NewBytesReader(b)
+
+	return dec()
 }
 
 // func (d *Decoder) Writer() *rwutil.Writer {

@@ -12,6 +12,7 @@ type TypeOptions struct {
 	LenBytes           LenBytesCount
 	Bytes              ValueBytesCount
 	InterfaceIsNotEnum bool
+	ElemAsByteArray    bool
 }
 
 func (o *TypeOptions) Validate() error {
@@ -31,6 +32,9 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	}
 	if other.InterfaceIsNotEnum {
 		o.InterfaceIsNotEnum = true
+	}
+	if other.ElemAsByteArray {
+		o.ElemAsByteArray = true
 	}
 }
 
@@ -95,6 +99,8 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 			opts.Optional = true
 		case "bytearr":
 			opts.AsByteArray = true
+		case "elem_bytearr":
+			opts.ElemAsByteArray = true
 		case "not_enum":
 			opts.InterfaceIsNotEnum = true
 		case "":
