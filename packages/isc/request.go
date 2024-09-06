@@ -2,7 +2,6 @@ package isc
 
 import (
 	"fmt"
-	"io"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -13,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -23,9 +23,10 @@ type Request interface {
 	Bytes() []byte
 	IsOffLedger() bool
 	String() string
+}
 
-	Read(r io.Reader) error
-	Write(w io.Writer) error
+func init() {
+	bcs.RegisterEnumType4[Request, *onLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest]()
 }
 
 func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
@@ -79,6 +80,10 @@ type OnLedgerRequest interface {
 	Clone() OnLedgerRequest
 	RequestRef() sui.ObjectRef
 	AssetsBag() *iscmove.AssetsBag
+}
+
+func init() {
+	bcs.RegisterEnumType1[OnLedgerRequest, *onLedgerRequestData]()
 }
 
 func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, args ...interface{}), prefix string) {

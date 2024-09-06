@@ -2,23 +2,19 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
-	"io"
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type KeyPair struct {
-	privateKey *PrivateKey
-	publicKey  *PublicKey
+	privateKey *PrivateKey `bcs:""`
+	publicKey  *PublicKey  `bcs:""`
 }
 
 var (
-	_ rwutil.IoReader = &KeyPair{}
-	_ rwutil.IoWriter = &KeyPair{}
-	_ Signer          = &KeyPair{}
+	_ Signer = &KeyPair{}
 )
 
 // NewKeyPair creates a new key pair with a randomly generated seed
@@ -78,20 +74,4 @@ func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent suisigner.Intent)
 	sig := ed25519.Sign(k.privateKey.key, hash[:])
 
 	return NewSignature(k.GetPublicKey(), sig), nil
-}
-
-func (k *KeyPair) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	k.publicKey = new(PublicKey)
-	rr.Read(k.publicKey)
-	k.privateKey = new(PrivateKey)
-	rr.Read(k.privateKey)
-	return rr.Err
-}
-
-func (k *KeyPair) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(k.publicKey)
-	ww.Write(k.privateKey)
-	return ww.Err
 }

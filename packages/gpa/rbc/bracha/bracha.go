@@ -48,7 +48,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type rbc struct {
@@ -269,7 +269,16 @@ func (r *rbc) StatusString() string {
 	)
 }
 
+func (r *rbc) MarshalMessage(msg gpa.Message) ([]byte, error) {
+	brachaMsg, ok := msg.(*msgBracha)
+	if !ok {
+		return nil, fmt.Errorf("unexpected message: %+v", msg)
+	}
+
+	return bcs.Marshal(brachaMsg)
+}
+
 // Implements the GPA interface.
 func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return rwutil.ReadFromBytes(data, new(msgBracha))
+	return bcs.Unmarshal[*msgBracha](data)
 }

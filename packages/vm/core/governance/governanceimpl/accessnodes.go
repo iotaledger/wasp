@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -60,7 +61,7 @@ func addCandidateNode(
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey.Bytes())
 
 	state := governance.NewStateWriterFromSandbox(ctx)
-	state.AccessNodeCandidatesMap().SetAt(ani.NodePubKey.Bytes(), rwutil.WriteToBytes(&ani.AccessNodeData))
+	state.AccessNodeCandidatesMap().SetAt(ani.NodePubKey.Bytes(), bcs.MustMarshal(&ani.AccessNodeData))
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {

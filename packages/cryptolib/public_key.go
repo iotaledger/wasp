@@ -4,7 +4,6 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
-	"io"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
@@ -12,21 +11,16 @@ import (
 	"github.com/minio/blake2b-simd"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type PublicKey struct {
-	key ed25519.PublicKey
+	key ed25519.PublicKey `bcs:""`
 }
 
 type PublicKeyKey [PublicKeySize]byte
 
 const PublicKeySize = ed25519.PublicKeySize
-
-var (
-	_ rwutil.IoReader = &PublicKey{}
-	_ rwutil.IoWriter = &PublicKey{}
-)
 
 func publicKeyFromCrypto(cryptoPublicKey ed25519.PublicKey) *PublicKey {
 	return &PublicKey{cryptoPublicKey}
@@ -104,22 +98,21 @@ func (pkT *PublicKey) String() string {
 	return iotago.EncodeHex(pkT.key)
 }
 
-func (pkT *PublicKey) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	pkT.key = make([]byte, PublicKeySize)
-	rr.ReadN(pkT.key)
-	return rr.Err
+func (pkT *PublicKey) Bytes() []byte {
+	return bcs.MustMarshal(pkT)
 }
 
-func (pkT *PublicKey) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
+func (pkT *PublicKey) UnmarshalBCS(d *bcs.Decoder) error {
+	_, err := d.Read(pkT.key)
+	return err
+}
+
+func (pkT *PublicKey) MarshalBCS(e *bcs.Encoder) error {
 	if len(pkT.key) != PublicKeySize {
 		panic("unexpected public key size for write")
 	}
-	ww.WriteN(pkT.key)
-	return ww.Err
-}
 
-func (pkT *PublicKey) Bytes() []byte {
-	return rwutil.WriteToBytes(pkT)
+	_, err := e.Write(pkT.key)
+
+	return err
 }

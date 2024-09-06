@@ -48,43 +48,11 @@ type AccessNodeData struct {
 	AccessAPI     string                   // API URL, if any.
 }
 
-func (a *AccessNodeData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(a.ValidatorAddr)
-	ww.WriteBytes(a.Certificate)
-	ww.WriteBool(a.ForCommittee)
-	ww.WriteString(a.AccessAPI)
-	return ww.Err
-}
-
-func (a *AccessNodeData) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	a.ValidatorAddr = rwutil.ReadStruct(rr, new(cryptolib.Address))
-	a.Certificate = rr.ReadBytes()
-	a.ForCommittee = rr.ReadBool()
-	a.AccessAPI = rr.ReadString()
-	return rr.Err
-}
-
 // AccessNodeInfo conveys all the information that is maintained
 // on the governance SC about a specific node.
 type AccessNodeInfo struct {
 	NodePubKey *cryptolib.PublicKey // Public Key of the node. Stored as a key in the SC State and Params.
 	AccessNodeData
-}
-
-func (a *AccessNodeInfo) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(a.NodePubKey)
-	ww.Write(&a.AccessNodeData)
-	return ww.Err
-}
-
-func (a *AccessNodeInfo) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(a.NodePubKey)
-	rr.Read(&a.AccessNodeData)
-	return rr.Err
 }
 
 var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()

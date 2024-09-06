@@ -46,6 +46,10 @@ func (o *OwnHandler) StatusString() string {
 	return fmt.Sprintf("{OWN%s}", o.target.StatusString())
 }
 
+func (o *OwnHandler) MarshalMessage(msg Message) ([]byte, error) {
+	return o.target.MarshalMessage(msg)
+}
+
 func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return o.target.UnmarshalMessage(data)
 }

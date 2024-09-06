@@ -4,12 +4,12 @@
 package gpa
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (
@@ -102,6 +102,24 @@ func (a *ackHandler) Output() Output {
 
 func (a *ackHandler) StatusString() string {
 	return fmt.Sprintf("{ACK:%s}", a.nested.StatusString())
+}
+
+func (a *ackHandler) MarshalMessage(msg Message) ([]byte, error) {
+	var b bytes.Buffer
+	e := bcs.NewEncoder(&b)
+
+	switch msg := msg.(type) {
+	case *ackHandlerReset:
+		e.Encode(msgTypeAckHandlerReset)
+		e.Encode(msg)
+	case *ackHandlerBatch:
+		e.Encode(msgTypeAckHandlerBatch)
+		e.Encode(msg)
+	default:
+		return nil, fmt.Errorf("unexpected message type: %T", msg)
+	}
+
+	return b.Bytes(), e.Err()
 }
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
@@ -297,27 +315,11 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 
 type ackHandlerReset struct {
 	BasicMessage
-	response bool
-	latestID int
+	response bool `bcs:""`
+	latestID int  `bcs:""`
 }
 
 var _ Message = new(ackHandlerReset)
-
-func (msg *ackHandlerReset) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeAckHandlerReset.ReadAndVerify(rr)
-	msg.response = rr.ReadBool()
-	msg.latestID = int(rr.ReadUint32())
-	return rr.Err
-}
-
-func (msg *ackHandlerReset) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeAckHandlerReset.Write(ww)
-	ww.WriteBool(msg.response)
-	ww.WriteUint32(uint32(msg.latestID))
-	return ww.Err
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ackHandlerBatch
@@ -326,9 +328,9 @@ func (msg *ackHandlerReset) Write(w io.Writer) error {
 type ackHandlerBatch struct {
 	sender    NodeID
 	recipient NodeID
-	id        *int       // That's ACK only, if nil.
-	msgs      []Message  // Messages in the batch.
-	acks      []int      // Acknowledged batches.
+	id        *int       `bcs:"optional"`                                // That's ACK only, if nil.
+	msgs      []Message  `bcs:"len_bytes=2" bcs_elem:"not_enum,bytearr"` // Messages in the batch.
+	acks      []int      `bcs:"len_bytes=2"`                             // Acknowledged batches.
 	sent      *time.Time // Transient, only used for outgoing messages, not sent to the outside.
 	nestedGPA GPA        // Transient, for un-marshaling only.
 }
@@ -346,48 +348,27 @@ func (msg *ackHandlerBatch) SetSender(sender NodeID) {
 	}
 }
 
-func (msg *ackHandlerBatch) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeAckHandlerBatch.ReadAndVerify(rr)
+func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
+	var err error
 	msg.id = nil
-	hasID := rr.ReadBool()
-	if hasID {
-		id := int(rr.ReadUint32())
-		msg.id = &id
+
+	if hasID, _ := bcs.Decode[bool](d); hasID {
+		d.Decode(&msg.id)
 	}
 
-	size := rr.ReadSize16()
-	msg.msgs = make([]Message, size)
-	for i := range msg.msgs {
-		msg.msgs[i] = rwutil.ReadFromFunc(rr, msg.nestedGPA.UnmarshalMessage)
+	msgsBytes, _ := bcs.Decode[[][]byte](d)
+	msg.msgs = make([]Message, len(msgsBytes))
+
+	for i := range msgsBytes {
+		msg.msgs[i], err = msg.nestedGPA.UnmarshalMessage(msgsBytes[i])
+		if err != nil {
+			return err
+		}
 	}
 
-	size = rr.ReadSize16()
-	msg.acks = make([]int, size)
-	for i := range msg.acks {
-		msg.acks[i] = int(rr.ReadUint32())
-	}
-	return rr.Err
-}
+	msg.acks, err = bcs.Decode[[]int](d)
 
-func (msg *ackHandlerBatch) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeAckHandlerBatch.Write(ww)
-	ww.WriteBool(msg.id != nil)
-	if msg.id != nil {
-		ww.WriteUint32(uint32(*msg.id))
-	}
-
-	ww.WriteSize16(len(msg.msgs))
-	for i := range msg.msgs {
-		ww.WriteBytes(rwutil.WriteToBytes(msg.msgs[i]))
-	}
-
-	ww.WriteSize16(len(msg.acks))
-	for i := range msg.acks {
-		ww.WriteUint32(uint32(msg.acks[i]))
-	}
-	return ww.Err
+	return err
 }
 
 ////////////////////////////////////////////////////////////////////////////////

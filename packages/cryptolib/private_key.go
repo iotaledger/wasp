@@ -4,25 +4,18 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
-	"io"
 
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/util/key"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type PrivateKey struct {
-	key ed25519.PrivateKey
+	key ed25519.PrivateKey `bcs:""`
 }
 
 const PrivateKeySize = ed25519.PrivateKeySize
-
-var (
-	_ rwutil.IoReader = &PrivateKey{}
-	_ rwutil.IoWriter = &PrivateKey{}
-)
 
 func NewPrivateKey() *PrivateKey {
 	return PrivateKeyFromSeed(NewSeed())
@@ -84,20 +77,4 @@ func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address)
 
 func (pkT *PrivateKey) AddressKeys(addr iotago.Address) iotago.AddressKeys {
 	return iotago.AddressKeys{Address: addr, Keys: pkT.key}
-}
-
-func (pkT *PrivateKey) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	pkT.key = make([]byte, PrivateKeySize)
-	rr.ReadN(pkT.key)
-	return rr.Err
-}
-
-func (pkT *PrivateKey) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	if len(pkT.key) != PrivateKeySize {
-		panic("unexpected private key size for write")
-	}
-	ww.WriteN(pkT.key)
-	return ww.Err
 }

@@ -1,10 +1,8 @@
 package blocklog
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const EventLookupKeyLength = 8
@@ -34,13 +32,5 @@ func (k *EventLookupKey) RequestEventIndex() uint16 {
 }
 
 func (k *EventLookupKey) Bytes() []byte {
-	return k[:]
-}
-
-func (k *EventLookupKey) Read(r io.Reader) error {
-	return rwutil.ReadN(r, k[:])
-}
-
-func (k *EventLookupKey) Write(w io.Writer) error {
-	return rwutil.WriteN(w, k[:])
+	return bcs.MustMarshal(k)
 }

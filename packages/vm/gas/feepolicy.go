@@ -2,14 +2,13 @@ package gas
 
 import (
 	"fmt"
-	"io"
 	"math"
 	"math/big"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // By default each token pays for 100 units of gas
@@ -132,11 +131,11 @@ func MustFeePolicyFromBytes(data []byte) *FeePolicy {
 }
 
 func FeePolicyFromBytes(data []byte) (*FeePolicy, error) {
-	return rwutil.ReadFromBytes(data, new(FeePolicy))
+	return bcs.Unmarshal[*FeePolicy](data)
 }
 
 func (p *FeePolicy) Bytes() []byte {
-	return rwutil.WriteToBytes(p)
+	return bcs.MustMarshal(p)
 }
 
 func (p *FeePolicy) String() string {
@@ -149,22 +148,6 @@ func (p *FeePolicy) String() string {
 		p.EVMGasRatio,
 		p.ValidatorFeeShare,
 	)
-}
-
-func (p *FeePolicy) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&p.EVMGasRatio)
-	rr.Read(&p.GasPerToken)
-	p.ValidatorFeeShare = rr.ReadUint8()
-	return rr.Err
-}
-
-func (p *FeePolicy) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&p.EVMGasRatio)
-	ww.Write(&p.GasPerToken)
-	ww.WriteUint8(p.ValidatorFeeShare)
-	return ww.Err
 }
 
 // DefaultGasPriceFullDecimals returns the default gas price to be set in EVM

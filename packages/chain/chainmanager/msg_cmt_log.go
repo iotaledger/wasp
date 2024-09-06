@@ -2,19 +2,18 @@ package chainmanager
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // gpa.Wrapper is not applicable here, because here the addressing
 // is by CommitteeID, not by integer index.
 type msgCmtLog struct {
-	committeeAddr cryptolib.Address
-	wrapped       gpa.Message
+	committeeAddr cryptolib.Address `bcs:""`
+	wrapped       gpa.Message       `bcs:"not_enum,bytearr"`
 }
 
 var _ gpa.Message = new(msgCmtLog)
@@ -38,18 +37,17 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 	msg.wrapped.SetSender(sender)
 }
 
-func (msg *msgCmtLog) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeCmtLog.ReadAndVerify(rr)
-	rr.ReadN(msg.committeeAddr[:])
-	msg.wrapped = rwutil.ReadFromFunc(rr, cmt_log.UnmarshalMessage)
-	return rr.Err
-}
+func (msg *msgCmtLog) UnmarshalBCS(d *bcs.Decoder) error {
+	d.Decode(&msg.committeeAddr)
+	var wrapped []byte
+	d.Decode(&wrapped)
 
-func (msg *msgCmtLog) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeCmtLog.Write(ww)
-	ww.WriteN(msg.committeeAddr[:])
-	ww.WriteBytes(rwutil.WriteToBytes(msg.wrapped))
-	return ww.Err
+	if d.Err() != nil {
+		return d.Err()
+	}
+
+	var err error
+	msg.wrapped, err = cmt_log.UnmarshalMessage(wrapped)
+
+	return err
 }

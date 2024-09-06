@@ -5,28 +5,29 @@
 package gpa
 
 import (
-	"errors"
-	"io"
+	"bytes"
+	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type MessageType rwutil.Kind
 
-func (m *MessageType) Read(rr *rwutil.Reader) {
-	*m = MessageType(rr.ReadKind())
-}
+// func (m *MessageType) Read(rr *rwutil.Reader) {
+// 	*m = MessageType(rr.ReadKind())
+// }
 
-func (m MessageType) ReadAndVerify(rr *rwutil.Reader) {
-	rr.ReadKindAndVerify(rwutil.Kind(m))
-}
+// func (m MessageType) ReadAndVerify(rr *rwutil.Reader) {
+// 	rr.ReadKindAndVerify(rwutil.Kind(m))
+// }
 
-func (m MessageType) Write(ww *rwutil.Writer) {
-	ww.WriteKind(rwutil.Kind(m))
-}
+// func (m MessageType) Write(ww *rwutil.Writer) {
+// 	ww.WriteKind(rwutil.Kind(m))
+// }
 
 type NodeID [32]byte
 
@@ -59,8 +60,6 @@ func (niT NodeID) ShortString() string {
 }
 
 type Message interface {
-	Read(r io.Reader) error
-	Write(w io.Writer) error
 	Recipient() NodeID // The sender should indicate the recipient.
 	SetSender(NodeID)  // The transport later will set a validated sender for a message.
 }
@@ -131,6 +130,7 @@ type GPA interface {
 	Message(msg Message) OutMessages // Can return nil for NoMessages.
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
+	MarshalMessage(msg Message) ([]byte, error)
 	UnmarshalMessage(data []byte) (Message, error)
 }
 
@@ -140,26 +140,35 @@ type (
 )
 
 func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message, error) {
-	rr := rwutil.NewBytesReader(data)
-	kind := rr.ReadKind()
+	r := bytes.NewReader(data)
+
+	rr := rwutil.NewReader(r)
+	msgType := MessageType(rr.ReadKind())
 	if rr.Err != nil {
 		return nil, rr.Err
 	}
-	msgType := MessageType(kind)
+
 	allocator := mapper[msgType]
-	if allocator == nil {
-		if len(fallback) == 1 {
-			unmarshaler := fallback[0][msgType]
-			if unmarshaler != nil {
-				return unmarshaler(data)
-			}
-		}
-		return nil, errors.New("cannot map kind to message")
+	if allocator != nil {
+		msg := allocator()
+		err := bcs.NewDecoder(r).Decode(msg)
+
+		return msg, err
 	}
-	msg := allocator()
-	rr.PushBack().WriteKind(kind)
-	rr.Read(msg)
-	return msg, rr.Err
+
+	if len(fallback) == 0 {
+		return nil, fmt.Errorf("unexpected message type %d", msgType)
+	}
+	if len(fallback) > 1 {
+		return nil, fmt.Errorf("too many fallbacks specified: %d", len(fallback))
+	}
+
+	unmarshaler := fallback[0][msgType]
+	if unmarshaler == nil {
+		return nil, fmt.Errorf("unexpected message type %d", msgType)
+	}
+
+	return unmarshaler(data[1:])
 }
 
 type Logger interface {

@@ -1,9 +1,7 @@
 package isc
 
 import (
-	"io"
-
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type PublicChainMetadata struct {
@@ -15,29 +13,9 @@ type PublicChainMetadata struct {
 }
 
 func PublicChainMetadataFromBytes(data []byte) (*PublicChainMetadata, error) {
-	return rwutil.ReadFromBytes(data, new(PublicChainMetadata))
+	return bcs.Unmarshal[*PublicChainMetadata](data)
 }
 
 func (m *PublicChainMetadata) Bytes() []byte {
-	return rwutil.WriteToBytes(m)
-}
-
-func (m *PublicChainMetadata) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	m.EVMJsonRPCURL = rr.ReadString()
-	m.EVMWebSocketURL = rr.ReadString()
-	m.Name = rr.ReadString()
-	m.Description = rr.ReadString()
-	m.Website = rr.ReadString()
-	return rr.Err
-}
-
-func (m *PublicChainMetadata) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteString(m.EVMJsonRPCURL)
-	ww.WriteString(m.EVMWebSocketURL)
-	ww.WriteString(m.Name)
-	ww.WriteString(m.Description)
-	ww.WriteString(m.Website)
-	return ww.Err
+	return bcs.MustMarshal(m)
 }
