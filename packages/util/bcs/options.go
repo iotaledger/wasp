@@ -12,7 +12,10 @@ type TypeOptions struct {
 	LenBytes           LenBytesCount
 	Bytes              ValueBytesCount
 	InterfaceIsNotEnum bool
-	ElemAsByteArray    bool
+
+	ArrayElement *ArrayElemOptions
+	MapKey       *TypeOptions
+	MapValue     *TypeOptions
 }
 
 func (o *TypeOptions) Validate() error {
@@ -33,8 +36,38 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	if other.InterfaceIsNotEnum {
 		o.InterfaceIsNotEnum = true
 	}
-	if other.ElemAsByteArray {
-		o.ElemAsByteArray = true
+	if other.ArrayElement != nil {
+		if o.ArrayElement == nil {
+			o.ArrayElement = other.ArrayElement
+		} else {
+			o.ArrayElement.Update(*other.ArrayElement)
+		}
+	}
+	if other.MapKey != nil {
+		if o.MapKey == nil {
+			o.MapKey = other.MapKey
+		} else {
+			o.MapKey.Update(*other.MapKey)
+		}
+	}
+	if other.MapValue != nil {
+		if o.MapValue == nil {
+			o.MapValue = other.MapValue
+		} else {
+			o.MapValue.Update(*other.MapValue)
+		}
+	}
+}
+
+type ArrayElemOptions struct {
+	TypeOptions
+	AsByteArray bool
+}
+
+func (o *ArrayElemOptions) Update(other ArrayElemOptions) {
+	o.TypeOptions.Update(other.TypeOptions)
+	if other.AsByteArray {
+		o.AsByteArray = true
 	}
 }
 
@@ -53,6 +86,51 @@ func (o *FieldOptions) Validate() error {
 	}
 
 	return nil
+}
+
+func FieldOptionsFromField(fieldType reflect.StructField, tagName string) (FieldOptions, bool, error) {
+	a, hasTag := fieldType.Tag.Lookup(tagName)
+
+	fieldOpts, err := FieldOptionsFromTag(a)
+	if err != nil {
+		return FieldOptions{}, false, fmt.Errorf("parsing annotation: %w", err)
+	}
+
+	switch fieldType.Type.Kind() {
+	case reflect.Slice, reflect.Array:
+		a, hasElemTag := fieldType.Tag.Lookup(tagName + "_elem")
+		elemOpts, err := FieldOptionsFromTag(a)
+		if err != nil {
+			return FieldOptions{}, false, fmt.Errorf("parsing elem annotation: %w", err)
+		}
+
+		fieldOpts.ArrayElement = &ArrayElemOptions{
+			TypeOptions: elemOpts.TypeOptions,
+			AsByteArray: elemOpts.AsByteArray,
+		}
+
+		hasTag = hasTag || hasElemTag
+	case reflect.Map:
+		a, hasKeyTag := fieldType.Tag.Lookup(tagName + "_key")
+		keyOpts, err := FieldOptionsFromTag(a)
+		if err != nil {
+			return FieldOptions{}, false, fmt.Errorf("parsing key annotation: %w", err)
+		}
+
+		fieldOpts.MapKey = &keyOpts.TypeOptions
+
+		a, hasValueTag := fieldType.Tag.Lookup(tagName + "_value")
+		valueOpts, err := FieldOptionsFromTag(a)
+		if err != nil {
+			return FieldOptions{}, false, fmt.Errorf("parsing value annotation: %w", err)
+		}
+
+		fieldOpts.MapValue = &valueOpts.TypeOptions
+
+		hasTag = hasTag || hasKeyTag || hasValueTag
+	}
+
+	return fieldOpts, hasTag, nil
 }
 
 func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
@@ -99,8 +177,6 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 			opts.Optional = true
 		case "bytearr":
 			opts.AsByteArray = true
-		case "elem_bytearr":
-			opts.ElemAsByteArray = true
 		case "not_enum":
 			opts.InterfaceIsNotEnum = true
 		case "":

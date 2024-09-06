@@ -248,19 +248,15 @@ type WithArray struct {
 }
 
 type WithByteArrElem struct {
-	ByteArrayVal []BasicStruct `bcs:"elem_bytearr"`
-}
-
-type WithByteArrEntry struct {
-	ByteArrayVal map[int16]BasicStruct `bcs:"elem_bytearr"`
+	ByteArrayVal []BasicStruct `bcs_elem:"bytearr"`
 }
 
 type WithByteArrByte struct {
-	A []byte `bcs:"elem_bytearr"`
+	A []byte `bcs_elem:"bytearr"`
 }
 
 type WithByteArrInt struct {
-	ByteArrVal []int32 `bcs:"elem_bytearr"`
+	ByteArrVal []int32 `bcs_elem:"bytearr"`
 }
 
 type WithMap struct {
@@ -433,7 +429,6 @@ func TestStructCodec(t *testing.T) {
 	bcs.TestCodecAndBytesNoRef(t, WithByteArrElem{ByteArrayVal: []BasicStruct{{A: 42, B: "aaa"}, {A: 43, B: "bbb"}}}, []byte{0x2, 0xc, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0x61, 0x61, 0x61, 0xc, 0x2b, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0x62, 0x62, 0x62})
 	bcs.TestCodecAndBytesNoRef(t, WithByteArrInt{ByteArrVal: []int32{1, 2, 3}}, []byte{0x3, 0x4, 0x1, 0x0, 0x0, 0x0, 0x4, 0x2, 0x0, 0x0, 0x0, 0x4, 0x3, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytesNoRef(t, WithByteArrByte{A: []byte{1, 2, 3}}, []byte{0x3, 0x1, 0x1, 0x1, 0x2, 0x1, 0x3})
-	bcs.TestCodecAndBytesNoRef(t, WithByteArrEntry{ByteArrayVal: map[int16]BasicStruct{1: {A: 42, B: "aaa"}}}, []byte{0x1, 0xe, 0x1, 0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3, 0x61, 0x61, 0x61})
 	bcs.TestCodecAndBytesNoRef(t, WithMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
 	bcs.TestCodecAndBytesNoRef(t, WithMap{A: map[int16]bool{}}, []byte{0x0})
 	bcs.TestEncodeErr(t, WithMap{A: nil})
