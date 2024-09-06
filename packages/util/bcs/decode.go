@@ -131,10 +131,22 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	case reflect.String:
 		v.SetString(d.r.ReadString())
 	case reflect.Slice:
+		if typeOptions.ArrayElement == nil {
+			typeOptions.ArrayElement = &ArrayElemOptions{}
+		}
 		err = d.decodeSlice(v, typeOptions)
 	case reflect.Array:
+		if typeOptions.ArrayElement == nil {
+			typeOptions.ArrayElement = &ArrayElemOptions{}
+		}
 		err = d.decodeArray(v, typeOptions)
 	case reflect.Map:
+		if typeOptions.MapKey == nil {
+			typeOptions.MapKey = &TypeOptions{}
+		}
+		if typeOptions.MapValue == nil {
+			typeOptions.MapValue = &TypeOptions{}
+		}
 		err = d.decodeMap(v, typeOptions)
 	case reflect.Struct:
 		if t.Customization == typeCustomizationIsStructEnum {
@@ -330,7 +342,7 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
 		}
 	}
 
-	if typOpts.ElemAsByteArray {
+	if typOpts.ArrayElement.AsByteArray {
 		// Elements are encoded as byte arrays.
 		for i := 0; i < v.Len(); i++ {
 			err := d.decodeAsByteArray(func() error {
@@ -354,7 +366,7 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
 func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
 	switch bytesPerElem {
 	case Value1Byte:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(1); err != nil {
 					return err
@@ -367,7 +379,7 @@ func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 			}
 		}
 	case Value2Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(2); err != nil {
 					return err
@@ -380,7 +392,7 @@ func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 			}
 		}
 	case Value4Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(4); err != nil {
 					return err
@@ -393,7 +405,7 @@ func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 			}
 		}
 	case Value8Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(8); err != nil {
 					return err
@@ -415,7 +427,7 @@ func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
 	switch bytesPerElem {
 	case Value1Byte:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(1); err != nil {
 					return err
@@ -434,7 +446,7 @@ func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 			}
 		}
 	case Value2Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(2); err != nil {
 					return err
@@ -447,7 +459,7 @@ func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 			}
 		}
 	case Value4Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(4); err != nil {
 					return err
@@ -460,7 +472,7 @@ func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 			}
 		}
 	case Value8Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				if err := d.readAndCheckByteArraySize(8); err != nil {
 					return err
@@ -506,32 +518,16 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 	keyTypeDeref := d.getEncodedType(keyType)
 	valueTypeDeref := d.getEncodedType(valueType)
 
-	var err error
-
 	for i := 0; i < length; i++ {
 		key := reflect.New(keyType).Elem()
 		value := reflect.New(valueType).Elem()
 
-		dec := func() error {
-			if err := d.decodeValue(key, nil, &keyTypeDeref); err != nil {
-				return fmt.Errorf("key: %w", err)
-			}
-
-			if err := d.decodeValue(value, nil, &valueTypeDeref); err != nil {
-				return fmt.Errorf("value: %w", err)
-			}
-
-			return nil
+		if err := d.decodeValue(key, typOpts.MapKey, &keyTypeDeref); err != nil {
+			return fmt.Errorf("key: %w", err)
 		}
 
-		if typOpts.ElemAsByteArray {
-			err = d.decodeAsByteArray(dec)
-		} else {
-			err = dec()
-		}
-
-		if err != nil {
-			return fmt.Errorf("[%v]: %w", i, err)
+		if err := d.decodeValue(value, typOpts.MapValue, &valueTypeDeref); err != nil {
+			return fmt.Errorf("value: %w", err)
 		}
 
 		v.SetMapIndex(key, value)
@@ -546,7 +542,7 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
 
-		fieldOpts, hasTag, err := d.fieldOptsFromTag(fieldType)
+		fieldOpts, hasTag, err := FieldOptionsFromField(fieldType, d.cfg.TagName)
 		if err != nil {
 			return fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
 		}
@@ -595,17 +591,6 @@ func (d *Decoder) decodeStruct(v reflect.Value) error {
 	}
 
 	return nil
-}
-
-func (d *Decoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions, bool, error) {
-	a, hasTag := fieldType.Tag.Lookup(d.cfg.TagName)
-
-	fieldOpts, err := FieldOptionsFromTag(a)
-	if err != nil {
-		return FieldOptions{}, false, fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
-	}
-
-	return fieldOpts, hasTag, nil
 }
 
 func (d *Decoder) decodeInterface(v reflect.Value) error {
@@ -740,6 +725,34 @@ func Unmarshal[T any](b []byte) (T, error) {
 func MustUnmarshal[T any](b []byte) T {
 	v, err := Unmarshal[T](b)
 	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func UnmarshalStreamOver[V any](r io.Reader, v *V) (*V, error) {
+	if err := NewDecoder(r).Decode(v); err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func MustUnmarshalStreamOver[V any](r io.Reader, v *V) *V {
+	if _, err := UnmarshalStreamOver(r, v); err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func UnmarshalOver[V any](b []byte, v *V) (*V, error) {
+	return UnmarshalStreamOver(bytes.NewReader(b), v)
+}
+
+func MustUnmarshalOver[V any](b []byte, v *V) *V {
+	if _, err := UnmarshalOver(b, v); err != nil {
 		panic(err)
 	}
 

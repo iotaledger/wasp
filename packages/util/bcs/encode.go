@@ -142,10 +142,22 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	case reflect.String:
 		e.w.WriteString(v.String())
 	case reflect.Slice:
+		if typeOptions.ArrayElement == nil {
+			typeOptions.ArrayElement = &ArrayElemOptions{}
+		}
 		err = e.encodeSlice(v, typeOptions)
 	case reflect.Array:
+		if typeOptions.ArrayElement == nil {
+			typeOptions.ArrayElement = &ArrayElemOptions{}
+		}
 		err = e.encodeArray(v, typeOptions)
 	case reflect.Map:
+		if typeOptions.MapKey == nil {
+			typeOptions.MapKey = &TypeOptions{}
+		}
+		if typeOptions.MapValue == nil {
+			typeOptions.MapValue = &TypeOptions{}
+		}
 		err = e.encodeMap(v, typeOptions)
 	case reflect.Struct:
 		if t.Customization == typeCustomizationIsStructEnum {
@@ -424,11 +436,10 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 		}
 	}
 
-	if typOpts.ElemAsByteArray {
-		// Elements are requested to be encoded as byte arrays.
+	if typOpts.ArrayElement.AsByteArray {
 		for i := 0; i < v.Len(); i++ {
 			err := e.encodeAsByteArray(func() error {
-				return e.encodeValue(v.Index(i), nil, &t)
+				return e.encodeValue(v.Index(i), &typOpts.ArrayElement.TypeOptions, &t)
 			})
 			if err != nil {
 				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
@@ -436,7 +447,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 		}
 	} else {
 		for i := 0; i < v.Len(); i++ {
-			if err := e.encodeValue(v.Index(i), nil, &t); err != nil {
+			if err := e.encodeValue(v.Index(i), &typOpts.ArrayElement.TypeOptions, &t); err != nil {
 				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
 			}
 		}
@@ -448,7 +459,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
 	switch bytesPerElem {
 	case Value1Byte:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(1) // NOTE: using WriteUint8 instaed of WritSize32 for sake of performance
 				e.w.WriteInt8(int8(v.Index(i).Int()))
@@ -459,7 +470,7 @@ func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 			}
 		}
 	case Value2Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(2)
 				e.w.WriteInt16(int16(v.Index(i).Int()))
@@ -470,7 +481,7 @@ func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 			}
 		}
 	case Value4Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(4)
 				e.w.WriteInt32(int32(v.Index(i).Int()))
@@ -481,7 +492,7 @@ func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 			}
 		}
 	case Value8Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(8)
 				e.w.WriteInt64(v.Index(i).Int())
@@ -502,9 +513,9 @@ func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 	switch bytesPerElem {
 	case Value1Byte:
 		// Optimization for encoding of byte/uint8 slices
-		if (v.Kind() == reflect.Slice || v.CanAddr()) && !typOpts.ElemAsByteArray {
+		if (v.Kind() == reflect.Slice || v.CanAddr()) && !typOpts.ArrayElement.AsByteArray {
 			e.w.WriteN(v.Bytes())
-		} else if typOpts.ElemAsByteArray {
+		} else if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(1)
 				e.w.WriteUint8(uint8(v.Index(i).Uint()))
@@ -515,7 +526,7 @@ func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 			}
 		}
 	case Value2Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(2)
 				e.w.WriteUint16(uint16(v.Index(i).Uint()))
@@ -526,7 +537,7 @@ func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 			}
 		}
 	case Value4Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(4)
 				e.w.WriteUint32(uint32(v.Index(i).Uint()))
@@ -537,7 +548,7 @@ func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 			}
 		}
 	case Value8Bytes:
-		if typOpts.ElemAsByteArray {
+		if typOpts.ArrayElement.AsByteArray {
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteUint8(8)
 				e.w.WriteUint64(v.Index(i).Uint())
@@ -583,29 +594,13 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 	keyTypeInfo := e.getEncodedTypeInfo(t.Key())
 	valTypeInfo := e.getEncodedTypeInfo(t.Elem())
 
-	var err error
-
 	for i := range entries {
-		enc := func() error {
-			if err := e.encodeValue(entries[i].Key, nil, &keyTypeInfo); err != nil {
-				return fmt.Errorf("key: %w", err)
-			}
-
-			if err := e.encodeValue(entries[i].Value, nil, &valTypeInfo); err != nil {
-				return fmt.Errorf("value: %w", err)
-			}
-
-			return nil
+		if err := e.encodeValue(entries[i].Key, typOpts.MapKey, &keyTypeInfo); err != nil {
+			return fmt.Errorf("key: %w", err)
 		}
 
-		if typOpts.ElemAsByteArray {
-			err = e.encodeAsByteArray(enc)
-		} else {
-			err = enc()
-		}
-
-		if err != nil {
-			return fmt.Errorf("[%v]: %w", i, err)
+		if err := e.encodeValue(entries[i].Value, typOpts.MapValue, &valTypeInfo); err != nil {
+			return fmt.Errorf("value: %w", err)
 		}
 	}
 
@@ -618,7 +613,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
 
-		fieldOpts, hasTag, err := e.fieldOptsFromTag(fieldType)
+		fieldOpts, hasTag, err := FieldOptionsFromField(fieldType, e.cfg.TagName)
 		if err != nil {
 			return fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
 		}
@@ -744,17 +739,6 @@ func (e *Encoder) encodeAsByteArray(enc func() error) error {
 	}
 
 	return nil
-}
-
-func (e *Encoder) fieldOptsFromTag(fieldType reflect.StructField) (FieldOptions, bool, error) {
-	a, hasTag := fieldType.Tag.Lookup(e.cfg.TagName)
-
-	fieldOpts, err := FieldOptionsFromTag(a)
-	if err != nil {
-		return FieldOptions{}, false, fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
-	}
-
-	return fieldOpts, hasTag, nil
 }
 
 // func (e *Encoder) Writer() *rwutil.Writer {
