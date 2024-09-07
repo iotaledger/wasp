@@ -16,9 +16,6 @@ const (
 	AssetsBagObjectName = "AssetsBag"
 	AssetObjectName     = "Asset"
 
-	AllowanceModuleName = "allowance"
-	AllowanceObjectName = "Allowance"
-
 	RequestModuleName      = "request"
 	RequestObjectName      = "Request"
 	MessageObjectName      = "Message"

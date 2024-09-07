@@ -14,6 +14,10 @@ import (
 // Value is the balance of a given coin
 type Value uint64
 
+func (v Value) Uint64() uint64 {
+	return uint64(v)
+}
+
 func (v Value) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	// serialized as bigint to save space for smaller values
@@ -55,7 +59,7 @@ func (t Type) Write(w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("invalid Type %q: %w", t, err)
 	}
-	if rt.SubType != nil {
+	if rt.SubType1 != nil {
 		panic("cointype with subtype is unsupported")
 	}
 	ww := rwutil.NewWriter(w)
@@ -79,6 +83,14 @@ func (t *Type) Read(r io.Reader) error {
 
 func (t Type) String() string {
 	return string(t)
+}
+
+func (t Type) TypeTag() sui.TypeTag {
+	coinTypeTag, err := sui.TypeTagFromString(t.String())
+	if err != nil {
+		panic(err)
+	}
+	return *coinTypeTag
 }
 
 func (t Type) Bytes() []byte {

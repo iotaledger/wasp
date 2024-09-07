@@ -70,9 +70,8 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) {
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
-		TargetAddress:                 ctx.ChainID().AsAddress(),
-		Assets:                        isc.NewAssets(allowance.BaseTokens()),
-		AdjustToMinimumStorageDeposit: true,
+		TargetAddress: ctx.ChainID().AsAddress(),
+		Assets:        isc.NewAssets(allowance.BaseTokens()),
 		Metadata: &isc.SendMetadata{
 			Message:   isc.NewMessage(ctx.Contract(), FuncIncCounter.Hname()),
 			GasBudget: math.MaxUint64,
@@ -105,9 +104,8 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 	state.Set(VarNumRepeats, codec.Int64.Encode(numRepeats-1))
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
-		TargetAddress:                 ctx.ChainID().AsAddress(),
-		Assets:                        isc.NewAssets(1000),
-		AdjustToMinimumStorageDeposit: true,
+		TargetAddress: ctx.ChainID().AsAddress(),
+		Assets:        isc.NewAssets(1000),
 		Metadata: &isc.SendMetadata{
 			Message:   isc.NewMessage(ctx.Contract(), FuncIncAndRepeatMany.Hname()),
 			GasBudget: math.MaxUint64,

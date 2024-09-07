@@ -9,6 +9,21 @@ import (
 )
 
 func PTBAssetsBagNew(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, owner *cryptolib.Address) *sui.ProgrammableTransactionBuilder {
+	ptb.Command(
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "new",
+				TypeArguments: []sui.TypeTag{},
+				Arguments:     []sui.Argument{},
+			},
+		},
+	)
+	return ptb
+}
+
+func PTBAssetsBagNewAndTransfer(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, owner *cryptolib.Address) *sui.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -24,7 +39,7 @@ func PTBAssetsBagNew(ptb *sui.ProgrammableTransactionBuilder, packageID sui.Pack
 		sui.Command{
 			TransferObjects: &sui.ProgrammableTransferObjects{
 				Objects: []sui.Argument{arg1},
-				Address: ptb.MustPure(owner.AsSuiAddress()),
+				Address: ptb.MustForceSeparatePure(owner.AsSuiAddress()),
 			},
 		},
 	)
@@ -59,6 +74,28 @@ func PTBAssetsBagPlaceCoin(
 	return ptb
 }
 
+func PTBAssetsBagPlaceCoinBalance(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAssetsBag sui.Argument, argCoinBalance sui.Argument, coinType string) *sui.ProgrammableTransactionBuilder {
+	typeTag, err := sui.TypeTagFromString(coinType)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
+	}
+	ptb.Command(
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "place_coin_balance",
+				TypeArguments: []sui.TypeTag{*typeTag},
+				Arguments: []sui.Argument{
+					argAssetsBag,
+					argCoinBalance,
+				},
+			},
+		},
+	)
+	return ptb
+}
+
 func PTBAssetsBagPlaceCoinWithAmount(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, assetsBagRef *sui.ObjectRef, coin *sui.ObjectRef, amount uint64, coinType string) *sui.ProgrammableTransactionBuilder {
 	typeTag, err := sui.TypeTagFromString(coinType)
 	if err != nil {
@@ -82,6 +119,28 @@ func PTBAssetsBagPlaceCoinWithAmount(ptb *sui.ProgrammableTransactionBuilder, pa
 				Arguments: []sui.Argument{
 					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 					splitCoinArg,
+				},
+			},
+		},
+	)
+	return ptb
+}
+
+func PTBAssetsBagTakeCoinBalance(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAssetsBag sui.Argument, amount uint64, coinType string) *sui.ProgrammableTransactionBuilder {
+	typeTag, err := sui.TypeTagFromString(coinType)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
+	}
+	ptb.Command(
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "take_coin_balance",
+				TypeArguments: []sui.TypeTag{*typeTag},
+				Arguments: []sui.Argument{
+					argAssetsBag,
+					ptb.MustForceSeparatePure(amount),
 				},
 			},
 		},

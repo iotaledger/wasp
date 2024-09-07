@@ -120,7 +120,7 @@ type Sandbox interface {
 	Send(metadata RequestParameters)
 	// StateAnchor properties of the anchor request
 	StateAnchor() *StateAnchor
-
+	// RequestIndex returns the index of the current request in the request batch
 	RequestIndex() uint16
 
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
@@ -281,8 +281,6 @@ type RequestParameters struct {
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	Assets *Assets
-	// AdjustToMinimumStorageDeposit if true base tokens in attached fungible tokens will be added to meet minimum storage deposit requirements
-	AdjustToMinimumStorageDeposit bool
 	// Metadata is a request metadata. It may be nil if the request is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the request, such as time lock or expiry parameters
