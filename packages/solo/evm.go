@@ -62,19 +62,21 @@ func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, 
 	return chainutil.EVMEstimateGas(b.Chain, aliasOutput, callMsg)
 }
 
-func (b *jsonRPCSoloBackend) EVMTraceTransaction(
+func (b *jsonRPCSoloBackend) EVMTrace(
 	aliasOutput *isc.AliasOutputWithID,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex uint64,
+	txIndex *uint64,
+	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
-	return chainutil.EVMTraceTransaction(
+	return chainutil.EVMTrace(
 		b.Chain,
 		aliasOutput,
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
+		blockNumber,
 		tracer,
 	)
 }

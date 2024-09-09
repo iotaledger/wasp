@@ -191,6 +191,21 @@ func (c *Index) TxByBlockNumberAndIndex(blockNumber *big.Int, txIndex uint64) (t
 	return txs[txIndex], block.Hash()
 }
 
+func (c *Index) TxsByBlockNumber(blockNumber *big.Int) types.Transactions {
+	if blockNumber == nil {
+		return nil
+	}
+	db := c.evmDBFromBlockIndex(uint32(blockNumber.Uint64()))
+	if db == nil {
+		return nil
+	}
+	block := db.GetBlockByNumber(blockNumber.Uint64())
+	if block == nil {
+		return nil
+	}
+	return block.Transactions()
+}
+
 // internals
 
 const (
