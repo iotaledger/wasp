@@ -112,7 +112,6 @@ type callTracerConfig struct {
 func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, initValue any) (*tracers.Tracer, error) {
 	var txs types.Transactions
 	if initValue != nil {
-
 		var ok bool
 		txs, ok = initValue.(types.Transactions)
 		if !ok {
@@ -268,12 +267,12 @@ func (t *callTracer) GetResult() (json.RawMessage, error) {
 		})
 	}
 
-	resJson, err := json.Marshal(results)
+	resJSON, err := json.Marshal(results)
 	if err != nil {
 		return nil, err
 	}
 
-	return resJson, t.reason
+	return resJSON, t.reason
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.
