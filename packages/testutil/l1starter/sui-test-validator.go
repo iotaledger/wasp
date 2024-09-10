@@ -8,6 +8,7 @@ package l1starter
 import (
 	"bufio"
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"io"
@@ -15,16 +16,43 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/sui-go/contracts"
+	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suiconn"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
+
+var (
+	ISCPackageOwner suisigner.Signer
+	instance        atomic.Pointer[SuiTestValidator]
+)
+
+func init() {
+	var seed [ed25519.SeedSize]byte
+	copy(seed[:], []byte("iscPackageOwner"))
+	ISCPackageOwner = suisigner.NewSigner(seed[:], suisigner.KeySchemeFlagDefault)
+}
+
+func Instance() *SuiTestValidator {
+	stv := instance.Load()
+	if stv == nil {
+		panic("SuiTestValidator not started; call Start() first")
+	}
+	return stv
+}
+
+func ISCPackageID() sui.PackageID {
+	return Instance().ISCPackageID
+}
 
 type Config struct {
 	Host       string
@@ -45,28 +73,30 @@ var DefaultConfig = Config{
 type LogFunc func(format string, args ...interface{})
 
 type SuiTestValidator struct {
-	Config Config
-	Cmd    *exec.Cmd
-	ctx    context.Context
+	ctx          context.Context
+	Config       Config
+	Cmd          *exec.Cmd
+	ISCPackageID sui.PackageID
 }
 
 func Start(ctx context.Context, cfg Config) *SuiTestValidator {
-	stv := New(cfg)
-	stv.Start(ctx)
+	stv := &SuiTestValidator{Config: cfg}
+	if !instance.CompareAndSwap(nil, stv) {
+		panic("an instance of sui-test-validator is already running")
+	}
+	stv.start(ctx)
 	return stv
 }
 
-func New(cfg Config) *SuiTestValidator {
-	return &SuiTestValidator{Config: cfg}
-}
-
-func (stv *SuiTestValidator) Start(ctx context.Context) {
+func (stv *SuiTestValidator) start(ctx context.Context) {
 	stv.ctx = ctx
 	stv.logf("Starting sui-test-validator...")
 	ts := time.Now()
 	stv.execCmd()
 	stv.logf("Starting sui-test-validator... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 	stv.waitAllHealthy(5 * time.Minute)
+	stv.logf("Deploying ISC contracts...")
+	stv.ISCPackageID = stv.deployISCContracts()
 	stv.logf("SuiTestValidator started successfully")
 }
 
@@ -107,6 +137,10 @@ func (stv *SuiTestValidator) Stop() {
 
 		panic(fmt.Errorf("SUI node failed: %s", stv.Cmd.ProcessState.String()))
 	}
+
+	if !instance.CompareAndSwap(stv, nil) {
+		panic("should not happen")
+	}
 }
 
 func (stv *SuiTestValidator) Client() *suiclient.Client {
@@ -144,9 +178,8 @@ func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
 		return true
 	})
 
-	kp := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("SuiTestValidator")))
 	tryLoop(func() bool {
-		err := suiclient.RequestFundsFromFaucet(ctx, kp.Address().AsSuiAddress(), suiconn.LocalnetFaucetURL)
+		err := suiclient.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), suiconn.LocalnetFaucetURL)
 		return err == nil
 	})
 
@@ -178,4 +211,29 @@ func scanLog(reader io.Reader, out *os.File) {
 		line := scanner.Text()
 		_ = lo.Must(out.WriteString(fmt.Sprintln(line)))
 	}
+}
+
+func (stv *SuiTestValidator) deployISCContracts() sui.PackageID {
+	client := stv.Client()
+	iscBytecode := contracts.ISC()
+	txnBytes := lo.Must(client.Publish(context.Background(), suiclient.PublishRequest{
+		Sender:          ISCPackageOwner.Address(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
+	}))
+	txnResponse := lo.Must(client.SignAndExecuteTransaction(
+		context.Background(),
+		ISCPackageOwner,
+		txnBytes.TxBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	))
+	if !txnResponse.Effects.Data.IsSuccess() {
+		panic("publish ISC contracts failed")
+	}
+	packageID := lo.Must(txnResponse.GetPublishedPackageID())
+	return *packageID
 }

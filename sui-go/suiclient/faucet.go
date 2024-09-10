@@ -13,6 +13,8 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
+const FundsFromFaucetAmount = 1_000_000_000_000
+
 // refer the implementation of `request_tokens_from_faucet()` in
 // https://github.com/MystenLabs/sui/blob/main/crates/sui-sdk/examples/utils.rs#L91
 func RequestFundsFromFaucet(ctx context.Context, address *sui.Address, faucetUrl string) error {

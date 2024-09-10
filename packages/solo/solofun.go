@@ -5,11 +5,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
+
+func (env *Solo) SuiClient() *suiclient.Client {
+	return suiclient.NewHTTP(env.l1Config.SuiRPCURL)
+}
+
+func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
+	return iscmoveclient.NewHTTPClient(
+		env.l1Config.SuiRPCURL,
+		env.l1Config.SuiFaucetURL,
+	)
+}
 
 func (env *Solo) NewKeyPairFromIndex(index int) *cryptolib.KeyPair {
 	seed := env.NewSeedFromIndex(index)
@@ -31,19 +42,14 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 // Returns signature scheme interface and public key in binary form
 func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {
 	keyPair, addr := env.NewKeyPair(seed...)
-
-	env.ledgerMutex.Lock()
-	defer env.ledgerMutex.Unlock()
-
-	_, err := env.utxoDB.GetFundsFromFaucet(addr)
-	require.NoError(env.T, err)
-	env.AssertL1BaseTokens(addr, utxodb.FundsFromFaucetAmount)
-
+	env.GetFundsFromFaucet(addr)
 	return keyPair, addr
 }
 
-func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address, amount ...uint64) (*iotago.Transaction, error) {
-	return env.utxoDB.GetFundsFromFaucet(target, amount...)
+func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
+	err := suiclient.RequestFundsFromFaucet(env.ctx, target.AsSuiAddress(), env.l1Config.SuiFaucetURL)
+	require.NoError(env.T, err)
+	env.AssertL1BaseTokens(target, suiclient.FundsFromFaucetAmount)
 }
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme

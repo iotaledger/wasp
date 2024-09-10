@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -21,12 +22,10 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -39,7 +38,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	assetsDestroyEmptyRes, err := client.AssetsDestroyEmpty(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		assetsBagRef,
 		nil,
 		suiclient.DefaultGasPrice,
@@ -56,12 +55,10 @@ func TestAssetsBagAddItems(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -87,7 +84,7 @@ func TestAssetsBagAddItems(t *testing.T) {
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		assetsBagMainRef,
 		coinInfo.Ref,
 		testCointype,
@@ -103,12 +100,10 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -134,7 +129,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		assetsBagMainRef,
 		coinInfo.Ref,
 		testCointype,
@@ -159,9 +154,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
-	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor := startNewChain(t, client, cryptolibSigner)
 
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -177,7 +170,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.NoError(t, err)
 	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
 
-	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &iscPackageID, &anchor.ObjectRef, testcoinInfo)
+	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &anchor.ObjectRef, testcoinInfo)
 
 	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.Value.ID)
 	require.NoError(t, err)
@@ -192,11 +185,11 @@ func borrowAnchorAssetsAndPlaceCoin(
 	t *testing.T, ctx context.Context,
 	client *iscmoveclient.Client,
 	cryptolibSigner cryptolib.Signer,
-	packageID *sui.PackageID,
 	anchorRef *sui.ObjectRef,
 	testcoinInfo *sui.ObjectInfo,
 ) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	packageID := l1starter.ISCPackageID()
 
 	ptb := sui.NewProgrammableTransactionBuilder()
 	typeTag, err := sui.TypeTagFromString(testcoinInfo.Type.String())
@@ -204,7 +197,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        "anchor",
 				Function:      "borrow_assets",
 				TypeArguments: []sui.TypeTag{},
@@ -219,7 +212,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        "assets_bag",
 				Function:      "place_coin",
 				TypeArguments: []sui.TypeTag{*typeTag},
@@ -233,7 +226,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
-				Package:       packageID,
+				Package:       &packageID,
 				Module:        "anchor",
 				Function:      "return_assets_from_borrow",
 				TypeArguments: []sui.TypeTag{},
@@ -272,9 +265,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
-	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor := startNewChain(t, client, cryptolibSigner)
 
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -293,7 +284,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -306,7 +297,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		assetsBagRef,
 		testcoinInfo.Ref,
 		testCointype,
@@ -321,12 +312,12 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
 
-	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner, iscPackageID)
+	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		anchor.ObjectID,
 		&tmpAssetsBagRef,
 		uint32(isc.Hn("test_isc_contract")),

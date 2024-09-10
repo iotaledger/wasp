@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -18,12 +19,10 @@ func TestAllowanceNewAndDestroyEmpty(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
 	txnResponse, err := client.AllowanceNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -36,7 +35,7 @@ func TestAllowanceNewAndDestroyEmpty(t *testing.T) {
 	allowanceDestroyRes, err := client.AllowanceDestroy(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		allowanceRef,
 		nil,
 		suiclient.DefaultGasPrice,
@@ -53,12 +52,10 @@ func TestAllowanceAddItems(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
 	txnResponse, err := client.AllowanceNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -84,7 +81,7 @@ func TestAllowanceAddItems(t *testing.T) {
 	_, err = client.AllowanceWithCoinBalance(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		allowanceMainRef,
 		100,
 		testCointype,
@@ -100,12 +97,10 @@ func TestGetAllowanceFromAllowanceID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
 	txnResponse, err := client.AllowanceNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -131,7 +126,7 @@ func TestGetAllowanceFromAllowanceID(t *testing.T) {
 	_, err = client.AllowanceWithCoinBalance(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		allowanceMainRef,
 		100,
 		testCointype,
@@ -152,7 +147,7 @@ func TestGetAllowanceFromAllowanceID(t *testing.T) {
 	_, err = client.AllowanceWithCoinBalance(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		&allowanceMainRefTmp,
 		111,
 		suijsonrpc.SuiCoinType,
@@ -179,9 +174,7 @@ func TestGetAllowanceFromRequestID(t *testing.T) {
 	// cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	// client := newLocalnetClient()
 
-	// iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
-	// anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	// anchor := startNewChain(t, client, cryptolibSigner, l1starter.ISCPackageID())
 
 	// _, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	// getCoinRef, err := client.GetObject(
@@ -200,7 +193,7 @@ func TestGetAllowanceFromRequestID(t *testing.T) {
 	// txnResponse, err := client.AllowanceNew(
 	// 	context.Background(),
 	// 	cryptolibSigner,
-	// 	iscPackageID,
+	// 	l1starter.ISCPackageID(),
 	// 	nil,
 	// 	suiclient.DefaultGasPrice,
 	// 	suiclient.DefaultGasBudget,
@@ -213,7 +206,7 @@ func TestGetAllowanceFromRequestID(t *testing.T) {
 	// _, err = client.AllowanceWithCoinBalance(
 	// 	context.Background(),
 	// 	cryptolibSigner,
-	// 	iscPackageID,
+	// 	l1starter.ISCPackageID(),
 	// 	allowanceRef,
 	// 	testcoinInfo.Ref,
 	// 	testCointype,
@@ -230,7 +223,7 @@ func TestGetAllowanceFromRequestID(t *testing.T) {
 	// createAndSendRequestRes, err := client.CreateAndSendRequest(
 	// 	context.Background(),
 	// 	cryptolibSigner,
-	// 	iscPackageID,
+	// 	l1starter.ISCPackageID(),
 	// 	anchor.ObjectID,
 	// 	&tmpAllowanceRef,
 	// 	uint32(isc.Hn("test_isc_contract")),
@@ -258,11 +251,11 @@ func TestGetAllowanceFromRequestID(t *testing.T) {
 	// require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
 }
 
-func createEmptyAllowance(t *testing.T, client *iscmoveclient.Client, cryptolibSigner cryptolib.Signer, iscPackageID sui.PackageID) *sui.ObjectRef {
+func createEmptyAllowance(t *testing.T, client *iscmoveclient.Client, cryptolibSigner cryptolib.Signer) *sui.ObjectRef {
 	txnResponse, err := client.AllowanceNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
