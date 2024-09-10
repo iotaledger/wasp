@@ -652,6 +652,19 @@ func TestRPCTraceBlock(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	var res2 json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res2,
+		"debug_traceBlockByHash",
+		env.BlockByNumber(big.NewInt(int64(env.BlockNumber()))).Hash(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	require.Equal(t, res1, res2, "debug_traceBlockByNumber and debug_traceBlockByNumber should produce equal results")
+
 	traceBlock := make([]jsonrpc.TxTraceResult, 0)
 	err = json.Unmarshal(res1, &traceBlock)
 	require.NoError(t, err)
