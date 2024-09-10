@@ -716,6 +716,67 @@ func TestRPCTraceBlock(t *testing.T) {
 	require.Empty(t, innerCall2.RevertReason)
 }
 
+func TestRPCBlockReceipt(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creator2, creatorAddress2 := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    big.NewInt(123),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))),
+		})
+
+	tx2 := types.MustSignNewTx(creator2, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress2),
+			To:       &contractAddress,
+			Value:    big.NewInt(321),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))),
+		})
+
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	env.soloChain.WaitForRequestsMark()
+	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
+	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
+
+	var resceipts []*types.Receipt
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&resceipts,
+		"eth_getBlockReceipts",
+		env.BlockNumber())
+	require.NoError(t, err)
+
+	require.Len(t, resceipts, 2)
+
+	r1 := resceipts[slices.IndexFunc(resceipts, func(v *types.Receipt) bool {
+		return v.TxHash == tx1.Hash()
+	})]
+
+	r2 := resceipts[slices.IndexFunc(resceipts, func(v *types.Receipt) bool {
+		return v.TxHash == tx2.Hash()
+	})]
+
+	require.Equal(t, uint64(1), r1.Status)
+	require.Equal(t, big.NewInt(4), r1.BlockNumber)
+	require.Equal(t, uint64(1), r2.Status)
+	require.Equal(t, big.NewInt(4), r1.BlockNumber)
+}
+
 func BenchmarkRPCEstimateGas(b *testing.B) {
 	env := newSoloTestEnv(b)
 	_, addr := env.soloChain.NewEthereumAccountWithL2Funds()

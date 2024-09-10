@@ -451,9 +451,9 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 	return rpcSub, nil
 }
 
-func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumber) ([]*types.Receipt, error) {
+func (e *EthService) GetBlockReceipts(blockNumber int64) ([]*types.Receipt, error) {
 	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]*types.Receipt, error) {
-		receipts, err := e.evmChain.GetBlockReceipts(blockNumber)
+		receipts, err := e.evmChain.GetBlockReceipts(rpc.BlockNumber(blockNumber))
 		if err != nil {
 			return nil, e.resolveError(err)
 		}
