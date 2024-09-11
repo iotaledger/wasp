@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -73,5 +74,5 @@ func TestRequestRefSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, reqRef0, reqRef1)
 
-	rwutil.ReadWriteTest(t, reqRef0, new(RequestRef))
+	bcs.TestCodec(t, reqRef0)
 }

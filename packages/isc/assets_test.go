@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -93,4 +94,20 @@ func TestAssetsSpendBudget(t *testing.T) {
 	toSpend = isc.NewAssets(1).
 		AddCoin(coinType1, 5)
 	require.False(t, budget.Spend(toSpend))
+}
+
+func TestAssetsCodec(t *testing.T) {
+	assets := isc.NewEmptyAssets().
+		AddBaseTokens(42).
+		AddCoin("0xa1::a::A", 100).
+		AddObject(*sui.RandomAddress())
+	bcs.TestCodec(t, assets)
+}
+
+func TestCoinBalancesCodec(t *testing.T) {
+	coinBalance := isc.CoinBalances{
+		"0xa1::a::A": 100,
+		"0xa2::b::B": 200,
+	}
+	bcs.TestCodec(t, coinBalance)
 }

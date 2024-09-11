@@ -1,15 +1,13 @@
 package isc
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // AddressAgentID is an AgentID backed by a L1 address
 type AddressAgentID struct {
-	a *cryptolib.Address
+	a *cryptolib.Address `bcs:""`
 }
 
 var _ AgentIDWithL1Address = &AddressAgentID{}
@@ -31,7 +29,7 @@ func (a *AddressAgentID) Address() *cryptolib.Address {
 }
 
 func (a *AddressAgentID) Bytes() []byte {
-	return rwutil.WriteToBytes(a)
+	return bcs.MustMarshal(a)
 }
 
 func (a *AddressAgentID) BelongsToChain(ChainID) bool {
@@ -58,19 +56,4 @@ func (a *AddressAgentID) Kind() AgentIDKind {
 
 func (a *AddressAgentID) String() string {
 	return a.a.String()
-}
-
-func (a *AddressAgentID) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
-	a.a = cryptolib.NewEmptyAddress()
-	rr.Read(a.a)
-	return rr.Err
-}
-
-func (a *AddressAgentID) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(a.Kind()))
-	ww.Write(a.a)
-	return ww.Err
 }
