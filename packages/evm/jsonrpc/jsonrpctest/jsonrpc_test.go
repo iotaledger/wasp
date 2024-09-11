@@ -7,7 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"math/big"
-	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -579,10 +579,202 @@ func TestRPCTraceTx(t *testing.T) {
 		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
 	)
 	require.NoError(t, err)
-	lastCallRegExp := regexp.MustCompile(`{.+"to":"0x([a-zA-Z0-9_.-]+)".*}`)
-	match1 := lastCallRegExp.Find(res1)
-	match2 := lastCallRegExp.Find(res2)
-	require.NotEqual(t, match1, match2)
+
+	trace1 := jsonrpc.CallFrame{}
+	err = json.Unmarshal(res1, &trace1)
+	require.NoError(t, err)
+
+	require.Equal(t, creatorAddress, trace1.From)
+	require.Equal(t, contractAddress, *trace1.To)
+	require.Equal(t, big.NewInt(123), trace1.Value)
+	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))
+	require.NoError(t, err)
+	require.Equal(t, expectedInput, trace1.Input)
+	require.Empty(t, trace1.Error)
+	require.Empty(t, trace1.RevertReason)
+
+	require.Len(t, trace1.Calls, 1)
+	trace2 := trace1.Calls[0]
+	require.Equal(t, contractAddress, trace2.From)
+	require.Equal(t, common.Address{0x1}, *trace2.To)
+	require.Equal(t, big.NewInt(1), trace2.Value)
+	require.Empty(t, trace2.Input)
+	require.Empty(t, trace2.Error)
+	require.Empty(t, trace2.RevertReason)
+}
+
+func TestRPCTraceBlock(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creator2, creatorAddress2 := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	// make it so that 2 requests are included in the same block
+	tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    big.NewInt(123),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))),
+		})
+
+	tx2 := types.MustSignNewTx(creator2, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress2),
+			To:       &contractAddress,
+			Value:    big.NewInt(321),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))),
+		})
+
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	env.soloChain.WaitForRequestsMark()
+	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
+	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
+
+	var res1 json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"debug_traceBlockByNumber",
+		env.BlockNumber(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	var res2 json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res2,
+		"debug_traceBlockByHash",
+		env.BlockByNumber(big.NewInt(int64(env.BlockNumber()))).Hash(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	require.Equal(t, res1, res2, "debug_traceBlockByNumber and debug_traceBlockByNumber should produce equal results")
+
+	traceBlock := make([]jsonrpc.TxTraceResult, 0)
+	err = json.Unmarshal(res1, &traceBlock)
+	require.NoError(t, err)
+
+	require.Len(t, traceBlock, 2)
+
+	trace1 := traceBlock[slices.IndexFunc(traceBlock, func(v jsonrpc.TxTraceResult) bool {
+		return v.TxHash == tx1.Hash()
+	})].Result
+
+	trace2 := traceBlock[slices.IndexFunc(traceBlock, func(v jsonrpc.TxTraceResult) bool {
+		return v.TxHash == tx2.Hash()
+	})].Result
+
+	require.Equal(t, creatorAddress, trace1.From)
+	require.Equal(t, contractAddress, *trace1.To)
+	require.Equal(t, big.NewInt(123), trace1.Value)
+	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))
+	require.NoError(t, err)
+	require.Equal(t, expectedInput, trace1.Input)
+	require.Empty(t, trace1.Error)
+	require.Empty(t, trace1.RevertReason)
+
+	require.Len(t, trace1.Calls, 1)
+	innerCall1 := trace1.Calls[0]
+	require.Equal(t, contractAddress, innerCall1.From)
+	require.Equal(t, common.Address{0x1}, *innerCall1.To)
+	require.Equal(t, big.NewInt(2), innerCall1.Value)
+	require.Empty(t, innerCall1.Input)
+	require.Empty(t, innerCall1.Error)
+	require.Empty(t, innerCall1.RevertReason)
+
+	require.Equal(t, creatorAddress2, trace2.From)
+	require.Equal(t, contractAddress, *trace2.To)
+	require.Equal(t, big.NewInt(321), trace2.Value)
+	expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
+	require.NoError(t, err)
+	require.Equal(t, expectedInput, trace2.Input)
+	require.Empty(t, trace2.Error)
+	require.Empty(t, trace2.RevertReason)
+
+	require.Len(t, trace2.Calls, 1)
+	innerCall2 := trace2.Calls[0]
+	require.Equal(t, contractAddress, innerCall2.From)
+	require.Equal(t, common.Address{0x2}, *innerCall2.To)
+	require.Equal(t, big.NewInt(3), innerCall2.Value)
+	require.Empty(t, innerCall2.Input)
+	require.Empty(t, innerCall2.Error)
+	require.Empty(t, innerCall2.RevertReason)
+}
+
+func TestRPCBlockReceipt(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creator2, creatorAddress2 := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    big.NewInt(123),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))),
+		})
+
+	tx2 := types.MustSignNewTx(creator2, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress2),
+			To:       &contractAddress,
+			Value:    big.NewInt(321),
+			Gas:      100000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))),
+		})
+
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	env.soloChain.WaitForRequestsMark()
+	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
+	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
+
+	var resceipts []*types.Receipt
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&resceipts,
+		"eth_getBlockReceipts",
+		env.BlockNumber())
+	require.NoError(t, err)
+
+	require.Len(t, resceipts, 2)
+
+	r1 := resceipts[slices.IndexFunc(resceipts, func(v *types.Receipt) bool {
+		return v.TxHash == tx1.Hash()
+	})]
+
+	r2 := resceipts[slices.IndexFunc(resceipts, func(v *types.Receipt) bool {
+		return v.TxHash == tx2.Hash()
+	})]
+
+	require.Equal(t, uint64(1), r1.Status)
+	require.Equal(t, big.NewInt(4), r1.BlockNumber)
+	require.Equal(t, uint64(1), r2.Status)
+	require.Equal(t, big.NewInt(4), r1.BlockNumber)
 }
 
 func BenchmarkRPCEstimateGas(b *testing.B) {

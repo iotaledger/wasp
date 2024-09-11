@@ -451,6 +451,17 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 	return rpcSub, nil
 }
 
+func (e *EthService) GetBlockReceipts(blockNumber int64) ([]*types.Receipt, error) {
+	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]*types.Receipt, error) {
+		receipts, err := e.evmChain.GetBlockReceipts(rpc.BlockNumber(blockNumber))
+		if err != nil {
+			return nil, e.resolveError(err)
+		}
+
+		return receipts, nil
+	})
+}
+
 /*
 Not implemented:
 func (e *EthService) NewFilter()
@@ -540,6 +551,18 @@ func NewDebugService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *D
 func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
 	return withMetrics(d.metrics, "debug_traceTransaction", func() (interface{}, error) {
 		return d.evmChain.TraceTransaction(txHash, config)
+	})
+}
+
+func (d *DebugService) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceConfig) (interface{}, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByNumber", func() (interface{}, error) {
+		return d.evmChain.TraceBlockByNumber(blockNumber, config)
+	})
+}
+
+func (d *DebugService) TraceBlockByHash(blockHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (interface{}, error) {
+		return d.evmChain.TraceBlockByHash(blockHash, config)
 	})
 }
 

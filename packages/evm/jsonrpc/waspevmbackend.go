@@ -84,19 +84,21 @@ func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, call
 	return chainutil.EVMEstimateGas(b.chain, aliasOutput, callMsg)
 }
 
-func (b *WaspEVMBackend) EVMTraceTransaction(
+func (b *WaspEVMBackend) EVMTrace(
 	aliasOutput *isc.AliasOutputWithID,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex uint64,
+	txIndex *uint64,
+	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
-	return chainutil.EVMTraceTransaction(
+	return chainutil.EVMTrace(
 		b.chain,
 		aliasOutput,
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
+		blockNumber,
 		tracer,
 	)
 }
