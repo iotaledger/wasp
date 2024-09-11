@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -121,10 +120,10 @@ func getChainNodes(ctx isc.SandboxView) (
 	state := governance.NewStateReaderFromSandbox(ctx)
 	state.AccessNodeCandidatesMap().Iterate(func(pubKeyBytes, accessNodeDataBytes []byte) bool {
 		pubKey := lo.Must(cryptolib.PublicKeyFromBytes(pubKeyBytes))
-		and := lo.Must(rwutil.ReadFromBytes(accessNodeDataBytes, new(governance.AccessNodeData)))
+		and := bcs.MustUnmarshal[governance.AccessNodeData](accessNodeDataBytes)
 		candidates = append(candidates, &governance.AccessNodeInfo{
 			NodePubKey:     pubKey,
-			AccessNodeData: *and,
+			AccessNodeData: and,
 		})
 		return true
 	})

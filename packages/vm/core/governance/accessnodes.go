@@ -4,12 +4,10 @@
 package governance
 
 import (
-	"io"
-
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -17,11 +15,18 @@ import (
 // It is implemented as a signature over the node pub key concatenated with the owner address.
 type NodeOwnershipCertificate []byte
 
+type NodeOwnershipCertificateFields struct {
+	NodePubKey   *cryptolib.PublicKey
+	OwnerAddress *cryptolib.Address
+}
+
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) NodeOwnershipCertificate {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(nodeKeyPair.GetPublicKey())
-	ww.Write(ownerAddress)
-	return nodeKeyPair.GetPrivateKey().Sign(ww.Bytes())
+	cert := bcs.MustMarshal(&NodeOwnershipCertificateFields{
+		NodePubKey:   nodeKeyPair.GetPublicKey(),
+		OwnerAddress: ownerAddress,
+	})
+
+	return nodeKeyPair.GetPrivateKey().Sign(cert)
 }
 
 func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
@@ -29,10 +34,12 @@ func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress *cryptolib.Address) bool {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(nodePubKey)
-	ww.Write(ownerAddress)
-	return nodePubKey.Verify(ww.Bytes(), c.Bytes())
+	cert := bcs.MustMarshal(&NodeOwnershipCertificateFields{
+		NodePubKey:   nodePubKey,
+		OwnerAddress: ownerAddress,
+	})
+
+	return nodePubKey.Verify(cert, c.Bytes())
 }
 
 func (c NodeOwnershipCertificate) Bytes() []byte {
@@ -63,18 +70,6 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 }
 
 type ChangeAccessNodeAction byte
-
-func (a *ChangeAccessNodeAction) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(byte(*a))
-	return ww.Err
-}
-
-func (a *ChangeAccessNodeAction) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	*a = ChangeAccessNodeAction(rr.ReadByte())
-	return rr.Err
-}
 
 const (
 	ChangeAccessNodeActionRemove = ChangeAccessNodeAction(iota)

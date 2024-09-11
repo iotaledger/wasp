@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -122,15 +121,6 @@ func (k *RequestLookupKey) Bytes() []byte {
 	return k[:]
 }
 
-func (k *RequestLookupKey) Read(r io.Reader) error {
-	_, err := bcs.UnmarshalStreamOver(r, k)
-	return err
-}
-
-func (k *RequestLookupKey) Write(w io.Writer) error {
-	return bcs.MarshalStream(k, w)
-}
-
 // endregion ///////////////////////////////////////////////////////////
 
 // region RequestLookupKeyList //////////////////////////////////////////////
@@ -139,22 +129,11 @@ func (k *RequestLookupKey) Write(w io.Writer) error {
 type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
-	rr := rwutil.NewBytesReader(data)
-	size := rr.ReadSize16()
-	ret = make(RequestLookupKeyList, size)
-	for i := range ret {
-		rr.Read(&ret[i])
-	}
-	return ret, rr.Err
+	return bcs.Unmarshal[RequestLookupKeyList](data)
 }
 
 func (ll RequestLookupKeyList) Bytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteSize16(len(ll))
-	for i := range ll {
-		ww.Write(&ll[i])
-	}
-	return ww.Bytes()
+	return bcs.MustMarshal(&ll)
 }
 
 // endregion /////////////////////////////////////////////////////////////
