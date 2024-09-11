@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
@@ -15,14 +16,12 @@ func TestCreateAndSendRequest(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
-	anchor := startNewChain(t, client, cryptolibSigner, iscPackageID)
+	anchor := startNewChain(t, client, cryptolibSigner)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -35,7 +34,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 	AllowanceNewRes, err := client.AllowanceNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -48,7 +47,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		anchor.ObjectID,
 		assetsBagRef,
 		uint32(isc.Hn("test_isc_contract")),

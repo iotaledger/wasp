@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
@@ -18,12 +19,10 @@ func TestStartNewChain(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
-	iscPackageID := buildAndDeployISCContracts(t, client, signer)
-
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
 		nil,
 		suiclient.DefaultGasPrice,
@@ -38,12 +37,10 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
-	iscPackageID := buildAndDeployISCContracts(t, client, signer)
-
 	anchor1, err := client.StartNewChain(
 		context.Background(),
 		signer,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
 		nil,
 		suiclient.DefaultGasPrice,
@@ -63,14 +60,12 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	chainSigner := newSignerWithFunds(t, testSeed, 1)
 
-	iscPackageID := buildAndDeployISCContracts(t, client, cryptolibSigner)
-
-	anchor := startNewChain(t, client, chainSigner, iscPackageID)
+	anchor := startNewChain(t, client, chainSigner)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -80,12 +75,12 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner, iscPackageID)
+	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		&anchor.Object.ID,
 		sentAssetsBagRef,
 		uint32(isc.Hn("test_isc_contract")),
@@ -107,7 +102,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
 		chainSigner,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,
 		[]sui.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
@@ -119,11 +114,11 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer, iscPackageID sui.PackageID) *iscmove.RefWithObject[iscmove.Anchor] {
+func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.RefWithObject[iscmove.Anchor] {
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
-		iscPackageID,
+		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
 		nil,
 		suiclient.DefaultGasPrice,

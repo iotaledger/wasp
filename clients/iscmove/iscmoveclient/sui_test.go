@@ -15,7 +15,8 @@ func signAndExecuteTransactionGetObjectRef(
 	cryptolibSigner cryptolib.Signer,
 	txnBytes []byte,
 	module sui.Identifier,
-	objName sui.Identifier) (*sui.ObjectRef, error) {
+	objName sui.Identifier,
+) (*sui.ObjectRef, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),

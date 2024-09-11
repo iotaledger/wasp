@@ -37,11 +37,6 @@ func ChainIDFromObjectID(addr sui.ObjectID) ChainID {
 	return ChainID(addr[:])
 }
 
-// ChainIDFromAliasID creates new chain ID from alias address
-func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
-	return ChainID(aliasID)
-}
-
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
 func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	_, err = rwutil.ReadFromBytes(data, &ret)

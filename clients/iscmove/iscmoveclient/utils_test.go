@@ -23,35 +23,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) sui.PackageID {
-	suiSigner := cryptolib.SignerToSuiSigner(signer)
-	iscBytecode := contracts.ISC()
-
-	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
-		Sender:          suiSigner.Address(),
-		CompiledModules: iscBytecode.Modules,
-		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
-	})
-	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		suiSigner,
-		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
-
-	return *packageID
-}
-
 func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectInfo) {
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
