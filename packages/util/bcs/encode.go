@@ -300,10 +300,6 @@ func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 }
 
 func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumVariantID, _ error) {
-	if v.IsNil() {
-		return -1, fmt.Errorf("attemp to encode non-optional nil interface")
-	}
-
 	t := v.Type()
 
 	enumVariants, registered := EnumTypes[t]
@@ -311,7 +307,15 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx En
 		return -1, fmt.Errorf("interface %v is not registered as enum type", t)
 	}
 
-	valT := v.Elem().Type()
+	isNil := v.IsNil()
+
+	var valT reflect.Type
+	if isNil {
+		valT = noneT
+	} else {
+		valT = v.Elem().Type()
+	}
+
 	enumVariantIdx = -1
 
 	for id, variant := range enumVariants {
@@ -321,7 +325,11 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx En
 	}
 
 	if enumVariantIdx == -1 {
-		return -1, fmt.Errorf("variant %v is not registered as part of enum type %v", valT, t)
+		if isNil {
+			return -1, fmt.Errorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", t)
+		} else {
+			return -1, fmt.Errorf("variant %v is not registered as part of enum type %v", valT, t)
+		}
 	}
 
 	return enumVariantIdx, nil
@@ -707,6 +715,10 @@ func (e *Encoder) encodeInterfaceEnum(v reflect.Value) error {
 
 func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
 	e.w.WriteSize32(variantIdx)
+
+	if !v.IsValid() {
+		return nil
+	}
 
 	if err := e.encodeValue(v, nil, nil); err != nil {
 		return fmt.Errorf("%v: %w", v.Type(), err)
