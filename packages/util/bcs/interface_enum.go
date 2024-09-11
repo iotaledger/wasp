@@ -22,7 +22,7 @@ func RegisterEnumTypeVariant[EnumType any](id EnumVariantID, newVariant any) str
 		panic(fmt.Errorf("RegisterEnumType: variant type %v of enum %v is an interface", newVariantT, enumT))
 	}
 
-	if !newVariantT.Implements(enumT) {
+	if !newVariantT.Implements(enumT) && newVariantT != noneT {
 		panic(fmt.Errorf("RegisterEnumType: variant type %v does not implement enum %v", newVariantT, enumT))
 	}
 

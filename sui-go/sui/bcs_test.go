@@ -78,7 +78,7 @@ func testBCS[V any](t *testing.T, v V) {
 
 func testBCSEnc[V any](t *testing.T, v V) []byte {
 	refEnc := ref_bcs.MustMarshal(v)
-	enc := bcs.MustMarshal(v)
+	enc := bcs.MustMarshal(&v)
 	require.Equal(t, refEnc, enc)
 
 	return enc

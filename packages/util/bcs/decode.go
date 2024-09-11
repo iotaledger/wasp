@@ -635,7 +635,12 @@ func (d *Decoder) decodeInterfaceEnum(v reflect.Value) error {
 		return fmt.Errorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, v.Type(), len(variants))
 	}
 
-	variant := reflect.New(variants[variantIdx]).Elem()
+	variantT := variants[variantIdx]
+	if variantT == noneT {
+		return nil
+	}
+
+	variant := reflect.New(variantT).Elem()
 
 	if err := d.decodeValue(variant, nil, nil); err != nil {
 		return fmt.Errorf("%v: %w", variants[variantIdx], err)
