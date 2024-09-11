@@ -8,8 +8,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func NewAssetsBagNewPTB(packageID sui.PackageID, owner *cryptolib.Address) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBAssetsBagNew(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, owner *cryptolib.Address) *sui.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -29,15 +28,13 @@ func NewAssetsBagNewPTB(packageID sui.PackageID, owner *cryptolib.Address) sui.P
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }
 
-func NewAssetsBagPlaceCoinPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectRef, coin *sui.ObjectRef, coinType string) (sui.ProgrammableTransaction, error) {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBAssetsBagPlaceCoin(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAssetsBag sui.Argument, coin *sui.ObjectRef, coinType string) *sui.ProgrammableTransactionBuilder {
 	typeTag, err := sui.TypeTagFromString(coinType)
 	if err != nil {
-		return sui.ProgrammableTransaction{}, fmt.Errorf("failed to parse TypeTag: %s: %w", coinType, err)
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 	ptb.Command(
 		sui.Command{
@@ -47,18 +44,16 @@ func NewAssetsBagPlaceCoinPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectR
 				Function:      "place_coin",
 				TypeArguments: []sui.TypeTag{*typeTag},
 				Arguments: []sui.Argument{
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+					argAssetsBag,
 					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coin}),
 				},
 			},
 		},
 	)
-
-	return ptb.Finish(), nil
+	return ptb
 }
 
-func NewAssetsDestroyEmptyPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectRef) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBAssetsDestroyEmpty(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAssetsBag sui.Argument) *sui.ProgrammableTransactionBuilder {
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -67,11 +62,10 @@ func NewAssetsDestroyEmptyPTB(packageID sui.PackageID, assetsBagRef *sui.ObjectR
 				Function:      "destroy_empty",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+					argAssetsBag,
 				},
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }

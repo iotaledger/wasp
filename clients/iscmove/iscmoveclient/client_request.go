@@ -37,16 +37,19 @@ func (c *Client) CreateAndSendRequest(
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	ptb := NewCreateAndSendRequestPTB(
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBCreateAndSendRequest(
+		ptb,
 		packageID,
 		*anchorRef.ObjectID,
-		assetsBagRef,
+		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 		iscContractHname,
 		iscFunctionHname,
 		args,
-		allowanceRef,
+		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}),
 		onchainGasBudget,
 	)
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -58,7 +61,7 @@ func (c *Client) CreateAndSendRequest(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,

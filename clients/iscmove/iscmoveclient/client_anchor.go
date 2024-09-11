@@ -26,7 +26,9 @@ func (c *Client) StartNewChain(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewStartNewChainPTB(packageID, stateMetadata, cryptolibSigner.Address())
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, cryptolibSigner.Address())
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -38,7 +40,7 @@ func (c *Client) StartNewChain(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -93,6 +95,7 @@ func (c *Client) ReceiveRequestAndTransition(
 	gasBudget uint64,
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	reqAssetsBagsMap := make(map[sui.ObjectRef]*iscmove.AssetsBagWithBalances)
@@ -108,10 +111,9 @@ func (c *Client) ReceiveRequestAndTransition(
 		reqAssetsBagsMap[reqRef] = assetsBag
 	}
 
-	ptb, err := NewReceiveRequestPTB(packageID, anchorRef, reqs, reqAssetsBagsMap, stateMetadata)
-	if err != nil {
-		return nil, err
-	}
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBReceiveRequestAndTransition(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef}), reqs, reqAssetsBagsMap, stateMetadata)
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -122,7 +124,7 @@ func (c *Client) ReceiveRequestAndTransition(
 	}
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,

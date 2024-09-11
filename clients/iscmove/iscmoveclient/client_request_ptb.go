@@ -5,18 +5,17 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func NewCreateAndSendRequestPTB(
+func PTBCreateAndSendRequest(
+	ptb *sui.ProgrammableTransactionBuilder,
 	packageID sui.PackageID,
 	anchorID sui.ObjectID,
-	assetsBagRef *sui.ObjectRef,
+	argAssetsBag sui.Argument,
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
-	allowanceRef *sui.ObjectRef,
+	argAllowance sui.Argument,
 	onchainGasBudget uint64,
-) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
-
+) *sui.ProgrammableTransactionBuilder {
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -26,16 +25,15 @@ func NewCreateAndSendRequestPTB(
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
 					ptb.MustPure(anchorID),
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+					argAssetsBag,
 					ptb.MustPure(iscContractHname),
 					ptb.MustPure(iscFunctionHname),
 					ptb.MustPure(args),
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}),
+					argAllowance,
 					ptb.MustPure(onchainGasBudget),
 				},
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }
