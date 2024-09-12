@@ -5,34 +5,36 @@ package evmtypes
 
 import (
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-func EncodeCallMsg(c ethereum.CallMsg) []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteN(c.From[:])
-	ww.WriteBool(c.To != nil)
-	if c.To != nil {
-		ww.WriteN(c.To[:])
-	}
-	ww.WriteGas64(c.Gas)
-	ww.WriteBigUint(c.Value)
-	ww.WriteBytes(c.Data)
-	return ww.Bytes()
+func init() {
+	bcs.AddCustomEncoder(func(e *bcs.Encoder, msg ethereum.CallMsg) error {
+		e.Encode(msg.From[:])
+		e.EncodeOptional(msg.To)
+		e.Encode(msg.Gas)
+		e.Encode(msg.Value)
+		e.Encode(msg.Data)
+
+		return e.Err()
+	})
+
+	bcs.AddCustomDecoder(func(d *bcs.Decoder, msg *ethereum.CallMsg) error {
+		d.Decode(&msg.From)
+		d.DecodeOptional(&msg.To)
+		d.Decode(&msg.Gas)
+		d.Decode(&msg.Value)
+		d.Decode(&msg.Data)
+
+		return d.Err()
+	})
 }
 
-func DecodeCallMsg(data []byte) (ret ethereum.CallMsg, err error) {
-	rr := rwutil.NewBytesReader(data)
-	rr.ReadN(ret.From[:])
-	hasTo := rr.ReadBool()
-	if hasTo {
-		ret.To = new(common.Address)
-		rr.ReadN(ret.To[:])
-	}
-	ret.Gas = rr.ReadGas64()
-	ret.Value = rr.ReadBigUint()
-	ret.Data = rr.ReadBytes()
-	return ret, rr.Err
+func EncodeCallMsg(args ethereum.CallMsg) []byte {
+	return bcs.MustMarshal(&args)
+}
+
+func DecodeCallMsg(data []byte) ethereum.CallMsg {
+	return bcs.MustUnmarshal[ethereum.CallMsg](data)
 }
