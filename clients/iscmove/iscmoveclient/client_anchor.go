@@ -31,11 +31,11 @@ func (c *Client) StartNewChain(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
+		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = coins.CoinRefs()
+		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
 	tx := sui.NewProgrammable(
@@ -85,6 +85,7 @@ func (c *Client) StartNewChain(
 
 func (c *Client) ReceiveRequestAndTransition(
 	ctx context.Context,
+	ptb *sui.ProgrammableTransactionBuilder,
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
 	anchorRef *sui.ObjectRef,
@@ -111,16 +112,15 @@ func (c *Client) ReceiveRequestAndTransition(
 		reqAssetsBagsMap[reqRef] = assetsBag
 	}
 
-	ptb := sui.NewProgrammableTransactionBuilder()
 	ptb = PTBReceiveRequestAndTransition(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef}), reqs, reqAssetsBagsMap, stateMetadata)
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
+		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = coins.CoinRefs()
+		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
 	}
 	tx := sui.NewProgrammable(
 		signer.Address(),
@@ -197,6 +197,10 @@ func (c *Client) GetRequestFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-
+	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
+	}
+	req.AssetsBag.Value = bals
 	return &req, nil
 }

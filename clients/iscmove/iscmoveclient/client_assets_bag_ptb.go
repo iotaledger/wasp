@@ -53,6 +53,36 @@ func PTBAssetsBagPlaceCoin(ptb *sui.ProgrammableTransactionBuilder, packageID su
 	return ptb
 }
 
+func PTBAssetsBagPlaceCoinWithAmount(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, assetsBagRef *sui.ObjectRef, coin *sui.ObjectRef, amount uint64, coinType string) *sui.ProgrammableTransactionBuilder {
+	typeTag, err := sui.TypeTagFromString(coinType)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
+	}
+	splitCoinArg := ptb.Command(
+		sui.Command{
+			SplitCoins: &sui.ProgrammableSplitCoins{
+				Coin:    ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coin}),
+				Amounts: []sui.Argument{ptb.MustForceSeparatePure(amount)},
+			},
+		},
+	)
+	ptb.Command(
+		sui.Command{
+			MoveCall: &sui.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "place_coin",
+				TypeArguments: []sui.TypeTag{*typeTag},
+				Arguments: []sui.Argument{
+					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+					splitCoinArg,
+				},
+			},
+		},
+	)
+	return ptb
+}
+
 func PTBAssetsDestroyEmpty(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAssetsBag sui.Argument) *sui.ProgrammableTransactionBuilder {
 	ptb.Command(
 		sui.Command{

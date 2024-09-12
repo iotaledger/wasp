@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestStartNewChain(t *testing.T) {
@@ -75,6 +76,27 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
+	getCoinsRes, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsSuiAddress()})
+	require.NoError(t, err)
+
+	_, err = client.AssetsBagPlaceCoinAmount(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		sentAssetsBagRef,
+		getCoinsRes.Data[len(getCoinsRes.Data)-1].Ref(),
+		suijsonrpc.SuiCoinType,
+		10,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+
+	sentAssetsBagRef, err = client.UpdateObjectRef(context.Background(), sentAssetsBagRef)
+	require.NoError(t, err)
+
 	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
@@ -99,8 +121,11 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
+	ptb := sui.NewProgrammableTransactionBuilder()
+
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
+		ptb,
 		chainSigner,
 		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,
