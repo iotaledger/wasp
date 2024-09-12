@@ -17,6 +17,12 @@ type Decodable interface {
 
 var decodableT = reflect.TypeOf((*Decodable)(nil)).Elem()
 
+type Initializeable interface {
+	BCSInit() error
+}
+
+var initializeableT = reflect.TypeOf((*Initializeable)(nil)).Elem()
+
 type DecoderConfig struct {
 	TagName        string
 	CustomDecoders map[reflect.Type]CustomDecoder
@@ -64,10 +70,6 @@ func (d *Decoder) Decode(v any) error {
 	if d.err != nil {
 		return d.err
 	}
-	if v == nil {
-		d.err = fmt.Errorf("cannot Decode a nil value")
-		return d.err
-	}
 
 	vR := reflect.ValueOf(v)
 
@@ -88,6 +90,23 @@ func (d *Decoder) Decode(v any) error {
 	return d.err
 }
 
+func (d *Decoder) DecodeOptionalFlag() (bool, error) {
+	hasValue := d.r.ReadByte() != 0
+	return hasValue, d.r.Err
+}
+
+func (d *Decoder) DecodeOptional(v any) (bool, error) {
+	if hasValue := d.r.ReadByte() != 0; !hasValue {
+		return false, d.r.Err
+	}
+
+	return true, d.Decode(v)
+}
+
+func (d *Decoder) DecodeEnumVariantIdx() (int, error) {
+	return int(d.r.ReadSize32()), d.r.Err
+}
+
 func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, typeParsingHint *typeInfo) error {
 	var t typeInfo
 
@@ -103,16 +122,25 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	v = d.getDecodedValueStorage(v, t.RefLevelsCount)
 
-	if t.Customization == typeCustomizationHasCustomCodec {
+	if t.CustomDecoder != nil {
 		if err := t.CustomDecoder(d, v.Addr()); err != nil {
 			return fmt.Errorf("%v: custom decoder: %w", v.Type(), err)
+		}
+		if d.r.Err != nil {
+			return fmt.Errorf("%v: custom decoder: %w", v.Type(), d.r.Err)
+		}
+
+		if t.Init != nil {
+			if err := t.Init(v.Addr()); err != nil {
+				return fmt.Errorf("%v: custom init: %w", v.Type(), err)
+			}
 		}
 
 		return nil
 	}
 
 	var typeOptions TypeOptions
-	if t.Customization == typeCustomizationHasTypeOptions {
+	if t.HasTypeOptions {
 		typeOptions = v.Interface().(BCSType).BCSOptions()
 	}
 	if typeOptionsFromTag != nil {
@@ -149,7 +177,7 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		}
 		err = d.decodeMap(v, typeOptions)
 	case reflect.Struct:
-		if t.Customization == typeCustomizationIsStructEnum {
+		if t.IsStructEnum {
 			err = d.decodeStructEnum(v)
 		} else {
 			err = d.decodeStruct(v)
@@ -171,28 +199,38 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		return fmt.Errorf("%v: %w", v.Type(), d.r.Err)
 	}
 
+	if t.Init != nil {
+		if err := t.Init(v.Addr()); err != nil {
+			return fmt.Errorf("%v: custom init: %w", v.Type(), err)
+		}
+	}
+
 	return nil
 }
 
-func (e *Decoder) checkTypeCustomizations(t reflect.Type) (typeCustomization, CustomDecoder) {
-	// Detecting enum variant index might return error, so we
-	// should first check for existance of custom decoder.
-	if customDecoder := e.getCustomDecoder(t); customDecoder != nil {
-		return typeCustomizationHasCustomCodec, customDecoder
+func (e *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
+	customDecoder := e.getCustomDecoder(t)
+	customInitFunc := e.getCustomInitFunc(t)
+
+	if customDecoder != nil || customInitFunc != nil {
+		return typeCustomization{
+			CustomDecoder: customDecoder,
+			Init:          customInitFunc,
+		}
 	}
 
 	kind := t.Kind()
 
 	switch {
 	case kind == reflect.Interface:
-		return typeCustomizationNone, nil
+		return typeCustomization{}
 	case kind == reflect.Struct && t.Implements(enumT):
-		return typeCustomizationIsStructEnum, nil
+		return typeCustomization{IsStructEnum: true}
 	case t.Implements(bcsTypeT):
-		return typeCustomizationHasTypeOptions, nil
+		return typeCustomization{HasTypeOptions: true}
 	}
 
-	return typeCustomizationNone, nil
+	return typeCustomization{}
 }
 
 func (e *Decoder) getEncodedType(t reflect.Type) typeInfo {
@@ -201,18 +239,18 @@ func (e *Decoder) getEncodedType(t reflect.Type) typeInfo {
 
 	for t.Kind() == reflect.Ptr {
 		// Before dereferencing pointer, we should check if maybe current type is already the type we should decode.
-		customization, customDecoder := e.checkTypeCustomizations(t)
-		if customization != typeCustomizationNone {
-			return typeInfo{refLevelsCount, customization, nil, customDecoder}
+		customization := e.checkTypeCustomizations(t)
+		if customization.HasCustomizations() {
+			return typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
 		}
 
 		refLevelsCount++
 		t = t.Elem()
 	}
 
-	customization, customDecoder := e.checkTypeCustomizations(t)
+	customization := e.checkTypeCustomizations(t)
 
-	return typeInfo{refLevelsCount, customization, nil, customDecoder}
+	return typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
 }
 
 func (d *Decoder) getDecodedValueStorage(v reflect.Value, refLevelsCount int) (dereferenced reflect.Value) {
@@ -245,14 +283,24 @@ func (d *Decoder) getCustomDecoder(t reflect.Type) CustomDecoder {
 		return customDecoder
 	}
 
-	// We skip interfaces, because although they can have custom decoders set for them as global option,
-	// they still can't providate them through methods, because their actual type is unknown.
 	if t.Kind() != reflect.Interface && reflect.PointerTo(t).Implements(decodableT) {
 		customDecoder := func(e *Decoder, v reflect.Value) error {
 			return v.Interface().(Decodable).UnmarshalBCS(e)
 		}
 
 		return customDecoder
+	}
+
+	return nil
+}
+
+func (d *Decoder) getCustomInitFunc(t reflect.Type) InitFunc {
+	if t.Kind() != reflect.Interface && reflect.PointerTo(t).Implements(initializeableT) {
+		initFunc := func(v reflect.Value) error {
+			return v.Interface().(Initializeable).BCSInit()
+		}
+
+		return initFunc
 	}
 
 	return nil
@@ -324,7 +372,7 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
 	// decoder requires addressable value.
 	t := d.getEncodedType(reflect.PointerTo(elemType))
 
-	if t.Customization == typeCustomizationNone {
+	if !t.HasCustomizations() {
 		// Optimizations for decoding of basic types
 		switch elemType.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -765,6 +813,7 @@ func MustUnmarshalOver[V any](b []byte, v *V) *V {
 }
 
 type CustomDecoder func(e *Decoder, v reflect.Value) error
+type InitFunc func(v reflect.Value) error
 
 var CustomDecoders = make(map[reflect.Type]CustomDecoder)
 
