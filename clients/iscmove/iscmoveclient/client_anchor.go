@@ -101,11 +101,11 @@ func (c *Client) ReceiveRequestAndTransition(
 
 	reqAssetsBagsMap := make(map[sui.ObjectRef]*iscmove.AssetsBagWithBalances)
 	for _, reqRef := range reqs {
-		req, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
+		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
 			return nil, err
 		}
-		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
+		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &reqWithObj.Object.AssetsBag.Value.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +183,7 @@ func (c *Client) GetAnchorFromObjectID(
 func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	id *sui.ObjectID,
-) (*iscmove.Request, error) {
+) (*iscmove.RefWithObject[iscmove.Request], error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: id,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},

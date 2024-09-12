@@ -89,7 +89,13 @@ func (c *Client) AssetsBagPlaceCoin(
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
-	ptb = PTBAssetsBagPlaceCoin(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}), coin, string(coinType))
+	ptb = PTBAssetsBagPlaceCoin(
+		ptb,
+		packageID,
+		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coin}),
+		string(coinType),
+	)
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {

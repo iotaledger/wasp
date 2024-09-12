@@ -30,10 +30,10 @@ var (
 	ViewFindContract = coreutil.NewViewEP12(Contract, "findContract",
 		coreutil.FieldWithCodec(codec.Hname),
 		coreutil.FieldWithCodec(codec.Bool),
-		coreutil.FieldWithCodec(codec.NewCodecEx(ContractRecordFromBytes)),
+		coreutil.FieldWithCodecOptional(codec.NewCodecEx(ContractRecordFromBytes)),
 	)
 	ViewGetContractRecords = coreutil.NewViewEP01(Contract, "getContractRecords",
-		coreutil.FieldArrayWithCodec(codec.NewTupleCodec[isc.Hname, ContractRecord]()),
+		coreutil.FieldArrayWithCodec(codec.NewTupleCodec[*isc.Hname, *ContractRecord]()),
 	)
 )
 

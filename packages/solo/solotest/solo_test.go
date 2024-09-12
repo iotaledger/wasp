@@ -33,7 +33,7 @@ func TestSaveSnapshot(t *testing.T) {
 
 	_, err = ch.GetNativeTokenIDByFoundrySN(sn)
 	require.NoError(t, err)
-	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, big.NewInt(1000))
+	ch.AssertL2Coins(ch.OriginatorAgentID, nativeTokenID, big.NewInt(1000))
 
 	// create NFT on L1 and deposit on L2
 	nft, _, err := ch.Env.MintNFTL1(ch.OriginatorPrivateKey, ch.OriginatorAddress, []byte("foobar"))
@@ -66,5 +66,5 @@ func TestLoadSnapshot(t *testing.T) {
 
 	nativeTokenID, err := ch.GetNativeTokenIDByFoundrySN(1)
 	require.NoError(t, err)
-	ch.AssertL2NativeTokens(ch.OriginatorAgentID, nativeTokenID, big.NewInt(1000))
+	ch.AssertL2Coins(ch.OriginatorAgentID, nativeTokenID, big.NewInt(1000))
 }

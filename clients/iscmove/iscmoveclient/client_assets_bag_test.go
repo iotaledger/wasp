@@ -382,10 +382,10 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	req, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
 
-	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &reqWithObj.Object.AssetsBag.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]

@@ -199,6 +199,14 @@ func (c CoinBalances) String() string {
 	return fmt.Sprintf("CoinBalances{%s}", strings.Join(s, ", "))
 }
 
+func (c CoinBalances) Clone() CoinBalances {
+	r := NewCoinBalances()
+	for coinType, amount := range c {
+		r.Add(coinType, amount)
+	}
+	return r
+}
+
 type ObjectIDSet map[sui.ObjectID]struct{}
 
 func NewObjectIDSet() ObjectIDSet {
@@ -322,9 +330,7 @@ func AssetsFromBytes(b []byte) (*Assets, error) {
 
 func (a *Assets) Clone() *Assets {
 	r := NewEmptyAssets()
-	for coinType, amount := range a.Coins {
-		r.Coins.Add(coinType, amount)
-	}
+	r.Coins = a.Coins.Clone()
 	r.Objects = maps.Clone(a.Objects)
 	return r
 }

@@ -6,7 +6,6 @@ package solo
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -23,7 +22,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -54,11 +55,10 @@ var _ chain.Chain = &Chain{}
 func (ch *Chain) String() string {
 	w := new(rwutil.Buffer)
 	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
-	fmt.Fprintf(w, "Chain state controller: %s\n", ch.StateControllerAddress)
+	fmt.Fprintf(w, "Chain state controller: %s\n", ch.OriginatorAddress)
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
-	fmt.Fprintf(w, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return string(*w)
 }
 
@@ -82,15 +82,15 @@ func (ch *Chain) DumpAccounts() string {
 // FindContract is a view call to the 'root' smart contract on the chain.
 // It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
-	retDict, err := ch.CallView(root.ViewFindContract.Message(isc.Hn(scName)))
+	ret, err := ch.CallView(root.ViewFindContract.Message(isc.Hn(scName)))
 	if err != nil {
 		return nil, err
 	}
-	ok := lo.Must(root.ViewFindContract.Output1.Decode(retDict))
+	ok, prec := lo.Must2(root.ViewFindContract.DecodeOutput(ret))
 	if !ok {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
-	record := lo.Must(root.ViewFindContract.Output2.Decode(retDict))
+	record := *prec
 	if record.Name != scName {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
@@ -102,14 +102,14 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
 	res, err := ch.CallView(blob.ViewGetBlobInfo.Message(blobHash))
 	require.NoError(ch.Env.T, err)
-	ret := lo.Must(blob.ViewGetBlobInfo.Output.Decode(res))
+	ret := lo.Must(blob.ViewGetBlobInfo.DecodeOutput(res))
 	return ret, len(ret) > 0
 }
 
 func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.ViewGetFeePolicy.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetFeePolicy.Output1.Decode(res))
+	return lo.Must(governance.ViewGetFeePolicy.DecodeOutput(res))
 }
 
 func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
@@ -120,7 +120,7 @@ func (ch *Chain) SetGasFeePolicy(user *cryptolib.KeyPair, fp *gas.FeePolicy) {
 func (ch *Chain) GetGasLimits() *gas.Limits {
 	res, err := ch.CallView(governance.ViewGetGasLimits.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetGasLimits.Output1.Decode(res))
+	return lo.Must(governance.ViewGetGasLimits.DecodeOutput(res))
 }
 
 func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
@@ -153,16 +153,8 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, fields dict.Dict) (ret hash
 	if err != nil {
 		return ret, err
 	}
-	resBin := res.Get(blob.ParamHash)
-	if resBin == nil {
-		err = errors.New("internal error: no hash returned")
-		return ret, err
-	}
-	ret, err = codec.HashValue.Decode(resBin)
-	if err != nil {
-		return ret, err
-	}
-	require.EqualValues(ch.Env.T, expectedHash, ret)
+	blobHash := lo.Must(blob.FuncStoreBlob.DecodeOutput(res))
+	require.EqualValues(ch.Env.T, expectedHash, blobHash)
 	return ret, err
 }
 
@@ -203,13 +195,13 @@ func (ch *Chain) GetContractBinary(progHash hashing.HashValue) (string, []byte, 
 	if err != nil {
 		return "", nil, err
 	}
-	vmType := codec.String.MustDecode(lo.Must(blob.ViewGetBlobField.Output1.Decode(res)))
+	vmType := codec.String.MustDecode(lo.Must(blob.ViewGetBlobField.DecodeOutput(res)))
 
 	res, err = ch.CallView(blob.ViewGetBlobField.Message(progHash, codec.String.Encode(blob.VarFieldProgramBinary)))
 	if err != nil {
 		return "", nil, err
 	}
-	binary := lo.Must(blob.ViewGetBlobField.Output1.Decode(res))
+	binary := lo.Must(blob.ViewGetBlobField.DecodeOutput(res))
 	return vmType, binary, nil
 }
 
@@ -221,13 +213,9 @@ func (ch *Chain) GetContractBinary(progHash hashing.HashValue) (string, []byte, 
 //     binary and vmtype
 //   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
 //     smart contract must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, initParams ...dict.Dict) error {
-	var d dict.Dict
-	if len(initParams) > 0 {
-		d = initParams[0]
-	}
+func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, initParams isc.CallArguments) error {
 	_, err := ch.PostRequestSync(
-		NewCallParams(root.FuncDeployContract.Message(name, programHash, d)).
+		NewCallParams(root.FuncDeployContract.Message(programHash, name, initParams)).
 			WithGasBudget(math.MaxUint64),
 		user,
 	)
@@ -236,12 +224,12 @@ func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHas
 
 // UploadAndDeployContract is a shortcut for uploading a contract binary from file and
 // deploying the smart contract.
-func (ch *Chain) UploadAndDeployContract(keyPair *cryptolib.KeyPair, name, vmType, fname string, initParams ...dict.Dict) error {
+func (ch *Chain) UploadAndDeployContract(keyPair *cryptolib.KeyPair, name, vmType, fname string, initParams isc.CallArguments) error {
 	hprog, err := ch.UploadContractBinaryFromFile(keyPair, vmType, fname)
 	if err != nil {
 		return err
 	}
-	return ch.DeployContract(keyPair, name, hprog, initParams...)
+	return ch.DeployContract(keyPair, name, hprog, initParams)
 }
 
 func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...interface{}) (abi.ABI, []byte) {
@@ -284,23 +272,25 @@ func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, by
 	return crypto.CreateAddress(creatorAddress, nonce), contractABI
 }
 
-// GetInfo return main parameters of the chain:
+// GetInfo returns information about the chain:
 //   - chainID
 //   - agentID of the chain owner
-//   - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
+//   - list of contracts deployed on the chain
 func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.ViewGetChainOwner.Message())
 	require.NoError(ch.Env.T, err)
 
-	chainOwnerID, err := governance.ViewGetChainOwner.Output1.Decode(res)
+	chainOwnerID, err := governance.ViewGetChainOwner.DecodeOutput(res)
 	require.NoError(ch.Env.T, err)
 
 	res, err = ch.CallView(root.ViewGetContractRecords.Message())
 	require.NoError(ch.Env.T, err)
 
-	contracts, err := root.ViewGetContractRecords.Output1.Decode(res)
+	contracts, err := root.ViewGetContractRecords.DecodeOutput(res)
 	require.NoError(ch.Env.T, err)
-	return ch.ChainID, chainOwnerID, contracts
+	return ch.ChainID, chainOwnerID, lo.Associate(contracts, func(item lo.Tuple2[*isc.Hname, *root.ContractRecord]) (isc.Hname, *root.ContractRecord) {
+		return *item.A, item.B
+	})
 }
 
 // GetEventsForRequest calls the view in the 'blocklog' core smart contract to retrieve events for a given request.
@@ -309,7 +299,7 @@ func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]*isc.Event, error) 
 	if err != nil {
 		return nil, err
 	}
-	return blocklog.ViewGetEventsForRequest.Output.Decode(viewResult)
+	return blocklog.ViewGetEventsForRequest.DecodeOutput(viewResult)
 }
 
 // GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
@@ -318,14 +308,16 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]*isc.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	return blocklog.ViewGetEventsForBlock.Output2.Decode(viewResult)
+	_, events := lo.Must2(blocklog.ViewGetEventsForBlock.DecodeOutput(viewResult))
+	return events, nil
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.ViewGetBlockInfo.Message(nil))
 	require.NoError(ch.Env.T, err)
-	return lo.Must(blocklog.ViewGetBlockInfo.Output2.Decode(ret))
+	_, bi := lo.Must2(blocklog.ViewGetBlockInfo.DecodeOutput(ret))
+	return bi
 }
 
 func (ch *Chain) GetErrorMessageFormat(code isc.VMErrorCode) (string, error) {
@@ -333,7 +325,7 @@ func (ch *Chain) GetErrorMessageFormat(code isc.VMErrorCode) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return vmerrors.ViewGetErrorMessageFormat.Output.Decode(ret)
+	return vmerrors.ViewGetErrorMessageFormat.DecodeOutput(ret)
 }
 
 // GetBlockInfo return BlockInfo for the particular block index in the chain
@@ -342,21 +334,22 @@ func (ch *Chain) GetBlockInfo(blockIndex ...uint32) (*blocklog.BlockInfo, error)
 	if err != nil {
 		return nil, err
 	}
-	return blocklog.ViewGetBlockInfo.Output2.Decode(ret)
+	_, bi := lo.Must2(blocklog.ViewGetBlockInfo.DecodeOutput(ret))
+	return bi, nil
 }
 
 // IsRequestProcessed checks if the request is booked on the chain as processed
 func (ch *Chain) IsRequestProcessed(reqID isc.RequestID) bool {
 	ret, err := ch.CallView(blocklog.ViewIsRequestProcessed.Message(reqID))
 	require.NoError(ch.Env.T, err)
-	return lo.Must(blocklog.ViewIsRequestProcessed.Output.Decode(ret))
+	return lo.Must(blocklog.ViewIsRequestProcessed.DecodeOutput(ret))
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
 func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, bool) {
 	ret, err := ch.CallView(blocklog.ViewGetRequestReceipt.Message(reqID))
 	require.NoError(ch.Env.T, err)
-	rec, err := blocklog.ViewGetRequestReceipt.Output.Decode(ret)
+	rec, err := blocklog.ViewGetRequestReceipt.DecodeOutput(ret)
 	require.NoError(ch.Env.T, err)
 	return rec, rec != nil
 }
@@ -367,26 +360,27 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	if err != nil {
 		return nil
 	}
-	recs, err := blocklog.ViewGetRequestReceiptsForBlock.Output2.Decode(res)
+	recs, err := blocklog.ViewGetRequestReceiptsForBlock.DecodeOutput(res)
 	if err != nil {
 		ch.Log().Warn(err)
 		return nil
 	}
-	return recs
+	return recs.Receipts
 }
 
 // GetRequestIDsForBlock returns the list of requestIDs settled in a particular block
 func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 	res, err := ch.CallView(blocklog.ViewGetRequestIDsForBlock.Message(&blockIndex))
 	require.NoError(ch.Env.T, err)
-	return lo.Must(blocklog.ViewGetRequestIDsForBlock.Output2.Decode(res))
+	_, ids := lo.Must2(blocklog.ViewGetRequestIDsForBlock.DecodeOutput(res))
+	return ids
 }
 
 // GetRequestReceiptsForBlockRange returns all request log records for range of blocks, inclusively.
 // Upper bound is 'latest block' is set to 0
 func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestReceipt {
 	if toBlockIndex == 0 {
-		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex()
+		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex
 	}
 	if fromBlockIndex > toBlockIndex {
 		return nil
@@ -410,17 +404,14 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 }
 
 func (ch *Chain) GetControlAddresses() *isc.ControlAddresses {
-	aliasOutputID, err := ch.LatestAliasOutput(chain.ConfirmedState)
-	if err != nil {
-		return nil
-	}
-	aliasOutput := aliasOutputID.GetAliasOutput()
-	controlAddr := &isc.ControlAddresses{
-		StateAddress:     cryptolib.NewAddressFromIotago(aliasOutput.StateController()),
-		GoverningAddress: cryptolib.NewAddressFromIotago(aliasOutput.GovernorAddress()),
-		SinceBlockIndex:  aliasOutput.StateIndex,
-	}
-	return controlAddr
+	panic("TODO: is this still needed?")
+	/*
+		return &isc.ControlAddresses{
+			StateAddress:     ch.OriginatorAddress,
+			GoverningAddress: ch.OriginatorAddress,
+			SinceBlockIndex:  ch.LatestBlockIndex(),
+		}
+	*/
 }
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
@@ -443,7 +434,7 @@ func (ch *Chain) RemoveAllowedStateController(addr *cryptolib.Address, keyPair *
 func (ch *Chain) GetAllowedStateControllerAddresses() []*cryptolib.Address {
 	res, err := ch.CallView(governance.ViewGetAllowedStateControllerAddresses.Message())
 	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.Output1.Decode(res))
+	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.DecodeOutput(res))
 }
 
 // RotateStateController rotates the chain to the new controller address.
@@ -454,40 +445,40 @@ func (ch *Chain) RotateStateController(newStateAddr *cryptolib.Address, newState
 		WithMaxAffordableGasBudget()
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if result.Receipt.Error == nil {
-		ch.StateControllerAddress = newStateAddr
 		ch.StateControllerKeyPair = newStateKeyPair
 	}
 	return ch.ResolveVMError(result.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {
-	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
-	require.NoError(ch.Env.T, err)
-	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(ch.Env.T, err)
-	results := ch.RunRequestsSync(reqs, "postSpecial")
-	return results[0]
+	panic("TODO")
+	/*
+		reqID, err := ch.RequestFromParamsToLedger(req, keyPair)
+		require.NoError(ch.Env.T, err)
+		results := ch.RunRequestsSync(reqs, "postSpecial")
+		return results[0]
+	*/
 }
 
-type L1L2AddressAssets struct {
-	Address  *cryptolib.Address
-	AssetsL1 *isc.Assets
-	AssetsL2 *isc.Assets
+type L1L2CoinBalances struct {
+	Address *cryptolib.Address
+	L1      isc.CoinBalances
+	L2      isc.CoinBalances
 }
 
-func (a *L1L2AddressAssets) String() string {
-	return fmt.Sprintf("Address: %s\nL1 ftokens:\n  %s\nL2 ftokens:\n  %s", a.Address, a.AssetsL1, a.AssetsL2)
+func (a *L1L2CoinBalances) String() string {
+	return fmt.Sprintf("Address: %s\nL1 ftokens:\n  %s\nL2 ftokens:\n  %s", a.Address, a.L1, a.L2)
 }
 
-func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2AddressAssets {
-	return &L1L2AddressAssets{
-		Address:  addr,
-		AssetsL1: ch.Env.L1Assets(addr),
-		AssetsL2: ch.L2Assets(isc.NewAgentID(addr)),
+func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
+	return &L1L2CoinBalances{
+		Address: addr,
+		L1:      ch.Env.L1CoinBalances(addr),
+		L2:      ch.L2Assets(isc.NewAgentID(addr)).Coins,
 	}
 }
 
-func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64) {
+func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {
 	// find a deterministic L1 address that has 0 balance
 	walletKey, walletAddr := func() (*cryptolib.KeyPair, *cryptolib.Address) {
 		masterSeed := []byte("GetL2FundsFromFaucet")
@@ -495,8 +486,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 		for {
 			ss := cryptolib.SubSeed(masterSeed, i)
 			key, addr := ch.Env.NewKeyPair(&ss)
-			_, err := ch.Env.GetFundsFromFaucet(addr)
-			require.NoError(ch.Env.T, err)
+			ch.Env.GetFundsFromFaucet(addr)
 			if ch.L2BaseTokens(isc.NewAgentID(addr)) == 0 {
 				return key, addr
 			}
@@ -504,14 +494,14 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 		}
 	}()
 
-	var amount uint64
+	var amount coin.Value
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
 		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
 	}
 	err := ch.TransferAllowanceTo(
-		isc.NewAssetsBaseTokensU64(amount),
+		isc.NewAssets(amount),
 		agentID,
 		walletKey,
 	)
@@ -563,13 +553,9 @@ func (*Chain) GetTimeData() time.Time {
 	panic("unimplemented")
 }
 
-// LatestAliasOutput implements chain.Chain
-func (ch *Chain) LatestAliasOutput(freshness chain.StateFreshness) (*isc.AliasOutputWithID, error) {
-	ao := ch.GetAnchorOutputFromL1()
-	if ao == nil {
-		return nil, fmt.Errorf("have no latest alias output")
-	}
-	return ao, nil
+// LatestAnchor implements chain.Chain
+func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*iscmove.RefWithObject[iscmove.Anchor], error) {
+	return ch.GetLatestAnchor(), nil
 }
 
 // LatestState implements chain.Chain
@@ -577,18 +563,9 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	if freshness == chain.ActiveOrCommittedState || freshness == chain.ActiveState {
 		return ch.store.LatestState()
 	}
-	ao := ch.GetAnchorOutputFromL1()
-	if ao == nil {
-		return nil, errors.New("no AO for this chain in L1")
-	}
-	l1c, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
-	if err != nil {
-		panic(err)
-	}
-	st, err := ch.store.StateByTrieRoot(l1c.TrieRoot())
-	if err != nil {
-		panic(err)
-	}
+	anchorRef, _ := ch.LatestAnchor(chain.ActiveOrCommittedState)
+	m := lo.Must(transaction.StateMetadataFromBytes(anchorRef.Object.StateMetadata))
+	st := lo.Must(ch.store.StateByTrieRoot(m.L1Commitment.TrieRoot()))
 	return st, nil
 }
 
@@ -606,7 +583,7 @@ func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
 	}
 	res, err := ch.CallView(accounts.ViewGetAccountNonce.Message(&agentID))
 	require.NoError(ch.Env.T, err)
-	return lo.Must(accounts.ViewGetAccountNonce.Output.Decode(res))
+	return lo.Must(accounts.ViewGetAccountNonce.DecodeOutput(res))
 }
 
 // ReceiveOffLedgerRequest implements chain.Chain
@@ -620,7 +597,7 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	return ch.GetLatestBlockInfo().BlockIndex()
+	return ch.GetLatestBlockInfo().BlockIndex
 }
 
 func (ch *Chain) GetMempoolContents() io.Reader {

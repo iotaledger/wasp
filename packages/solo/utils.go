@@ -8,10 +8,6 @@ import (
 
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
 func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID isc.AgentID) error {
-	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
-		keyPair = ch.OriginatorPrivateKey
-	}*/ // TODO: is it still needed?
-
 	req := NewCallParams(root.FuncGrantDeployPermission.Message(deployerAgentID)).AddBaseTokens(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
@@ -19,10 +15,6 @@ func (ch *Chain) GrantDeployPermission(keyPair *cryptolib.KeyPair, deployerAgent
 
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
 func (ch *Chain) RevokeDeployPermission(keyPair *cryptolib.KeyPair, deployerAgentID isc.AgentID) error {
-	/*if !cryptolib.IsVariantKeyPairValid(keyPair) {
-		keyPair = ch.OriginatorPrivateKey
-	}*/ // TODO: is it still needed?
-
 	req := NewCallParams(root.FuncRevokeDeployPermission.Message(deployerAgentID)).AddBaseTokens(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
@@ -34,13 +26,16 @@ func (ch *Chain) ContractAgentID(name string) isc.AgentID {
 
 // Warning: if the same `req` is passed in different occasions, the resulting request will have different IDs (because the ledger state is different)
 func ISCRequestFromCallParams(ch *Chain, req *CallParams, keyPair *cryptolib.KeyPair) (isc.Request, error) {
-	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
-	if err != nil {
-		return nil, err
-	}
-	requestsFromSignedTx, err := isc.RequestsInTransaction(tx)
-	if err != nil {
-		return nil, err
-	}
-	return requestsFromSignedTx[ch.ChainID][0], nil
+	panic("TODO")
+	/*
+		reqID, err := ch.RequestFromParamsToLedger(req, keyPair)
+		if err != nil {
+			return nil, err
+		}
+		requestsFromSignedTx, err := isc.RequestsInTransaction(tx)
+		if err != nil {
+			return nil, err
+		}
+		return requestsFromSignedTx[ch.ChainID][0], nil
+	*/
 }

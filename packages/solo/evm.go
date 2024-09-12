@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -47,7 +46,7 @@ func (b *jsonRPCSoloBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetFeePolicy.Output1.Decode(ret)
+	return governance.ViewGetFeePolicy.DecodeOutput(ret)
 }
 
 func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -80,7 +79,7 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 	)
 }
 
-func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error) {
+func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
 	return b.Chain.CallViewAtState(chainState, msg)
 }
 
@@ -137,7 +136,7 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	)
 }
 
-func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {
+func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (isc.CallArguments, error) {
 	req, err := isc.NewEVMOffLedgerTxRequest(ch.ChainID, tx)
 	if err != nil {
 		return nil, err
@@ -164,7 +163,7 @@ func EthereumAccountByIndex(i int) (*ecdsa.PrivateKey, common.Address) {
 	return key, addr
 }
 
-func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := EthereumAccountByIndex(i)
 	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr
