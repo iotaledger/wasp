@@ -27,6 +27,13 @@ func NewProgrammableTransactionBuilder() *ProgrammableTransactionBuilder {
 	}
 }
 
+func (p *ProgrammableTransactionBuilder) LastCommandResultArg() Argument {
+	i := uint16(len(p.Commands)) - 1
+	return Argument{
+		Result: &i,
+	}
+}
+
 func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 	var inputs []CallArg
 	p.Inputs.ForEach(func(k BuilderArg, v CallArg) {

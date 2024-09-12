@@ -26,7 +26,9 @@ func (c *Client) AssetsBagNew(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewAssetsBagNewPTB(packageID, cryptolibSigner.Address())
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBAssetsBagNew(ptb, packageID, cryptolibSigner.Address())
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -38,7 +40,7 @@ func (c *Client) AssetsBagNew(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -83,12 +85,12 @@ func (c *Client) AssetsBagPlaceCoin(
 	gasBudget uint64,
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb, err := NewAssetsBagPlaceCoinPTB(packageID, assetsBagRef, coin, string(coinType))
-	if err != nil {
-		return nil, fmt.Errorf("can't create PTB: %w", err)
-	}
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBAssetsBagPlaceCoin(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}), coin, string(coinType))
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -100,7 +102,7 @@ func (c *Client) AssetsBagPlaceCoin(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -146,7 +148,9 @@ func (c *Client) AssetsDestroyEmpty(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewAssetsDestroyEmptyPTB(packageID, assetsBagRef)
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBAssetsDestroyEmpty(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}))
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -158,7 +162,7 @@ func (c *Client) AssetsDestroyEmpty(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,

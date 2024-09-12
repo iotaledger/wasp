@@ -9,8 +9,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-func NewAllowanceNewPTB(packageID sui.PackageID, owner *cryptolib.Address) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBAllowanceNew(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, owner *cryptolib.Address) *sui.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -30,15 +29,13 @@ func NewAllowanceNewPTB(packageID sui.PackageID, owner *cryptolib.Address) sui.P
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }
 
-func NewAllowanceWithCoinBalancePTB(packageID sui.PackageID, allowanceRef *sui.ObjectRef, balanceVal uint64, coinType string) (sui.ProgrammableTransaction, error) {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBAllowanceWithCoinBalance(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAllowance sui.Argument, balanceVal uint64, coinType string) *sui.ProgrammableTransactionBuilder {
 	typeTag, err := sui.TypeTagFromString(coinType)
 	if err != nil {
-		return sui.ProgrammableTransaction{}, fmt.Errorf("failed to parse TypeTag: %s: %w", coinType, err)
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 
 	ptb.Command(
@@ -49,18 +46,16 @@ func NewAllowanceWithCoinBalancePTB(packageID sui.PackageID, allowanceRef *sui.O
 				Function:      "with_coin_allowance",
 				TypeArguments: []sui.TypeTag{*typeTag},
 				Arguments: []sui.Argument{
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}),
+					argAllowance,
 					ptb.MustPure(balanceVal),
 				},
 			},
 		},
 	)
-
-	return ptb.Finish(), nil
+	return ptb
 }
 
-func NewAllowanceDestroyPTB(packageID sui.PackageID, allowanceRef *sui.ObjectRef) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBAllowanceDestroy(ptb *sui.ProgrammableTransactionBuilder, packageID sui.PackageID, argAllowance sui.Argument) *sui.ProgrammableTransactionBuilder {
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -69,17 +64,15 @@ func NewAllowanceDestroyPTB(packageID sui.PackageID, allowanceRef *sui.ObjectRef
 				Function:      "destroy",
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
-					ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}),
+					argAllowance,
 				},
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }
 
-func NewCreateBalancePTB(coinType suijsonrpc.CoinType, val uint64) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBCreateBalance(ptb *sui.ProgrammableTransactionBuilder, coinType suijsonrpc.CoinType, val uint64) *sui.ProgrammableTransactionBuilder {
 	coinTypeTag, err := sui.TypeTagFromString(coinType)
 	if err != nil {
 		panic(err)
@@ -110,5 +103,5 @@ func NewCreateBalancePTB(coinType suijsonrpc.CoinType, val uint64) sui.Programma
 			},
 		},
 	)
-	return ptb.Finish()
+	return ptb
 }
