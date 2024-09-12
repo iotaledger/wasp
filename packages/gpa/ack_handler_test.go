@@ -4,9 +4,12 @@
 package gpa
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,4 +52,42 @@ func TestAckHandler(t *testing.T) {
 		}
 		tc.RunAll()
 	}
+}
+
+func TestAckHandlerBatchCodec(t *testing.T) {
+	v := ackHandlerBatch{
+		id: lo.ToPtr(42),
+		msgs: []Message{
+			&TestMessage{ID: 50},
+			&TestMessage{ID: 100},
+		},
+		acks:      []int{1, 2, 3},
+		nestedGPA: &testGPA{},
+	}
+	vEnc := bcs.MustMarshal(&v)
+
+	vDec := ackHandlerBatch{
+		nestedGPA: &testGPA{},
+	}
+	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
+
+	require.Equal(t, v, vDec, vEnc)
+}
+
+type testGPA struct {
+	GPA
+}
+
+var _ GPA = &testGPA{}
+
+func (g *testGPA) UnmarshalMessage(data []byte) (Message, error) {
+	return bcs.Unmarshal[TestNestedMessages](data)
+}
+
+type TestNestedMessages interface {
+	Message
+}
+
+func init() {
+	bcs.RegisterEnumType1[TestNestedMessages, *TestMessage]()
 }
