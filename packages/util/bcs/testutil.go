@@ -11,21 +11,7 @@ import (
 // Checks that:
 //   - encoding and decoding succeed
 //   - decoded value is equal to the original
-//   - encoded value is equal to the result of reference library
 func TestCodec[V any](t *testing.T, v V) []byte {
-	vEnc := TestCodecNoRef(t, v)
-	require.NotEmpty(t, vEnc)
-
-	vEncExternal := lo.Must1(ref_bcs.Marshal(v))
-	require.Equal(t, vEncExternal, vEnc)
-
-	return vEnc
-}
-
-// Checks that:
-//   - encoding and decoding succeed
-//   - decoded value is equal to the original
-func TestCodecNoRef[V any](t *testing.T, v V) []byte {
 	vEnc, err := Marshal(&v)
 	require.NoError(t, err, "%#v", v)
 	vDec, err := Unmarshal[V](vEnc)
@@ -36,10 +22,23 @@ func TestCodecNoRef[V any](t *testing.T, v V) []byte {
 	return vEnc
 }
 
-// Checks that
+// Checks that:
 //   - encoding and decoding succeed
 //   - decoded value is equal to the original
 //   - encoded value is equal to the result of reference library
+func TestCodecVsRef[V any](t *testing.T, v V) []byte {
+	vEnc := TestCodec(t, v)
+	require.NotEmpty(t, vEnc)
+
+	vEncExternal := lo.Must1(ref_bcs.Marshal(v))
+	require.Equal(t, vEncExternal, vEnc)
+
+	return vEnc
+}
+
+// Checks that
+//   - encoding and decoding succeed
+//   - decoded value is equal to the original
 //   - encoded value is equal to the expected bytes
 func TestCodecAndBytes[V any](t *testing.T, v V, expectedEnc []byte) {
 	vEnc := TestCodec(t, v)
@@ -49,16 +48,21 @@ func TestCodecAndBytes[V any](t *testing.T, v V, expectedEnc []byte) {
 // Checks that
 //   - encoding and decoding succeed
 //   - decoded value is equal to the original
+//   - encoded value is equal to the result of reference library
 //   - encoded value is equal to the expected bytes
-func TestCodecAndBytesNoRef[V any](t *testing.T, v V, expectedEnc []byte) {
-	vEnc := TestCodecNoRef(t, v)
+func TestCodecAndBytesVsRef[V any](t *testing.T, v V, expectedEnc []byte) {
+	vEnc := TestCodecVsRef(t, v)
 	require.Equal(t, expectedEnc, vEnc)
 }
 
 // Checks that encoding fails
-func TestEncodeErr[V any](t *testing.T, v V) {
+func TestEncodeErr[V any](t *testing.T, v V, errMustContain ...string) {
 	_, err := Marshal(&v)
 	require.Error(t, err)
+
+	for _, s := range errMustContain {
+		require.Contains(t, err.Error(), s)
+	}
 }
 
 // Checks that:

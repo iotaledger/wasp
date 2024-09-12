@@ -99,23 +99,24 @@ func TestBasicInterfaceEnumCodec(t *testing.T) {
 	vS := "foo"
 	refEnumEnc := ref_bcs.MustMarshal(RefEnum1{B: &vS})
 	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytesNoRef(t, StructWithEnum(InfEnum1(vS)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, StructWithEnum(InfEnum1(vS)), refEnumEnc)
 
 	vI := int32(42)
 	refEnumEnc = ref_bcs.MustMarshal(RefEnum2{B: &vI})
 	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytesNoRef(t, StructWithEnum(InfEnum2(vI)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, StructWithEnum(InfEnum2(vI)), refEnumEnc)
 
 	var e InfEnumWithMethods = EnumVariant1{A: 42}
-	bcs.TestCodecAndBytesNoRef(t, StructWithEnum(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
-	bcs.TestCodecAndBytesNoRef(t, &e, []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, StructWithEnum(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, &e, []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 
 	e = EnumVariant2{A: "bar"}
-	bcs.TestCodecAndBytesNoRef(t, StructWithEnum(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
-	bcs.TestCodecAndBytesNoRef(t, &e, []byte{0x1, 0x3, 0x62, 0x61, 0x72})
+	bcs.TestCodecAndBytes(t, StructWithEnum(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
+	bcs.TestCodecAndBytes(t, &e, []byte{0x1, 0x3, 0x62, 0x61, 0x72})
 
 	bcs.TestEncodeErr(t, InfEnum1(int8(42)))
 	bcs.TestEncodeErr(t, InfEnum2(int(42)))
+	bcs.TestEncodeErr(t, InfEnum2(nil))
 }
 
 func TestInterfaceEnumVariantWithCustomCodec(t *testing.T) {
@@ -123,8 +124,18 @@ func TestInterfaceEnumVariantWithCustomCodec(t *testing.T) {
 
 	bcs.RegisterEnumType2[InfEnum1, WithCustomCodec, string]()
 
-	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](WithCustomCodec{}), []byte{0x0, 0x1, 0x2, 0x3})
-	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1]("aaa"), []byte{0x1, 0x3, 0x61, 0x61, 0x61})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1](WithCustomCodec{}), []byte{0x0, 0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1]("aaa"), []byte{0x1, 0x3, 0x61, 0x61, 0x61})
+}
+
+func TestIntEnumWithInfEnumVariant(t *testing.T) {
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
+
+	bcs.RegisterEnumType2[InfEnum1, int, *InfEnum2]()
+	bcs.RegisterEnumType1[InfEnum2, string]()
+
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1](42), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1](lo.ToPtr[InfEnum2]("aaa")), []byte{0x1, 0x0, 0x3, 0x61, 0x61, 0x61})
 }
 
 func TestIntEnumWithStructEnumVariant(t *testing.T) {
@@ -132,9 +143,9 @@ func TestIntEnumWithStructEnumVariant(t *testing.T) {
 
 	bcs.RegisterEnumType3[InfEnum1, BasicStructEnum, WithCustomCodec, string]()
 
-	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](BasicStructEnum{A: lo.ToPtr[int32](10)}), []byte{0x0, 0x0, 0xa, 0x0, 0x0, 0x0})
-	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](BasicStructEnum{B: lo.ToPtr("aaa")}), []byte{0x0, 0x1, 0x3, 0x61, 0x61, 0x61})
-	bcs.TestCodecAndBytesNoRef(t, lo.ToPtr[InfEnum1](WithCustomCodec{}), []byte{0x1, 0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1](BasicStructEnum{A: lo.ToPtr[int32](10)}), []byte{0x0, 0x0, 0xa, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1](BasicStructEnum{B: lo.ToPtr("aaa")}), []byte{0x0, 0x1, 0x3, 0x61, 0x61, 0x61})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnum1](WithCustomCodec{}), []byte{0x1, 0x1, 0x2, 0x3})
 }
 
 type NonEnumInf interface{}
@@ -168,7 +179,7 @@ func (s *WithNonEnumByteArrInf) UnmarshalBCS(d *bcs.Decoder) error {
 }
 
 func TestInfNotEnum(t *testing.T) {
-	bcs.TestCodecAndBytesNoRef(t, &WithNonEnumInf{A: 42}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, &WithNonEnumInf{A: 42}, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 
 	vEnc := bcs.MustMarshal(&WithNonEnumInfNoDecode{A: 42})
 	_, err := bcs.Unmarshal[WithNonEnumInfNoDecode](vEnc)
@@ -184,5 +195,18 @@ func TestInfNotEnum(t *testing.T) {
 	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&v)
 	require.Equal(t, lo.ToPtr(43), v.A)
 
-	bcs.TestCodecAndBytesNoRef(t, &WithNonEnumByteArrInf{A: 42, B: 10}, []byte{0x8, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, &WithNonEnumByteArrInf{A: 42, B: 10}, []byte{0x8, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+}
+
+func TestInfEnumNone(t *testing.T) {
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
+
+	require.Panics(t, func() {
+		bcs.RegisterEnumType3[InfEnumWithMethods, bcs.None, int, EnumVariant1]()
+	})
+
+	bcs.RegisterEnumType2[InfEnumWithMethods, bcs.None, EnumVariant1]()
+
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnumWithMethods](EnumVariant1{A: 42}), []byte{0x1, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnumWithMethods](nil), []byte{0x0})
 }
