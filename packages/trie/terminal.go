@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -103,7 +104,7 @@ func (t *Tcommitment) Write(w io.Writer) error {
 }
 
 func (t *Tcommitment) Bytes() []byte {
-	return rwutil.WriteToBytes(t)
+	return bcs.MustMarshal(t)
 }
 
 func (t *Tcommitment) String() string {

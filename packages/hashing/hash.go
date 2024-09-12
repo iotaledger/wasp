@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash"
-	"io"
 	"math/rand"
 
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const HashSize = 32
@@ -50,9 +49,8 @@ func (h *HashValue) UnmarshalJSON(buf []byte) error {
 	return nil
 }
 
-func HashValueFromBytes(b []byte) (ret HashValue, err error) {
-	_, err = rwutil.ReadFromBytes(b, &ret)
-	return ret, err
+func HashValueFromBytes(b []byte) (HashValue, error) {
+	return bcs.Unmarshal[HashValue](b)
 }
 
 func MustHashValueFromHex(s string) HashValue {
@@ -156,12 +154,4 @@ func PseudoRandomHash(rnd *rand.Rand) HashValue {
 	}
 	ret := HashStrings(s, s, s)
 	return ret
-}
-
-func (h *HashValue) Write(w io.Writer) error {
-	return rwutil.WriteN(w, h[:])
-}
-
-func (h *HashValue) Read(r io.Reader) error {
-	return rwutil.ReadN(r, h[:])
 }

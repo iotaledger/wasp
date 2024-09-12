@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -43,27 +44,14 @@ func NewCodecFromIoReadWriter[T any, PT interface {
 func NewTupleCodec[
 	A, B any,
 	PA interface {
-		rwutil.IoReadWriter
 		*A
 	},
 	PB interface {
-		rwutil.IoReadWriter
 		*B
 	},
 ]() Codec[lo.Tuple2[PA, PB]] {
-	encode := func(obj lo.Tuple2[PA, PB]) []byte {
-		ww := rwutil.NewBytesWriter()
-		ww.Write(obj.A)
-		ww.Write(obj.B)
-		return ww.Bytes()
-	}
-	decode := func(b []byte) (lo.Tuple2[PA, PB], error) {
-		rr := rwutil.NewBytesReader(b)
-		ret := lo.Tuple2[PA, PB]{}
-		ret.A = rwutil.ReadStruct(rr, PA(new(A)))
-		ret.B = rwutil.ReadStruct(rr, PB(new(B)))
-		return ret, rr.Err
-	}
+	encode := func(v lo.Tuple2[PA, PB]) []byte { return bcs.MustMarshal(&v) }
+	decode := bcs.Unmarshal[lo.Tuple2[PA, PB]]
 	return NewCodec(decode, encode)
 }
 
