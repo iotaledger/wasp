@@ -26,7 +26,9 @@ func (c *Client) AllowanceNew(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewAllowanceNewPTB(packageID, cryptolibSigner.Address())
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBAllowanceNew(ptb, packageID, cryptolibSigner.Address())
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -38,7 +40,7 @@ func (c *Client) AllowanceNew(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -83,12 +85,12 @@ func (c *Client) AllowanceWithCoinBalance(
 	gasBudget uint64,
 	devMode bool,
 ) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb, err := NewAllowanceWithCoinBalancePTB(packageID, allowanceRef, coinBal, string(coinType))
-	if err != nil {
-		return nil, fmt.Errorf("can't create PTB: %w", err)
-	}
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBAllowanceWithCoinBalance(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}), coinBal, string(coinType))
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -100,7 +102,7 @@ func (c *Client) AllowanceWithCoinBalance(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,
@@ -146,7 +148,9 @@ func (c *Client) AllowanceDestroy(
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := NewAllowanceDestroyPTB(packageID, allowanceRef)
+	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb = PTBAllowanceDestroy(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}))
+	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
 		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
@@ -158,7 +162,7 @@ func (c *Client) AllowanceDestroy(
 
 	tx := sui.NewProgrammable(
 		signer.Address(),
-		ptb,
+		pt,
 		gasPayments,
 		gasBudget,
 		gasPrice,

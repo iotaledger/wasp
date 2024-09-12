@@ -8,12 +8,12 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func NewStartNewChainPTB(
+func PTBStartNewChain(
+	ptb *sui.ProgrammableTransactionBuilder,
 	packageID sui.PackageID,
 	stateMetadata []byte,
 	ownerAddress *cryptolib.Address,
-) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+) *sui.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -35,23 +35,20 @@ func NewStartNewChainPTB(
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }
 
-func NewReceiveRequestPTB(
+func PTBReceiveRequestAndTransition(
+	ptb *sui.ProgrammableTransactionBuilder,
 	packageID sui.PackageID,
-	anchorRef *sui.ObjectRef,
+	argAnchor sui.Argument,
 	requestRefs []sui.ObjectRef,
 	reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances,
 	stateMetadata []byte,
-) (sui.ProgrammableTransaction, error) {
-	ptb := sui.NewProgrammableTransactionBuilder()
-
-	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef})
+) *sui.ProgrammableTransactionBuilder {
 	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
-		return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
+		panic(fmt.Sprintf("can't parse Receipt's TypeTag: %s", err))
 	}
 
 	var argReceiveRequests []sui.Argument
@@ -90,7 +87,7 @@ func NewReceiveRequestPTB(
 		for _, bal := range assetsBag.Balances {
 			typeTag, err := sui.TypeTagFromString(bal.CoinType)
 			if err != nil {
-				return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Balance's Coin TypeTag: %w", err)
+				panic(fmt.Sprintf("can't parse Balance's Coin TypeTag: %s", err))
 			}
 			argBal := ptb.Command(
 				sui.Command{
@@ -181,6 +178,5 @@ func NewReceiveRequestPTB(
 			},
 		},
 	)
-
-	return ptb.Finish(), nil
+	return ptb
 }
