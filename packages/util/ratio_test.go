@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestRatioSerialization(t *testing.T) {
@@ -24,5 +24,5 @@ func TestRatioSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, ratio2, ratio3)
 
-	rwutil.ReadWriteTest(t, &ratio1, new(util.Ratio32))
+	bcs.TestCodec(t, ratio1)
 }

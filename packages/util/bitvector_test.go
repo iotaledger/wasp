@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestFixedSizeBitVector(t *testing.T) {
@@ -21,7 +21,5 @@ func TestFixedSizeBitVector(t *testing.T) {
 
 func TestFixedSizeBitVectorSerialization(t *testing.T) {
 	bv := util.NewFixedSizeBitVector(10).SetBits([]int{0, 3, 7, 8, 9})
-	rwutil.ReadWriteTest(t, bv, util.NewFixedSizeBitVector(0))
-	newBV := rwutil.BytesTest(t, bv, util.FixedSizeBitVectorFromBytes)
-	require.Equal(t, bv.AsInts(), newBV.AsInts())
+	bcs.TestCodec(t, bv)
 }
