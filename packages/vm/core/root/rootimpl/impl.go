@@ -83,10 +83,13 @@ func requireDeployPermissions(ctx isc.Sandbox, permissionsEnabled bool) {
 }
 
 // findContract view finds and returns encoded record of the contract
-func findContract(ctx isc.SandboxView, hname isc.Hname) (bool, *root.ContractRecord) {
+func findContract(ctx isc.SandboxView, hname isc.Hname) (bool, **root.ContractRecord) {
 	state := root.NewStateReaderFromSandbox(ctx)
 	rec := state.FindContract(hname)
-	return rec != nil, rec
+	if rec == nil {
+		return false, nil
+	}
+	return true, &rec
 }
 
 func getContractRecords(ctx isc.SandboxView) []lo.Tuple2[*isc.Hname, *root.ContractRecord] {

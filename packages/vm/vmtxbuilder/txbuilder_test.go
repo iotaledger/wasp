@@ -180,12 +180,9 @@ func createIscmoveReq(
 	require.NoError(t, err)
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
-	iscReq, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
-	req, err := isc.OnLedgerFromRequest(&iscmove.RefWithObject[iscmove.Request]{
-		ObjectRef: *reqRef,
-		Object:    iscReq,
-	}, cryptolib.NewAddressFromSui(anchor.ObjectID))
+	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromSui(anchor.ObjectID))
 	require.NoError(t, err)
 
 	return req

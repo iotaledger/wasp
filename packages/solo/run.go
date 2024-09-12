@@ -6,20 +6,21 @@ package solo
 import (
 	"errors"
 
+	"github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (isc.CallArguments, error) {
@@ -53,13 +54,17 @@ func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
-	anchorOutput := ch.GetAnchorOutputFromL1()
+	anchorRef, err := ch.LatestAnchor(chain.ActiveOrCommittedState)
+	require.NoError(ch.Env.T, err)
 	task := &vm.VMTask{
-		Processors:         ch.proc,
-		AnchorOutput:       anchorOutput.GetAliasOutput(),
-		AnchorOutputID:     anchorOutput.OutputID(),
+		Processors: ch.proc,
+		Anchor: &isc.StateAnchor{
+			Ref:        anchorRef,
+			Owner:      ch.OriginatorAddress,
+			ISCPackage: ch.Env.ISCPackageID(),
+		},
 		Requests:           reqs,
-		TimeAssumption:     ch.Env.GlobalTime(),
+		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
 		Entropy:            hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
@@ -80,48 +85,29 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 
 func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
-
 	res := ch.runTaskNoLock(reqs, false)
 
-	var essence *iotago.TransactionEssence
-	if res.RotationAddress == nil {
-		essence = res.TransactionEssence
-		copy(essence.InputsCommitment[:], res.InputsCommitment)
-	} else {
-		var err error = errors.New("refactor me: runRequestsNolock")
-		panic("refactor me: rotate.MakeRotateStateControllerTransaction")
-		require.NoError(ch.Env.T, err)
-	}
-	sig, err := ch.StateControllerKeyPair.Sign(essence.InputsCommitment[:])
+	txnBytes, err := bcs.Marshal(res.UnsignedTransaction)
 	require.NoError(ch.Env.T, err)
 
-	tx := transaction.MakeAnchorTransaction(essence, sig)
+	txBlockRes, err := ch.Env.SuiClient().SignAndExecuteTransaction(
+		ch.Env.ctx,
+		cryptolib.SignerToSuiSigner(ch.StateControllerKeyPair),
+		txnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, txBlockRes.Effects.Data.IsSuccess())
 
 	if res.RotationAddress == nil {
 		// normal state transition
-		ch.settleStateTransition(tx, res.StateDraft)
+		ch.settleStateTransition(res.StateDraft)
 	}
-
-	err = ch.Env.AddToLedger(tx)
-	require.NoError(ch.Env.T, err)
-
-	anchor, _, err := transaction.GetAnchorFromTransaction(tx)
-	require.NoError(ch.Env.T, err)
-
-	if res.RotationAddress != nil {
-		ch.Log().Infof("ROTATED STATE CONTROLLER to %s", anchor.StateController)
-	}
-
-	rootC := ch.GetRootCommitment()
-	l1C := ch.GetL1Commitment()
-	require.Equal(ch.Env.T, rootC, l1C.TrieRoot())
-
-	ch.Env.EnqueueRequests(tx)
 
 	return res.RequestResults
 }
 
-func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateDraft state.StateDraft) {
+func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
 	block := ch.store.Commit(stateDraft)
 	err := ch.store.SetLatest(block.TrieRoot())
 	if err != nil {
@@ -139,19 +125,12 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, stateDraft s
 	for _, rec := range blockReceipts {
 		ch.mempool.RemoveRequest(rec.Request.ID())
 	}
-	unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
-	if err != nil {
-		panic(err)
-	}
-	for _, req := range unprocessableRequests {
-		ch.mempool.RemoveRequest(req.ID())
-	}
-	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-		stateDraft.BlockIndex(), len(blockReceipts), len(stateTx.Essence.Outputs))
+	ch.Log().Infof("state transition --> #%d. Requests in the block: %d",
+		stateDraft.BlockIndex(), len(blockReceipts))
 }
 
 func (ch *Chain) logRequestLastBlock() {
-	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex())
+	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
 		ch.Log().Infof("REQ: '%s'", rec.Short())
 	}

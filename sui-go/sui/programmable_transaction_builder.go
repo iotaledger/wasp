@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/sui-go/orderedmap"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 
@@ -359,6 +361,20 @@ func (p *ProgrammableTransactionBuilder) PayAllSui(recipient *Address) error {
 		},
 	},
 	)
+	return nil
+}
+
+func (p *ProgrammableTransactionBuilder) SplitCoin(coinRef *ObjectRef, amounts []uint64) error {
+	coinArg, err := p.Obj(ObjectArg{ImmOrOwnedObject: coinRef})
+	if err != nil {
+		return err
+	}
+	p.Command(Command{
+		SplitCoins: &ProgrammableSplitCoins{
+			Coin:    coinArg,
+			Amounts: lo.Map(amounts, func(v uint64, _ int) Argument { return lo.Must(p.Pure(v)) }),
+		},
+	})
 	return nil
 }
 

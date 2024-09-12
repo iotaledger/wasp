@@ -31,37 +31,31 @@ func NewCodecEx[T interface{ Bytes() []byte }](decode func([]byte) (T, error)) C
 	}}
 }
 
-func NewCodecFromIoReadWriter[T any, PT interface {
-	rwutil.IoReadWriter
-	*T
-}]() Codec[PT] {
-	encode := func(obj PT) []byte { return rwutil.WriteToBytes(obj) }
-	decode := func(b []byte) (PT, error) { return rwutil.ReadFromBytes(b, PT(new(T))) }
-	return &codec[PT]{decode: decode, encode: encode}
+func NewCodecFromIoReadWriter[T rwutil.IoReadWriter]() Codec[T] {
+	encode := func(obj T) []byte { return rwutil.WriteToBytes(obj) }
+	decode := func(b []byte) (T, error) {
+		return rwutil.ReadFromBytes(b, rwutil.MakeValue[T]())
+	}
+	return &codec[T]{decode: decode, encode: encode}
 }
 
 func NewTupleCodec[
-	A, B any,
-	PA interface {
-		rwutil.IoReadWriter
-		*A
-	},
-	PB interface {
-		rwutil.IoReadWriter
-		*B
-	},
-]() Codec[lo.Tuple2[PA, PB]] {
-	encode := func(obj lo.Tuple2[PA, PB]) []byte {
+	A, B rwutil.IoReadWriter,
+]() Codec[lo.Tuple2[A, B]] {
+	encode := func(obj lo.Tuple2[A, B]) []byte {
 		ww := rwutil.NewBytesWriter()
 		ww.Write(obj.A)
 		ww.Write(obj.B)
 		return ww.Bytes()
 	}
-	decode := func(b []byte) (lo.Tuple2[PA, PB], error) {
+	decode := func(b []byte) (lo.Tuple2[A, B], error) {
 		rr := rwutil.NewBytesReader(b)
-		ret := lo.Tuple2[PA, PB]{}
-		ret.A = rwutil.ReadStruct(rr, PA(new(A)))
-		ret.B = rwutil.ReadStruct(rr, PB(new(B)))
+		ret := lo.Tuple2[A, B]{
+			A: rwutil.MakeValue[A](),
+			B: rwutil.MakeValue[B](),
+		}
+		rr.Read(ret.A)
+		rr.Read(ret.B)
 		return ret, rr.Err
 	}
 	return NewCodec(decode, encode)
