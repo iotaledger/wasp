@@ -37,6 +37,7 @@ func TestAssetsSerialization(t *testing.T) {
 		AddBaseTokens(42).
 		AddCoin("0xa1::a::A", 100).
 		AddObject(sui.ObjectID{})
+	bcs.TestCodec(t, assets)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
 

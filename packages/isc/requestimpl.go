@@ -3,7 +3,6 @@ package isc
 import (
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -98,8 +97,7 @@ func (ref *RequestRef) String() string {
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
-	_, err = rwutil.ReadFromBytes(data, &ret)
-	return ret, err
+	return bcs.Unmarshal[RequestID](data)
 }
 
 func RequestIDFromEVMTxHash(txHash common.Hash) RequestID {
@@ -144,14 +142,6 @@ func (rid RequestID) String() string {
 func (rid RequestID) Short() string {
 	ridString := rid.String()
 	return fmt.Sprintf("%s..%s", ridString[2:6], ridString[len(ridString)-4:])
-}
-
-func (rid *RequestID) Read(r io.Reader) error {
-	return rwutil.ReadN(r, rid[:])
-}
-
-func (rid *RequestID) Write(w io.Writer) error {
-	return rwutil.WriteN(w, rid[:])
 }
 
 // endregion ////////////////////////////////////////////////////////////

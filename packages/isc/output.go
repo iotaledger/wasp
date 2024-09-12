@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -63,11 +64,11 @@ func RandomAliasOutputWithID() *AliasOutputWithID {
 }
 
 func AliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
-	return rwutil.ReadFromBytes(data, new(AliasOutputWithID))
+	return bcs.Unmarshal[*AliasOutputWithID](data)
 }
 
 func (a *AliasOutputWithID) Bytes() []byte {
-	return rwutil.WriteToBytes(a)
+	return bcs.MustMarshal(a)
 }
 
 func (a *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"maps"
 	"math/big"
 	"slices"
@@ -17,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -210,28 +208,6 @@ func (o ObjectIDSet) IterateSorted(f func(sui.ObjectID) bool) {
 			return
 		}
 	}
-}
-
-func (o *ObjectIDSet) Read(r io.Reader) error {
-	*o = NewObjectIDSet()
-	rr := rwutil.NewReader(r)
-	n := rr.ReadSize32()
-	for i := 0; i < n; i++ {
-		var id sui.ObjectID
-		rr.ReadN(id[:])
-		o.Add(id)
-	}
-	return rr.Err
-}
-
-func (o ObjectIDSet) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteSize32(len(o))
-	o.IterateSorted(func(id sui.ObjectID) bool {
-		ww.WriteN(id[:])
-		return true
-	})
-	return ww.Err
 }
 
 func (o *ObjectIDSet) UnmarshalJSON(b []byte) error {

@@ -57,8 +57,7 @@ func TestRequestDataSerialization(t *testing.T) {
 func TestRequestIDSerialization(t *testing.T) {
 	req := NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
-	rwutil.ReadWriteTest(t, &requestID, new(RequestID))
-	rwutil.BytesTest(t, requestID, RequestIDFromBytes)
+	bcs.TestCodec(t, requestID)
 	rwutil.StringTest(t, requestID, RequestIDFromString)
 }
 
