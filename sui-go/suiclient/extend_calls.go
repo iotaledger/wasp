@@ -96,6 +96,27 @@ func (c *Client) PublishContract(
 	return txnResponse, packageID, nil
 }
 
+func (c *Client) UpdateObjectRef(
+	ctx context.Context,
+	ref *sui.ObjectRef,
+) (*sui.ObjectRef, error) {
+	res, err := c.GetObject(
+		context.Background(),
+		GetObjectRequest{
+			ObjectID: ref.ObjectID,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the object of ObjectRef: %w", err)
+	}
+
+	return &sui.ObjectRef{
+		ObjectID: res.Data.ObjectID,
+		Version:  res.Data.Version.Uint64(),
+		Digest:   res.Data.Digest,
+	}, nil
+}
+
 func (c *Client) MintToken(
 	ctx context.Context,
 	signer suisigner.Signer,
