@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestPrivateKeySerialization(t *testing.T) {
@@ -18,5 +18,5 @@ func TestPrivateKeySerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, pivkey1, pivkey2)
 
-	rwutil.ReadWriteTest(t, pivkey1, cryptolib.NewPrivateKey())
+	bcs.TestCodec(t, pivkey1)
 }
