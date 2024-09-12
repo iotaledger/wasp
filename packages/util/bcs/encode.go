@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"unsafe"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -587,27 +588,33 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
 	}
 
-	entries := make([]*lo.Entry[reflect.Value, reflect.Value], 0, v.Len())
-	for elem := v.MapRange(); elem.Next(); {
-		entries = append(entries, &lo.Entry[reflect.Value, reflect.Value]{Key: elem.Key(), Value: elem.Value()})
-	}
-
-	// Need to sort map entries to ensure deterministic encoding
-	if err := sortMap(entries); err != nil {
-		return fmt.Errorf("sorting map: %w", err)
-	}
-
 	t := v.Type()
-
 	keyTypeInfo := e.getEncodedTypeInfo(t.Key())
 	valTypeInfo := e.getEncodedTypeInfo(t.Elem())
 
-	for i := range entries {
-		if err := e.encodeValue(entries[i].Key, typOpts.MapKey, &keyTypeInfo); err != nil {
+	entries := make([]*lo.Tuple2[[]byte, reflect.Value], 0, v.Len())
+
+	for elem := v.MapRange(); elem.Next(); {
+		// Encoding keys to be able to sort map entries by key's bytes
+		encodedKey, err := e.getBytes(func() error {
+			return e.encodeValue(elem.Key(), typOpts.MapKey, &keyTypeInfo)
+		})
+		if err != nil {
 			return fmt.Errorf("key: %w", err)
 		}
 
-		if err := e.encodeValue(entries[i].Value, typOpts.MapValue, &valTypeInfo); err != nil {
+		entry := lo.T2[[]byte, reflect.Value](encodedKey, elem.Value())
+		entries = append(entries, &entry)
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return bytes.Compare(entries[i].A, entries[j].A) < 0
+	})
+
+	for i := range entries {
+		e.w.WriteN(entries[i].A)
+
+		if err := e.encodeValue(entries[i].B, typOpts.MapValue, &valTypeInfo); err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
 	}
@@ -731,18 +738,11 @@ func (e *Encoder) encodeAsByteArray(enc func() error) error {
 	// This value needs to be written as variable bytes array. For that, we need to first
 	// encode it in a separate buffer and then write it as array to original stream.
 
-	origStream := e.w
-	defer func() { e.w = origStream }() // for case of panic/error
-
-	e.w = rwutil.NewBytesWriter()
-
-	if err := enc(); err != nil {
+	encodedVal, err := e.getBytes(enc)
+	if err != nil {
 		return err
 	}
 
-	encodedVal := e.w.Bytes()
-
-	e.w = origStream
 	e.w.WriteSize32(len(encodedVal))
 	e.w.WriteN(encodedVal)
 
@@ -751,6 +751,20 @@ func (e *Encoder) encodeAsByteArray(enc func() error) error {
 	}
 
 	return nil
+}
+
+func (e *Encoder) getBytes(enc func() error) ([]byte, error) {
+	origStream := e.w
+	defer func() { e.w = origStream }() // for case of panic/error
+
+	e.w = rwutil.NewBytesWriter()
+	if err := enc(); err != nil {
+		return nil, err
+	}
+
+	encodedVal := e.w.Bytes()
+
+	return encodedVal, nil
 }
 
 // func (e *Encoder) Writer() *rwutil.Writer {
