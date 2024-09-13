@@ -368,3 +368,90 @@ func TestDecodingWithPresetStructEnumVariant(t *testing.T) {
 	// NOTE: Preset struct enum variants are KEPT - for a performance reason.
 	require.Equal(t, BasicStructEnum{A: lo.ToPtr[int32](42), B: lo.ToPtr("aaa")}, vDec)
 }
+
+type StructWithManualCodec struct {
+	A int
+	B *string `bcs:"optional"`
+	C BasicStructEnum
+	D []int8
+}
+
+func (s *StructWithManualCodec) MarshalBCS(e *bcs.Encoder) error {
+	e.Encode(s.A)
+	e.EncodeOptional(s.B)
+
+	switch {
+	case s.C.A != nil:
+		e.EncodeEnumIdx(0)
+		e.Encode(*s.C.A)
+	case s.C.B != nil:
+		e.EncodeEnumIdx(1)
+		e.Encode(*s.C.B)
+	case s.C.C != nil:
+		e.EncodeEnumIdx(2)
+		e.Encode(*s.C.C)
+	default:
+		panic("enum variant not set")
+	}
+
+	e.EncodeLen(len(s.D))
+	for _, v := range s.D {
+		e.Encode(v)
+	}
+
+	// Just to mark that this is a manual codec.
+	return e.Encode(byte(1))
+}
+
+func (s *StructWithManualCodec) UnmarshalBCS(d *bcs.Decoder) error {
+	d.Decode(&s.A)
+	d.DecodeOptional(&s.B)
+
+	variantIdx, _ := d.DecodeEnumIdx()
+
+	switch variantIdx {
+	case 0:
+		s.C.A = new(int32)
+		d.Decode(s.C.A)
+	case 1:
+		s.C.B = new(string)
+		d.Decode(s.C.B)
+	case 2:
+		s.C.C = new([]byte)
+		d.Decode(s.C.C)
+	default:
+		panic("invalid enum variant")
+	}
+
+	l, _ := d.DecodeLen()
+	for i := 0; i < l; i++ {
+		s.D = append(s.D, bcs.MustDecode[int8](d))
+	}
+
+	// Just to ensure that this is a manual codec.
+	var b byte
+	d.Decode(&b)
+	if b != 1 {
+		panic("invalid manual codec marker")
+	}
+
+	return d.Err()
+}
+
+type StructWithAutoCodec StructWithManualCodec
+
+func TestHighLevelCodecFuncs(t *testing.T) {
+	v := StructWithManualCodec{
+		A: 42,
+		B: lo.ToPtr("aaa"),
+		C: BasicStructEnum{B: lo.ToPtr("bbb")},
+		D: []int8{1, 2, 3},
+	}
+	vEnc := bcs.TestCodec(t, v)
+	require.Equal(t, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x3, 0x61, 0x61, 0x61, 0x1, 0x3, 0x62, 0x62, 0x62, 0x3, 0x1, 0x2, 0x3, 0x1}, vEnc)
+
+	vAuto := StructWithAutoCodec(v)
+	vAutoEnc := bcs.TestCodec(t, vAuto)
+	vEncWithoutMarker := vEnc[:len(vEnc)-1]
+	require.Equal(t, vEncWithoutMarker, vAutoEnc)
+}
