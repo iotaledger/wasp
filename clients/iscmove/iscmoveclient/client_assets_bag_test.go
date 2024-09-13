@@ -51,7 +51,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	require.Error(t, err, "not found")
 }
 
-func TestAssetsBagAddItems(t *testing.T) {
+func TestAssetsBagPlaceCoin(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
@@ -88,6 +88,53 @@ func TestAssetsBagAddItems(t *testing.T) {
 		assetsBagMainRef,
 		coinInfo.Ref,
 		testCointype,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+}
+
+func TestAssetsBagPlaceCoinAmount(t *testing.T) {
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	client := newLocalnetClient()
+
+	txnResponse, err := client.AssetsBagNew(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	require.NoError(t, err)
+
+	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	getCoinRef, err := client.GetObject(
+		context.Background(),
+		suiclient.GetObjectRequest{
+			ObjectID: coinInfo.Ref.ObjectID,
+			Options:  &suijsonrpc.SuiObjectDataOptions{ShowType: true},
+		},
+	)
+	require.NoError(t, err)
+
+	coinResource, err := sui.NewResourceType(*getCoinRef.Data.Type)
+	require.NoError(t, err)
+	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
+
+	_, err = client.AssetsBagPlaceCoinAmount(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		assetsBagMainRef,
+		coinInfo.Ref,
+		testCointype,
+		10,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -335,10 +382,10 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	req, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
 
-	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &reqWithObj.Object.AssetsBag.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]

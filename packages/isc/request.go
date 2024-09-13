@@ -1,13 +1,11 @@
 package isc
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -85,74 +83,6 @@ type OnLedgerRequest interface {
 func init() {
 	bcs.RegisterEnumType1[OnLedgerRequest, *onLedgerRequestData]()
 }
-
-func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, args ...interface{}), prefix string) {
-	txReqs, err := RequestsInTransaction(tx)
-	if err != nil {
-		panic(fmt.Errorf("cannot extract requests from TX: %w", err))
-	}
-	for chainID, chainReqs := range txReqs {
-		for i, req := range chainReqs {
-			log("%v, ChainID=%v, Req[%v]=%v", prefix, chainID.ShortString(), i, req.String())
-		}
-	}
-}
-
-// TODO: Refactor me:
-// RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain
-func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error) {
-	panic("refactor me")
-	/*
-		txid, err := tx.ID()
-		if err != nil {
-			return nil, err
-		}
-		if tx.Essence == nil {
-			return nil, fmt.Errorf("malformed transaction")
-		}
-
-		ret := make(map[ChainID][]Request)
-		_ = txid
-		for i, output := range tx.Essence.Outputs {
-			switch output.(type) {
-			case *iotago.BasicOutput, *iotago.NFTOutput:
-				// process it
-			default:
-				// only BasicOutputs and NFTs are interpreted right now, // TODO other outputs
-				continue
-			}
-
-			// wrap request into the isc.Request
-			odata, err := OnLedgerFromUTXO(output, iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i)))
-			if err != nil {
-				return nil, err // TODO: maybe log the error and keep processing?
-			}
-
-			addr := odata.TargetAddress()
-
-
-			chainID := ChainIDFromAddress(addr)
-
-			if odata.IsInternalUTXO(chainID) {
-				continue
-			}
-
-			ret[chainID] = append(ret[chainID], odata)
-		}
-		return ret, nil
-	*/
-}
-
-// TODO: Clarify if we want to keep expiry dates.
-// don't process any request which deadline will expire within 1 minute
-/*const RequestConsideredExpiredWindow = time.Minute * 1
-func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
-	expiry, _ := req.Features().Expiry()
-	if expiry.IsZero() {
-		return false
-	}
-	return !expiry.IsZero() && currentTime.After(expiry.Add(-RequestConsideredExpiredWindow))
-}*/
 
 func RequestHash(req Request) hashing.HashValue {
 	return hashing.HashData(req.Bytes())

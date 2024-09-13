@@ -145,12 +145,12 @@ func (f *ChainFeed) consumeRequestEvents(
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
-			req, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
+			reqWithObj, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
-			requests <- req
+			requests <- reqWithObj.Object
 		}
 	}
 }

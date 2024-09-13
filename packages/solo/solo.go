@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math"
 	"math/rand"
 	"slices"
@@ -22,7 +21,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -64,17 +62,16 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                               Context
-	logger                          *logger.Logger
-	chainStateDatabaseManager       *database.ChainStateDatabaseManager
-	chainsMutex                     sync.RWMutex
-	chains                          map[isc.ChainID]*Chain
-	processorConfig                 *processors.Config
-	disableAutoAdjustStorageDeposit bool
-	enableGasBurnLogging            bool
-	seed                            cryptolib.Seed
-	publisher                       *publisher.Publisher
-	ctx                             context.Context
+	T                         Context
+	logger                    *logger.Logger
+	chainStateDatabaseManager *database.ChainStateDatabaseManager
+	chainsMutex               sync.RWMutex
+	chains                    map[isc.ChainID]*Chain
+	processorConfig           *processors.Config
+	enableGasBurnLogging      bool
+	seed                      cryptolib.Seed
+	publisher                 *publisher.Publisher
+	ctx                       context.Context
 
 	l1Config L1Config
 }
@@ -136,13 +133,12 @@ type Chain struct {
 var _ chain.ChainCore = &Chain{}
 
 type InitOptions struct {
-	L1Config                 L1Config
-	AutoAdjustStorageDeposit bool
-	Debug                    bool
-	PrintStackTrace          bool
-	GasBurnLogEnabled        bool
-	Seed                     cryptolib.Seed
-	Log                      *logger.Logger
+	L1Config          L1Config
+	Debug             bool
+	PrintStackTrace   bool
+	GasBurnLogEnabled bool
+	Seed              cryptolib.Seed
+	Log               *logger.Logger
 }
 
 type L1Config struct {
@@ -158,11 +154,10 @@ func DefaultInitOptions() *InitOptions {
 			SuiFaucetURL: suiconn.LocalnetFaucetURL,
 			ISCPackageID: l1starter.ISCPackageID(),
 		},
-		Debug:                    false,
-		PrintStackTrace:          false,
-		Seed:                     cryptolib.Seed{},
-		AutoAdjustStorageDeposit: false, // is OFF by default
-		GasBurnLogEnabled:        true,  // is ON by default
+		Debug:             false,
+		PrintStackTrace:   false,
+		Seed:              cryptolib.Seed{},
+		GasBurnLogEnabled: true, // is ON by default
 	}
 }
 
@@ -194,17 +189,16 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	t.Cleanup(cancelCtx)
 
 	ret := &Solo{
-		T:                               t,
-		logger:                          opt.Log,
-		chainStateDatabaseManager:       chainStateDatabaseManager,
-		l1Config:                        opt.L1Config,
-		chains:                          make(map[isc.ChainID]*Chain),
-		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
-		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
-		enableGasBurnLogging:            opt.GasBurnLogEnabled,
-		seed:                            opt.Seed,
-		publisher:                       publisher.New(opt.Log.Named("publisher")),
-		ctx:                             ctx,
+		T:                         t,
+		logger:                    opt.Log,
+		chainStateDatabaseManager: chainStateDatabaseManager,
+		l1Config:                  opt.L1Config,
+		chains:                    make(map[isc.ChainID]*Chain),
+		processorConfig:           coreprocessors.NewConfigWithCoreContracts(),
+		enableGasBurnLogging:      opt.GasBurnLogEnabled,
+		seed:                      opt.Seed,
+		publisher:                 publisher.New(opt.Log.Named("publisher")),
+		ctx:                       ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
@@ -443,37 +437,15 @@ func (env *Solo) addChain(chData chainData) *Chain {
 	return ch
 }
 
-// RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID isc.ChainID) ([]isc.Request, error) {
-	env.chainsMutex.RLock()
-	defer env.chainsMutex.RUnlock()
-
-	m := env.requestsByChain(tx)
-	ret, ok := m[chainID]
-	if !ok {
-		return nil, fmt.Errorf("chain %s does not exist", chainID.String())
-	}
-	return ret, nil
-}
-
-// requestsByChain parses the transaction and extracts those outputs which are interpreted as a request to a chain
-func (env *Solo) requestsByChain(tx *iotago.Transaction) map[isc.ChainID][]isc.Request {
-	ret, err := isc.RequestsInTransaction(tx)
-	require.NoError(env.T, err)
-	return ret
-}
-
 // AddRequestsToMempool adds all the requests to the chain mempool,
 func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
 	ch.mempool.ReceiveRequests(reqs...)
 }
 
 // EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
-func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
+func (env *Solo) EnqueueRequests(requests map[isc.ChainID][]isc.Request) {
 	env.chainsMutex.RLock()
 	defer env.chainsMutex.RUnlock()
-
-	requests := env.requestsByChain(tx)
 
 	for chainID, reqs := range requests {
 		ch, ok := env.chains[chainID]
@@ -485,7 +457,7 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 	}
 }
 
-func (ch *Chain) GetAnchorFromL1() *iscmove.RefWithObject[iscmove.Anchor] {
+func (ch *Chain) GetLatestAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsSuiAddress())
 	require.NoError(ch.Env.T, err)
 	return anchor
@@ -551,14 +523,6 @@ func (ch *Chain) Processors() *processors.Cache {
 	return ch.proc
 }
 
-func (ch *Chain) EnqueueDismissChain(_ string) {
-	panic("unimplemented")
-}
-
-func (ch *Chain) EnqueueAliasOutput(_ *isc.AliasOutputWithID) {
-	panic("unimplemented")
-}
-
 // ---------------------------------------------
 
 func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
@@ -602,7 +566,7 @@ func (env *Solo) L1NFTs(addr *cryptolib.Address) []sui.ObjectID {
 }
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
-func (env *Solo) L1Assets(addr *cryptolib.Address) isc.CoinBalances {
+func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	r, err := env.SuiClient().GetAllBalances(env.ctx, addr.AsSuiAddress())
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
@@ -612,20 +576,14 @@ func (env *Solo) L1Assets(addr *cryptolib.Address) isc.CoinBalances {
 	return cb
 }
 
-type NFTMintedInfo struct {
-	Output   iotago.Output
-	OutputID iotago.OutputID
-	NFTID    iotago.NFTID
-}
-
 // MintNFTL1 mints a single NFT with the `issuer` account and sends it to a `target` account.
 // Base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
-	nfts, infos, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, immutableMetadata []byte) (*isc.NFT, error) {
+	nfts, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return nfts[0], infos[0], nil
+	return nfts[0], nil
 }
 
 // MintNFTsL1 mints len(metadata) NFTs with the `issuer` account and sends them
@@ -641,7 +599,7 @@ func (env *Solo) MintNFTsL1(
 	target *cryptolib.Address,
 	collectionID *sui.ObjectID,
 	metadata [][]byte,
-) ([]*isc.NFT, []*NFTMintedInfo, error) {
+) ([]*isc.NFT, error) {
 	panic("TODO")
 	/*
 		err := errors.New("refactor me: MintNFTsL1")
@@ -681,6 +639,32 @@ func (env *Solo) MintNFTsL1(
 	*/
 }
 
+func (env *Solo) executePTB(ptb sui.ProgrammableTransaction, wallet *cryptolib.KeyPair) *suijsonrpc.SuiTransactionBlockResponse {
+	tx := sui.NewProgrammable(
+		wallet.Address().AsSuiAddress(),
+		ptb,
+		nil,
+		suiclient.DefaultGasPrice,
+		suiclient.DefaultGasBudget,
+	)
+
+	txnBytes, err := bcs.Marshal(tx)
+	require.NoError(env.T, err)
+
+	execRes, err := env.SuiClient().SignAndExecuteTransaction(
+		env.ctx,
+		cryptolib.SignerToSuiSigner(wallet),
+		txnBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(env.T, err)
+	require.True(env.T, execRes.Effects.Data.IsSuccess())
+	return execRes
+}
+
 // SendL1 sends coins to another L1 address
 func (env *Solo) SendL1(targetAddress *cryptolib.Address, coins isc.CoinBalances, wallet *cryptolib.KeyPair) {
 	ptb := sui.NewProgrammableTransactionBuilder()
@@ -701,26 +685,5 @@ func (env *Solo) SendL1(targetAddress *cryptolib.Address, coins isc.CoinBalances
 		return true
 	})
 
-	tx := sui.NewProgrammable(
-		wallet.Address().AsSuiAddress(),
-		ptb.Finish(),
-		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
-	)
-
-	txnBytes, err := bcs.Marshal(tx)
-	require.NoError(env.T, err)
-
-	execRes, err := env.SuiClient().SignAndExecuteTransaction(
-		env.ctx,
-		cryptolib.SignerToSuiSigner(wallet),
-		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(env.T, err)
-	require.True(env.T, execRes.Effects.Data.IsSuccess())
+	env.executePTB(ptb.Finish(), wallet)
 }

@@ -52,11 +52,11 @@ func (c *Client) CreateAndSendRequest(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
+		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = coins.CoinRefs()
+		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
 	tx := sui.NewProgrammable(

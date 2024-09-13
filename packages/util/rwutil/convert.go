@@ -6,6 +6,7 @@ package rwutil
 import (
 	"errors"
 	"io"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -207,4 +208,13 @@ func ReadWriteTest[T IoReadWriter](t *testing.T, obj1 T, newObj T) T {
 	data2 := WriteToBytes(obj2)
 	require.Equal(t, data1, data2)
 	return obj2
+}
+
+func MakeValue[T IoReadWriter]() T {
+	var val T
+	if reflect.TypeOf(val).Kind() == reflect.Ptr {
+		v := reflect.New(reflect.TypeOf(val))
+		val = v.Interface().(T)
+	}
+	return val
 }

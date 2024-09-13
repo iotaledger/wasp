@@ -47,9 +47,7 @@ type VMTaskResult struct {
 	// UnsignedTransaction is the transaction data for the next block,
 	// or nil if the task does not produce a normal block
 	UnsignedTransaction *sui.TransactionData
-	// InputsCommitment is the inputs commitment necessary to sign the ResultTransactionEssence
-	InputsCommitment []byte
-	StateMetadata    []byte
+	StateMetadata       []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult
 }
