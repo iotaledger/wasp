@@ -17,6 +17,12 @@ type Decodable interface {
 
 var decodableT = reflect.TypeOf((*Decodable)(nil)).Elem()
 
+type Readable interface {
+	Read(r io.Reader) error
+}
+
+var readableT = reflect.TypeOf((*Readable)(nil)).Elem()
+
 type Initializeable interface {
 	BCSInit() error
 }
@@ -283,12 +289,20 @@ func (d *Decoder) getCustomDecoder(t reflect.Type) CustomDecoder {
 		return customDecoder
 	}
 
-	if t.Kind() != reflect.Interface && reflect.PointerTo(t).Implements(decodableT) {
-		customDecoder := func(e *Decoder, v reflect.Value) error {
+	if t.Kind() == reflect.Interface {
+		return nil
+	}
+
+	if reflect.PointerTo(t).Implements(decodableT) {
+		return func(e *Decoder, v reflect.Value) error {
 			return v.Interface().(Decodable).UnmarshalBCS(e)
 		}
+	}
 
-		return customDecoder
+	if reflect.PointerTo(t).Implements(readableT) {
+		return func(e *Decoder, v reflect.Value) error {
+			return v.Interface().(Readable).Read(e)
+		}
 	}
 
 	return nil

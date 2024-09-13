@@ -18,6 +18,12 @@ type Encodable interface {
 
 var encodableT = reflect.TypeOf((*Encodable)(nil)).Elem()
 
+type Writable interface {
+	Write(w io.Writer) error
+}
+
+var writableT = reflect.TypeOf((*Writable)(nil)).Elem()
+
 type EncoderConfig struct {
 	TagName string
 	// IncludeUnexported bool
@@ -342,12 +348,20 @@ func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 	// Check if this type implements custom encoding interface.
 	// Although we could allow encoding of interfaces, which implement Encodable, still
 	// we exclude them here to ensure symetric behaviour with decoding.
-	if t.Kind() != reflect.Interface && t.Implements(encodableT) {
-		customEncoder := func(e *Encoder, v reflect.Value) error {
+	if t.Kind() == reflect.Interface {
+		return nil
+	}
+
+	if t.Implements(encodableT) {
+		return func(e *Encoder, v reflect.Value) error {
 			return v.Interface().(Encodable).MarshalBCS(e)
 		}
+	}
 
-		return customEncoder
+	if t.Implements(writableT) {
+		return func(e *Encoder, v reflect.Value) error {
+			return v.Interface().(Writable).Write(e)
+		}
 	}
 
 	return nil
