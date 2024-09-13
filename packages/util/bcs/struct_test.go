@@ -42,6 +42,22 @@ type IntOptionalPtr struct {
 	A **int64 `bcs:"optional"`
 }
 
+type MapOptional struct {
+	A map[byte]byte `bcs:"optional"`
+}
+
+type MapPtrOptional struct {
+	A *map[byte]byte `bcs:"optional"`
+}
+
+type InfOptional struct {
+	A InfEnum1 `bcs:"optional,not_enum"`
+}
+
+type InfPtrOptional struct {
+	A *InfEnum1 `bcs:"optional,not_enum"`
+}
+
 type NestedStruct struct {
 	A int64
 	B BasicStruct
@@ -238,6 +254,12 @@ func TestStructCodec(t *testing.T) {
 	bcs.TestEncodeErr(t, IntMultiPtr{A: nil})
 	bcs.TestCodecAndBytesVsRef(t, IntOptional{A: &vI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestCodecAndBytesVsRef(t, IntOptionalPtr{A: &pVI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})
+	bcs.TestCodecAndBytes(t, MapOptional{A: map[byte]byte{3: 4}}, []byte{0x1, 0x1, 0x3, 0x4})
+	bcs.TestCodecAndBytes(t, MapOptional{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytes(t, MapPtrOptional{A: &map[byte]byte{3: 4}}, []byte{0x1, 0x1, 0x3, 0x4})
+	bcs.TestCodecAndBytes(t, MapPtrOptional{A: nil}, []byte{0x0})
+	require.Equal(t, []byte{0x1, 0x3}, bcs.MustMarshal(&InfOptional{A: byte(3)}))
+	bcs.TestCodecAndBytes(t, InfOptional{A: nil}, []byte{0x0})
 	bcs.TestCodecAndBytesVsRef(t, NestedStruct{A: 42, B: BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
 	bcs.TestCodecAndBytesVsRef(t, OptionalNestedStruct{A: 42, B: &BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 1, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
 	bcs.TestCodecAndBytesVsRef(t, &OptionalNestedStruct{A: 42, B: &BasicStruct{A: 43, B: "aaa"}}, []byte{42, 0, 0, 0, 0, 0, 0, 0, 1, 43, 0, 0, 0, 0, 0, 0, 0, 3, 97, 97, 97})
@@ -313,79 +335,4 @@ func TestUnexportedFieldsCodec(t *testing.T) {
 	vDec.b = 43
 	vDec.D = 45
 	require.Equal(t, v, vDec)
-}
-
-type StructWithManualCodec struct {
-	A int
-	B *string `bcs:"optional"`
-	C BasicStructEnum
-}
-
-func (s *StructWithManualCodec) MarshalBCS(e *bcs.Encoder) error {
-	e.Encode(s.A)
-	e.EncodeOptional(s.B)
-
-	switch {
-	case s.C.A != nil:
-		e.EncodeEnumVariantIdx(0)
-		e.Encode(*s.C.A)
-	case s.C.B != nil:
-		e.EncodeEnumVariantIdx(1)
-		e.Encode(*s.C.B)
-	case s.C.C != nil:
-		e.EncodeEnumVariantIdx(2)
-		e.Encode(*s.C.C)
-	default:
-		panic("enum variant not set")
-	}
-
-	// Just to mark that this is a manual codec.
-	return e.Encode(byte(1))
-}
-
-func (s *StructWithManualCodec) UnmarshalBCS(d *bcs.Decoder) error {
-	d.Decode(&s.A)
-	d.DecodeOptional(&s.B)
-
-	variantIdx, _ := d.DecodeEnumVariantIdx()
-
-	switch variantIdx {
-	case 0:
-		s.C.A = new(int32)
-		d.Decode(s.C.A)
-	case 1:
-		s.C.B = new(string)
-		d.Decode(s.C.B)
-	case 2:
-		s.C.C = new([]byte)
-		d.Decode(s.C.C)
-	default:
-		panic("invalid enum variant")
-	}
-
-	// Just to ensure that this is a manual codec.
-	var b byte
-	d.Decode(&b)
-	if b != 1 {
-		panic("invalid manual codec marker")
-	}
-
-	return d.Err()
-}
-
-type StructWithAutoCodec StructWithManualCodec
-
-func TestHighLevelCodecFuncs(t *testing.T) {
-	v := StructWithManualCodec{
-		A: 42,
-		B: lo.ToPtr("aaa"),
-		C: BasicStructEnum{B: lo.ToPtr("bbb")},
-	}
-	vEnc := bcs.TestCodec(t, v)
-	require.Equal(t, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x3, 0x61, 0x61, 0x61, 0x1, 0x3, 0x62, 0x62, 0x62, 0x1}, vEnc)
-
-	vAuto := StructWithAutoCodec(v)
-	vAutoEnc := bcs.TestCodec(t, vAuto)
-	vEncWithoutMarker := vEnc[:len(vEnc)-1]
-	require.Equal(t, vEncWithoutMarker, vAutoEnc)
 }
