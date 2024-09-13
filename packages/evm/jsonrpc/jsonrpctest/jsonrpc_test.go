@@ -6,10 +6,8 @@ package jsonrpctest
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -518,16 +516,6 @@ func TestRPCCustomError(t *testing.T) {
 
 	require.Len(t, args, 1)
 	require.EqualValues(t, 42, args[0])
-}
-
-func Test1(t *testing.T) {
-	i := 123
-
-	s := fmt.Sprintf("%x", i)
-	s2 := strconv.FormatInt(int64(i), 16)
-
-	fmt.Println(s)
-	fmt.Println(s2)
 }
 
 func TestRPCTraceTx(t *testing.T) {
