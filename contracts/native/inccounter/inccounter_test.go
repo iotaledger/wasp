@@ -32,19 +32,6 @@ func initSolo(t *testing.T) *solo.Solo {
 	}).WithNativeContract(Processor)
 }
 
-func TestDeployInc(t *testing.T) {
-	env := initSolo(t)
-	chain := env.NewChain()
-
-	err := chain.DeployContract(nil, Contract.Name, Contract.ProgramHash)
-	require.NoError(t, err)
-	chain.CheckChain()
-	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
-	checkCounter(chain, 0)
-	chain.CheckAccountLedger()
-}
-
 func TestDeployIncInitParams(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()

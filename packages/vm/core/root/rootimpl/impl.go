@@ -19,7 +19,6 @@ import (
 )
 
 var Processor = root.Contract.Processor(nil,
-	root.FuncDeployContract.WithHandler(deployContract),
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
 	root.FuncRequireDeployPermissions.WithHandler(requireDeployPermissions),
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),

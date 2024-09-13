@@ -5,13 +5,11 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func (reqctx *requestContext) ChainID() isc.ChainID {
@@ -120,13 +118,6 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 
 func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
 	return vmctx.task.Anchor
-}
-
-// DeployContract deploys contract by its program hash with the name specific to the instance
-func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams isc.CallArguments) {
-	reqctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
-	// calling root contract from another contract to install contract
-	reqctx.Call(root.FuncDeployContract.Message(programHash, name, initParams), nil)
 }
 
 func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
