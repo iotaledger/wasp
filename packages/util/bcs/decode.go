@@ -109,17 +109,8 @@ func (d *Decoder) DecodeOptional(v any) (bool, error) {
 	return true, d.Decode(v)
 }
 
-func (d *Decoder) DecodeEnumIdx() (int, error) {
+func (d *Decoder) DecodeEnumVariantIdx() (int, error) {
 	return int(d.r.ReadSize32()), d.r.Err
-}
-
-func (d *Decoder) DecodeLen() (int, error) {
-	return int(d.r.ReadSize32()), d.r.Err
-}
-
-func (d *Decoder) DecodeULEB128() (uint64, error) {
-	v, err := d.DecodeLen()
-	return uint64(v), err
 }
 
 func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, typeParsingHint *typeInfo) error {

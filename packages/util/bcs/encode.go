@@ -126,8 +126,7 @@ func (e *Encoder) EncodeOptional(val any) error {
 	return e.Encode(val)
 }
 
-// Enum index is an index of variant in enum type.
-func (e *Encoder) EncodeEnumIdx(variantIdx int) error {
+func (e *Encoder) EncodeEnumVariantIdx(variantIdx int) error {
 	if e.err != nil {
 		return e.err
 	}
@@ -135,21 +134,6 @@ func (e *Encoder) EncodeEnumIdx(variantIdx int) error {
 	e.w.WriteSize32(variantIdx)
 
 	return e.w.Err
-}
-
-func (e *Encoder) EncodeLen(len int) error {
-	if e.err != nil {
-		return e.err
-	}
-
-	e.w.WriteSize32(len)
-
-	return e.w.Err
-}
-
-// ULEB - unsigned little-endian base-128 - variable-length integer value.
-func (e *Encoder) EncodeULEB128(v uint64) error {
-	return e.EncodeLen(int(v))
 }
 
 // This structure is used to store result of parsing type to reuse it for each of element of collection.
