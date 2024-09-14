@@ -97,25 +97,6 @@ func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
 	return multiclient.New(resolver, ch.AllAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
 }
 
-func (ch *Chain) DeployContract(name, progHashStr string, initParams dict.Dict) (*iotago.Transaction, error) {
-	programHash, err := hashing.HashValueFromHex(progHashStr)
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := ch.OriginatorClient().PostRequest(
-		root.FuncDeployContract.Message(name, programHash, initParams),
-	)
-	if err != nil {
-		return nil, err
-	}
-	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(ch.ChainID, tx, false, 30*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	return tx, nil
-}
-
 func (ch *Chain) DeployBinaryContract(name, vmType string, progBinary []byte, initParams dict.Dict) (hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:        vmType,

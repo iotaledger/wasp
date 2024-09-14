@@ -10,12 +10,6 @@ var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
 
 var (
 	// Funcs
-	FuncDeployContract = coreutil.NewEP3(Contract, "deployContract",
-		coreutil.FieldWithCodec(codec.HashValue),
-		coreutil.FieldWithCodec(codec.String),
-		coreutil.FieldWithCodec(codec.CallArguments),
-	)
-
 	FuncGrantDeployPermission = coreutil.NewEP1(Contract, "grantDeployPermission",
 		coreutil.FieldWithCodec(codec.AgentID),
 	)
