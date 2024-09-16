@@ -6,10 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type contractIdentityKind rwutil.Kind
+type contractIdentityKind byte
 
 type ContractIdentity struct {
 	// can either be an Hname or a solidity contract

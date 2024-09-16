@@ -9,10 +9,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type AgentIDKind rwutil.Kind
+type AgentIDKind byte
 
 const (
 	AgentIDKindNil AgentIDKind = iota
@@ -36,7 +35,7 @@ type AgentID interface {
 }
 
 func init() {
-	bcs.RegisterEnumType5[AgentID, bcs.None, *NilAgentID, *AddressAgentID, *ContractAgentID, *EthereumAddressAgentID]()
+	bcs.RegisterEnumType5[AgentID, bcs.None, *AddressAgentID, *ContractAgentID, *EthereumAddressAgentID, *NilAgentID]()
 }
 
 // AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).

@@ -10,11 +10,10 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-type RequestKind rwutil.Kind
+type RequestKind byte
 
 const (
 	requestKindOnLedger RequestKind = iota
