@@ -57,7 +57,6 @@ func NewEncoderWithOpts(dest io.Writer, cfg EncoderConfig) *Encoder {
 type Encoder struct {
 	cfg EncoderConfig
 	w   *rwutil.Writer
-	err error
 }
 
 func (e *Encoder) Err() error {
@@ -71,49 +70,24 @@ func (e *Encoder) MustEncode(val any) {
 }
 
 func (e *Encoder) Encode(val any) error {
-	if e.err != nil {
-		return e.err
-	}
-
 	if val == nil {
-		e.err = fmt.Errorf("cannot encode a nil value")
-		return e.err
+		return e.handleErrorf("cannot encode a nil value")
 	}
 
-	e.err = e.encodeValue(reflect.ValueOf(val), nil, nil)
-	if e.err != nil {
-		e.err = fmt.Errorf("encoding %T: %w", val, e.err)
+	if err := e.encodeValue(reflect.ValueOf(val), nil, nil); err != nil {
+		return fmt.Errorf("encoding %T: %w", val, err)
 	}
 
-	return e.err
-}
-
-func (e *Encoder) EncodeOptionalFlag(hasValue bool) error {
-	if e.err != nil {
-		return e.err
-	}
-
-	if hasValue {
-		e.w.WriteByte(0)
-	} else {
-		e.w.WriteByte(1)
-	}
-
-	return e.w.Err
+	return nil
 }
 
 func (e *Encoder) EncodeOptional(val any) error {
-	if e.err != nil {
-		return e.err
-	}
-
 	v := reflect.ValueOf(val)
 
 	switch v.Kind() {
 	case reflect.Ptr, reflect.Interface, reflect.Map:
 	default:
-		e.err = fmt.Errorf("optional value must be a pointer, interface or map, got %v", v.Type())
-		return e.err
+		return e.handleErrorf("optional value must be a pointer, interface or map, got %v", v.Type())
 	}
 
 	if v.IsNil() {
@@ -126,31 +100,97 @@ func (e *Encoder) EncodeOptional(val any) error {
 	return e.Encode(val)
 }
 
-// Enum index is an index of variant in enum type.
-func (e *Encoder) EncodeEnumIdx(variantIdx int) error {
-	if e.err != nil {
-		return e.err
+func (e *Encoder) WriteOptionalFlag(hasValue bool) error {
+	if hasValue {
+		e.w.WriteByte(0)
+	} else {
+		e.w.WriteByte(1)
 	}
-
-	e.w.WriteSize32(variantIdx)
 
 	return e.w.Err
 }
 
-func (e *Encoder) EncodeLen(len int) error {
-	if e.err != nil {
-		return e.err
-	}
+// Enum index is an index of variant in enum type.
+func (e *Encoder) WriteEnumIdx(variantIdx int) error {
+	e.w.WriteSize32(variantIdx)
+	return e.w.Err
+}
 
+func (e *Encoder) WriteLen(len int) error {
 	e.w.WriteSize32(len)
-
 	return e.w.Err
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
-func (e *Encoder) EncodeULEB128(v uint64) error {
-	return e.EncodeLen(int(v))
+func (e *Encoder) WriteCompactUint(v uint64) error {
+	return e.WriteLen(int(v))
 }
+
+func (e *Encoder) WriteBool(v bool) error {
+	e.w.WriteBool(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteByte(v byte) error {
+	e.w.WriteByte(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteInt8(v int8) error {
+	e.w.WriteInt8(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteInt16(v int16) error {
+	e.w.WriteInt16(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteInt32(v int32) error {
+	e.w.WriteInt32(v)
+
+	return e.w.Err
+}
+
+func (e *Encoder) WriteInt64(v int64) error {
+	e.w.WriteInt64(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteUint8(v uint8) error {
+	e.w.WriteUint8(v)
+
+	return e.w.Err
+}
+
+func (e *Encoder) WriteUint16(v uint16) error {
+	e.w.WriteUint16(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteUint32(v uint32) error {
+	e.w.WriteUint32(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteUint64(v uint64) error {
+	e.w.WriteUint64(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteString(v string) error {
+	e.w.WriteString(v)
+	return e.w.Err
+}
+
+func (e *Encoder) Write(b []byte) (n int, err error) {
+	e.w.WriteN(b)
+	return len(b), e.w.Err
+}
+
+// func (e *Encoder) Writer() *rwutil.Writer {
+// 	return &e.w
+// }
 
 // This structure is used to store result of parsing type to reuse it for each of element of collection.
 type typeInfo struct {
@@ -178,6 +218,9 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	if t.CustomEncoder != nil {
 		if err := t.CustomEncoder(e, v); err != nil {
+			if e.w.Err == nil {
+				e.w.Err = err
+			}
 			return fmt.Errorf("%v: custom encoder: %w", v.Type(), err)
 		}
 		if e.w.Err != nil {
@@ -199,9 +242,17 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	case reflect.Bool:
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		err = e.encodeInt(v, defaultValueSize(v.Kind()), typeOptions.Bytes)
+		if typeOptions.IsCompactInt {
+			e.w.WriteSize32(int(v.Int()))
+		} else {
+			err = e.encodeInt(v, defaultValueSize(v.Kind()), typeOptions.SizeInBytes)
+		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		err = e.encodeUint(v, defaultValueSize(v.Kind()), typeOptions.Bytes)
+		if typeOptions.IsCompactInt {
+			e.w.WriteSize32(int(v.Uint()))
+		} else {
+			err = e.encodeUint(v, defaultValueSize(v.Kind()), typeOptions.SizeInBytes)
+		}
 	case reflect.String:
 		e.w.WriteString(v.String())
 	case reflect.Slice:
@@ -235,7 +286,7 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 			err = e.encodeInterfaceEnum(v)
 		}
 	default:
-		return fmt.Errorf("%v: cannot encode unknown type", v.Type())
+		return e.handleErrorf("%v: cannot encode unknown type", v.Type())
 	}
 
 	if err != nil {
@@ -313,7 +364,7 @@ func (e *Encoder) getEncodedValue(v reflect.Value, refsCount int) (valToEncode r
 	// Removing all found redundant pointers
 	for i := 0; i < refsCount; i++ {
 		if v.IsNil() {
-			return v, fmt.Errorf("attempt to encode non-optinal nil value of type %v", v.Type())
+			return v, e.handleErrorf("attempt to encode non-optinal nil value of type %v", v.Type())
 		}
 
 		v = v.Elem()
@@ -388,7 +439,7 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx En
 
 	enumVariants, registered := EnumTypes[t]
 	if !registered {
-		return -1, fmt.Errorf("interface %v is not registered as enum type", t)
+		return -1, e.handleErrorf("interface %v is not registered as enum type", t)
 	}
 
 	isNil := v.IsNil()
@@ -410,9 +461,9 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx En
 
 	if enumVariantIdx == -1 {
 		if isNil {
-			return -1, fmt.Errorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", t)
+			return -1, e.handleErrorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", t)
 		} else {
-			return -1, fmt.Errorf("variant %v is not registered as part of enum type %v", valT, t)
+			return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, t)
 		}
 	}
 
@@ -435,19 +486,19 @@ func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumV
 			if enumVariantIdx != -1 {
 				prevSetField := v.Type().Field(int(enumVariantIdx))
 				currentField := v.Type().Field(i)
-				return -1, fmt.Errorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
+				return -1, e.handleErrorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
 			}
 
 			enumVariantIdx = i
 			// We do not break here to check if there are multiple options set
 		default:
 			fieldType := v.Type().Field(i)
-			return -1, fmt.Errorf("field %v of enum %v is of non-nullable type %v", fieldType.Name, v.Type(), fieldType.Type)
+			return -1, e.handleErrorf("field %v of enum %v is of non-nullable type %v", fieldType.Name, v.Type(), fieldType.Type)
 		}
 	}
 
 	if enumVariantIdx == -1 {
-		return -1, fmt.Errorf("no options are set in enum struct %v", v.Type())
+		return -1, e.handleErrorf("no options are set in enum struct %v", v.Type())
 	}
 
 	return enumVariantIdx, nil
@@ -466,7 +517,7 @@ func (e *Encoder) encodeInt(v reflect.Value, origSize, customSize ValueBytesCoun
 	case Value8Bytes:
 		e.w.WriteInt64(v.Int())
 	default:
-		return fmt.Errorf("invalid value size: %v", size)
+		return e.handleErrorf("invalid value size: %v", size)
 	}
 
 	return e.w.Err
@@ -485,20 +536,20 @@ func (e *Encoder) encodeUint(v reflect.Value, origSize, customSize ValueBytesCou
 	case Value8Bytes:
 		e.w.WriteUint64(v.Uint())
 	default:
-		return fmt.Errorf("invalid value size: %v", size)
+		return e.handleErrorf("invalid value size: %v", size)
 	}
 
 	return e.w.Err
 }
 
 func (e *Encoder) encodeSlice(v reflect.Value, typOpts TypeOptions) error {
-	switch typOpts.LenBytes {
+	switch typOpts.LenSizeInBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
 	case Len4Bytes, 0:
 		e.w.WriteSize32(v.Len())
 	default:
-		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
+		return e.handleErrorf("invalid collection size type: %v", typOpts.LenSizeInBytes)
 	}
 
 	return e.encodeArray(v, typOpts)
@@ -549,6 +600,24 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 }
 
 func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
+	if typOpts.ArrayElement.IsCompactInt {
+		if typOpts.ArrayElement.AsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				e.encodeAsByteArray(func() error {
+					e.w.WriteSize32(int(v.Index(i).Int()))
+					return nil
+				})
+			}
+		} else {
+			fmt.Println("XXX")
+			for i := 0; i < v.Len(); i++ {
+				e.w.WriteSize32(int(v.Index(i).Int()))
+			}
+		}
+
+		return e.w.Err
+	}
+
 	switch bytesPerElem {
 	case Value1Byte:
 		if typOpts.ArrayElement.AsByteArray {
@@ -602,6 +671,23 @@ func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 }
 
 func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
+	if typOpts.ArrayElement.IsCompactInt {
+		if typOpts.ArrayElement.AsByteArray {
+			for i := 0; i < v.Len(); i++ {
+				e.encodeAsByteArray(func() error {
+					e.w.WriteSize32(int(v.Index(i).Uint()))
+					return nil
+				})
+			}
+		} else {
+			for i := 0; i < v.Len(); i++ {
+				e.w.WriteSize32(int(v.Index(i).Uint()))
+			}
+		}
+
+		return e.w.Err
+	}
+
 	switch bytesPerElem {
 	case Value1Byte:
 		// Optimization for encoding of byte/uint8 slices
@@ -659,16 +745,16 @@ func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount,
 
 func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 	if v.IsNil() {
-		return fmt.Errorf("attemp to encode non-optional nil-map")
+		return e.handleErrorf("attemp to encode non-optional nil-map")
 	}
 
-	switch typOpts.LenBytes {
+	switch typOpts.LenSizeInBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
 	case Len4Bytes, 0:
 		e.w.WriteSize32(v.Len())
 	default:
-		return fmt.Errorf("invalid collection size type: %v", typOpts.LenBytes)
+		return e.handleErrorf("invalid collection size type: %v", typOpts.LenSizeInBytes)
 	}
 
 	t := v.Type()
@@ -713,7 +799,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 
 		fieldOpts, hasTag, err := FieldOptionsFromField(fieldType, e.cfg.TagName)
 		if err != nil {
-			return fmt.Errorf("%v: parsing annotation: %w", fieldType.Name, err)
+			return e.handleErrorf("%v: parsing annotation: %w", fieldType.Name, err)
 		}
 
 		if fieldOpts.Skip {
@@ -749,7 +835,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 			isNil := fieldVal.IsNil()
 
 			if isNil && !fieldOpts.Optional {
-				return fmt.Errorf("%v: non-optional nil value", fieldType.Name)
+				return e.handleErrorf("%v: non-optional nil value", fieldType.Name)
 			}
 
 			if fieldOpts.Optional {
@@ -770,7 +856,7 @@ func (e *Encoder) encodeStruct(v reflect.Value) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("%v: %w", fieldType.Name, err)
+			return e.handleErrorf("%v: %w", fieldType.Name, err)
 		}
 	}
 
@@ -850,13 +936,9 @@ func (e *Encoder) getBytes(enc func() error) ([]byte, error) {
 	return encodedVal, nil
 }
 
-// func (e *Encoder) Writer() *rwutil.Writer {
-// 	return &e.w
-// }
-
-func (e *Encoder) Write(b []byte) (n int, err error) {
-	e.w.WriteN(b)
-	return len(b), e.w.Err
+func (e *Encoder) handleErrorf(format string, args ...interface{}) error {
+	e.w.Err = fmt.Errorf(format, args...)
+	return e.w.Err
 }
 
 func MarshalStream[V any](v *V, dest io.Writer) error {
