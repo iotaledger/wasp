@@ -374,6 +374,8 @@ type StructWithManualCodec struct {
 	B *string `bcs:"optional"`
 	C BasicStructEnum
 	D []int8
+	E int16
+	F string
 }
 
 func (s *StructWithManualCodec) MarshalBCS(e *bcs.Encoder) error {
@@ -382,22 +384,25 @@ func (s *StructWithManualCodec) MarshalBCS(e *bcs.Encoder) error {
 
 	switch {
 	case s.C.A != nil:
-		e.EncodeEnumIdx(0)
+		e.WriteEnumIdx(0)
 		e.Encode(*s.C.A)
 	case s.C.B != nil:
-		e.EncodeEnumIdx(1)
+		e.WriteEnumIdx(1)
 		e.Encode(*s.C.B)
 	case s.C.C != nil:
-		e.EncodeEnumIdx(2)
+		e.WriteEnumIdx(2)
 		e.Encode(*s.C.C)
 	default:
 		panic("enum variant not set")
 	}
 
-	e.EncodeLen(len(s.D))
+	e.WriteLen(len(s.D))
 	for _, v := range s.D {
 		e.Encode(v)
 	}
+
+	e.WriteInt16(s.E)
+	e.WriteString(s.F)
 
 	// Just to mark that this is a manual codec.
 	return e.Encode(byte(1))
@@ -407,7 +412,7 @@ func (s *StructWithManualCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	d.Decode(&s.A)
 	d.DecodeOptional(&s.B)
 
-	variantIdx, _ := d.DecodeEnumIdx()
+	variantIdx := d.ReadEnumIdx()
 
 	switch variantIdx {
 	case 0:
@@ -423,10 +428,13 @@ func (s *StructWithManualCodec) UnmarshalBCS(d *bcs.Decoder) error {
 		panic("invalid enum variant")
 	}
 
-	l, _ := d.DecodeLen()
+	l := d.ReadLen()
 	for i := 0; i < l; i++ {
 		s.D = append(s.D, bcs.MustDecode[int8](d))
 	}
+
+	s.E = d.ReadInt16()
+	s.F = d.ReadString()
 
 	// Just to ensure that this is a manual codec.
 	var b byte
@@ -446,9 +454,11 @@ func TestHighLevelCodecFuncs(t *testing.T) {
 		B: lo.ToPtr("aaa"),
 		C: BasicStructEnum{B: lo.ToPtr("bbb")},
 		D: []int8{1, 2, 3},
+		E: 10,
+		F: "ccc",
 	}
 	vEnc := bcs.TestCodec(t, v)
-	require.Equal(t, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x3, 0x61, 0x61, 0x61, 0x1, 0x3, 0x62, 0x62, 0x62, 0x3, 0x1, 0x2, 0x3, 0x1}, vEnc)
+	require.Equal(t, []byte{0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x3, 0x61, 0x61, 0x61, 0x1, 0x3, 0x62, 0x62, 0x62, 0x3, 0x1, 0x2, 0x3, 0xa, 0x0, 0x3, 0x63, 0x63, 0x63, 0x1}, vEnc)
 
 	vAuto := StructWithAutoCodec(v)
 	vAutoEnc := bcs.TestCodec(t, vAuto)

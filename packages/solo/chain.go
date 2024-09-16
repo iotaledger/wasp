@@ -8,7 +8,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io"
-	"math"
 	"math/big"
 	"os"
 	"strings"
@@ -203,33 +202,6 @@ func (ch *Chain) GetContractBinary(progHash hashing.HashValue) (string, []byte, 
 	}
 	binary := lo.Must(blob.ViewGetBlobField.DecodeOutput(res))
 	return vmType, binary, nil
-}
-
-// DeployContract deploys contract with the given name by its 'programHash'. 'sigScheme' represents
-// the private key of the creator (nil defaults to chain originator). The 'creator' becomes an immutable
-// property of the contract instance.
-// The parameter 'programHash' can be one of the following:
-//   - it is the hash of the previously uploaded blob that contains the
-//     binary and vmtype
-//   - it can be a hash (ID) of the example smart contract ("hardcoded"). The "hardcoded"
-//     smart contract must be made available with the call examples.AddProcessor
-func (ch *Chain) DeployContract(user *cryptolib.KeyPair, name string, programHash hashing.HashValue, initParams isc.CallArguments) error {
-	_, err := ch.PostRequestSync(
-		NewCallParams(root.FuncDeployContract.Message(programHash, name, initParams)).
-			WithGasBudget(math.MaxUint64),
-		user,
-	)
-	return err
-}
-
-// UploadAndDeployContract is a shortcut for uploading a contract binary from file and
-// deploying the smart contract.
-func (ch *Chain) UploadAndDeployContract(keyPair *cryptolib.KeyPair, name, vmType, fname string, initParams isc.CallArguments) error {
-	hprog, err := ch.UploadContractBinaryFromFile(keyPair, vmType, fname)
-	if err != nil {
-		return err
-	}
-	return ch.DeployContract(keyPair, name, hprog, initParams)
 }
 
 func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...interface{}) (abi.ABI, []byte) {

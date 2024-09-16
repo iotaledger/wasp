@@ -26,6 +26,10 @@ type IntWithMoreBytes struct {
 	A int16 `bcs:"bytes=4"`
 }
 
+type CompactInt struct {
+	A int64 `bcs:"compact"`
+}
+
 type IntPtr struct {
 	A *int64
 }
@@ -224,7 +228,7 @@ type WithNestedPtrCustomPtrCodec struct {
 type ShortInt int64
 
 func (v ShortInt) BCSOptions() bcs.TypeOptions {
-	return bcs.TypeOptions{Bytes: bcs.Value2Bytes}
+	return bcs.TypeOptions{SizeInBytes: bcs.Value2Bytes}
 }
 
 type WithBCSOpts struct {
@@ -250,6 +254,8 @@ func TestStructCodec(t *testing.T) {
 	pVI := &vI
 	bcs.TestCodecAndBytesVsRef(t, IntPtr{A: &vI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestEncodeErr(t, IntPtr{A: nil})
+	bcs.TestCodecAndBytes(t, CompactInt{A: 1}, []byte{0x1})
+	bcs.TestCodecAndBytes(t, CompactInt{A: 70000}, []byte{0xf0, 0xa2, 0x4})
 	bcs.TestCodecAndBytesVsRef(t, IntMultiPtr{A: &pVI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
 	bcs.TestEncodeErr(t, IntMultiPtr{A: nil})
 	bcs.TestCodecAndBytesVsRef(t, IntOptional{A: &vI}, []byte{1, 42, 0, 0, 0, 0, 0, 0, 0})

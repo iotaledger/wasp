@@ -9,8 +9,14 @@ import (
 
 type TypeOptions struct {
 	//IncludeUnexported bool
-	LenBytes           LenBytesCount
-	Bytes              ValueBytesCount
+
+	// TODO: Is this needed? It is present in rwutil as Size16/Size32, but it is more of validation.
+	LenSizeInBytes LenBytesCount
+
+	// TODO: Isthis really useful? The engineer can just change type of int to indicate its size.
+	SizeInBytes ValueBytesCount
+
+	IsCompactInt       bool
 	InterfaceIsNotEnum bool
 
 	ArrayElement *ArrayElemOptions
@@ -19,7 +25,7 @@ type TypeOptions struct {
 }
 
 func (o *TypeOptions) Validate() error {
-	if err := o.LenBytes.Validate(); err != nil {
+	if err := o.LenSizeInBytes.Validate(); err != nil {
 		return fmt.Errorf("array len size: %w", err)
 	}
 
@@ -27,11 +33,14 @@ func (o *TypeOptions) Validate() error {
 }
 
 func (o *TypeOptions) Update(other TypeOptions) {
-	if other.LenBytes != 0 {
-		o.LenBytes = other.LenBytes
+	if other.LenSizeInBytes != 0 {
+		o.LenSizeInBytes = other.LenSizeInBytes
 	}
-	if other.Bytes != 0 {
-		o.Bytes = other.Bytes
+	if other.SizeInBytes != 0 {
+		o.SizeInBytes = other.SizeInBytes
+	}
+	if other.IsCompactInt {
+		o.IsCompactInt = true
 	}
 	if other.InterfaceIsNotEnum {
 		o.InterfaceIsNotEnum = true
@@ -81,7 +90,7 @@ type FieldOptions struct {
 }
 
 func (o *FieldOptions) Validate() error {
-	if err := o.TypeOptions.LenBytes.Validate(); err != nil {
+	if err := o.TypeOptions.LenSizeInBytes.Validate(); err != nil {
 		return fmt.Errorf("array len size: %w", err)
 	}
 
@@ -159,20 +168,22 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 		}
 
 		switch key {
+		case "compact":
+			opts.IsCompactInt = true
 		case "bytes":
 			bytes, err := strconv.Atoi(val)
 			if err != nil {
 				return FieldOptions{}, fmt.Errorf("invalid bytes tag: %s", val)
 			}
 
-			opts.Bytes = ValueBytesCount(bytes)
+			opts.SizeInBytes = ValueBytesCount(bytes)
 		case "len_bytes":
 			bytes, err := strconv.Atoi(val)
 			if err != nil {
 				return FieldOptions{}, fmt.Errorf("invalid len_bytes tag: %s", val)
 			}
 
-			opts.LenBytes = LenBytesCount(bytes)
+			opts.LenSizeInBytes = LenBytesCount(bytes)
 		case "optional":
 			opts.Optional = true
 		case "bytearr":

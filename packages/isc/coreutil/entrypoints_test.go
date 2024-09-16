@@ -52,11 +52,6 @@ func (m MockSandBox) Call(msg isc.Message, allowance *isc.Assets) dict.Dict {
 	panic("implement me")
 }
 
-func (m MockSandBox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
-	// TODO implement me
-	panic("implement me")
-}
-
 func (m MockSandBox) Event(topic string, payload []byte) {
 	// TODO implement me
 	panic("implement me")

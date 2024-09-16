@@ -35,13 +35,6 @@ func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) isc.CallAr
 	return s.Ctx.Call(msg, transfer)
 }
 
-// DeployContract deploys contract by the binary hash
-// and calls "init" endpoint (constructor) with provided parameters
-func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams isc.CallArguments) {
-	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
-	s.reqctx.deployContract(programHash, name, initParams)
-}
-
 func (s *contractSandbox) Event(topic string, payload []byte) {
 	s.Ctx.GasBurn(gas.BurnCodeEmitEvent1P, uint64(len(topic)+len(payload)))
 	hContract := s.reqctx.CurrentContractHname()

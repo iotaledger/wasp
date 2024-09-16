@@ -102,8 +102,6 @@ type Sandbox interface {
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(msg Message, allowance *Assets) CallArguments
-	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	DeployContract(programHash hashing.HashValue, name string, initParams CallArguments)
 	// Event emits an event
 	Event(topic string, payload []byte)
 	// RegisterError registers an error
