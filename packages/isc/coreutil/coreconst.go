@@ -8,7 +8,6 @@ import (
 const (
 	CoreContractRoot            = "root"
 	CoreContractAccounts        = "accounts"
-	CoreContractBlob            = "blob"
 	CoreContractBlocklog        = "blocklog"
 	CoreContractGovernance      = "governance"
 	CoreContractErrors          = "errors"
@@ -20,7 +19,6 @@ const (
 var (
 	CoreContractRootHname            = isc.Hn(CoreContractRoot)
 	CoreContractAccountsHname        = isc.Hn(CoreContractAccounts)
-	CoreContractBlobHname            = isc.Hn(CoreContractBlob)
 	CoreContractBlocklogHname        = isc.Hn(CoreContractBlocklog)
 	CoreContractGovernanceHname      = isc.Hn(CoreContractGovernance)
 	CoreContractErrorsHname          = isc.Hn(CoreContractErrors)
@@ -30,7 +28,6 @@ var (
 	hnames = map[string]isc.Hname{
 		CoreContractRoot:       CoreContractRootHname,
 		CoreContractAccounts:   CoreContractAccountsHname,
-		CoreContractBlob:       CoreContractBlobHname,
 		CoreContractBlocklog:   CoreContractBlocklogHname,
 		CoreContractGovernance: CoreContractGovernanceHname,
 		CoreContractEVM:        CoreContractEVMHname,
