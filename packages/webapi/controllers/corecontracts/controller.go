@@ -111,27 +111,6 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetSummary("Get all stored assets")
 }
 
-func (c *Controller) addBlobContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	api.GET("chains/:chainID/core/blobs/:blobHash/data/:fieldKey", c.getBlobValue).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamPath("", params.ParamBlobHash, params.DescriptionBlobHash).
-		AddParamPath("", params.ParamFieldKey, params.DescriptionFieldKey).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The value of the supplied field (key)", mocker.Get(BlobValueResponse{}), nil).
-		SetOperationId("blobsGetBlobValue").
-		SetSummary("Get the value of the supplied field (key)")
-
-	api.GET("chains/:chainID/core/blobs/:blobHash", c.getBlobInfo).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamPath("", params.ParamBlobHash, params.DescriptionBlobHash).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All blob fields and their values", mocker.Get(BlobInfoResponse{}), nil).
-		SetOperationId("blobsGetBlobInfo").
-		SetSummary("Get all fields of a blob")
-}
-
 func (c *Controller) addErrorContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	//nolint:unused
 	type errorMessageFormat struct {
@@ -288,7 +267,6 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	c.addAccountContractRoutes(publicAPI, mocker)
-	c.addBlobContractRoutes(publicAPI, mocker)
 	c.addBlockLogContractRoutes(publicAPI, mocker)
 	c.addErrorContractRoutes(publicAPI, mocker)
 	c.addGovernanceContractRoutes(publicAPI, mocker)
