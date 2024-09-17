@@ -210,8 +210,8 @@ func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
 
 type header struct {
 	Hash        common.Hash
-	GasLimit    uint64
-	GasUsed     uint64
+	GasLimit    uint64 `bcs:"compact"`
+	GasUsed     uint64 `bcs:"compact"`
 	Time        uint64
 	TxHash      common.Hash
 	ReceiptHash common.Hash

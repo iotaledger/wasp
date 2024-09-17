@@ -22,8 +22,8 @@ type BlockInfo struct {
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
 	PreviousL1Commitment  *state.L1Commitment `bcs:"optional"`
-	GasBurned             uint64
-	GasFeeCharged         coin.Value
+	GasBurned             uint64              `bcs:"compact"`
+	GasFeeCharged         coin.Value          `bcs:"compact"`
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index

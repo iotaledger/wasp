@@ -19,9 +19,9 @@ import (
 type RequestReceipt struct {
 	Request       isc.Request            `json:"request"`
 	Error         *isc.UnresolvedVMError `json:"error" bcs:"optional"`
-	GasBudget     uint64                 `json:"gasBudget"`
-	GasBurned     uint64                 `json:"gasBurned"`
-	GasFeeCharged coin.Value             `json:"gasFeeCharged"`
+	GasBudget     uint64                 `json:"gasBudget" bcs:"compact"`
+	GasBurned     uint64                 `json:"gasBurned" bcs:"compact"`
+	GasFeeCharged coin.Value             `json:"gasFeeCharged" bcs:"compact"`
 	// not persistent
 	BlockIndex   uint32       `json:"blockIndex" bcs:"-"`
 	RequestIndex uint16       `json:"requestIndex" bcs:"-"`
