@@ -38,9 +38,6 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("accountsBasic", func(t *testing.T) { run(t, testBasicAccounts) })
 	t.Run("2acccounts", func(t *testing.T) { run(t, testBasic2Accounts) })
 
-	t.Run("small blob", func(t *testing.T) { run(t, testBlobStoreSmallBlob) })
-	t.Run("many blobs", func(t *testing.T) { run(t, testBlobStoreManyBlobsNoEncoding) })
-
 	t.Run("post deploy", func(t *testing.T) { run(t, testPostDeployInccounter) })
 	t.Run("post 1", func(t *testing.T) { run(t, testPost1Request) })
 	t.Run("post 3 recursive", func(t *testing.T) { run(t, testPost3Recursive) })

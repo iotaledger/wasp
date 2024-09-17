@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -64,9 +63,6 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 	bi := ch.GetLatestBlockInfo()
 	t.Logf("after ch deployment:\n%s", bi.String())
-	// uploading one blob
-	_, err = ch.UploadBlob(nil, dict.Dict{"field": []byte("dummy blob data")})
-	require.NoError(t, err)
 
 	bi = ch.GetLatestBlockInfo()
 	require.NotNil(t, bi)
@@ -85,10 +81,6 @@ func TestBlockInfoSeveral(t *testing.T) {
 	require.NoError(t, err)
 
 	const numReqs = 5
-	for i := 0; i < numReqs; i++ {
-		_, err := ch.UploadBlob(nil, dict.Dict{"field": []byte(fmt.Sprintf("dummy blob data #%d", i))})
-		require.NoError(t, err)
-	}
 
 	bi := ch.GetLatestBlockInfo()
 	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex()))

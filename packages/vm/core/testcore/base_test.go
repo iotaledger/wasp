@@ -20,7 +20,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -425,18 +424,6 @@ func TestRepeatInit(t *testing.T) {
 		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
 		ch.CheckAccountLedger()
 	})
-	t.Run("blob", func(t *testing.T) {
-		env := solo.New(t)
-		ch := env.NewChain()
-		err := ch.DepositBaseTokensToL2(10_000, nil)
-		require.NoError(t, err)
-		req := solo.NewCallParamsEx(blob.Contract.Name, "init").
-			WithGasBudget(100_000)
-		_, err = ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
-		ch.CheckAccountLedger()
-	})
 	t.Run("governance", func(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain()
@@ -495,9 +482,6 @@ func TestBurnLog(t *testing.T) {
 	rec := ch.LastReceipt()
 	t.Logf("receipt 1:\n%s", rec)
 	t.Logf("burn log 1:\n%s", rec.GasBurnLog)
-
-	_, err := ch.UploadBlob(nil, dict.Dict{"field": []byte(strings.Repeat("dummy data", 1000))})
-	require.NoError(t, err)
 
 	rec = ch.LastReceipt()
 	t.Logf("receipt 2:\n%s", rec)
