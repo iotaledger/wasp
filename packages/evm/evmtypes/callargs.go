@@ -11,9 +11,9 @@ import (
 
 func init() {
 	bcs.AddCustomEncoder(func(e *bcs.Encoder, msg ethereum.CallMsg) error {
-		e.Encode(msg.From[:])
+		e.Encode(msg.From)
 		e.EncodeOptional(msg.To)
-		e.Encode(msg.Gas)
+		e.WriteUint64(msg.Gas)
 		e.Encode(msg.Value)
 		e.Encode(msg.Data)
 
@@ -23,7 +23,7 @@ func init() {
 	bcs.AddCustomDecoder(func(d *bcs.Decoder, msg *ethereum.CallMsg) error {
 		d.Decode(&msg.From)
 		d.DecodeOptional(&msg.To)
-		d.Decode(&msg.Gas)
+		msg.Gas = d.ReadUint64()
 		d.Decode(&msg.Value)
 		d.Decode(&msg.Data)
 
