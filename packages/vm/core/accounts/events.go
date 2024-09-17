@@ -2,24 +2,18 @@ package accounts
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func eventCoinCreated(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteN(treasuryCapID[:])
-	ctx.Event("coreaccounts.coinCreated", ww.Bytes())
+	ctx.Event("coreaccounts.coinCreated", bcs.MustMarshal(&treasuryCapID))
 }
 
 func eventCoinDestroyed(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteN(treasuryCapID[:])
-	ctx.Event("coreaccounts.coinDestroyed", ww.Bytes())
+	ctx.Event("coreaccounts.coinDestroyed", bcs.MustMarshal(&treasuryCapID))
 }
 
 func eventCoinModified(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteN(treasuryCapID[:])
-	ctx.Event("coreaccounts.coinModified", ww.Bytes())
+	ctx.Event("coreaccounts.coinModified", bcs.MustMarshal(&treasuryCapID))
 }

@@ -3,12 +3,13 @@ package isc
 import (
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"reflect"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/samber/lo"
 )
 
 const VMErrorMessageLimit = math.MaxUint16
@@ -29,13 +30,12 @@ func NewCoreVMErrorCode(id uint16) VMErrorCode {
 	return VMErrorCode{ContractID: VMCoreErrorContractID, ID: id}
 }
 
-func VMErrorCodeFromBytes(b []byte) (ret VMErrorCode, err error) {
-	_, err = rwutil.ReadFromBytes(b, &ret)
-	return ret, err
+func VMErrorCodeFromBytes(b []byte) (VMErrorCode, error) {
+	return bcs.Unmarshal[VMErrorCode](b)
 }
 
 func (c VMErrorCode) Bytes() []byte {
-	return rwutil.WriteToBytes(&c)
+	return bcs.MustMarshal(&c)
 }
 
 func (c VMErrorCode) String() string {
@@ -45,20 +45,6 @@ func (c VMErrorCode) String() string {
 	return fmt.Sprintf("%s:%04x", c.ContractID, c.ID)
 }
 
-func (c *VMErrorCode) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&c.ContractID)
-	c.ID = rr.ReadUint16()
-	return rr.Err
-}
-
-func (c *VMErrorCode) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&c.ContractID)
-	ww.WriteUint16(c.ID)
-	return ww.Err
-}
-
 // VMErrorBase is the common interface of UnresolvedVMError and VMError
 type VMErrorBase interface {
 	error
@@ -66,7 +52,7 @@ type VMErrorBase interface {
 }
 
 type VMErrorTemplate struct {
-	code          VMErrorCode
+	code          VMErrorCode `bcs:""`
 	messageFormat string
 }
 
@@ -77,18 +63,18 @@ func NewVMErrorTemplate(code VMErrorCode, messageFormat string) *VMErrorTemplate
 }
 
 func VMErrorTemplateFromBytes(data []byte) (*VMErrorTemplate, error) {
-	return rwutil.ReadFromBytes(data, new(VMErrorTemplate))
+	return bcs.Unmarshal[*VMErrorTemplate](data)
 }
 
 func (e *VMErrorTemplate) Bytes() []byte {
-	return rwutil.WriteToBytes(e)
+	return bcs.MustMarshal(e)
 }
 
 func (e *VMErrorTemplate) Code() VMErrorCode {
 	return e.code
 }
 
-func (e *VMErrorTemplate) Create(params ...any) *VMError {
+func (e *VMErrorTemplate) Create(params ...VMParam) *VMError {
 	validateParams(params)
 	return &VMError{
 		template: e,
@@ -107,23 +93,9 @@ func (e *VMErrorTemplate) MessageFormat() string {
 	return e.messageFormat
 }
 
-func (e *VMErrorTemplate) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&e.code)
-	e.messageFormat = rr.ReadString()
-	return rr.Err
-}
-
-func (e *VMErrorTemplate) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&e.code)
-	ww.WriteString(e.messageFormat)
-	return ww.Err
-}
-
 type UnresolvedVMError struct {
 	ErrorCode VMErrorCode `json:"code"`
-	Params    []any       `json:"params"`
+	Params    []VMParam   `json:"params"`
 }
 
 var _ VMErrorBase = &UnresolvedVMError{}
@@ -142,7 +114,7 @@ func (e *UnresolvedVMError) AsGoError() error {
 }
 
 func (e *UnresolvedVMError) Bytes() []byte {
-	return rwutil.WriteToBytes(e)
+	return bcs.MustMarshal(e)
 }
 
 func (e *UnresolvedVMError) Code() VMErrorCode {
@@ -167,21 +139,7 @@ func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
 	}
 }
 
-func (e *UnresolvedVMError) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&e.ErrorCode)
-	e.Params = readParams(rr)
-	return rr.Err
-}
-
-func (e *UnresolvedVMError) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&e.ErrorCode)
-	writeParams(ww, e.Params)
-	return ww.Err
-}
-
-func humanlyReadableParams(params []any) []string {
+func humanlyReadableParams(params []VMParam) []string {
 	res := make([]string, len(params))
 	for i, param := range params {
 		res[i] = fmt.Sprintf("%v:%s", param, reflect.TypeOf(param).String())
@@ -190,8 +148,8 @@ func humanlyReadableParams(params []any) []string {
 }
 
 type VMError struct {
-	template *VMErrorTemplate
-	params   []any
+	template *VMErrorTemplate `bcs:""`
+	params   []VMParam        `bcs:""`
 }
 
 var _ VMErrorBase = &VMError{}
@@ -216,7 +174,7 @@ func (e *VMError) AsUnresolvedError() *UnresolvedVMError {
 }
 
 func (e *VMError) Bytes() []byte {
-	return rwutil.WriteToBytes(e)
+	return bcs.MustMarshal(e)
 }
 
 func (e *VMError) Code() VMErrorCode {
@@ -227,29 +185,18 @@ func (e *VMError) Error() string {
 	if e == nil {
 		return ""
 	}
-	return fmt.Sprintf(e.MessageFormat(), e.params...)
+
+	anyArr := lo.Map(e.params, func(p VMParam, _ int) any { return p })
+
+	return fmt.Sprintf(e.MessageFormat(), anyArr...)
 }
 
 func (e *VMError) MessageFormat() string {
 	return e.template.messageFormat
 }
 
-func (e *VMError) Params() []any {
+func (e *VMError) Params() []VMParam {
 	return e.params
-}
-
-func (e *VMError) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&e.template.code)
-	e.params = readParams(rr)
-	return rr.Err
-}
-
-func (e *VMError) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&e.template.code)
-	writeParams(ww, e.params)
-	return ww.Err
 }
 
 func GetErrorIDFromMessageFormat(messageFormat string) uint16 {
@@ -278,7 +225,7 @@ func VMErrorMustBe(err error, expected VMErrorBase) {
 	}
 }
 
-func validateParams(params []any) {
+func validateParams(params []VMParam) {
 	if len(params) > 255 {
 		panic("params too long")
 	}
@@ -310,85 +257,8 @@ func validateParams(params []any) {
 	}
 }
 
-//nolint:gocyclo
-func readParams(rr *rwutil.Reader) []any {
-	size := rr.ReadSize16()
-	if rr.Err != nil || size == 0 {
-		return nil
-	}
-	ret := make([]any, size)
-	for i := 0; i < size; i++ {
-		kind := rr.ReadUint8()
-		switch reflect.Kind(kind) {
-		case reflect.String:
-			ret[i] = rr.ReadString()
+type VMParam any
 
-		case reflect.Uint:
-			ret[i] = uint(rr.ReadUint32())
-		case reflect.Uint8:
-			ret[i] = rr.ReadUint8()
-		case reflect.Uint16:
-			ret[i] = rr.ReadUint16()
-		case reflect.Uint32:
-			ret[i] = rr.ReadUint32()
-		case reflect.Uint64:
-			ret[i] = rr.ReadUint64()
-
-		case reflect.Int:
-			ret[i] = int(rr.ReadInt32())
-		case reflect.Int8:
-			ret[i] = rr.ReadInt8()
-		case reflect.Int16:
-			ret[i] = rr.ReadInt16()
-		case reflect.Int32:
-			ret[i] = rr.ReadInt32()
-		case reflect.Int64:
-			ret[i] = rr.ReadInt64()
-
-		default:
-			panic(fmt.Sprintf("no handler for param of kind %s", reflect.Kind(kind)))
-		}
-	}
-	if rr.Err != nil || size == 0 {
-		return nil
-	}
-	return ret
-}
-
-func writeParams(ww *rwutil.Writer, params []any) {
-	ww.WriteSize16(len(params))
-	for _, param := range params {
-		t := reflect.TypeOf(param)
-		v := reflect.ValueOf(param)
-		ww.WriteUint8(uint8(t.Kind()))
-		switch t.Kind() {
-		case reflect.String:
-			ww.WriteString(v.String())
-
-		case reflect.Uint:
-			ww.WriteUint32(uint32(v.Uint()))
-		case reflect.Uint8:
-			ww.WriteUint8(uint8(v.Uint()))
-		case reflect.Uint16:
-			ww.WriteUint16(uint16(v.Uint()))
-		case reflect.Uint32:
-			ww.WriteUint32(uint32(v.Uint()))
-		case reflect.Uint64:
-			ww.WriteUint64(v.Uint())
-
-		case reflect.Int:
-			ww.WriteInt32(int32(v.Int()))
-		case reflect.Int8:
-			ww.WriteInt8(int8(v.Int()))
-		case reflect.Int16:
-			ww.WriteInt16(int16(v.Int()))
-		case reflect.Int32:
-			ww.WriteInt32(int32(v.Int()))
-		case reflect.Int64:
-			ww.WriteInt64(v.Int())
-
-		default:
-			panic(fmt.Sprintf("no handler for param of type %s", t.Name()))
-		}
-	}
+func init() {
+	bcs.RegisterEnumType9[VMParam, int8, uint8, int16, uint16, int32, uint32, int64, uint64, string]()
 }

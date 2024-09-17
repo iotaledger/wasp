@@ -3,18 +3,17 @@ package isc
 import (
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // EthereumAddressAgentID is an AgentID formed by an Ethereum address
 type EthereumAddressAgentID struct {
-	chainID ChainID
-	eth     common.Address
+	chainID ChainID        `bcs:""`
+	eth     common.Address `bcs:""`
 }
 
 var _ AgentID = &EthereumAddressAgentID{}
@@ -41,7 +40,7 @@ func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAge
 }
 
 func (a *EthereumAddressAgentID) Bytes() []byte {
-	return rwutil.WriteToBytes(a)
+	return bcs.MustMarshal(a)
 }
 
 func (a *EthereumAddressAgentID) Equals(other AgentID) bool {
@@ -78,20 +77,4 @@ func (a *EthereumAddressAgentID) Kind() AgentIDKind {
 func (a *EthereumAddressAgentID) String() string {
 	// eth.String includes 0x prefix
 	return a.eth.String() + AgentIDStringSeparator + a.chainID.String()
-}
-
-func (a *EthereumAddressAgentID) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
-	rr.Read(&a.chainID)
-	rr.ReadN(a.eth[:])
-	return rr.Err
-}
-
-func (a *EthereumAddressAgentID) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(a.Kind()))
-	ww.Write(&a.chainID)
-	ww.WriteN(a.eth[:])
-	return ww.Err
 }

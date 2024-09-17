@@ -2,13 +2,12 @@ package blocklog
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (
@@ -22,7 +21,7 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
-	PreviousL1Commitment  *state.L1Commitment
+	PreviousL1Commitment  *state.L1Commitment `bcs:"optional"`
 	GasBurned             uint64
 	GasFeeCharged         coin.Value
 }
@@ -50,47 +49,14 @@ func (bi *BlockInfo) String() string {
 }
 
 func (bi *BlockInfo) Bytes() []byte {
-	return rwutil.WriteToBytes(bi)
+	return bcs.MustMarshal(bi)
 }
 
 func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
-	return rwutil.ReadFromBytes(data, new(BlockInfo))
+	return bcs.Unmarshal[*BlockInfo](data)
 }
 
 // BlockInfoKey a key to access block info record inside SC state
 func BlockInfoKey(index uint32) []byte {
 	return []byte(collections.ArrayElemKey(prefixBlockRegistry, index))
-}
-
-func (bi *BlockInfo) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	bi.SchemaVersion = rr.ReadUint8()
-	bi.BlockIndex = rr.ReadUint32()
-	bi.Timestamp = time.Unix(0, rr.ReadInt64())
-	bi.TotalRequests = rr.ReadUint16()
-	bi.NumSuccessfulRequests = rr.ReadUint16()
-	bi.NumOffLedgerRequests = rr.ReadUint16()
-	if bi.BlockIndex > 0 {
-		bi.PreviousL1Commitment = new(state.L1Commitment)
-		rr.Read(bi.PreviousL1Commitment)
-	}
-	bi.GasBurned = rr.ReadGas64()
-	bi.GasFeeCharged = coin.Value(rr.ReadAmount64())
-	return rr.Err
-}
-
-func (bi *BlockInfo) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteUint8(bi.SchemaVersion)
-	ww.WriteUint32(bi.BlockIndex)
-	ww.WriteInt64(bi.Timestamp.UnixNano())
-	ww.WriteUint16(bi.TotalRequests)
-	ww.WriteUint16(bi.NumSuccessfulRequests)
-	ww.WriteUint16(bi.NumOffLedgerRequests)
-	if bi.BlockIndex > 0 {
-		ww.Write(bi.PreviousL1Commitment)
-	}
-	ww.WriteGas64(bi.GasBurned)
-	ww.WriteAmount64(uint64(bi.GasFeeCharged))
-	return ww.Err
 }

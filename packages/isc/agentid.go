@@ -5,15 +5,13 @@ package isc
 
 import (
 	"errors"
-	"io"
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-type AgentIDKind rwutil.Kind
+type AgentIDKind byte
 
 const (
 	AgentIDKindNil AgentIDKind = iota
@@ -33,13 +31,11 @@ type AgentID interface {
 	BytesWithoutChainID() []byte
 	Equals(other AgentID) bool
 	Kind() AgentIDKind
-	Read(r io.Reader) error
 	String() string
-	Write(w io.Writer) error
 }
 
 func init() {
-	bcs.RegisterEnumType4[AgentID, *NilAgentID, *AddressAgentID, *ContractAgentID, *EthereumAddressAgentID]()
+	bcs.RegisterEnumType5[AgentID, bcs.None, *AddressAgentID, *ContractAgentID, *EthereumAddressAgentID, *NilAgentID]()
 }
 
 // AgentIDWithL1Address is an AgentID backed by an L1 address (either AddressAgentID or ContractAgentID).
@@ -76,40 +72,7 @@ func NewAgentID(addr *cryptolib.Address) AgentID {
 }
 
 func AgentIDFromBytes(data []byte) (AgentID, error) {
-	rr := rwutil.NewBytesReader(data)
-	return AgentIDFromReader(rr), rr.Err
-}
-
-func AgentIDFromReader(rr *rwutil.Reader) (ret AgentID) {
-	kind := rr.ReadKind()
-	switch AgentIDKind(kind) {
-	case AgentIDIsNil:
-		return nil
-	case AgentIDKindNil:
-		ret = new(NilAgentID)
-	case AgentIDKindAddress:
-		ret = new(AddressAgentID)
-	case AgentIDKindContract:
-		ret = new(ContractAgentID)
-	case AgentIDKindEthereumAddress:
-		ret = new(EthereumAddressAgentID)
-	default:
-		if rr.Err == nil {
-			rr.Err = errors.New("invalid AgentID kind")
-			return nil
-		}
-	}
-	rr.PushBack().WriteKind(kind)
-	rr.Read(ret)
-	return ret
-}
-
-func AgentIDToWriter(ww *rwutil.Writer, agent AgentID) {
-	if agent == nil {
-		ww.WriteKind(rwutil.Kind(AgentIDIsNil))
-		return
-	}
-	ww.Write(agent)
+	return bcs.Unmarshal[AgentID](data)
 }
 
 // AgentIDFromString parses the human-readable string representation

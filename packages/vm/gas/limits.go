@@ -1,11 +1,9 @@
 package gas
 
 import (
-	"errors"
 	"fmt"
-	"io"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type Limits struct {
@@ -23,7 +21,17 @@ var LimitsDefault = &Limits{
 }
 
 func LimitsFromBytes(data []byte) (*Limits, error) {
-	return rwutil.ReadFromBytes(data, new(Limits))
+	v, err := bcs.Unmarshal[*Limits](data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !v.IsValid() {
+		return nil, fmt.Errorf("invalid gas limits")
+	}
+
+	return v, nil
 }
 
 func (gl *Limits) IsValid() bool {
@@ -43,7 +51,7 @@ func (gl *Limits) IsValid() bool {
 }
 
 func (gl *Limits) Bytes() []byte {
-	return rwutil.WriteToBytes(gl)
+	return bcs.MustMarshal(gl)
 }
 
 func (gl *Limits) String() string {
@@ -54,25 +62,4 @@ func (gl *Limits) String() string {
 		gl.MaxGasPerRequest,
 		gl.MaxGasExternalViewCall,
 	)
-}
-
-func (gl *Limits) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	gl.MaxGasPerBlock = rr.ReadGas64()
-	gl.MinGasPerRequest = rr.ReadGas64()
-	gl.MaxGasPerRequest = rr.ReadGas64()
-	gl.MaxGasExternalViewCall = rr.ReadGas64()
-	if rr.Err == nil && !gl.IsValid() {
-		rr.Err = errors.New("invalid gas limits")
-	}
-	return rr.Err
-}
-
-func (gl *Limits) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteGas64(gl.MaxGasPerBlock)
-	ww.WriteGas64(gl.MinGasPerRequest)
-	ww.WriteGas64(gl.MaxGasPerRequest)
-	ww.WriteGas64(gl.MaxGasExternalViewCall)
-	return ww.Err
 }
