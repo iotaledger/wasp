@@ -52,18 +52,16 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 }
 
 func (req *onLedgerRequestData) Read(r io.Reader) error {
-	var err error
 	rr := rwutil.NewReader(r)
+	req.senderAddress = cryptolib.NewEmptyAddress()
+	req.targetAddress = cryptolib.NewEmptyAddress()
+	req.requestMetadata = &RequestMetadata{}
 
 	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
-	rr.ReadN(req.requestRef.Bytes())
-	rr.ReadN(req.senderAddress[:])
-	rr.ReadN(req.targetAddress[:])
-
-	req.requestMetadata, err = RequestMetadataFromBytes(rr.ReadBytes())
-	if err != nil {
-		return err
-	}
+	rr.Read(&req.requestRef)
+	rr.Read(req.senderAddress)
+	rr.Read(req.targetAddress)
+	rr.Read(req.requestMetadata)
 
 	return rr.Err
 }
@@ -71,9 +69,9 @@ func (req *onLedgerRequestData) Read(r io.Reader) error {
 func (req *onLedgerRequestData) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
-	ww.WriteN(req.requestRef.Bytes())
-	ww.WriteN(req.senderAddress[:])
-	ww.WriteN(req.targetAddress[:])
+	ww.Write(&req.requestRef)
+	ww.Write(req.senderAddress)
+	ww.Write(req.targetAddress)
 	ww.Write(req.requestMetadata)
 
 	return ww.Err
@@ -116,6 +114,19 @@ func (req *onLedgerRequestData) Clone() OnLedgerRequest {
 	}
 
 	return ret
+}
+
+func (req *onLedgerRequestData) Equals(other Request) bool {
+	otherR, ok := other.(*onLedgerRequestData)
+	if !ok {
+		return false
+	}
+	return req.requestRef.Equals(&otherR.requestRef) &&
+		req.senderAddress.Equals(otherR.senderAddress) &&
+		req.targetAddress.Equals(otherR.targetAddress) &&
+		true //req.assets.Equals(otherR.assets) &&	// TODO: assets is not serialized, should it be?
+	// req.assetsBag.Equals(otherR.assetsBag)		// TODO: assetsBag is not serialized, should it be?
+	// requestMetadata *RequestMetadata				// TODO: should requestMetadata be part of Equals?
 }
 
 func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {

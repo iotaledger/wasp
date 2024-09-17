@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
@@ -724,7 +725,7 @@ type testEnv struct {
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
-	originAO         *isc.AliasOutputWithID
+	originAO         *iscmove.RefWithObject[iscmove.Anchor]
 	mempools         []mempool.Mempool
 	stores           []state.Store
 }
@@ -795,8 +796,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	return te
 }
 
-func (te *testEnv) stateForAO(i int, ao *isc.AliasOutputWithID) state.State {
-	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+func (te *testEnv) stateForAO(i int, ao *iscmove.RefWithObject[iscmove.Anchor]) state.State {
+	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ao.Object)
 	require.NoError(te.t, err)
 	st, err := te.stores[i].StateByTrieRoot(l1Commitment.TrieRoot())
 	require.NoError(te.t, err)

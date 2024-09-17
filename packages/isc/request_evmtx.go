@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
-	
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -81,6 +81,16 @@ func (req *evmOffLedgerTxRequest) Assets() *Assets {
 
 func (req *evmOffLedgerTxRequest) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
+}
+
+func (req *evmOffLedgerTxRequest) Equals(other Request) bool {
+	otherR, ok := other.(*evmOffLedgerTxRequest)
+	if !ok {
+		return false
+	}
+	return req.chainID.Equals(otherR.chainID) &&
+		//req.tx.Equals(otherR.tx) &&	 // TODO: implement
+		req.sender.Equals(otherR.sender)
 }
 
 func (req *evmOffLedgerTxRequest) Message() Message {

@@ -88,6 +88,14 @@ type AssetsBagWithBalances struct {
 	Balances AssetsBagBalances `bcs:"-"`
 }
 
+func (ab *AssetsBag) Equals(other *AssetsBag) bool {
+	if (ab == nil) || (other == nil) {
+		return (ab == nil) && (other == nil)
+	}
+	return ab.ID.Equals(other.ID) &&
+		ab.Size == other.Size
+}
+
 // Anchor is the BCS equivalent for the move type Anchor
 type Anchor struct {
 	ID            sui.ObjectID

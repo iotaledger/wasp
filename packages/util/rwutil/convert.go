@@ -200,14 +200,22 @@ func StringTest[T interface{ String() string }](t *testing.T, obj1 T, fromString
 // and Write again and compare the objects for equality and both serialized versions
 // as well. It will return the deserialized object in case the user wants to perform
 // more tests with it.
-func ReadWriteTest[T IoReadWriter](t *testing.T, obj1 T, newObj T) T {
+func ReadWriteTest[T IoReadWriter](t *testing.T, obj1 T, newObj T, equalFun ...func(T, T) bool) T {
 	data1 := WriteToBytes(obj1)
 	obj2, err := ReadFromBytes(data1, newObj)
 	require.NoError(t, err)
-	require.Equal(t, obj1, obj2)
+	if len(equalFun) == 0 {
+		require.Equal(t, obj1, obj2)
+	} else {
+		require.True(t, equalFun[0](obj1, obj2))
+	}
 	data2 := WriteToBytes(obj2)
 	require.Equal(t, data1, data2)
 	return obj2
+}
+
+func SimpleEqualFun[T interface{ Equals(T) bool }](obj1 T, obj2 T) bool {
+	return obj1.Equals(obj2)
 }
 
 func MakeValue[T IoReadWriter]() T {

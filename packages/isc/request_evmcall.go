@@ -66,6 +66,15 @@ func (req *evmOffLedgerCallRequest) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
 }
 
+func (req *evmOffLedgerCallRequest) Equals(other Request) bool {
+	otherTyped, ok := other.(*evmOffLedgerCallRequest)
+	if !ok {
+		return false
+	}
+	return req.chainID.Equals(otherTyped.chainID) &&
+		true // req.callMsg.Equals(otherTyped.callMsg) // TODO: implement
+}
+
 func (req *evmOffLedgerCallRequest) Message() Message {
 	return NewMessage(
 		Hn(evmnames.Contract),

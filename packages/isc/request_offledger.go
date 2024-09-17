@@ -127,6 +127,19 @@ func (req *OffLedgerRequestData) Bytes() []byte {
 	return rwutil.WriteToBytes(req)
 }
 
+func (req *OffLedgerRequestData) Equals(other Request) bool {
+	otherR, ok := other.(*OffLedgerRequestData)
+	if !ok {
+		return false
+	}
+	return req.allowance.Equals(otherR.allowance) &&
+		req.chainID.Equals(otherR.chainID) &&
+		//req.msg.Equals(otherR.msg) &&
+		req.gasBudget == otherR.gasBudget &&
+		req.nonce == otherR.nonce &&
+		req.signature == otherR.signature
+}
+
 func (req *OffLedgerRequestData) Message() Message {
 	return req.msg
 }

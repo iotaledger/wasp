@@ -6,6 +6,7 @@ import (
 	"io"
 	"math/rand"
 
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )
 
@@ -92,11 +93,21 @@ func RandomObjectRef() *ObjectRef {
 }
 
 func (or *ObjectRef) Read(r io.Reader) error {
-	return nil // TODO implement
+	rr := rwutil.NewReader(r)
+	or.ObjectID = &Address{}
+	rr.Read(or.ObjectID)
+	or.Version = rr.ReadUint64()
+	digest := ObjectDigest(rr.ReadBytes())
+	or.Digest = &digest
+	return rr.Err
 }
 
 func (or *ObjectRef) Write(w io.Writer) error {
-	return nil // TODO implement
+	ww := rwutil.NewWriter(w)
+	ww.Write(or.ObjectID)
+	ww.WriteUint64(or.Version)
+	ww.WriteBytes(*or.Digest)
+	return ww.Err
 }
 
 func (or *ObjectRef) Equals(other *ObjectRef) bool {

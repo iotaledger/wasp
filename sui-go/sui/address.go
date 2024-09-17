@@ -5,7 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"strings"
+
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 const AddressLen = 32
@@ -96,6 +99,19 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 		*a = *tmp
 	}
 	return err
+}
+
+func (a *Address) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	address := rr.ReadBytes()
+	copy(a[:], address)
+	return rr.Err
+}
+
+func (a Address) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteBytes(a[:])
+	return ww.Err
 }
 
 // FIXME may need to be pointer

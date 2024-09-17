@@ -86,6 +86,11 @@ func (msg *BasicMessage) SetSender(sender NodeID) {
 	msg.sender = sender
 }
 
+func (msg *BasicMessage) Equals(other *BasicMessage) bool {
+	return msg.sender.Equals(other.sender) &&
+		msg.recipient.Equals(other.recipient)
+}
+
 type Input interface{}
 
 type Output interface{}

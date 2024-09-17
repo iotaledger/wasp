@@ -5,24 +5,22 @@ package distsync
 
 import (
 	"math"
-	"math/big"
 	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func TestMsgShareRequestSerialization(t *testing.T) {
 	{
-		req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(3, 14, dict.New()), 1337, 100).Sign(cryptolib.NewKeyPair())
+		req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 100).Sign(cryptolib.NewKeyPair())
 		msg := &msgShareRequest{
 			gpa.BasicMessage{},
 			req,
@@ -32,30 +30,33 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		rwutil.ReadWriteTest(t, msg, new(msgShareRequest))
 	}
 	{
-		sender := tpkg.RandAliasAddress()
-		requestMetadata := &isc.RequestMetadata{
-			SenderContract: isc.ContractIdentityFromHname(isc.Hn("sender_contract")),
-			Message:        isc.NewMessage(isc.Hn("target_contract"), isc.Hn("entrypoint")),
-			Allowance:      isc.NewAssetsBaseTokensU64(1),
-			GasBudget:      1000,
-		}
-		basicOutput := &iotago.BasicOutput{
-			Amount: 123,
-			NativeTokens: iotago.NativeTokens{
-				&iotago.NativeToken{
-					ID:     [iotago.NativeTokenIDLength]byte{1},
-					Amount: big.NewInt(100),
+		sender := cryptolib.NewRandomAddress()
+		requestRef := sui.RandomObjectRef()
+		assetsBagID := sui.RandomAddress()
+		request := &iscmove.RefWithObject[iscmove.Request]{
+			ObjectRef: *requestRef,
+			Object: &iscmove.Request{
+				ID:     *requestRef.ObjectID,
+				Sender: sender,
+				AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
+					ID: *assetsBagID,
+					Value: &iscmove.AssetsBagWithBalances{
+						AssetsBag: iscmove.AssetsBag{
+							ID:   *assetsBagID,
+							Size: 5,
+						},
+						Balances: iscmove.AssetsBagBalances{},
+					},
 				},
-			},
-			Features: iotago.Features{
-				&iotago.SenderFeature{Address: sender},
-				&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
-			},
-			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: sender},
+				Message: iscmove.Message{
+					Contract: uint32(isc.Hn("target_contract")),
+					Function: uint32(isc.Hn("entrypoint")),
+					Args:     [][]byte{},
+				},
+				GasBudget: 1000,
 			},
 		}
-		req, err := isc.OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
+		req, err := isc.OnLedgerFromRequest(request, sender)
 		require.NoError(t, err)
 
 		msg := &msgShareRequest{
@@ -64,6 +65,6 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 			byte(rand.Intn(math.MaxUint8)),
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgShareRequest))
+		rwutil.ReadWriteTest(t, msg, new(msgShareRequest), rwutil.SimpleEqualFun)
 	}
 }

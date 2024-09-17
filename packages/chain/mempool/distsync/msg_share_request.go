@@ -27,6 +27,12 @@ func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa
 	}
 }
 
+func (msg *msgShareRequest) Equals(other *msgShareRequest) bool {
+	return msg.BasicMessage.Equals(&other.BasicMessage) &&
+		msg.request.Equals(other.request) &&
+		msg.ttl == other.ttl
+}
+
 func (msg *msgShareRequest) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	msgTypeShareRequest.ReadAndVerify(rr)

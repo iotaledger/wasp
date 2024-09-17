@@ -364,6 +364,9 @@ func (a *Assets) Bytes() []byte {
 }
 
 func (a *Assets) Equals(b *Assets) bool {
+	if (a == nil) || (b == nil) {
+		return (a == nil) && (b == nil)
+	}
 	if a == b {
 		return true
 	}
