@@ -607,6 +607,43 @@ func TestRPCTraceTx(t *testing.T) {
 	require.Contains(t, trace2.GasUsed, "0x")
 }
 
+func TestRPCTraceEvmDeposit(t *testing.T) {
+	env := newSoloTestEnv(t)
+	wallet, _ := env.solo.NewKeyPairWithFunds()
+	_, evmAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	err := env.soloChain.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(1000),
+		isc.NewEthereumAddressAgentID(env.soloChain.ChainID, evmAddr),
+		wallet)
+
+	block := env.BlockByNumber(nil)
+	require.NoError(t, err)
+	txs := block.Transactions()
+	tx := txs[0]
+
+	require.Equal(t, evmAddr, *tx.To())
+
+	rc, err := env.TxReceipt(txs[0].Hash())
+	require.NoError(t, err)
+	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
+
+	var res1 json.RawMessage
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"debug_traceTransaction",
+		tx.Hash().Hex(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	var trace1 []jsonrpc.CallFrame
+	err = json.Unmarshal(res1, &trace1)
+	require.NoError(t, err)
+	require.Len(t, trace1, 0)
+}
+
 func TestRPCTraceBlock(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
