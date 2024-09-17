@@ -35,8 +35,8 @@ type callLog struct {
 type CallFrame struct {
 	Type         vm.OpCode       `json:"-"`
 	From         common.Address  `json:"from"`
-	Gas          uint64          `json:"gas"`
-	GasUsed      uint64          `json:"gasUsed"`
+	Gas          hexutil.Uint64  `json:"gas"`
+	GasUsed      hexutil.Uint64  `json:"gasUsed"`
 	To           *common.Address `json:"to,omitempty" rlp:"optional"`
 	Input        []byte          `json:"input" rlp:"optional"`
 	Output       []byte          `json:"output,omitempty" rlp:"optional"`
@@ -46,7 +46,7 @@ type CallFrame struct {
 	Logs         []callLog       `json:"logs,omitempty" rlp:"optional"`
 	// Placed at end on purpose. The RLP will be decoded to 0 instead of
 	// nil if there are non-empty elements after in the struct.
-	Value            *big.Int `json:"value,omitempty" rlp:"optional"`
+	Value            hexutil.Big `json:"value,omitempty" rlp:"optional"`
 	revertedSnapshot bool
 }
 
@@ -165,11 +165,11 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 		From:  from,
 		To:    &toCopy,
 		Input: common.CopyBytes(input),
-		Gas:   gas,
-		Value: value,
+		Gas:   hexutil.Uint64(gas),
+		Value: hexutil.Big(*value),
 	}
 	if depth == 0 {
-		call.Gas = t.gasLimit
+		call.Gas = hexutil.Uint64(t.gasLimit)
 	}
 	t.callstack = append(t.callstack, call)
 }
@@ -196,7 +196,7 @@ func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error,
 	t.callstack = t.callstack[:size-1]
 	size--
 
-	call.GasUsed = gasUsed
+	call.GasUsed = hexutil.Uint64(gasUsed)
 	call.processOutput(output, err, reverted)
 	// Nest call into parent.
 	t.callstack[size-1].Calls = append(t.callstack[size-1].Calls, call)
@@ -218,7 +218,7 @@ func (t *callTracer) OnTxEnd(receipt *types.Receipt, err error) {
 	if err != nil {
 		return
 	}
-	t.callstack[0].GasUsed = receipt.GasUsed
+	t.callstack[0].GasUsed = hexutil.Uint64(receipt.GasUsed)
 	if t.config.WithLog {
 		// Logs are not emitted when the call fails
 		clearFailedLogs(&t.callstack[0], false)

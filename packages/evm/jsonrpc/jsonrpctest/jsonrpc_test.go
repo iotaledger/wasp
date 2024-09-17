@@ -586,21 +586,62 @@ func TestRPCTraceTx(t *testing.T) {
 
 	require.Equal(t, creatorAddress, trace1.From)
 	require.Equal(t, contractAddress, *trace1.To)
-	require.Equal(t, big.NewInt(123), trace1.Value)
+	require.Equal(t, "0x7b", trace1.Value.String())
 	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))
 	require.NoError(t, err)
 	require.Equal(t, expectedInput, trace1.Input)
 	require.Empty(t, trace1.Error)
 	require.Empty(t, trace1.RevertReason)
+	require.Equal(t, "0x0", trace1.Gas.String())
+	require.Equal(t, "0x0", trace1.GasUsed.String())
 
 	require.Len(t, trace1.Calls, 1)
 	trace2 := trace1.Calls[0]
 	require.Equal(t, contractAddress, trace2.From)
 	require.Equal(t, common.Address{0x1}, *trace2.To)
-	require.Equal(t, big.NewInt(1), trace2.Value)
+	require.Equal(t, "0x1", trace2.Value.String())
 	require.Empty(t, trace2.Input)
 	require.Empty(t, trace2.Error)
 	require.Empty(t, trace2.RevertReason)
+	require.Contains(t, trace2.Gas.String(), "0x")
+	require.Contains(t, trace2.GasUsed.String(), "0x")
+}
+
+func TestRPCTraceEvmDeposit(t *testing.T) {
+	env := newSoloTestEnv(t)
+	wallet, _ := env.solo.NewKeyPairWithFunds()
+	_, evmAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	err := env.soloChain.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(1000),
+		isc.NewEthereumAddressAgentID(env.soloChain.ChainID, evmAddr),
+		wallet)
+
+	block := env.BlockByNumber(nil)
+	require.NoError(t, err)
+	txs := block.Transactions()
+	tx := txs[0]
+
+	require.Equal(t, evmAddr, *tx.To())
+
+	rc, err := env.TxReceipt(txs[0].Hash())
+	require.NoError(t, err)
+	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
+
+	var res1 json.RawMessage
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"debug_traceTransaction",
+		tx.Hash().Hex(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	var trace1 []jsonrpc.CallFrame
+	err = json.Unmarshal(res1, &trace1)
+	require.NoError(t, err)
+	require.Len(t, trace1, 0)
 }
 
 func TestRPCTraceBlock(t *testing.T) {
@@ -681,39 +722,47 @@ func TestRPCTraceBlock(t *testing.T) {
 
 	require.Equal(t, creatorAddress, trace1.From)
 	require.Equal(t, contractAddress, *trace1.To)
-	require.Equal(t, big.NewInt(123), trace1.Value)
+	require.Equal(t, "0x7b", trace1.Value.String())
 	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))
 	require.NoError(t, err)
 	require.Equal(t, expectedInput, trace1.Input)
 	require.Empty(t, trace1.Error)
 	require.Empty(t, trace1.RevertReason)
+	require.Equal(t, "0x0", trace1.Gas.String())
+	require.Equal(t, "0x0", trace1.GasUsed.String())
 
 	require.Len(t, trace1.Calls, 1)
 	innerCall1 := trace1.Calls[0]
 	require.Equal(t, contractAddress, innerCall1.From)
 	require.Equal(t, common.Address{0x1}, *innerCall1.To)
-	require.Equal(t, big.NewInt(2), innerCall1.Value)
+	require.Equal(t, "0x2", innerCall1.Value.String())
 	require.Empty(t, innerCall1.Input)
 	require.Empty(t, innerCall1.Error)
 	require.Empty(t, innerCall1.RevertReason)
+	require.Contains(t, innerCall1.Gas.String(), "0x")
+	require.Contains(t, innerCall1.GasUsed.String(), "0x")
 
 	require.Equal(t, creatorAddress2, trace2.From)
 	require.Equal(t, contractAddress, *trace2.To)
-	require.Equal(t, big.NewInt(321), trace2.Value)
+	require.Equal(t, "0x141", trace2.Value.String())
 	expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
 	require.NoError(t, err)
 	require.Equal(t, expectedInput, trace2.Input)
 	require.Empty(t, trace2.Error)
 	require.Empty(t, trace2.RevertReason)
+	require.Equal(t, "0x0", trace2.Gas.String())
+	require.Equal(t, "0x0", trace2.GasUsed.String())
 
 	require.Len(t, trace2.Calls, 1)
 	innerCall2 := trace2.Calls[0]
 	require.Equal(t, contractAddress, innerCall2.From)
 	require.Equal(t, common.Address{0x2}, *innerCall2.To)
-	require.Equal(t, big.NewInt(3), innerCall2.Value)
+	require.Equal(t, "0x3", innerCall2.Value.String())
 	require.Empty(t, innerCall2.Input)
 	require.Empty(t, innerCall2.Error)
 	require.Empty(t, innerCall2.RevertReason)
+	require.Contains(t, innerCall2.Gas.String(), "0x")
+	require.Contains(t, innerCall2.GasUsed.String(), "0x")
 }
 
 func TestRPCBlockReceipt(t *testing.T) {
