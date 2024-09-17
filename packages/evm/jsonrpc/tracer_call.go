@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strconv"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -36,8 +35,8 @@ type callLog struct {
 type CallFrame struct {
 	Type         vm.OpCode       `json:"-"`
 	From         common.Address  `json:"from"`
-	Gas          string          `json:"gas"`
-	GasUsed      string          `json:"gasUsed"`
+	Gas          hexutil.Uint64  `json:"gas"`
+	GasUsed      hexutil.Uint64  `json:"gasUsed"`
 	To           *common.Address `json:"to,omitempty" rlp:"optional"`
 	Input        []byte          `json:"input" rlp:"optional"`
 	Output       []byte          `json:"output,omitempty" rlp:"optional"`
@@ -47,7 +46,7 @@ type CallFrame struct {
 	Logs         []callLog       `json:"logs,omitempty" rlp:"optional"`
 	// Placed at end on purpose. The RLP will be decoded to 0 instead of
 	// nil if there are non-empty elements after in the struct.
-	Value            string `json:"value,omitempty" rlp:"optional"`
+	Value            hexutil.Big `json:"value,omitempty" rlp:"optional"`
 	revertedSnapshot bool
 }
 
@@ -162,22 +161,17 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 
 	toCopy := to
 	call := CallFrame{
-		Type:    vm.OpCode(typ),
-		From:    from,
-		To:      &toCopy,
-		Input:   common.CopyBytes(input),
-		Gas:     intToHex(int64(gas)),
-		Value:   intToHex(value.Int64()),
-		GasUsed: "0x0",
+		Type:  vm.OpCode(typ),
+		From:  from,
+		To:    &toCopy,
+		Input: common.CopyBytes(input),
+		Gas:   hexutil.Uint64(gas),
+		Value: hexutil.Big(*value),
 	}
 	if depth == 0 {
-		call.Gas = intToHex(int64(t.gasLimit))
+		call.Gas = hexutil.Uint64(t.gasLimit)
 	}
 	t.callstack = append(t.callstack, call)
-}
-
-func intToHex(i int64) string {
-	return "0x" + strconv.FormatInt(i, 16)
 }
 
 // OnExit is called when EVM exits a scope, even if the scope didn't
@@ -202,7 +196,7 @@ func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error,
 	t.callstack = t.callstack[:size-1]
 	size--
 
-	call.GasUsed = intToHex(int64(gasUsed))
+	call.GasUsed = hexutil.Uint64(gasUsed)
 	call.processOutput(output, err, reverted)
 	// Nest call into parent.
 	t.callstack[size-1].Calls = append(t.callstack[size-1].Calls, call)
@@ -224,7 +218,7 @@ func (t *callTracer) OnTxEnd(receipt *types.Receipt, err error) {
 	if err != nil {
 		return
 	}
-	t.callstack[0].GasUsed = intToHex(int64(receipt.GasUsed))
+	t.callstack[0].GasUsed = hexutil.Uint64(receipt.GasUsed)
 	if t.config.WithLog {
 		// Logs are not emitted when the call fails
 		clearFailedLogs(&t.callstack[0], false)
