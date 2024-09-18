@@ -5,7 +5,6 @@ package emulator
 
 import (
 	"fmt"
-	"io"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (
@@ -211,8 +210,8 @@ func (bc *BlockchainDB) deleteBlock(blockNumber uint64) {
 
 type header struct {
 	Hash        common.Hash
-	GasLimit    uint64
-	GasUsed     uint64
+	GasLimit    uint64 `bcs:"compact"`
+	GasUsed     uint64 `bcs:"compact"`
 	Time        uint64
 	TxHash      common.Hash
 	ReceiptHash common.Hash
@@ -233,41 +232,11 @@ func makeHeader(h *types.Header) *header {
 
 // note we do not check for excess data bytes because the old format was longer
 func mustHeaderFromBytes(data []byte) (ret *header) {
-	rr := rwutil.NewBytesReader(data)
-	ret = new(header)
-	rr.Read(ret)
-	if rr.Err != nil {
-		panic(rr.Err)
-	}
-	return ret
+	return bcs.MustUnmarshal[*header](data)
 }
 
 func (h *header) Bytes() []byte {
-	return rwutil.WriteToBytes(h)
-}
-
-func (h *header) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadN(h.Hash[:])
-	h.GasLimit = rr.ReadGas64()
-	h.GasUsed = rr.ReadGas64()
-	h.Time = rr.ReadUint64()
-	rr.ReadN(h.TxHash[:])
-	rr.ReadN(h.ReceiptHash[:])
-	rr.ReadN(h.Bloom[:])
-	return rr.Err
-}
-
-func (h *header) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(h.Hash[:])
-	ww.WriteGas64(h.GasLimit)
-	ww.WriteGas64(h.GasUsed)
-	ww.WriteUint64(h.Time)
-	ww.WriteN(h.TxHash[:])
-	ww.WriteN(h.ReceiptHash[:])
-	ww.WriteN(h.Bloom[:])
-	return ww.Err
+	return bcs.MustMarshal(h)
 }
 
 func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {

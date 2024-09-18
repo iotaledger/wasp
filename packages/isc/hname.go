@@ -5,13 +5,12 @@ package isc
 
 import (
 	"fmt"
-	"io"
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Hname is calculated as the first 4 bytes of the BLAKE2b hash of a string,
@@ -46,8 +45,7 @@ func Hn(name string) (ret Hname) {
 }
 
 func HnameFromBytes(data []byte) (ret Hname, err error) {
-	_, err = rwutil.ReadFromBytes(data, &ret)
-	return ret, err
+	return bcs.Unmarshal[Hname](data)
 }
 
 func HnameFromString(s string) (Hname, error) {
@@ -59,7 +57,7 @@ func HnameFromString(s string) (Hname, error) {
 }
 
 func (hn Hname) Bytes() []byte {
-	return rwutil.WriteToBytes(&hn)
+	return bcs.MustMarshal(&hn)
 }
 
 func (hn Hname) Clone() Hname {
@@ -72,18 +70,6 @@ func (hn Hname) IsNil() bool {
 
 func (hn Hname) String() string {
 	return fmt.Sprintf("%08x", int(hn))
-}
-
-func (hn *Hname) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	*hn = Hname(rr.ReadUint32())
-	return rr.Err
-}
-
-func (hn *Hname) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteUint32(uint32(*hn))
-	return ww.Err
 }
 
 func ContractStateSubrealm(chainState kv.KVStore, contract Hname) kv.KVStore {

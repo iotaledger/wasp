@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"maps"
 	"math/big"
 	"slices"
@@ -16,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -61,39 +60,12 @@ func (c CoinBalances) IterateSorted(f func(coin.Type, coin.Value) bool) {
 	}
 }
 
-func (c *CoinBalances) Read(r io.Reader) error {
-	*c = NewCoinBalances()
-	rr := rwutil.NewReader(r)
-	n := rr.ReadSize32()
-	for i := 0; i < n; i++ {
-		var coinType coin.Type
-		var coinValue coin.Value
-		rr.Read(&coinType)
-		rr.Read(&coinValue)
-		c.Add(coinType, coinValue)
-	}
-	return rr.Err
-}
-
-func (c CoinBalances) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteSize32(len(c))
-	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
-		ww.Write(t)
-		ww.Write(v)
-		return true
-	})
-	return ww.Err
-}
-
 func (c CoinBalances) Bytes() []byte {
-	return rwutil.WriteToBytes(c)
+	return bcs.MustMarshal(&c)
 }
 
 func CoinBalancesFromBytes(b []byte) (CoinBalances, error) {
-	var r CoinBalances
-	_, err := rwutil.ReadFromBytes(b, &r)
-	return r, err
+	return bcs.Unmarshal[CoinBalances](b)
 }
 
 func (c CoinBalances) Add(coinType coin.Type, amount coin.Value) CoinBalances {
@@ -246,28 +218,6 @@ func (o ObjectIDSet) IterateSorted(f func(sui.ObjectID) bool) {
 	}
 }
 
-func (o *ObjectIDSet) Read(r io.Reader) error {
-	*o = NewObjectIDSet()
-	rr := rwutil.NewReader(r)
-	n := rr.ReadSize32()
-	for i := 0; i < n; i++ {
-		var id sui.ObjectID
-		rr.ReadN(id[:])
-		o.Add(id)
-	}
-	return rr.Err
-}
-
-func (o ObjectIDSet) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteSize32(len(o))
-	o.IterateSorted(func(id sui.ObjectID) bool {
-		ww.WriteN(id[:])
-		return true
-	})
-	return ww.Err
-}
-
 func (o *ObjectIDSet) UnmarshalJSON(b []byte) error {
 	var ids []sui.ObjectID
 	err := json.Unmarshal(b, &ids)
@@ -325,7 +275,7 @@ func AssetsFromAssetsBagWithBalances(assetsBag iscmove.AssetsBagWithBalances) *A
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {
-	return rwutil.ReadFromBytes(b, NewEmptyAssets())
+	return bcs.Unmarshal[*Assets](b)
 }
 
 func (a *Assets) Clone() *Assets {
@@ -360,7 +310,7 @@ func (a *Assets) String() string {
 }
 
 func (a *Assets) Bytes() []byte {
-	return rwutil.WriteToBytes(a)
+	return bcs.MustMarshal(a)
 }
 
 func (a *Assets) Equals(b *Assets) bool {
@@ -428,19 +378,4 @@ func (a *Assets) SetBaseTokens(amount coin.Value) *Assets {
 
 func (a *Assets) BaseTokens() coin.Value {
 	return a.Coins.Get(coin.BaseTokenType)
-}
-
-func (a *Assets) Read(r io.Reader) error {
-	*a = Assets{}
-	rr := rwutil.NewReader(r)
-	rr.Read(&a.Coins)
-	rr.Read(&a.Objects)
-	return rr.Err
-}
-
-func (a *Assets) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(a.Coins)
-	ww.Write(a.Objects)
-	return ww.Err
 }

@@ -4,12 +4,10 @@
 package isc
 
 import (
-	"io"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -39,8 +37,7 @@ func ChainIDFromObjectID(addr sui.ObjectID) ChainID {
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
 func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
-	_, err = rwutil.ReadFromBytes(data, &ret)
-	return ret, err
+	return bcs.Unmarshal[ChainID](data)
 }
 
 func ChainIDFromString(hexAddress string) (ChainID, error) {
@@ -122,12 +119,4 @@ func (id ChainID) ShortString() string {
 
 func (id ChainID) String() string {
 	return id.AsAddress().String()
-}
-
-func (id *ChainID) Read(r io.Reader) error {
-	return rwutil.ReadN(r, id[:])
-}
-
-func (id *ChainID) Write(w io.Writer) error {
-	return rwutil.WriteN(w, id[:])
 }

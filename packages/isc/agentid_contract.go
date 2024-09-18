@@ -2,10 +2,9 @@ package isc
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
@@ -38,7 +37,7 @@ func (a *ContractAgentID) Address() *cryptolib.Address {
 }
 
 func (a *ContractAgentID) Bytes() []byte {
-	return rwutil.WriteToBytes(a)
+	return bcs.MustMarshal(a)
 }
 
 func (a *ContractAgentID) ChainID() ChainID {
@@ -50,9 +49,7 @@ func (a *ContractAgentID) BelongsToChain(cID ChainID) bool {
 }
 
 func (a *ContractAgentID) BytesWithoutChainID() []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(&a.hname)
-	return ww.Bytes()
+	return bcs.MustMarshal(&a.hname)
 }
 
 func (a *ContractAgentID) Equals(other AgentID) bool {
@@ -76,20 +73,4 @@ func (a *ContractAgentID) Kind() AgentIDKind {
 
 func (a *ContractAgentID) String() string {
 	return a.hname.String() + AgentIDStringSeparator + a.chainID.String()
-}
-
-func (a *ContractAgentID) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
-	rr.Read(&a.chainID)
-	rr.Read(&a.hname)
-	return rr.Err
-}
-
-func (a *ContractAgentID) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(a.Kind()))
-	ww.Write(&a.chainID)
-	ww.Write(&a.hname)
-	return ww.Err
 }

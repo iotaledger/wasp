@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -56,8 +57,7 @@ func TestRequestDataSerialization(t *testing.T) {
 func TestRequestIDSerialization(t *testing.T) {
 	req := NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
-	rwutil.ReadWriteTest(t, &requestID, new(RequestID))
-	rwutil.BytesTest(t, requestID, RequestIDFromBytes)
+	bcs.TestCodec(t, requestID)
 	rwutil.StringTest(t, requestID, RequestIDFromString)
 }
 
@@ -73,5 +73,5 @@ func TestRequestRefSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, reqRef0, reqRef1)
 
-	rwutil.ReadWriteTest(t, reqRef0, new(RequestRef))
+	bcs.TestCodec(t, reqRef0)
 }
