@@ -4,7 +4,9 @@
 package evm
 
 import (
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -18,13 +20,13 @@ var (
 	// evmOffLedgerTxRequest in order to process an Ethereum tx (e.g.
 	// eth_sendRawTransaction).
 	FuncSendTransaction = coreutil.NewEP1(Contract, evmnames.FuncSendTransaction,
-		coreutil.FieldWithCodec(codec.NewCodec(evmtypes.DecodeTransaction, evmtypes.EncodeTransaction)), // evm tx bytes
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*types.Transaction]()),
 	)
 
 	// FuncCallContract is the entry point called by an evmOffLedgerCallRequest
 	// in order to process a view call or gas estimation (e.g. eth_call, eth_estimateGas).
 	FuncCallContract = coreutil.NewEP11(Contract, evmnames.FuncCallContract,
-		coreutil.FieldWithCodec(codec.NewCodec(evmtypes.DecodeCallMsg, evmtypes.EncodeCallMsg)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[ethereum.CallMsg]()),
 		coreutil.FieldWithCodec(codec.Bytes),
 	)
 

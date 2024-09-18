@@ -16,8 +16,20 @@ type SuiCoinInfo struct {
 	TotalSupply coin.Value
 }
 
+type SuiCoinInfos = map[coin.Type]*SuiCoinInfo
+
 func (s *SuiCoinInfo) Bytes() []byte {
 	return bcs.MustMarshal(s)
+}
+
+func (s *SuiCoinInfo) Equals(other *SuiCoinInfo) bool {
+	return s.CoinType == other.CoinType &&
+		s.Decimals == other.Decimals &&
+		s.Name == other.Name &&
+		s.Symbol == other.Symbol &&
+		s.Description == other.Description &&
+		s.IconURL == other.IconURL &&
+		s.TotalSupply == other.TotalSupply
 }
 
 func SuiCoinInfoFromBytes(b []byte) (*SuiCoinInfo, error) {
@@ -27,7 +39,7 @@ func SuiCoinInfoFromBytes(b []byte) (*SuiCoinInfo, error) {
 
 func SuiCoinInfoFromL1Metadata(
 	coinType coin.Type,
-	metadata suijsonrpc.SuiCoinMetadata,
+	metadata *suijsonrpc.SuiCoinMetadata,
 	totalSupply coin.Value,
 ) *SuiCoinInfo {
 	return &SuiCoinInfo{

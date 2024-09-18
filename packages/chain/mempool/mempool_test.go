@@ -199,7 +199,8 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.StateAnchor, tangleTime ti
 		Anchor:               ao,
 		Store:                store,
 		Requests:             reqs,
-		TimeAssumption:       tangleTime,
+		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
+		Timestamp:            tangleTime,
 		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EstimateGasMode:      false,
@@ -714,7 +715,7 @@ type testEnv struct {
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	log       *logger.Logger
-	//utxoDB           *utxodb.UtxoDB
+	// utxoDB           *utxodb.UtxoDB
 	governor         *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
