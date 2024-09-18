@@ -161,7 +161,7 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) [
 }
 
 func TestGetEvents(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{}).
+	env := solo.New(t).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 

@@ -20,7 +20,7 @@ import (
 )
 
 func TestNoSenderFeature(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	wallet, addr := env.NewKeyPairWithFunds()
@@ -118,7 +118,7 @@ func TestNoSenderFeature(t *testing.T) {
 }
 
 func TestSendBack(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{}).
+	env := solo.New(t).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 
@@ -193,7 +193,7 @@ func TestSendBack(t *testing.T) {
 }
 
 func TestBadMetadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	wallet, addr := env.NewKeyPairWithFunds()

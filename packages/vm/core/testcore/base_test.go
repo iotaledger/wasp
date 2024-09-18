@@ -36,7 +36,7 @@ func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
 }
 
 func TestInitLoad(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 	originAmount := 10 * isc.Million
@@ -57,7 +57,7 @@ func TestInitLoad(t *testing.T) {
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	genesisAddr := env.L1Ledger().GenesisAddress()
 	assets := env.L1Assets(genesisAddr)
 	require.EqualValues(t, env.L1Ledger().Supply(), assets.BaseTokens)
@@ -108,7 +108,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch, _ := env.NewChainExt(nil, 0, "chain")
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
@@ -142,7 +142,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch, _ := env.NewChainExt(nil, 0, "chain")
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
@@ -185,7 +185,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch, _ := env.NewChainExt(nil, 0, "chain")
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
@@ -219,7 +219,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch, _ := env.NewChainExt(nil, 0, "chain")
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
@@ -267,7 +267,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 func TestNoTargetView(t *testing.T) {
 	t.Run("no contract view", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 		chain.AssertControlAddresses()
 
@@ -275,7 +275,7 @@ func TestNoTargetView(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("no EP view", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 		chain.AssertControlAddresses()
 
@@ -285,7 +285,7 @@ func TestNoTargetView(t *testing.T) {
 }
 
 func TestEstimateGas(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{}).
+	env := solo.New(t).
 		WithNativeContract(sbtestsc.Processor)
 	ch := env.NewChain()
 	ch.MustDepositBaseTokensToL2(10000, nil)
@@ -390,7 +390,7 @@ func TestEstimateGas(t *testing.T) {
 
 func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
@@ -402,7 +402,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("accounts", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
@@ -414,7 +414,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("blocklog", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
@@ -426,7 +426,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("blob", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
@@ -438,7 +438,7 @@ func TestRepeatInit(t *testing.T) {
 		ch.CheckAccountLedger()
 	})
 	t.Run("governance", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
@@ -452,7 +452,7 @@ func TestRepeatInit(t *testing.T) {
 }
 
 func TestDeployNativeContract(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{}).
+	env := solo.New(t).
 		WithNativeContract(sbtestsc.Processor)
 
 	ch := env.NewChain()
@@ -481,14 +481,14 @@ func TestDeployNativeContract(t *testing.T) {
 }
 
 func TestFeeBasic(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }
 
 func TestBurnLog(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(30_000, nil)

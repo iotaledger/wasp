@@ -32,14 +32,14 @@ func TestGovernance1(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 
 	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 
 		lst := chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 0, len(lst))
 	})
 	t.Run("add/remove allowed rotation addresses", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 
 		_, addr1 := env.NewKeyPair(env.NewSeedFromIndex(1))
@@ -82,7 +82,7 @@ func TestRotate(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 
 	t.Run("not allowed address", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 
 		kp, addr := env.NewKeyPair()
@@ -91,7 +91,7 @@ func TestRotate(t *testing.T) {
 		strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
 	})
 	t.Run("unauthorized", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 
 		kp, addr := env.NewKeyPairWithFunds()
@@ -100,7 +100,7 @@ func TestRotate(t *testing.T) {
 		strings.Contains(err.Error(), "checkRotateStateControllerRequest: unauthorized access")
 	})
 	t.Run("rotate success", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{})
+		env := solo.New(t)
 		chain := env.NewChain()
 
 		chain.WaitUntilMempoolIsEmpty()
@@ -124,7 +124,7 @@ func TestRotate(t *testing.T) {
 }
 
 func TestAccessNodes(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
 	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
@@ -202,7 +202,7 @@ func TestAccessNodes(t *testing.T) {
 }
 
 func TestMaintenanceMode(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{}).
+	env := solo.New(t).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 
@@ -357,7 +357,7 @@ func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
 			return ctx.Call(governance.FuncStartMaintenance.Message(), nil)
 		}),
 	)
-	env := solo.New(t, &solo.InitOptions{}).
+	env := solo.New(t).
 		WithNativeContract(ownerContractProcessor)
 	ch := env.NewChain()
 
@@ -425,7 +425,7 @@ func TestDisallowMaintenanceDeadlock2(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	// deposit some extra tokens to the common account to accommodate for the SD change
@@ -518,7 +518,7 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestL1Metadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	// deposit some extra tokens to the common account to accommodate for the SD change
@@ -714,7 +714,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 }
 
 func TestGovCallsNoBalance(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
+	env := solo.New(t)
 	ch := env.NewChain(false)
 
 	// the owner can call gov funcs without funds
