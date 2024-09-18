@@ -1,8 +1,6 @@
 package iscmove
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -67,14 +65,6 @@ func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 	return res
 }
 
-func (rwo *RefWithObject[any]) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (rwo *RefWithObject[any]) Write(w io.Writer) error {
-	return nil // TODO implement
-}
-
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
 	ID   sui.ObjectID
@@ -102,14 +92,6 @@ func (a *Anchor) GetStateIndex() uint32 {
 
 func (a *Anchor) Equals(b *Anchor) bool {
 	return a.ID.Equals(b.ID)
-}
-
-func (a *Anchor) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (a *Anchor) Write(w io.Writer) error {
-	return nil // TODO implement
 }
 
 type Receipt struct {
