@@ -94,6 +94,16 @@ func (a *Anchor) Equals(b *Anchor) bool {
 	return a.ID.Equals(b.ID)
 }
 
+func (a *Anchor) Read(r io.Reader) error {
+	return nil // TODO implement
+}
+
+func (a *Anchor) Write(w io.Writer) error {
+	return nil // TODO implement
+}
+
+type AnchorWithRef = RefWithObject[Anchor]
+
 type Receipt struct {
 	RequestID sui.ObjectID
 }

@@ -62,7 +62,7 @@ func TestRequestsFeed(t *testing.T) {
 		chainFeed.WaitUntilStopped()
 	}()
 
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
+	anchorUpdates := make(chan *iscmove.AnchorWithRef, 10)
 	newRequests := make(chan *iscmove.Request, 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 

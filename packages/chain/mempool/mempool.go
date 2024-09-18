@@ -97,7 +97,7 @@ type Mempool interface {
 	// It can mean simple advance of the chain, or a rollback or a reorg.
 	// This function is guaranteed to be called in the order, which is
 	// considered the chain block order by the ChainMgr.
-	TrackNewChainHead(st state.State, from, till *iscmove.RefWithObject[iscmove.Anchor], added, removed []state.Block) <-chan bool
+	TrackNewChainHead(st state.State, from, till *iscmove.AnchorWithRef, added, removed []state.Block) <-chan bool
 	// Invoked by the chain when a new off-ledger request is received from a node user.
 	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
@@ -137,7 +137,7 @@ type mempoolImpl struct {
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
 	offLedgerPool                  *OffLedgerPool
 	distSync                       gpa.GPA
-	chainHeadAO                    *iscmove.RefWithObject[iscmove.Anchor]
+	chainHeadAO                    *iscmove.AnchorWithRef
 	chainHeadState                 state.State
 	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
 	serverNodes                    []*cryptolib.PublicKey
@@ -190,7 +190,7 @@ type reqConsensusInstancesUpdated struct {
 
 type reqConsensusProposal struct {
 	ctx         context.Context
-	aliasOutput *iscmove.RefWithObject[iscmove.Anchor]
+	aliasOutput *iscmove.AnchorWithRef
 	consensusID consGR.ConsensusID
 	responseCh  chan<- []*isc.RequestRef
 }
@@ -208,8 +208,8 @@ type reqConsensusRequests struct {
 
 type reqTrackNewChainHead struct {
 	st         state.State
-	from       *iscmove.RefWithObject[iscmove.Anchor]
-	till       *iscmove.RefWithObject[iscmove.Anchor]
+	from       *iscmove.AnchorWithRef
+	till       *iscmove.AnchorWithRef
 	added      []state.Block
 	removed    []state.Block
 	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
@@ -298,7 +298,7 @@ func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
-func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *iscmove.RefWithObject[iscmove.Anchor], added, removed []state.Block) <-chan bool {
+func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *iscmove.AnchorWithRef, added, removed []state.Block) <-chan bool {
 	responseCh := make(chan bool)
 	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed, responseCh}
 	return responseCh
@@ -336,7 +336,7 @@ func (mpi *mempoolImpl) ConsensusInstancesUpdated(activeConsensusInstances []con
 	}
 }
 
-func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.RefWithObject[iscmove.Anchor], consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
+func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.AnchorWithRef, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposal{
 		ctx:         ctx,

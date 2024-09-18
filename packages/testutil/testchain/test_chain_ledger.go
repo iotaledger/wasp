@@ -10,11 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -25,17 +26,17 @@ import (
 // TestChainLedger
 
 type TestChainLedger struct {
-	t           *testing.T
-	utxoDB      *utxodb.UtxoDB
+	t *testing.T
+	//utxoDB      *utxodb.UtxoDB
 	governor    *cryptolib.KeyPair
 	chainID     isc.ChainID
 	fetchedReqs map[cryptolib.AddressKey]map[iotago.OutputID]bool
 }
 
-func NewTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, originator *cryptolib.KeyPair) *TestChainLedger {
+func NewTestChainLedger(t *testing.T /*utxoDB *utxodb.UtxoDB*/, originator *cryptolib.KeyPair) *TestChainLedger {
 	return &TestChainLedger{
-		t:           t,
-		utxoDB:      utxoDB,
+		t: t,
+		//utxoDB:      utxoDB,
 		governor:    originator,
 		fetchedReqs: map[cryptolib.AddressKey]map[iotago.OutputID]bool{},
 	}
@@ -46,7 +47,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*iotago.Transaction, *isc.AliasOutputWithID, isc.ChainID) {
+func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*iotago.Transaction, *iscmove.AnchorWithRef, isc.ChainID) {
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.governor.Address())
 	panic("refactor me: origin.NewChainOriginTransaction")
 	var originTX *iotago.Transaction
@@ -77,7 +78,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 tcl.chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokensU64(100_000_000),
+				Assets:                        isc.NewAssets(100_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),
@@ -102,7 +103,7 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 tcl.chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokensU64(2_000_000),
+				Assets:                        isc.NewAssets(2_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message: root.FuncDeployContract.Message(
@@ -120,7 +121,7 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 	return tcl.findChainRequests(tx)
 }
 
-func (tcl *TestChainLedger) FakeStateTransition(baseAO *isc.AliasOutputWithID, stateCommitment *state.L1Commitment) *isc.AliasOutputWithID {
+func (tcl *TestChainLedger) FakeStateTransition(baseAO *iscmove.AnchorWithRef, stateCommitment *state.L1Commitment) *iscmove.AnchorWithRef {
 	stateMetadata := transaction.NewStateMetadata(
 		stateCommitment,
 		gas.DefaultFeePolicy(),
@@ -145,7 +146,7 @@ func (tcl *TestChainLedger) FakeStateTransition(baseAO *isc.AliasOutputWithID, s
 	return isc.NewAliasOutputWithID(anchorOutput, iotago.OutputID{byte(anchorOutput.StateIndex)})
 }
 
-func (tcl *TestChainLedger) FakeRotationTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr *cryptolib.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
+func (tcl *TestChainLedger) FakeRotationTX(baseAO *iscmove.AnchorWithRef, nextCommitteeAddr *cryptolib.Address) (*iscmove.AnchorWithRef, *iotago.Transaction) {
 	tx, err := transaction.NewRotateChainStateControllerTx(
 		tcl.chainID.AsAliasID(),
 		nextCommitteeAddr,

@@ -62,7 +62,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 	requestMetadata := &isc.RequestMetadata{
 		SenderContract: isc.ContractIdentityFromHname(isc.Hn("sender_contract")),
 		Message:        isc.NewMessage(isc.Hn("target_contract"), isc.Hn("entrypoint")),
-		Allowance:      isc.NewAssetsBaseTokensU64(1),
+		Allowance:      isc.NewAssets(1),
 		GasBudget:      1000,
 	}
 

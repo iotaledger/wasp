@@ -12,7 +12,7 @@ func GetAccountBalance(ch chain.ChainCore, agentID isc.AgentID) (*isc.Assets, er
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewBalance.Output.Decode(ret)
+	return accounts.ViewBalance.DecodeOutput(ret)
 }
 
 func mustLatestState(ch chain.ChainCore) state.State {

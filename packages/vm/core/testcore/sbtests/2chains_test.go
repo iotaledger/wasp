@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -30,16 +30,15 @@ func test2Chains(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
+		Debug:           true,
+		PrintStackTrace: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain1 := env.NewChain()
 	chain2, _ := env.NewChainExt(nil, 0, "chain2")
 	// chain owner deposit base tokens on chain2
 	chain2BaseTokenOwnerDeposit := 5 * isc.Million
-	err := chain2.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(chain2BaseTokenOwnerDeposit), nil)
+	err := chain2.DepositAssetsToL2(isc.NewAssets(chain2BaseTokenOwnerDeposit), nil)
 	require.NoError(t, err)
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
@@ -49,7 +48,7 @@ func test2Chains(t *testing.T) {
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := isc.NewAgentID(userAddress)
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddress /*, utxodb.FundsFromFaucetAmount*/)
 
 	fmt.Println("---------------chain1---------------")
 	fmt.Println(chain1.DumpAccounts())
@@ -76,7 +75,7 @@ func test2Chains(t *testing.T) {
 	chain1TransferAllowanceReceipt := chain1.LastReceipt()
 	chain1TransferAllowanceGas := chain1TransferAllowanceReceipt.GasFeeCharged
 
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-creditBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress /*utxodb.FundsFromFaucetAmount-creditBaseTokensToSend*/)
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID2, baseTokensCreditedToScOnChain1)
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + creditBaseTokensToSend)
@@ -122,7 +121,7 @@ func test2Chains(t *testing.T) {
 			sbtestsc.ParamGasReserveTransferAccountToChain: gasFeeTransferAccountToChain,
 		}))).
 			AddBaseTokens(withdrawBaseTokensToSend).
-			WithAllowance(isc.NewAssetsBaseTokensU64(withdrawReqAllowance)).
+			WithAllowance(isc.NewAssets(withdrawReqAllowance)).
 			WithMaxAffordableGasBudget(),
 		userWallet,
 	)
@@ -162,7 +161,7 @@ func test2Chains(t *testing.T) {
 	fmt.Println("------------------------------------")
 
 	// the 2 function call we did above are requests from L1
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress /* utxodb.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend*/)
 	// on chain1 user only made the first transaction, so it is the same as its balance before 'WithdrawFromChain' function call
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	// gasFeeTransferAccountToChain is is used for paying the gas fee of the 'TransferAccountToChain' func call

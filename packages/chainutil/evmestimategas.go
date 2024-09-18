@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -21,7 +22,7 @@ var evmErrOutOfGasRegex = regexp.MustCompile("out of gas|intrinsic gas too low")
 
 // EVMEstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
-func EVMEstimateGas(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethereum.CallMsg) (uint64, error) { //nolint:gocyclo,funlen
+func EVMEstimateGas(ch chain.ChainCore, aliasOutput *iscmove.AnchorWithRef, call ethereum.CallMsg) (uint64, error) { //nolint:gocyclo,funlen
 	// Determine the lowest and highest possible gas limits to binary search in between
 	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, call.To == nil, true, true, true)
 	if err != nil {

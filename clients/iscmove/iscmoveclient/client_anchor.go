@@ -22,7 +22,7 @@ func (c *Client) StartNewChain(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iscmove.RefWithObject[iscmove.Anchor], error) {
+) (*iscmove.AnchorWithRef, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
@@ -160,7 +160,7 @@ func (c *Client) ReceiveRequestAndTransition(
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *sui.ObjectID,
-) (*iscmove.RefWithObject[iscmove.Anchor], error) {
+) (*iscmove.AnchorWithRef, error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -174,7 +174,7 @@ func (c *Client) GetAnchorFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	return &iscmove.RefWithObject[iscmove.Anchor]{
+	return &iscmove.AnchorWithRef{
 		ObjectRef: getObjectResponse.Data.Ref(),
 		Object:    &anchor,
 	}, nil
@@ -202,5 +202,9 @@ func (c *Client) GetRequestFromObjectID(
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
 	req.AssetsBag.Value = bals
-	return &req, nil
+
+	return &iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: getObjectResponse.Data.Ref(),
+		Object:    &req,
+	}, nil
 }

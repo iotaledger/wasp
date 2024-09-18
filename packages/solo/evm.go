@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -54,16 +55,16 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
+func (b *jsonRPCSoloBackend) EVMCall(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) ([]byte, error) {
 	return chainutil.EVMCall(b.Chain, aliasOutput, callMsg)
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
+func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) (uint64, error) {
 	return chainutil.EVMEstimateGas(b.Chain, aliasOutput, callMsg)
 }
 
 func (b *jsonRPCSoloBackend) EVMTraceTransaction(
-	aliasOutput *isc.AliasOutputWithID,
+	aliasOutput *iscmove.AnchorWithRef,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
@@ -83,7 +84,7 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 	return b.Chain.CallViewAtState(chainState, msg)
 }
 
-func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
+func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*iscmove.AnchorWithRef, error) {
 	latestAliasOutput, err := b.Chain.LatestAliasOutput(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)

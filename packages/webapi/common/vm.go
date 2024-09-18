@@ -9,7 +9,6 @@ import (
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -26,7 +25,7 @@ func ParseReceipt(chain chainpkg.Chain, receipt *blocklog.RequestReceipt) (*isc.
 	return iscReceipt, nil
 }
 
-func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (dict.Dict, error) {
+func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.CallArguments, error) {
 	var chainState state.State
 	var err error
 	switch {

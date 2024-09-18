@@ -437,6 +437,10 @@ func (env *Solo) addChain(chData chainData) *Chain {
 	return ch
 }
 
+func (env *Solo) Ctx() context.Context {
+	return env.ctx
+}
+
 // AddRequestsToMempool adds all the requests to the chain mempool,
 func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
 	ch.mempool.ReceiveRequests(reqs...)

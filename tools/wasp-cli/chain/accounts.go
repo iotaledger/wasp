@@ -141,8 +141,7 @@ func initDepositCmd() *cobra.Command {
 					return cliclients.ChainClient(client, chainID).PostRequest(
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
-							Transfer:                 tokens,
-							AutoAdjustStorageDeposit: adjustStorageDeposit,
+							Transfer: tokens,
 						},
 					)
 				})
@@ -164,7 +163,7 @@ func initDepositCmd() *cobra.Command {
 					log.Check(err)
 
 					if senderOnChainBaseTokens < feeNeeded {
-						allowance.Spend(isc.NewAssetsBaseTokensU64(feeNeeded - senderOnChainBaseTokens))
+						allowance.Spend(isc.NewAssets(feeNeeded - senderOnChainBaseTokens))
 					}
 				}
 
@@ -173,9 +172,8 @@ func initDepositCmd() *cobra.Command {
 					return cliclients.ChainClient(client, chainID).PostRequest(
 						accounts.FuncTransferAllowanceTo.Message(agentID),
 						chainclient.PostRequestParams{
-							Transfer:                 tokens,
-							Allowance:                allowance,
-							AutoAdjustStorageDeposit: adjustStorageDeposit,
+							Transfer:  tokens,
+							Allowance: allowance,
 						},
 					)
 				})

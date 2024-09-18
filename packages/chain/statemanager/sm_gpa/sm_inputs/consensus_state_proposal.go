@@ -18,7 +18,7 @@ type ConsensusStateProposal struct {
 
 var _ gpa.Input = &ConsensusStateProposal{}
 
-func NewConsensusStateProposal(ctx context.Context, anchor *iscmove.RefWithObject[iscmove.Anchor]) (*ConsensusStateProposal, <-chan interface{}) {
+func NewConsensusStateProposal(ctx context.Context, anchor *iscmove.AnchorWithRef) (*ConsensusStateProposal, <-chan interface{}) {
 	commitment, err := transaction.L1CommitmentFromAnchor(anchor.Object)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")

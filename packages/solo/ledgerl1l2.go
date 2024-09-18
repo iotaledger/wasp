@@ -197,7 +197,7 @@ func (fp *NewNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, e
 
 		metadata := isc.NewIRC30NativeTokenMetadata(fp.tokenName, fp.tokenSymbol, fp.tokenDecimals)
 		req := NewCallParams(accounts.Func.Message(metadata, sch)).
-			WithAllowance(isc.NewAssetsBaseTokensU64(allowanceForFoundryStorageDeposit)).
+			WithAllowance(isc.NewAssets(allowanceForFoundryStorageDeposit)).
 			AddBaseTokens(allowanceForFoundryStorageDeposit).
 			WithMaxAffordableGasBudget()
 
@@ -230,7 +230,7 @@ func (ch *Chain) MintTokens(sn uint32, amount coin.Value, user *cryptolib.KeyPai
 	panic("Implement solo::'MintTokens'")
 	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.MintTokens(sn, amount)).
 	// 	AddBaseTokens(allowanceForModifySupply).
-	// 	WithAllowance(isc.NewAssetsBaseTokensU64(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
+	// 	WithAllowance(isc.NewAssets(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
 	// 	WithMaxAffordableGasBudget()
 
 	// _, rec, err := ch.EstimateGasOnLedger(req, user)

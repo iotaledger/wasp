@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func testCheckContextFromFullEP(ctx isc.Sandbox) dict.Dict {
+func testCheckContextFromFullEP(ctx isc.Sandbox) isc.CallArguments {
 	params := ctx.Params()
 
 	ctx.Requiref(params.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
@@ -19,7 +19,7 @@ func testCheckContextFromFullEP(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func testCheckContextFromViewEP(ctx isc.SandboxView) dict.Dict {
+func testCheckContextFromViewEP(ctx isc.SandboxView) isc.CallArguments {
 	params := ctx.Params()
 	a := assert.NewAssert(ctx.Log())
 
@@ -30,7 +30,7 @@ func testCheckContextFromViewEP(ctx isc.SandboxView) dict.Dict {
 	return nil
 }
 
-func passTypesFull(ctx isc.Sandbox) dict.Dict {
+func passTypesFull(ctx isc.Sandbox) isc.CallArguments {
 	ret := dict.New()
 	params := ctx.Params()
 	s, err := params.GetString("string")
@@ -83,7 +83,7 @@ func passTypesFull(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func passTypesView(ctx isc.SandboxView) dict.Dict {
+func passTypesView(ctx isc.SandboxView) isc.CallArguments {
 	params := ctx.Params()
 	s, err := params.GetString("string")
 	checkView(ctx, err)

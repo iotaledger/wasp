@@ -40,7 +40,7 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 		NumSuccessfulRequests: info.NumSuccessfulRequests,
 		NumOffLedgerRequests:  info.NumOffLedgerRequests,
 		GasBurned:             iotago.EncodeUint64(info.GasBurned),
-		GasFeeCharged:         iotago.EncodeUint64(info.GasFeeCharged),
+		GasFeeCharged:         iotago.EncodeUint64(uint64(info.GasFeeCharged)),
 	}
 }
 

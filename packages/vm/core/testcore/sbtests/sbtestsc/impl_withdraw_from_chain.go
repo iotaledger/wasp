@@ -2,13 +2,12 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain
-func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
+func withdrawFromChain(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Infof(FuncWithdrawFromChain.Name)
 	params := ctx.Params()
 	targetChain := params.MustGetChainID(ParamChainID)
@@ -29,11 +28,11 @@ func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
 	// the storage deposit will be returned along with the withdrawal
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: targetChain.AsAddress(),
-		Assets:        isc.NewAssetsBaseTokensU64(storageDeposit + gasReserveTransferAccountToChain + gasReserve),
+		Assets:        isc.NewAssets(storageDeposit + gasReserveTransferAccountToChain + gasReserve),
 		Metadata: &isc.SendMetadata{
 			Message:   accounts.FuncTransferAccountToChain.Message(&gasReserve),
 			GasBudget: gasReserve,
-			Allowance: isc.NewAssetsBaseTokensU64(withdrawal + storageDeposit + gasReserve),
+			Allowance: isc.NewAssets(withdrawal + storageDeposit + gasReserve),
 		},
 	})
 

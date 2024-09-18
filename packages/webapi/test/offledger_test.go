@@ -8,15 +8,15 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/utxodb"
+
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
 func TestOffLedger(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		GasBurnLogEnabled:        true,
+		GasBurnLogEnabled: true,
 	})
 	chain := env.NewChain()
 

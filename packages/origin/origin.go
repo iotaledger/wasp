@@ -88,8 +88,8 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams isc.CallArgume
 
 func InitChainByAnchor(
 	chainStore state.Store,
-	anchor *iscmove.RefWithObject[iscmove.Anchor],
-	anchorAssets isc.Assets,
+	anchor *iscmove.AnchorWithRef,
+	anchorAssets *isc.Assets,
 ) (state.Block, error) {
 	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 	if err != nil {

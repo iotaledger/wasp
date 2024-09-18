@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -24,7 +25,6 @@ func TestAliasOutputWithIDSerialization(t *testing.T) {
 	outputID := iotago.OutputID{}
 	rand.Read(outputID[:])
 	aliasOutputWithID := isc.NewAliasOutputWithID(&output, outputID)
-	bcs.TestCodec(t, output)
-	rwutil.ReadWriteTest(t, aliasOutputWithID, new(isc.AliasOutputWithID))
+	rwutil.ReadWriteTest(t, aliasOutputWithID, new(iscmove.AnchorWithRef))
 	rwutil.BytesTest(t, aliasOutputWithID, isc.AliasOutputWithIDFromBytes)
 }

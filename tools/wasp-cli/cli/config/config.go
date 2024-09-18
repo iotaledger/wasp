@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -109,11 +108,7 @@ func L1APIAddress() string {
 	if host != "" {
 		return host
 	}
-	return fmt.Sprintf(
-		"%s:%d",
-		privtangledefaults.Host,
-		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetRestAPI,
-	)
+	return "localhost:5678"
 }
 
 func L1FaucetAddress() string {
@@ -121,11 +116,8 @@ func L1FaucetAddress() string {
 	if address != "" {
 		return address
 	}
-	return fmt.Sprintf(
-		"%s:%d",
-		privtangledefaults.Host,
-		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetFaucet,
-	)
+	return "localhost:5679"
+
 }
 
 var keyChain keychain.KeyChain

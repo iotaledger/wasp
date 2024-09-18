@@ -99,7 +99,7 @@ func testAccounts(e *ChainEnv) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		e.t.Fatal()
 	}
 
@@ -163,7 +163,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 
@@ -174,7 +174,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	allowanceBaseTokens := uint64(800_000)
 	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{
-			Allowance: isc.NewAssetsBaseTokensU64(allowanceBaseTokens),
+			Allowance: isc.NewAssets(allowanceBaseTokens),
 		},
 	)
 	require.NoError(t, err)

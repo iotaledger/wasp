@@ -42,12 +42,11 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer                 *isc.Assets
-	Nonce                    uint64
-	NFT                      *isc.NFT
-	Allowance                *isc.Assets
-	gasBudget                uint64
-	AutoAdjustStorageDeposit bool
+	Transfer  *isc.Assets
+	Nonce     uint64
+	NFT       *isc.NFT
+	Allowance *isc.Assets
+	gasBudget uint64
 }
 
 func (par *PostRequestParams) GasBudget() uint64 {
@@ -122,9 +121,8 @@ func (c *Client) post1RequestWithOutputs(
 			UnspentOutputs:   outputs,
 			UnspentOutputIDs: isc.OutputSetToOutputIDs(outputs),
 			Request: &isc.RequestParameters{
-				TargetAddress:                 c.ChainID.AsAddress(),
-				Assets:                        par.Transfer,
-				AdjustToMinimumStorageDeposit: par.AutoAdjustStorageDeposit,
+				TargetAddress: c.ChainID.AsAddress(),
+				Assets:        par.Transfer,
 				Metadata: &isc.SendMetadata{
 					Message:   msg,
 					Allowance: par.Allowance,
