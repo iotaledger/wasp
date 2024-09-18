@@ -8,28 +8,28 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-func coinsMapKey(accountKey kv.Key) string {
-	return prefixCoins + string(accountKey)
+func accountCoinBalancesKey(accountKey kv.Key) string {
+	return prefixAccountCoinBalances + string(accountKey)
 }
 
-func (s *StateReader) coinsMapR(accountKey kv.Key) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, coinsMapKey(accountKey))
+func (s *StateReader) accountCoinBalancesMapR(accountKey kv.Key) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, accountCoinBalancesKey(accountKey))
 }
 
-func (s *StateWriter) coinsMap(accountKey kv.Key) *collections.Map {
-	return collections.NewMap(s.state, coinsMapKey(accountKey))
+func (s *StateWriter) accountCoinBalancesMap(accountKey kv.Key) *collections.Map {
+	return collections.NewMap(s.state, accountCoinBalancesKey(accountKey))
 }
 
 func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType coin.Type) coin.Value {
-	b := s.coinsMapR(accountKey).GetAt(coinType.Bytes())
+	b := s.accountCoinBalancesMapR(accountKey).GetAt(coinType.Bytes())
 	return codec.CoinValue.MustDecode(b, 0)
 }
 
 func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n coin.Value) {
 	if n == 0 {
-		s.coinsMap(accountKey).DelAt(coinType.Bytes())
+		s.accountCoinBalancesMap(accountKey).DelAt(coinType.Bytes())
 	} else {
-		s.coinsMap(accountKey).SetAt(coinType.Bytes(), codec.CoinValue.Encode(n))
+		s.accountCoinBalancesMap(accountKey).SetAt(coinType.Bytes(), codec.CoinValue.Encode(n))
 	}
 }
 
@@ -43,7 +43,7 @@ func (s *StateReader) GetCoinBalanceTotal(coinID coin.Type) coin.Value {
 
 func (s *StateReader) GetCoins(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
 	ret := isc.CoinBalances{}
-	s.coinsMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
+	s.accountCoinBalancesMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
 			codec.CoinType.MustDecode(coinType),
 			codec.CoinValue.MustDecode(val),

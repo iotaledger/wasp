@@ -350,13 +350,3 @@ type EVMTracer struct {
 	Tracer  *tracers.Tracer
 	TxIndex uint64
 }
-
-type SuiCoinInfo struct {
-	CoinType    coin.Type
-	Decimals    uint8
-	Name        string
-	Symbol      string
-	Description string
-	IconURL     string
-	TotalSupply coin.Value
-}
