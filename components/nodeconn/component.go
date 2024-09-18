@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func init() {
@@ -39,14 +40,17 @@ func provide(c *dig.Container) error {
 	type nodeConnectionDeps struct {
 		dig.In
 
+		WebsocketURL    string
+		PackageID       sui.Address
 		ShutdownHandler *shutdown.ShutdownHandler
 	}
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
 		nodeConnection, err := nodeconn.New(
 			Component.Daemon().ContextStopped(),
+			deps.PackageID,
+			deps.WebsocketURL,
 			Component.Logger().Named("nc"),
-			deps.NodeBridge,
 			deps.ShutdownHandler,
 		)
 		if err != nil {

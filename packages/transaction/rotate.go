@@ -1,13 +1,8 @@
 package transaction
 
 import (
-	"errors"
-	"fmt"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 func NewRotateChainStateControllerTx(
@@ -17,7 +12,8 @@ func NewRotateChainStateControllerTx(
 	chainOutput iotago.Output,
 	kp cryptolib.Signer,
 ) (*iotago.Transaction, error) {
-	o, ok := chainOutput.(*iotago.AliasOutput)
+	panic("refactor me: NewRotateChainStateControllerTx")
+	/*o, ok := chainOutput.(*iotago.AliasOutput)
 	if !ok {
 		return nil, fmt.Errorf("provided output is not the correct one. Expected AliasOutput, received %T=%v", chainOutput, chainOutput)
 	}
@@ -69,5 +65,5 @@ func NewRotateChainStateControllerTx(
 	newChainOutput.Features = newFeatures
 
 	outputs := iotago.Outputs{newChainOutput}
-	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, kp, parameters.L1().Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, kp, parameters.L1().Protocol.NetworkID())*/
 }

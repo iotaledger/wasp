@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -26,14 +25,14 @@ var (
 	funcBigEvent   = manyEventsContract.Func("bigevent")
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
-		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+		funcManyEvents.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 			n := codec.Uint32.MustDecode(ctx.Params().Get("n"))
 			for i := uint32(0); i < n; i++ {
 				ctx.Event("event.test", codec.Uint32.Encode(n))
 			}
 			return nil
 		}),
-		funcBigEvent.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+		funcBigEvent.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 			n := codec.Uint32.MustDecode(ctx.Params().Get("n"))
 			ctx.Event("event.big", make([]byte, n))
 			return nil
@@ -42,7 +41,7 @@ var (
 )
 
 func setupTest(t *testing.T) *solo.Chain {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true}).
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true}).
 		WithNativeContract(manyEventsContractProcessor)
 	ch := env.NewChain()
 	err := ch.DeployContract(nil, manyEventsContract.Name, manyEventsContract.ProgramHash)
@@ -162,7 +161,7 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) [
 }
 
 func TestGetEvents(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{}).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 

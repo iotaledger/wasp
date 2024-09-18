@@ -417,16 +417,12 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	scArgs := governance.AccessNodeInfo{
-		NodePubKey:   accessNodePubKey.AsBytes(),
-		Certificate:  decodedCert,
-		ForCommittee: false,
-		AccessAPI:    clu.Config.APIHost(accessNodeIndex),
-	}
+	accessAPI := clu.Config.APIHost(accessNodeIndex)
+	forCommittee := false
 
 	govClient := chain.Client(validatorKeyPair)
 	tx, err := govClient.PostRequest(
-		governance.FuncAddCandidateNode.Message(&scArgs),
+		governance.FuncAddCandidateNode.Message(accessNodePubKey, decodedCert, accessAPI, forCommittee),
 		*chainclient.NewPostRequestParams().WithBaseTokens(1000),
 	)
 	if err != nil {
@@ -438,7 +434,8 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
+		txID, accessNodePubKey, decodedCert, accessAPI, forCommittee)
 	return tx, nil
 }
 

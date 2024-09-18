@@ -145,7 +145,7 @@ func createIscmoveReq(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 	iscPackage sui.Address,
-	anchor *iscmove.RefWithObject[iscmove.Anchor],
+	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),

@@ -3,8 +3,10 @@ package apiextensions
 import (
 	"context"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
@@ -19,8 +21,8 @@ func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
 	return apiclient.NewAPIClient(config), nil
 }
 
-func CallView(context context.Context, client *apiclient.APIClient, chainID string, request apiclient.ContractCallViewRequest) (dict.Dict, error) {
-	result, _, err := client.ChainsApi.
+func CallView(context context.Context, client *apiclient.APIClient, chainID string, request apiclient.ContractCallViewRequest) (isc.CallArguments, error) {
+	_, _, err := client.ChainsApi.
 		CallView(context, chainID).
 		ContractCallViewRequest(request).
 		Execute()
@@ -28,7 +30,18 @@ func CallView(context context.Context, client *apiclient.APIClient, chainID stri
 		return nil, err
 	}
 
-	dictResult, err := APIJsonDictToDict(*result)
+	panic("we need to recompile the webapi docs to get a proper type from  result. For this ISC needs to be compilable. Right now faking a hex string")
 
-	return dictResult, err
+	result := "0x0"
+	resultHex, err := hexutil.Decode(result)
+	if err != nil {
+		return nil, err
+	}
+
+	resultArgs, err := isc.CallArgumentsFromBytes(resultHex)
+	if err != nil {
+		return nil, err
+	}
+
+	return resultArgs, nil
 }

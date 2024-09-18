@@ -55,6 +55,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
+	"github.com/samber/lo"
 )
 
 const (
@@ -110,7 +111,7 @@ type RequestHandler = func(req *iscmove.Request)
 
 // The Anchor versions must be passed here in-order. The last one
 // is the current one.
-type AnchorHandler = func(anchor *iscmove.RefWithObject[iscmove.Anchor])
+type AnchorHandler = func(anchor *iscmove.AnchorWithRef)
 
 type TxPostHandler = func(tx suisigner.SignedTransaction, err error)
 
@@ -124,7 +125,7 @@ type chainNodeImpl struct {
 	tangleTime          time.Time
 	mempool             mempool.Mempool
 	stateMgr            statemanager.StateMgr
-	recvAliasOutputPipe pipe.Pipe[*isc.AliasOutputWithID]
+	recvAliasOutputPipe pipe.Pipe[*iscmove.AnchorWithRef]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	recvMilestonePipe   pipe.Pipe[time.Time]
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
@@ -155,12 +156,12 @@ type chainNodeImpl struct {
 	accessNodesFromCNF     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the active state).
 	accessNodesFromACT     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the confirmed state).
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
-	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
+	latestConfirmedAO      *iscmove.AnchorWithRef // Confirmed by L1, can be lagging from latestActiveAO.
 	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
-	latestConfirmedStateAO *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
-	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
+	latestConfirmedStateAO *iscmove.AnchorWithRef // Set only when the corresponding state is retrieved.
+	latestActiveAO         *iscmove.AnchorWithRef // This is the AO the chain is build on.
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
-	latestActiveStateAO    *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
+	latestActiveStateAO    *iscmove.AnchorWithRef // Set only when the corresponding state is retrieved.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -211,7 +212,7 @@ type txPublished struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
 	txID            iotago.TransactionID
-	nextAliasOutput *isc.AliasOutputWithID
+	nextAliasOutput *iscmove.AnchorWithRef
 	confirmed       bool
 }
 
@@ -271,7 +272,7 @@ func New(
 		chainStore:             chainStore,
 		nodeConn:               nodeConn,
 		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
-		recvAliasOutputPipe:    pipe.NewInfinitePipe[*isc.AliasOutputWithID](),
+		recvAliasOutputPipe:    pipe.NewInfinitePipe[*iscmove.AnchorWithRef](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
 		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
@@ -340,7 +341,7 @@ func New(
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
 		func(anchor *iscmove.Anchor) {
-			cni.stateTrackerAct.TrackAliasOutput(ao, true)
+			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
 		},
 		func(block state.Block) {
 			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
@@ -598,7 +599,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
-func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *iscmove.AnchorWithRef, added, removed []state.Block) {
 	cni.log.Debugf("handleStateTrackerActCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
@@ -607,12 +608,12 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 	cni.accessLock.Unlock()
 
 	// Set the state to match the ActiveOrConfirmed state.
-	if latestConfirmedAO == nil || till.GetStateIndex() > latestConfirmedAO.GetStateIndex() {
-		l1Commitment := transaction.MustL1CommitmentFromAliasOutput(till.GetAliasOutput())
+	if latestConfirmedAO == nil || till.Object.StateIndex > latestConfirmedAO.Object.StateIndex {
+		l1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(till.Object))
 		if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 			panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
 		}
-		cni.log.Debugf("Latest state set to ACT index=%v, trieRoot=%v", till.GetStateIndex(), l1Commitment.TrieRoot())
+		cni.log.Debugf("Latest state set to ACT index=%v, trieRoot=%v", till.Object.StateIndex, l1Commitment.TrieRoot())
 	}
 
 	newAccessNodes := governance.NewStateReaderFromChainState(st).AccessNodes()
@@ -630,7 +631,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //   - We set it as latest here. This is then used in many places to access the latest version of the state.
 //
 // The request/receipt awaits are already handled in the StateTracker.
-func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *iscmove.AnchorWithRef, added, removed []state.Block) {
 	cni.log.Debugf("handleStateTrackerCnfCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
@@ -646,12 +647,12 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	}
 
 	// Set the state to match the ActiveOrConfirmed state.
-	if latestActiveStateAO == nil || latestActiveStateAO.GetStateIndex() <= till.GetStateIndex() {
-		l1Commitment := transaction.MustL1CommitmentFromAliasOutput(till.GetAliasOutput())
+	if latestActiveStateAO == nil || latestActiveStateAO.Object.StateIndex <= till.Object.StateIndex {
+		l1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(till.Object))
 		if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 			panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
 		}
-		cni.log.Debugf("Latest state set to CNF index=%v, trieRoot=%v", till.GetStateIndex(), l1Commitment.TrieRoot())
+		cni.log.Debugf("Latest state set to CNF index=%v, trieRoot=%v", till.Object.StateIndex, l1Commitment.TrieRoot())
 	}
 }
 
@@ -681,10 +682,10 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *iscmove.AnchorWithRef) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
-	if aliasOutput.GetStateIndex() == 0 {
-		initBlock, err := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+	if aliasOutput.Object.StateIndex == 0 {
+		initBlock, err := origin.InitChainByAnchor(cni.chainStore, aliasOutput, isc.NewEmptyAssets())
 		if err != nil {
 			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
 			return
@@ -1045,7 +1046,7 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 	return cni.log
 }
 
-func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error) {
+func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*iscmove.AnchorWithRef, error) {
 	cni.accessLock.RLock()
 	latestActiveAO := cni.latestActiveStateAO
 	latestConfirmedAO := cni.latestConfirmedStateAO
@@ -1053,7 +1054,7 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 	switch freshness {
 	case ActiveOrCommittedState:
 		if latestActiveAO != nil {
-			if latestConfirmedAO == nil || latestActiveAO.GetStateIndex() > latestConfirmedAO.GetStateIndex() {
+			if latestConfirmedAO == nil || latestActiveAO.Object.StateIndex > latestConfirmedAO.Object.StateIndex {
 				cni.log.Debugf("LatestAliasOutput(%v) => active = %v", freshness, latestActiveAO)
 				return latestActiveAO, nil
 			}

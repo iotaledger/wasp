@@ -18,7 +18,7 @@ import (
 
 func TestBlockInfoLatest(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	chain := env.NewChain()
 
 	bi := chain.GetLatestBlockInfo()
@@ -32,7 +32,7 @@ func TestBlockInfoLatest(t *testing.T) {
 
 func TestBlockInfo(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	chain := env.NewChain()
 
 	bi, err := chain.GetBlockInfo(0)
@@ -55,7 +55,7 @@ func TestBlockInfo(t *testing.T) {
 }
 
 func TestBlockInfoLatestWithRequest(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 
 	ch := env.NewChain()
 
@@ -78,7 +78,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 }
 
 func TestBlockInfoSeveral(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(100_000, nil)
@@ -106,7 +106,7 @@ func TestBlockInfoSeveral(t *testing.T) {
 }
 
 func TestRequestIsProcessed(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -128,7 +128,7 @@ func TestRequestIsProcessed(t *testing.T) {
 }
 
 func TestRequestReceipt(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -155,7 +155,7 @@ func TestRequestReceipt(t *testing.T) {
 }
 
 func TestRequestReceiptsForBlocks(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -179,7 +179,7 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 }
 
 func TestRequestIDsForBlocks(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -202,7 +202,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 }
 
 func TestViewGetRequestReceipt(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 	// try to get a receipt for a request that does not exist
 	_, ok := ch.GetRequestReceipt(isc.RequestID{})
@@ -210,7 +210,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 }
 
 func TestBlocklogPruning(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
+	env := solo.New(t, &solo.InitOptions{, Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
 		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
 	})
@@ -240,7 +240,7 @@ func TestBlocklogPruning(t *testing.T) {
 func TestBlocklogFoundriesWithPruning(t *testing.T) {
 	// test that foundries can be accessed even after the block is pruned
 
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
+	env := solo.New(t, &solo.InitOptions{, Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
 		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
 	})

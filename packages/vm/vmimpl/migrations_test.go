@@ -54,7 +54,7 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	require.NoError(t, err)
 	task := &vm.VMTask{
 		Anchor: &isc.StateAnchor{
-			Ref: &iscmove.RefWithObject[iscmove.Anchor]{
+			Ref: &iscmove.AnchorWithRef{
 				Object: &iscmove.Anchor{
 					StateIndex: stateIndex,
 				},

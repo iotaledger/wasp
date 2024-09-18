@@ -6,8 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -15,46 +13,48 @@ import (
 )
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	panic("TODO")
+	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	// assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	assetsResponse := &models.AssetsResponse{
-		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-		NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
-	}
+	// assetsResponse := &models.AssetsResponse{
+	// 	BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
+	// 	NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+	// }
 
-	return e.JSON(http.StatusOK, assetsResponse)
+	// return e.JSON(http.StatusOK, assetsResponse)
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	panic("TODO")
+	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	agentID, err := params.DecodeAgentID(e)
-	if err != nil {
-		return err
-	}
+	// agentID, err := params.DecodeAgentID(e)
+	// if err != nil {
+	// 	return err
+	// }
 
-	assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	// assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	assetsResponse := &models.AssetsResponse{
-		BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-		NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
-	}
+	// assetsResponse := &models.AssetsResponse{
+	// 	BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
+	// 	NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+	// }
 
-	return e.JSON(http.StatusOK, assetsResponse)
+	// return e.JSON(http.StatusOK, assetsResponse)
 }
 
 func (c *Controller) getAccountNFTs(e echo.Context) error {
@@ -85,23 +85,24 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 }
 
 func (c *Controller) getAccountFoundries(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
-	agentID, err := params.DecodeAgentID(e)
-	if err != nil {
-		return err
-	}
+	panic("TODO")
+	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
+	// agentID, err := params.DecodeAgentID(e)
+	// if err != nil {
+	// 	return err
+	// }
 
-	foundries, err := corecontracts.GetAccountFoundries(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	// foundries, err := corecontracts.GetAccountFoundries(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	return e.JSON(http.StatusOK, &models.AccountFoundriesResponse{
-		FoundrySerialNumbers: foundries,
-	})
+	// return e.JSON(http.StatusOK, &models.AccountFoundriesResponse{
+	// 	FoundrySerialNumbers: foundries,
+	// })
 }
 
 func (c *Controller) getAccountNonce(e echo.Context) error {
@@ -128,24 +129,25 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 }
 
 func (c *Controller) getNFTData(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	panic("TODO")
+	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	nftID, err := params.DecodeNFTID(e)
-	if err != nil {
-		return err
-	}
+	// nftID, err := params.DecodeNFTID(e)
+	// if err != nil {
+	// 	return err
+	// }
 
-	nftData, err := corecontracts.GetNFTData(ch, *nftID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	// nftData, err := corecontracts.GetNFTData(ch, *nftID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	nftDataResponse := isc.NFTToJSONObject(nftData)
+	// nftDataResponse := isc.NFTToJSONObject(nftData)
 
-	return e.JSON(http.StatusOK, nftDataResponse)
+	// return e.JSON(http.StatusOK, nftDataResponse)
 }
 
 func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
@@ -171,33 +173,34 @@ func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
 }
 
 func (c *Controller) getFoundryOutput(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	panic("TODO")
+	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	serialNumber, err := params.DecodeUInt(e, "serialNumber")
-	if err != nil {
-		return err
-	}
+	// serialNumber, err := params.DecodeUInt(e, "serialNumber")
+	// if err != nil {
+	// 	return err
+	// }
 
-	foundryOutput, err := corecontracts.GetFoundryOutput(ch, uint32(serialNumber), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err, chainID)
-	}
+	// foundryOutput, err := corecontracts.GetFoundryOutput(ch, uint32(serialNumber), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	// if err != nil {
+	// 	return c.handleViewCallError(err, chainID)
+	// }
 
-	foundryOutputID, err := foundryOutput.ID()
-	if err != nil {
-		return apierrors.InvalidPropertyError("FoundryOutput.ID", err)
-	}
+	// foundryOutputID, err := foundryOutput.ID()
+	// if err != nil {
+	// 	return apierrors.InvalidPropertyError("FoundryOutput.ID", err)
+	// }
 
-	foundryOutputResponse := &models.FoundryOutputResponse{
-		FoundryID: foundryOutputID.ToHex(),
-		Assets: models.AssetsResponse{
-			BaseTokens:   iotago.EncodeUint64(foundryOutput.Amount),
-			NativeTokens: isc.NativeTokensToJSONObject(foundryOutput.NativeTokens),
-		},
-	}
+	// foundryOutputResponse := &models.FoundryOutputResponse{
+	// 	FoundryID: foundryOutputID.ToHex(),
+	// 	Assets: models.AssetsResponse{
+	// 		BaseTokens:   iotago.EncodeUint64(foundryOutput.Amount),
+	// 		NativeTokens: isc.NativeTokensToJSONObject(foundryOutput.NativeTokens),
+	// 	},
+	// }
 
-	return e.JSON(http.StatusOK, foundryOutputResponse)
+	// return e.JSON(http.StatusOK, foundryOutputResponse)
 }

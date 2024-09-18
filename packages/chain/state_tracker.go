@@ -19,7 +19,7 @@ import (
 type StateTracker interface {
 	//
 	// The main functions provided by this component.
-	TrackAliasOutput(ao *iscmove.Anchor, strict bool)
+	TrackAliasOutput(ao *iscmove.AnchorWithRef, strict bool)
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
@@ -27,16 +27,16 @@ type StateTracker interface {
 	ChainNodeStateMgrResponse(*sm_inputs.ChainFetchStateDiffResults)
 }
 
-type StateTrackerStepCB = func(st state.State, from, till *iscmove.Anchor, added, removed []state.Block)
+type StateTrackerStepCB = func(st state.State, from, till *iscmove.AnchorWithRef, added, removed []state.Block)
 
 type stateTrackerImpl struct {
 	ctx                    context.Context
 	stateMgr               statemanager.StateMgr
 	haveLatestCB           StateTrackerStepCB
 	haveAOState            state.State
-	haveAO                 *iscmove.Anchor    // We have a state ready for this AO.
-	nextAO                 *iscmove.Anchor    // For this state a query was made, but the response not received yet.
-	nextAOCancel           context.CancelFunc // Cancel for a context used to query for the nextAO state.
+	haveAO                 *iscmove.AnchorWithRef // We have a state ready for this AO.
+	nextAO                 *iscmove.AnchorWithRef // For this state a query was made, but the response not received yet.
+	nextAOCancel           context.CancelFunc     // Cancel for a context used to query for the nextAO state.
 	nextAOWaitCh           <-chan *sm_inputs.ChainFetchStateDiffResults
 	awaitReceipt           AwaitReceipt
 	metricWantStateIndexCB func(uint32)
@@ -70,7 +70,7 @@ func NewStateTracker(
 	}
 }
 
-func (sti *stateTrackerImpl) TrackAliasOutput(ao *iscmove.Anchor, strict bool) {
+func (sti *stateTrackerImpl) TrackAliasOutput(ao *iscmove.AnchorWithRef, strict bool) {
 	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
 	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
 		return

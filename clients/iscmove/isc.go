@@ -112,6 +112,8 @@ func (a *Anchor) Write(w io.Writer) error {
 	return nil // TODO implement
 }
 
+type AnchorWithRef = RefWithObject[Anchor]
+
 type Receipt struct {
 	RequestID sui.ObjectID
 }

@@ -2,11 +2,10 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // spawn deploys new contract and calls it
-func spawn(ctx isc.Sandbox) dict.Dict {
+func spawn(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf(FuncSpawn.Name)
 	progHash := ctx.Params().MustGetHashValue(ParamProgHash)
 	name := Contract.Name + "_spawned"

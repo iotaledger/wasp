@@ -21,7 +21,7 @@ type ChainFetchStateDiff struct {
 
 var _ gpa.Input = &ChainFetchStateDiff{}
 
-func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *iscmove.RefWithObject[iscmove.Anchor]) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
+func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *iscmove.AnchorWithRef) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
 	if prevAnchor == nil {
 		// Only the current state is needed, if prevAO is unknown.
 		prevAnchor = nextAnchor

@@ -10,13 +10,13 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 )
 
 type Snapshot struct {
-	UtxoDB *utxodb.UtxoDBState
+	//UtxoDB *utxodb.UtxoDBState
 	Chains []*ChainSnapshot
 }
 

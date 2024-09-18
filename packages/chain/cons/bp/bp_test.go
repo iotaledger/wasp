@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -28,7 +28,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	//
 	// Produce an alias output.
 	cmtKP := cryptolib.NewKeyPair()
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
 	originator := cryptolib.NewKeyPair()
 	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
 	require.NoError(t, err)

@@ -12,14 +12,15 @@ func GetBlobInfo(ch chain.Chain, blobHash hashing.HashValue, blockIndexOrTrieRoo
 	if err != nil {
 		return nil, false, err
 	}
-	fields, err := blob.ViewGetBlobInfo.Output.Decode(ret)
+	fields, err := blob.ViewGetBlobInfo.DecodeOutput(ret)
 	return fields, len(fields) > 0, err
 }
 
 func GetBlobValue(ch chain.Chain, blobHash hashing.HashValue, key string, blockIndexOrTrieRoot string) ([]byte, error) {
-	ret, err := common.CallView(ch, blob.ViewGetBlobField.Message(blobHash, []byte(key)), blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-	return blob.ViewGetBlobField.Output1.Decode(ret)
+	panic("TODO")
+	// ret, err := common.CallView(ch, blob.ViewGetBlobField.Message(blobHash, []byte(key)), blockIndexOrTrieRoot)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return blob.ViewGetBlobField.Output1.Decode(ret)
 }

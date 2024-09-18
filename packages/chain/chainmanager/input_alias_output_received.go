@@ -13,10 +13,10 @@ import (
 
 type inputAliasOutputConfirmed struct {
 	stateController *cryptolib.Address
-	anchor          *iscmove.Anchor
+	anchor          *iscmove.AnchorWithRef
 }
 
-func NewInputAliasOutputConfirmed(stateController *cryptolib.Address, anchor *iscmove.Anchor) gpa.Input {
+func NewInputAliasOutputConfirmed(stateController *cryptolib.Address, anchor *iscmove.AnchorWithRef) gpa.Input {
 	return &inputAliasOutputConfirmed{
 		stateController: stateController,
 		anchor:          anchor,
@@ -24,5 +24,5 @@ func NewInputAliasOutputConfirmed(stateController *cryptolib.Address, anchor *is
 }
 
 func (inp *inputAliasOutputConfirmed) String() string {
-	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, %v}", inp.anchor.ID.ShortString())
+	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, %v}", inp.anchor.Object.ID.ShortString())
 }

@@ -20,7 +20,7 @@ import (
 )
 
 func TestNoSenderFeature(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	wallet, addr := env.NewKeyPairWithFunds()
@@ -30,7 +30,7 @@ func TestNoSenderFeature(t *testing.T) {
 	// mint some NTs and withdraw them
 	gasFee := 10 * gas.LimitsDefault.MinGasPerRequest
 	withdrawAmount := 3 * gas.LimitsDefault.MinGasPerRequest
-	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(withdrawAmount+gasFee), wallet)
+	err := ch.DepositAssetsToL2(isc.NewAssets(withdrawAmount+gasFee), wallet)
 	require.NoError(t, err)
 	nativeTokenAmount := big.NewInt(123)
 	sn, nativeTokenID, err := ch.NewNativeTokenParams(big.NewInt(1234)).
@@ -118,7 +118,7 @@ func TestNoSenderFeature(t *testing.T) {
 }
 
 func TestSendBack(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{}).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 
@@ -193,7 +193,7 @@ func TestSendBack(t *testing.T) {
 }
 
 func TestBadMetadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	wallet, addr := env.NewKeyPairWithFunds()

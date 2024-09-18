@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -37,8 +38,8 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
+
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
@@ -376,11 +377,11 @@ func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID is
 // testEnv
 
 type testEnv struct {
-	t                *testing.T
-	ctx              context.Context
-	ctxCancel        context.CancelFunc
-	log              *logger.Logger
-	utxoDB           *utxodb.UtxoDB
+	t         *testing.T
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+	log       *logger.Logger
+	//utxoDB           *utxodb.UtxoDB
 	governor         *cryptolib.KeyPair
 	originator       *cryptolib.KeyPair
 	peeringURLs      []string
@@ -391,7 +392,7 @@ type testEnv struct {
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
-	originAO         *isc.AliasOutputWithID
+	originAO         *iscmove.AnchorWithRef
 	originTx         *iotago.Transaction
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain
@@ -403,7 +404,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 	//
 	// Create ledger accounts.
-	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
+	//te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
 	te.governor = cryptolib.NewKeyPair()
 	te.originator = cryptolib.NewKeyPair()
 	_, err := te.utxoDB.GetFundsFromFaucet(te.governor.Address())

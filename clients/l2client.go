@@ -21,7 +21,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+	) (*iscmove.AnchorWithRef, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -40,6 +40,7 @@ type L2Client interface {
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	ReceiveRequestAndTransition(
 		ctx context.Context,
+		ptb *sui.ProgrammableTransactionBuilder,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		anchorRef *sui.ObjectRef,

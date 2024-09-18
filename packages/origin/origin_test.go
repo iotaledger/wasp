@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -35,7 +34,7 @@ func TestOrigin(t *testing.T) {
 }
 
 func TestCreateOrigin(t *testing.T) {
-	var u *utxodb.UtxoDB
+	var u *UtxoDB
 	var originTx *iotago.Transaction
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *cryptolib.Address

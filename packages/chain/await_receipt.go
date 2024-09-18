@@ -101,13 +101,6 @@ func (ari *awaitReceiptImpl) respondByBlock(block state.Block) {
 	for _, receipt := range blockReceipts {
 		handleReq(receipt.Request.ID(), receipt)
 	}
-	unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
-	if err != nil {
-		panic(fmt.Errorf("cannot extract new unprocessable requests from block: %w", err))
-	}
-	for _, r := range unprocessableRequests {
-		handleReq(r.ID(), nil)
-	}
 }
 
 func (ari *awaitReceiptImpl) StatusString() string {

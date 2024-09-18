@@ -330,7 +330,7 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	Ref        *iscmove.RefWithObject[iscmove.Anchor]
+	Ref        *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
 	ISCPackage sui.Address
 }

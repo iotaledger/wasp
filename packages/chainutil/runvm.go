@@ -8,6 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,7 +24,7 @@ import (
 
 func runISCTask(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	aliasOutput *iscmove.AnchorWithRef,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
@@ -56,7 +57,7 @@ func runISCTask(
 	return res.RequestResults, nil
 }
 
-func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.AliasOutputWithID) (*migrations.MigrationScheme, error) {
+func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *iscmove.AnchorWithRef) (*migrations.MigrationScheme, error) {
 	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)
@@ -78,7 +79,7 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.Ali
 
 func runISCRequest(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	aliasOutput *iscmove.AnchorWithRef,
 	blockTime time.Time,
 	req isc.Request,
 	estimateGasMode bool,

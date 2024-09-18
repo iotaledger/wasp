@@ -39,8 +39,8 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		RequestIndex:  receipt.RequestIndex,
 		GasBudget:     iotago.EncodeUint64(receipt.GasBudget),
 		GasBurned:     iotago.EncodeUint64(receipt.GasBurned),
-		GasFeeCharged: iotago.EncodeUint64(receipt.GasFeeCharged),
-		SDCharged:     iotago.EncodeUint64(receipt.SDCharged),
+		GasFeeCharged: iotago.EncodeUint64(uint64(receipt.GasFeeCharged)),
+		SDCharged:     iotago.EncodeUint64(uint64(receipt.SDCharged)),
 		GasBurnLog:    burnRecords,
 	}
 }

@@ -139,7 +139,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.RefWithObject[iscmove.Anchor] {
+func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,

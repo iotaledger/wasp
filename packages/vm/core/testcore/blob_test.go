@@ -24,7 +24,7 @@ const (
 
 func TestUploadBlob(t *testing.T) {
 	t.Run("from binary", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t, &solo.InitOptions{})
 		ch := env.NewChain()
 
 		ch.MustDepositBaseTokensToL2(100_000, nil)
@@ -158,7 +158,7 @@ func TestUploadContractBinary(t *testing.T) {
 }
 
 func TestBigBlob(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 	ch.MustDepositBaseTokensToL2(1*isc.Million, nil)
 

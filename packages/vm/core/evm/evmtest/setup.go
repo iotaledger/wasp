@@ -49,10 +49,9 @@ type ethCallOptions struct {
 
 func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
-		GasBurnLogEnabled:        false,
+		Debug:             true,
+		PrintStackTrace:   true,
+		GasBurnLogEnabled: false,
 	})
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)

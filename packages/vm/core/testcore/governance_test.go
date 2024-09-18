@@ -32,14 +32,14 @@ func TestGovernance1(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 
 	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t, &solo.InitOptions{})
 		chain := env.NewChain()
 
 		lst := chain.GetAllowedStateControllerAddresses()
 		require.EqualValues(t, 0, len(lst))
 	})
 	t.Run("add/remove allowed rotation addresses", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t, &solo.InitOptions{})
 		chain := env.NewChain()
 
 		_, addr1 := env.NewKeyPair(env.NewSeedFromIndex(1))
@@ -82,7 +82,7 @@ func TestRotate(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 
 	t.Run("not allowed address", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t, &solo.InitOptions{})
 		chain := env.NewChain()
 
 		kp, addr := env.NewKeyPair()
@@ -91,7 +91,7 @@ func TestRotate(t *testing.T) {
 		strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
 	})
 	t.Run("unauthorized", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t, &solo.InitOptions{})
 		chain := env.NewChain()
 
 		kp, addr := env.NewKeyPairWithFunds()
@@ -100,7 +100,7 @@ func TestRotate(t *testing.T) {
 		strings.Contains(err.Error(), "checkRotateStateControllerRequest: unauthorized access")
 	})
 	t.Run("rotate success", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t, &solo.InitOptions{})
 		chain := env.NewChain()
 
 		chain.WaitUntilMempoolIsEmpty()
@@ -124,7 +124,7 @@ func TestRotate(t *testing.T) {
 }
 
 func TestAccessNodes(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
 	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
@@ -202,7 +202,7 @@ func TestAccessNodes(t *testing.T) {
 }
 
 func TestMaintenanceMode(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{}).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain()
 
@@ -350,14 +350,14 @@ var (
 
 func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
 	ownerContractProcessor := ownerContract.Processor(nil,
-		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 			return ctx.Call(governance.FuncClaimChainOwnership.Message(), nil)
 		}),
-		startMaintenanceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+		startMaintenanceFunc.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 			return ctx.Call(governance.FuncStartMaintenance.Message(), nil)
 		}),
 	)
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{}).
 		WithNativeContract(ownerContractProcessor)
 	ch := env.NewChain()
 
@@ -425,7 +425,7 @@ func TestDisallowMaintenanceDeadlock2(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	// deposit some extra tokens to the common account to accommodate for the SD change
@@ -518,7 +518,7 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestL1Metadata(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
 
 	// deposit some extra tokens to the common account to accommodate for the SD change
@@ -581,7 +581,7 @@ func TestL1Metadata(t *testing.T) {
 }
 
 func TestGovernanceGasFee(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	fp := ch.GetGasFeePolicy()
 	fp.GasPerToken.A *= 1000000
@@ -591,7 +591,7 @@ func TestGovernanceGasFee(t *testing.T) {
 }
 
 func TestGovernanceZeroGasFee(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	user1, userAddr1 := env.NewKeyPairWithFunds()
@@ -661,7 +661,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 }
 
 func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	user, userAddr := env.NewKeyPairWithFunds()
@@ -690,7 +690,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 }
 
 func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	initRetDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
@@ -732,7 +732,7 @@ func TestGovCallsNoBalance(t *testing.T) {
 
 func TestGasPayout(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
+		,
 		Debug:                    true,
 		PrintStackTrace:          true,
 	})
@@ -802,7 +802,7 @@ func TestGasPayout(t *testing.T) {
 
 	// top-up the common account, so its the minBalance - 10 tokens, assert what happens with the fees
 	err = ch.TransferAllowanceTo(
-		isc.NewAssetsBaseTokensU64(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
+		isc.NewAssets(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
 		accounts.CommonAccount(),
 		nil,
 	)

@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func TestNFTDepositNoIssuer(t *testing.T) {
@@ -28,7 +29,7 @@ func TestNFTDepositNoIssuer(t *testing.T) {
 	o := &iotago.NFTOutput{
 		Amount:       100 * isc.Million,
 		NativeTokens: []*isc.NativeToken{},
-		NFTID:        isc.NFTID{0x1},
+		NFTID:        sui.ObjectID{0x1},
 		Conditions:   []iotago.UnlockCondition{},
 		Features: []iotago.Feature{
 			&iotago.MetadataFeature{
@@ -86,7 +87,7 @@ func simulateRunOutput(
 	task := &vm.VMTask{
 		Processors: processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
 		Anchor: &isc.StateAnchor{
-			Ref:   &iscmove.RefWithObject[iscmove.Anchor]{},
+			Ref:   &iscmove.AnchorWithRef{},
 			Owner: chainCreator.Address(),
 		},
 		Store:                store,

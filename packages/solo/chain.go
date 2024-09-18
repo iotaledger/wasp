@@ -526,7 +526,7 @@ func (*Chain) GetTimeData() time.Time {
 }
 
 // LatestAnchor implements chain.Chain
-func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*iscmove.RefWithObject[iscmove.Anchor], error) {
+func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*iscmove.AnchorWithRef, error) {
 	return ch.GetLatestAnchor(), nil
 }
 
