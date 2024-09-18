@@ -8,7 +8,6 @@ module isc::anchor {
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
-        allowance::Allowance,
     };
 
     // === Main structs ===
@@ -61,10 +60,10 @@ module isc::anchor {
     // === Receive a Request ===
 
     /// The Anchor receives a request and destroys it, implementing the HotPotato pattern.
-    public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag, Allowance) {
+    public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag) {
         let req = request::receive(&mut self.id, request);
-        let (request_id, assets, allowance) = req.destroy();
-        (Receipt { request_id }, assets, allowance)
+        let (request_id, assets) = req.destroy();
+        (Receipt { request_id }, assets)
     }
 
     public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
