@@ -3,7 +3,6 @@ package sui
 import (
 	"encoding/binary"
 	"fmt"
-	"io"
 	"math/rand"
 
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
@@ -89,14 +88,6 @@ func RandomObjectRef() *ObjectRef {
 		Version:  rand.Uint64(),
 		Digest:   RandomDigest(),
 	}
-}
-
-func (or *ObjectRef) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (or *ObjectRef) Write(w io.Writer) error {
-	return nil // TODO implement
 }
 
 func (or *ObjectRef) Equals(other *ObjectRef) bool {
