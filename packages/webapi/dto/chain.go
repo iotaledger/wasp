@@ -4,10 +4,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/samber/lo"
 )
 
 type (
-	ContractsMap map[isc.Hname]*root.ContractRecord
+	ContractsMap []lo.Tuple2[*isc.Hname, *root.ContractRecord]
 )
 
 type PublicChainMetadata struct {
