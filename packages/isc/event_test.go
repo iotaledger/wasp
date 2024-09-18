@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestEventSerialize(t *testing.T) {
@@ -15,6 +15,5 @@ func TestEventSerialize(t *testing.T) {
 		Topic:      "this is a topic",
 		Timestamp:  uint64(time.Now().UnixNano()),
 	}
-	rwutil.ReadWriteTest(t, event, new(isc.Event))
-	rwutil.BytesTest(t, event, isc.EventFromBytes)
+	bcs.TestCodec(t, event)
 }

@@ -4,23 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
-	
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
-	
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
 // evmOffLedgerTxRequest is used to wrap an EVM tx
 type evmOffLedgerTxRequest struct {
-	chainID ChainID
-	tx      *types.Transaction
+	chainID ChainID                 `bcs:""`
+	tx      *types.Transaction      `bcs:""`
 	sender  *EthereumAddressAgentID // not serialized
 }
 
@@ -38,37 +36,15 @@ func NewEVMOffLedgerTxRequest(chainID ChainID, tx *types.Transaction) (OffLedger
 	}, nil
 }
 
-func (req *evmOffLedgerTxRequest) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(rwutil.Kind(requestKindOffLedgerEVMTx))
-	rr.Read(&req.chainID)
-	txData := rr.ReadBytes()
-	if rr.Err != nil {
-		return rr.Err
-	}
-	req.tx, rr.Err = evmtypes.DecodeTransaction(txData)
-	if rr.Err != nil {
-		return rr.Err
-	}
+func (req *evmOffLedgerTxRequest) BCSInit() error {
 	// derive req.sender from req.tx
 	sender, err := evmutil.GetSender(req.tx)
 	if err != nil {
 		return err
 	}
 	req.sender = NewEthereumAddressAgentID(req.chainID, sender)
-	return rr.Err
-}
 
-func (req *evmOffLedgerTxRequest) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(requestKindOffLedgerEVMTx))
-	ww.Write(&req.chainID)
-	if ww.Err == nil {
-		txData := evmtypes.EncodeTransaction(req.tx)
-		ww.WriteBytes(txData)
-	}
-	// no need to write req.sender, it can be derived from req.tx
-	return ww.Err
+	return nil
 }
 
 func (req *evmOffLedgerTxRequest) Allowance() *Assets {
@@ -80,14 +56,14 @@ func (req *evmOffLedgerTxRequest) Assets() *Assets {
 }
 
 func (req *evmOffLedgerTxRequest) Bytes() []byte {
-	return rwutil.WriteToBytes(req)
+	return bcs.MustMarshal(req)
 }
 
 func (req *evmOffLedgerTxRequest) Message() Message {
 	return NewMessage(
 		Hn(evmnames.Contract),
 		Hn(evmnames.FuncSendTransaction),
-		NewCallArguments(evmtypes.EncodeTransaction(req.tx)),
+		NewCallArguments(bcs.MustMarshal(req.tx)),
 	)
 }
 

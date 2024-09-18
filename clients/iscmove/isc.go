@@ -1,8 +1,6 @@
 package iscmove
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -65,14 +63,6 @@ type RefWithObject[T any] struct {
 func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 	res, _ := hashing.HashValueFromBytes(rwo.ObjectRef.Bytes())
 	return res
-}
-
-func (rwo *RefWithObject[any]) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (rwo *RefWithObject[any]) Write(w io.Writer) error {
-	return nil // TODO implement
 }
 
 // AssetsBag is the BCS equivalent for the move type AssetsBag

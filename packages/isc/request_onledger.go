@@ -2,23 +2,22 @@ package isc
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type onLedgerRequestData struct {
-	requestRef      sui.ObjectRef
-	senderAddress   *cryptolib.Address
-	targetAddress   *cryptolib.Address
+	requestRef      sui.ObjectRef      `bcs:""`
+	senderAddress   *cryptolib.Address `bcs:""`
+	targetAddress   *cryptolib.Address `bcs:""`
 	assets          *Assets
 	assetsBag       *iscmove.AssetsBag
-	requestMetadata *RequestMetadata
+	requestMetadata *RequestMetadata `bcs:""`
 }
 
 var (
@@ -51,34 +50,6 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 	return r, nil
 }
 
-func (req *onLedgerRequestData) Read(r io.Reader) error {
-	var err error
-	rr := rwutil.NewReader(r)
-
-	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
-	rr.ReadN(req.requestRef.Bytes())
-	rr.ReadN(req.senderAddress[:])
-	rr.ReadN(req.targetAddress[:])
-
-	req.requestMetadata, err = RequestMetadataFromBytes(rr.ReadBytes())
-	if err != nil {
-		return err
-	}
-
-	return rr.Err
-}
-
-func (req *onLedgerRequestData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
-	ww.WriteN(req.requestRef.Bytes())
-	ww.WriteN(req.senderAddress[:])
-	ww.WriteN(req.targetAddress[:])
-	ww.Write(req.requestMetadata)
-
-	return ww.Err
-}
-
 func (req *onLedgerRequestData) Allowance() *Assets {
 	if req.requestMetadata == nil {
 		return NewEmptyAssets()
@@ -91,7 +62,7 @@ func (req *onLedgerRequestData) Assets() *Assets {
 }
 
 func (req *onLedgerRequestData) Bytes() []byte {
-	return rwutil.WriteToBytes(req)
+	return bcs.MustMarshal(req)
 }
 
 func (req *onLedgerRequestData) Message() Message {

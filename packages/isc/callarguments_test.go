@@ -1,12 +1,11 @@
 package isc
 
 import (
-	"bytes"
 	"encoding/json"
 	"testing"
-	
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/buffer"
 )
 
 func TestCallArgsSerialization(t *testing.T) {
@@ -17,19 +16,17 @@ func TestCallArgsSerialization(t *testing.T) {
 	callArgs := NewCallArguments(testBuffer1, testBuffer2, testBuffer3)
 	require.Equal(t, callArgs.Length(), 3)
 
-	var buf buffer.Buffer
-	err := callArgs.Write(&buf)
+	enc, err := bcs.Marshal(&callArgs)
 	require.NoError(t, err)
 
-	callArgs2 := NewCallArguments()
-	reader := bytes.NewReader(buf.Bytes())
-	callArgs2.Read(reader)
+	callArgsDec, err := bcs.Unmarshal[CallArguments](enc)
+	require.NoError(t, err)
 
-	require.Equal(t, len(callArgs2), 3)
+	require.Equal(t, len(callArgsDec), 3)
 
-	require.Equal(t, testBuffer1, callArgs2.MustAt(0))
-	require.Equal(t, testBuffer2, callArgs2.MustAt(1))
-	require.Equal(t, testBuffer3, callArgs2.MustAt(2))
+	require.Equal(t, testBuffer1, callArgsDec.MustAt(0))
+	require.Equal(t, testBuffer2, callArgsDec.MustAt(1))
+	require.Equal(t, testBuffer3, callArgsDec.MustAt(2))
 }
 
 func TestCallArgsJSON(t *testing.T) {

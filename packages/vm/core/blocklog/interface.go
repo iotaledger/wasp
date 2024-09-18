@@ -3,10 +3,12 @@
 package blocklog
 
 import (
+	"bytes"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
@@ -74,30 +76,37 @@ func (OutputRequestReceipt) Encode(rec *RequestReceipt) []byte {
 	if rec == nil {
 		return nil
 	}
-	ww := rwutil.NewBytesWriter()
-	ww.WriteUint32(rec.BlockIndex)
-	ww.WriteUint16(rec.RequestIndex)
-	ww.Write(rec)
-	if ww.Err != nil {
-		panic(ww.Err)
-	}
-	return ww.Bytes()
+
+	var buf bytes.Buffer
+	enc := bcs.NewEncoder(&buf)
+
+	enc.MustEncode(rec.BlockIndex)
+	enc.MustEncode(rec.RequestIndex)
+	enc.MustEncode(rec)
+
+	return buf.Bytes()
 }
 
 func (OutputRequestReceipt) Decode(r []byte) (*RequestReceipt, error) {
 	if len(r) == 0 {
 		return nil, nil
 	}
-	rr := rwutil.NewBytesReader(r)
-	blockIndex := rr.ReadUint32()
-	reqIndex := rr.ReadUint16()
-	if rr.Err != nil {
-		return nil, rr.Err
+
+	rr := bytes.NewReader(r)
+	dec := bcs.NewDecoder(rr)
+
+	blockIndex, _ := bcs.Decode[uint32](dec)
+	reqIndex, _ := bcs.Decode[uint16](dec)
+
+	if dec.Err() != nil {
+		return nil, dec.Err()
 	}
-	rec, err := RequestReceiptFromBytes(rr.Bytes(), blockIndex, reqIndex)
+
+	rec, err := RequestReceiptFromReader(rr, blockIndex, reqIndex)
 	if err != nil {
 		return nil, err
 	}
+
 	return rec, nil
 }
 
@@ -109,31 +118,19 @@ type RequestReceiptsResponse struct {
 type OutputRequestReceipts struct{}
 
 func (OutputRequestReceipts) Encode(res *RequestReceiptsResponse) []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteUint32(res.BlockIndex)
-	ww.WriteUint16(uint16(len(res.Receipts)))
-	for _, receipt := range res.Receipts {
-		ww.Write(receipt)
-	}
-	if ww.Err != nil {
-		panic(ww.Err)
-	}
-	return ww.Bytes()
+	return bcs.MustMarshal(res)
 }
 
 func (OutputRequestReceipts) Decode(r []byte) (*RequestReceiptsResponse, error) {
-	rr := rwutil.NewBytesReader(r)
-	blockIndex := rr.ReadUint32()
-	n := rr.ReadUint16()
-	ret := make([]*RequestReceipt, n)
-	for i := uint16(0); i < n; i++ {
-		rec := new(RequestReceipt)
-		rr.Read(rec)
-		rec.BlockIndex = blockIndex
-		rec.RequestIndex = i
+	res, err := bcs.Unmarshal[*RequestReceiptsResponse](r)
+	if err != nil {
+		return nil, err
 	}
-	return &RequestReceiptsResponse{
-		BlockIndex: blockIndex,
-		Receipts:   ret,
-	}, nil
+
+	for i := range res.Receipts {
+		res.Receipts[i].BlockIndex = res.BlockIndex
+		res.Receipts[i].RequestIndex = uint16(i)
+	}
+
+	return res, nil
 }

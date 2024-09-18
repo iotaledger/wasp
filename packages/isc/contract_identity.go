@@ -2,14 +2,13 @@ package isc
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-type contractIdentityKind rwutil.Kind
+type contractIdentityKind byte
 
 type ContractIdentity struct {
 	// can either be an Hname or a solidity contract
@@ -48,28 +47,30 @@ func (c *ContractIdentity) String() string {
 	return ""
 }
 
-func (c *ContractIdentity) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	c.kind = contractIdentityKind(rr.ReadKind())
+func (c *ContractIdentity) MarshalBCS(e *bcs.Encoder) error {
+	e.WriteEnumIdx(int(c.kind))
+
 	switch c.kind {
 	case contractIdentityKindHname:
-		rr.Read(&c.hname)
+		return e.WriteUint32(uint32(c.hname))
 	case contractIdentityKindEthereum:
-		rr.ReadN(c.evmAddr[:])
+		return e.Encode(c.evmAddr)
 	}
-	return rr.Err
+
+	return nil
 }
 
-func (c *ContractIdentity) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(c.kind))
+func (c *ContractIdentity) UnmarshalBCS(d *bcs.Decoder) error {
+	c.kind = contractIdentityKind(d.ReadEnumIdx())
+
 	switch c.kind {
 	case contractIdentityKindHname:
-		ww.Write(&c.hname)
+		c.hname = Hname(d.ReadUint32())
 	case contractIdentityKindEthereum:
-		ww.WriteN(c.evmAddr[:])
+		return d.Decode(&c.evmAddr)
 	}
-	return ww.Err
+
+	return d.Err()
 }
 
 func (c *ContractIdentity) AgentID(chainID ChainID) AgentID {
