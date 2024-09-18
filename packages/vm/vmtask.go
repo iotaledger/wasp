@@ -22,6 +22,7 @@ type VMTask struct {
 	Anchor             *isc.StateAnchor
 	Store              state.Store
 	Requests           []isc.Request
+	CoinInfos          isc.SuiCoinInfos
 	Timestamp          time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget isc.AgentID

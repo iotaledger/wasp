@@ -115,6 +115,13 @@ func (vmctx *vmContext) init() {
 		vmctx.runMigrations(chainState, vmctx.task.Migrations)
 		vmctx.schemaVersion = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 
+		for _, coinInfo := range vmctx.task.CoinInfos {
+			accountsState := vmctx.accountsStateWriterFromChainState(chainState)
+			if ci, ok := accountsState.GetCoinInfo(coinInfo.CoinType); !ok || !ci.Equals(coinInfo) {
+				accountsState.SaveCoinInfo(coinInfo)
+			}
+		}
+
 		// TODO
 		// save the ObjectID of the newly created tokens, foundries and NFTs in the previous block
 		/*

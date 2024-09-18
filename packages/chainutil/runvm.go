@@ -41,6 +41,7 @@ func runISCTask(
 		AnchorOutputID:       aliasOutput.OutputID(),
 		Store:                store,
 		Requests:             reqs,
+		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
 		TimeAssumption:       blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),

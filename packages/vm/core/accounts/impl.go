@@ -37,8 +37,9 @@ var Processor = Contract.Processor(nil,
 )
 
 // this expects the origin amount minus SD
-func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value) {
+func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *isc.SuiCoinInfo) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
+	s.SaveCoinInfo(baseTokenCoinInfo)
 	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor), isc.ChainID{})
 }
 
