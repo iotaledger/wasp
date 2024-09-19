@@ -20,11 +20,15 @@ func TestStartNewChain(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
+	getCoinsRes, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{Owner: signer.Address().AsSuiAddress()})
+	require.NoError(t, err)
+
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
+		getCoinsRes.Data[1].Ref(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -43,6 +47,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -143,6 +148,7 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
