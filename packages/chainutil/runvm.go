@@ -24,25 +24,24 @@ import (
 
 func runISCTask(
 	ch chain.ChainCore,
-	aliasOutput *iscmove.AnchorWithRef,
+	stateAnchor *isc.StateAnchor,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
 	store := ch.Store()
-	migs, err := getMigrationsForBlock(store, aliasOutput)
+	migs, err := getMigrationsForBlock(store, stateAnchor.Ref)
 	if err != nil {
 		return nil, err
 	}
 	task := &vm.VMTask{
 		Processors:           ch.Processors(),
-		AnchorOutput:         aliasOutput.GetAliasOutput(),
-		AnchorOutputID:       aliasOutput.OutputID(),
+		Anchor:               stateAnchor,
 		Store:                store,
 		Requests:             reqs,
 		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
-		TimeAssumption:       blockTime,
+		Timestamp:            blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EnableGasBurnLogging: estimateGasMode,
@@ -59,7 +58,7 @@ func runISCTask(
 }
 
 func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *iscmove.AnchorWithRef) (*migrations.MigrationScheme, error) {
-	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(aliasOutput.Object)
 	if err != nil {
 		panic(err)
 	}

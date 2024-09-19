@@ -350,11 +350,14 @@ func (env *Solo) deployChain(
 		initParams,
 		"",
 	)
+
+	panic("refactor me: validate StartNewChain call (initCoinRef, gasPayments)")
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		chainOriginator,
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,

@@ -35,15 +35,7 @@ func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot st
 }
 
 func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]coin.Type, error) {
-	ret, err := common.CallView(ch, accounts.ViewAccountTreasuries.Message(&agentID), blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-	sns, err := accounts.ViewAccountTreasuries.DecodeOutput(ret)
-	if err != nil {
-		return nil, err
-	}
-	return sns, nil
+	panic("minting on L2 is currently unsupported")
 }
 
 func GetAccountNonce(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (uint64, error) {
