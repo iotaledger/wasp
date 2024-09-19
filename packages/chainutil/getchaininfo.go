@@ -7,11 +7,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func GetAccountBalance(ch chain.ChainCore, agentID isc.AgentID) (*isc.Assets, error) {
+func GetAccountBalance(ch chain.ChainCore, agentID isc.AgentID) (isc.CoinBalances, error) {
 	ret, err := CallView(mustLatestState(ch), ch, accounts.ViewBalance.Message(&agentID))
 	if err != nil {
 		return nil, err
 	}
+
 	return accounts.ViewBalance.DecodeOutput(ret)
 }
 

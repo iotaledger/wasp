@@ -1,10 +1,7 @@
 package cluster
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -15,10 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 type Chain struct {
@@ -95,40 +88,6 @@ func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
 	}
 
 	return multiclient.New(resolver, ch.AllAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
-}
-
-func (ch *Chain) DeployBinaryContract(name, vmType string, progBinary []byte, initParams dict.Dict) (hashing.HashValue, error) {
-	blobFieldValues := codec.MakeDict(map[string]interface{}{
-		blob.VarFieldVMType:        vmType,
-		blob.VarFieldProgramBinary: progBinary,
-	})
-
-	programHash, _, _, err := ch.OriginatorClient().UploadBlob(context.Background(), blobFieldValues)
-	if err != nil {
-		return hashing.NilHash, err
-	}
-
-	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
-	if err != nil {
-		return hashing.NilHash, err
-	}
-	if !bytes.Equal(progBinary, progBinaryBack) {
-		return hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
-	}
-	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
-
-	tx, err := ch.OriginatorClient().PostRequest(
-		root.FuncDeployContract.Message(name, programHash, initParams),
-	)
-	if err != nil {
-		return hashing.NilHash, err
-	}
-	_, err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(ch.ChainID, tx, false, 30*time.Second)
-	if err != nil {
-		return hashing.NilHash, err
-	}
-
-	return programHash, nil
 }
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {

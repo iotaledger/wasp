@@ -53,6 +53,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		par.PackageID,
 		par.StateMetadata.Bytes(),
 		nil,
+		nil, // Add gasPayments here (or not)
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
 		false,

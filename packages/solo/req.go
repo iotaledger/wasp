@@ -242,7 +242,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		uint32(req.msg.Target.Contract),
 		uint32(req.msg.Target.EntryPoint),
 		req.msg.Params,
-		allowanceRef,
+		nil, // Add allowance here
 		req.gasBudget,
 		nil,
 		suiclient.DefaultGasPrice,
