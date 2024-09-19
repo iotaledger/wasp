@@ -179,32 +179,3 @@ func (c *Client) GetAnchorFromObjectID(
 		Object:    &anchor,
 	}, nil
 }
-
-func (c *Client) GetRequestFromObjectID(
-	ctx context.Context,
-	id *sui.ObjectID,
-) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
-		ObjectID: id,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %w", err)
-	}
-
-	var req iscmove.Request
-	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
-	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
-	}
-	req.AssetsBag.Value = bals
-
-	return &iscmove.RefWithObject[iscmove.Request]{
-		ObjectRef: getObjectResponse.Data.Ref(),
-		Object:    &req,
-	}, nil
-}
