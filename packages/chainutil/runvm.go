@@ -8,7 +8,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -24,23 +23,22 @@ import (
 
 func runISCTask(
 	ch chain.ChainCore,
-	stateAnchor *isc.StateAnchor,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
 	store := ch.Store()
-	migs, err := getMigrationsForBlock(store, stateAnchor.Ref)
+	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
 	}
 	task := &vm.VMTask{
 		Processors:           ch.Processors(),
-		Anchor:               stateAnchor,
+		Anchor:               anchor,
 		Store:                store,
 		Requests:             reqs,
-		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
 		Timestamp:            blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
@@ -57,8 +55,8 @@ func runISCTask(
 	return res.RequestResults, nil
 }
 
-func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *iscmove.AnchorWithRef) (*migrations.MigrationScheme, error) {
-	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(aliasOutput.Object)
+func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnchor) (*migrations.MigrationScheme, error) {
+	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(anchor.Ref.Object)
 	if err != nil {
 		panic(err)
 	}
@@ -79,14 +77,14 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *iscmove
 
 func runISCRequest(
 	ch chain.ChainCore,
-	aliasOutput *iscmove.AnchorWithRef,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	req isc.Request,
 	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
 		ch,
-		aliasOutput,
+		anchor,
 		blockTime,
 		[]isc.Request{req},
 		estimateGasMode,

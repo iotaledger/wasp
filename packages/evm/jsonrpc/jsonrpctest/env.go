@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -37,7 +38,7 @@ type Env struct {
 	ChainID               uint16
 	accountManager        *jsonrpc.AccountManager
 	WaitTxConfirmed       func(common.Hash) error
-	NewAccountWithL2Funds func(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address)
+	NewAccountWithL2Funds func(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address)
 }
 
 func (e *Env) Signer() types.Signer {

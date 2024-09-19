@@ -14,11 +14,11 @@ func SimulateRequest(
 	req isc.Request,
 	estimateGas bool,
 ) (*blocklog.RequestReceipt, error) {
-	aliasOutput, err := ch.LatestAliasOutput(chain.ActiveOrCommittedState)
+	anchor, err := ch.LatestAnchor(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
 	}
-	res, err := runISCRequest(ch, aliasOutput, time.Now(), req, estimateGas)
+	res, err := runISCRequest(ch, anchor, time.Now(), req, estimateGas)
 	if err != nil {
 		return nil, err
 	}

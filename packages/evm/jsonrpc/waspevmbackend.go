@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -76,16 +75,16 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (b *WaspEVMBackend) EVMCall(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.EVMCall(b.chain, aliasOutput, callMsg)
+func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
+	return chainutil.EVMCall(b.chain, anchor, callMsg)
 }
 
-func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EVMEstimateGas(b.chain, aliasOutput, callMsg)
+func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
+	return chainutil.EVMEstimateGas(b.chain, anchor, callMsg)
 }
 
 func (b *WaspEVMBackend) EVMTraceTransaction(
-	aliasOutput *iscmove.AnchorWithRef,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
@@ -93,7 +92,7 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 ) error {
 	return chainutil.EVMTraceTransaction(
 		b.chain,
-		aliasOutput,
+		anchor,
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
@@ -109,12 +108,12 @@ func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
-func (b *WaspEVMBackend) ISCLatestAliasOutput() (*iscmove.AnchorWithRef, error) {
-	latestAliasOutput, err := b.chain.LatestAliasOutput(chain.ActiveOrCommittedState)
+func (b *WaspEVMBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
+	latestAnchor, err := b.chain.LatestAnchor(chain.ActiveOrCommittedState)
 	if err != nil {
-		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
+		return nil, fmt.Errorf("could not get latest Anchor: %w", err)
 	}
-	return latestAliasOutput, nil
+	return latestAnchor, nil
 }
 
 func (b *WaspEVMBackend) ISCLatestState() (state.State, error) {

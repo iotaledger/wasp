@@ -468,7 +468,7 @@ func (env *Solo) EnqueueRequests(requests map[isc.ChainID][]isc.Request) {
 	}
 }
 
-func (ch *Chain) GetLatestAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
+func (ch *Chain) GetLatestAnchor() *iscmove.AnchorWithRef {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsSuiAddress())
 	require.NoError(ch.Env.T, err)
 	return anchor

@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/samber/lo"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -55,16 +55,16 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMCall(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.EVMCall(b.Chain, aliasOutput, callMsg)
+func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
+	return chainutil.EVMCall(b.Chain, anchor, callMsg)
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EVMEstimateGas(b.Chain, aliasOutput, callMsg)
+func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
+	return chainutil.EVMEstimateGas(b.Chain, anchor, callMsg)
 }
 
 func (b *jsonRPCSoloBackend) EVMTraceTransaction(
-	aliasOutput *iscmove.AnchorWithRef,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
@@ -72,7 +72,7 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 ) error {
 	return chainutil.EVMTraceTransaction(
 		b.Chain,
-		aliasOutput,
+		anchor,
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
@@ -84,12 +84,9 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 	return b.Chain.CallViewAtState(chainState, msg)
 }
 
-func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*iscmove.AnchorWithRef, error) {
-	latestAliasOutput, err := b.Chain.LatestAliasOutput(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
-	}
-	return latestAliasOutput, nil
+func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
+	anchor := lo.Must(b.Chain.LatestAnchor(chain.ActiveOrCommittedState))
+	return anchor, nil
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
