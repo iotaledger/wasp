@@ -23,6 +23,8 @@ var Processor = Contract.Processor(nil,
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
+	SetCoinMetadata.WithHandler(setCoinMetadata),
+	DeleteCoinMetadata.WithHandler(deleteCoinMetadata),
 
 	// views
 	ViewAccountObjects.WithHandler(viewAccountObjects),
@@ -103,6 +105,16 @@ func withdraw(ctx isc.Sandbox) {
 		callerAddress.String(),
 		allowance.String(),
 	)
+}
+
+func setCoinMetadata(ctx isc.Sandbox, coinInfo *isc.SuiCoinInfo) {
+	ctx.RequireCallerIsChainOwner()
+	NewStateWriterFromSandbox(ctx).SaveCoinInfo(coinInfo)
+}
+
+func deleteCoinMetadata(ctx isc.Sandbox, coinType coin.Type) {
+	ctx.RequireCallerIsChainOwner()
+	NewStateWriterFromSandbox(ctx).DeleteCoinInfo(coinType)
 }
 
 // transferAccountToChain transfers the specified allowance from the sender SC's L2

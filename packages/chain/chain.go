@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -89,7 +88,7 @@ type ChainCore interface {
 	// The active AO can be ahead of the confirmed one by several blocks.
 	// Both values can be nil, if the node haven't received an output from
 	// L1 yet (after a restart or a chain activation).
-	LatestAnchor(freshness StateFreshness) (*iscmove.AnchorWithRef, error)
+	LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error)
 	LatestState(freshness StateFreshness) (state.State, error)
 	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
 	Store() indexedstore.IndexedStore // Use LatestState whenever possible. That will work faster.

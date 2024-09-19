@@ -36,7 +36,7 @@ var (
 )
 
 func TestBaseBalance(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -50,7 +50,7 @@ func TestBaseBalance(t *testing.T) {
 }
 
 func TestNativeBalance(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -79,7 +79,7 @@ func TestNativeBalance(t *testing.T) {
 }
 
 func TestNFTBalance(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -108,7 +108,7 @@ func TestNFTBalance(t *testing.T) {
 }
 
 func TestAgentID(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -124,7 +124,7 @@ func TestAgentID(t *testing.T) {
 }
 
 func TestEntropy(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, EntropyContractABI, EntropyContractBytecode)
