@@ -17,6 +17,7 @@ type L2Client interface {
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		stateMetadata []byte,
+		initCoinRef *sui.ObjectRef,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
@@ -31,8 +32,7 @@ type L2Client interface {
 		iscContractName uint32,
 		iscFunctionName uint32,
 		args [][]byte,
-		allowanceCoinTypes []suijsonrpc.CoinType,
-		allowanceBalances []uint64,
+		allowanceArray []iscmove.CoinAllowance,
 		onchainGasBudget uint64,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,

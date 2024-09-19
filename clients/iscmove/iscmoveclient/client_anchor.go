@@ -18,6 +18,7 @@ func (c *Client) StartNewChain(
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
 	stateMetadata []byte,
+	initCoinRef *sui.ObjectRef,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -27,7 +28,13 @@ func (c *Client) StartNewChain(
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
-	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, cryptolibSigner.Address())
+	var argInitCoin sui.Argument
+	if initCoinRef != nil {
+		argInitCoin = ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: initCoinRef})
+	} else {
+		argInitCoin = ptb.MustPure(&bcs.Option[uint32]{None: true})
+	}
+	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, cryptolibSigner.Address())
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
