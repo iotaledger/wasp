@@ -20,5 +20,5 @@ func (rec *TreasuryCapRecord) Bytes() []byte {
 }
 
 func TreasuryCapRecordFromBytes(data []byte, coinType coin.Type) (*TreasuryCapRecord, error) {
-	return bcs.UnmarshalOver(data, &TreasuryCapRecord{CoinType: coinType})
+	return bcs.UnmarshalInto(data, &TreasuryCapRecord{CoinType: coinType})
 }

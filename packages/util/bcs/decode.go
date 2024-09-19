@@ -30,16 +30,13 @@ type Initializeable interface {
 var initializeableT = reflect.TypeOf((*Initializeable)(nil)).Elem()
 
 type DecoderConfig struct {
-	TagName        string
-	CustomDecoders map[reflect.Type]CustomDecoder
+	TagName string
+	//CustomDecoders map[reflect.Type]CustomDecoder
 }
 
 func (c *DecoderConfig) InitializeDefaults() {
 	if c.TagName == "" {
 		c.TagName = "bcs"
-	}
-	if c.CustomDecoders == nil {
-		c.CustomDecoders = CustomDecoders
 	}
 }
 
@@ -51,15 +48,19 @@ func NewDecoderWithOpts(src io.Reader, cfg DecoderConfig) *Decoder {
 	cfg.InitializeDefaults()
 
 	return &Decoder{
-		cfg: cfg,
-		r:   rwutil.NewReader(src),
+		cfg:           cfg,
+		r:             rwutil.NewReader(src),
+		typeInfoCache: decoderTypeInfoCache.Get(),
 	}
 }
 
 type Decoder struct {
-	cfg DecoderConfig
-	r   *rwutil.Reader
+	cfg           DecoderConfig
+	r             *rwutil.Reader
+	typeInfoCache localTypeInfoCache
 }
+
+var decoderTypeInfoCache = newGlobalTypeInfoCache()
 
 func (d *Decoder) Err() error {
 	return d.r.Err
@@ -80,6 +81,8 @@ func (d *Decoder) Decode(v any) error {
 	if vR.IsNil() {
 		return d.handleErrorf("Decode destination cannot be nil")
 	}
+
+	defer d.typeInfoCache.Save()
 
 	if err := d.decodeValue(vR, nil, nil); err != nil {
 		return d.handleErrorf("decoding %T: %w", v, err)
@@ -138,6 +141,10 @@ func (d *Decoder) ReadInt64() int64 {
 	return d.r.ReadInt64()
 }
 
+func (d *Decoder) ReadInt() int {
+	return int(d.r.ReadInt64())
+}
+
 func (d *Decoder) ReadUint8() uint8 {
 	return d.r.ReadUint8()
 }
@@ -152,6 +159,10 @@ func (d *Decoder) ReadUint32() uint32 {
 
 func (d *Decoder) ReadUint64() uint64 {
 	return d.r.ReadUint64()
+}
+
+func (d *Decoder) ReadUint() uint {
+	return uint(d.r.ReadUint64())
 }
 
 func (d *Decoder) ReadString() string {
@@ -305,6 +316,12 @@ func (e *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 }
 
 func (e *Decoder) getEncodedType(t reflect.Type) typeInfo {
+	initialT := t
+
+	if cached, isCached := e.typeInfoCache.Get(initialT); isCached {
+		return cached
+	}
+
 	// Removing all redundant pointers
 	refLevelsCount := 0
 
@@ -312,7 +329,10 @@ func (e *Decoder) getEncodedType(t reflect.Type) typeInfo {
 		// Before dereferencing pointer, we should check if maybe current type is already the type we should decode.
 		customization := e.checkTypeCustomizations(t)
 		if customization.HasCustomizations() {
-			return typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
+			res := typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
+			e.typeInfoCache.Add(initialT, res)
+
+			return res
 		}
 
 		refLevelsCount++
@@ -321,7 +341,10 @@ func (e *Decoder) getEncodedType(t reflect.Type) typeInfo {
 
 	customization := e.checkTypeCustomizations(t)
 
-	return typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
+	res := typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
+	e.typeInfoCache.Add(initialT, res)
+
+	return res
 }
 
 func (d *Decoder) getDecodedValueStorage(v reflect.Value, refLevelsCount int) (dereferenced reflect.Value) {
@@ -350,7 +373,7 @@ func (d *Decoder) getDecodedValueStorage(v reflect.Value, refLevelsCount int) (d
 }
 
 func (d *Decoder) getCustomDecoder(t reflect.Type) CustomDecoder {
-	if customDecoder, ok := d.cfg.CustomDecoders[t]; ok {
+	if customDecoder, ok := CustomDecoders[t]; ok {
 		return customDecoder
 	}
 
@@ -893,7 +916,7 @@ func MustUnmarshal[T any](b []byte) T {
 	return v
 }
 
-func UnmarshalStreamOver[V any](r io.Reader, v *V) (*V, error) {
+func UnmarshalStreamInto[V any](r io.Reader, v *V) (*V, error) {
 	if err := NewDecoder(r).Decode(v); err != nil {
 		return nil, err
 	}
@@ -901,20 +924,20 @@ func UnmarshalStreamOver[V any](r io.Reader, v *V) (*V, error) {
 	return v, nil
 }
 
-func MustUnmarshalStreamOver[V any](r io.Reader, v *V) *V {
-	if _, err := UnmarshalStreamOver(r, v); err != nil {
+func MustUnmarshalStreamInto[V any](r io.Reader, v *V) *V {
+	if _, err := UnmarshalStreamInto(r, v); err != nil {
 		panic(err)
 	}
 
 	return v
 }
 
-func UnmarshalOver[V any](b []byte, v *V) (*V, error) {
-	return UnmarshalStreamOver(bytes.NewReader(b), v)
+func UnmarshalInto[V any](b []byte, v *V) (*V, error) {
+	return UnmarshalStreamInto(bytes.NewReader(b), v)
 }
 
-func MustUnmarshalOver[V any](b []byte, v *V) *V {
-	if _, err := UnmarshalOver(b, v); err != nil {
+func MustUnmarshalInto[V any](b []byte, v *V) *V {
+	if _, err := UnmarshalInto(b, v); err != nil {
 		panic(err)
 	}
 
@@ -933,5 +956,9 @@ func MakeCustomDecoder[V any](f func(e *Decoder, v *V) error) func(e *Decoder, v
 }
 
 func AddCustomDecoder[V any](f func(e *Decoder, v *V) error) {
-	CustomDecoders[reflect.TypeOf(lo.Empty[V]())] = MakeCustomDecoder(f)
+	CustomDecoders[reflect.TypeOf((*V)(nil)).Elem()] = MakeCustomDecoder(f)
+}
+
+func RemoveCustomDecoder[V any]() {
+	delete(CustomDecoders, reflect.TypeOf((*V)(nil)).Elem())
 }

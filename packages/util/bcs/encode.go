@@ -29,15 +29,12 @@ type EncoderConfig struct {
 	// IncludeUnexported bool
 	// IncludeUntaggedUnexported bool
 	// ExcludeUntagged           bool
-	CustomEncoders map[reflect.Type]CustomEncoder
+	//CustomEncoders map[reflect.Type]CustomEncoder
 }
 
 func (c *EncoderConfig) InitializeDefaults() {
 	if c.TagName == "" {
 		c.TagName = "bcs"
-	}
-	if c.CustomEncoders == nil {
-		c.CustomEncoders = CustomEncoders
 	}
 }
 
@@ -49,15 +46,19 @@ func NewEncoderWithOpts(dest io.Writer, cfg EncoderConfig) *Encoder {
 	cfg.InitializeDefaults()
 
 	return &Encoder{
-		cfg: cfg,
-		w:   rwutil.NewWriter(dest),
+		cfg:           cfg,
+		w:             rwutil.NewWriter(dest),
+		typeInfoCache: encoderTypeInfoCache.Get(),
 	}
 }
 
 type Encoder struct {
-	cfg EncoderConfig
-	w   *rwutil.Writer
+	cfg           EncoderConfig
+	w             *rwutil.Writer
+	typeInfoCache localTypeInfoCache
 }
+
+var encoderTypeInfoCache = newGlobalTypeInfoCache()
 
 func (e *Encoder) Err() error {
 	return e.w.Err
@@ -73,6 +74,8 @@ func (e *Encoder) Encode(val any) error {
 	if val == nil {
 		return e.handleErrorf("cannot encode a nil value")
 	}
+
+	defer e.typeInfoCache.Save()
 
 	if err := e.encodeValue(reflect.ValueOf(val), nil, nil); err != nil {
 		return fmt.Errorf("encoding %T: %w", val, err)
@@ -157,6 +160,11 @@ func (e *Encoder) WriteInt64(v int64) error {
 	return e.w.Err
 }
 
+func (e *Encoder) WriteInt(v int) error {
+	e.w.WriteInt64(int64(v))
+	return e.w.Err
+}
+
 func (e *Encoder) WriteUint8(v uint8) error {
 	e.w.WriteUint8(v)
 
@@ -175,6 +183,11 @@ func (e *Encoder) WriteUint32(v uint32) error {
 
 func (e *Encoder) WriteUint64(v uint64) error {
 	e.w.WriteUint64(v)
+	return e.w.Err
+}
+
+func (e *Encoder) WriteUint(v uint) error {
+	e.w.WriteUint64(uint64(v))
 	return e.w.Err
 }
 
@@ -304,6 +317,12 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 // 1. Type has multiple layers of pointers. We need to remove them all or until first type with custom encoder.
 // 2. Type is not a pointer but its pointer type has custom encoder. In this case we need to use pointer to value instead of value itself.
 func (e *Encoder) getEncodedTypeInfo(t reflect.Type) typeInfo {
+	initialT := t
+
+	if cached, isCached := e.typeInfoCache.Get(initialT); isCached {
+		return cached
+	}
+
 	refLevelsCount := 0
 
 	if t.Kind() != reflect.Ptr {
@@ -314,12 +333,10 @@ func (e *Encoder) getEncodedTypeInfo(t reflect.Type) typeInfo {
 
 		customEncoder := e.getCustomEncoder(reflect.PointerTo(t))
 		if customEncoder != nil {
-			return typeInfo{
-				RefLevelsCount: -1,
-				typeCustomization: typeCustomization{
-					CustomEncoder: customEncoder,
-				},
-			}
+			res := typeInfo{RefLevelsCount: -1, typeCustomization: typeCustomization{CustomEncoder: customEncoder}}
+			e.typeInfoCache.Add(initialT, res)
+
+			return res
 		}
 	} else {
 		// Value is a pointer
@@ -329,12 +346,10 @@ func (e *Encoder) getEncodedTypeInfo(t reflect.Type) typeInfo {
 			// Before removing pointer, we need to check if maybe current type is already the type we should encode.
 			customEncoder := e.getCustomEncoder(t)
 			if customEncoder != nil {
-				return typeInfo{
-					RefLevelsCount: refLevelsCount,
-					typeCustomization: typeCustomization{
-						CustomEncoder: customEncoder,
-					},
-				}
+				res := typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: typeCustomization{CustomEncoder: customEncoder}}
+				e.typeInfoCache.Add(initialT, res)
+
+				return res
 			}
 
 			refLevelsCount++
@@ -344,7 +359,10 @@ func (e *Encoder) getEncodedTypeInfo(t reflect.Type) typeInfo {
 
 	customization := e.checkTypeCustomizations(t)
 
-	return typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
+	res := typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
+	e.typeInfoCache.Add(initialT, res)
+
+	return res
 }
 
 func (e *Encoder) getEncodedValue(v reflect.Value, refsCount int) (valToEncode reflect.Value, _ error) {
@@ -408,7 +426,7 @@ func (e *Encoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 
 func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 	// Check if this type has custom encoder func
-	if customEncoder, ok := e.cfg.CustomEncoders[t]; ok {
+	if customEncoder, ok := CustomEncoders[t]; ok {
 		return customEncoder
 	}
 
@@ -609,7 +627,6 @@ func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, 
 				})
 			}
 		} else {
-			fmt.Println("XXX")
 			for i := 0; i < v.Len(); i++ {
 				e.w.WriteSize32(int(v.Index(i).Int()))
 			}
@@ -989,5 +1006,9 @@ func MakeCustomEncoder[V any](f func(e *Encoder, v V) error) func(e *Encoder, v 
 }
 
 func AddCustomEncoder[V any](f func(e *Encoder, v V) error) {
-	CustomEncoders[reflect.TypeOf(lo.Empty[V]())] = MakeCustomEncoder(f)
+	CustomEncoders[reflect.TypeOf((*V)(nil)).Elem()] = MakeCustomEncoder(f)
+}
+
+func RemoveCustomEncoder[V any]() {
+	delete(CustomEncoders, reflect.TypeOf((*V)(nil)).Elem())
 }
