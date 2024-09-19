@@ -97,6 +97,22 @@ func (o *FieldOptions) Validate() error {
 	return nil
 }
 
+func FieldOptionsFromStruct(structType reflect.Type, tagName string) (_ []FieldOptions, hasTag []bool, err error) {
+	fieldOpts := make([]FieldOptions, structType.NumField())
+	hasTag = make([]bool, structType.NumField())
+
+	for i := 0; i < structType.NumField(); i++ {
+		fieldType := structType.Field(i)
+
+		fieldOpts[i], hasTag[i], err = FieldOptionsFromField(fieldType, tagName)
+		if err != nil {
+			return nil, nil, fmt.Errorf("field %v: %w", fieldType.Name, err)
+		}
+	}
+
+	return fieldOpts, hasTag, nil
+}
+
 func FieldOptionsFromField(fieldType reflect.StructField, tagName string) (FieldOptions, bool, error) {
 	a, hasTag := fieldType.Tag.Lookup(tagName)
 
