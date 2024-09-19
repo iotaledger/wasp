@@ -103,7 +103,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   		},
 	   	}
 
-	   aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
+	   aliasOutputs := make(map[state.BlockHash]*iscmove.AnchorWithRef)
 	   originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	   aliasOutputs[originCommitment.BlockHash()] = originOutput
 	   chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
@@ -128,7 +128,7 @@ func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
+func (bfT *BlockFactory) GetOriginAnchor() *iscmove.AnchorWithRef {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
 }
 
@@ -222,7 +222,7 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.RefWithObject[iscmove.Anchor] {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.AnchorWithRef {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
 
@@ -234,7 +234,7 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.RefW
 		PublicURL:     "",
 	}
 
-	return &iscmove.RefWithObject[iscmove.Anchor]{
+	return &iscmove.AnchorWithRef{
 		ObjectRef: *anchorData.ref,
 		Object: &iscmove.Anchor{
 			ID:            *anchorData.ref.ObjectID,

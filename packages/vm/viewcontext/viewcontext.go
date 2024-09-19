@@ -130,7 +130,7 @@ func (ctx *ViewContext) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
 }
 
 func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
-	panic("TODO")
+	return ctx.accountsStateWithGasBurn().GetCoinInfo(coinType)
 }
 
 func (ctx *ViewContext) Timestamp() time.Time {

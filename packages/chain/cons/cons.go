@@ -113,12 +113,12 @@ type Output struct {
 	Terminated bool
 	//
 	// Requests for other components.
-	NeedMempoolProposal       *iscmove.RefWithObject[iscmove.Anchor] // Requests for the mempool are needed for this Base Alias Output.
-	NeedMempoolRequests       []*isc.RequestRef                      // Request payloads are needed from mempool for this IDs/Hash.
-	NeedStateMgrStateProposal *iscmove.RefWithObject[iscmove.Anchor] // Query for a proposal for Virtual State (it will go to the batch proposal).
-	NeedStateMgrDecidedState  *iscmove.RefWithObject[iscmove.Anchor] // Query for a decided Virtual State to be used by VM.
-	NeedStateMgrSaveBlock     state.StateDraft                       // Ask StateMgr to save the produced block.
-	NeedVMResult              *vm.VMTask                             // VM Result is needed for this (agreed) batch.
+	NeedMempoolProposal       *iscmove.AnchorWithRef // Requests for the mempool are needed for this Base Alias Output.
+	NeedMempoolRequests       []*isc.RequestRef      // Request payloads are needed from mempool for this IDs/Hash.
+	NeedStateMgrStateProposal *iscmove.AnchorWithRef // Query for a proposal for Virtual State (it will go to the batch proposal).
+	NeedStateMgrDecidedState  *iscmove.AnchorWithRef // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrSaveBlock     state.StateDraft       // Ask StateMgr to save the produced block.
+	NeedVMResult              *vm.VMTask             // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
@@ -380,7 +380,7 @@ func (c *consImpl) StatusString() string {
 ////////////////////////////////////////////////////////////////////////////////
 // MP -- MemPool
 
-func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.OutMessages {
+func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
 	c.output.NeedMempoolProposal = baseAliasOutput
 	return nil
 }
@@ -403,17 +403,17 @@ func (c *consImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessage
 ////////////////////////////////////////////////////////////////////////////////
 // SM -- StateManager
 
-func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = baseAliasOutput
 	return nil
 }
 
-func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
 	return c.subACS.StateProposalReceived(proposedAliasOutput)
 }
 
-func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.OutMessages {
+func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutput
 	return nil
 }
@@ -477,7 +477,7 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 // ACS
 
-func (c *consImpl) uponACSInputsReceived(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor], requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
+func (c *consImpl) uponACSInputsReceived(baseAliasOutput *iscmove.AnchorWithRef, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
@@ -564,6 +564,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		},
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
+		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
 		Timestamp:            aggregatedProposals.AggregatedTime(),
 		Entropy:              *randomness,
 		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(*randomness),

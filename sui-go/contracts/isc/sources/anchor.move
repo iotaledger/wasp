@@ -4,11 +4,12 @@
 module isc::anchor {
     use sui::{
         borrow::{Self, Referent, Borrow},
+        coin::Coin,
+        sui::SUI,
     };
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
-        allowance::Allowance,
     };
 
     // === Main structs ===
@@ -30,10 +31,16 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(state_metadata: vector<u8>, ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<SUI>>, ctx: &mut TxContext): Anchor {
+        let mut assets_bag = assets_bag::new(ctx);
+        if (coin.is_some()) {
+            assets_bag.place_coin<SUI>(coin.destroy_some());
+        } else {
+            coin.destroy_none()
+        };
         Anchor{
             id: object::new(ctx),
-            assets: borrow::new(assets_bag::new(ctx), ctx),
+            assets: borrow::new(assets_bag, ctx),
             state_metadata: state_metadata,
             state_index: 0,
         }
@@ -61,10 +68,10 @@ module isc::anchor {
     // === Receive a Request ===
 
     /// The Anchor receives a request and destroys it, implementing the HotPotato pattern.
-    public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag, Allowance) {
+    public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag) {
         let req = request::receive(&mut self.id, request);
-        let (request_id, assets, allowance) = req.destroy();
-        (Receipt { request_id }, assets, allowance)
+        let (request_id, assets) = req.destroy();
+        (Receipt { request_id }, assets)
     }
 
     public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {

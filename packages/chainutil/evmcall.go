@@ -6,15 +6,15 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // EVMCall executes an EVM contract call and returns its output, discarding any state changes
-func EVMCall(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethereum.CallMsg) ([]byte, error) {
+func EVMCall(ch chain.ChainCore, aliasOutput *iscmove.AnchorWithRef, call ethereum.CallMsg) ([]byte, error) {
 	info := getChainInfo(ch)
 
 	// 0 means view call
@@ -40,5 +40,5 @@ func EVMCall(ch chain.ChainCore, aliasOutput *isc.AliasOutputWithID, call ethere
 		}
 		return nil, vmerr
 	}
-	return res.Return[evm.FieldResult], nil
+	return res.Return.Bytes(), nil
 }

@@ -41,7 +41,7 @@ func (f *ChainFeed) WaitUntilStopped() {
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.RefWithObject[iscmove.Anchor], []*iscmove.Request, error) {
+func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.Request, error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
@@ -85,7 +85,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.RefWithObje
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
-	anchorCh chan<- *iscmove.RefWithObject[iscmove.Anchor],
+	anchorCh chan<- *iscmove.AnchorWithRef,
 	requestsCh chan<- *iscmove.Request,
 ) {
 	go f.subscribeToAnchorUpdates(ctx, anchorCh)
@@ -157,7 +157,7 @@ func (f *ChainFeed) consumeRequestEvents(
 
 func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
-	anchorCh chan<- *iscmove.RefWithObject[iscmove.Anchor],
+	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
 		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
@@ -188,7 +188,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
 	changes <-chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
-	anchorCh chan<- *iscmove.RefWithObject[iscmove.Anchor],
+	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
 		select {
@@ -219,7 +219,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
-					anchorCh <- &iscmove.RefWithObject[iscmove.Anchor]{
+					anchorCh <- &iscmove.AnchorWithRef{
 						ObjectRef: r.Data.VersionFound.Ref(),
 						Object:    anchor,
 					}

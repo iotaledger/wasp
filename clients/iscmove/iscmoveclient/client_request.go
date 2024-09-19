@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
@@ -22,7 +23,7 @@ func (c *Client) CreateAndSendRequest(
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
-	allowanceRef *sui.ObjectRef,
+	allowanceArray []iscmove.Allowance,
 	onchainGasBudget uint64,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
@@ -46,7 +47,7 @@ func (c *Client) CreateAndSendRequest(
 		iscContractHname,
 		iscFunctionHname,
 		args,
-		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: allowanceRef}),
+		allowanceArray,
 		onchainGasBudget,
 	)
 	pt := ptb.Finish()
@@ -93,4 +94,32 @@ func (c *Client) CreateAndSendRequest(
 		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
 	}
 	return txnResponse, nil
+}
+
+func (c *Client) GetRequestFromObjectID(
+	ctx context.Context,
+	reqID *sui.ObjectID,
+) (*iscmove.RefWithObject[iscmove.Request], error) {
+	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
+		ObjectID: reqID,
+		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor content: %w", err)
+	}
+
+	var req iscmove.Request
+	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
+	}
+	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
+	}
+	req.AssetsBag.Value = bals
+	return &iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: getObjectResponse.Data.Ref(),
+		Object:    &req,
+	}, nil
 }

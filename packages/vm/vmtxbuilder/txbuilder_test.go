@@ -124,28 +124,12 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, sign
 	return *packageID
 }
 
-func createEmptyAllowance(t *testing.T, client *iscmoveclient.Client, cryptolibSigner cryptolib.Signer, iscPackageID sui.PackageID) *sui.ObjectRef {
-	txnResponse, err := client.AllowanceNew(
-		context.Background(),
-		cryptolibSigner,
-		iscPackageID,
-		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
-		false,
-	)
-	require.NoError(t, err)
-	allowanceRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AllowanceModuleName, iscmove.AllowanceObjectName)
-	require.NoError(t, err)
-	return allowanceRef
-}
-
 func createIscmoveReq(
 	t *testing.T,
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 	iscPackage sui.Address,
-	anchor *iscmove.RefWithObject[iscmove.Anchor],
+	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -159,7 +143,6 @@ func createIscmoveReq(
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
-	allowanceRef := createEmptyAllowance(t, client, signer, iscPackage)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
@@ -170,7 +153,8 @@ func createIscmoveReq(
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		allowanceRef,
+		nil,
+		nil,
 		10,
 		nil,
 		suiclient.DefaultGasPrice,

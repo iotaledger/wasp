@@ -94,6 +94,8 @@ func (a *Anchor) Equals(b *Anchor) bool {
 	return a.ID.Equals(b.ID)
 }
 
+type AnchorWithRef = RefWithObject[Anchor]
+
 type Receipt struct {
 	RequestID sui.ObjectID
 }
@@ -104,13 +106,18 @@ type Message struct {
 	Args     [][]byte
 }
 
+type CoinAllowance struct {
+	CoinType string
+	Balance  uint64
+}
+
 type Request struct {
 	ID     sui.ObjectID
 	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
 	AssetsBag Referent[AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
-	Allowance Referent[Allowance] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *Allowance with `bcs:"optional`
+	Allowance []CoinAllowance
 	GasBudget uint64
 }
 

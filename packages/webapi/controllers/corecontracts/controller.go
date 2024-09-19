@@ -75,7 +75,8 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", params.ParamNFTID, params.DescriptionNFTID).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The NFT data", mocker.Get(isc.NFTJSON{}), nil).
+		// FIXME
+		// AddResponse(http.StatusOK, "The NFT data", mocker.Get(isc.NFTJSON{}), nil).
 		SetOperationId("accountsGetNFTData").
 		SetSummary("Get the NFT data by an ID")
 

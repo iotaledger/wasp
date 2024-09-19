@@ -11,6 +11,7 @@ const (
 	BurnCodeGetAllowance
 	BurnCodeGetStateAnchorInfo
 	BurnCodeGetBalance
+	BurnCodeGetCoinInfo
 	BurnCodeGetNFTData
 	BurnCodeCallContract
 	BurnCodeDeployContract
@@ -43,6 +44,7 @@ var burnTable = BurnTable{
 	BurnCodeGetCallerData:              {"caller", constValue(10)},
 	BurnCodeGetStateAnchorInfo:         {"anchor", constValue(10)},
 	BurnCodeGetBalance:                 {"balance", constValue(20)},
+	BurnCodeGetCoinInfo:                {"coin info", constValue(10)},
 	BurnCodeGetNFTData:                 {"nft data", constValue(10)},
 	BurnCodeCallContract:               {"call", constValue(100)},
 	BurnCodeEmitEvent1P:                {"event", linear(1)}, // 1 gas per byte

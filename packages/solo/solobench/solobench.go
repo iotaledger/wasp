@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
@@ -26,10 +26,10 @@ func RunBenchmarkSync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, 
 // RunBenchmarkAsync processes requests asynchronously, producing 1 block per many requests
 func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, keyPair *cryptolib.KeyPair) {
 	_ = keyPair
-	txs := make([]*iotago.Transaction, b.N)
+	txs := make([]isc.RequestID, b.N)
 	for i := 0; i < b.N; i++ {
 		var err error
-		txs[i], _, err = chain.RequestFromParamsToLedger(reqs[i], nil)
+		txs[i], err = chain.RequestFromParamsToLedger(reqs[i], nil)
 		require.NoError(b, err)
 	}
 
@@ -37,7 +37,21 @@ func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams,
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		go chain.Env.EnqueueRequests(txs[i])
+		suiAddress := txs[i].AsSuiAddress()
+		request, err := chain.Env.ISCMoveClient().GetRequestFromObjectID(chain.Env.Ctx(), &suiAddress)
+		require.NoError(b, err)
+
+		address := cryptolib.NewAddressFromSui(chain.GetLatestAnchor().ObjectID)
+		iscRequest, err := isc.OnLedgerFromRequest(request, address)
+		require.NoError(b, err)
+
+		requestMap := map[isc.ChainID][]isc.Request{
+			chain.ChainID: []isc.Request{
+				iscRequest,
+			},
+		}
+
+		go chain.Env.EnqueueRequests(requestMap)
 	}
 	require.True(b, chain.WaitForRequestsThrough(b.N, 20*time.Second))
 }

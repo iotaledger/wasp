@@ -7,12 +7,14 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/utxodb"
+
+	"github.com/iotaledger/wasp/sui-go/sui"
+
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -105,7 +107,7 @@ func testSplitTokensFail(t *testing.T) {
 	require.NoError(t, err)
 
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := isc.NewAssetsBaseTokensU64(100*isc.Million).AddNativeTokens(nativeTokenID, big.NewInt(100))
+	allowance := isc.NewAssets(100*isc.Million).AddNativeTokens(nativeTokenID, big.NewInt(100))
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(200 * isc.Million).
@@ -135,7 +137,7 @@ func testSplitTokensSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	amountTokensToSend := int64(3)
-	allowance := isc.NewAssetsBaseTokensU64(2*isc.Million).AddNativeTokens(nativeTokenID, big.NewInt(amountTokensToSend))
+	allowance := isc.NewAssets(2*isc.Million).AddNativeTokens(nativeTokenID, big.NewInt(amountTokensToSend))
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(2 * isc.Million).
@@ -170,14 +172,14 @@ func testPingBaseTokens1(t *testing.T) {
 	require.NoError(t, err)
 
 	req.
-		WithFungibleTokens(isc.NewAssetsBaseTokensU64(expectedBack + estimate.GasFeeCharged)).
+		WithFungibleTokens(isc.NewAssets(expectedBack + estimate.GasFeeCharged)).
 		WithGasBudget(estimate.GasBurned)
 
 	// re-estimate (it's possible the result is slightly different because we send less tokens (req is changed from  `exptected+500` above to `expected+estimate.GasFeeCharged`))
 	_, estimate2, err := ch.EstimateGasOnLedger(req, user)
 	require.NoError(t, err)
 	req.
-		WithFungibleTokens(isc.NewAssetsBaseTokensU64(expectedBack + estimate2.GasFeeCharged)).
+		WithFungibleTokens(isc.NewAssets(expectedBack + estimate2.GasFeeCharged)).
 		WithGasBudget(estimate2.GasBurned)
 
 	_, err = ch.PostRequestSync(req, user)
@@ -202,7 +204,7 @@ func testEstimateMinimumStorageDeposit(t *testing.T) {
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
 	// should fail without enough base tokens to pay for a L1 transaction storage deposit
-	allowance := isc.NewAssetsBaseTokensU64(1)
+	allowance := isc.NewAssets(1)
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncEstimateMinStorageDeposit.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(100_000).
@@ -212,7 +214,7 @@ func testEstimateMinimumStorageDeposit(t *testing.T) {
 	require.Error(t, err)
 
 	// should succeed with enough base tokens to pay for a L1 transaction storage deposit
-	allowance = isc.NewAssetsBaseTokensU64(100_000)
+	allowance = isc.NewAssets(100_000)
 	req = solo.NewCallParamsEx(ScName, sbtestsc.FuncEstimateMinStorageDeposit.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(100_000).
@@ -241,8 +243,8 @@ func testSendNFTsBack(t *testing.T) {
 
 	baseTokensToSend := uint64(300_000)
 	baseTokensForGas := uint64(100_000)
-	assetsToSend := isc.NewAssetsBaseTokensU64(baseTokensToSend)
-	assetsToAllow := isc.NewAssetsBaseTokensU64(baseTokensToSend - baseTokensForGas)
+	assetsToSend := isc.NewAssets(baseTokensToSend)
+	assetsToAllow := isc.NewAssets(baseTokensToSend - baseTokensForGas)
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSendNFTsBack.Name).
@@ -272,7 +274,7 @@ func testNFTOffledgerWithdraw(t *testing.T) {
 	require.False(t, ch.HasL2NFT(isc.NewAgentID(issuerAddr), &nft.ID))
 
 	req := solo.NewCallParams(accounts.FuncDeposit.Message()).
-		AddFungibleTokens(isc.NewAssetsBaseTokensU64(1_000_000)).
+		AddFungibleTokens(isc.NewAssets(1_000_000)).
 		WithNFT(nft).
 		WithMaxAffordableGasBudget()
 
@@ -304,15 +306,15 @@ func testNFTMintToChain(t *testing.T) {
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
 	nftToBeMinted := &isc.NFT{
-		ID:       isc.NFTID{},
+		ID:       sui.ObjectID{},
 		Issuer:   addr,
 		Metadata: []byte("foobar"),
 	}
 
 	baseTokensToSend := uint64(300_000)
 	baseTokensForGas := uint64(100_000)
-	assetsToSend := isc.NewAssetsBaseTokensU64(baseTokensToSend)
-	assetsToAllow := isc.NewAssetsBaseTokensU64(baseTokensToSend - baseTokensForGas)
+	assetsToSend := isc.NewAssets(baseTokensToSend)
+	assetsToAllow := isc.NewAssets(baseTokensToSend - baseTokensForGas)
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncClaimAllowance.Name).

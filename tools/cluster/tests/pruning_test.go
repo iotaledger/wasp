@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -51,7 +51,7 @@ func TestPruning(t *testing.T) {
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(chain.ChainID, evmAddr)
-	env.TransferFundsTo(isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+	env.TransferFundsTo(isc.NewAssets(1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter
 	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))
@@ -233,11 +233,11 @@ func TestPruning(t *testing.T) {
 			"10",
 		)
 		require.NoError(t, err)
-		receipts, err := blocklog.ViewGetRequestReceiptsForBlock.Output2.Decode(res)
+		receipts, err := blocklog.ViewGetRequestReceiptsForBlock.DecodeOutput(res)
 		require.NoError(t, err)
 		require.Len(t, receipts, 1)
 		require.NoError(t, err)
-		require.NotZero(t, receipts[0].GasFeeCharged)
+		require.NotZero(t, receipts.Receipts[0].GasFeeCharged)
 
 		// light node
 		bi = 0

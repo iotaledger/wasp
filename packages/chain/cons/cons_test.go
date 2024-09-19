@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -29,7 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -75,7 +76,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Construct the chain on L1.
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	//utxodb.New(utxodb.DefaultInitParams())
 	//
 	// Construct the chain on L1: Create the accounts.
 	originator := cryptolib.NewKeyPair()
@@ -109,7 +110,7 @@ func testConsBasic(t *testing.T, n, f int) {
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokensU64(100_000_000),
+				Assets:                        isc.NewAssets(100_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),
@@ -312,7 +313,7 @@ func testChained(t *testing.T, n, f, b int) {
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
 	//
 	// Create the accounts.
 	scClient := cryptolib.NewKeyPair()
@@ -412,7 +413,7 @@ func testChained(t *testing.T, n, f, b int) {
 
 type testInstInput struct {
 	nodeID          gpa.NodeID
-	baseAliasOutput *isc.AliasOutputWithID
+	baseAliasOutput *iscmove.AnchorWithRef
 	baseState       state.State // State committed with the baseAliasOutput
 }
 

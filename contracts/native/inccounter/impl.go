@@ -148,10 +148,10 @@ func spawn(ctx isc.Sandbox, name string) {
 	val := codec.Int64.MustDecode(ctx.State().Get(VarCounter))
 
 	eventCounter(ctx, val+1)
-	ctx.DeployContract(Contract.ProgramHash, name, isc.NewCallArguments(codec.Int64.Encode(val+1)))
+	//ctx.DeployContract(Contract.ProgramHash, name, isc.NewCallArguments(codec.Int64.Encode(val+1)))
 
 	// increase counter in newly spawned contract
-	ctx.Call(FuncIncCounter.Message(nil), nil)
+	//	ctx.Call(FuncIncCounter.Message(nil), nil)
 }
 
 func getCounter(ctx isc.SandboxView) int64 {

@@ -26,9 +26,8 @@ func checkCounter(e *solo.Chain, expected int64) {
 
 func initSolo(t *testing.T) *solo.Solo {
 	return solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
+		Debug:           true,
+		PrintStackTrace: true,
 	}).WithNativeContract(Processor)
 }
 
@@ -90,7 +89,7 @@ func TestIncWith1Post(t *testing.T) {
 
 	req := solo.NewCallParams(FuncIncAndRepeatOnceAfter2s.Message()).
 		AddBaseTokens(2 * isc.Million).
-		WithAllowance(isc.NewAssetsBaseTokensU64(1 * isc.Million)).
+		WithAllowance(isc.NewAssets(1 * isc.Million)).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)

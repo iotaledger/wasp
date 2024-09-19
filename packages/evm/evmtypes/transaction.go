@@ -6,6 +6,7 @@ package evmtypes
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -17,4 +18,12 @@ func init() {
 	bcs.AddCustomDecoder(func(d *bcs.Decoder, tx *types.Transaction) error {
 		return tx.DecodeRLP(rlp.NewStream(d, 0))
 	})
+}
+
+func EncodeTransaction(tx *types.Transaction) []byte {
+	return bcs.MustMarshal(tx)
+}
+
+func DecodeTransaction(data []byte) (*types.Transaction, error) {
+	return bcs.UnmarshalOver(data, &types.Transaction{})
 }

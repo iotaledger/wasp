@@ -117,7 +117,7 @@ func (s *StateWriter) debitFromAccountFullDecimals(accountKey kv.Key, amount *bi
 // getFungibleTokens returns the fungible tokens owned by an account (base tokens extra decimals will be discarded)
 func (s *StateReader) getFungibleTokens(accountKey kv.Key) isc.CoinBalances {
 	ret := isc.NewCoinBalances()
-	s.coinsMapR(accountKey).Iterate(func(coinType []byte, val []byte) bool {
+	s.accountCoinBalancesMapR(accountKey).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
 			codec.CoinType.MustDecode(coinType),
 			codec.CoinValue.MustDecode(val),

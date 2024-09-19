@@ -64,12 +64,12 @@ func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.Agent
 	return bts
 }
 
-func remainderKey(accountKey kv.Key) kv.Key {
-	return prefixRemainders + accountKey
+func accountWeiRemainderKey(accountKey kv.Key) kv.Key {
+	return prefixAccountWeiRemainder + accountKey
 }
 
 func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
-	b := s.state.Get(remainderKey(accountKey))
+	b := s.state.Get(accountWeiRemainderKey(accountKey))
 	if b == nil {
 		return new(big.Int)
 	}
@@ -77,5 +77,5 @@ func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
 }
 
 func (s *StateWriter) setWeiRemainder(accountKey kv.Key, v *big.Int) {
-	s.state.Set(remainderKey(accountKey), codec.BigIntAbs.Encode(v))
+	s.state.Set(accountWeiRemainderKey(accountKey), codec.BigIntAbs.Encode(v))
 }

@@ -50,10 +50,9 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 	}
 
 	s := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
-		Log:                      log,
+		Debug:           true,
+		PrintStackTrace: true,
+		Log:             log,
 	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain, _ := s.NewChainExt(chainOwner, 0, "chain1")

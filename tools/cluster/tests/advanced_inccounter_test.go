@@ -88,7 +88,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	accountsClient := e.Chain.Client(keyPair)
 	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokensU64(1_000_000),
+		Transfer: isc.NewAssets(1_000_000),
 	})
 	require.NoError(t, err)
 

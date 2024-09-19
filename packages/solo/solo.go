@@ -334,11 +334,14 @@ func (env *Solo) deployChain(
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 	originatorAgentID := isc.NewAgentID(originatorAddr)
 
+	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
+
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	originCommitment := origin.L1Commitment(
 		schemaVersion,
 		initParams,
 		initBaseTokens,
+		baseTokenCoinInfo,
 	)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
@@ -347,11 +350,14 @@ func (env *Solo) deployChain(
 		initParams,
 		"",
 	)
+
+	panic("refactor me: validate StartNewChain call (initCoinRef, gasPayments)")
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		chainOriginator,
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -370,6 +376,7 @@ func (env *Solo) deployChain(
 		store,
 		initParams,
 		initBaseTokens,
+		baseTokenCoinInfo,
 	)
 	env.logger.Infof(
 		"deployed chain '%s' - ID: %s - state controller address: %s - origin trie root: %s",
@@ -435,6 +442,10 @@ func (env *Solo) addChain(chData chainData) *Chain {
 	}
 	env.chains[chData.ChainID] = ch
 	return ch
+}
+
+func (env *Solo) Ctx() context.Context {
+	return env.ctx
 }
 
 // AddRequestsToMempool adds all the requests to the chain mempool,
@@ -524,6 +535,14 @@ func (ch *Chain) Processors() *processors.Cache {
 }
 
 // ---------------------------------------------
+
+func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.SuiCoinInfo {
+	md, err := env.SuiClient().GetCoinMetadata(env.ctx, string(coinType))
+	require.NoError(env.T, err)
+	ts, err := env.SuiClient().GetTotalSupply(env.ctx, string(coinType))
+	require.NoError(env.T, err)
+	return isc.SuiCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
+}
 
 func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
 	return env.L1Coins(addr, coin.BaseTokenType)

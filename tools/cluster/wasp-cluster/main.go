@@ -15,7 +15,6 @@ import (
 	appLogger "github.com/iotaledger/hive.go/app/logger"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -49,7 +48,7 @@ func main() {
 
 	l1StarterFlags := flag.NewFlagSet("l1", flag.ExitOnError)
 	inxStarterFlags := flag.NewFlagSet("inx", flag.ExitOnError)
-	l1 := l1starter.New(l1StarterFlags, inxStarterFlags)
+	l1 := _l1starter.New(l1StarterFlags, inxStarterFlags) // Add L1 starter
 
 	commonFlags.AddGoFlagSet(l1StarterFlags)
 	commonFlags.AddGoFlagSet(inxStarterFlags)

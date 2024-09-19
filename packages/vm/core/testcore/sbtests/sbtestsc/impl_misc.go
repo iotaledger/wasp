@@ -13,7 +13,7 @@ import (
 // ParamCallOption
 // ParamCallIntParam
 // ParamHnameContract
-func callOnChain(ctx isc.Sandbox) dict.Dict {
+func callOnChain(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf(FuncCallOnChain.Name)
 	params := ctx.Params()
 	paramIn := params.MustGetUint64(ParamN)
@@ -33,7 +33,7 @@ func callOnChain(ctx isc.Sandbox) dict.Dict {
 	})), nil)
 }
 
-func incCounter(ctx isc.Sandbox) dict.Dict {
+func incCounter(ctx isc.Sandbox) isc.CallArguments {
 	state := ctx.State()
 	decoder := kvdecoder.New(state, ctx.Log())
 	counter := decoder.MustGetUint64(VarCounter, 0)
@@ -41,7 +41,7 @@ func incCounter(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func getCounter(ctx isc.SandboxView) dict.Dict {
+func getCounter(ctx isc.SandboxView) isc.CallArguments {
 	ret := dict.New()
 	decoder := kvdecoder.New(ctx.StateR(), ctx.Log())
 	counter := decoder.MustGetUint64(VarCounter, 0)
@@ -49,7 +49,7 @@ func getCounter(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
-func runRecursion(ctx isc.Sandbox) dict.Dict {
+func runRecursion(ctx isc.Sandbox) isc.CallArguments {
 	params := ctx.Params()
 	depth := params.MustGetUint64(ParamN)
 	if depth == 0 {
@@ -68,7 +68,7 @@ func fibonacci(n uint64) uint64 {
 	return fibonacci(n-1) + fibonacci(n-2)
 }
 
-func getFibonacci(ctx isc.SandboxView) dict.Dict {
+func getFibonacci(ctx isc.SandboxView) isc.CallArguments {
 	params := ctx.Params()
 	n := params.MustGetUint64(ParamN)
 	ctx.Log().Infof("fibonacci( %d )", n)
@@ -78,7 +78,7 @@ func getFibonacci(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
-func getFibonacciIndirect(ctx isc.SandboxView) dict.Dict {
+func getFibonacciIndirect(ctx isc.SandboxView) isc.CallArguments {
 	params := ctx.Params()
 
 	n := params.MustGetUint64(ParamN)
@@ -108,7 +108,7 @@ func getFibonacciIndirect(ctx isc.SandboxView) dict.Dict {
 }
 
 // calls the "fib indirect" view and stores the result in the state
-func calcFibonacciIndirectStoreValue(ctx isc.Sandbox) dict.Dict {
+func calcFibonacciIndirectStoreValue(ctx isc.Sandbox) isc.CallArguments {
 	ret := ctx.CallView(isc.NewMessage(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), dict.Dict{
 		ParamN: ctx.Params().Get(ParamN),
 	}))
@@ -116,7 +116,7 @@ func calcFibonacciIndirectStoreValue(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-func viewFibResult(ctx isc.SandboxView) dict.Dict {
+func viewFibResult(ctx isc.SandboxView) isc.CallArguments {
 	return dict.Dict{
 		ParamN: ctx.StateR().Get(ParamN),
 	}
@@ -124,7 +124,7 @@ func viewFibResult(ctx isc.SandboxView) dict.Dict {
 
 // ParamIntParamName
 // ParamIntParamValue
-func setInt(ctx isc.Sandbox) dict.Dict {
+func setInt(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Infof(FuncSetInt.Name)
 	params := ctx.Params()
 	paramName := params.MustGetString(ParamIntParamName)
@@ -134,7 +134,7 @@ func setInt(ctx isc.Sandbox) dict.Dict {
 }
 
 // ParamIntParamName
-func getInt(ctx isc.SandboxView) dict.Dict {
+func getInt(ctx isc.SandboxView) isc.CallArguments {
 	ctx.Log().Infof(FuncGetInt.Name)
 	params := ctx.Params()
 	paramName := params.MustGetString(ParamIntParamName)
@@ -145,14 +145,14 @@ func getInt(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
-func infiniteLoop(ctx isc.Sandbox) dict.Dict {
+func infiniteLoop(ctx isc.Sandbox) isc.CallArguments {
 	for {
 		// do nothing, just waste gas
 		ctx.State().Set("foo", []byte(strings.Repeat("dummy data", 1000)))
 	}
 }
 
-func infiniteLoopView(ctx isc.SandboxView) dict.Dict {
+func infiniteLoopView(ctx isc.SandboxView) isc.CallArguments {
 	for {
 		// do nothing, just waste gas
 		ctx.CallView(isc.NewMessage(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{}))

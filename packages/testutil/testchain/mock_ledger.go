@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -200,7 +201,7 @@ func (mlT *MockedLedger) PullStateOutputByID(nodeID string, outputID iotago.Outp
 	}
 }
 
-func (mlT *MockedLedger) GetLatestOutput() *isc.AliasOutputWithID {
+func (mlT *MockedLedger) GetLatestOutput() *iscmove.AnchorWithRef {
 	mlT.mutex.RLock()
 	defer mlT.mutex.RUnlock()
 
@@ -298,7 +299,7 @@ func getOriginOutputID() iotago.OutputID {
 	return iotago.OutputID{}
 }
 
-func (mlT *MockedLedger) GetOriginOutput() *isc.AliasOutputWithID {
+func (mlT *MockedLedger) GetOriginOutput() *iscmove.AnchorWithRef {
 	mlT.mutex.RLock()
 	defer mlT.mutex.RUnlock()
 

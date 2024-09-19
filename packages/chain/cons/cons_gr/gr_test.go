@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
@@ -28,7 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -71,7 +72,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	defer log.Sync()
 	//
 	// Create ledger accounts.
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
 	originator := cryptolib.NewKeyPair()
 	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
 	require.NoError(t, err)
@@ -231,7 +232,7 @@ func (tmp *testMempool) tryRespondRequestQueries() {
 	tmp.qRequests = remaining
 }
 
-func (tmp *testMempool) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
+func (tmp *testMempool) ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.AnchorWithRef, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	tmp.lock.Lock()
 	defer tmp.lock.Unlock()
 	outputID := aliasOutput.OutputID()
@@ -273,7 +274,7 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 	}
 }
 
-func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
+func (tsm *testStateMgr) addOriginState(originAO *iscmove.AnchorWithRef) {
 	originAOStateMetadata, err := transaction.StateMetadataFromBytes(originAO.GetStateMetadata())
 	require.NoError(tsm.t, err)
 	chainState, err := tsm.chainStore.StateByTrieRoot(
@@ -283,7 +284,7 @@ func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
 	tsm.addState(originAO, chainState)
 }
 
-func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, chainState state.State) { // TODO: Why is it not called from other places???
+func (tsm *testStateMgr) addState(aliasOutput *iscmove.AnchorWithRef, chainState state.State) { // TODO: Why is it not called from other places???
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	hash := commitmentHashFromAO(aliasOutput)
@@ -291,7 +292,7 @@ func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, chainState
 	tsm.tryRespond(hash)
 }
 
-func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan interface{} {
+func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *iscmove.AnchorWithRef) <-chan interface{} {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan interface{}, 1)
@@ -303,7 +304,7 @@ func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput
 
 // State manager has to ensure all the data needed for the specified alias
 // output (presented as aliasOutputID+stateCommitment) is present in the DB.
-func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
+func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *iscmove.AnchorWithRef) <-chan state.State {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan state.State, 1)
@@ -344,7 +345,7 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 	}
 }
 
-func commitmentHashFromAO(aliasOutput *isc.AliasOutputWithID) hashing.HashValue {
+func commitmentHashFromAO(aliasOutput *iscmove.AnchorWithRef) hashing.HashValue {
 	commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)

@@ -3,6 +3,7 @@ package iscmoveclient
 import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func PTBCreateAndSendRequest(
@@ -13,9 +14,16 @@ func PTBCreateAndSendRequest(
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
-	argAllowance sui.Argument,
+	// the order of the allowance will be reversed after processed by
+	allowanceArray []iscmove.CoinAllowance,
 	onchainGasBudget uint64,
 ) *sui.ProgrammableTransactionBuilder {
+	allowanceCoinTypes := make([]suijsonrpc.CoinType, len(allowanceArray))
+	allowanceBalances := make([]uint64, len(allowanceArray))
+	for i, val := range allowanceArray {
+		allowanceCoinTypes[i] = val.CoinType
+		allowanceBalances[i] = val.Balance
+	}
 	ptb.Command(
 		sui.Command{
 			MoveCall: &sui.ProgrammableMoveCall{
@@ -29,7 +37,8 @@ func PTBCreateAndSendRequest(
 					ptb.MustPure(iscContractHname),
 					ptb.MustPure(iscFunctionHname),
 					ptb.MustPure(args),
-					argAllowance,
+					ptb.MustPure(allowanceCoinTypes),
+					ptb.MustPure(allowanceBalances),
 					ptb.MustPure(onchainGasBudget),
 				},
 			},

@@ -5,13 +5,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func EVMTraceTransaction(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	aliasOutput *iscmove.AnchorWithRef,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,

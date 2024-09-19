@@ -38,6 +38,14 @@ func RequestFromBytes(data []byte) (Request, error) {
 
 type RequestID sui.ObjectID
 
+func (id *RequestID) AsSuiObjectID() sui.ObjectID {
+	return sui.ObjectID(*id)
+}
+
+func (id *RequestID) AsSuiAddress() sui.Address {
+	return sui.Address(*id)
+}
+
 const RequestIDDigestLen = 6
 
 type RequestRef struct {

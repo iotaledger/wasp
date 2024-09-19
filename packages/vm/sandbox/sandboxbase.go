@@ -77,7 +77,8 @@ func (s *SandboxBase) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
 }
 
 func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
-	panic("TODO")
+	s.Ctx.GasBurn(gas.BurnCodeGetCoinInfo)
+	return s.Ctx.GetCoinInfo(coinType)
 }
 
 func (s *SandboxBase) ChainID() isc.ChainID {

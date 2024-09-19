@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -75,16 +76,16 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (b *WaspEVMBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
+func (b *WaspEVMBackend) EVMCall(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) ([]byte, error) {
 	return chainutil.EVMCall(b.chain, aliasOutput, callMsg)
 }
 
-func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
+func (b *WaspEVMBackend) EVMEstimateGas(aliasOutput *iscmove.AnchorWithRef, callMsg ethereum.CallMsg) (uint64, error) {
 	return chainutil.EVMEstimateGas(b.chain, aliasOutput, callMsg)
 }
 
 func (b *WaspEVMBackend) EVMTraceTransaction(
-	aliasOutput *isc.AliasOutputWithID,
+	aliasOutput *iscmove.AnchorWithRef,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
@@ -108,7 +109,7 @@ func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
-func (b *WaspEVMBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
+func (b *WaspEVMBackend) ISCLatestAliasOutput() (*iscmove.AnchorWithRef, error) {
 	latestAliasOutput, err := b.chain.LatestAliasOutput(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)

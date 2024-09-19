@@ -8,6 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,24 +24,24 @@ import (
 
 func runISCTask(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	stateAnchor *isc.StateAnchor,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
 	store := ch.Store()
-	migs, err := getMigrationsForBlock(store, aliasOutput)
+	migs, err := getMigrationsForBlock(store, stateAnchor.Ref)
 	if err != nil {
 		return nil, err
 	}
 	task := &vm.VMTask{
 		Processors:           ch.Processors(),
-		AnchorOutput:         aliasOutput.GetAliasOutput(),
-		AnchorOutputID:       aliasOutput.OutputID(),
+		Anchor:               stateAnchor,
 		Store:                store,
 		Requests:             reqs,
-		TimeAssumption:       blockTime,
+		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
+		Timestamp:            blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EnableGasBurnLogging: estimateGasMode,
@@ -56,8 +57,8 @@ func runISCTask(
 	return res.RequestResults, nil
 }
 
-func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.AliasOutputWithID) (*migrations.MigrationScheme, error) {
-	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *iscmove.AnchorWithRef) (*migrations.MigrationScheme, error) {
+	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(aliasOutput.Object)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +79,7 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.Ali
 
 func runISCRequest(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	aliasOutput *iscmove.AnchorWithRef,
 	blockTime time.Time,
 	req isc.Request,
 	estimateGasMode bool,

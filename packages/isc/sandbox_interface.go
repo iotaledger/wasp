@@ -298,7 +298,7 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	Ref        *iscmove.RefWithObject[iscmove.Anchor]
+	Ref        *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
 	ISCPackage sui.Address
 }
@@ -349,14 +349,4 @@ type BLS interface {
 type EVMTracer struct {
 	Tracer  *tracers.Tracer
 	TxIndex uint64
-}
-
-type SuiCoinInfo struct {
-	CoinType    coin.Type
-	Decimals    uint8
-	Name        string
-	Symbol      string
-	Description string
-	IconURL     string
-	TotalSupply coin.Value
 }

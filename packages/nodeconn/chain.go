@@ -127,7 +127,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 }
 
 func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
+	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.Request)
 	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
