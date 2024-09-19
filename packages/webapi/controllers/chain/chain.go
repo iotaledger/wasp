@@ -14,9 +14,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
@@ -186,12 +186,13 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 			c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
 			return
 		}
-		sa := accounts.NewStateAccess(chainState)
+		sa := accounts.NewStateReaderFromChainState(allmigrations.DefaultScheme.LatestSchemaVersion(), chainState)
 
 		// because we don't know when the last account will be, we save each account string and write it in the next iteration
 		// this way we can remove the trailing comma, thus getting a valid JSON
 		prevString := ""
-		sa.IterateAccounts()(func(key []byte) bool {
+
+		sa.AllAccountsAsDict().ForEach(func(key kv.Key, value []byte) bool {
 			if prevString != "" {
 				_, err2 := f.WriteString(prevString)
 				if err2 != nil {
@@ -201,8 +202,8 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 			}
 			accKey := kv.Key(key)
 			agentID := lo.Must(accounts.AgentIDFromKey(accKey, ch.ID()))
-			accountAssets := sa.AssetsOwnedBy(accKey, agentID)
-			assetsJSON, err2 := json.Marshal(isc.AssetsToJSONObject(accountAssets))
+			accountAssets := sa.GetAccountFungibleTokens(agentID, chainID)
+			assetsJSON, err2 := json.Marshal(accountAssets)
 			if err2 != nil {
 				c.log.Errorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
 				return false
