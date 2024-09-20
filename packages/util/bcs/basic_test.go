@@ -138,6 +138,19 @@ func (w *BasicWithCustomAndInit) BCSInit() error {
 
 type InfWithCustomCodec interface{}
 
+func TestMarshalAny(t *testing.T) {
+	var v any = "hello"
+	vEnc := bcs.MustMarshal(&v)
+	vDec := bcs.MustUnmarshal[string](vEnc)
+	require.Equal(t, v, vDec)
+
+	type SameAsAny any
+	var vSameAsAny SameAsAny = "hello"
+	_, err := bcs.Marshal(&vSameAsAny)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not registered as enum")
+}
+
 func TestBasicTypesCodec(t *testing.T) {
 	// Boolean	                         t/f    01/00
 	// 8-bit signed                       -1    FF

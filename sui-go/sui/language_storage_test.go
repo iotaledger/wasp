@@ -3,7 +3,7 @@ package sui_test
 import (
 	"testing"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 	"github.com/stretchr/testify/require"
@@ -11,20 +11,14 @@ import (
 
 func TestTypeTagEncoding(t *testing.T) {
 	typeTagU64 := sui.TypeTag{U64: &serialization.EmptyEnum{}}
-	typeTagMarshaled, err := bcs.Marshal(typeTagU64)
-	require.NoError(t, err)
-	require.Equal(t, []byte{2}, typeTagMarshaled)
+	bcs.TestCodecAndBytes(t, typeTagU64, []byte{2})
 
 	typeTagStruct := sui.TypeTag{Struct: &sui.StructTag{
 		Address: sui.MustObjectIDFromHex("0x2eeb551107032ae860d76661f3f4573dd0f8c701116137e6525dcd95d4f8e58"),
 		Module:  "testcoin",
 		Name:    "TESTCOIN",
 	}}
-	typeTagStructMarshaled, err := bcs.Marshal(typeTagStruct)
-	require.NoError(t, err)
-	var structTag sui.TypeTag
-	_, err = bcs.Unmarshal(typeTagStructMarshaled, &structTag)
-	require.NoError(t, err)
+	bcs.TestCodec(t, &typeTagStruct)
 }
 
 func TestTypeTagString(t *testing.T) {

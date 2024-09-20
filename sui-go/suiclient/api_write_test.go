@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -37,7 +37,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytes, err := bcs.Marshal(tx.V1.Kind)
+	txBytes, err := bcs.Marshal(&tx.V1.Kind)
 	require.NoError(t, err)
 
 	resp, err := client.DevInspectTransactionBlock(

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -297,7 +297,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
+	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{

@@ -170,8 +170,12 @@ func (d *Decoder) ReadString() string {
 }
 
 func (d *Decoder) Read(b []byte) (n int, err error) {
-	d.r.ReadN(b)
-	return len(b), d.r.Err
+	d.r.ReadFromFunc(func(r io.Reader) (int, error) {
+		n, err = r.Read(b)
+		return n, err
+	})
+
+	return n, d.r.Err
 }
 
 // func (d *Decoder) Writer() *rwutil.Writer {

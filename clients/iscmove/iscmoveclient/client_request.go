@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fardream/go-bcs/bcs"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -70,12 +70,12 @@ func (c *Client) CreateAndSendRequest(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
