@@ -38,6 +38,20 @@ func (c *EncoderConfig) InitializeDefaults() {
 	}
 }
 
+func NewBytesEncoder() *BytesEncoder {
+	var buf bytes.Buffer
+	return &BytesEncoder{Encoder: *NewEncoder(&buf), buf: &buf}
+}
+
+type BytesEncoder struct {
+	Encoder
+	buf *bytes.Buffer
+}
+
+func (e *BytesEncoder) Bytes() []byte {
+	return e.buf.Bytes()
+}
+
 func NewEncoder(dest io.Writer) *Encoder {
 	return NewEncoderWithOpts(dest, EncoderConfig{})
 }

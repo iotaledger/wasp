@@ -138,19 +138,6 @@ func (w *BasicWithCustomAndInit) BCSInit() error {
 
 type InfWithCustomCodec interface{}
 
-func TestMarshalAny(t *testing.T) {
-	var v any = "hello"
-	vEnc := bcs.MustMarshal(&v)
-	vDec := bcs.MustUnmarshal[string](vEnc)
-	require.Equal(t, v, vDec)
-
-	type SameAsAny any
-	var vSameAsAny SameAsAny = "hello"
-	_, err := bcs.Marshal(&vSameAsAny)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "not registered as enum")
-}
-
 func TestBasicTypesCodec(t *testing.T) {
 	// Boolean	                         t/f    01/00
 	// 8-bit signed                       -1    FF
@@ -492,6 +479,30 @@ func TestHighLevelCodecFuncs(t *testing.T) {
 	vAutoEnc := bcs.TestCodec(t, vAuto)
 	vEncWithoutMarker := vEnc[:len(vEnc)-1]
 	require.Equal(t, vEncWithoutMarker, vAutoEnc)
+}
+
+func TestMarshalAny(t *testing.T) {
+	var v any = "hello"
+	vEnc := bcs.MustMarshal(&v)
+	vDec := bcs.MustUnmarshal[string](vEnc)
+	require.Equal(t, v, vDec)
+
+	type SameAsAny any
+	var vSameAsAny SameAsAny = "hello"
+	_, err := bcs.Marshal(&vSameAsAny)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not registered as enum")
+}
+
+func TestBytesCoders(t *testing.T) {
+	enc := bcs.NewBytesEncoder()
+	enc.WriteInt16(1)
+	enc.WriteString("abc")
+	b := enc.Bytes()
+
+	dec := bcs.NewBytesDecoder(b)
+	require.Equal(t, int16(1), dec.ReadInt16())
+	require.Equal(t, "abc", dec.ReadString())
 }
 
 func TestInfWithCustomCodec(t *testing.T) {
