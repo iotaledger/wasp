@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,4 +51,42 @@ func TestAckHandler(t *testing.T) {
 		}
 		tc.RunAll()
 	}
+}
+
+func TestAckHandlerBatchCodec(t *testing.T) {
+	v := ackHandlerBatch{
+		id: lo.ToPtr(42),
+		msgs: []Message{
+			&TestMessage{ID: 50},
+			&TestMessage{ID: 100},
+		},
+		acks:      []int{1, 2, 3},
+		nestedGPA: &testGPA{},
+	}
+
+	vEnc := bcs.MustMarshal(&v)
+	vDec := bcs.MustUnmarshalInto(vEnc, &ackHandlerBatch{nestedGPA: &testGPA{}})
+	require.Equal(t, v, *vDec, vEnc)
+
+	v.id = nil
+	vEnc = bcs.MustMarshal(&v)
+	vDec = bcs.MustUnmarshalInto(vEnc, &ackHandlerBatch{nestedGPA: &testGPA{}})
+	require.Equal(t, v, *vDec, vEnc)
+}
+
+type testGPA struct {
+	GPA
+}
+
+var _ GPA = &testGPA{}
+
+func (g *testGPA) UnmarshalMessage(data []byte) (Message, error) {
+	return bcs.Unmarshal[*TestMessage](data)
+}
+
+func TestAckHandlerResetCodec(t *testing.T) {
+	bcs.TestCodec(t, ackHandlerReset{
+		response: true,
+		latestID: 123,
+	})
 }
