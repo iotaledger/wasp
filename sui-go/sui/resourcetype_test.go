@@ -17,9 +17,30 @@ func TestNewResourceType(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "with array",
+			str:  "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::sui::SUI>>",
+			want: &sui.ResourceType{
+				sui.MustAddressFromHex("0x2"), "dynamic_field", "Field",
+				&sui.ResourceType{
+					sui.MustAddressFromHex("0x1"), "ascii", "String",
+					nil,
+					nil,
+				},
+				&sui.ResourceType{
+					sui.MustAddressFromHex("0x2"), "balance", "Balance",
+					&sui.ResourceType{
+						sui.MustAddressFromHex("0x2"), "sui", "SUI",
+						nil,
+						nil,
+					},
+					nil,
+				},
+			},
+		},
+		{
 			name: "sample",
 			str:  "0x23::coin::Xxxx",
-			want: &sui.ResourceType{sui.MustAddressFromHex("0x23"), "coin", "Xxxx", nil},
+			want: &sui.ResourceType{sui.MustAddressFromHex("0x23"), "coin", "Xxxx", nil, nil},
 		},
 		{
 			name: "three level",
@@ -28,8 +49,10 @@ func TestNewResourceType(t *testing.T) {
 				sui.MustAddressFromHex("0xabc"), "Coin", "Xxxx",
 				&sui.ResourceType{
 					sui.MustAddressFromHex("0x789"), "AAA", "ppp",
-					&sui.ResourceType{sui.MustAddressFromHex("0x111"), "mod3", "func3", nil},
+					&sui.ResourceType{sui.MustAddressFromHex("0x111"), "mod3", "func3", nil, nil},
+					nil,
 				},
+				nil,
 			},
 		},
 		{
@@ -40,6 +63,11 @@ func TestNewResourceType(t *testing.T) {
 		{
 			name:    "error format",
 			str:     "0x1::m1::f1<0x2::m2::f2>x",
+			wantErr: true,
+		},
+		{
+			name:    "error format2",
+			str:     "0x1::m1::f1<<0x3::m3::f3>0x2::m2::f2>",
 			wantErr: true,
 		},
 		{
@@ -83,6 +111,30 @@ func TestContains(t *testing.T) {
 			want:   true,
 		},
 		{
+			name:   "successful, two levels, inner",
+			str:    "0xe87e::swap::Pool<0x2f63::testcoin::TESTCOIN>",
+			target: &sui.ResourceType{Module: "testcoin", ObjectName: "TESTCOIN"},
+			want:   true,
+		},
+		{
+			name:   "successful, dynamic field 1",
+			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::sui::SUI>>",
+			target: &sui.ResourceType{Module: "ascii", ObjectName: "String"},
+			want:   true,
+		},
+		{
+			name:   "successful, dynamic field 2",
+			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::sui::SUI>>",
+			target: &sui.ResourceType{Module: "balance", ObjectName: "Balance"},
+			want:   true,
+		},
+		{
+			name:   "successful, dynamic field inner",
+			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::sui::SUI>>",
+			target: &sui.ResourceType{Module: "sui", ObjectName: "SUI"},
+			want:   true,
+		},
+		{
 			name:   "failed, two levels",
 			str:    "0xe87e::swap::Pool<0x2f63::testcoin::TESTCOIN>",
 			target: &sui.ResourceType{Module: "name", ObjectName: "Pool"},
@@ -116,7 +168,7 @@ func TestResourceTypeShortString(t *testing.T) {
 		want string
 	}{
 		{
-			arg:  &sui.ResourceType{sui.MustAddressFromHex("0x1"), "m1", "f1", nil},
+			arg:  &sui.ResourceType{sui.MustAddressFromHex("0x1"), "m1", "f1", nil, nil},
 			want: "0x1::m1::f1",
 		},
 		{
@@ -124,8 +176,10 @@ func TestResourceTypeShortString(t *testing.T) {
 				sui.MustAddressFromHex("0x1"), "m1", "f1",
 				&sui.ResourceType{
 					sui.MustAddressFromHex("2"), "m2", "f2",
-					&sui.ResourceType{sui.MustAddressFromHex("0x123abcdef"), "m3", "f3", nil},
+					&sui.ResourceType{sui.MustAddressFromHex("0x123abcdef"), "m3", "f3", nil, nil},
+					nil,
 				},
+				nil,
 			},
 			want: "0x1::m1::f1<0x2::m2::f2<0x123abcdef::m3::f3>>",
 		},
