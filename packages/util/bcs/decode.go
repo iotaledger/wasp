@@ -40,6 +40,10 @@ func (c *DecoderConfig) InitializeDefaults() {
 	}
 }
 
+func NewBytesDecoder(b []byte) *Decoder {
+	return NewDecoder(bytes.NewReader(b))
+}
+
 func NewDecoder(src io.Reader) *Decoder {
 	return NewDecoderWithOpts(src, DecoderConfig{})
 }
