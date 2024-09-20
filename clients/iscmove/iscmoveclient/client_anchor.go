@@ -30,10 +30,12 @@ func (c *Client) StartNewChain(
 	ptb := sui.NewProgrammableTransactionBuilder()
 	var argInitCoin sui.Argument
 	if initCoinRef != nil {
-		argInitCoin = ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: initCoinRef})
+		ptb = PTBOptionSomeSuiCoin(ptb, initCoinRef)
 	} else {
-		argInitCoin = ptb.MustPure(&bcs.Option[uint32]{None: true})
+		ptb = PTBOptionNoneSuiCoin(ptb)
 	}
+	argInitCoin = ptb.LastCommandResultArg()
+
 	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, cryptolibSigner.Address())
 	pt := ptb.Finish()
 
