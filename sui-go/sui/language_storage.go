@@ -57,6 +57,14 @@ func (t *TypeTag) String() string {
 	}
 }
 
+func MustTypeTagFromString(data string) *TypeTag {
+	tag, err := TypeTagFromString(data)
+	if err != nil {
+		panic(err)
+	}
+	return tag
+}
+
 // refer TypeTagSerializer.parseFromStr() at 'sdk/typescript/src/bcs/type-tag-serializer.ts'
 func TypeTagFromString(data string) (*TypeTag, error) {
 	switch data {
