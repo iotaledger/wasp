@@ -105,9 +105,9 @@ func (e *Encoder) EncodeOptional(val any) error {
 
 func (e *Encoder) WriteOptionalFlag(hasValue bool) error {
 	if hasValue {
-		e.w.WriteByte(0)
-	} else {
 		e.w.WriteByte(1)
+	} else {
+		e.w.WriteByte(0)
 	}
 
 	return e.w.Err
@@ -197,8 +197,12 @@ func (e *Encoder) WriteString(v string) error {
 }
 
 func (e *Encoder) Write(b []byte) (n int, err error) {
-	e.w.WriteN(b)
-	return len(b), e.w.Err
+	e.w.WriteFromFunc(func(w io.Writer) (int, error) {
+		n, err = w.Write(b)
+		return n, err
+	})
+
+	return n, e.w.Err
 }
 
 // func (e *Encoder) Writer() *rwutil.Writer {
@@ -983,8 +987,16 @@ func MarshalStream[V any](v *V, dest io.Writer) error {
 	//  - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
 	//  - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
 
-	if err := NewEncoder(dest).Encode(v); err != nil {
-		return err
+	switch v := interface{}(v).(type) {
+	case *interface{}:
+		// Exception for pointer to "any" just for convenience.
+		if err := NewEncoder(dest).Encode(*v); err != nil {
+			return err
+		}
+	default:
+		if err := NewEncoder(dest).Encode(v); err != nil {
+			return err
+		}
 	}
 
 	return nil

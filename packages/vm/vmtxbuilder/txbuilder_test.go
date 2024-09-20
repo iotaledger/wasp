@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/stretchr/testify/require"
 
@@ -60,7 +60,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
+	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	txnResponse, err := client.SignAndExecuteTransaction(

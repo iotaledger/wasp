@@ -25,5 +25,5 @@ func EncodeTransaction(tx *types.Transaction) []byte {
 }
 
 func DecodeTransaction(data []byte) (*types.Transaction, error) {
-	return bcs.UnmarshalOver(data, &types.Transaction{})
+	return bcs.Unmarshal[*types.Transaction](data)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
@@ -667,7 +667,7 @@ func (env *Solo) executePTB(ptb sui.ProgrammableTransaction, wallet *cryptolib.K
 		suiclient.DefaultGasBudget,
 	)
 
-	txnBytes, err := bcs.Marshal(tx)
+	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(env.T, err)
 
 	execRes, err := env.SuiClient().SignAndExecuteTransaction(

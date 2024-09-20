@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/orderedmap"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BuilderArg struct {
@@ -48,7 +48,7 @@ func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 }
 
 func (p *ProgrammableTransactionBuilder) Pure(value any) (Argument, error) {
-	pureData, err := bcs.Marshal(value)
+	pureData, err := bcs.Marshal(&value)
 	if err != nil {
 		return Argument{}, err
 	}
@@ -56,7 +56,7 @@ func (p *ProgrammableTransactionBuilder) Pure(value any) (Argument, error) {
 }
 
 func (p *ProgrammableTransactionBuilder) MustPure(value any) Argument {
-	pureData, err := bcs.Marshal(value)
+	pureData, err := bcs.Marshal(&value)
 	if err != nil {
 		panic(err)
 	}
@@ -116,7 +116,7 @@ func (p *ProgrammableTransactionBuilder) MustObj(objArg ObjectArg) Argument {
 }
 
 func (p *ProgrammableTransactionBuilder) ForceSeparatePure(value any) (Argument, error) {
-	pureData, err := bcs.Marshal(value)
+	pureData, err := bcs.Marshal(&value)
 	if err != nil {
 		return Argument{}, err
 	}
