@@ -7,6 +7,7 @@ import (
 
 	oldbcs "github.com/fardream/go-bcs/bcs"
 	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -94,8 +95,10 @@ func TestAddressBCSCodec(t *testing.T) {
 	addr := NewRandomAddress()
 	encOld := oldbcs.MustMarshal(addr)
 	encNew := bcs.MustMarshal(&addr)
+	encRwutil := rwutil.NewBytesWriter().Write(addr).Bytes()
 
 	require.Equal(t, len(encOld), len(encNew), addr)
 	require.Equal(t, encOld, encNew, addr)
+	require.Equal(t, encNew, encRwutil, addr)
 	require.Equal(t, len(encNew), len(addr), encNew)
 }
