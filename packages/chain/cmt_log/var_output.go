@@ -12,7 +12,7 @@ type VarOutput interface {
 	StatusString() string
 	Value() *Output
 	LogIndexAgreed(li LogIndex)
-	TipAOChanged(ao *iscmove.Anchor)
+	TipAOChanged(ao *iscmove.AnchorWithRef)
 	HaveRejection()
 	HaveMilestone()
 	CanPropose()
@@ -21,7 +21,7 @@ type VarOutput interface {
 
 type varOutputImpl struct {
 	candidateLI                LogIndex
-	candidateAO                *iscmove.Anchor
+	candidateAO                *iscmove.AnchorWithRef
 	canPropose                 bool
 	milestonesToWait           int
 	suspended                  bool
@@ -64,7 +64,7 @@ func (vo *varOutputImpl) LogIndexAgreed(li LogIndex) {
 	vo.tryOutput()
 }
 
-func (vo *varOutputImpl) TipAOChanged(ao *iscmove.Anchor) {
+func (vo *varOutputImpl) TipAOChanged(ao *iscmove.AnchorWithRef) {
 	vo.candidateAO = ao
 	vo.tryOutput()
 }

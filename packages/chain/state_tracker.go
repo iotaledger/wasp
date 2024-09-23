@@ -72,14 +72,14 @@ func NewStateTracker(
 
 func (sti *stateTrackerImpl) TrackAliasOutput(ao *iscmove.AnchorWithRef, strict bool) {
 	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
-	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
+	if !strict && sti.haveAO != nil && sti.haveAO.Object.GetStateIndex() >= ao.Object.GetStateIndex() {
 		return
 	}
-	if ao.Equals(sti.nextAO) {
+	if ao.Equals(&sti.nextAO.ObjectRef) {
 		return
 	}
-	sti.metricWantStateIndexCB(ao.GetStateIndex())
-	if ao.Equals(sti.haveAO) {
+	sti.metricWantStateIndexCB(ao.Object.GetStateIndex())
+	if ao.Equals(&sti.haveAO.ObjectRef) {
 		sti.nextAO = sti.haveAO // All done, state is already received.
 		sti.cancelQuery()       // Cancel the request, if pending.
 		return
