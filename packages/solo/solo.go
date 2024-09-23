@@ -316,7 +316,7 @@ func (env *Solo) deployChain(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (chainData, *iscmove.RefWithObject[iscmove.Anchor]) {
+) (chainData, *iscmove.AnchorWithRef) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	if chainOriginator == nil {
@@ -416,7 +416,7 @@ func (env *Solo) NewChainExt(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (*Chain, *iscmove.RefWithObject[iscmove.Anchor]) {
+) (*Chain, *iscmove.AnchorWithRef) {
 	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
 
 	env.chainsMutex.Lock()

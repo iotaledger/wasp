@@ -340,7 +340,7 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(anchor *iscmove.RefWithObject[iscmove.Anchor]) {
+		func(anchor *iscmove.AnchorWithRef) {
 			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
 		},
 		func(block state.Block) {
