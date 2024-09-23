@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::request {
+    use std::string::String;
     use sui::{
         borrow::{Self, Referent},
         event::Self,
     };
-    use std::string::String;
     use isc::assets_bag::AssetsBag;
 
     // The allowance coin_types vector and balances vector are not in the same size

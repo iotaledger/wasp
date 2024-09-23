@@ -7,7 +7,7 @@ edition = "2024.beta"
 
 [dependencies]
 MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "l1sc/isc-models" }
-Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/stardust", rev = "l1sc/isc-models" }
+# Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/stardust", rev = "l1sc/isc-models" }
 Sui = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "l1sc/isc-models" }
 
 

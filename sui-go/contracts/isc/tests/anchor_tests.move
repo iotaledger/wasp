@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::anchor_tests {
-
     use std::{
         fixed_point32::{FixedPoint32},
         string::{Self, String},
@@ -15,16 +14,15 @@ module isc::anchor_tests {
         url::Self,
         vec_set::Self,
     };
-
-    use stardust::{
-        nft::{Self, Nft},
-        irc27::Self,
-    };
     use isc::{
         assets_bag::Self,
         anchor::Self,
         request::Self,
     };
+    // use stardust::{
+    //     nft::{Self, Nft},
+    //     irc27::Self,
+    // };
 
     // One Time Witness for coins used in the tests.
     public struct TEST_A has drop {}

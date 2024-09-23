@@ -1,8 +1,10 @@
 // Copyright (c) 2024 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 module isc::assets_bag {
-    use std::ascii::String;
-    use std::type_name;
+    use std::{
+        ascii::String,
+        type_name,
+    };
     use sui::{
         coin::{Self, Coin},
         balance::Balance,
