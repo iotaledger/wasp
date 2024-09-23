@@ -9,7 +9,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -98,16 +97,13 @@ func (a *Address) Clone() *Address {
 }
 
 func (a *Address) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	address := rr.ReadBytes()
-	copy(a[:], address)
-	return rr.Err
+	_, err := r.Read(a[:])
+	return err
 }
 
 func (a *Address) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteBytes(a[:])
-	return ww.Err
+	_, err := w.Write(a[:])
+	return err
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {
@@ -148,9 +144,4 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 	}
 
 	return err
-}
-
-// FIXME may need to be pointer
-func (a Address) MarshalBCS() ([]byte, error) {
-	return a[:], nil
 }
