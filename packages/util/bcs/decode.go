@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/iotaledger/hive.go/constraints"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
 )
@@ -238,13 +239,13 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		if typeOptions.IsCompactInt {
 			v.SetInt(int64(d.ReadCompactUint()))
 		} else {
-			err = d.decodeInt(v, defaultValueSize(v.Kind()), typeOptions.SizeInBytes)
+			err = d.decodeInt(v, typeOptions.UnderlayingType)
 		}
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		if typeOptions.IsCompactInt {
 			v.SetUint(d.ReadCompactUint())
 		} else {
-			err = d.decodeUint(v, defaultValueSize(v.Kind()), typeOptions.SizeInBytes)
+			err = d.decodeUint(v, typeOptions.UnderlayingType)
 		}
 	case reflect.String:
 		v.SetString(d.r.ReadString())
@@ -425,54 +426,123 @@ func (d *Decoder) getCustomInitFunc(t reflect.Type) InitFunc {
 	return nil
 }
 
-func (d *Decoder) decodeInt(v reflect.Value, origSize, customSize ValueBytesCount) error {
-	size := lo.Ternary(customSize != 0, customSize, origSize)
+func (d *Decoder) decodeInt(v reflect.Value, encodedType reflect.Kind) error {
+	k := v.Kind()
 
-	switch size {
-	case Value1Byte:
+	if encodedType != reflect.Invalid && encodedType != k {
+		return decodeConvertNumber(d, v, encodedType)
+	}
+
+	switch k {
+	case reflect.Int8:
 		v.SetInt(int64(d.r.ReadInt8()))
-	case Value2Bytes:
+	case reflect.Int16:
 		v.SetInt(int64(d.r.ReadInt16()))
-	case Value4Bytes:
+	case reflect.Int32:
 		v.SetInt(int64(d.r.ReadInt32()))
-	case Value8Bytes:
+	case reflect.Int64, reflect.Int:
 		v.SetInt(d.r.ReadInt64())
 	default:
-		return d.handleErrorf("invalid value size: %v", size)
+		panic(fmt.Sprintf("unexpected int kind: %v", k))
 	}
 
 	return nil
 }
 
-func (d *Decoder) decodeUint(v reflect.Value, origSize, customSize ValueBytesCount) error {
-	size := lo.Ternary(customSize != 0, customSize, origSize)
+func (d *Decoder) decodeUint(v reflect.Value, encodedType reflect.Kind) error {
+	k := v.Kind()
 
-	switch size {
-	case Value1Byte:
+	if encodedType != reflect.Invalid && encodedType != k {
+		return decodeConvertNumber(d, v, encodedType)
+	}
+
+	switch k {
+	case reflect.Uint8:
 		v.SetUint(uint64(d.r.ReadUint8()))
-	case Value2Bytes:
+	case reflect.Uint16:
 		v.SetUint(uint64(d.r.ReadUint16()))
-	case Value4Bytes:
+	case reflect.Uint32:
 		v.SetUint(uint64(d.r.ReadUint32()))
-	case Value8Bytes:
+	case reflect.Uint64, reflect.Uint:
 		v.SetUint(d.r.ReadUint64())
 	default:
-		return d.handleErrorf("invalid value size: %v", size)
+		panic(fmt.Sprintf("unexpected uint kind: %v", k))
 	}
 
 	return nil
 }
 
-func (d *Decoder) decodeSlice(v reflect.Value, typOpts TypeOptions) error {
+func decodeConvertNumber(d *Decoder, v reflect.Value, encodedType reflect.Kind) error {
+	switch v.Kind() {
+	case reflect.Int8:
+		return decodeConvertNumber2(d, encodedType, func(i int8) { v.SetInt(int64(i)) })
+	case reflect.Int16:
+		return decodeConvertNumber2(d, encodedType, func(i int16) { v.SetInt(int64(i)) })
+	case reflect.Int32:
+		return decodeConvertNumber2(d, encodedType, func(i int32) { v.SetInt(int64(i)) })
+	case reflect.Int64, reflect.Int:
+		return decodeConvertNumber2(d, encodedType, v.SetInt)
+	case reflect.Uint8:
+		return decodeConvertNumber2(d, encodedType, func(u uint8) { v.SetUint(uint64(u)) })
+	case reflect.Uint16:
+		return decodeConvertNumber2(d, encodedType, func(u uint16) { v.SetUint(uint64(u)) })
+	case reflect.Uint32:
+		return decodeConvertNumber2(d, encodedType, func(u uint32) { v.SetUint(uint64(u)) })
+	case reflect.Uint64, reflect.Uint:
+		return decodeConvertNumber2(d, encodedType, v.SetUint)
+	default:
+		panic(fmt.Sprintf("unexpected number kind: %v", v.Kind()))
+	}
+}
+
+// decodeConvertNumber2 is a helper function for decodeConvertNumber, which is used to unwrap type RealType.
+func decodeConvertNumber2[RealType constraints.Numeric](d *Decoder, encodedType reflect.Kind, set func(RealType)) error {
+	switch encodedType {
+	case reflect.Int8:
+		return decodeConvertNumber3(d, d.r.ReadInt8, set)
+	case reflect.Int16:
+		return decodeConvertNumber3(d, d.r.ReadInt16, set)
+	case reflect.Int32:
+		return decodeConvertNumber3(d, d.r.ReadInt32, set)
+	case reflect.Int64, reflect.Int:
+		return decodeConvertNumber3(d, d.r.ReadInt64, set)
+	case reflect.Uint8:
+		return decodeConvertNumber3(d, d.r.ReadUint8, set)
+	case reflect.Uint16:
+		return decodeConvertNumber3(d, d.r.ReadUint16, set)
+	case reflect.Uint32:
+		return decodeConvertNumber3(d, d.r.ReadUint32, set)
+	case reflect.Uint64, reflect.Uint:
+		return decodeConvertNumber3(d, d.r.ReadUint64, set)
+	default:
+		return d.handleErrorf("invalid underlaying type %v for type %T", encodedType, lo.Empty[RealType]())
+	}
+}
+
+// decodeConvertNumber3 is a helper function for decodeConvertNumber2, which is used to convert value to From.
+func decodeConvertNumber3[To, From constraints.Numeric](d *Decoder, read func() From, set func(To)) error {
+	v := read()
+	converted := To(v)
+
+	if From(converted) != v {
+		return d.handleErrorf("value %v is out of range of type %T", v, To(0))
+	}
+
+	set(converted)
+
+	return nil
+}
+
+func (d *Decoder) decodeSlice(v reflect.Value, typeOpts TypeOptions) error {
 	var length int
 
-	switch typOpts.LenSizeInBytes {
+	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
 		length = int(d.r.ReadSize16())
 	case Len4Bytes, 0:
 		length = int(d.r.ReadSize32())
 	default:
-		return d.handleErrorf("invalid array size type: %v", typOpts.LenSizeInBytes)
+		return d.handleErrorf("invalid array size type: %v", typeOpts.LenSizeInBytes)
 	}
 
 	if length == 0 {
@@ -481,10 +551,10 @@ func (d *Decoder) decodeSlice(v reflect.Value, typOpts TypeOptions) error {
 
 	v.Set(reflect.MakeSlice(v.Type(), length, length))
 
-	return d.decodeArray(v, typOpts)
+	return d.decodeArray(v, typeOpts)
 }
 
-func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
+func (d *Decoder) decodeArray(v reflect.Value, typeOpts TypeOptions) error {
 	elemType := v.Type().Elem()
 
 	// We take pointer because elements of array are addressable and
@@ -495,25 +565,18 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
 	}
 
 	if !tInfo.HasCustomizations() {
-		// Optimizations for decoding of basic types
-		switch elemType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if err := d.decodeIntArray(v, defaultValueSize(elemType.Kind()), typOpts); err != nil {
-				return fmt.Errorf("%v: %w", elemType, err)
-			}
-
-			return nil
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			if err := d.decodeUintArray(v, defaultValueSize(elemType.Kind()), typOpts); err != nil {
-				return fmt.Errorf("%v: %w", elemType, err)
-			}
-
+		// The type does not have any customizations. So we can use  some optimizations for encoding of basic types
+		if elemType.Kind() == reflect.Uint8 && (v.Kind() == reflect.Slice || v.CanAddr()) && !typeOpts.ArrayElement.AsByteArray {
+			// Optimization for []byte and [N]byte.
+			d.r.ReadN(v.Bytes())
 			return nil
 		}
+
+		// There could be other optimizations for encoding of basic types. But I removed them for now for simplicity.
 	}
 
-	if typOpts.ArrayElement.AsByteArray {
-		// Elements are encoded as byte arrays.
+	if typeOpts.ArrayElement.AsByteArray {
+		// Elements were encoded as byte arrays.
 		for i := 0; i < v.Len(); i++ {
 			err := d.decodeAsByteArray(func() error {
 				return d.decodeValue(v.Index(i).Addr(), nil, &tInfo)
@@ -533,187 +596,16 @@ func (d *Decoder) decodeArray(v reflect.Value, typOpts TypeOptions) error {
 	return nil
 }
 
-func (d *Decoder) decodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
-	if typOpts.ArrayElement.IsCompactInt {
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				d.decodeAsByteArray(func() error {
-					v.Index(i).SetInt(int64(d.r.ReadSize32()))
-					return nil
-				})
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetInt(int64(d.r.ReadSize32()))
-			}
-		}
-
-		return d.r.Err
-	}
-
-	switch bytesPerElem {
-	case Value1Byte:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(1); err != nil {
-					return err
-				}
-				v.Index(i).SetInt(int64(d.r.ReadInt8()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetInt(int64(d.r.ReadInt8()))
-			}
-		}
-	case Value2Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(2); err != nil {
-					return err
-				}
-				v.Index(i).SetInt(int64(d.r.ReadInt16()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetInt(int64(d.r.ReadInt16()))
-			}
-		}
-	case Value4Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(4); err != nil {
-					return err
-				}
-				v.Index(i).SetInt(int64(d.r.ReadInt32()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetInt(int64(d.r.ReadInt32()))
-			}
-		}
-	case Value8Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(8); err != nil {
-					return err
-				}
-				v.Index(i).SetInt(d.r.ReadInt64())
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetInt(d.r.ReadInt64())
-			}
-		}
-	default:
-		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
-	}
-
-	return d.r.Err
-}
-
-func (d *Decoder) decodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
-	if typOpts.ArrayElement.IsCompactInt {
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				d.decodeAsByteArray(func() error {
-					v.Index(i).SetUint(uint64(d.r.ReadSize32()))
-					return nil
-				})
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetUint(uint64(d.r.ReadSize32()))
-			}
-		}
-
-		return d.r.Err
-	}
-
-	switch bytesPerElem {
-	case Value1Byte:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(1); err != nil {
-					return err
-				}
-				v.Index(i).SetUint(uint64(d.r.ReadUint8()))
-			}
-		} else {
-			// Optimization for decoding of byte/uint8 slices
-			b := make([]byte, v.Len())
-			d.r.ReadN(b)
-
-			if v.Kind() == reflect.Slice {
-				v.SetBytes(b)
-			} else {
-				v.Set(reflect.ValueOf(b).Convert(v.Type()))
-			}
-		}
-	case Value2Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(2); err != nil {
-					return err
-				}
-				v.Index(i).SetUint(uint64(d.r.ReadUint16()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetUint(uint64(d.r.ReadUint16()))
-			}
-		}
-	case Value4Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(4); err != nil {
-					return err
-				}
-				v.Index(i).SetUint(uint64(d.r.ReadUint32()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetUint(uint64(d.r.ReadUint32()))
-			}
-		}
-	case Value8Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				if err := d.readAndCheckByteArraySize(8); err != nil {
-					return err
-				}
-				v.Index(i).SetUint(d.r.ReadUint64())
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				v.Index(i).SetUint(d.r.ReadUint64())
-			}
-		}
-	default:
-		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
-	}
-
-	return d.r.Err
-}
-
-func (d *Decoder) readAndCheckByteArraySize(expected uint8) error {
-	size := d.r.ReadUint8()
-	if size != expected {
-		return d.handleErrorf("invalid byte array length: expected %v, got %v", expected, size)
-	}
-
-	return nil
-}
-
-func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
+func (d *Decoder) decodeMap(v reflect.Value, typeOpts TypeOptions) error {
 	var length int
 
-	switch typOpts.LenSizeInBytes {
+	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
 		length = int(d.r.ReadSize16())
 	case Len4Bytes, 0:
 		length = int(d.r.ReadSize32())
 	default:
-		return d.handleErrorf("invalid map size type: %v", typOpts.LenSizeInBytes)
+		return d.handleErrorf("invalid map size type: %v", typeOpts.LenSizeInBytes)
 	}
 
 	keyType := v.Type().Key()
@@ -733,11 +625,11 @@ func (d *Decoder) decodeMap(v reflect.Value, typOpts TypeOptions) error {
 		key := reflect.New(keyType).Elem()
 		value := reflect.New(valueType).Elem()
 
-		if err := d.decodeValue(key, typOpts.MapKey, &keyTypeInfo); err != nil {
+		if err := d.decodeValue(key, typeOpts.MapKey, &keyTypeInfo); err != nil {
 			return fmt.Errorf("key: %w", err)
 		}
 
-		if err := d.decodeValue(value, typOpts.MapValue, &valueTypeInfo); err != nil {
+		if err := d.decodeValue(value, typeOpts.MapValue, &valueTypeInfo); err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
 

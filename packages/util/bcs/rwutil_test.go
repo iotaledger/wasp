@@ -12,7 +12,7 @@ import (
 
 type StructWithRwUtilSupport struct {
 	A int
-	B int `bcs:"bytes=2"`
+	B int `bcs:"type=i16"`
 	C NestedStructWithRwUtilSupport
 }
 

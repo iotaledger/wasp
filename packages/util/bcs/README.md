@@ -64,6 +64,21 @@ dec.MustDecode(&v2)
 
 **NOTE:** Althouth `Encode`() supports both value and pointer as argument, try prefering passing a pointer (see perf section)
 
+#### Using BytesEncoder/BytesDecoder
+
+```
+v1 := "hello"
+v2 := 123
+enc := bcs.NewBytesEncoder()
+enc.MustEncode(v1)
+enc.MustEncode(&v2) // note both value and pointer supported
+encoded := enc.Bytes()
+
+dec := bcs.NewBytesDecoder(encoded)
+dec.MustDecode(&v1)
+dec.MustDecode(&v2)
+```
+
 #### Decoder with helper functions
 
 ```
@@ -220,11 +235,34 @@ require.Equal(t, v, ***vDec)
 
 Interface can be serialized in three different ways:
 
-* By default, interface values are considered as **enumerations** (see sections below), so uses registered enum specification for serialization.
-* If interface is marked as **"not_enum"** (see sections below), the library treats interface value as just regular value (but only for **encoding**).
-* If interface has custom serialization **functor**, they is called anything else.
+* By default, interface values are considered as **enumerations** (see sections below), so  the library uses its registered enum specification for serialization.
+* If field structure of interface type is marked as **"not_enum"** (see sections below), the library treats interface value as just regular value (but only for **encoding**).
+* If interface has custom serialization **functor**, it is used for serialization and everything else is ignored.
 
 If interface does not satisfy any of those criterias, serialization will return an **error**.
+
+###### Encoding interface's value using Marshal/Encode
+
+If you need to encode the value wrapped by the interface, you can pass interface **by value** to `Encode()` of `bcs.Encoder`:
+
+```
+type Message interface{}
+
+var m Message = "hello"
+e := bcs.NewBytesEncoder()
+e.Encode(m)
+```
+
+This works, because `Encode()` function has argument of type `any`, so initial information about `Message` interface is lost - value in unpacked from `Message` and packed as `any`.
+
+With `bcs.Marshal` this won't work, because it enforces pointer argument, so passing interface by value is not an option.
+For that purpose, you can either cast interface to actual value (`bcs.Marshal(m.(string)`). But if the type is unknown, you can cast to `any` and then take its pointer:
+
+```
+...
+var eI any = m
+bcs.Marshal(&eI)
+```
 
 ## Enumerations
 
@@ -319,7 +357,7 @@ type TestStruct struct {
    hidden bool   `bcs:""`
    Excluded bool `bcs:"-"`
    S []*int64    `bcs:"len_bytes=4" bcs_elem:"compact"`
-   M map[int]int `bcs:"len_bytes=2" bcs_key:"bytes=4" bcs_value:"bytearr"`
+   M map[int]int `bcs:"len_bytes=2" bcs_key:"type=int32" bcs_value:"bytearr"`
    F interface{} `bcs:"not_enum"`
 }
 ```
@@ -360,7 +398,7 @@ Custom serialization can be provided **for** **any type:** basic types, structs,
 
 There are multiple methods available in Encoder and Decoder to help implement manual serialization, including serialization of optionals, collections and enumerations (see sections below).
 
-###### Custom serialization methods:
+###### MarshalBCS/UnmarshalBCS methods:
 
 One or both methods of the following methods can be defined to implement manual serialization.
 
@@ -382,6 +420,31 @@ func (s *TestStruct) UnmarshalBCS(d *bcs.Decoder) error {
    s.A = d.ReadInt()
    ...
 }
+```
+
+###### Read/Write methods:
+
+In addition to MarshalBCS/UnmarshalBCS, another pair of methods is supported: **Read()** and **Write()**.
+This is done to ensure compatibility with others libraries (specifically **rwutil**).
+
+```
+type TestStruct struct {
+   A int
+   ...
+}
+
+func (s *TestStruct) Write(w io.Writer) error {
+   e := bcs.NewEncoder(w)  
+   e.WriteInt(s.A)
+   ...
+}
+
+func (s *TestStruct) Read(r io.Reader) error {
+   d := bcs.NewDecoder(r)
+   e.A = d.ReadInt()
+   ...
+}
+
 ```
 
 ###### Custom serialization functors:
@@ -453,19 +516,21 @@ In **rwutil** library this was represented as **WriteSize32**, **WriteGas**, **W
 
 **WARNING:** BCS specification does not have mentions about ULEB128 being used for anything other than length of collections and enumeration variant indexes. So this logic is a custom extension mostly designed for usage with types, which are not used for interaction with other actors.
 
-###### "bytes=N"
+###### "type=T"
 
-Allows to **override size** of integer value. For example, if field has type int64, using this tag you can store it as int16.
+Allows to **override type** of integer value. For example, if field has type int64, using this tag you can store it as int16.
 Applicable to: **integers**.
-Possible values of **N**: 1, 2, 4, 8.
+Possible values of **T**: i8, i16, i32, i64, u8, u16, u32, u64 (and corresponding aliases int8, uint16, ...).
 
 ```
 type TestStruct struct {
-   A int64 `bcs:"bytes=2"`
+   A int64 `bcs:"type=i16"`
 }
 
 bcs.Marshal(&TestStruct{A: 10}) // []byte{10, 0}
 ```
+
+**WARNING:** In case of overflow an **error** is returned. This is done to ensure, that field is not accidentally missused when type from definition is bigger than serialized type.
 
 ###### "len_bytes=N"
 
