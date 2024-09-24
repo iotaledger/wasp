@@ -27,7 +27,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 			byte(rand.Intn(math.MaxUint8)),
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgShareRequest))
+		rwutil.ReadWriteTest(t, msg, new(msgShareRequest), rwutil.SimpleEqualFun)
 	}
 	{
 		sender := cryptolib.NewRandomAddress()

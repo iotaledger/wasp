@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )
 

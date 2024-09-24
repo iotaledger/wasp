@@ -97,7 +97,7 @@ func (req *OffLedgerRequestData) Equals(other Request) bool {
 		//req.msg.Equals(otherR.msg) &&
 		req.gasBudget == otherR.gasBudget &&
 		req.nonce == otherR.nonce &&
-		req.signature == otherR.signature
+		req.signature.Equals(otherR.signature)
 }
 
 func (req *OffLedgerRequestData) Message() Message {

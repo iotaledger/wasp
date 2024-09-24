@@ -115,6 +115,12 @@ func (s *Signature) Validate(message []byte) bool {
 	return p.Equal(edwards25519.NewIdentityPoint()) == 1 // p == 0
 }
 
+func (s *Signature) Equals(other *Signature) bool {
+	return s.signatureScheme == other.signatureScheme &&
+		s.publicKey.Equals(other.publicKey) &&
+		s.signature == other.signature
+}
+
 func (s *Signature) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	s.signatureScheme = rr.ReadByte()

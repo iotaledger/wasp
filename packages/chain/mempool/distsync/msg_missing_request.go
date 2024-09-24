@@ -26,16 +26,20 @@ func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.
 }
 
 func (msg *msgMissingRequest) Read(r io.Reader) error {
+	var err error
 	rr := rwutil.NewReader(r)
 	msgTypeMissingRequest.ReadAndVerify(rr)
 	msg.requestRef = new(isc.RequestRef)
-	rr.Read(msg.requestRef)
+	msg.requestRef, err = isc.RequestRefFromBytes(rr.ReadBytes())
+	if err != nil {
+		return err
+	}
 	return rr.Err
 }
 
 func (msg *msgMissingRequest) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	msgTypeMissingRequest.Write(ww)
-	ww.Write(msg.requestRef)
+	ww.WriteBytes(msg.requestRef.Bytes())
 	return ww.Err
 }
