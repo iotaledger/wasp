@@ -14,6 +14,7 @@ const (
 	CoreContractErrors          = "errors"
 	CoreContractEVM             = "evm"
 	CoreEPRotateStateController = "rotateStateController"
+	CoreIncCounter              = "incCounter"
 )
 
 var (

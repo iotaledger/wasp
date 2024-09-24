@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -25,6 +26,7 @@ var All = map[hashing.HashValue]isc.VMProcessor{
 	blocklog.Contract.ProgramHash:   blocklog.Processor,
 	governance.Contract.ProgramHash: governanceimpl.Processor,
 	evm.Contract.ProgramHash:        evmimpl.Processor,
+	inccounter.Contract.ProgramHash: inccounter.Processor,
 }
 
 func init() {
