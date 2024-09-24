@@ -8,6 +8,7 @@ import (
 	"sort"
 	"unsafe"
 
+	"github.com/iotaledger/hive.go/constraints"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
 )
@@ -271,13 +272,13 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		if typeOptions.IsCompactInt {
 			e.w.WriteSize32(int(v.Int()))
 		} else {
-			err = e.encodeInt(v, defaultValueSize(v.Kind()), typeOptions.SizeInBytes)
+			err = e.encodeInt(v, typeOptions.UnderlayingType)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if typeOptions.IsCompactInt {
 			e.w.WriteSize32(int(v.Uint()))
 		} else {
-			err = e.encodeUint(v, defaultValueSize(v.Kind()), typeOptions.SizeInBytes)
+			err = e.encodeUint(v, typeOptions.UnderlayingType)
 		}
 	case reflect.String:
 		e.w.WriteString(v.String())
@@ -553,58 +554,102 @@ func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumV
 	return enumVariantIdx, nil
 }
 
-func (e *Encoder) encodeInt(v reflect.Value, origSize, customSize ValueBytesCount) error {
-	size := lo.Ternary(customSize != 0, customSize, origSize)
+func (e *Encoder) encodeInt(v reflect.Value, encodedType reflect.Kind) error {
+	k := v.Kind()
 
-	switch size {
-	case Value1Byte:
+	if encodedType != reflect.Invalid && encodedType != k {
+		return convertEncodeNumber(e, v.Int(), encodedType)
+	}
+
+	switch k {
+	case reflect.Int8:
 		e.w.WriteInt8(int8(v.Int()))
-	case Value2Bytes:
+	case reflect.Int16:
 		e.w.WriteInt16(int16(v.Int()))
-	case Value4Bytes:
+	case reflect.Int32:
 		e.w.WriteInt32(int32(v.Int()))
-	case Value8Bytes:
+	case reflect.Int64, reflect.Int:
 		e.w.WriteInt64(v.Int())
 	default:
-		return e.handleErrorf("invalid value size: %v", size)
+		panic(fmt.Sprintf("unexpected int kind: %v", k))
 	}
 
-	return e.w.Err
+	return nil
 }
 
-func (e *Encoder) encodeUint(v reflect.Value, origSize, customSize ValueBytesCount) error {
-	size := lo.Ternary(customSize != 0, customSize, origSize)
+func (e *Encoder) encodeUint(v reflect.Value, encodedType reflect.Kind) error {
+	k := v.Kind()
 
-	switch size {
-	case Value1Byte:
+	if encodedType != reflect.Invalid && encodedType != k {
+		return convertEncodeNumber(e, v.Uint(), encodedType)
+	}
+
+	switch k {
+	case reflect.Uint8:
 		e.w.WriteUint8(uint8(v.Uint()))
-	case Value2Bytes:
+	case reflect.Uint16:
 		e.w.WriteUint16(uint16(v.Uint()))
-	case Value4Bytes:
+	case reflect.Uint32:
 		e.w.WriteUint32(uint32(v.Uint()))
-	case Value8Bytes:
+	case reflect.Uint64, reflect.Uint:
 		e.w.WriteUint64(v.Uint())
 	default:
-		return e.handleErrorf("invalid value size: %v", size)
+		panic(fmt.Sprintf("unexpected uint kind: %v", k))
 	}
 
-	return e.w.Err
+	return nil
 }
 
-func (e *Encoder) encodeSlice(v reflect.Value, typOpts TypeOptions) error {
-	switch typOpts.LenSizeInBytes {
+func convertEncodeNumber[Value constraints.Numeric](e *Encoder, v Value, encodedType reflect.Kind) error {
+	switch encodedType {
+	case reflect.Int8:
+		return convertEncodeNumber2(e, v, e.w.WriteInt8)
+	case reflect.Int16:
+		return convertEncodeNumber2(e, v, e.w.WriteInt16)
+	case reflect.Int32:
+		return convertEncodeNumber2(e, v, e.w.WriteInt32)
+	case reflect.Int64, reflect.Int:
+		return convertEncodeNumber2(e, v, e.w.WriteInt64)
+	case reflect.Uint8:
+		return convertEncodeNumber2(e, v, e.w.WriteUint8)
+	case reflect.Uint16:
+		return convertEncodeNumber2(e, v, e.w.WriteUint16)
+	case reflect.Uint32:
+		return convertEncodeNumber2(e, v, e.w.WriteUint32)
+	case reflect.Uint64, reflect.Uint:
+		return convertEncodeNumber2(e, v, e.w.WriteUint64)
+	default:
+		return e.handleErrorf("invalid underlaying type %v for type %T", encodedType, lo.Empty[Value]())
+	}
+}
+
+// The name has suffix 2 because it is a helper function for convertEncodeNumber to unwrap type To.
+func convertEncodeNumber2[To, From constraints.Numeric, Ret any](e *Encoder, v From, write func(To) Ret) error {
+	converted := To(v)
+
+	if From(converted) != v {
+		return e.handleErrorf("value %v is out of range of type %T", v, To(0))
+	}
+
+	write(converted)
+
+	return nil
+}
+
+func (e *Encoder) encodeSlice(v reflect.Value, typeOpts TypeOptions) error {
+	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
 	case Len4Bytes, 0:
 		e.w.WriteSize32(v.Len())
 	default:
-		return e.handleErrorf("invalid collection size type: %v", typOpts.LenSizeInBytes)
+		return e.handleErrorf("invalid collection size type: %v", typeOpts.LenSizeInBytes)
 	}
 
-	return e.encodeArray(v, typOpts)
+	return e.encodeArray(v, typeOpts)
 }
 
-func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
+func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 	elemType := v.Type().Elem()
 
 	tInfo, err := e.getEncodedTypeInfo(elemType)
@@ -613,28 +658,20 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 	}
 
 	if !tInfo.HasCustomizations() {
-		// The type does not have any customizations. So we can use
-		// some optimizations for encoding of basic types
-		switch elemType.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if err := e.encodeIntArray(v, defaultValueSize(elemType.Kind()), typOpts); err != nil {
-				return err
-			}
-
-			return nil
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			if err := e.encodeUintArray(v, defaultValueSize(elemType.Kind()), typOpts); err != nil {
-				return err
-			}
-
+		// The type does not have any customizations. So we can use  some optimizations for encoding of basic types
+		if elemType.Kind() == reflect.Uint8 && (v.Kind() == reflect.Slice || v.CanAddr()) && !typeOpts.ArrayElement.AsByteArray {
+			// Optimization for []byte and [N]byte.
+			e.w.WriteN(v.Bytes())
 			return nil
 		}
+
+		// There could be other optimizations for encoding of basic types. But I removed them for now for simplicity.
 	}
 
-	if typOpts.ArrayElement.AsByteArray {
+	if typeOpts.ArrayElement.AsByteArray {
 		for i := 0; i < v.Len(); i++ {
 			err := e.encodeAsByteArray(func() error {
-				return e.encodeValue(v.Index(i), &typOpts.ArrayElement.TypeOptions, &tInfo)
+				return e.encodeValue(v.Index(i), &typeOpts.ArrayElement.TypeOptions, &tInfo)
 			})
 			if err != nil {
 				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
@@ -642,7 +679,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 		}
 	} else {
 		for i := 0; i < v.Len(); i++ {
-			if err := e.encodeValue(v.Index(i), &typOpts.ArrayElement.TypeOptions, &tInfo); err != nil {
+			if err := e.encodeValue(v.Index(i), &typeOpts.ArrayElement.TypeOptions, &tInfo); err != nil {
 				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
 			}
 		}
@@ -651,161 +688,18 @@ func (e *Encoder) encodeArray(v reflect.Value, typOpts TypeOptions) error {
 	return nil
 }
 
-func (e *Encoder) encodeIntArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
-	if typOpts.ArrayElement.IsCompactInt {
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.encodeAsByteArray(func() error {
-					e.w.WriteSize32(int(v.Index(i).Int()))
-					return nil
-				})
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteSize32(int(v.Index(i).Int()))
-			}
-		}
-
-		return e.w.Err
-	}
-
-	switch bytesPerElem {
-	case Value1Byte:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(1) // NOTE: using WriteUint8 instaed of WritSize32 for sake of performance
-				e.w.WriteInt8(int8(v.Index(i).Int()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteInt8(int8(v.Index(i).Int()))
-			}
-		}
-	case Value2Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(2)
-				e.w.WriteInt16(int16(v.Index(i).Int()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteInt16(int16(v.Index(i).Int()))
-			}
-		}
-	case Value4Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(4)
-				e.w.WriteInt32(int32(v.Index(i).Int()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteInt32(int32(v.Index(i).Int()))
-			}
-		}
-	case Value8Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(8)
-				e.w.WriteInt64(v.Index(i).Int())
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteInt64(v.Index(i).Int())
-			}
-		}
-	default:
-		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
-	}
-
-	return e.w.Err
-}
-
-func (e *Encoder) encodeUintArray(v reflect.Value, bytesPerElem ValueBytesCount, typOpts TypeOptions) error {
-	if typOpts.ArrayElement.IsCompactInt {
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.encodeAsByteArray(func() error {
-					e.w.WriteSize32(int(v.Index(i).Uint()))
-					return nil
-				})
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteSize32(int(v.Index(i).Uint()))
-			}
-		}
-
-		return e.w.Err
-	}
-
-	switch bytesPerElem {
-	case Value1Byte:
-		// Optimization for encoding of byte/uint8 slices
-		if (v.Kind() == reflect.Slice || v.CanAddr()) && !typOpts.ArrayElement.AsByteArray {
-			e.w.WriteN(v.Bytes())
-		} else if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(1)
-				e.w.WriteUint8(uint8(v.Index(i).Uint()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(uint8(v.Index(i).Uint()))
-			}
-		}
-	case Value2Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(2)
-				e.w.WriteUint16(uint16(v.Index(i).Uint()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint16(uint16(v.Index(i).Uint()))
-			}
-		}
-	case Value4Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(4)
-				e.w.WriteUint32(uint32(v.Index(i).Uint()))
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint32(uint32(v.Index(i).Uint()))
-			}
-		}
-	case Value8Bytes:
-		if typOpts.ArrayElement.AsByteArray {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint8(8)
-				e.w.WriteUint64(v.Index(i).Uint())
-			}
-		} else {
-			for i := 0; i < v.Len(); i++ {
-				e.w.WriteUint64(v.Index(i).Uint())
-			}
-		}
-	default:
-		panic(fmt.Errorf("invalid value size: %v", bytesPerElem))
-	}
-
-	return e.w.Err
-}
-
-func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
+func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 	if v.IsNil() {
 		return e.handleErrorf("attemp to encode non-optional nil-map")
 	}
 
-	switch typOpts.LenSizeInBytes {
+	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
 		e.w.WriteSize16(v.Len())
 	case Len4Bytes, 0:
 		e.w.WriteSize32(v.Len())
 	default:
-		return e.handleErrorf("invalid collection size type: %v", typOpts.LenSizeInBytes)
+		return e.handleErrorf("invalid collection size type: %v", typeOpts.LenSizeInBytes)
 	}
 
 	t := v.Type()
@@ -824,7 +718,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 	for elem := v.MapRange(); elem.Next(); {
 		// Encoding keys to be able to sort map entries by key's bytes
 		encodedKey, err := e.getBytes(func() error {
-			return e.encodeValue(elem.Key(), typOpts.MapKey, &keyTypeInfo)
+			return e.encodeValue(elem.Key(), typeOpts.MapKey, &keyTypeInfo)
 		})
 		if err != nil {
 			return fmt.Errorf("key: %w", err)
@@ -841,7 +735,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typOpts TypeOptions) error {
 	for i := range entries {
 		e.w.WriteN(entries[i].A)
 
-		if err := e.encodeValue(entries[i].B, typOpts.MapValue, &valTypeInfo); err != nil {
+		if err := e.encodeValue(entries[i].B, typeOpts.MapValue, &valTypeInfo); err != nil {
 			return fmt.Errorf("value: %w", err)
 		}
 	}
@@ -958,10 +852,8 @@ func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
 	return nil
 }
 
+// Captures bytes written by enc() and prepends them with their count.
 func (e *Encoder) encodeAsByteArray(enc func() error) error {
-	// This value needs to be written as variable bytes array. For that, we need to first
-	// encode it in a separate buffer and then write it as array to original stream.
-
 	encodedVal, err := e.getBytes(enc)
 	if err != nil {
 		return err
