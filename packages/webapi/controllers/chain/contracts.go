@@ -24,7 +24,9 @@ func (c *Controller) getContracts(e echo.Context) error {
 
 	contractList := make([]models.ContractInfoResponse, 0, len(contracts))
 
-	for hName, contract := range contracts {
+	for _, contract := range contracts {
+		hName, contract := contract.Unpack()
+
 		contractInfo := models.ContractInfoResponse{
 			HName:       hName.String(),
 			Name:        contract.Name,

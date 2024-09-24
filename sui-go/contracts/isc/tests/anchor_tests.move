@@ -24,7 +24,6 @@ module isc::anchor_tests {
         assets_bag::Self,
         anchor::Self,
         request::Self,
-        allowance::Self,
     };
 
     // One Time Witness for coins used in the tests.
@@ -69,9 +68,14 @@ module isc::anchor_tests {
         let nft_id = object::id(&test_b_nft);
 
         // ClientPTB.2 create allowance
-        let mut req_allowance = allowance::new(&mut ctx);
-        req_allowance.with_coin_allowance<TEST_A>(100);
-        req_allowance.with_coin_allowance<TEST_A>(111);
+        let mut allowance_cointypes = vector::empty();
+        let mut allowance_balances = vector::empty();
+        allowance_cointypes.push_back(string::utf8(b"TEST_A"));
+        allowance_balances.push_back(100);
+        allowance_cointypes.push_back(string::utf8(b"TEST_A"));
+        allowance_balances.push_back(111);
+        allowance_cointypes.push_back(string::utf8(b"SUI"));
+        allowance_balances.push_back(32);
 
         // ClientPTB.3 Add the assets to the bag.
         let mut req_assets = assets_bag::new(&mut ctx);
@@ -93,18 +97,16 @@ module isc::anchor_tests {
             42, // contract hname
             42, // entry point
             vector::empty(), // args
-            req_allowance,
+            allowance_cointypes,
+            allowance_balances,
             100,
             &mut ctx,
         );
 
         // ServerPTB.1 Now the Anchor receives off-chain an event that tracks the request and can receive it.
-        // let (receipt, req_extracted_assets, req_extracted_allowance) = anchor.receive_request(req); // Commented because cannot be executed in this test
-        let (id, mut req_extracted_assets, mut req_extracted_allowance) = req.destroy(); //this is not part of the PTB
+        // let (receipt, req_extracted_assets) = anchor.receive_request(req); // Commented because cannot be executed in this test
+        let (id, mut req_extracted_assets) = req.destroy(); //this is not part of the PTB
         let receipt = anchor::create_receipt_for_testing(id); //this is not part of the PTB
-        let coin_allowance = req_extracted_allowance.remove_coin_allowance<TEST_A>();
-        assert!(211 == coin_allowance);
-        req_extracted_allowance.destroy();
 
         // ServerPTB.2: borrow the asset bag of the anchor
         let (mut anchor_assets, borrow) = anchor.borrow_assets();    

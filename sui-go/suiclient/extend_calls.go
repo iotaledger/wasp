@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
@@ -268,7 +268,7 @@ func BCS_RequestAddStake(
 	tx := sui.NewProgrammable(
 		signer, pt, coins, gasBudget, gasPrice,
 	)
-	return bcs.Marshal(tx)
+	return bcs.Marshal(&tx)
 }
 
 func BCS_RequestWithdrawStake(
@@ -307,5 +307,5 @@ func BCS_RequestWithdrawStake(
 	tx := sui.NewProgrammable(
 		signer, pt, gas, gasBudget, gasPrice,
 	)
-	return bcs.Marshal(tx)
+	return bcs.Marshal(&tx)
 }

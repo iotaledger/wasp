@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/utxodb"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/common"
@@ -22,7 +21,6 @@ func TestOffLedger(t *testing.T) {
 
 	// create a wallet with some base tokens on L1:
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(0))
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 	chain.DepositBaseTokensToL2(env.L1BaseTokens(userAddress), userWallet)
 
 	req := isc.NewOffLedgerRequest(chain.ID(), accounts.FuncDeposit.Message(), 0, math.MaxUint64)

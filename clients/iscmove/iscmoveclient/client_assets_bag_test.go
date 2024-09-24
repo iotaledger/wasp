@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -297,7 +297,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txnBytes, err := bcs.Marshal(tx)
+	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
@@ -359,8 +359,6 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
 
-	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner)
-
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
@@ -370,7 +368,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		allowanceRef,
+		nil,
 		0,
 		nil,
 		suiclient.DefaultGasPrice,

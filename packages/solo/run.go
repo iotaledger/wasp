@@ -6,12 +6,12 @@ package solo
 import (
 	"errors"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -55,17 +55,10 @@ func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
-	anchorRef, err := ch.LatestAnchor(chain.ActiveOrCommittedState)
-	require.NoError(ch.Env.T, err)
 	task := &vm.VMTask{
-		Processors: ch.proc,
-		Anchor: &isc.StateAnchor{
-			Ref:        anchorRef,
-			Owner:      ch.OriginatorAddress,
-			ISCPackage: ch.Env.ISCPackageID(),
-		},
+		Processors:         ch.proc,
+		Anchor:             lo.Must(ch.LatestAnchor(chain.ActiveOrCommittedState)),
 		Requests:           reqs,
-		CoinInfos:          ch.getCoinInfosForRequests(reqs),
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
 		Entropy:            hashing.PseudoRandomHash(nil),
@@ -83,27 +76,6 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		CheckLedgerConsistency()
 	require.NoError(ch.Env.T, err)
 	return res
-}
-
-func (ch *Chain) getCoinInfosForRequests(reqs []isc.Request) isc.SuiCoinInfos {
-	ret := make(isc.SuiCoinInfos)
-	for _, req := range reqs {
-		req.Assets().Coins.IterateSorted(func(t coin.Type, v coin.Value) bool {
-			if ret[t] != nil {
-				return true
-			}
-			ret[t] = ch.Env.L1CoinInfo(t)
-			return true
-		})
-		req.Allowance().Coins.IterateSorted(func(t coin.Type, v coin.Value) bool {
-			if ret[t] != nil {
-				return true
-			}
-			ret[t] = ch.Env.L1CoinInfo(t)
-			return true
-		})
-	}
-	return ret
 }
 
 func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []*vm.RequestResult) {

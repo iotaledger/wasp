@@ -13,7 +13,7 @@ type ObjectRecord struct {
 }
 
 func ObjectRecordFromBytes(data []byte, id sui.ObjectID) (*ObjectRecord, error) {
-	return bcs.UnmarshalOver(data, &ObjectRecord{ID: id})
+	return bcs.UnmarshalInto(data, &ObjectRecord{ID: id})
 }
 
 func (rec *ObjectRecord) Bytes() []byte {

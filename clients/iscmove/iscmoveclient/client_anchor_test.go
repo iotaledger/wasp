@@ -20,11 +20,15 @@ func TestStartNewChain(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
+	getCoinsRes, err := client.GetCoins(context.Background(), suiclient.GetCoinsRequest{Owner: signer.Address().AsSuiAddress()})
+	require.NoError(t, err)
+
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
+		getCoinsRes.Data[1].Ref(),
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -43,6 +47,7 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -97,8 +102,6 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	sentAssetsBagRef, err = client.UpdateObjectRef(context.Background(), sentAssetsBagRef)
 	require.NoError(t, err)
 
-	allowanceRef := createEmptyAllowance(t, client, cryptolibSigner)
-
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
 		cryptolibSigner,
@@ -108,7 +111,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		allowanceRef,
+		nil,
 		0,
 		nil,
 		suiclient.DefaultGasPrice,
@@ -145,6 +148,7 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,

@@ -30,19 +30,20 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
-	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -260,13 +261,20 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	initParams := dict.Dict{
-		origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
-		origin.ParamWaspVersion: codec.String.Encode(app.Version),
-	}
-	if len(blockKeepAmount) > 0 {
-		initParams[origin.ParamBlockKeepAmount] = codec.Int32.Encode(blockKeepAmount[0])
-	}
+	encodedInitParams := origin.EncodeInitParams(isc.NewAgentID(chain.OriginatorAddress()), 1074, blockKeepAmount[0])
+
+	stateMetaData := *transaction.NewStateMetadata(
+		allmigrations.DefaultScheme.LatestSchemaVersion(),
+		origin.L1Commitment(
+			allmigrations.DefaultScheme.LatestSchemaVersion(),
+			encodedInitParams,
+			governance.DefaultMinBaseTokensOnCommonAccount,
+			&isc.SuiCoinInfo{CoinType: coin.BaseTokenType},
+		),
+		gas.DefaultFeePolicy(),
+		encodedInitParams,
+		"",
+	)
 
 	chainID, err := apilib.DeployChain(
 		context.Background(),
@@ -278,7 +286,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
-			InitParams:        initParams,
+			StateMetadata:     stateMetaData,
 		},
 		stateAddr,
 		stateAddr,
@@ -350,7 +358,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		}
 	}
 
-	scArgs := governance.NewChangeAccessNodesRequest()
+	pubKeys := []lo.Tuple2[*cryptolib.PublicKey, *governance.ChangeAccessNodeAction]{}
 	for _, a := range accessNodes {
 		waspClient := clu.WaspClient(a)
 
@@ -364,12 +372,13 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		if err != nil {
 			return err
 		}
-		scArgs.Accept(accessNodePubKey)
+
+		pubKeys = append(pubKeys, governance.AcceptAccessNodeAction(accessNodePubKey))
 	}
 	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
 	govClient := chain.Client(chain.OriginatorKeyPair)
 
-	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Message(scArgs), *scParams)
+	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Message(pubKeys), *scParams)
 	if err != nil {
 		return err
 	}
@@ -849,9 +858,9 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	return balance
 }
 
-func (clu *Cluster) L1BaseTokens(addr *cryptolib.Address) uint64 {
+func (clu *Cluster) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 	tokens := clu.AddressBalances(addr)
-	return tokens.BaseTokens
+	return tokens.BaseTokens()
 }
 
 func (clu *Cluster) AssertAddressBalances(addr *cryptolib.Address, expected *isc.Assets) bool {

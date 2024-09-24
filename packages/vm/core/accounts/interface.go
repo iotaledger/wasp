@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
@@ -22,7 +23,13 @@ var (
 	FuncTransferAllowanceTo = coreutil.NewEP1(Contract, "transferAllowanceTo",
 		coreutil.FieldWithCodec(codec.AgentID),
 	)
-	FuncWithdraw = coreutil.NewEP0(Contract, "withdraw")
+	FuncWithdraw    = coreutil.NewEP0(Contract, "withdraw")
+	SetCoinMetadata = coreutil.NewEP1(Contract, "setCoinMetadata",
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.SuiCoinInfo]()),
+	)
+	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
+		coreutil.FieldWithCodec(codec.CoinType),
+	)
 
 	// Views
 	// TODO: implement pagination

@@ -59,7 +59,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -564,7 +564,6 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		},
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
-		CoinInfos:            nil, // TODO: fill a map with a SuiCoinInfo for each coin referenced in all requests (assets & allowance)
 		Timestamp:            aggregatedProposals.AggregatedTime(),
 		Entropy:              *randomness,
 		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(*randomness),

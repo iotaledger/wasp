@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
@@ -350,11 +350,14 @@ func (env *Solo) deployChain(
 		initParams,
 		"",
 	)
+
+	panic("refactor me: validate StartNewChain call (initCoinRef, gasPayments)")
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		chainOriginator,
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
+		nil,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
@@ -465,7 +468,7 @@ func (env *Solo) EnqueueRequests(requests map[isc.ChainID][]isc.Request) {
 	}
 }
 
-func (ch *Chain) GetLatestAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
+func (ch *Chain) GetLatestAnchor() *iscmove.AnchorWithRef {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsSuiAddress())
 	require.NoError(ch.Env.T, err)
 	return anchor
@@ -664,7 +667,7 @@ func (env *Solo) executePTB(ptb sui.ProgrammableTransaction, wallet *cryptolib.K
 		suiclient.DefaultGasBudget,
 	)
 
-	txnBytes, err := bcs.Marshal(tx)
+	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(env.T, err)
 
 	execRes, err := env.SuiClient().SignAndExecuteTransaction(

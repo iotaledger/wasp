@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -14,7 +13,11 @@ import (
 )
 
 // EVMCall executes an EVM contract call and returns its output, discarding any state changes
-func EVMCall(ch chain.ChainCore, aliasOutput *iscmove.AnchorWithRef, call ethereum.CallMsg) ([]byte, error) {
+func EVMCall(
+	ch chain.ChainCore,
+	anchor *isc.StateAnchor,
+	call ethereum.CallMsg,
+) ([]byte, error) {
 	info := getChainInfo(ch)
 
 	// 0 means view call
@@ -29,7 +32,7 @@ func EVMCall(ch chain.ChainCore, aliasOutput *iscmove.AnchorWithRef, call ethere
 
 	iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
 	// TODO: setting EstimateGasMode = true feels wrong here
-	res, err := runISCRequest(ch, aliasOutput, time.Now(), iscReq, true)
+	res, err := runISCRequest(ch, anchor, time.Now(), iscReq, true)
 	if err != nil {
 		return nil, err
 	}
