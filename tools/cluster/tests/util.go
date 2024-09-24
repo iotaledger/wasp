@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -11,12 +10,13 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -25,7 +25,7 @@ func (e *ChainEnv) checkCoreContracts() {
 		cl := e.Chain.Client(nil, i)
 		ret, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Message())
 		require.NoError(e.t, err)
-		info, err := governance.ViewGetChainInfo.Output1.Decode(ret)
+		info, err := governance.ViewGetChainInfo.DecodeOutput(ret)
 		require.NoError(e.t, err)
 
 		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainOwnerID)
@@ -34,7 +34,7 @@ func (e *ChainEnv) checkCoreContracts() {
 			CallView(context.Background(), root.ViewGetContractRecords.Message())
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.ViewGetContractRecords.Output1.Decode(records)
+		contractRegistry, err := root.ViewGetContractRecords.DecodeOutput(records)
 		require.NoError(e.t, err)
 		for _, rec := range corecontracts.All {
 			cr := contractRegistry[rec.Hname()]
@@ -56,7 +56,7 @@ func (e *ChainEnv) checkRootsOutside() {
 	}
 }
 
-func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIndex ...int) uint64 {
+func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, coinType coin.Type, nodeIndex ...int) coin.Value {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]
@@ -70,25 +70,11 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 	assets, err := apiextensions.AssetsFromAPIResponse(balance)
 	require.NoError(e.t, err)
 
-	if bytes.Equal(assetID, isc.BaseTokenID) {
-		return assets.BaseTokens
-	}
-
-	nativeTokenID, err := isc.NativeTokenIDFromBytes(assetID)
-	require.NoError(e.t, err)
-
-	for _, nativeToken := range assets.NativeTokens {
-		if nativeToken.ID.Matches(nativeTokenID) {
-			// TODO: Validate bigint to uint64 behavior
-			return nativeToken.Amount.Uint64()
-		}
-	}
-	// TODO: Throw error when native token id wasn't found?
-	return 0
+	return assets.CoinBalance(coinType)
 }
 
-func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expected uint64) {
-	actual := e.getBalanceOnChain(agentID, assetID)
+func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, coinType coin.Type, expected coin.Value) {
+	actual := e.getBalanceOnChain(agentID, coinType)
 	require.EqualValues(e.t, expected, actual)
 }
 
@@ -185,7 +171,7 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
 		}
-		counter, err := inccounter.ViewGetCounter.Output1.Decode(ret)
+		counter, err := inccounter.ViewGetCounter.DecodeOutput(ret)
 		require.NoError(t, err)
 		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected
@@ -194,7 +180,7 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 
 func (e *ChainEnv) accountExists(agentID isc.AgentID) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		return e.getBalanceOnChain(agentID, isc.BaseTokenID, nodeIndex) > 0
+		return e.getBalanceOnChain(agentID, coin.BaseTokenType, nodeIndex) > 0
 	}
 }
 
@@ -258,6 +244,6 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int, d
 		Clu:   clu,
 		Chain: chain,
 	}
-	e.deployNativeIncCounterSC(0)
+
 	return e
 }

@@ -15,7 +15,6 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,12 +22,12 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 // executed in cluster_test.go
 func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
 
@@ -114,7 +113,6 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 // executed in cluster_test.go
 func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
 
 	// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
 	const maxParallelRequests = 700
@@ -202,7 +200,6 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 // executed in cluster_test.go
 func testSpamEVM(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
 
 	const numRequests = 1_000
 

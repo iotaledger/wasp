@@ -11,9 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 type SabotageEnv struct {
@@ -23,14 +23,10 @@ type SabotageEnv struct {
 }
 
 func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *SabotageEnv {
-	progHash := inccounter.Contract.ProgramHash
 	env := SetupWithChain(t, waspClusterOpts{nNodes: clusterSize})
 	_, _, err := env.Clu.InitDKG(numValidators)
 
 	require.NoError(t, err)
-
-	_, _ = env.Chain.DeployContract(inccounter.Contract.Name, progHash.String(), nil)
-	waitUntil(t, env.contractIsDeployed(), env.Clu.Config.AllNodes(), 50*time.Second, "contract is deployed")
 
 	return &SabotageEnv{
 		chainEnv:      env,

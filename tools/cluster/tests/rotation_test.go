@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
@@ -79,7 +79,6 @@ func TestRotation(t *testing.T) {
 	t.Logf("chainID: %s", chain.ChainID)
 
 	chEnv := newChainEnv(t, clu, chain)
-	chEnv.deployNativeIncCounterSC(0)
 
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
 
@@ -142,9 +141,6 @@ func TestRotationFromSingle(t *testing.T) {
 	t.Logf("chainID: %s", chain.ChainID)
 
 	chEnv := newChainEnv(t, clu, chain)
-	chEnv.deployNativeIncCounterSC(0)
-
-	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
 	incCounterResultChan := make(chan error)
 
@@ -251,8 +247,6 @@ func TestRotationMany(t *testing.T) {
 		require.NoError(t, err2)
 		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
 	}
-
-	chEnv.deployNativeIncCounterSC(0)
 
 	keyPair, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

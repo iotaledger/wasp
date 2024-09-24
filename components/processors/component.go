@@ -27,9 +27,7 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func() processorsConfigResult {
 		Component.LogInfo("Registering native contracts...")
 
-		nativeContracts := []*coreutil.ContractProcessor{
-			// inccounter.Processor,
-		}
+		nativeContracts := []*coreutil.ContractProcessor{}
 
 		for _, c := range nativeContracts {
 			Component.LogDebugf(

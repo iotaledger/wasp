@@ -18,7 +18,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -195,7 +194,7 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.StateAnchor, tangleTime ti
 
 	store := te.stores[0]
 	vmTask := &vm.VMTask{
-		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
+		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
 		Anchor:               ao,
 		Store:                store,
 		Requests:             reqs,

@@ -10,13 +10,14 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -31,8 +32,6 @@ type contractWithMessageCounterEnv struct {
 }
 
 func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
-	env.deployNativeIncCounterSC(0)
-
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, inccounter.Contract.Hname())
 	tx, err := env.NewChainClient().PostRequest(accounts.FuncTransferAllowanceTo.Message(contractAgentID), chainclient.PostRequestParams{
@@ -52,7 +51,7 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
-	transfer := isc.NewAssets(uint64(tokens), nil)
+	transfer := isc.NewAssets(coin.Value(tokens))
 	b := isc.NewEmptyAssets()
 	if transfer != nil {
 		b = transfer
@@ -74,7 +73,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		cl := e.Chain.Client(nil, i)
 		r, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Message())
 		require.NoError(e.t, err)
-		info, err := governance.ViewGetChainInfo.Output1.Decode(r)
+		info, err := governance.ViewGetChainInfo.DecodeOutput(r)
 		require.NoError(e.t, err)
 
 		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainOwnerID)
@@ -82,7 +81,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		recs, err := e.Chain.Client(nil, i).CallView(context.Background(), root.ViewGetContractRecords.Message())
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.ViewGetContractRecords.Output1.Decode(recs)
+		contractRegistry, err := root.ViewGetContractRecords.DecodeOutput(recs)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, len(corecontracts.All)+1, len(contractRegistry))
 
@@ -244,8 +243,7 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 			FunctionName:  "getCounter",
 		})
 	require.NoError(t, err)
-
-	counter, err := codec.Int64.Decode(ret.Get(varCounter), 0)
+	counter, err := inccounter.ViewGetCounter.DecodeOutput(ret)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }
