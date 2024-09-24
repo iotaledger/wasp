@@ -30,14 +30,14 @@ const (
 	// Covered in: TestFoundries
 	keyAllAccounts = "a"
 
-	// prefixCoins | <accountID> stores a map of <CoinType> => CoinValue
+	// prefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
 	// Covered in: TestFoundries
-	prefixCoins = "C"
+	prefixAccountCoinBalances = "C"
 
-	// prefixRemainders | <accountID> stores the wei remainder (big.Int 18 decimals)
-	prefixRemainders = "w"
+	// prefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
+	prefixAccountWeiRemainder = "w"
 
-	// L2TotalsAccount is the special <accountID> storing the total coins
+	// L2TotalsAccount is the special <accountID> storing the total coin balances
 	// controlled by the chain
 	// Covered in: TestFoundries
 	L2TotalsAccount = "*"
@@ -50,10 +50,6 @@ const (
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	prefixObjectsByCollection = "c"
 
-	// prefixTreasuryCaps + <agentID> stores a map of <ObjectID> => true
-	// Covered in: TestFoundries
-	prefixTreasuryCaps = "T"
-
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	// Covered in: TestNFTMint
 	noCollection = "-"
@@ -62,12 +58,9 @@ const (
 	// Covered in: TestNFTMint
 	keyNonce = "m"
 
-	// keyCoinRecords stores a map of <CoinType> => array of CoinRecord
+	// keyCoinInfo stores a map of <CoinType> => isc.SuiCoinInfo
 	// Covered in: TestFoundries
-	keyCoinRecords = "RC"
-	// keyTreasuryCapRecords stores a map of <CoinType> => TreasuryCapRecord
-	// Covered in: TestFoundries
-	keyTreasuryCapRecords = "RT"
+	keyCoinInfo = "RC"
 	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyObjectRecords = "RO"

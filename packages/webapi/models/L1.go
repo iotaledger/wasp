@@ -38,11 +38,13 @@ func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
 		return nil
 	}
 
+	panic("refactor me: webapi output models")
+
 	return &OnLedgerRequest{
 		ID:       request.ID().String(),
-		OutputID: request.ID().OutputID().ToHex(),
-		Output:   OutputFromIotaGoOutput(request.Output()),
-		Raw:      iotago.EncodeHex(request.Bytes()),
+		OutputID: request.ID().String(),
+		//Output:   OutputFromIotaGoOutput(request.Output()),
+		Raw: iotago.EncodeHex(request.Bytes()),
 	}
 }
 

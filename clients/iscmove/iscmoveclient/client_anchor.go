@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -18,16 +18,25 @@ func (c *Client) StartNewChain(
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
 	stateMetadata []byte,
+	initCoinRef *sui.ObjectRef,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iscmove.RefWithObject[iscmove.Anchor], error) {
+) (*iscmove.AnchorWithRef, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
-	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, cryptolibSigner.Address())
+	var argInitCoin sui.Argument
+	if initCoinRef != nil {
+		ptb = PTBOptionSomeSuiCoin(ptb, initCoinRef)
+	} else {
+		ptb = PTBOptionNoneSuiCoin(ptb)
+	}
+	argInitCoin = ptb.LastCommandResultArg()
+
+	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, cryptolibSigner.Address())
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
@@ -48,12 +57,12 @@ func (c *Client) StartNewChain(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
@@ -132,12 +141,12 @@ func (c *Client) ReceiveRequestAndTransition(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
@@ -160,7 +169,7 @@ func (c *Client) ReceiveRequestAndTransition(
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *sui.ObjectID,
-) (*iscmove.RefWithObject[iscmove.Anchor], error) {
+) (*iscmove.AnchorWithRef, error) {
 	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -174,33 +183,8 @@ func (c *Client) GetAnchorFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	return &iscmove.RefWithObject[iscmove.Anchor]{
+	return &iscmove.AnchorWithRef{
 		ObjectRef: getObjectResponse.Data.Ref(),
 		Object:    &anchor,
 	}, nil
-}
-
-func (c *Client) GetRequestFromObjectID(
-	ctx context.Context,
-	id *sui.ObjectID,
-) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
-		ObjectID: id,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %w", err)
-	}
-
-	var req iscmove.Request
-	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
-	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
-	}
-	req.AssetsBag.Value = bals
-	return &req, nil
 }

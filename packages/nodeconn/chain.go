@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -127,7 +127,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 }
 
 func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
+	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.Request)
 	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestPublicChainMetadataSerialization(t *testing.T) {
@@ -15,6 +15,5 @@ func TestPublicChainMetadataSerialization(t *testing.T) {
 		Description:     "Description",
 		Website:         "Website",
 	}
-	rwutil.ReadWriteTest(t, metadata, new(isc.PublicChainMetadata))
-	rwutil.BytesTest(t, metadata, isc.PublicChainMetadataFromBytes)
+	bcs.TestCodec(t, metadata)
 }

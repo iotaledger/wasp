@@ -138,16 +138,11 @@ func (c *CommitteeService) getCandidateNodes(
 	nodes := make([]*dto.ChainNodeStatus, 0)
 
 	for _, node := range candidateNodes {
-		pubKey, err := cryptolib.PublicKeyFromBytes(node.NodePubKey)
-		if err != nil {
-			return nil, err
-		}
-
-		if _, ok := inChainNodes[pubKey.AsKey()]; ok {
+		if _, ok := inChainNodes[node.NodePubKey.AsKey()]; ok {
 			continue // Only include unused candidates here.
 		}
 
-		nodes = append(nodes, c.makeChainNodeStatus(pubKey, peeringStatus, candidateNodes))
+		nodes = append(nodes, c.makeChainNodeStatus(node.NodePubKey, peeringStatus, candidateNodes))
 	}
 
 	return nodes, nil
@@ -156,11 +151,7 @@ func (c *CommitteeService) getCandidateNodes(
 func (c *CommitteeService) getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNodeInfo) (map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo, error) {
 	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
 	for _, chainCandidateNode := range chainCandidateNodes {
-		pubKey, err := cryptolib.PublicKeyFromBytes(chainCandidateNode.NodePubKey)
-		if err != nil {
-			return nil, err
-		}
-		candidateNodes[pubKey.AsKey()] = chainCandidateNode
+		candidateNodes[chainCandidateNode.NodePubKey.AsKey()] = chainCandidateNode
 	}
 
 	return candidateNodes, nil

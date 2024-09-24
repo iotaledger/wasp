@@ -3,7 +3,6 @@ package isc
 import (
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"time"
 
@@ -12,16 +11,16 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type OffLedgerRequestData struct {
-	allowance *Assets
-	chainID   ChainID
-	msg       Message
-	gasBudget uint64
-	nonce     uint64
-	signature *cryptolib.Signature
+	allowance *Assets              `bcs:""`
+	chainID   ChainID              `bcs:""`
+	msg       Message              `bcs:""`
+	gasBudget uint64               `bcs:""`
+	nonce     uint64               `bcs:""`
+	signature *cryptolib.Signature `bcs:""`
 }
 
 var (
@@ -70,47 +69,8 @@ func NewOffLedgerRequest(
 	}
 }
 
-func (req *OffLedgerRequestData) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	req.readEssence(rr)
-	req.signature = cryptolib.NewEmptySignature()
-	rr.Read(req.signature)
-	return rr.Err
-}
-
 func (req *OffLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
-}
-
-func (req *OffLedgerRequestData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	req.writeEssence(ww)
-	ww.Write(req.signature)
-	return ww.Err
-}
-
-func (req *OffLedgerRequestData) readEssence(rr *rwutil.Reader) {
-	rr.ReadKindAndVerify(rwutil.Kind(requestKindOffLedgerISC))
-	rr.Read(&req.chainID)
-	rr.Read(&req.msg.Target.Contract)
-	rr.Read(&req.msg.Target.EntryPoint)
-	req.msg.Params = CallArguments{}
-	rr.Read(&req.msg.Params)
-	req.nonce = rr.ReadAmount64()
-	req.gasBudget = rr.ReadGas64()
-	req.allowance = NewEmptyAssets()
-	rr.Read(req.allowance)
-}
-
-func (req *OffLedgerRequestData) writeEssence(ww *rwutil.Writer) {
-	ww.WriteKind(rwutil.Kind(requestKindOffLedgerISC))
-	ww.Write(&req.chainID)
-	ww.Write(&req.msg.Target.Contract)
-	ww.Write(&req.msg.Target.EntryPoint)
-	ww.Write(&req.msg.Params)
-	ww.WriteAmount64(req.nonce)
-	ww.WriteGas64(req.gasBudget)
-	ww.Write(req.allowance)
 }
 
 // Allowance from the sender's account to the target smart contract. Nil mean no Allowance
@@ -124,7 +84,7 @@ func (req *OffLedgerRequestData) Assets() *Assets {
 }
 
 func (req *OffLedgerRequestData) Bytes() []byte {
-	return rwutil.WriteToBytes(req)
+	return bcs.MustMarshal(req)
 }
 
 func (req *OffLedgerRequestData) Equals(other Request) bool {
@@ -149,9 +109,21 @@ func (req *OffLedgerRequestData) ChainID() ChainID {
 }
 
 func (req *OffLedgerRequestData) EssenceBytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	req.writeEssence(ww)
-	return ww.Bytes()
+	type offLedgerRequestDataEssence struct { // TODO: why is it not a separate embedded type?
+		Allowance *Assets
+		ChainID   ChainID
+		Msg       Message
+		GasBudget uint64
+		Nonce     uint64
+	}
+
+	return bcs.MustMarshal(&offLedgerRequestDataEssence{
+		Allowance: req.allowance,
+		ChainID:   req.chainID,
+		Msg:       req.msg,
+		GasBudget: req.gasBudget,
+		Nonce:     req.nonce,
+	})
 }
 
 func (req *OffLedgerRequestData) messageToSign() []byte {

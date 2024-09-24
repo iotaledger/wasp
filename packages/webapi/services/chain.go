@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/samber/lo"
 )
 
 type ChainService struct {
@@ -129,7 +130,7 @@ func (c *ChainService) GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot s
 	if err != nil {
 		return 0, err
 	}
-	return evm.ViewGetChainID.Output1.Decode(ret)
+	return evm.ViewGetChainID.DecodeOutput(ret)
 }
 
 func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
@@ -172,7 +173,7 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTr
 	return chainInfo, nil
 }
 
-func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) (dto.ContractsMap, error) {
+func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error) {
 	ch, err := c.GetChainByID(chainID)
 	if err != nil {
 		return nil, err
@@ -181,7 +182,7 @@ func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot st
 	if err != nil {
 		return nil, err
 	}
-	return root.ViewGetContractRecords.Output1.Decode(res)
+	return root.ViewGetContractRecords.DecodeOutput(res)
 }
 
 func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {

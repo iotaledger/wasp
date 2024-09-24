@@ -6,8 +6,11 @@ module isc::request {
         borrow::{Self, Referent},
         event::Self,
     };
+    use std::string::String;
     use isc::assets_bag::AssetsBag;
-    use isc::allowance::Allowance;
+
+    // The allowance coin_types vector and balances vector are not in the same size
+    const EAllowanceVecUnequal: u64 = 0;
 
     // === Main structs ===
 
@@ -21,6 +24,11 @@ module isc::request {
         args: vector<vector<u8>>,
     }
 
+    public struct CoinAllowance has drop, store {
+        coin_type: String,
+        balance: u64,
+    }
+
     /// Represents a request object
     public struct Request has key {
         id: UID,
@@ -31,7 +39,7 @@ module isc::request {
         /// The target contract, entry point and arguments
         message: Message,
         /// The gas_budget of the request on L2
-        allowance: Referent<Allowance>,
+        allowance: vector<CoinAllowance>,
         /// The gas_budget of the request on L2
         gas_budget: u64,
     }
@@ -55,10 +63,24 @@ module isc::request {
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
-        allowance: Allowance,
+        mut allowance_cointypes: vector<String>,
+        mut allowance_balances: vector<u64>,
         gas_budget: u64,
         ctx: &mut TxContext,
     ) {
+        let mut allowance_cointypes_len = vector::length<String>(&allowance_cointypes);
+        assert!(allowance_cointypes_len == vector::length<u64>(&allowance_balances), EAllowanceVecUnequal);
+
+        let mut allowance = vector::empty();
+        while (allowance_cointypes_len > 0) {
+            let allowance_elt = CoinAllowance {
+                coin_type: allowance_cointypes.pop_back(),
+                balance: allowance_balances.pop_back(),
+            };
+            allowance.push_back(allowance_elt);
+            allowance_cointypes_len = allowance_cointypes_len - 1;
+        };
+
         send(Request{
             id: object::new(ctx),
             sender: ctx.sender(),
@@ -68,24 +90,24 @@ module isc::request {
                 function,
                 args,
             },
-            allowance: borrow::new(allowance, ctx),
+            allowance: allowance,
             gas_budget: gas_budget,
         }, anchor)
     }
 
     /// Destroys a Request object and returns its balance and assets bag.
-    public fun destroy(self: Request): (ID, AssetsBag, Allowance) {
+    public fun destroy(self: Request): (ID, AssetsBag) {
         let Request {
             id,
             sender: _,
             assets_bag,
             message: _,
-            allowance,
+            allowance: _,
             gas_budget: _,
         } = self;
         let inner_id = id.uid_to_inner();
         id.delete();
-        (inner_id, assets_bag.destroy(), allowance.destroy())
+        (inner_id, assets_bag.destroy())
     }
 
     // === Send and receive the Request ===
@@ -111,10 +133,24 @@ module isc::request {
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
-        allowance: Allowance,
+        mut allowance_cointypes: vector<String>,
+        mut allowance_balances: vector<u64>,
         gas_budget: u64,
         ctx: &mut TxContext,
     ): Request {
+        let mut allowance_cointypes_len = vector::length<String>(&allowance_cointypes);
+        assert!(allowance_cointypes_len == vector::length<u64>(&allowance_balances), EAllowanceVecUnequal);
+
+        let mut allowance = vector::empty();
+        while (allowance_cointypes_len > 0) {
+            let allowance_elt = CoinAllowance {
+                coin_type: allowance_cointypes.pop_back(),
+                balance: allowance_balances.pop_back(),
+            };
+            allowance.push_back(allowance_elt);
+            allowance_cointypes_len = allowance_cointypes_len - 1;
+        };
+
         Request{
             id: object::new(ctx),
             sender: ctx.sender(),
@@ -124,7 +160,7 @@ module isc::request {
                 function,
                 args,
             },
-            allowance: borrow::new(allowance, ctx),
+            allowance: allowance,
             gas_budget: gas_budget,
         }
     }

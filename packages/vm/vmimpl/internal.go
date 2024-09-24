@@ -122,6 +122,13 @@ func (reqctx *requestContext) GetObjectBCS(objectID sui.ObjectID) (ret []byte, o
 	return ret, ret != nil
 }
 
+func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *isc.SuiCoinInfo, ok bool) {
+	reqctx.callAccounts(func(s *accounts.StateWriter) {
+		coinInfo, ok = s.GetCoinInfo(coinType)
+	})
+	return
+}
+
 func (reqctx *requestContext) GetSenderTokenBalanceForFees() coin.Value {
 	sender := reqctx.req.SenderAccount()
 	if sender == nil {
@@ -212,8 +219,4 @@ func (reqctx *requestContext) adjustL2BaseTokensIfNeeded(adjustment coin.Value, 
 	if err != nil {
 		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
 	}
-}
-
-func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
-	panic("TODO")
 }

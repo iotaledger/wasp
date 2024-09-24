@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type soloTestEnv struct {
@@ -50,13 +51,12 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 	}
 
 	s := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
-		Log:                      log,
+		Debug:           true,
+		PrintStackTrace: true,
+		Log:             log,
 	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
-	chain, _ := s.NewChainExt(chainOwner, 0, "chain1")
+	chain, _ := s.NewChainExt(chainOwner, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	accounts := jsonrpc.NewAccountManager(nil)
 	rpcsrv, err := jsonrpc.NewServer(

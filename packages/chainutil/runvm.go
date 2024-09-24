@@ -23,24 +23,23 @@ import (
 
 func runISCTask(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
 	store := ch.Store()
-	migs, err := getMigrationsForBlock(store, aliasOutput)
+	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
 	}
 	task := &vm.VMTask{
 		Processors:           ch.Processors(),
-		AnchorOutput:         aliasOutput.GetAliasOutput(),
-		AnchorOutputID:       aliasOutput.OutputID(),
+		Anchor:               anchor,
 		Store:                store,
 		Requests:             reqs,
-		TimeAssumption:       blockTime,
+		Timestamp:            blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EnableGasBurnLogging: estimateGasMode,
@@ -56,8 +55,8 @@ func runISCTask(
 	return res.RequestResults, nil
 }
 
-func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.AliasOutputWithID) (*migrations.MigrationScheme, error) {
-	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnchor) (*migrations.MigrationScheme, error) {
+	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(anchor.Ref.Object)
 	if err != nil {
 		panic(err)
 	}
@@ -78,14 +77,14 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.Ali
 
 func runISCRequest(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	req isc.Request,
 	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
 		ch,
-		aliasOutput,
+		anchor,
 		blockTime,
 		[]isc.Request{req},
 		estimateGasMode,

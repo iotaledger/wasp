@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type Intent struct {

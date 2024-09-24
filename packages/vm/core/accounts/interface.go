@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
@@ -22,14 +23,15 @@ var (
 	FuncTransferAllowanceTo = coreutil.NewEP1(Contract, "transferAllowanceTo",
 		coreutil.FieldWithCodec(codec.AgentID),
 	)
-	FuncWithdraw = coreutil.NewEP0(Contract, "withdraw")
+	FuncWithdraw    = coreutil.NewEP0(Contract, "withdraw")
+	SetCoinMetadata = coreutil.NewEP1(Contract, "setCoinMetadata",
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.SuiCoinInfo]()),
+	)
+	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
+		coreutil.FieldWithCodec(codec.CoinType),
+	)
 
 	// Views
-	// TODO: implement pagination
-	ViewAccountTreasuries = coreutil.NewViewEP11(Contract, "accountTreasuries",
-		coreutil.FieldWithCodecOptional(codec.AgentID),
-		coreutil.FieldArrayWithCodec(codec.CoinType),
-	)
 	// TODO: implement pagination
 	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
@@ -59,18 +61,10 @@ var (
 		coreutil.FieldWithCodec(codec.CoinType),
 		coreutil.FieldWithCodec(codec.CoinValue),
 	)
-	ViewTreasuryCapID = coreutil.NewViewEP11(Contract, "treasuryCapID",
-		coreutil.FieldWithCodec(codec.CoinType),
-		coreutil.FieldWithCodec(codec.ObjectID),
-	)
 
 	ViewGetAccountNonce = coreutil.NewViewEP11(Contract, "getAccountNonce",
 		coreutil.FieldWithCodecOptional(codec.AgentID),
 		coreutil.FieldWithCodec(codec.Uint64),
-	)
-	// TODO: implement pagination
-	ViewGetCoinRegistry = coreutil.NewViewEP01(Contract, "getCoinRegistry",
-		coreutil.FieldArrayWithCodec(codec.CoinType),
 	)
 	ViewObjectBCS = coreutil.NewViewEP11(Contract, "objectBCS",
 		coreutil.FieldWithCodec(codec.ObjectID),

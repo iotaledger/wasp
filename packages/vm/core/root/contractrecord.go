@@ -1,12 +1,10 @@
 package root
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // ContractRecord is a structure which contains metadata of the deployed contract instance
@@ -31,27 +29,13 @@ func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord 
 }
 
 func ContractRecordFromBytes(data []byte) (*ContractRecord, error) {
-	return rwutil.ReadFromBytes(data, new(ContractRecord))
+	return bcs.Unmarshal[*ContractRecord](data)
 }
 
 func (p *ContractRecord) Bytes() []byte {
-	return rwutil.WriteToBytes(p)
+	return bcs.MustMarshal(p)
 }
 
 func (p *ContractRecord) Hname() isc.Hname {
 	return isc.Hn(p.Name)
-}
-
-func (p *ContractRecord) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadN(p.ProgramHash[:])
-	p.Name = rr.ReadString()
-	return rr.Err
-}
-
-func (p *ContractRecord) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(p.ProgramHash[:])
-	ww.WriteString(p.Name)
-	return ww.Err
 }

@@ -47,12 +47,29 @@ func DecodeInitParams(initParams isc.CallArguments) (isc.AgentID, uint16, int32,
 
 // L1Commitment calculates the L1 commitment for the origin state
 // originDeposit must exclude the minSD for the AliasOutput
-func L1Commitment(v isc.SchemaVersion, initParams isc.CallArguments, originDeposit coin.Value) *state.L1Commitment {
-	block := InitChain(v, state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()), initParams, originDeposit)
+func L1Commitment(
+	v isc.SchemaVersion,
+	initParams isc.CallArguments,
+	originDeposit coin.Value,
+	baseTokenCoinInfo *isc.SuiCoinInfo,
+) *state.L1Commitment {
+	block := InitChain(
+		v,
+		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
+		initParams,
+		originDeposit,
+		baseTokenCoinInfo,
+	)
 	return block.L1Commitment()
 }
 
-func InitChain(v isc.SchemaVersion, store state.Store, initParams isc.CallArguments, originDeposit coin.Value) state.Block {
+func InitChain(
+	v isc.SchemaVersion,
+	store state.Store,
+	initParams isc.CallArguments,
+	originDeposit coin.Value,
+	baseTokenCoinInfo *isc.SuiCoinInfo,
+) state.Block {
 	chainOwner, evmChainID, blockKeepAmount, err := DecodeInitParams(initParams)
 	if err != nil {
 		panic(err)
@@ -73,7 +90,7 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams isc.CallArgume
 		evm.Contract,
 	})
 	blob.NewStateWriter(blob.Contract.StateSubrealm(d)).SetInitialState()
-	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit)
+	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, baseTokenCoinInfo)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(chainOwner, blockKeepAmount)
@@ -88,8 +105,9 @@ func InitChain(v isc.SchemaVersion, store state.Store, initParams isc.CallArgume
 
 func InitChainByAnchor(
 	chainStore state.Store,
-	anchor *iscmove.RefWithObject[iscmove.Anchor],
-	anchorAssets isc.Assets,
+	anchor *iscmove.AnchorWithRef,
+	originDeposit coin.Value,
+	baseTokenCoinInfo *isc.SuiCoinInfo,
 ) (state.Block, error) {
 	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 	if err != nil {
@@ -99,7 +117,8 @@ func InitChainByAnchor(
 		stateMetadata.SchemaVersion,
 		chainStore,
 		stateMetadata.InitParams,
-		anchorAssets.BaseTokens(),
+		originDeposit,
+		baseTokenCoinInfo,
 	)
 	if !originBlock.L1Commitment().Equals(stateMetadata.L1Commitment) {
 		return nil, fmt.Errorf(

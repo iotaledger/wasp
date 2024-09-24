@@ -6,7 +6,8 @@ package solo
 import (
 	"errors"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -54,15 +55,9 @@ func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
-	anchorRef, err := ch.LatestAnchor(chain.ActiveOrCommittedState)
-	require.NoError(ch.Env.T, err)
 	task := &vm.VMTask{
-		Processors: ch.proc,
-		Anchor: &isc.StateAnchor{
-			Ref:        anchorRef,
-			Owner:      ch.OriginatorAddress,
-			ISCPackage: ch.Env.ISCPackageID(),
-		},
+		Processors:         ch.proc,
+		Anchor:             lo.Must(ch.LatestAnchor(chain.ActiveOrCommittedState)),
 		Requests:           reqs,
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,

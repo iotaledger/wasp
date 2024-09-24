@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -31,33 +32,17 @@ func NewCodecEx[T interface{ Bytes() []byte }](decode func([]byte) (T, error)) C
 	}}
 }
 
-func NewCodecFromIoReadWriter[T rwutil.IoReadWriter]() Codec[T] {
-	encode := func(obj T) []byte { return rwutil.WriteToBytes(obj) }
-	decode := func(b []byte) (T, error) {
-		return rwutil.ReadFromBytes(b, rwutil.MakeValue[T]())
-	}
+func NewCodecFromBCS[T any]() Codec[T] {
+	encode := func(obj T) []byte { return bcs.MustMarshal(&obj) }
+	decode := bcs.Unmarshal[T]
 	return &codec[T]{decode: decode, encode: encode}
 }
 
 func NewTupleCodec[
-	A, B rwutil.IoReadWriter,
+	A, B any,
 ]() Codec[lo.Tuple2[A, B]] {
-	encode := func(obj lo.Tuple2[A, B]) []byte {
-		ww := rwutil.NewBytesWriter()
-		ww.Write(obj.A)
-		ww.Write(obj.B)
-		return ww.Bytes()
-	}
-	decode := func(b []byte) (lo.Tuple2[A, B], error) {
-		rr := rwutil.NewBytesReader(b)
-		ret := lo.Tuple2[A, B]{
-			A: rwutil.MakeValue[A](),
-			B: rwutil.MakeValue[B](),
-		}
-		rr.Read(ret.A)
-		rr.Read(ret.B)
-		return ret, rr.Err
-	}
+	encode := func(obj lo.Tuple2[A, B]) []byte { return bcs.MustMarshal(&obj) }
+	decode := bcs.Unmarshal[lo.Tuple2[A, B]]
 	return NewCodec(decode, encode)
 }
 

@@ -3,6 +3,7 @@ package sui_test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/stretchr/testify/require"
 )
@@ -24,8 +25,8 @@ func TestTransactionData(t *testing.T) {
 				Package:       sui.SuiPackageIdSuiSystem,
 				Module:        sui.SuiSystemModuleName,
 				Function:      "function",
-				TypeArguments: []sui.TypeTag{},
-				Arguments:     []sui.Argument{},
+				TypeArguments: nil,
+				Arguments:     nil,
 			},
 		},
 	)
@@ -42,4 +43,6 @@ func TestTransactionData(t *testing.T) {
 	digest, err := tx.Digest()
 	require.NoError(t, err)
 	require.Equal(t, targetHash, digest.Data())
+
+	bcs.TestCodec(t, tx)
 }

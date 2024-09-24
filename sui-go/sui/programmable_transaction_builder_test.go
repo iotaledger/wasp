@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suitest"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,7 +74,7 @@ func TestPTBMoveCall(t *testing.T) {
 				suiclient.DefaultGasBudget,
 				suiclient.DefaultGasPrice,
 			)
-			txBytes, err := bcs.Marshal(txData)
+			txBytes, err := bcs.Marshal(&txData)
 			require.NoError(t, err)
 			simulate, err := client.DryRunTransaction(context.Background(), txBytes)
 			require.NoError(t, err)
@@ -111,7 +111,7 @@ func TestPTBTransferObject(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytes, err := bcs.Marshal(tx)
+	txBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	// build with remote rpc
@@ -155,7 +155,7 @@ func TestPTBTransferSui(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytesBCS, err := bcs.Marshal(tx)
+	txBytesBCS, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	// build with remote rpc
@@ -198,7 +198,7 @@ func TestPTBPayAllSui(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytes, err := bcs.Marshal(tx)
+	txBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	// build with remote rpc
@@ -246,7 +246,7 @@ func TestPTBPaySui(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytes, err := bcs.Marshal(tx)
+	txBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
@@ -319,7 +319,7 @@ func TestPTBPay(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytes, err := bcs.Marshal(tx)
+	txBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
 	simulate, err := client.DryRunTransaction(context.Background(), txBytes)
@@ -368,4 +368,3 @@ func TestPTBPay(t *testing.T) {
 	txBytesRemote := txn.TxBytes.Data()
 	require.Equal(t, txBytes, txBytesRemote)
 }
-

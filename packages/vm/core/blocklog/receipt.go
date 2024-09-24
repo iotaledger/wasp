@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -17,18 +18,22 @@ import (
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       isc.Request            `json:"request"`
-	Error         *isc.UnresolvedVMError `json:"error"`
-	GasBudget     uint64                 `json:"gasBudget"`
-	GasBurned     uint64                 `json:"gasBurned"`
-	GasFeeCharged coin.Value             `json:"gasFeeCharged"`
+	Error         *isc.UnresolvedVMError `json:"error" bcs:"optional"`
+	GasBudget     uint64                 `json:"gasBudget" bcs:"compact"`
+	GasBurned     uint64                 `json:"gasBurned" bcs:"compact"`
+	GasFeeCharged coin.Value             `json:"gasFeeCharged" bcs:"compact"`
 	// not persistent
-	BlockIndex   uint32       `json:"blockIndex"`
-	RequestIndex uint16       `json:"requestIndex"`
-	GasBurnLog   *gas.BurnLog `json:"-"`
+	BlockIndex   uint32       `json:"blockIndex" bcs:"-"`
+	RequestIndex uint16       `json:"requestIndex" bcs:"-"`
+	GasBurnLog   *gas.BurnLog `json:"-" bcs:"optional"`
 }
 
 func RequestReceiptFromBytes(data []byte, blockIndex uint32, reqIndex uint16) (*RequestReceipt, error) {
-	rec, err := rwutil.ReadFromBytes(data, new(RequestReceipt))
+	return RequestReceiptFromReader(bytes.NewReader(data), blockIndex, reqIndex)
+}
+
+func RequestReceiptFromReader(r io.Reader, blockIndex uint32, reqIndex uint16) (*RequestReceipt, error) {
+	rec, err := bcs.UnmarshalStream[*RequestReceipt](r)
 	if err != nil {
 		return nil, err
 	}
@@ -44,44 +49,7 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 }
 
 func (rec *RequestReceipt) Bytes() []byte {
-	return rwutil.WriteToBytes(rec)
-}
-
-func (rec *RequestReceipt) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rec.GasBudget = rr.ReadGas64()
-	rec.GasBurned = rr.ReadGas64()
-	rec.GasFeeCharged = coin.Value(rr.ReadAmount64())
-	rec.Request = isc.RequestFromReader(rr)
-	hasError := rr.ReadBool()
-	if hasError {
-		rec.Error = new(isc.UnresolvedVMError)
-		rr.Read(rec.Error)
-	}
-	hasBurnLog := rr.ReadBool()
-	if hasBurnLog {
-		rec.GasBurnLog = new(gas.BurnLog)
-		rr.Read(rec.GasBurnLog)
-	}
-
-	return rr.Err
-}
-
-func (rec *RequestReceipt) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteGas64(rec.GasBudget)
-	ww.WriteGas64(rec.GasBurned)
-	ww.WriteAmount64(uint64(rec.GasFeeCharged))
-	ww.Write(rec.Request)
-	ww.WriteBool(rec.Error != nil)
-	if rec.Error != nil {
-		ww.Write(rec.Error)
-	}
-	ww.WriteBool(rec.GasBurnLog != nil)
-	if rec.GasBurnLog != nil {
-		ww.Write(rec.GasBurnLog)
-	}
-	return ww.Err
+	return bcs.MustMarshal(rec)
 }
 
 func (rec *RequestReceipt) String() string {
@@ -153,14 +121,6 @@ func (k *RequestLookupKey) Bytes() []byte {
 	return k[:]
 }
 
-func (k *RequestLookupKey) Read(r io.Reader) error {
-	return rwutil.ReadN(r, k[:])
-}
-
-func (k *RequestLookupKey) Write(w io.Writer) error {
-	return rwutil.WriteN(w, k[:])
-}
-
 // endregion ///////////////////////////////////////////////////////////
 
 // region RequestLookupKeyList //////////////////////////////////////////////
@@ -169,22 +129,11 @@ func (k *RequestLookupKey) Write(w io.Writer) error {
 type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
-	rr := rwutil.NewBytesReader(data)
-	size := rr.ReadSize16()
-	ret = make(RequestLookupKeyList, size)
-	for i := range ret {
-		rr.Read(&ret[i])
-	}
-	return ret, rr.Err
+	return bcs.Unmarshal[RequestLookupKeyList](data)
 }
 
 func (ll RequestLookupKeyList) Bytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteSize16(len(ll))
-	for i := range ll {
-		ww.Write(&ll[i])
-	}
-	return ww.Bytes()
+	return bcs.MustMarshal(&ll)
 }
 
 // endregion /////////////////////////////////////////////////////////////

@@ -23,25 +23,25 @@ var Processor = Contract.Processor(nil,
 	FuncTransferAccountToChain.WithHandler(transferAccountToChain),
 	FuncTransferAllowanceTo.WithHandler(transferAllowanceTo),
 	FuncWithdraw.WithHandler(withdraw),
+	SetCoinMetadata.WithHandler(setCoinMetadata),
+	DeleteCoinMetadata.WithHandler(deleteCoinMetadata),
 
 	// views
 	ViewAccountObjects.WithHandler(viewAccountObjects),
 	ViewAccountObjectsInCollection.WithHandler(viewAccountObjectsInCollection),
-	ViewAccountTreasuries.WithHandler(viewAccountTreasuries),
 	ViewBalance.WithHandler(viewBalance),
 	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
 	ViewBalanceBaseTokenEVM.WithHandler(viewBalanceBaseTokenEVM),
 	ViewBalanceCoin.WithHandler(viewBalanceCoin),
-	ViewTreasuryCapID.WithHandler(viewTreasuryCapID),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
-	ViewGetCoinRegistry.WithHandler(viewGetCoinRegistry),
 	ViewObjectBCS.WithHandler(viewObjectBCS),
 	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 
 // this expects the origin amount minus SD
-func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value) {
+func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *isc.SuiCoinInfo) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
+	s.SaveCoinInfo(baseTokenCoinInfo)
 	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor), isc.ChainID{})
 }
 
@@ -105,6 +105,16 @@ func withdraw(ctx isc.Sandbox) {
 		callerAddress.String(),
 		allowance.String(),
 	)
+}
+
+func setCoinMetadata(ctx isc.Sandbox, coinInfo *isc.SuiCoinInfo) {
+	ctx.RequireCallerIsChainOwner()
+	NewStateWriterFromSandbox(ctx).SaveCoinInfo(coinInfo)
+}
+
+func deleteCoinMetadata(ctx isc.Sandbox, coinType coin.Type) {
+	ctx.RequireCallerIsChainOwner()
+	NewStateWriterFromSandbox(ctx).DeleteCoinInfo(coinType)
 }
 
 // transferAccountToChain transfers the specified allowance from the sender SC's L2

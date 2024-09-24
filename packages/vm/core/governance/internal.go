@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -195,10 +195,10 @@ func (s *StateReader) CandidateNodes() []*AccessNodeInfo {
 	candidateNodes := []*AccessNodeInfo{}
 	s.AccessNodeCandidatesMap().Iterate(func(pubKeyBytes, accessNodeDataBytes []byte) bool {
 		pubKey := lo.Must(cryptolib.PublicKeyFromBytes(pubKeyBytes))
-		and := lo.Must(rwutil.ReadFromBytes(accessNodeDataBytes, new(AccessNodeData)))
+		and := bcs.MustUnmarshal[AccessNodeData](accessNodeDataBytes)
 		candidateNodes = append(candidateNodes, &AccessNodeInfo{
 			NodePubKey:     pubKey,
-			AccessNodeData: *and,
+			AccessNodeData: and,
 		})
 		return true
 	})

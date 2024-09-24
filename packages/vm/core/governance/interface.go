@@ -81,20 +81,20 @@ var (
 
 	// access nodes
 	FuncAddCandidateNode = coreutil.NewEP4(Contract, "addCandidateNode",
-		coreutil.FieldWithCodec(codec.NewCodecFromIoReadWriter[*cryptolib.PublicKey]()), // NodePubKey
-		coreutil.FieldWithCodec(codec.Bytes),                                            // Certificate
-		coreutil.FieldWithCodec(codec.String),                                           // AccessAPI
-		coreutil.FieldWithCodec(codec.Bool),                                             // ForCommittee
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*cryptolib.PublicKey]()), // NodePubKey
+		coreutil.FieldWithCodec(codec.Bytes),                                   // Certificate
+		coreutil.FieldWithCodec(codec.String),                                  // AccessAPI
+		coreutil.FieldWithCodec(codec.Bool),                                    // ForCommittee
 	)
 	FuncRevokeAccessNode = coreutil.NewEP2(Contract, "revokeAccessNode",
-		coreutil.FieldWithCodec(codec.NewCodecFromIoReadWriter[*cryptolib.PublicKey]()), // NodePubKey
-		coreutil.FieldWithCodec(codec.Bytes),                                            // Certificate
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*cryptolib.PublicKey]()), // NodePubKey
+		coreutil.FieldWithCodec(codec.Bytes),                                   // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
 		coreutil.FieldArrayWithCodec(codec.NewTupleCodec[*cryptolib.PublicKey, *ChangeAccessNodeAction]()),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
-		coreutil.FieldArrayWithCodec(codec.NewCodecFromIoReadWriter[*AccessNodeInfo]()),
+		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*AccessNodeInfo]()),
 		coreutil.FieldArrayWithCodec(codec.NewCodecEx(cryptolib.PublicKeyFromBytes)),
 	)
 

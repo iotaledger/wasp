@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -48,37 +47,6 @@ func viewTotalAssets(ctx isc.SandboxView) isc.CoinBalances {
 func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint64 {
 	account := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).AccountNonce(account, ctx.ChainID())
-}
-
-func viewGetCoinRegistry(ctx isc.SandboxView) []coin.Type {
-	ntMap := NewStateReaderFromSandbox(ctx).coinRecordsMapR()
-	ret := make([]coin.Type, 0, ntMap.Len())
-	ntMap.IterateKeys(func(b []byte) bool {
-		ntID := codec.CoinType.MustDecode(b)
-		ret = append(ret, ntID)
-		return true
-	})
-	return ret
-}
-
-func viewAccountTreasuries(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []coin.Type {
-	var ret []coin.Type
-	account := coreutil.FromOptional(optionalAgentID, ctx.Caller())
-	NewStateReaderFromSandbox(ctx).accountTreasuryCapsMapR(account).IterateKeys(func(b []byte) bool {
-		ret = append(ret, codec.CoinType.MustDecode(b))
-		return true
-	})
-	return ret
-}
-
-var errTreasuryNotFound = coreerrors.Register("treasury not found").Create()
-
-func viewTreasuryCapID(ctx isc.SandboxView, coinType coin.Type) sui.ObjectID {
-	rec := NewStateReaderFromSandbox(ctx).GetTreasuryCap(coinType, ctx.ChainID())
-	if rec == nil {
-		panic(errTreasuryNotFound)
-	}
-	return rec.ID
 }
 
 // viewAccountObjects returns the ObjectIDs of Objects owned by an account

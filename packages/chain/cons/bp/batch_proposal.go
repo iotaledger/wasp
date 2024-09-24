@@ -14,12 +14,12 @@ import (
 )
 
 type BatchProposal struct {
-	nodeIndex               uint16                                 `bcs:""` // Just for a double-check.
-	baseAliasOutput         *iscmove.RefWithObject[iscmove.Anchor] `bcs:""` // Proposed Base AliasOutput to use.
-	dssIndexProposal        util.BitVector                         `bcs:""` // DSS Index proposal.
-	timeData                time.Time                              `bcs:""` // Our view of time.
-	validatorFeeDestination isc.AgentID                            `bcs:""` // Proposed destination for fees.
-	requestRefs             []*isc.RequestRef                      `bcs:""` // Requests we propose to include into the execution.
+	nodeIndex               uint16                 `bcs:""` // Just for a double-check.
+	baseAliasOutput         *iscmove.AnchorWithRef `bcs:""` // Proposed Base AliasOutput to use.
+	dssIndexProposal        util.BitVector         `bcs:""` // DSS Index proposal.
+	timeData                time.Time              `bcs:""` // Our view of time.
+	validatorFeeDestination isc.AgentID            `bcs:""` // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef      `bcs:""` // Requests we propose to include into the execution.
 	//
 	// TODO: Add these fields? How to aggregate them?
 	//
@@ -30,7 +30,7 @@ type BatchProposal struct {
 
 func NewBatchProposal(
 	nodeIndex uint16,
-	baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor],
+	baseAliasOutput *iscmove.AnchorWithRef,
 	dssIndexProposal util.BitVector,
 	timeData time.Time,
 	validatorFeeDestination isc.AgentID,
@@ -53,7 +53,7 @@ func (b *BatchProposal) Bytes() []byte {
 func (b *BatchProposal) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	b.nodeIndex = rr.ReadUint16()
-	b.baseAliasOutput = &iscmove.RefWithObject[iscmove.Anchor]{}
+	b.baseAliasOutput = &iscmove.AnchorWithRef{}
 	rr.Read(b.baseAliasOutput)
 	b.dssIndexProposal = util.NewFixedSizeBitVector(0)
 	rr.Read(b.dssIndexProposal)

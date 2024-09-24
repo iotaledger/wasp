@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func SwapSui(
@@ -76,7 +76,7 @@ func SwapSui(
 		suiclient.DefaultGasBudget,
 		suiclient.DefaultGasPrice,
 	)
-	txBytes, err := bcs.Marshal(txData)
+	txBytes, err := bcs.Marshal(&txData)
 	if err != nil {
 		panic(err)
 	}

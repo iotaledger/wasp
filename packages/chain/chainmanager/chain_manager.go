@@ -284,8 +284,8 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	cmi.log.Debugf("handleInputAliasOutputConfirmed: %+v", input)
 	//
 	// >     Set LatestConfirmedAO <- ConfirmedAO
-	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor)
-	cmi.latestConfirmedAO = input.anchor
+	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor.Object)
+	cmi.latestConfirmedAO = input.anchor.Object
 	msgs := gpa.NoMessages()
 	committeeLog, err := cmi.ensureCmtLog(*input.stateController) // TODO: input.stateController.Key()
 	if errors.Is(err, ErrNotInCommittee) {
@@ -315,7 +315,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.handleCmtLogOutput(
 		committeeLog,
-		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.anchor)),
+		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.anchor.Object)),
 	))
 	return msgs
 }

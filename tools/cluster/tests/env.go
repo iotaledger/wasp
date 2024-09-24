@@ -88,7 +88,7 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	client := e.Chain.Client(keyPair)
 	tx, err := client.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokensU64(amount),
+		Transfer: isc.NewAssets(amount),
 	})
 	require.NoError(e.t, err)
 	txID, err := tx.ID()
@@ -101,10 +101,9 @@ func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cr
 	transferAssets := assets.Clone()
 	transferAssets.AddBaseTokens(1 * isc.Million) // to pay for the fees
 	tx, err := e.Chain.Client(keyPair).PostRequest(accounts.FuncTransferAllowanceTo.Message(targetAccount), chainclient.PostRequestParams{
-		Transfer:                 transferAssets,
-		NFT:                      nft,
-		Allowance:                assets,
-		AutoAdjustStorageDeposit: false,
+		Transfer:  transferAssets,
+		NFT:       nft,
+		Allowance: assets,
 	})
 	require.NoError(e.t, err)
 	txID, err := tx.ID()

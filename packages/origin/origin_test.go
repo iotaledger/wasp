@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -17,17 +18,18 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
+var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
+
 func TestOrigin(t *testing.T) {
-	l1commitment := origin.L1Commitment(0, nil, 0)
+	l1commitment := origin.L1Commitment(0, nil, 0, baseTokenCoinInfo)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	initBlock := origin.InitChain(0, store, nil, 0)
+	initBlock := origin.InitChain(0, store, nil, 0, baseTokenCoinInfo)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
@@ -35,7 +37,7 @@ func TestOrigin(t *testing.T) {
 }
 
 func TestCreateOrigin(t *testing.T) {
-	var u *utxodb.UtxoDB
+	var u *UtxoDB
 	var originTx *iotago.Transaction
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *cryptolib.Address

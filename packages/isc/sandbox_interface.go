@@ -4,10 +4,8 @@
 package isc
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/big"
 	"time"
 
@@ -20,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -205,41 +203,11 @@ func (c CallArguments) String() string {
 }
 
 func (c CallArguments) Bytes() []byte {
-	var b bytes.Buffer
-	err := c.Write(&b)
-	if err != nil {
-		panic(err)
-	}
-	return b.Bytes()
+	return bcs.MustMarshal(&c)
 }
 
 func CallArgumentsFromBytes(b []byte) (CallArguments, error) {
-	var ret CallArguments
-	_, err := rwutil.ReadFromBytes(b, &ret)
-	return ret, err
-}
-
-func (c *CallArguments) Read(rr io.Reader) error {
-	r := rwutil.NewReader(rr)
-	size := r.ReadSize32()
-
-	*c = make(CallArguments, size)
-	for i := range *c {
-		(*c)[i] = r.ReadBytes()
-	}
-
-	return nil
-}
-
-func (c CallArguments) Write(ww io.Writer) error {
-	w := rwutil.NewWriter(ww)
-
-	w.WriteSize32(len(c))
-	for _, v := range c {
-		w.WriteBytes(v)
-	}
-
-	return nil
+	return bcs.Unmarshal[CallArguments](b)
 }
 
 func (c CallArguments) MarshalJSON() ([]byte, error) {
@@ -330,7 +298,7 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	Ref        *iscmove.RefWithObject[iscmove.Anchor]
+	Ref        *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
 	ISCPackage sui.Address
 }
@@ -381,14 +349,4 @@ type BLS interface {
 type EVMTracer struct {
 	Tracer  *tracers.Tracer
 	TxIndex uint64
-}
-
-type SuiCoinInfo struct {
-	CoinType    coin.Type
-	Decimals    uint8
-	Name        string
-	Symbol      string
-	Description string
-	IconURL     string
-	TotalSupply coin.Value
 }

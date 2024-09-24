@@ -4,12 +4,10 @@
 package governance
 
 import (
-	"io"
-
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -17,11 +15,18 @@ import (
 // It is implemented as a signature over the node pub key concatenated with the owner address.
 type NodeOwnershipCertificate []byte
 
+type NodeOwnershipCertificateFields struct {
+	NodePubKey   *cryptolib.PublicKey
+	OwnerAddress *cryptolib.Address
+}
+
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) NodeOwnershipCertificate {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(nodeKeyPair.GetPublicKey())
-	ww.Write(ownerAddress)
-	return nodeKeyPair.GetPrivateKey().Sign(ww.Bytes())
+	cert := bcs.MustMarshal(&NodeOwnershipCertificateFields{
+		NodePubKey:   nodeKeyPair.GetPublicKey(),
+		OwnerAddress: ownerAddress,
+	})
+
+	return nodeKeyPair.GetPrivateKey().Sign(cert)
 }
 
 func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
@@ -29,10 +34,12 @@ func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress *cryptolib.Address) bool {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(nodePubKey)
-	ww.Write(ownerAddress)
-	return nodePubKey.Verify(ww.Bytes(), c.Bytes())
+	cert := bcs.MustMarshal(&NodeOwnershipCertificateFields{
+		NodePubKey:   nodePubKey,
+		OwnerAddress: ownerAddress,
+	})
+
+	return nodePubKey.Verify(cert, c.Bytes())
 }
 
 func (c NodeOwnershipCertificate) Bytes() []byte {
@@ -48,43 +55,11 @@ type AccessNodeData struct {
 	AccessAPI     string                   // API URL, if any.
 }
 
-func (a *AccessNodeData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(a.ValidatorAddr)
-	ww.WriteBytes(a.Certificate)
-	ww.WriteBool(a.ForCommittee)
-	ww.WriteString(a.AccessAPI)
-	return ww.Err
-}
-
-func (a *AccessNodeData) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	a.ValidatorAddr = rwutil.ReadStruct(rr, new(cryptolib.Address))
-	a.Certificate = rr.ReadBytes()
-	a.ForCommittee = rr.ReadBool()
-	a.AccessAPI = rr.ReadString()
-	return rr.Err
-}
-
 // AccessNodeInfo conveys all the information that is maintained
 // on the governance SC about a specific node.
 type AccessNodeInfo struct {
 	NodePubKey *cryptolib.PublicKey // Public Key of the node. Stored as a key in the SC State and Params.
 	AccessNodeData
-}
-
-func (a *AccessNodeInfo) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(a.NodePubKey)
-	ww.Write(&a.AccessNodeData)
-	return ww.Err
-}
-
-func (a *AccessNodeInfo) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(a.NodePubKey)
-	rr.Read(&a.AccessNodeData)
-	return rr.Err
 }
 
 var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()
@@ -95,18 +70,6 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 }
 
 type ChangeAccessNodeAction byte
-
-func (a *ChangeAccessNodeAction) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(byte(*a))
-	return ww.Err
-}
-
-func (a *ChangeAccessNodeAction) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	*a = ChangeAccessNodeAction(rr.ReadByte())
-	return rr.Err
-}
 
 const (
 	ChangeAccessNodeActionRemove = ChangeAccessNodeAction(iota)

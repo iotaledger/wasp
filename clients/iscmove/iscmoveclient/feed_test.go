@@ -37,6 +37,7 @@ func TestRequestsFeed(t *testing.T) {
 		suiclient.DefaultGasBudget,
 		false,
 	)
+	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
@@ -62,11 +63,9 @@ func TestRequestsFeed(t *testing.T) {
 		chainFeed.WaitUntilStopped()
 	}()
 
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor], 10)
+	anchorUpdates := make(chan *iscmove.AnchorWithRef, 10)
 	newRequests := make(chan *iscmove.Request, 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
-
-	allowanceRef := createEmptyAllowance(t, client, iscOwner)
 
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
@@ -78,13 +77,14 @@ func TestRequestsFeed(t *testing.T) {
 		uint32(isc.Hn("dummy_isc_contract")),
 		uint32(isc.Hn("dummy_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		allowanceRef,
+		nil,
 		0,
 		nil,
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
 		false,
 	)
+	require.NoError(t, err)
 	requestRef, err := txnResponse.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 

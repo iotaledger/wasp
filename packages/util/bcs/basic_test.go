@@ -136,6 +136,8 @@ func (w *BasicWithCustomAndInit) BCSInit() error {
 	return nil
 }
 
+type InfWithCustomCodec interface{}
+
 func TestBasicTypesCodec(t *testing.T) {
 	// Boolean	                         t/f    01/00
 	// 8-bit signed                       -1    FF
@@ -234,6 +236,19 @@ func TestMultiPtrCodec(t *testing.T) {
 	var pVM *map[int16]bool = &vM
 	var ppVM **map[int16]bool = &pVM
 	bcs.TestCodecAndBytes(t, ppVM, []byte{0x3, 0x1, 0x0, 0x1, 0x2, 0x0, 0x0, 0x3, 0x0, 0x1})
+
+	type testStruct struct {
+		A **bool
+	}
+
+	a := true
+	pa := &a
+	v := &testStruct{A: &pa}
+	pv := &v
+
+	vEnc := bcs.MustMarshal(&pv)
+	vDec := bcs.MustUnmarshal[****testStruct](vEnc)
+	require.Equal(t, v, ***vDec)
 }
 
 func TestStringCodec(t *testing.T) {
@@ -464,4 +479,65 @@ func TestHighLevelCodecFuncs(t *testing.T) {
 	vAutoEnc := bcs.TestCodec(t, vAuto)
 	vEncWithoutMarker := vEnc[:len(vEnc)-1]
 	require.Equal(t, vEncWithoutMarker, vAutoEnc)
+}
+
+func TestMarshalAny(t *testing.T) {
+	var v any = "hello"
+	vEnc := bcs.MustMarshal(&v)
+	vDec := bcs.MustUnmarshal[string](vEnc)
+	require.Equal(t, v, vDec)
+
+	type SameAsAny any
+	var vSameAsAny SameAsAny = "hello"
+	_, err := bcs.Marshal(&vSameAsAny)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not registered as enum")
+}
+
+func TestBytesCoders(t *testing.T) {
+	enc := bcs.NewBytesEncoder()
+	enc.WriteInt16(1)
+	enc.WriteString("abc")
+	b := enc.Bytes()
+
+	dec := bcs.NewBytesDecoder(b)
+	require.Equal(t, int16(1), dec.ReadInt16())
+	require.Equal(t, "abc", dec.ReadString())
+}
+
+func TestInfWithCustomCodec(t *testing.T) {
+	t.Cleanup(func() {
+		bcs.RemoveCustomEncoder[InfWithCustomCodec]()
+		bcs.RemoveCustomDecoder[InfWithCustomCodec]()
+	})
+
+	bcs.AddCustomEncoder(func(e *bcs.Encoder, v InfWithCustomCodec) error {
+		switch v := v.(type) {
+		case string:
+			e.WriteEnumIdx(0)
+			e.WriteString(v)
+		case int:
+			e.WriteEnumIdx(1)
+			e.WriteInt32(int32(v))
+		default:
+			return fmt.Errorf("unsupported type: %T", v)
+		}
+
+		return nil
+	})
+
+	bcs.AddCustomDecoder(func(d *bcs.Decoder, v *InfWithCustomCodec) error {
+		switch d.ReadEnumIdx() {
+		case 0:
+			*v = d.ReadString()
+		case 1:
+			*v = d.ReadInt()
+		default:
+			return fmt.Errorf("invalid enum variant")
+		}
+
+		return nil
+	})
+
+	bcs.TestCodec(t, InfWithCustomCodec("aaa"))
 }

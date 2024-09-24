@@ -17,11 +17,12 @@ type L2Client interface {
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		stateMetadata []byte,
+		initCoinRef *sui.ObjectRef,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+	) (*iscmove.AnchorWithRef, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -31,7 +32,7 @@ type L2Client interface {
 		iscContractName uint32,
 		iscFunctionName uint32,
 		args [][]byte,
-		allowanceRef *sui.ObjectRef,
+		allowanceArray []iscmove.CoinAllowance,
 		onchainGasBudget uint64,
 		gasPayments []*sui.ObjectRef, // optional
 		gasPrice uint64,
@@ -40,6 +41,7 @@ type L2Client interface {
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	ReceiveRequestAndTransition(
 		ctx context.Context,
+		ptb *sui.ProgrammableTransactionBuilder,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		anchorRef *sui.ObjectRef,

@@ -9,7 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/utxodb"
+
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -24,9 +25,8 @@ var HScName = isc.Hn(ScName)
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	env := solo.New(t, &solo.InitOptions{
-		Debug:                    debug,
-		AutoAdjustStorageDeposit: true,
-		GasBurnLogEnabled:        true,
+		Debug:             debug,
+		GasBurnLogEnabled: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
@@ -59,7 +59,6 @@ func deployContract(chain *solo.Chain, user *cryptolib.KeyPair) error {
 	return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 }
 
-// WARNING: setupTestSandboxSC will fail if AutoAdjustStorageDeposit is not enabled
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair) isc.AgentID {
 	err := deployContract(chain, user)
 	require.NoError(t, err)

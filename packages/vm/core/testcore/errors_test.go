@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -34,22 +33,22 @@ var (
 var testError *isc.VMErrorTemplate
 
 var errorContractProcessor = errorContract.Processor(nil,
-	funcRegisterErrors.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+	funcRegisterErrors.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 		testError = ctx.RegisterError(errorMessageToTest)
 
 		return nil
 	}),
-	funcThrowErrorWithoutArgs.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+	funcThrowErrorWithoutArgs.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 		panic(testError.Create())
 	}),
-	funcThrowErrorWithArgs.WithHandler(func(ctx isc.Sandbox) dict.Dict {
+	funcThrowErrorWithArgs.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
 		panic(testError.Create(42))
 	}),
 )
 
 func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true}).WithNativeContract(errorContractProcessor)
+	env := solo.New(t, &solo.InitOptions{Debug: true}).WithNativeContract(errorContractProcessor)
 	chain, _ := env.NewChainExt(nil, 100_000, "chain1")
 	err := chain.DeployContract(nil, errorContract.Name, errorContract.ProgramHash)
 
@@ -65,7 +64,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 
 func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true})
 	chain, _ := env.NewChainExt(nil, 1, "chain1")
 
 	chain.MustDepositBaseTokensToL2(1, nil)

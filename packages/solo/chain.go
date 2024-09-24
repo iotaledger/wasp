@@ -21,7 +21,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -526,8 +525,12 @@ func (*Chain) GetTimeData() time.Time {
 }
 
 // LatestAnchor implements chain.Chain
-func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*iscmove.RefWithObject[iscmove.Anchor], error) {
-	return ch.GetLatestAnchor(), nil
+func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*isc.StateAnchor, error) {
+	return &isc.StateAnchor{
+		Ref:        ch.GetLatestAnchor(),
+		Owner:      ch.OriginatorAddress,
+		ISCPackage: ch.Env.ISCPackageID(),
+	}, nil
 }
 
 // LatestState implements chain.Chain
@@ -535,8 +538,8 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 	if freshness == chain.ActiveOrCommittedState || freshness == chain.ActiveState {
 		return ch.store.LatestState()
 	}
-	anchorRef, _ := ch.LatestAnchor(chain.ActiveOrCommittedState)
-	m := lo.Must(transaction.StateMetadataFromBytes(anchorRef.Object.StateMetadata))
+	anchor, _ := ch.LatestAnchor(chain.ActiveOrCommittedState)
+	m := lo.Must(transaction.StateMetadataFromBytes(anchor.Ref.Object.StateMetadata))
 	st := lo.Must(ch.store.StateByTrieRoot(m.L1Commitment.TrieRoot()))
 	return st, nil
 }

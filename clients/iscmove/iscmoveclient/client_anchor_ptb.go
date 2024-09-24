@@ -12,6 +12,7 @@ func PTBStartNewChain(
 	ptb *sui.ProgrammableTransactionBuilder,
 	packageID sui.PackageID,
 	stateMetadata []byte,
+	argInitCoin sui.Argument,
 	ownerAddress *cryptolib.Address,
 ) *sui.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
@@ -23,6 +24,7 @@ func PTBStartNewChain(
 				TypeArguments: []sui.TypeTag{},
 				Arguments: []sui.Argument{
 					ptb.MustPure(stateMetadata),
+					argInitCoin,
 				},
 			},
 		},

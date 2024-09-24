@@ -37,7 +37,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	_, err := rand.Read(digest)
 	require.NoError(t, err)
 
-	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
+	anchorRef := iscmove.AnchorWithRef{
 		ObjectRef: sui.ObjectRef{
 			ObjectID: &anchor.ID,
 			Version:  13,

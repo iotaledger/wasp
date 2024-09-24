@@ -4,7 +4,6 @@ import (
 	"math/big"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -16,7 +15,7 @@ type AnchorTransactionBuilder struct {
 	iscPackage sui.Address
 
 	// anchorOutput output of the chain
-	anchor *iscmove.RefWithObject[iscmove.Anchor]
+	anchor *iscmove.AnchorWithRef
 
 	// already consumed requests, specified by entire Request. It is needed for checking validity
 	consumed []isc.OnLedgerRequest
@@ -27,7 +26,7 @@ var _ TransactionBuilder = &AnchorTransactionBuilder{}
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(
 	iscPackage sui.Address,
-	anchor *iscmove.RefWithObject[iscmove.Anchor],
+	anchor *iscmove.AnchorWithRef,
 ) *AnchorTransactionBuilder {
 	return &AnchorTransactionBuilder{
 		iscPackage: iscPackage,
@@ -62,17 +61,19 @@ func (txb *AnchorTransactionBuilder) SendObject(object sui.Object) (storageDepos
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte) sui.ProgrammableTransaction {
-	ptb, err := iscmoveclient.NewReceiveRequestPTB(
-		txb.iscPackage,
-		&txb.anchor.ObjectRef,
-		onRequestsToRequestRefs(txb.consumed),
-		onRequestsToAssetsBagMap(txb.consumed),
-		stateMetadata,
-	)
-	if err != nil {
-		panic(err)
-	}
-	return ptb
+	panic("TODO")
+	// ptb := iscmoveclient.PTBReceiveRequestAndTransition(
+	// 	txb.iscPackage,
+	// 	txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef}),
+	// 	onRequestsToRequestRefs(txb.consumed),
+	// 	onRequestsToAssetsBagMap(txb.consumed),
+	// 	stateMetadata,
+	// )
+	// return ptb.Finish()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// return ptb
 }
 
 func onRequestsToRequestRefs(reqs []isc.OnLedgerRequest) []sui.ObjectRef {

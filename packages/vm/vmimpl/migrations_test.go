@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -44,17 +45,19 @@ func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 	})
 }
 
+var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
+
 func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
 	cs := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(0, cs, nil, 0)
+	origin.InitChain(0, cs, nil, 0, baseTokenCoinInfo)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
 	require.NoError(t, err)
 	task := &vm.VMTask{
 		Anchor: &isc.StateAnchor{
-			Ref: &iscmove.RefWithObject[iscmove.Anchor]{
+			Ref: &iscmove.AnchorWithRef{
 				Object: &iscmove.Anchor{
 					StateIndex: stateIndex,
 				},

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -48,12 +48,12 @@ func (c *Client) AssetsBagNew(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
@@ -116,12 +116,12 @@ func (c *Client) AssetsBagPlaceCoin(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
@@ -179,12 +179,12 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
@@ -239,12 +239,12 @@ func (c *Client) AssetsDestroyEmpty(
 
 	var txnBytes []byte
 	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
+		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 		}

@@ -3,12 +3,12 @@ package pkg
 import (
 	"context"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 func CreatePool(
@@ -55,7 +55,7 @@ func CreatePool(
 		suiclient.DefaultGasPrice,
 	)
 
-	txBytes, err := bcs.Marshal(txData)
+	txBytes, err := bcs.Marshal(&txData)
 	if err != nil {
 		panic(err)
 	}

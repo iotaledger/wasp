@@ -3,7 +3,7 @@ package gas_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -19,5 +19,5 @@ func TestBurnLogSerialization(t *testing.T) {
 			GasBurned: 80,
 		},
 	}
-	rwutil.ReadWriteTest(t, &burnLog, new(gas.BurnLog))
+	bcs.TestCodec(t, burnLog)
 }

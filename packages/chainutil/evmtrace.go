@@ -11,7 +11,7 @@ import (
 
 func EVMTraceTransaction(
 	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
 	txIndex uint64,
@@ -19,7 +19,7 @@ func EVMTraceTransaction(
 ) error {
 	_, err := runISCTask(
 		ch,
-		aliasOutput,
+		anchor,
 		blockTime,
 		iscRequestsInBlock,
 		false,

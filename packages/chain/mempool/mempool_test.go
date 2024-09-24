@@ -34,7 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -187,7 +187,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	}
 }
 
-func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleTime time.Time) *isc.AliasOutputWithID {
+func blockFn(te *testEnv, reqs []isc.Request, ao *isc.StateAnchor, tangleTime time.Time) *isc.StateAnchor {
 	// sort reqs by nonce
 	slices.SortFunc(reqs, func(a, b isc.Request) int {
 		return int(a.(isc.OffLedgerRequest).Nonce() - b.(isc.OffLedgerRequest).Nonce())
@@ -196,11 +196,10 @@ func blockFn(te *testEnv, reqs []isc.Request, ao *isc.AliasOutputWithID, tangleT
 	store := te.stores[0]
 	vmTask := &vm.VMTask{
 		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
-		AnchorOutput:         ao.GetAliasOutput(),
-		AnchorOutputID:       ao.OutputID(),
+		Anchor:               ao,
 		Store:                store,
 		Requests:             reqs,
-		TimeAssumption:       tangleTime,
+		Timestamp:            tangleTime,
 		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EstimateGasMode:      false,
@@ -499,7 +498,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	}
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
-	askProposalExpectReqs := func(ao *isc.AliasOutputWithID, reqs ...isc.Request) *isc.AliasOutputWithID {
+	askProposalExpectReqs := func(ao *isc.StateAnchor, reqs ...isc.Request) *isc.StateAnchor {
 		t.Log("Ask for proposals")
 		proposalCh := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i, node := range te.mempools {
@@ -527,7 +526,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		return blockFn(te, nodeDecidedReqs, ao, tangleTime)
 	}
 
-	emptyProposalFn := func(ao *isc.AliasOutputWithID) {
+	emptyProposalFn := func(ao *iscmove.AnchorWithRef) {
 		// ask again, nothing to be proposed
 		//
 		// Ask proposals for the next
@@ -711,11 +710,11 @@ func TestTTL(t *testing.T) {
 
 // Setups testing environment and holds all the relevant info.
 type testEnv struct {
-	t                *testing.T
-	ctx              context.Context
-	ctxCancel        context.CancelFunc
-	log              *logger.Logger
-	utxoDB           *utxodb.UtxoDB
+	t         *testing.T
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+	log       *logger.Logger
+	// utxoDB           *utxodb.UtxoDB
 	governor         *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
@@ -736,7 +735,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.log = testlogger.NewLogger(t)
 	//
 	// Create ledger accounts.
-	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
+	//te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
 	te.governor = cryptolib.NewKeyPair()
 	_, err := te.utxoDB.GetFundsFromFaucet(te.governor.Address())
 	require.NoError(t, err)
