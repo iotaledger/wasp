@@ -14,7 +14,7 @@ type TypeOptions struct {
 	LenSizeInBytes LenBytesCount
 
 	// TODO: Isthis really useful? The engineer can just change type of int to indicate its size.
-	SizeInBytes ValueBytesCount
+	UnderlayingType reflect.Kind
 
 	IsCompactInt       bool
 	InterfaceIsNotEnum bool
@@ -28,6 +28,21 @@ func (o *TypeOptions) Validate() error {
 	if err := o.LenSizeInBytes.Validate(); err != nil {
 		return fmt.Errorf("array len size: %w", err)
 	}
+	if o.ArrayElement != nil {
+		if err := o.ArrayElement.Validate(); err != nil {
+			return fmt.Errorf("array element: %w", err)
+		}
+	}
+	if o.MapKey != nil {
+		if err := o.MapKey.Validate(); err != nil {
+			return fmt.Errorf("map key: %w", err)
+		}
+	}
+	if o.MapValue != nil {
+		if err := o.MapValue.Validate(); err != nil {
+			return fmt.Errorf("map value: %w", err)
+		}
+	}
 
 	return nil
 }
@@ -36,8 +51,8 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	if other.LenSizeInBytes != 0 {
 		o.LenSizeInBytes = other.LenSizeInBytes
 	}
-	if other.SizeInBytes != 0 {
-		o.SizeInBytes = other.SizeInBytes
+	if other.UnderlayingType != reflect.Invalid {
+		o.UnderlayingType = other.UnderlayingType
 	}
 	if other.IsCompactInt {
 		o.IsCompactInt = true
@@ -90,8 +105,8 @@ type FieldOptions struct {
 }
 
 func (o *FieldOptions) Validate() error {
-	if err := o.TypeOptions.LenSizeInBytes.Validate(); err != nil {
-		return fmt.Errorf("array len size: %w", err)
+	if err := o.TypeOptions.Validate(); err != nil {
+		return err
 	}
 
 	return nil
@@ -186,13 +201,12 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 		switch key {
 		case "compact":
 			opts.IsCompactInt = true
-		case "bytes":
-			bytes, err := strconv.Atoi(val)
+		case "type":
+			var err error
+			opts.UnderlayingType, err = UnderlayingTypeFromString(val)
 			if err != nil {
-				return FieldOptions{}, fmt.Errorf("invalid bytes tag: %s", val)
+				return FieldOptions{}, fmt.Errorf("invalid undelaying type tag: %s", val)
 			}
-
-			opts.SizeInBytes = ValueBytesCount(bytes)
 		case "len_bytes":
 			bytes, err := strconv.Atoi(val)
 			if err != nil {
@@ -232,36 +246,26 @@ func (s LenBytesCount) Validate() error {
 	}
 }
 
-type ValueBytesCount uint8
-
-const (
-	Value1Byte  ValueBytesCount = 1
-	Value2Bytes ValueBytesCount = 2
-	Value4Bytes ValueBytesCount = 4
-	Value8Bytes ValueBytesCount = 8
-)
-
-func (s ValueBytesCount) Validate() error {
+func UnderlayingTypeFromString(s string) (reflect.Kind, error) {
 	switch s {
-	case Value1Byte, Value2Bytes, Value4Bytes, Value8Bytes:
-		return nil
+	case "i8", "int8":
+		return reflect.Int8, nil
+	case "i16", "int16":
+		return reflect.Int16, nil
+	case "i32", "int32":
+		return reflect.Int32, nil
+	case "i64", "int64":
+		return reflect.Int64, nil
+	case "u8", "uint8":
+		return reflect.Uint8, nil
+	case "u16", "uint16":
+		return reflect.Uint16, nil
+	case "u32", "uint32":
+		return reflect.Uint32, nil
+	case "u64", "uint64":
+		return reflect.Uint64, nil
 	default:
-		return fmt.Errorf("invalid value size: %v", s)
-	}
-}
-
-func defaultValueSize(k reflect.Kind) ValueBytesCount {
-	switch k {
-	case reflect.Int8, reflect.Uint8:
-		return Value1Byte
-	case reflect.Int16, reflect.Uint16:
-		return Value2Bytes
-	case reflect.Int32, reflect.Uint32:
-		return Value4Bytes
-	case reflect.Int64, reflect.Uint64, reflect.Int, reflect.Uint:
-		return Value8Bytes
-	default:
-		panic(fmt.Errorf("unexpected kind: %v", k))
+		return 0, fmt.Errorf("invalid value size: %s", s)
 	}
 }
 

@@ -3,6 +3,7 @@ package bcs
 import (
 	"testing"
 
+	"github.com/fardream/go-bcs/bcs"
 	ref_bcs "github.com/fardream/go-bcs/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -58,6 +59,19 @@ func TestCodecAndBytesVsRef[V any](t *testing.T, v V, expectedEnc []byte) {
 // Checks that encoding fails
 func TestEncodeErr[V any](t *testing.T, v V, errMustContain ...string) {
 	_, err := Marshal(&v)
+	require.Error(t, err)
+
+	for _, s := range errMustContain {
+		require.Contains(t, err.Error(), s)
+	}
+}
+
+// Checks that decoding fails
+func TestDecodeErr[V any, Encoded any](t *testing.T, v Encoded, errMustContain ...string) {
+	encoded, err := bcs.Marshal(v)
+	require.NoError(t, err)
+
+	_, err = Unmarshal[V](encoded)
 	require.Error(t, err)
 
 	for _, s := range errMustContain {
