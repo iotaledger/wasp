@@ -2,12 +2,11 @@ package chainmanager
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // gpa.Wrapper is not applicable here, because here the addressing
@@ -38,18 +37,28 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 	msg.wrapped.SetSender(sender)
 }
 
-func (msg *msgCmtLog) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeCmtLog.ReadAndVerify(rr)
-	rr.ReadN(msg.committeeAddr[:])
-	msg.wrapped = rwutil.ReadFromFunc(rr, cmt_log.UnmarshalMessage)
-	return rr.Err
+func (msg *msgCmtLog) MarshalBCS(e *bcs.Encoder) error {
+	e.Encode(msg.committeeAddr)
+
+	wrapped, err := cmt_log.MarshalMessage(msg.wrapped)
+	if err != nil {
+		return fmt.Errorf("marshaling wrapped message: %w", err)
+	}
+
+	e.Encode(wrapped)
+
+	return nil
 }
 
-func (msg *msgCmtLog) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeCmtLog.Write(ww)
-	ww.WriteN(msg.committeeAddr[:])
-	ww.WriteBytes(rwutil.WriteToBytes(msg.wrapped))
-	return ww.Err
+func (msg *msgCmtLog) UnmarshalBCS(d *bcs.Decoder) error {
+	d.Decode(&msg.committeeAddr)
+	wrapped := bcs.Decode[[]byte](d)
+
+	var err error
+	msg.wrapped, err = cmt_log.UnmarshalMessage(wrapped)
+	if err != nil {
+		return fmt.Errorf("unmarshaling wrapped message: %w", err)
+	}
+
+	return nil
 }

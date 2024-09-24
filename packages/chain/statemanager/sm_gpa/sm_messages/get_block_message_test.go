@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
@@ -16,7 +16,7 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 		// so don't use a random non-null node id here
 		commitment := blocks[i].L1Commitment()
 		msg := NewGetBlockMessage(commitment, gpa.NodeID{})
-		rwutil.ReadWriteTest(t, msg, NewEmptyGetBlockMessage())
+		bcs.TestCodec(t, msg)
 	}
 }
 
@@ -26,5 +26,5 @@ func TestGetBlockMessageSerialization(t *testing.T) {
 		state.NewPseudoRandL1Commitment(),
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(GetBlockMessage))
+	bcs.TestCodec(t, msg)
 }

@@ -13,6 +13,17 @@ const (
 	msgTypeWrapped
 )
 
+func (a *abaImpl) MarshalMessage(msg gpa.Message) ([]byte, error) {
+	switch msg := msg.(type) {
+	case *msgVote:
+		return gpa.MarshalMessage(msgTypeVote, msg)
+	case *msgDone:
+		return gpa.MarshalMessage(msgTypeDone, msg)
+	default:
+		return gpa.MarshalWrappedMessage(msgTypeWrapped, msg, a.msgWrapper)
+	}
+}
+
 // Implements the gpa.GPA interface.
 func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{

@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
+type LogIndex uint32
+
 type MsgNextLogIndexCause byte
 
 func (c MsgNextLogIndexCause) String() string {

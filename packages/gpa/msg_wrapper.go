@@ -134,17 +134,3 @@ func (msg *WrappingMsg) Recipient() NodeID {
 func (msg *WrappingMsg) SetSender(sender NodeID) {
 	msg.wrapped.SetSender(sender)
 }
-
-func (msg *WrappingMsg) MarshalBCS(w io.Writer) error {
-	encodedMsg, err := bcs.Marshal(&msg.wrapped)
-	if err != nil {
-		return err
-	}
-
-	enc := bcs.NewEncoder(w)
-	enc.Encode(msg.subsystem)
-	enc.Encode(uint16(msg.index))
-	enc.Encode(encodedMsg)
-
-	return enc.Err()
-}

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgDoneSerialization(t *testing.T) {
@@ -18,5 +18,12 @@ func TestMsgDoneSerialization(t *testing.T) {
 		int(uint16(rand.Intn(math.MaxUint16 + 1))),
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgDone))
+	bcs.TestCodec(t, msg)
+
+	msg = &msgDone{
+		gpa.BasicMessage{},
+		math.MaxUint16,
+	}
+
+	bcs.TestCodec(t, msg)
 }

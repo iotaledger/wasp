@@ -95,7 +95,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (
@@ -248,7 +248,7 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) gpa.OutMessages {
 	}
 
 	// > RBC(C||E)
-	rbcCEPayloadBytes := rwutil.WriteToBytes(&msgRBCCEPayload{suite: a.suite, data: data})
+	rbcCEPayloadBytes := bcs.MustMarshal(&msgRBCCEPayload{suite: a.suite, data: data})
 	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Input(rbcCEPayloadBytes))
 	return a.tryHandleRBCTermination(false, msgs)
 }
@@ -266,7 +266,7 @@ func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) gpa.OutMessages {
 func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gpa.OutMessages {
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
-		outParsed, err := rwutil.ReadFromBytes(out.([]byte), &msgRBCCEPayload{suite: a.suite})
+		outParsed, err := bcs.UnmarshalInto(out.([]byte), &msgRBCCEPayload{suite: a.suite})
 		if err != nil {
 			outParsed = &msgRBCCEPayload{err: err}
 		}

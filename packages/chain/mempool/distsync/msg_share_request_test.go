@@ -16,20 +16,19 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgShareRequestSerialization(t *testing.T) {
 	{
-		req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(3, 14, dict.New()), 1337, 100).Sign(cryptolib.NewKeyPair())
+		req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.NewKeyPair())
 		msg := &msgShareRequest{
 			gpa.BasicMessage{},
-			req,
 			byte(rand.Intn(math.MaxUint8)),
+			req,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgShareRequest))
+		bcs.TestCodec(t, msg)
 	}
 	{
 		sender := tpkg.RandAliasAddress()
@@ -60,10 +59,10 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 
 		msg := &msgShareRequest{
 			gpa.BasicMessage{},
-			req,
 			byte(rand.Intn(math.MaxUint8)),
+			req,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgShareRequest))
+		bcs.TestCodec(t, msg)
 	}
 }

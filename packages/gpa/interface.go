@@ -134,6 +134,20 @@ func MarshalMessage(msgType MessageType, msg Message) ([]byte, error) {
 	return e.Bytes(), e.Err()
 }
 
+func MarshalWrappedMessage(msgType MessageType, msg Message, wrapper *MsgWrapper) ([]byte, error) {
+	e := bcs.NewBytesEncoder()
+	e.WriteEnumIdx(int(msgType))
+
+	data, err := wrapper.MarshalMessage(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	e.Write(data)
+
+	return e.Bytes(), e.Err()
+}
+
 func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message, error) {
 	r := bytes.NewReader(data)
 

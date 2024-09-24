@@ -4,10 +4,7 @@
 package mostefaoui
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgVoteType byte
@@ -19,9 +16,9 @@ const (
 
 type msgVote struct {
 	gpa.BasicMessage
-	round    int
-	voteType msgVoteType
-	value    bool
+	round    int         `bcs:"type=u16"`
+	voteType msgVoteType `bcs:""`
+	value    bool        `bcs:""`
 }
 
 var _ gpa.Message = new(msgVote)
@@ -37,22 +34,4 @@ func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, 
 		})
 	}
 	return msgs
-}
-
-func (msg *msgVote) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeVote.ReadAndVerify(rr)
-	msg.round = int(rr.ReadUint16())
-	msg.voteType = msgVoteType(rr.ReadByte())
-	msg.value = rr.ReadBool()
-	return rr.Err
-}
-
-func (msg *msgVote) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeVote.Write(ww)
-	ww.WriteUint16(uint16(msg.round))
-	ww.WriteByte(byte(msg.voteType))
-	ww.WriteBool(msg.value)
-	return ww.Err
 }

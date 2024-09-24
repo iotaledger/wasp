@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgImplicateRecoverSerialization(t *testing.T) {
@@ -28,7 +28,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 			b,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgImplicateRecover))
+		bcs.TestCodec(t, msg)
 	}
 	{
 		b := make([]byte, 10)
@@ -42,6 +42,6 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 			b,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgImplicateRecover))
+		bcs.TestCodec(t, msg)
 	}
 }

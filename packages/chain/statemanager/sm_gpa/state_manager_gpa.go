@@ -142,6 +142,17 @@ func (smT *stateManagerGPA) StatusString() string {
 	)
 }
 
+func (smT *stateManagerGPA) MarshalMessage(msg gpa.Message) ([]byte, error) {
+	switch msg := msg.(type) {
+	case *sm_messages.BlockMessage:
+		return gpa.MarshalMessage(sm_messages.MsgTypeBlockMessage, msg)
+	case *sm_messages.GetBlockMessage:
+		return gpa.MarshalMessage(sm_messages.MsgTypeGetBlockMessage, msg)
+	default:
+		return nil, fmt.Errorf("unexpected message type: %T", msg)
+	}
+}
+
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		sm_messages.MsgTypeBlockMessage:    func() gpa.Message { return sm_messages.NewEmptyBlockMessage() },

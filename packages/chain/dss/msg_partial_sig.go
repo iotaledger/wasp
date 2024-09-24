@@ -4,15 +4,14 @@
 package dss
 
 import (
-	"io"
+	"fmt"
 
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type msgPartialSig struct {
@@ -23,23 +22,30 @@ type msgPartialSig struct {
 
 var _ gpa.Message = new(msgPartialSig)
 
-func (msg *msgPartialSig) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypePartialSig.ReadAndVerify(rr)
-	msg.partialSig = &dss.PartialSig{Partial: &share.PriShare{}}
-	msg.partialSig.Partial.I = int(rr.ReadUint16())
-	msg.partialSig.Partial.V = cryptolib.ScalarFromReader(rr, msg.suite)
-	msg.partialSig.SessionID = rr.ReadBytes()
-	msg.partialSig.Signature = rr.ReadBytes()
-	return rr.Err
+func (m *msgPartialSig) MarshalBCS(e *bcs.Encoder) error {
+	e.WriteUint16(uint16(m.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
+
+	if _, err := m.partialSig.Partial.V.MarshalTo(e); err != nil {
+		return fmt.Errorf("marshaling PartialSig.Partial.V: %w", err)
+	}
+
+	e.Encode(m.partialSig.SessionID)
+	e.Encode(m.partialSig.Signature)
+
+	return nil
 }
 
-func (msg *msgPartialSig) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypePartialSig.Write(ww)
-	ww.WriteUint16(uint16(msg.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
-	cryptolib.ScalarToWriter(ww, msg.partialSig.Partial.V)
-	ww.WriteBytes(msg.partialSig.SessionID)
-	ww.WriteBytes(msg.partialSig.Signature)
-	return ww.Err
+func (m *msgPartialSig) UnmarshalBCS(d *bcs.Decoder) error {
+	m.partialSig = &dss.PartialSig{Partial: &share.PriShare{}}
+	m.partialSig.Partial.I = int(d.ReadUint16())
+
+	m.partialSig.Partial.V = m.suite.Scalar()
+	if _, err := m.partialSig.Partial.V.UnmarshalFrom(d); err != nil {
+		return fmt.Errorf("unmarshaling PartialSig.Partial.V: %w", err)
+	}
+
+	m.partialSig.SessionID = bcs.Decode[[]byte](d)
+	m.partialSig.Signature = bcs.Decode[[]byte](d)
+
+	return d.Err()
 }

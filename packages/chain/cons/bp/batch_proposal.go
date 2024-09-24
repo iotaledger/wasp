@@ -4,13 +4,12 @@
 package bp
 
 import (
-	"io"
 	"time"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BatchProposal struct {
@@ -47,39 +46,5 @@ func NewBatchProposal(
 }
 
 func (b *BatchProposal) Bytes() []byte {
-	return rwutil.WriteToBytes(b)
-}
-
-func (b *BatchProposal) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	b.nodeIndex = rr.ReadUint16()
-	b.baseAliasOutput = &iscmove.AnchorWithRef{}
-	rr.Read(b.baseAliasOutput)
-	b.dssIndexProposal = util.NewFixedSizeBitVector(0)
-	rr.Read(b.dssIndexProposal)
-	b.timeData = time.Unix(0, rr.ReadInt64())
-	b.validatorFeeDestination = isc.AgentIDFromReader(rr)
-	size := rr.ReadSize16()
-	b.requestRefs = make([]*isc.RequestRef, size)
-	for i := range b.requestRefs {
-		b.requestRefs[i] = new(isc.RequestRef)
-		rr.ReadN(b.requestRefs[i].ID[:])
-		rr.ReadN(b.requestRefs[i].Hash[:])
-	}
-	return rr.Err
-}
-
-func (b *BatchProposal) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteUint16(b.nodeIndex)
-	ww.Write(b.baseAliasOutput)
-	ww.Write(b.dssIndexProposal)
-	ww.WriteInt64(b.timeData.UnixNano())
-	ww.Write(b.validatorFeeDestination)
-	ww.WriteSize16(len(b.requestRefs))
-	for i := range b.requestRefs {
-		ww.WriteN(b.requestRefs[i].ID[:])
-		ww.WriteN(b.requestRefs[i].Hash[:])
-	}
-	return ww.Err
+	return bcs.MustMarshal(b)
 }

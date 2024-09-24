@@ -110,7 +110,7 @@ func (a *ackHandler) MarshalMessage(msg Message) ([]byte, error) {
 	case *ackHandlerBatch:
 		return MarshalMessage(msgTypeAckHandlerBatch, msg)
 	default:
-		return nil, fmt.Errorf("unexpected message type for %T: %T", a, msg)
+		return nil, fmt.Errorf("unknown message type for %T: %T", a, msg)
 	}
 }
 
@@ -344,11 +344,11 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 	var err error
 	msg.id = nil
 
-	if hasID := d.ReadBool(); hasID {
+	if hasID := d.ReadOptionalFlag(); hasID {
 		d.Decode(&msg.id)
 	}
 
-	msgsBytes, _ := bcs.Decode[[][]byte](d)
+	msgsBytes := bcs.Decode[[][]byte](d)
 	msg.msgs = make([]Message, len(msgsBytes))
 
 	for i := range msgsBytes {
@@ -358,9 +358,9 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 		}
 	}
 
-	msg.acks, err = bcs.Decode[[]int](d)
+	msg.acks = bcs.Decode[[]int](d)
 
-	return err
+	return d.Err()
 }
 
 ////////////////////////////////////////////////////////////////////////////////

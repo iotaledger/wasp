@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgBrachaSerialization(t *testing.T) {
@@ -24,7 +24,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 			b,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgBracha))
+		bcs.TestCodec(t, msg)
 	}
 	{
 		b := make([]byte, 10)
@@ -36,7 +36,7 @@ func TestMsgBrachaSerialization(t *testing.T) {
 			b,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgBracha))
+		bcs.TestCodec(t, msg)
 	}
 	{
 		b := make([]byte, 10)
@@ -48,6 +48,6 @@ func TestMsgBrachaSerialization(t *testing.T) {
 			b,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgBracha))
+		bcs.TestCodec(t, msg)
 	}
 }

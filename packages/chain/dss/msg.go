@@ -24,6 +24,15 @@ func (d *dssImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
+func (d *dssImpl) MarshalMessage(msg gpa.Message) ([]byte, error) {
+	switch msg := msg.(type) {
+	case *msgPartialSig:
+		return gpa.MarshalMessage(msgTypePartialSig, msg)
+	default:
+		return gpa.MarshalWrappedMessage(msgTypeWrapped, msg, d.msgWrapper)
+	}
+}
+
 func (d *dssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
 		msgTypePartialSig: func() gpa.Message { return &msgPartialSig{suite: d.suite} },
