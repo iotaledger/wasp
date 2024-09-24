@@ -75,6 +75,55 @@ func TestStructCodec(t *testing.T) {
 	bcs.TestCodecAndBytesVsRef(t, OptionalEmbeddedStruct{BasicStruct: nil, C: 43}, []byte{0, 43, 0, 0, 0, 0, 0, 0, 0})
 }
 
+type WitUnexported struct {
+	A int
+	b int
+	c int `bcs:""`
+	D int `bcs:"-"`
+}
+
+func TestUnexportedFieldsCodec(t *testing.T) {
+	v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
+	vEnc := lo.Must1(bcs.Marshal(&v))
+	require.Equal(t, []byte{42, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 44, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, vEnc)
+	vDec := lo.Must1(bcs.Unmarshal[WitUnexported](vEnc))
+	require.NotEqual(t, v, vDec)
+	require.Equal(t, 0, vDec.b)
+	require.Equal(t, 0, vDec.D)
+	vDec.b = 43
+	vDec.D = 45
+	require.Equal(t, v, vDec)
+}
+
+type Embedded struct {
+	A int
+}
+
+type WithEmbedded struct {
+	Embedded
+	B int
+}
+
+type embeddedPrivate struct {
+	A int
+}
+
+type WithEmbeddedPrivate struct {
+	embeddedPrivate
+	B int
+}
+
+type WithEmbeddedPrivateWithTag struct {
+	embeddedPrivate `bcs:""`
+	B               int
+}
+
+func TestEmbedded(t *testing.T) {
+	bcs.TestCodec(t, WithEmbedded{Embedded: Embedded{A: 5}, B: 10})
+	bcs.TestCodecAsymmetric(t, WithEmbeddedPrivate{embeddedPrivate: embeddedPrivate{A: 5}, B: 10})
+	bcs.TestCodec(t, WithEmbeddedPrivateWithTag{embeddedPrivate: embeddedPrivate{A: 5}, B: 10})
+}
+
 func TestStructWithPtr(t *testing.T) {
 	vI := int64(42)
 	bcs.TestCodecAndBytesVsRef(t, IntPtr{A: &vI}, []byte{42, 0, 0, 0, 0, 0, 0, 0})
@@ -383,24 +432,4 @@ func TestStructWithInit(t *testing.T) {
 	require.NotEqual(t, vCustomAndInit, vCustomAndInitDec)
 	vCustomAndInit.A = 100
 	require.Equal(t, vCustomAndInit, vCustomAndInitDec)
-}
-
-type WitUnexported struct {
-	A int
-	b int
-	c int `bcs:""`
-	D int `bcs:"-"`
-}
-
-func TestUnexportedFieldsCodec(t *testing.T) {
-	v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
-	vEnc := lo.Must1(bcs.Marshal(&v))
-	require.Equal(t, []byte{42, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 44, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, vEnc)
-	vDec := lo.Must1(bcs.Unmarshal[WitUnexported](vEnc))
-	require.NotEqual(t, v, vDec)
-	require.Equal(t, 0, vDec.b)
-	require.Equal(t, 0, vDec.D)
-	vDec.b = 43
-	vDec.D = 45
-	require.Equal(t, v, vDec)
 }

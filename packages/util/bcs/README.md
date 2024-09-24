@@ -582,11 +582,15 @@ To decode an interface it either must be registered an enum, have registred cust
 Unlike from function `Marshal`(), method `Encode`() accepts both value and pointer. But passing by value will force encoder to copy value to make it addressable to support `MarshalBCS`() method with pointer receiver. It will also not work properly when interface is passed by value, because value is unpacked and packed again as `any` thus information about type of initial interface will be lost.
 So it is better to pass a pointer always when it is easy to do.
 
-#### Serialization of arrays of intergers is optimized
+#### Serialization of byte arrays is optimized
 
-If elements of array are of integer type, and they dont have any customization specified for them (except of `"bytes=N"`), such array will be serialized using optimized version of code. Especially this is noticeable for byte arrays.
+Arrays of bytes, whose elements does not have any customizations, are directly copied into/from the stream.
 
-#### Caching of type parsing
+#### Serialization of arrays of intergers is NOT yet optimized
+
+If elements of array are of integer type, and they dont have any customization specified for them (except of `"type=T"`), serialization of such array could be optimized to avoid redudant calls for each array element. But this not done specifically to keep code simple while it is maturing.
+
+#### Type parsing is cached
 
 Upon serialization the types are checked for the presense of customizations. This make take significant time.
 To improve that, the type information is stored in cache.
