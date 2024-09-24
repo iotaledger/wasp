@@ -340,7 +340,7 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(anchor *iscmove.Anchor) {
+		func(anchor *iscmove.AnchorWithRef) {
 			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
 		},
 		func(block state.Block) {
@@ -676,7 +676,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	cni.publishingTXes.Delete(txPubResult.txID)
 
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
+		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.nextAliasOutput.Hash(), txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -685,7 +685,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *iscmove.AnchorWithRef) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.Object.StateIndex == 0 {
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, aliasOutput, isc.NewEmptyAssets())
+		initBlock, err := origin.InitChainByAnchor(cni.chainStore, aliasOutput, 0, isc.BaseTokenCoinInfo)
 		if err != nil {
 			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
 			return
@@ -794,14 +794,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseAliasOutput.OutputID(),
+			out.request.BaseAliasOutput.Object.ID,
 			out.output.Result,
 		)
 	case cons.Skipped:
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseAliasOutput.OutputID(),
+			&out.request.BaseAliasOutput.ObjectRef,
 		)
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))

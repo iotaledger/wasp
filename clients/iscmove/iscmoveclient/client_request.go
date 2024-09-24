@@ -23,7 +23,7 @@ func (c *Client) CreateAndSendRequest(
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
-	allowanceArray []iscmove.Allowance,
+	allowanceArray []iscmove.CoinAllowance,
 	onchainGasBudget uint64,
 	gasPayments []*sui.ObjectRef, // optional
 	gasPrice uint64,
