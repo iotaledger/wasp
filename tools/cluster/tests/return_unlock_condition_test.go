@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 // builds a normal tx to post a request to inccounter, optionally adds SDRC
@@ -34,7 +34,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr *cryptolib.Address, keyPair *cryp
 		UnspentOutputIDs: outputIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress: env.Chain.ChainAddress(),
-			Assets:        &isc.Assets{BaseTokens: 2 * isc.Million},
+			Assets:        isc.NewAssets(2 * isc.Million),
 			Metadata: &isc.SendMetadata{
 				Message:   inccounter.FuncIncCounter.Message(nil),
 				GasBudget: math.MaxUint64,
@@ -70,7 +70,6 @@ func buildTX(t *testing.T, env *ChainEnv, addr *cryptolib.Address, keyPair *cryp
 
 // executed in cluster_test.go
 func testSDRUC(t *testing.T, env *ChainEnv) {
-	env.deployNativeIncCounterSC(0)
 	keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 

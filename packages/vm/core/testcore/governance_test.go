@@ -9,7 +9,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -202,8 +202,7 @@ func TestAccessNodes(t *testing.T) {
 }
 
 func TestMaintenanceMode(t *testing.T) {
-	env := solo.New(t).
-		WithNativeContract(inccounter.Processor)
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))

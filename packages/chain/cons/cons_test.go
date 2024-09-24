@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -30,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -152,7 +152,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
 	chainStates := map[gpa.NodeID]state.Store{}
-	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
+	procConfig := coreprocessors.NewConfigWithCoreContracts()
 	procCache := processors.MustNew(procConfig)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -328,7 +328,7 @@ func testChained(t *testing.T, n, f, b int) {
 	if b > 0 {
 		_, err = utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
 		require.NoError(t, err)
-		allRequests[0] = append(tcl.MakeTxAccountsDeposit(scClient), tcl.MakeTxDeployIncCounterContract()...)
+		allRequests[0] = append(tcl.MakeTxAccountsDeposit(scClient))
 	}
 	incTotal := 0
 	for i := 0; i < b-1; i++ {
@@ -348,7 +348,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	//
 	// Construct the nodes for each instance.
-	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
+	procConfig := coreprocessors.NewConfigWithCoreContracts()
 	procCache := processors.MustNew(procConfig)
 	doneCHs := map[gpa.NodeID]chan *testInstInput{}
 	for _, nid := range nodeIDs {

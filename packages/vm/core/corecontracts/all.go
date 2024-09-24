@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -20,6 +21,7 @@ var All = map[isc.Hname]*coreutil.ContractInfo{
 	blocklog.Contract.Hname():   blocklog.Contract,
 	governance.Contract.Hname(): governance.Contract,
 	evm.Contract.Hname():        evm.Contract,
+	inccounter.Contract.Hname(): inccounter.Contract,
 }
 
 func IsCoreHname(hname isc.Hname) bool {

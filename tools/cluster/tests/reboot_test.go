@@ -12,12 +12,13 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 // ensures a nodes resumes normal operation after rebooting
@@ -343,7 +344,7 @@ func TestRebootDuringTasks(t *testing.T) {
 			})
 		require.NoError(t, err)
 
-		counter, err := inccounter.ViewGetCounter.Output1.Decode(ret)
+		counter, err := inccounter.ViewGetCounter.DecodeOutput(ret)
 		require.NoError(t, err)
 		require.Greater(t, counter, lastCounter)
 		lastCounter = counter
@@ -358,12 +359,12 @@ func TestRebootDuringTasks(t *testing.T) {
 		req, err := client.PostOffLedgerRequest(
 			context.Background(),
 			accounts.FuncTransferAllowanceTo.Message(targetAgentID),
-			chainclient.PostRequestParams{Allowance: isc.NewAssets(5000, nil)},
+			chainclient.PostRequestParams{Allowance: isc.NewAssets(5000)},
 		)
 		require.NoError(t, err)
 		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), true, 10*time.Second)
 		require.NoError(t, err)
-		env.checkBalanceOnChain(targetAgentID, isc.BaseTokenID, 5000)
+		env.checkBalanceOnChain(targetAgentID, coin.BaseTokenType, 5000)
 	}
 
 	for _, restartIndexes := range restartCases {
