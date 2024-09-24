@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -37,8 +38,6 @@ func TestValidatorFees(t *testing.T) {
 	chainID := chain.ChainID
 
 	chEnv := newChainEnv(t, clu, chain)
-	chEnv.deployNativeIncCounterSC()
-	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
 	// set validator split fees to 50/50
 	{
@@ -70,7 +69,7 @@ func TestValidatorFees(t *testing.T) {
 		require.NoError(t, err)
 	}
 	for _, validatorKp := range validatorKps {
-		tokens := chEnv.getBalanceOnChain(isc.NewAgentID(validatorKp.Address()), isc.BaseTokenID)
+		tokens := chEnv.getBalanceOnChain(isc.NewAgentID(validatorKp.Address()), coin.BaseTokenType)
 		require.NotZero(t, tokens)
 	}
 }

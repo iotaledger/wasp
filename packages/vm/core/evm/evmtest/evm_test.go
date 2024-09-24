@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
@@ -45,6 +44,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -1256,10 +1256,8 @@ func TestERC721NFTCollection(t *testing.T) {
 }
 
 func TestISCCall(t *testing.T) {
-	env := InitEVM(t, inccounter.Processor)
+	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
-	err := env.Chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
-	require.NoError(t, err)
 	iscTest := env.deployISCTestContract(ethKey)
 
 	res, err := iscTest.CallFn(nil, "callInccounter")
@@ -1329,9 +1327,7 @@ func TestISCPanic(t *testing.T) {
 }
 
 func TestISCSendWithArgs(t *testing.T) {
-	env := InitEVM(t, inccounter.Processor)
-	err := env.Chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
-	require.NoError(t, err)
+	env := InitEVM(t)
 
 	checkCounter := func(c int) {
 		ret, err2 := env.Chain.CallView(inccounter.ViewGetCounter.Message())

@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -118,14 +118,10 @@ func TestNoSenderFeature(t *testing.T) {
 }
 
 func TestSendBack(t *testing.T) {
-	env := solo.New(t).
-		WithNativeContract(inccounter.Processor)
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(10*isc.Million, nil)
-	require.NoError(t, err)
-
-	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(0))
 	require.NoError(t, err)
 
 	// send a normal request
@@ -138,7 +134,7 @@ func TestSendBack(t *testing.T) {
 	// check counter increments
 	ret, err := ch.CallView(inccounter.ViewGetCounter.Message())
 	require.NoError(t, err)
-	counter := lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret))
+	counter := lo.Must(inccounter.ViewGetCounter.DecodeOutput(ret))
 	require.EqualValues(t, 1, counter)
 
 	// send a custom request
@@ -188,7 +184,7 @@ func TestSendBack(t *testing.T) {
 	// check counter is still the same (1)
 	ret, err = ch.CallView(inccounter.ViewGetCounter.Message())
 	require.NoError(t, err)
-	counter = lo.Must(inccounter.ViewGetCounter.Output1.Decode(ret))
+	counter = lo.Must(inccounter.ViewGetCounter.DecodeOutput(ret))
 	require.EqualValues(t, 1, counter)
 }
 

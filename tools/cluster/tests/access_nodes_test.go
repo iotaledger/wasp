@@ -9,16 +9,13 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 // executed in cluster_test.go
 func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
-	// deploy the inccounter for the test to use
-	env.deployNativeIncCounterSC(0)
-
 	// deposit funds for offledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

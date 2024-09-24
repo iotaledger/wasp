@@ -790,16 +790,16 @@ func (d *Decoder) handleErrorf(format string, args ...interface{}) error {
 	return d.r.Err
 }
 
-func Decode[V any](dec *Decoder) (V, error) {
+func Decode[V any](dec *Decoder) V {
 	var v V
-	err := dec.Decode(&v)
+	dec.Decode(&v)
 
-	return v, err
+	return v
 }
 
 func MustDecode[V any](dec *Decoder) V {
-	v, err := Decode[V](dec)
-	if err != nil {
+	v := Decode[V](dec)
+	if err := dec.Err(); err != nil {
 		panic(fmt.Errorf("failed to decode object of type %T: %w", v, err))
 	}
 
@@ -808,7 +808,8 @@ func MustDecode[V any](dec *Decoder) V {
 
 func UnmarshalStream[T any](r io.Reader) (T, error) {
 	dec := NewDecoder(r)
-	return Decode[T](dec)
+	v := Decode[T](dec)
+	return v, dec.Err()
 }
 
 func MustUnmarshalStream[T any](r io.Reader) T {

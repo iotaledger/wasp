@@ -11,14 +11,12 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -82,35 +80,6 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),
-					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
-				},
-			},
-		},
-	)
-	require.NoError(tcl.t, err)
-	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(tx))
-	return tcl.findChainRequests(tx)
-}
-
-func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
-	sender := tcl.governor
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(sender.Address())
-	tx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    sender,
-			SenderAddress:    sender.Address(),
-			UnspentOutputs:   outs,
-			UnspentOutputIDs: outIDs,
-			Request: &isc.RequestParameters{
-				TargetAddress:                 tcl.chainID.AsAddress(),
-				Assets:                        isc.NewAssets(2_000_000),
-				AdjustToMinimumStorageDeposit: false,
-				Metadata: &isc.SendMetadata{
-					Message: root.FuncDeployContract.Message(
-						inccounter.Contract.Name,
-						inccounter.Contract.ProgramHash,
-						inccounter.InitParams(0),
-					),
 					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
 				},
 			},

@@ -13,30 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-var Contract = coreutil.NewContract("inccounter")
-
-var (
-	FuncIncCounter = coreutil.NewEP1(Contract, "incCounter",
-		coreutil.FieldWithCodecOptional(codec.Int64),
-	)
-	FuncIncAndRepeatOnceAfter2s = coreutil.NewEP0(Contract, "incAndRepeatOnceAfter5s")
-	FuncIncAndRepeatMany        = coreutil.NewEP2(Contract, "incAndRepeatMany",
-		coreutil.FieldWithCodecOptional(codec.Int64),
-		coreutil.FieldWithCodecOptional(codec.Int64),
-	)
-	FuncSpawn = coreutil.NewEP1(Contract, "spawn",
-		coreutil.FieldWithCodec(codec.String),
-	)
-	ViewGetCounter = coreutil.NewViewEP01(Contract, "getCounter",
-		coreutil.FieldWithCodec(codec.Int64),
-	)
-)
-
 var Processor = Contract.Processor(initialize,
 	FuncIncCounter.WithHandler(incCounter),
 	FuncIncAndRepeatOnceAfter2s.WithHandler(incCounterAndRepeatOnce),
 	FuncIncAndRepeatMany.WithHandler(incCounterAndRepeatMany),
-	FuncSpawn.WithHandler(spawn),
 	ViewGetCounter.WithHandler(getCounter),
 )
 
@@ -139,19 +119,6 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 	})
 
 	ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
-}
-
-// spawn deploys new contract and calls it
-func spawn(ctx isc.Sandbox, name string) {
-	ctx.Log().Debugf("inccounter.spawn")
-
-	val := codec.Int64.MustDecode(ctx.State().Get(VarCounter))
-
-	eventCounter(ctx, val+1)
-	//ctx.DeployContract(Contract.ProgramHash, name, isc.NewCallArguments(codec.Int64.Encode(val+1)))
-
-	// increase counter in newly spawned contract
-	//	ctx.Call(FuncIncCounter.Message(nil), nil)
 }
 
 func getCounter(ctx isc.SandboxView) int64 {

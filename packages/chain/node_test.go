@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
@@ -39,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -139,11 +139,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 	require.NoError(t, err)
 	depositReqs := te.tcl.MakeTxAccountsDeposit(scClient)
 	sendAndAwait(depositReqs, 1, "depositReqs")
-
-	//
-	// Deploy a contract, wait for a confirming TX.
-	deployReqs := te.tcl.MakeTxDeployIncCounterContract()
-	sendAndAwait(deployReqs, 2, "deployReqs")
 
 	//
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
@@ -451,7 +446,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())),
 			te.nodeConns[i],
 			te.peerIdentities[i],
-			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
+			coreprocessors.NewConfigWithCoreContracts(),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			false,
