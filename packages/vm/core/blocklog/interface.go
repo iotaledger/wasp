@@ -95,8 +95,8 @@ func (OutputRequestReceipt) Decode(r []byte) (*RequestReceipt, error) {
 	rr := bytes.NewReader(r)
 	dec := bcs.NewDecoder(rr)
 
-	blockIndex, _ := bcs.Decode[uint32](dec)
-	reqIndex, _ := bcs.Decode[uint16](dec)
+	blockIndex := bcs.Decode[uint32](dec)
+	reqIndex := bcs.Decode[uint16](dec)
 
 	if dec.Err() != nil {
 		return nil, dec.Err()
