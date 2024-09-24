@@ -330,7 +330,7 @@ func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, object
 				}
 				return &ref, nil
 			}
-			for ; resource != nil; resource = resource.SubType {
+			for ; resource != nil; resource = resource.SubType1 {
 				if resource.Module == module && resource.ObjectName == objectName {
 					ref := sui.ObjectRef{
 						ObjectID: &change.Data.Created.ObjectID,
