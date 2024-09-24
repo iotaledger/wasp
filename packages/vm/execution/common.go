@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -14,7 +15,7 @@ func GetProgramBinary(ctx WaspContext, programHash hashing.HashValue) (vmtype st
 	if ok {
 		return vmtype, nil, nil
 	}
-	return ctx.LocateProgram(programHash)
+	return "", nil, fmt.Errorf("native processor not found for programHash")
 }
 
 func GetEntryPointByProgHash(ctx WaspContext, targetContract, epCode isc.Hname, progHash hashing.HashValue) isc.VMProcessorEntryPoint {

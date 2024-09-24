@@ -453,10 +453,6 @@ func (reqctx *requestContext) chargeGasFee() {
 	}
 }
 
-func (reqctx *requestContext) LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	return reqctx.vm.locateProgram(reqctx.chainStateWithGasBurn(), programHash)
-}
-
 func (reqctx *requestContext) Processors() *processors.Cache {
 	return reqctx.vm.task.Processors
 }
