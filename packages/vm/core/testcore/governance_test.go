@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -25,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -136,7 +136,7 @@ func TestAccessNodes(t *testing.T) {
 	// Initially the state is empty.
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse := lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
+	getChainNodesResponse := lo.Must(governance.ViewGetChainNodes.DecodeOutput(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
@@ -158,7 +158,7 @@ func TestAccessNodes(t *testing.T) {
 
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.DecodeOutput(res))
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[node1KP.GetPublicKey().AsKey()].AccessAPI)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
@@ -177,7 +177,7 @@ func TestAccessNodes(t *testing.T) {
 
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.DecodeOutput(res))
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodeCandidates)) // Candidate registered.
 	require.Equal(t, "http://my-api/url", getChainNodesResponse.AccessNodeCandidates[node1KP.GetPublicKey().AsKey()].AccessAPI)
 	require.Equal(t, 1, len(getChainNodesResponse.AccessNodes))
@@ -196,7 +196,7 @@ func TestAccessNodes(t *testing.T) {
 
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.Output1.Decode(res))
+	getChainNodesResponse = lo.Must(governance.ViewGetChainNodes.DecodeOutput(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 }
@@ -235,7 +235,7 @@ func TestMaintenanceMode(t *testing.T) {
 		// TODO: Add maintenance status to wrapped core contracts
 		ret, err2 := ch.CallView(governance.ViewGetMaintenanceStatus.Message())
 		require.NoError(t, err2)
-		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output1.Decode(ret))
+		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.DecodeOutput(ret))
 		require.False(t, maintenanceStatus)
 	}
 
@@ -261,7 +261,7 @@ func TestMaintenanceMode(t *testing.T) {
 	{
 		ret, err2 := ch.CallView(governance.ViewGetMaintenanceStatus.Message())
 		require.NoError(t, err2)
-		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.Output1.Decode(ret))
+		maintenanceStatus := lo.Must(governance.ViewGetMaintenanceStatus.DecodeOutput(ret))
 		require.True(t, maintenanceStatus)
 	}
 
@@ -459,7 +459,7 @@ func TestMetadata(t *testing.T) {
 
 	res, err := ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata := lo.Must(governance.ViewGetMetadata.Output2.Decode(res))
+	resMetadata := lo.Must(governance.ViewGetMetadata.DecodeOutput(res))
 
 	// Chain name should be equal to the configured one.
 	require.Equal(t, testMetadata.Bytes(), resMetadata.Bytes())
@@ -474,7 +474,7 @@ func TestMetadata(t *testing.T) {
 
 	res, err = ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata = lo.Must(governance.ViewGetMetadata.Output2.Decode(res))
+	resMetadata = lo.Must(governance.ViewGetMetadata.DecodeOutput(res))
 
 	// Chain name should be equal to the configured one.
 	require.Equal(t, testMetadata.Bytes(), resMetadata.Bytes())
@@ -539,7 +539,7 @@ func TestL1Metadata(t *testing.T) {
 	// assert metadata is correct on view call
 	res, err := ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resPubURL := lo.Must(governance.ViewGetMetadata.Output1.Decode(res))
+	resPubURL := lo.Must(governance.ViewGetMetadata.DecodeOutput(res))
 	require.Equal(t, publicURLMetadata, resPubURL)
 
 	// assert metadata is correct on L1 alias output
@@ -580,7 +580,7 @@ func TestL1Metadata(t *testing.T) {
 }
 
 func TestGovernanceGasFee(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	fp := ch.GetGasFeePolicy()
 	fp.GasPerToken.A *= 1000000
@@ -590,7 +590,7 @@ func TestGovernanceGasFee(t *testing.T) {
 }
 
 func TestGovernanceZeroGasFee(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	user1, userAddr1 := env.NewKeyPairWithFunds()
@@ -660,7 +660,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 }
 
 func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	user, userAddr := env.NewKeyPairWithFunds()
@@ -676,7 +676,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 
 	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
 	require.NoError(t, err)
-	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output1.Decode(retDict))
+	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.DecodeOutput(retDict))
 	require.Equal(t, userAgentID, retAgentID)
 
 	_, err = ch.PostRequestSync(
@@ -689,11 +689,11 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 }
 
 func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	initRetDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
-	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.Output1.Decode(initRetDict))
+	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.DecodeOutput(initRetDict))
 	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
 	minCommonAccountBalance := uint64(123456)
@@ -707,7 +707,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 
 	retDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
 	require.NoError(t, err)
-	retMinCommonAccountBalance = lo.Must(governance.ViewGetMinCommonAccountBalance.Output1.Decode(retDict))
+	retMinCommonAccountBalance = lo.Must(governance.ViewGetMinCommonAccountBalance.DecodeOutput(retDict))
 	require.NoError(t, err)
 	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
 }
@@ -731,9 +731,8 @@ func TestGovCallsNoBalance(t *testing.T) {
 
 func TestGasPayout(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{
-		,
-		Debug:                    true,
-		PrintStackTrace:          true,
+		Debug:           true,
+		PrintStackTrace: true,
 	})
 	ch := env.NewChain(false)
 	user1, user1Addr := env.NewKeyPairWithFunds()
@@ -778,7 +777,7 @@ func TestGasPayout(t *testing.T) {
 	// assert new payoutAddr is correctly set
 	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
 	require.NoError(t, err)
-	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.Output1.Decode(retDict))
+	retAgentID := lo.Must(governance.ViewGetPayoutAgentID.DecodeOutput(retDict))
 	require.NoError(t, err)
 	require.Equal(t, user1AgentID, retAgentID)
 

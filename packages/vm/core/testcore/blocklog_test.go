@@ -210,7 +210,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 }
 
 func TestBlocklogPruning(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{, Debug: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
 		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
 	})
@@ -240,7 +240,7 @@ func TestBlocklogPruning(t *testing.T) {
 func TestBlocklogFoundriesWithPruning(t *testing.T) {
 	// test that foundries can be accessed even after the block is pruned
 
-	env := solo.New(t, &solo.InitOptions{, Debug: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
 		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
 	})

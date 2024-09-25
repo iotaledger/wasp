@@ -22,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	
 
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -564,7 +563,7 @@ type testParams struct {
 
 func initDepositTest(t *testing.T, originParams dict.Dict, initLoad ...uint64) *testParams {
 	ret := &testParams{}
-	ret.env = solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
+	ret.env = solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 
 	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
 	ret.chainOwnerAgentID = isc.NewAgentID(ret.chainOwnerAddr)
@@ -1087,7 +1086,7 @@ func TestNFTAccount(t *testing.T) {
 func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *isc.NFT, owner isc.AgentID) {
 	ret, err := ch.CallView(accounts.ViewNFTData.Message(nft.ID))
 	require.NoError(t, err)
-	nftBack, err := accounts.ViewNFTData.DecodeOutput(ret))
+	nftBack, err := accounts.ViewNFTData.DecodeOutput(ret)
 	require.NoError(t, err)
 	require.Equal(t, nftBack.ID, nft.ID)
 	require.Equal(t, nftBack.Issuer, nft.Issuer)
@@ -1152,7 +1151,7 @@ func TestTransferNFTAllowance(t *testing.T) {
 }
 
 func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{, Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 
 	issuerWallet, issuerAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
@@ -1244,7 +1243,7 @@ func testUnprocessable(t *testing.T, originParams dict.Dict, verifyHash bool) {
 	isInUnprocessableList := func() bool {
 		res, err2 := v.ch.CallView(blocklog.ViewHasUnprocessable.Message(unprocessableReqID))
 		require.NoError(t, err2)
-		return lo.Must(blocklog.ViewHasUnprocessable.Output.Decode(res))
+		return lo.Must(blocklog.ViewHasUnprocessable.DecodeOutput(res))
 	}
 
 	require.True(t, isInUnprocessableList())
@@ -1273,7 +1272,7 @@ func testUnprocessable(t *testing.T, originParams dict.Dict, verifyHash bool) {
 	receipt, ok = v.ch.GetRequestReceipt(unprocessableReqID)
 	require.True(t, ok)
 	require.NotNil(t, receipt)
-	require.Nil(t, receipt.Error)             // assert the receit for the initially unprocessable request exists and is successful
+	require.Nil(t, receipt.Error)             // assert the receipt for the initially unprocessable request exists and is successful
 	require.False(t, isInUnprocessableList()) // assert the request was removed from the unprocessable list
 	require.NotZero(t, receipt.SDCharged)
 	require.True(t, blocklog.HasUnprocessableRequestBeenRemovedInBlock(v.ch.LatestBlock(), unprocessableReqID)) // assert this function returns true, its used to prevent these requests from being re-added to the mempool on a reorg
@@ -1544,7 +1543,7 @@ func TestNFTMint(t *testing.T) {
 		// check that the internal ID mapping  matches the L1 NFT
 		ret, err = ch.CallView(accounts.ViewNFTIDbyMintID.Message(mintID))
 		require.NoError(t, err)
-		storedNFTID := lo.Must(accounts.ViewNFTIDbyMintID.DecodeOutput(ret)))
+		storedNFTID := lo.Must(accounts.ViewNFTIDbyMintID.DecodeOutput(ret))
 		require.Equal(t, storedNFTID, NFTID)
 	})
 
@@ -1594,11 +1593,11 @@ func TestNFTMint(t *testing.T) {
 
 		ret, err = ch.CallView(accounts.ViewNFTIDbyMintID.Message(mintID))
 		require.NoError(t, err)
-		NFTIDInCollection := lo.Must(accounts.ViewNFTIDbyMintID.DecodeOutput(ret)))
+		NFTIDInCollection := lo.Must(accounts.ViewNFTIDbyMintID.DecodeOutput(ret))
 
 		ret, err = ch.CallView(accounts.ViewNFTData.Message(NFTIDInCollection))
 		require.NoError(t, err)
-		nftData := lo.Must(accounts.ViewNFTData.DecodeOutput(ret)))
+		nftData := lo.Must(accounts.ViewNFTData.DecodeOutput(ret))
 		require.True(t, nftData.Issuer.Equals(cryptolib.NewAddressFromIotago(firstNFTID.ToAddress())))
 		require.True(t, nftData.Owner.Equals(agentID))
 
