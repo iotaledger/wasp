@@ -131,7 +131,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 		WithGasBudget(100_000)
 	_, d, err = chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
-	message := lo.Must(errors.ViewGetErrorMessageFormat.Output.Decode(d))
+	message := lo.Must(errors.ViewGetErrorMessageFormat.DecodeOutput(d))
 	require.Equal(t, message, errorMessageToTest)
 }
 

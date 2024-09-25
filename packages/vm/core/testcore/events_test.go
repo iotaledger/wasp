@@ -151,13 +151,13 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []*isc.Event {
 	res, err := chain.CallView(blocklog.ViewGetEventsForRequest.Message(reqID))
 	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
+	return lo.Must(blocklog.ViewGetEventsForRequest.DecodeOutput(res))
 }
 
 func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) []*isc.Event {
 	res, err := chain.CallView(blocklog.ViewGetEventsForBlock.Message(coreutil.Optional(blockNumber...)))
 	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
+	return lo.Must(blocklog.ViewGetEventsForRequest.DecodeOutput(res))
 }
 
 func TestGetEvents(t *testing.T) {

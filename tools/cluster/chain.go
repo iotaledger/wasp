@@ -163,7 +163,7 @@ func (ch *Chain) GetCounterValue(nodeIndex ...int) (int64, error) {
 		return 0, err
 	}
 
-	return inccounter.ViewGetCounter.Output1.Decode(parsedDict)
+	return inccounter.ViewGetCounter.DecodeOutput(parsedDict)
 }
 
 func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex ...int) ([]byte, error) {
