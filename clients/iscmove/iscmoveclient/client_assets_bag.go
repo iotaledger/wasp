@@ -27,7 +27,7 @@ func (c *Client) AssetsBagNew(
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
 	ptb := sui.NewProgrammableTransactionBuilder()
-	ptb = PTBAssetsBagNew(ptb, packageID, cryptolibSigner.Address())
+	ptb = PTBAssetsBagNewAndTransfer(ptb, packageID, cryptolibSigner.Address())
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {

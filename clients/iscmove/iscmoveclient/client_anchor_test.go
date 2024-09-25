@@ -124,11 +124,8 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
-
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
-		ptb,
 		chainSigner,
 		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,

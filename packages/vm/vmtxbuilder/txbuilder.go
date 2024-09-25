@@ -1,10 +1,11 @@
 package vmtxbuilder
 
 import (
-	"math/big"
-
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -19,6 +20,10 @@ type AnchorTransactionBuilder struct {
 
 	// already consumed requests, specified by entire Request. It is needed for checking validity
 	consumed []isc.OnLedgerRequest
+
+	ptb *sui.ProgrammableTransactionBuilder
+
+	signer cryptolib.Signer
 }
 
 var _ TransactionBuilder = &AnchorTransactionBuilder{}
@@ -26,11 +31,14 @@ var _ TransactionBuilder = &AnchorTransactionBuilder{}
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(
 	iscPackage sui.Address,
-	anchor *iscmove.AnchorWithRef,
+	anchor *iscmove.RefWithObject[iscmove.Anchor],
+	signer cryptolib.Signer,
 ) *AnchorTransactionBuilder {
 	return &AnchorTransactionBuilder{
 		iscPackage: iscPackage,
 		anchor:     anchor,
+		ptb:        sui.NewProgrammableTransactionBuilder(),
+		signer:     signer,
 	}
 }
 
@@ -56,24 +64,63 @@ func (txb *AnchorTransactionBuilder) ConsumeRequest(req isc.OnLedgerRequest) {
 	txb.consumed = append(txb.consumed, req)
 }
 
-func (txb *AnchorTransactionBuilder) SendObject(object sui.Object) (storageDepositReturned *big.Int) {
-	return nil
+func (txb *AnchorTransactionBuilder) SendAssets(target *sui.Address, assets *isc.Assets) {
+	if txb.ptb == nil {
+		txb.ptb = sui.NewProgrammableTransactionBuilder()
+	}
+	// FIXME allow assets but not only coin balance
+
+	txb.ptb = iscmoveclient.PTBTakeAndTransferCoinBalance(
+		txb.ptb,
+		txb.iscPackage,
+		txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef}),
+		target,
+		assets,
+	)
+}
+
+func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *sui.Address, targetAnchor *sui.Address, assets *isc.Assets, metadata *isc.SendMetadata) {
+	if txb.ptb == nil {
+		txb.ptb = sui.NewProgrammableTransactionBuilder()
+	}
+	txb.ptb = iscmoveclient.PTBAssetsBagNew(txb.ptb, txb.iscPackage, txb.signer.Address())
+	argAssetsBag := txb.ptb.LastCommandResultArg()
+	argAnchor := txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef})
+	for coinType, coinBalance := range assets.Coins {
+		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
+	}
+	// TODO set allowance
+	allowanceCointypes := txb.ptb.MustForceSeparatePure(&bcs.Option[[]string]{None: true})
+	allowanceBalances := txb.ptb.MustForceSeparatePure(&bcs.Option[[]uint64]{None: true})
+	txb.ptb = iscmoveclient.PTBCreateAndSendCrossRequest(
+		txb.ptb,
+		txb.iscPackage,
+		*targetAnchor,
+		argAssetsBag,
+		uint32(metadata.Message.Target.Contract),
+		uint32(metadata.Message.Target.EntryPoint),
+		metadata.Message.Params,
+		allowanceCointypes,
+		allowanceBalances,
+		metadata.GasBudget,
+	)
 }
 
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte) sui.ProgrammableTransaction {
-	panic("TODO")
-	// ptb := iscmoveclient.PTBReceiveRequestAndTransition(
-	// 	txb.iscPackage,
-	// 	txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef}),
-	// 	onRequestsToRequestRefs(txb.consumed),
-	// 	onRequestsToAssetsBagMap(txb.consumed),
-	// 	stateMetadata,
-	// )
-	// return ptb.Finish()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return ptb
+	if txb.ptb == nil {
+		txb.ptb = sui.NewProgrammableTransactionBuilder()
+	}
+	// we have to discard the current txb to avoid reusing an ObjectRef
+	defer func() { txb.ptb = nil }()
+	ptb := iscmoveclient.PTBReceiveRequestAndTransition(
+		txb.ptb,
+		txb.iscPackage,
+		txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef}),
+		onRequestsToRequestRefs(txb.consumed),
+		onRequestsToAssetsBagMap(txb.consumed),
+		stateMetadata,
+	)
+	return ptb.Finish()
 }
 
 func onRequestsToRequestRefs(reqs []isc.OnLedgerRequest) []sui.ObjectRef {

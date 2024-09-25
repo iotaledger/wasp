@@ -67,6 +67,12 @@ type ProgrammableTransaction struct {
 	Commands []Command
 }
 
+func (p ProgrammableTransaction) PrintMoveCommand(cmdIdx int) {
+	if p.Commands[cmdIdx].MoveCall != nil {
+		fmt.Printf("pt.commands[%d]: %v\n", cmdIdx, p.Commands[cmdIdx].MoveCall)
+	}
+}
+
 type TransferObject struct {
 	Recipient Address
 	ObjectRef ObjectRef
