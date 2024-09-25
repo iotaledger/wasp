@@ -29,7 +29,7 @@ var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
 func TestOrigin(t *testing.T) {
 	l1commitment := origin.L1Commitment(0, nil, 0, baseTokenCoinInfo)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	initBlock := origin.InitChain(0, store, nil, 0, baseTokenCoinInfo)
+	initBlock, _ := origin.InitChain(0, store, nil, 0, baseTokenCoinInfo)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
@@ -100,7 +100,7 @@ func TestCreateOrigin(t *testing.T) {
 		originStateMetadata := transaction.NewStateMetadata(
 			origin.L1Commitment(
 				allmigrations.DefaultScheme.LatestSchemaVersion(),
-				dict.Dict{origin.ParamChainOwner: isc.NewAgentID(anchor.GovernanceController).Bytes()},
+				dict.Dict{origin.ParamChainOwner: isc.NewAddressAgentID(anchor.GovernanceController).Bytes()},
 				governance.DefaultMinBaseTokensOnCommonAccount,
 			),
 			gas.DefaultFeePolicy(),

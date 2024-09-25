@@ -69,7 +69,7 @@ func TestValidatorFees(t *testing.T) {
 		require.NoError(t, err)
 	}
 	for _, validatorKp := range validatorKps {
-		tokens := chEnv.getBalanceOnChain(isc.NewAgentID(validatorKp.Address()), coin.BaseTokenType)
+		tokens := chEnv.getBalanceOnChain(isc.NewAddressAgentID(validatorKp.Address()), coin.BaseTokenType)
 		require.NotZero(t, tokens)
 	}
 }

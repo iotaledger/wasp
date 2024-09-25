@@ -2,12 +2,11 @@ package buffered
 
 import (
 	"fmt"
-	"io"
 	"sort"
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Mutations is a set of mutations: one for each key
@@ -25,51 +24,11 @@ func NewMutations() *Mutations {
 }
 
 func MutationsFromBytes(data []byte) (*Mutations, error) {
-	return rwutil.ReadFromBytes(data, NewMutations())
+	return bcs.Unmarshal[*Mutations](data)
 }
 
 func (ms *Mutations) Bytes() []byte {
-	return rwutil.WriteToBytes(ms)
-}
-
-func (ms *Mutations) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-
-	size := rr.ReadSize32()
-	for i := 0; i < size; i++ {
-		key := rr.ReadString()
-		val := rr.ReadBytes()
-		if rr.Err != nil {
-			return rr.Err
-		}
-		ms.Set(kv.Key(key), val)
-	}
-
-	size = rr.ReadSize32()
-	for i := 0; i < size; i++ {
-		key := rr.ReadString()
-		if rr.Err != nil {
-			return rr.Err
-		}
-		ms.Del(kv.Key(key))
-	}
-	return rr.Err
-}
-
-func (ms *Mutations) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-
-	ww.WriteSize32(len(ms.Sets))
-	for _, item := range ms.SetsSorted() {
-		ww.WriteString(string(item.Key))
-		ww.WriteBytes(item.Value)
-	}
-
-	ww.WriteSize32(len(ms.Dels))
-	for _, k := range ms.DelsSorted() {
-		ww.WriteString(string(k))
-	}
-	return ww.Err
+	return bcs.MustMarshal(ms)
 }
 
 func (ms *Mutations) SetsSorted() kv.Items {

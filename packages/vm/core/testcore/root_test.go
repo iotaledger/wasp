@@ -137,7 +137,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := isc.NewAgentID(ownerAddr)
+	newOwnerAgentID := isc.NewAddressAgentID(ownerAddr)
 
 	req := solo.NewCallParams(
 		governance.FuncDelegateChainOwnership.Message(newOwnerAgentID),
@@ -166,7 +166,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := isc.NewAgentID(ownerAddr)
+	newOwnerAgentID := isc.NewAddressAgentID(ownerAddr)
 	req := solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(newOwnerAgentID))
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)

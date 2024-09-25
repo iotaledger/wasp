@@ -114,12 +114,10 @@ func (req *onLedgerRequestData) SenderAccount() AgentID {
 		return nil
 	}
 	if req.requestMetadata != nil && !req.requestMetadata.SenderContract.Empty() {
-		// if sender.Type() == iotago.AddressAlias {	// TODO: is it needed?
 		chainID := ChainIDFromAddress(sender)
 		return req.requestMetadata.SenderContract.AgentID(chainID)
-		//}
 	}
-	return NewAgentID(sender)
+	return NewAddressAgentID(sender)
 }
 
 func (req *onLedgerRequestData) SenderAddress() *cryptolib.Address {
@@ -144,6 +142,7 @@ func (req *onLedgerRequestData) String() string {
 func (req *onLedgerRequestData) RequestRef() sui.ObjectRef {
 	return req.requestRef
 }
+
 func (req *onLedgerRequestData) AssetsBag() *iscmove.AssetsBag {
 	return req.assetsBag
 }

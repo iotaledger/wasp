@@ -3,6 +3,8 @@ package vmimpl
 import (
 	"math"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -46,16 +48,8 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		panic("invalid params: must be at least 1 request")
 	}
 
-	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(task.Anchor.Ref.Object)
-	if err != nil {
-		panic(err)
-	}
-
-	stateDraft, err := task.Store.NewStateDraft(task.Timestamp, prevL1Commitment)
-	if err != nil {
-		panic(err)
-	}
-
+	prevL1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(task.Anchor.Ref.Object))
+	stateDraft := lo.Must(task.Store.NewStateDraft(task.Timestamp, prevL1Commitment))
 	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage, task.Anchor.Ref, task.Anchor.Owner)
 	vmctx := newVmContext(task, stateDraft, txbuilder)
 	vmctx.init()

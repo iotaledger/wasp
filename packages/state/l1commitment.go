@@ -2,19 +2,18 @@ package state
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	trieRoot trie.Hash
+	trieRoot trie.Hash `bcs:""`
 	// hash of the essence of the block
-	blockHash BlockHash
+	blockHash BlockHash `bcs:""`
 }
 
 const L1CommitmentSize = trie.HashSizeBytes + BlockHashSize
@@ -27,7 +26,7 @@ func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 }
 
 func NewL1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
-	return rwutil.ReadFromBytes(data, new(L1Commitment))
+	return bcs.Unmarshal[*L1Commitment](data)
 }
 
 func (s *L1Commitment) TrieRoot() trie.Hash {
@@ -43,36 +42,12 @@ func (s *L1Commitment) Equals(other *L1Commitment) bool {
 }
 
 func (s *L1Commitment) Bytes() []byte {
-	return rwutil.WriteToBytes(s)
-}
-
-func (s *L1Commitment) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadN(s.trieRoot[:])
-	rr.ReadN(s.blockHash[:])
-	return rr.Err
-}
-
-func (s *L1Commitment) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(s.trieRoot[:])
-	ww.WriteN(s.blockHash[:])
-	return ww.Err
+	return bcs.MustMarshal(s)
 }
 
 func (s *L1Commitment) String() string {
 	return fmt.Sprintf("<%s;%s>", s.TrieRoot(), s.BlockHash())
 }
-
-var L1CommitmentNil = &L1Commitment{}
-
-/*func init() {
-	zs, err := L1CommitmentFromBytes(make([]byte, L1CommitmentSize))
-	if err != nil {
-		panic(err)
-	}
-	L1CommitmentNil = zs
-}*/
 
 // PseudoRandL1Commitment is for testing only
 func NewPseudoRandL1Commitment() *L1Commitment {

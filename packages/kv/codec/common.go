@@ -26,12 +26,6 @@ func NewCodec[T any](decode func([]byte) (T, error), encode func(T) []byte) Code
 	return &codec[T]{decode: decode, encode: encode}
 }
 
-func NewCodecEx[T interface{ Bytes() []byte }](decode func([]byte) (T, error)) Codec[T] {
-	return &codec[T]{decode: decode, encode: func(v T) []byte {
-		return v.Bytes()
-	}}
-}
-
 func NewCodecFromBCS[T any]() Codec[T] {
 	encode := func(obj T) []byte { return bcs.MustMarshal(&obj) }
 	decode := bcs.Unmarshal[T]

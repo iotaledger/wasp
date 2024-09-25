@@ -445,7 +445,7 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 	return &L1L2CoinBalances{
 		Address: addr,
 		L1:      ch.Env.L1CoinBalances(addr),
-		L2:      ch.L2Assets(isc.NewAgentID(addr)).Coins,
+		L2:      ch.L2Assets(isc.NewAddressAgentID(addr)).Coins,
 	}
 }
 
@@ -458,7 +458,7 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 			ss := cryptolib.SubSeed(masterSeed, i)
 			key, addr := ch.Env.NewKeyPair(&ss)
 			ch.Env.GetFundsFromFaucet(addr)
-			if ch.L2BaseTokens(isc.NewAgentID(addr)) == 0 {
+			if ch.L2BaseTokens(isc.NewAddressAgentID(addr)) == 0 {
 				return key, addr
 			}
 			i++

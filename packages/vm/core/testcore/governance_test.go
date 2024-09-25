@@ -206,7 +206,7 @@ func TestMaintenanceMode(t *testing.T) {
 	ch := env.NewChain()
 
 	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	ownerAgentID := isc.NewAgentID(ownerAddr)
+	ownerAgentID := isc.NewAddressAgentID(ownerAddr)
 	ch.DepositBaseTokensToL2(10*isc.Million, ownerWallet)
 
 	userWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
@@ -594,9 +594,9 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	ch := env.NewChain()
 
 	user1, userAddr1 := env.NewKeyPairWithFunds()
-	userAgentID1 := isc.NewAgentID(userAddr1)
+	userAgentID1 := isc.NewAddressAgentID(userAddr1)
 	_, userAddr2 := env.NewKeyPairWithFunds()
-	userAgentID2 := isc.NewAgentID(userAddr2)
+	userAgentID2 := isc.NewAddressAgentID(userAddr2)
 
 	fp := &gas.FeePolicy{
 		EVMGasRatio: gas.DefaultEVMGasRatio,
@@ -664,7 +664,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 	ch := env.NewChain()
 
 	user, userAddr := env.NewKeyPairWithFunds()
-	userAgentID := isc.NewAgentID(userAddr)
+	userAgentID := isc.NewAddressAgentID(userAddr)
 
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(
@@ -736,7 +736,7 @@ func TestGasPayout(t *testing.T) {
 	})
 	ch := env.NewChain(false)
 	user1, user1Addr := env.NewKeyPairWithFunds()
-	user1AgentID := isc.NewAgentID(user1Addr)
+	user1AgentID := isc.NewAddressAgentID(user1Addr)
 
 	// transfer some tokens from a new account (user1)
 	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)

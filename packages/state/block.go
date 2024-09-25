@@ -4,7 +4,6 @@
 package state
 
 import (
-	"io"
 	"math"
 	"math/rand"
 
@@ -16,13 +15,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type block struct {
-	trieRoot             trie.Hash
-	mutations            *buffered.Mutations
-	previousL1Commitment *L1Commitment
+	trieRoot             trie.Hash           `bcs:""`
+	mutations            *buffered.Mutations `bcs:""`
+	previousL1Commitment *L1Commitment       `bcs:"optional"`
 }
 
 var _ Block = &block{}
@@ -32,25 +31,24 @@ func NewBlock() Block {
 }
 
 func BlockFromBytes(data []byte) (Block, error) {
-	return rwutil.ReadFromBytes(data, new(block))
+	return bcs.Unmarshal[*block](data)
 }
 
 func (b *block) Bytes() []byte {
-	return rwutil.WriteToBytes(b)
-}
-
-func (b *block) essenceBytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	b.writeEssence(ww)
-	return ww.Bytes()
+	return bcs.MustMarshal(b)
 }
 
 func (b *block) Equals(other Block) bool {
 	return b.Hash().Equals(other.Hash())
 }
 
+// Hash calculates a hash from the mutations and previousL1Commitment
 func (b *block) Hash() (ret BlockHash) {
-	hash := blake2b.Sum256(b.essenceBytes())
+	data := bcs.MustMarshal(b.mutations)
+	if b.previousL1Commitment != nil {
+		data = append(data, bcs.MustMarshal(b.previousL1Commitment)...)
+	}
+	hash := blake2b.Sum256(data)
 	copy(ret[:], hash[:])
 	return ret
 }
@@ -80,38 +78,6 @@ func (b *block) StateIndex() uint32 {
 
 func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
-}
-
-func (b *block) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadN(b.trieRoot[:])
-	b.readEssence(rr)
-	return rr.Err
-}
-
-func (b *block) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(b.trieRoot[:])
-	b.writeEssence(ww)
-	return ww.Err
-}
-
-func (b *block) readEssence(rr *rwutil.Reader) {
-	b.mutations = buffered.NewMutations()
-	rr.Read(b.mutations)
-	hasPrevL1Commitment := rr.ReadBool()
-	if hasPrevL1Commitment {
-		b.previousL1Commitment = new(L1Commitment)
-		rr.Read(b.previousL1Commitment)
-	}
-}
-
-func (b *block) writeEssence(ww *rwutil.Writer) {
-	ww.Write(b.mutations)
-	ww.WriteBool(b.previousL1Commitment != nil)
-	if b.previousL1Commitment != nil {
-		ww.Write(b.previousL1Commitment)
-	}
 }
 
 // test only function

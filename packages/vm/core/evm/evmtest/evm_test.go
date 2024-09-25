@@ -1139,7 +1139,7 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	// deposit the collection NFT in the owner's L2 account
 	collectionNFT, _ := lo.Find(allNFTs, func(nft *isc.NFT) bool { return nft.ID == collection.ID })
-	env.Chain.MustDepositNFT(collectionNFT, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
+	env.Chain.MustDepositNFT(collectionNFT, isc.NewAddressAgentID(collectionOwnerAddr), collectionOwner)
 
 	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
 	require.NoError(t, err)
@@ -1292,7 +1292,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	env.Chain.GetL2FundsFromFaucet(contractAgentID)
 	initialContractBalance := env.Chain.L2BaseTokens(contractAgentID)
 
-	randAgentID := isc.NewAgentID(cryptolib.NewRandomAddress())
+	randAgentID := isc.NewAddressAgentID(cryptolib.NewRandomAddress())
 
 	const nBaseTokens = 100
 	allowance := isc.NewAssets(nBaseTokens)

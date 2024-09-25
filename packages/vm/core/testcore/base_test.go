@@ -147,7 +147,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := isc.NewAgentID(senderAddr)
+		senderAgentID := isc.NewAddressAgentID(senderAddr)
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -224,7 +224,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := isc.NewAgentID(senderAddr)
+		senderAgentID := isc.NewAddressAgentID(senderAddr)
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -355,14 +355,14 @@ func TestEstimateGas(t *testing.T) {
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
 			keyPair, addr := env.NewKeyPairWithFunds()
-			agentID := isc.NewAgentID(addr)
+			agentID := isc.NewAddressAgentID(addr)
 
 			if testCase.L2Balance > 0 {
 				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
 				anotherKeyPair, _ := env.NewKeyPairWithFunds()
 				err = ch.TransferAllowanceTo(
 					isc.NewAssets(testCase.L2Balance),
-					isc.NewAgentID(addr),
+					isc.NewAddressAgentID(addr),
 					anotherKeyPair,
 				)
 				require.NoError(t, err)
@@ -468,7 +468,7 @@ func TestDeployNativeContract(t *testing.T) {
 	require.NoError(t, err)
 	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
-	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAgentID(senderAddr))).
+	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAddressAgentID(senderAddr))).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)
