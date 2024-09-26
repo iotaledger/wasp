@@ -99,6 +99,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		taskResult.StateMetadata = nil
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
+	taskResult.UnsignedTransaction = vmctx.BuildTransactionEssence(taskResult.StateMetadata)
 	return taskResult
 }
 

@@ -114,7 +114,6 @@ func (vmctx *vmContext) extractBlock(
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
 		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.Timestamp)
-		panic("we need to re-think how transaction effects get saved to the state. something like saveInternalUTXOs is probably not necessary for the first PoC version")
 	})
 
 	block := vmctx.task.Store.ExtractBlock(vmctx.stateDraft)
@@ -157,81 +156,6 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	blocklogState.Prune(blockInfo.BlockIndex, vmctx.chainInfo.BlockKeepAmount)
 	vmctx.task.Log.Debugf("saved blockinfo:\n%s", blockInfo)
 	return nil
-}
-
-// saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.
-// Anchor Transaction outputs order must be:
-// 0. Anchor Output
-// 1. NativeTokens
-// 2. Foundries
-// 3. NFTs
-// 4. produced outputs
-func (vmctx *vmContext) saveInternalUTXOs() {
-	panic("saveInternalUTXOs deprecated")
-	// // create a mock AO, with a nil statecommitment, just to calculate changes in the minimum SD
-	// mockAO := vmctx.txbuilder.CreateAnchorOutput(vmctx.StateMetadata(state.L1CommitmentNil))
-	// newMinSD := parameters.L1().Protocol.RentStructure.MinRent(mockAO)
-	// oldMinSD := vmctx.txbuilder.AnchorOutputStorageDeposit()
-	// changeInSD := int64(oldMinSD) - int64(newMinSD)
-
-	// if changeInSD != 0 {
-	// 	vmctx.task.Log.Debugf("adjusting commonAccount because AO SD cost changed, old:%d new:%d", oldMinSD, newMinSD)
-	// 	// update the commonAccount with the change in SD cost
-	// 	vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).
-	// 		AdjustAccountBaseTokens(accounts.CommonAccount(), changeInSD, vmctx.ChainID())
-	// }
-
-	// nativeTokenIDsToBeUpdated, nativeTokensToBeRemoved := vmctx.txbuilder.NativeTokenRecordsToBeUpdated()
-	// // IMPORTANT: do not iterate by this map, order of the slice above must be respected
-	// nativeTokensMap := vmctx.txbuilder.NativeTokenOutputsByTokenIDs(nativeTokenIDsToBeUpdated)
-
-	// foundryIDsToBeUpdated, foundriesToBeRemoved := vmctx.txbuilder.FoundriesToBeUpdated()
-	// // IMPORTANT: do not iterate by this map, order of the slice above must be respected
-	// foundryOutputsMap := vmctx.txbuilder.FoundryOutputsBySN(foundryIDsToBeUpdated)
-
-	// NFTOutputsToBeAdded, NFTOutputsToBeRemoved, MintedNFTOutputs := vmctx.txbuilder.NFTOutputsToBeUpdated()
-
-	// outputIndex := uint16(1)
-
-	// accountsState := vmctx.accountsStateWriterFromChainState(vmctx.stateDraft)
-	// // update native token outputs
-	// for _, ntID := range nativeTokenIDsToBeUpdated {
-	// 	vmctx.task.Log.Debugf("saving NT %s, outputIndex: %d", ntID, outputIndex)
-	// 	accountsState.SaveNativeTokenOutput(nativeTokensMap[ntID], outputIndex)
-	// 	outputIndex++
-	// }
-	// for _, id := range nativeTokensToBeRemoved {
-	// 	vmctx.task.Log.Debugf("deleting NT %s", id)
-	// 	accountsState.DeleteNativeTokenOutput(id)
-	// }
-
-	// // update foundry UTXOs
-	// for _, foundryID := range foundryIDsToBeUpdated {
-	// 	vmctx.task.Log.Debugf("saving foundry %d, outputIndex: %d", foundryID, outputIndex)
-	// 	accountsState.SaveFoundryOutput(foundryOutputsMap[foundryID], outputIndex)
-	// 	outputIndex++
-	// }
-	// for _, sn := range foundriesToBeRemoved {
-	// 	vmctx.task.Log.Debugf("deleting foundry %d", sn)
-	// 	accountsState.DeleteFoundryOutput(sn)
-	// }
-
-	// // update NFT Outputs
-	// for _, out := range NFTOutputsToBeAdded {
-	// 	vmctx.task.Log.Debugf("saving NFT %s, outputIndex: %d", out.NFTID, outputIndex)
-	// 	accountsState.SaveNFTOutput(out, outputIndex)
-	// 	outputIndex++
-	// }
-	// for _, out := range NFTOutputsToBeRemoved {
-	// 	vmctx.task.Log.Debugf("deleting NFT %s", out.NFTID)
-	// 	accountsState.DeleteNFTOutput(out.NFTID)
-	// }
-
-	// for positionInMintedList := range MintedNFTOutputs {
-	// 	vmctx.task.Log.Debugf("minted NFT on output index: %d", outputIndex)
-	// 	accountsState.SaveMintedNFTOutput(uint16(positionInMintedList), outputIndex)
-	// 	outputIndex++
-	// }
 }
 
 func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestResult) {

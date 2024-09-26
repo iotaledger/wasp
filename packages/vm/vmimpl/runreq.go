@@ -465,7 +465,7 @@ func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *r
 	ret = findContractByHname(reqctx.chainStateWithGasBurn(), contractHname)
 	if ret == nil {
 		reqctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-		panic(vm.ErrContractNotFound.Create(contractHname))
+		panic(vm.ErrContractNotFound.Create(uint32(contractHname)))
 	}
 	return ret
 }
@@ -476,11 +476,7 @@ func (vmctx *vmContext) loadChainConfig() {
 
 // checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *vmContext) checkTransactionSize() error {
-	panic("checkTransactionSize not implemented yet")
-	// essence, _ := vmctx.BuildTransactionEssence(state.L1CommitmentNil, false)
-	// tx := transaction.MakeAnchorTransaction(essence, cryptolib.NewEmptySignature())
-	// if tx.Size() > parameters.L1().MaxPayloadSize {
-	// 	return vmexceptions.ErrMaxTransactionSizeExceeded
-	// }
-	// return nil
+	// TODO
+	vmctx.task.Log.Warn("TODO: checkTransactionSize")
+	return nil
 }
