@@ -38,7 +38,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor, signer)
+	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor, signer.Address())
 
 	req1 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb.ConsumeRequest(req1)
@@ -96,7 +96,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor, signer)
+	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor, signer.Address())
 
 	req1 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb1.ConsumeRequest(req1)
@@ -135,7 +135,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	tmp, err := client.UpdateObjectRef(context.Background(), &anchor.ObjectRef)
 	require.NoError(t, err)
 	anchor.ObjectRef = *tmp
-	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor, signer)
+	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, anchor, signer.Address())
 
 	txb2.SendAssets(recipient.Address().AsSuiAddress(), isc.NewAssets(1))
 
@@ -200,7 +200,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, anchor1, signer)
+	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, anchor1, signer.Address())
 
 	req1 := createIscmoveReq(t, client, signer, iscPackage1, anchor1)
 	txb1.ConsumeRequest(req1)
@@ -237,7 +237,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	tmp, err := client.UpdateObjectRef(context.Background(), &anchor1.ObjectRef)
 	require.NoError(t, err)
 	anchor1.ObjectRef = *tmp
-	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, anchor1, signer)
+	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, anchor1, signer.Address())
 
 	txb2.SendCrossChainRequest(&iscPackage1, anchor2.ObjectID, isc.NewAssets(1), &isc.SendMetadata{
 		Message:   isc.NewMessage(isc.Hn("accounts"), isc.Hn("deposit")),
@@ -272,7 +272,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	crossChainRequestRef, err := txnResponse2.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, anchor2, signer)
+	txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, anchor2, signer.Address())
 
 	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), crossChainRequestRef.ObjectID)
 	require.NoError(t, err)

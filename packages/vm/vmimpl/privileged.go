@@ -65,5 +65,6 @@ func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, msg isc.Message
 }
 
 func (reqctx *requestContext) SendOnBehalfOf(caller isc.ContractIdentity, metadata isc.RequestParameters) {
-	reqctx.doSend(caller, metadata)
+	// FIXME we should add the sender in the request object too
+	reqctx.send(metadata)
 }

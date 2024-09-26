@@ -56,7 +56,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		panic(err)
 	}
 
-	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage, task.Anchor.Ref)
+	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage, task.Anchor.Ref, task.Anchor.Owner)
 	vmctx := newVmContext(task, stateDraft, txbuilder)
 	vmctx.init()
 
