@@ -23,7 +23,7 @@ type AnchorTransactionBuilder struct {
 
 	ptb *sui.ProgrammableTransactionBuilder
 
-	signer cryptolib.Signer
+	ownerAddr *cryptolib.Address
 }
 
 var _ TransactionBuilder = &AnchorTransactionBuilder{}
@@ -32,13 +32,13 @@ var _ TransactionBuilder = &AnchorTransactionBuilder{}
 func NewAnchorTransactionBuilder(
 	iscPackage sui.Address,
 	anchor *iscmove.RefWithObject[iscmove.Anchor],
-	signer cryptolib.Signer,
+	ownerAddr *cryptolib.Address,
 ) *AnchorTransactionBuilder {
 	return &AnchorTransactionBuilder{
 		iscPackage: iscPackage,
 		anchor:     anchor,
 		ptb:        sui.NewProgrammableTransactionBuilder(),
-		signer:     signer,
+		ownerAddr:  ownerAddr,
 	}
 }
 
@@ -83,7 +83,7 @@ func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *sui.Ad
 	if txb.ptb == nil {
 		txb.ptb = sui.NewProgrammableTransactionBuilder()
 	}
-	txb.ptb = iscmoveclient.PTBAssetsBagNew(txb.ptb, txb.iscPackage, txb.signer.Address())
+	txb.ptb = iscmoveclient.PTBAssetsBagNew(txb.ptb, txb.iscPackage, txb.ownerAddr)
 	argAssetsBag := txb.ptb.LastCommandResultArg()
 	argAnchor := txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef})
 	for coinType, coinBalance := range assets.Coins {
