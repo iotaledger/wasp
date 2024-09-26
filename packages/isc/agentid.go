@@ -61,16 +61,6 @@ func HnameFromAgentID(a AgentID) Hname {
 	return HnameNil
 }
 
-// NewAgentID creates an AddressAgentID if the address is not an AliasAddress;
-// otherwise a ContractAgentID with hname = HnameNil.
-func NewAgentID(addr *cryptolib.Address) AgentID {
-	/*if addr.Type() == iotago.AddressAlias {
-		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(chainID, HnameNil)
-	}*/ // TODO: is it needed?
-	return NewAddressAgentID(addr)
-}
-
 func AgentIDFromBytes(data []byte) (AgentID, error) {
 	return bcs.Unmarshal[AgentID](data)
 }

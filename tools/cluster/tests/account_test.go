@@ -86,7 +86,7 @@ func testAccounts(e *ChainEnv) {
 	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(e.t, err)
 
-	e.checkBalanceOnChain(isc.NewAgentID(myAddress), coin.BaseTokenType, transferBaseTokens-coin.Value(fees))
+	e.checkBalanceOnChain(isc.NewAddressAgentID(myAddress), coin.BaseTokenType, transferBaseTokens-coin.Value(fees))
 
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(i)

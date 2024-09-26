@@ -53,7 +53,7 @@ func (ch *Chain) OriginatorAddress() *cryptolib.Address {
 }
 
 func (ch *Chain) OriginatorID() isc.AgentID {
-	ret := isc.NewAgentID(ch.OriginatorAddress())
+	ret := isc.NewAddressAgentID(ch.OriginatorAddress())
 	return ret
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
@@ -39,7 +38,7 @@ var (
 	FuncNewL1Deposit = coreutil.NewEP3(Contract, evmnames.FuncNewL1Deposit,
 		coreutil.FieldWithCodec(codec.AgentID),
 		coreutil.FieldWithCodec(codec.EthereumAddress),
-		coreutil.FieldWithCodec(codec.NewCodecEx(isc.AssetsFromBytes)),
+		coreutil.FieldWithCodec(codec.Assets),
 	)
 	ViewGetChainID = coreutil.NewViewEP01(Contract, evmnames.ViewGetChainID,
 		coreutil.FieldWithCodec(codec.Uint16),

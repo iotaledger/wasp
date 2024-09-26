@@ -54,29 +54,29 @@ var (
 
 	// gas
 	FuncSetFeePolicy = coreutil.NewEP1(Contract, "setFeePolicy",
-		coreutil.FieldWithCodec(codec.NewCodecEx(gas.FeePolicyFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.FeePolicy]()),
 	)
 	FuncSetGasLimits = coreutil.NewEP1(Contract, "setGasLimits",
-		coreutil.FieldWithCodec(codec.NewCodecEx(gas.LimitsFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.Limits]()),
 	)
 	ViewGetFeePolicy = coreutil.NewViewEP01(Contract, "getFeePolicy",
-		coreutil.FieldWithCodec(codec.NewCodecEx(gas.FeePolicyFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.FeePolicy]()),
 	)
 	ViewGetGasLimits = coreutil.NewViewEP01(Contract, "getGasLimits",
-		coreutil.FieldWithCodec(codec.NewCodecEx(gas.LimitsFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.Limits]()),
 	)
 
 	// evm fees
 	FuncSetEVMGasRatio = coreutil.NewEP1(Contract, "setEVMGasRatio",
-		coreutil.FieldWithCodec(codec.NewCodecEx(util.Ratio32FromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[util.Ratio32]()),
 	)
 	ViewGetEVMGasRatio = coreutil.NewViewEP01(Contract, "getEVMGasRatio",
-		coreutil.FieldWithCodec(codec.NewCodecEx(util.Ratio32FromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[util.Ratio32]()),
 	)
 
 	// chain info
 	ViewGetChainInfo = coreutil.NewViewEP01(Contract, "getChainInfo",
-		coreutil.FieldWithCodec(codec.NewCodecEx(isc.ChainInfoFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.ChainInfo]()),
 	)
 
 	// access nodes
@@ -95,7 +95,7 @@ var (
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
 		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*AccessNodeInfo]()),
-		coreutil.FieldArrayWithCodec(codec.NewCodecEx(cryptolib.PublicKeyFromBytes)),
+		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*cryptolib.PublicKey]()),
 	)
 
 	// maintenance
@@ -108,11 +108,11 @@ var (
 	// public chain metadata
 	FuncSetMetadata = coreutil.NewEP2(Contract, "setMetadata",
 		coreutil.FieldWithCodecOptional(codec.String),
-		coreutil.FieldWithCodecOptional(codec.NewCodecEx(isc.PublicChainMetadataFromBytes)),
+		coreutil.FieldWithCodecOptional(codec.NewCodecFromBCS[*isc.PublicChainMetadata]()),
 	)
 	ViewGetMetadata = coreutil.NewViewEP02(Contract, "getMetadata",
 		coreutil.FieldWithCodec(codec.String),
-		coreutil.FieldWithCodec(codec.NewCodecEx(isc.PublicChainMetadataFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.PublicChainMetadata]()),
 	)
 )
 

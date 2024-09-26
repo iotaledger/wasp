@@ -9,11 +9,10 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -47,22 +46,17 @@ func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 
 var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
 
-func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
+func newMigrationsTest(t *testing.T) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
 	cs := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(0, cs, nil, 0, baseTokenCoinInfo)
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	anchor := initChain(chainCreator, cs)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
 	require.NoError(t, err)
 	task := &vm.VMTask{
-		Anchor: &isc.StateAnchor{
-			Ref: &iscmove.AnchorWithRef{
-				Object: &iscmove.Anchor{
-					StateIndex: stateIndex,
-				},
-			},
-		},
+		Anchor: anchor,
 	}
 	vmctx := &vmContext{
 		task:       task,
@@ -95,8 +89,8 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	return env
 }
 
-func TestMigrationsStateIndex1(t *testing.T) {
-	env := newMigrationsTest(t, 1)
+func TestMigrations(t *testing.T) {
+	env := newMigrationsTest(t)
 
 	require.EqualValues(t, 0, env.getSchemaVersion())
 
@@ -111,8 +105,8 @@ func TestMigrationsStateIndex1(t *testing.T) {
 	require.EqualValues(t, 3, env.getSchemaVersion())
 }
 
-func TestMigrationsStateIndex1Current1(t *testing.T) {
-	env := newMigrationsTest(t, 1)
+func TestMigrationsCurrent1(t *testing.T) {
+	env := newMigrationsTest(t)
 
 	env.setSchemaVersion(1)
 
@@ -127,8 +121,8 @@ func TestMigrationsStateIndex1Current1(t *testing.T) {
 	require.EqualValues(t, 3, env.getSchemaVersion())
 }
 
-func TestMigrationsStateIndex1Current2Base1(t *testing.T) {
-	env := newMigrationsTest(t, 1)
+func TestMigrationsCurrent2Base1(t *testing.T) {
+	env := newMigrationsTest(t)
 
 	env.setSchemaVersion(2)
 

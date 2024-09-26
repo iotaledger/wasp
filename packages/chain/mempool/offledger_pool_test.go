@@ -20,7 +20,7 @@ func TestOffledgerMempoolAccountNonce(t *testing.T) {
 
 	// generate a bunch of requests for the same account
 	kp, addr := testkey.GenKeyAddr()
-	agentID := isc.NewAgentID(addr)
+	agentID := isc.NewAddressAgentID(addr)
 
 	req0 := testutil.DummyOffledgerRequestForAccount(isc.RandomChainID(), 0, kp)
 	req1 := testutil.DummyOffledgerRequestForAccount(isc.RandomChainID(), 1, kp)

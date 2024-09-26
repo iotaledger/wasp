@@ -156,7 +156,7 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
 	if r.nonce == 0 {
-		r.nonce = ch.Nonce(isc.NewAgentID(keyPair.Address()))
+		r.nonce = ch.Nonce(isc.NewAddressAgentID(keyPair.Address()))
 	}
 	ret := isc.NewOffLedgerRequest(ch.ID(), r.msg, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
@@ -165,7 +165,7 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) 
 
 func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *cryptolib.Address) isc.OffLedgerRequest {
 	if r.nonce == 0 {
-		r.nonce = ch.Nonce(isc.NewAgentID(address))
+		r.nonce = ch.Nonce(isc.NewAddressAgentID(address))
 	}
 	ret := isc.NewOffLedgerRequest(ch.ID(), r.msg, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)

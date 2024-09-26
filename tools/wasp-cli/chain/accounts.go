@@ -156,7 +156,7 @@ func initDepositCmd() *cobra.Command {
 					// adjust allowance to leave enough for fee if needed
 					client := cliclients.WaspClient(node)
 					feeNeeded := baseTokensForDepositFee(client, chain)
-					senderAgentID := isc.NewAgentID(wallet.Load().Address())
+					senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
 					senderOnChainBalance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)

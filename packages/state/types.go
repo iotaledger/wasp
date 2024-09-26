@@ -102,8 +102,6 @@ type Block interface {
 	Hash() BlockHash
 	Equals(Block) bool
 	Bytes() []byte
-	Read(io.Reader) error
-	Write(io.Writer) error
 }
 
 type StateCommonValues interface {

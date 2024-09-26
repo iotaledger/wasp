@@ -123,7 +123,7 @@ func testSplitTokensSuccess(t *testing.T) {
 	setupTestSandboxSC(t, ch, nil)
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
-	agentID := isc.NewAgentID(addr)
+	agentID := isc.NewAddressAgentID(addr)
 
 	err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func testNFTOffledgerWithdraw(t *testing.T) {
 
 	require.True(t, ch.Env.HasL1NFT(issuerAddr, &nft.ID))
 	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
-	require.False(t, ch.HasL2NFT(isc.NewAgentID(issuerAddr), &nft.ID))
+	require.False(t, ch.HasL2NFT(isc.NewAddressAgentID(issuerAddr), &nft.ID))
 
 	req := solo.NewCallParams(accounts.FuncDeposit.Message()).
 		AddFungibleTokens(isc.NewAssets(1_000_000)).
@@ -283,7 +283,7 @@ func testNFTOffledgerWithdraw(t *testing.T) {
 
 	require.False(t, ch.Env.HasL1NFT(issuerAddr, &nft.ID))
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
-	require.True(t, ch.HasL2NFT(isc.NewAgentID(issuerAddr), &nft.ID))
+	require.True(t, ch.HasL2NFT(isc.NewAddressAgentID(issuerAddr), &nft.ID))
 
 	wdReq := solo.NewCallParams(accounts.FuncWithdraw.Message()).
 		WithAllowance(isc.NewAssets(10_000, nil, nft.ID)).
@@ -294,7 +294,7 @@ func testNFTOffledgerWithdraw(t *testing.T) {
 
 	require.True(t, ch.Env.HasL1NFT(issuerAddr, &nft.ID))
 	require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nft.ID))
-	require.False(t, ch.HasL2NFT(isc.NewAgentID(issuerAddr), &nft.ID))
+	require.False(t, ch.HasL2NFT(isc.NewAddressAgentID(issuerAddr), &nft.ID))
 }
 
 func TestNFTMintToChain(t *testing.T) { run2(t, testNFTMintToChain) }

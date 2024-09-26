@@ -190,7 +190,7 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 	baseTokes := coin.Value(1000 * isc.Million)
 	userWallet, userAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
-	userAgentID := isc.NewAgentID(userAddress)
+	userAgentID := isc.NewAddressAgentID(userAddress)
 
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, userWallet)
 

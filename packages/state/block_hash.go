@@ -21,13 +21,6 @@ func NewBlockHash(hash []byte) (BlockHash, error) {
 	return result, nil
 }
 
-/*func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
-	return &L1Commitment{
-		trieRoot:  c,
-		blockHash: blockHash,
-	}
-}*/
-
 func BlockHashFromString(hash string) (BlockHash, error) {
 	byteSlice, err := cryptolib.DecodeHex(hash)
 	if err != nil {

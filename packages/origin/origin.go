@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func EncodeInitParams(
@@ -53,7 +54,7 @@ func L1Commitment(
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.SuiCoinInfo,
 ) *state.L1Commitment {
-	block := InitChain(
+	block, _ := InitChain(
 		v,
 		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
 		initParams,
@@ -69,7 +70,7 @@ func InitChain(
 	initParams isc.CallArguments,
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.SuiCoinInfo,
-) state.Block {
+) (state.Block, *transaction.StateMetadata) {
 	chainOwner, evmChainID, blockKeepAmount, err := DecodeInitParams(initParams)
 	if err != nil {
 		panic(err)
@@ -100,7 +101,13 @@ func InitChain(
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}
-	return block
+	return block, transaction.NewStateMetadata(
+		v,
+		block.L1Commitment(),
+		gas.DefaultFeePolicy(),
+		initParams,
+		"",
+	)
 }
 
 func InitChainByAnchor(
@@ -113,7 +120,7 @@ func InitChainByAnchor(
 	if err != nil {
 		return nil, err
 	}
-	originBlock := InitChain(
+	originBlock, _ := InitChain(
 		stateMetadata.SchemaVersion,
 		chainStore,
 		stateMetadata.InitParams,

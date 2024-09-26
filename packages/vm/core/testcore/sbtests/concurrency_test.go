@@ -121,7 +121,7 @@ func testConcurrency2(t *testing.T) {
 
 	for i := range users {
 		expectedBalance := uint64(repeats[i]) * (baseTokensSentPerRequest - estimate.GasFeeCharged)
-		chain.AssertL2BaseTokens(isc.NewAgentID(userAddr[i]), expectedBalance)
+		chain.AssertL2BaseTokens(isc.NewAddressAgentID(userAddr[i]), expectedBalance)
 		chain.Env.AssertL1BaseTokens(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*baseTokensSentPerRequest)
 	}
 

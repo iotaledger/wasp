@@ -42,11 +42,11 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 	err := ch.DepositBaseTokensToL2(10*gas.LimitsDefault.MinGasPerRequest, user)
 	require.NoError(t, err)
 
-	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAgentID(userAddr))).
+	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAddressAgentID(userAddr))).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	return user, isc.NewAgentID(userAddr)
+	return user, isc.NewAddressAgentID(userAddr)
 }
 
 func run2(t *testing.T, test func(*testing.T)) {
