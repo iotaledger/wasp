@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -15,11 +16,11 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
@@ -61,7 +62,13 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		governance.DefaultBlockKeepAmount,
 	)
 	const originDeposit = 1 * isc.Million
-	_, stateMetadata := origin.InitChain(0, store, initParams, originDeposit, baseTokenCoinInfo)
+	_, stateMetadata := origin.InitChain(
+		allmigrations.SchemaVersionIotaRebased,
+		store,
+		initParams,
+		originDeposit,
+		baseTokenCoinInfo,
+	)
 	anchorObjectRef := sui.RandomObjectRef()
 	anchorAssetsBagRef := sui.RandomObjectRef()
 	anchorAssetsReferentRef := sui.RandomObjectRef()
@@ -98,7 +105,8 @@ func TestRunVM(t *testing.T) {
 	requestRef := sui.RandomObjectRef()
 	requestAssetsBagRef := sui.RandomObjectRef()
 	requestAssetsReferentRef := sui.RandomObjectRef()
-	msg := inccounter.FuncIncCounter.Message(nil)
+	msg := accounts.FuncDeposit.Message()
+	const tokensForGas = 1 * isc.Million
 	request := &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *requestRef,
 		Object: &iscmove.Request{
@@ -109,9 +117,15 @@ func TestRunVM(t *testing.T) {
 				Value: &iscmove.AssetsBagWithBalances{
 					AssetsBag: iscmove.AssetsBag{
 						ID:   *requestAssetsBagRef.ObjectID,
-						Size: 0,
+						Size: 1,
 					},
-					Balances: map[string]*suijsonrpc.Balance{},
+					Balances: map[string]*suijsonrpc.Balance{
+						string(coin.BaseTokenType): {
+							CoinType:        string(coin.BaseTokenType),
+							CoinObjectCount: 1,
+							TotalBalance:    tokensForGas,
+						},
+					},
 				},
 			},
 			Message: iscmove.Message{
@@ -138,8 +152,11 @@ func TestRunVM(t *testing.T) {
 		EstimateGasMode:      false,
 		EVMTracer:            nil,
 		EnableGasBurnLogging: false,
-		Migrations:           &migrations.MigrationScheme{},
+		Migrations:           allmigrations.DefaultScheme,
 		Log:                  testlogger.NewLogger(t),
 	}
-	_ = runTask(task)
+	res := runTask(task)
+	require.Len(t, res.RequestResults, 1)
+	require.Nil(t, res.RequestResults[0].Receipt.Error)
+	require.NotNil(t, res.UnsignedTransaction)
 }

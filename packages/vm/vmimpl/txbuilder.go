@@ -25,8 +25,15 @@ func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
 	return stateMetadata.Bytes()
 }
 
-func (vmctx *vmContext) BuildTransactionEssence(stateMetadata []byte) sui.ProgrammableTransaction {
-	return vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
+func (vmctx *vmContext) BuildTransactionEssence(stateMetadata []byte) sui.TransactionData {
+	ptb := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
+	return sui.NewProgrammable(
+		vmctx.stateAnchor().Owner.AsSuiAddress(),
+		ptb,
+		[]*sui.ObjectRef{}, // TODO: handle L1 gas
+		0,
+		0,
+	)
 }
 
 func (vmctx *vmContext) createTxBuilderSnapshot() vmtxbuilder.TransactionBuilder {
