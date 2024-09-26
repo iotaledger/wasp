@@ -6,7 +6,9 @@ module isc::request {
         borrow::{Self, Referent},
         event::Self,
     };
-    use std::string::String;
+    use std::{
+        string::String,
+    };
     use isc::assets_bag::AssetsBag;
 
     // The allowance coin_types vector and balances vector are not in the same size
@@ -34,6 +36,9 @@ module isc::request {
         id: UID,
         /// Request sender
         sender: address,
+        /// Contract identity of the sender contract.
+        /// It is set when a contract calls cross chain request.
+        contract_identity: vector<u8>,
         /// Bag of assets associated to the request
         assets_bag: Referent<AssetsBag>,
         /// The target contract, entry point and arguments
@@ -60,6 +65,7 @@ module isc::request {
     public fun create_and_send_request(
         anchor: address,
         assets_bag: AssetsBag,
+        contract_identity: Option<vector<u8>>,
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
@@ -81,9 +87,16 @@ module isc::request {
             allowance_cointypes_len = allowance_cointypes_len - 1;
         };
 
+        let contract_identity_extract = if (contract_identity.is_some()) {
+            option::destroy_some<vector<u8>>(contract_identity)
+        } else {
+            vector::empty()
+        };
+
         send(Request{
             id: object::new(ctx),
             sender: ctx.sender(),
+            contract_identity: contract_identity_extract,
             assets_bag: borrow::new(assets_bag, ctx),
             message: Message{
                 contract,
@@ -100,6 +113,7 @@ module isc::request {
         let Request {
             id,
             sender: _,
+            contract_identity: _,
             assets_bag,
             message: _,
             allowance: _,
