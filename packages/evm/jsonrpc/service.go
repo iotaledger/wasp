@@ -554,9 +554,9 @@ func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.Trac
 	})
 }
 
-func (d *DebugService) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceConfig) (interface{}, error) {
+func (d *DebugService) TraceBlockByNumber(blockNumber hexutil.Uint64, config *tracers.TraceConfig) (interface{}, error) {
 	return withMetrics(d.metrics, "debug_traceBlockByNumber", func() (interface{}, error) {
-		return d.evmChain.TraceBlockByNumber(blockNumber, config)
+		return d.evmChain.TraceBlockByNumber(uint64(blockNumber), config)
 	})
 }
 

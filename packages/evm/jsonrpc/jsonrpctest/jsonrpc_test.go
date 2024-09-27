@@ -688,7 +688,7 @@ func TestRPCTraceBlock(t *testing.T) {
 		context.Background(),
 		&res1,
 		"debug_traceBlockByNumber",
-		env.BlockNumber(),
+		hexutil.Uint64(env.BlockNumber()).String(),
 		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
 	)
 	require.NoError(t, err)
