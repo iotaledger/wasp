@@ -75,9 +75,8 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) []
 			UnspentOutputs:   outs,
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
-				TargetAddress:                 tcl.chainID.AsAddress(),
-				Assets:                        isc.NewAssets(100_000_000),
-				AdjustToMinimumStorageDeposit: false,
+				TargetAddress: tcl.chainID.AsAddress(),
+				Assets:        isc.NewAssets(100_000_000),
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),
 					GasBudget: 2 * gas.LimitsDefault.MinGasPerRequest,
