@@ -47,9 +47,8 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) isc.CallArguments {
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
 				isc.RequestParameters{
-					TargetAddress:                 addr,
-					Assets:                        assets,
-					AdjustToMinimumStorageDeposit: true,
+					TargetAddress: addr,
+					Assets:        assets,
 				},
 			)
 		}
@@ -96,7 +95,6 @@ func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) isc.CallArguments {
 		Metadata: &isc.SendMetadata{
 			Message: isc.NewMessage(isc.Hn("foo"), isc.Hn("bar")),
 		},
-		AdjustToMinimumStorageDeposit: true,
 	}
 
 	required := ctx.EstimateRequiredStorageDeposit(requestParams)
@@ -113,11 +111,11 @@ func sendNFTsBack(ctx isc.Sandbox) isc.CallArguments {
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	for _, nftID := range allowance.NFTs {
 		ctx.Send(isc.RequestParameters{
-			TargetAddress:                 addr,
-			Assets:                        isc.NewEmptyAssets().AddNFTs(nftID),
-			AdjustToMinimumStorageDeposit: true,
-			Metadata:                      &isc.SendMetadata{},
-			Options:                       isc.SendOptions{},
+			TargetAddress: addr,
+			Assets:        isc.NewEmptyAssets().AddNFTs(nftID),
+
+			Metadata: &isc.SendMetadata{},
+			Options:  isc.SendOptions{},
 		})
 	}
 	return nil
@@ -150,8 +148,8 @@ func sendLargeRequest(ctx isc.Sandbox) isc.CallArguments {
 				dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
 			),
 		},
-		AdjustToMinimumStorageDeposit: true,
-		Assets:                        ctx.AllowanceAvailable(),
+
+		Assets: ctx.AllowanceAvailable(),
 	}
 	storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
 	provided := ctx.AllowanceAvailable().BaseTokens
