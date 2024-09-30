@@ -26,3 +26,7 @@ func NewEmptyGetBlockMessage() *GetBlockMessage {
 func (msg *GetBlockMessage) GetL1Commitment() *state.L1Commitment {
 	return msg.commitment
 }
+
+func (msg *GetBlockMessage) MsgType() gpa.MessageType {
+	return MsgTypeGetBlockMessage
+}

@@ -33,3 +33,7 @@ func newMsgAccess(
 		serverForChains: serverForChains,
 	}
 }
+
+func (msg *msgAccess) MsgType() gpa.MessageType {
+	return msgTypeAccess
+}

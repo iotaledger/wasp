@@ -8,6 +8,10 @@ import (
 	"fmt"
 )
 
+const (
+	msgTypeTestRound MessageType = iota
+)
+
 // A protocol for testing infrastructure.
 // A peer outputs true when it receives a message from each peer.
 type testRound struct {
@@ -64,3 +68,7 @@ type testRoundMsg struct {
 }
 
 var _ Message = new(testRoundMsg)
+
+func (msg *testRoundMsg) MsgType() MessageType {
+	return msgTypeTestRound
+}

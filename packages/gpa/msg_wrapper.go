@@ -115,6 +115,10 @@ type WrappingMsg struct {
 
 var _ Message = new(WrappingMsg)
 
+func (msg *WrappingMsg) MsgType() MessageType {
+	return msg.msgType
+}
+
 func (msg *WrappingMsg) Subsystem() byte {
 	return msg.subsystem
 }

@@ -26,3 +26,7 @@ func multicastMsgDone(recipients []gpa.NodeID, me gpa.NodeID, round int) gpa.Out
 	}
 	return msgs
 }
+
+func (msg *msgDone) MsgType() gpa.MessageType {
+	return msgTypeDone
+}

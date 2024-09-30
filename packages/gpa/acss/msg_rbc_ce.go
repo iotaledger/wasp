@@ -20,3 +20,7 @@ type msgRBCCEPayload struct {
 }
 
 var _ gpa.Message = new(msgRBCCEPayload)
+
+func (m *msgRBCCEPayload) MsgType() gpa.MessageType {
+	return msgTypeRBCCEPayload
+}

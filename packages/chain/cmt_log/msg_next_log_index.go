@@ -62,6 +62,10 @@ func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 	}
 }
 
+func (msg *MsgNextLogIndex) MsgType() gpa.MessageType {
+	return msgTypeNextLogIndex
+}
+
 func (msg *MsgNextLogIndex) String() string {
 	return fmt.Sprintf(
 		"{MsgNextLogIndex[%v], sender=%v, nextLogIndex=%v, pleaseRepeat=%v",

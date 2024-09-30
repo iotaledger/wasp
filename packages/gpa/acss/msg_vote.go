@@ -21,3 +21,7 @@ type msgVote struct {
 }
 
 var _ gpa.Message = new(msgVote)
+
+func (m *msgVote) MsgType() gpa.MessageType {
+	return msgTypeVote
+}

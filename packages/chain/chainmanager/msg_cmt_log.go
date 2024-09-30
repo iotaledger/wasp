@@ -25,6 +25,10 @@ func NewMsgCmtLog(committeeAddr cryptolib.Address, wrapped gpa.Message) gpa.Mess
 	}
 }
 
+func (msg *msgCmtLog) MsgType() gpa.MessageType {
+	return msgTypeCmtLog
+}
+
 func (msg *msgCmtLog) String() string {
 	return fmt.Sprintf("{chainMgr.msgCmtLog, committeeAddr=%v, wrapped=%+v}", msg.committeeAddr.String(), msg.wrapped)
 }

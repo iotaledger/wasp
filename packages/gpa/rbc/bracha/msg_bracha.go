@@ -22,3 +22,7 @@ type msgBracha struct {
 }
 
 var _ gpa.Message = new(msgBracha)
+
+func (msg *msgBracha) MsgType() gpa.MessageType {
+	return msg.MsgType()
+}

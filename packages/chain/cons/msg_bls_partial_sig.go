@@ -24,3 +24,7 @@ func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig
 		partialSig:   partialSig,
 	}
 }
+
+func (msg *msgBLSPartialSig) MsgType() gpa.MessageType {
+	return msgTypeBLSShare
+}

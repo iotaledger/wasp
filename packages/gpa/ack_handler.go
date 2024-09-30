@@ -313,6 +313,10 @@ type ackHandlerReset struct {
 
 var _ Message = new(ackHandlerReset)
 
+func (msg *ackHandlerReset) MsgType() MessageType {
+	return msgTypeAckHandlerReset
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ackHandlerBatch
 
@@ -328,6 +332,10 @@ type ackHandlerBatch struct {
 }
 
 var _ Message = new(ackHandlerBatch)
+
+func (msg *ackHandlerBatch) MsgType() MessageType {
+	return msgTypeAckHandlerBatch
+}
 
 func (msg *ackHandlerBatch) Recipient() NodeID {
 	return msg.recipient

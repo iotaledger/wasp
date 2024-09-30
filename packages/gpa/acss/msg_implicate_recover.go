@@ -32,3 +32,7 @@ func (msg *msgImplicateRecover) Recipient() gpa.NodeID {
 func (msg *msgImplicateRecover) SetSender(sender gpa.NodeID) {
 	msg.sender = sender
 }
+
+func (msg *msgImplicateRecover) MsgType() gpa.MessageType {
+	return msgTypeImplicateRecover
+}

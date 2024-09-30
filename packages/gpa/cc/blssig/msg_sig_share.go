@@ -13,3 +13,7 @@ type msgSigShare struct {
 }
 
 var _ gpa.Message = new(msgSigShare)
+
+func (msg *msgSigShare) MsgType() gpa.MessageType {
+	return msgTypeSigShare
+}

@@ -23,3 +23,7 @@ func newMsgShareRequest(request isc.Request, ttl byte, recipient gpa.NodeID) gpa
 		ttl:          ttl,
 	}
 }
+
+func (msg *msgShareRequest) MsgType() gpa.MessageType {
+	return msgTypeShareRequest
+}

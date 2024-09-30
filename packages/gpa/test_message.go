@@ -14,6 +14,10 @@ type TestMessage struct {
 
 var _ Message = new(TestMessage)
 
+func (msg *TestMessage) MsgType() MessageType {
+	return msgTypeTest
+}
+
 func (msg *TestMessage) Recipient() NodeID {
 	return msg.recipient
 }

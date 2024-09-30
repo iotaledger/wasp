@@ -21,3 +21,7 @@ func newMsgMissingRequest(requestRef *isc.RequestRef, recipient gpa.NodeID) gpa.
 		requestRef:   requestRef,
 	}
 }
+
+func (msg *msgMissingRequest) MsgType() gpa.MessageType {
+	return msgTypeMissingRequest
+}

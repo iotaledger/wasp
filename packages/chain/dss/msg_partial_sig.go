@@ -22,6 +22,10 @@ type msgPartialSig struct {
 
 var _ gpa.Message = new(msgPartialSig)
 
+func (m *msgPartialSig) MsgType() gpa.MessageType {
+	return msgTypePartialSig
+}
+
 func (m *msgPartialSig) MarshalBCS(e *bcs.Encoder) error {
 	e.WriteUint16(uint16(m.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
 

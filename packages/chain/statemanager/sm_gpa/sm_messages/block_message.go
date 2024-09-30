@@ -39,3 +39,7 @@ func (msg *BlockMessage) MarshalBCS(e *bcs.Encoder) error {
 	e.Encode(msg.block)
 	return nil
 }
+
+func (msg *BlockMessage) MsgType() gpa.MessageType {
+	return MsgTypeBlockMessage
+}

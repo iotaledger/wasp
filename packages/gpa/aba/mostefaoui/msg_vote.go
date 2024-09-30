@@ -35,3 +35,7 @@ func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, 
 	}
 	return msgs
 }
+
+func (msg *msgVote) MsgType() gpa.MessageType {
+	return msgTypeVote
+}
