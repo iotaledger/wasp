@@ -31,7 +31,8 @@ type Initializeable interface {
 var initializeableT = reflect.TypeOf((*Initializeable)(nil)).Elem()
 
 type DecoderConfig struct {
-	TagName string
+	TagName                  string
+	InterfaceIsEnumByDefault bool
 	//CustomDecoders map[reflect.Type]CustomDecoder
 }
 
@@ -274,11 +275,7 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 			err = d.decodeStruct(v, tInfo)
 		}
 	case reflect.Interface:
-		if typeOptions.InterfaceIsNotEnum {
-			err = d.decodeInterface(v)
-		} else {
-			err = d.decodeInterfaceEnum(v)
-		}
+		err = d.decodeInterface(v, !typeOptions.InterfaceIsNotEnum)
 	default:
 		return d.handleErrorf("%v: cannot decode unknown type", v.Type())
 	}
@@ -694,7 +691,18 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 	return nil
 }
 
-func (d *Decoder) decodeInterface(v reflect.Value) error {
+func (d *Decoder) decodeInterface(v reflect.Value, couldBeEnum bool) error {
+	if couldBeEnum {
+		variants, registered := EnumTypes[v.Type()]
+
+		if registered {
+			return d.decodeInterfaceEnum(v, variants)
+		}
+		if d.cfg.InterfaceIsEnumByDefault {
+			return d.handleErrorf("interface type %v is not registered as enum", v.Type())
+		}
+	}
+
 	if v.IsNil() {
 		return d.handleErrorf("cannot decode interface which is not enum and has nil value")
 	}
@@ -721,12 +729,7 @@ func (d *Decoder) decodeInterface(v reflect.Value) error {
 	return nil
 }
 
-func (d *Decoder) decodeInterfaceEnum(v reflect.Value) error {
-	variants, registered := EnumTypes[v.Type()]
-	if !registered {
-		return d.handleErrorf("interface type %v is not registered as enum", v.Type())
-	}
-
+func (d *Decoder) decodeInterfaceEnum(v reflect.Value, variants map[int]reflect.Type) error {
 	variantIdx := d.r.ReadSize32()
 	if d.r.Err != nil {
 		return d.r.Err

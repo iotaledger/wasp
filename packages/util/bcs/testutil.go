@@ -3,7 +3,6 @@ package bcs
 import (
 	"testing"
 
-	"github.com/fardream/go-bcs/bcs"
 	ref_bcs "github.com/fardream/go-bcs/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -68,7 +67,7 @@ func TestEncodeErr[V any](t *testing.T, v V, errMustContain ...string) {
 
 // Checks that decoding fails
 func TestDecodeErr[V any, Encoded any](t *testing.T, v Encoded, errMustContain ...string) {
-	encoded, err := bcs.Marshal(v)
+	encoded, err := Marshal(&v)
 	require.NoError(t, err)
 
 	_, err = Unmarshal[V](encoded)

@@ -235,15 +235,16 @@ require.Equal(t, v, ***vDec)
 
 Interface can be serialized in three different ways:
 
-* By default, interface values are considered as **enumerations** (see sections below), so  the library uses its registered enum specification for serialization.
-* If field structure of interface type is marked as **"not_enum"** (see sections below), the library treats interface value as just regular value (but only for **encoding**).
-* If interface has custom serialization **functor**, it is used for serialization and everything else is ignored.
+* **By default**, interface is encoded just as plain value. For decoding it **must** contain some value to specify an actual type.
+* If interface is registered as **enumeration** (see sections below), the library uses its registered enum specification for serialization. In that case, no need to preset value on decoding.
+* If structure's interface field is marked as **"not_enum"** (see sections below), the library ignores enum registration for that field.
+* If interface has custom serialization **functor**, that functor is used for serialization and everything else is ignored.
 
 If interface does not satisfy any of those criterias, serialization will return an **error**.
 
-###### Encoding interface's value using Marshal/Encode
+###### Encoding enum interface's value using Marshal/Encode
 
-If you need to encode the value wrapped by the interface, you can pass interface **by value** to `Encode()` of `bcs.Encoder`:
+If you need to encode the value wrapped by the interface, which is registered as enum, you can pass interface **by value** to `Encode()` of `bcs.Encoder`:
 
 ```
 type Message interface{}
@@ -253,7 +254,7 @@ e := bcs.NewBytesEncoder()
 e.Encode(m)
 ```
 
-This works, because `Encode()` function has argument of type `any`, so initial information about `Message` interface is lost - value in unpacked from `Message` and packed as `any`.
+This works, because `Encode()` function has argument of type `any`, so information about `Message` interface is lost - value in unpacked from `Message` and packed as `any`.
 
 With `bcs.Marshal` this won't work, because it enforces pointer argument, so passing interface by value is not an option.
 For that purpose, you can either cast interface to actual value (`bcs.Marshal(m.(string)`). But if the type is unknown, you can cast to `any` and then take its pointer:
@@ -262,6 +263,10 @@ For that purpose, you can either cast interface to actual value (`bcs.Marshal(m.
 ...
 var eI any = m
 bcs.Marshal(&eI)
+
+// Or:
+
+bcs.Marshal(lo.ToPtr[any](m))
 ```
 
 ## Enumerations
@@ -452,7 +457,7 @@ func (s *TestStruct) Read(r io.Reader) error {
 Special functions can be registered to customize serialization of a type. This has two **advantages** over using methods:
 
 * Allows to implement custom serialization for **third-party types** (like it is implemented for **time.Time** and **big.Int**).
-* Allows to implement custom serialization for **interfaces** without registering them as enumerations.
+* Allows to implement custom serialization for **interfaces**.
 
 It is convenient (but not required) to run register them upon program initialization using Golang's package **init()** function.
 It is permitted to register **separate functors** for the **type itself** and its **pointer type**.
@@ -566,14 +571,8 @@ bcs.Marshal(&TestStruct{A: 10, B: 10}) // []byte{
 
 ###### "not_enum"
 
-Specified that interface field as not an enumeration.
-Applicable to: **interfaces**.
-
-Interfaces are considered **enumerations by default**, so attept to encode interface without registering enumation will result in an error.
-To enforce **encoding** of the actual value wrapped by the interface `not_enum` tag can be used.
-
-**NOTE:** Interface values still **cannot be decoded**, because the library has no way to know which actual type it should put there.
-To decode an interface it either must be registered an enum, have registred custom decoding functor and be decoded manually.
+Forces interface field to be encoded/decoded as plain value and not as enumeration.
+Applicable to: **interfaces, that are registered as enums.**
 
 ## Performance considerations
 
