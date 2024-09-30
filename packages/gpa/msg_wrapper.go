@@ -67,11 +67,6 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 		return nil, fmt.Errorf("unmarshalling wrapped message: subsystem %v index %v: %w", rawMsg.Subsystem, rawMsg.Index, err)
 	}
 
-	if wrapped.MsgType() != rawMsg.WrappedMsgType {
-		return nil, fmt.Errorf("unexpected wrapped message type after unmarshaling: was encoded = %v, after decoding = %v",
-			rawMsg.WrappedMsgType, wrapped.MsgType())
-	}
-
 	return &WrappingMsg{
 		msgType:   w.msgType,
 		subsystem: rawMsg.Subsystem,
@@ -115,7 +110,7 @@ func (msg *WrappingMsg) SetSender(sender NodeID) {
 }
 
 func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
-	wrappedMsgBytes, err := bcs.Marshal(&msg.wrapped)
+	wrappedMsgBytes, err := MarshalMessage(msg.wrapped)
 	if err != nil {
 		return fmt.Errorf("marshaling wrapped message: %w", err)
 	}
@@ -123,7 +118,6 @@ func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
 	return e.Encode(rawWrappingMsg{
 		Subsystem:       msg.subsystem,
 		Index:           msg.index,
-		WrappedMsgType:  msg.wrapped.MsgType(),
 		WrappedMsgBytes: wrappedMsgBytes,
 	})
 }
@@ -131,6 +125,5 @@ func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
 type rawWrappingMsg struct {
 	Subsystem       byte
 	Index           int `bcs:"type=u16"`
-	WrappedMsgType  MessageType
 	WrappedMsgBytes []byte
 }

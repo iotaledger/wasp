@@ -63,7 +63,11 @@ type subsystemGPA1 struct {
 }
 
 func (g *subsystemGPA1) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return bcs.Unmarshal[*TestWrappedMessage1](data)
+	return gpa.UnmarshalMessage(data,
+		gpa.Mapper{
+			1: func() gpa.Message { return new(TestWrappedMessage1) },
+		},
+	)
 }
 
 type TestWrappedMessage1 struct {
@@ -80,7 +84,11 @@ type subsystemGPA2 struct {
 }
 
 func (g *subsystemGPA2) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return bcs.Unmarshal[*TestWrappedMessage2](data)
+	return gpa.UnmarshalMessage(data,
+		gpa.Mapper{
+			2: func() gpa.Message { return new(TestWrappedMessage2) },
+		},
+	)
 }
 
 type TestWrappedMessage2 struct {
@@ -99,7 +107,3 @@ func (testGPABase[_]) Input(inp gpa.Input) gpa.OutMessages     { return nil }
 func (testGPABase[_]) Message(msg gpa.Message) gpa.OutMessages { return nil }
 func (testGPABase[_]) Output() gpa.Output                      { return nil }
 func (testGPABase[_]) StatusString() string                    { return "" }
-
-func (testGPABase[MsgType]) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return bcs.Unmarshal[MsgType](data)
-}
