@@ -4,11 +4,10 @@
 package gpa
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 )
 
 // MsgWrapper can be used to compose an algorithm out of other abstractions.
@@ -53,54 +52,31 @@ func (w *MsgWrapper) DelegateMessage(msg *WrappingMsg) (GPA, OutMessages, error)
 	return sub, w.WrapMessages(msg.Subsystem(), msg.Index(), sub.Message(msg.Wrapped())), nil
 }
 
-func (w *MsgWrapper) MarshalMessage(msg Message) ([]byte, error) {
-	wrapped := msg.(*WrappingMsg)
-
-	e := bcs.NewBytesEncoder()
-	e.WriteByte(wrapped.subsystem)
-	e.WriteUint16(uint16(wrapped.index))
-
-	subGPA, err := w.subsystemFunc(wrapped.subsystem, wrapped.index)
-	if err != nil {
-		return nil, fmt.Errorf("retrieving subsystem GPA %v/%v: %w", wrapped.subsystem, wrapped.index, err)
-	}
-
-	encodedMsg, err := subGPA.MarshalMessage(wrapped.wrapped)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling wrapped message: subsystem %v index %v: %w", wrapped.subsystem, wrapped.index, err)
-	}
-
-	e.Write(encodedMsg)
-
-	return e.Bytes(), e.Err()
-}
-
 func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
-	r := bytes.NewReader(data)
-	d := bcs.NewDecoder(r)
-
-	subsystem := d.ReadByte()
-	index := int(d.ReadUint16())
-
-	subGPA, err := w.subsystemFunc(subsystem, index)
+	rawMsg, err := bcs.Unmarshal[rawWrappingMsg](data)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving subsystem GPA %v/%v: %w", subsystem, index, err)
+		return nil, fmt.Errorf("unmarshaling wrapping msg: %w", err)
 	}
 
-	wrappedMsgBytes, err := io.ReadAll(r)
+	subGPA, err := w.subsystemFunc(rawMsg.Subsystem, rawMsg.Index)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("retrieving subsystem GPA %v/%v: %w", rawMsg.Subsystem, rawMsg.Index, err)
 	}
 
-	wrapped, err := subGPA.UnmarshalMessage(wrappedMsgBytes)
+	wrapped, err := subGPA.UnmarshalMessage(rawMsg.WrappedMsgBytes)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshalling wrapped message: subsystem %v index %v: %w", subsystem, index, err)
+		return nil, fmt.Errorf("unmarshalling wrapped message: subsystem %v index %v: %w", rawMsg.Subsystem, rawMsg.Index, err)
+	}
+
+	if wrapped.MsgType() != rawMsg.WrappedMsgType {
+		return nil, fmt.Errorf("unexpected wrapped message type after unmarshaling: was encoded = %v, after decoding = %v",
+			rawMsg.WrappedMsgType, wrapped.MsgType())
 	}
 
 	return &WrappingMsg{
 		msgType:   w.msgType,
-		subsystem: subsystem,
-		index:     index,
+		subsystem: rawMsg.Subsystem,
+		index:     rawMsg.Index,
 		wrapped:   wrapped,
 	}, nil
 }
@@ -137,4 +113,25 @@ func (msg *WrappingMsg) Recipient() NodeID {
 
 func (msg *WrappingMsg) SetSender(sender NodeID) {
 	msg.wrapped.SetSender(sender)
+}
+
+func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
+	wrappedMsgBytes, err := bcs.Marshal(lo.ToPtr[any](msg.wrapped))
+	if err != nil {
+		return fmt.Errorf("marshaling wrapped message: %w", err)
+	}
+
+	return e.Encode(rawWrappingMsg{
+		Subsystem:       msg.subsystem,
+		Index:           msg.index,
+		WrappedMsgType:  msg.wrapped.MsgType(),
+		WrappedMsgBytes: wrappedMsgBytes,
+	})
+}
+
+type rawWrappingMsg struct {
+	Subsystem       byte
+	Index           int `bcs:"type=u16"`
+	WrappedMsgType  MessageType
+	WrappedMsgBytes []byte
 }

@@ -133,10 +133,6 @@ func (s *silentNode) StatusString() string {
 	return "{silentNode}"
 }
 
-func (s *silentNode) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	return s.nested.MarshalMessage(msg)
-}
-
 func (s *silentNode) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return s.nested.UnmarshalMessage(data)
 }

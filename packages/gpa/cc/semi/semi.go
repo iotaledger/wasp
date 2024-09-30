@@ -76,10 +76,6 @@ func (cc *ccSemi) StatusString() string {
 	return fmt.Sprintf("{CC:semi, index=%v, output=%v, target=%v}", cc.index, cc.output, cc.target.StatusString())
 }
 
-func (cc *ccSemi) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	return cc.target.MarshalMessage(msg)
-}
-
 func (cc *ccSemi) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return cc.target.UnmarshalMessage(data)
 }

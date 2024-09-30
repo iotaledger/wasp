@@ -19,10 +19,6 @@ func (n *nonceDKGImpl) subsystemFunc(subsystem byte, index int) (gpa.GPA, error)
 	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
-func (n *nonceDKGImpl) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	return n.wrapper.MarshalMessage(msg)
-}
-
 func (n *nonceDKGImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	// All non-node-local messages are from the ACSS, so just pass it there.
 	return n.wrapper.UnmarshalMessage(data)

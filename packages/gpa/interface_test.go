@@ -11,12 +11,16 @@ import (
 
 const (
 	TestMsgID1 gpa.MessageType = iota
-	TesstMsgWrapped
+	TestMsgWrapped
 )
 
 type TestMsg struct {
 	A int32
 	B string
+}
+
+func (m *TestMsg) MsgType() gpa.MessageType {
+	return TestMsgID1
 }
 
 func (m *TestMsg) Recipient() gpa.NodeID {
@@ -28,6 +32,10 @@ func (m *TestMsg) SetSender(gpa.NodeID) {
 
 type WrappedMsg struct {
 	C []bool
+}
+
+func (m *WrappedMsg) MsgType() gpa.MessageType {
+	return TestMsgWrapped
 }
 
 func (m *WrappedMsg) Recipient() gpa.NodeID {
@@ -46,7 +54,7 @@ func TestUnmarshalMessage(t *testing.T) {
 		return gpa.UnmarshalMessage(data, gpa.Mapper{
 			TestMsgID1: func() gpa.Message { return &TestMsg{} },
 		}, gpa.Fallback{
-			TesstMsgWrapped: decodeWrapped,
+			TestMsgWrapped: decodeWrapped,
 		})
 	}
 
@@ -62,7 +70,7 @@ func TestUnmarshalMessage(t *testing.T) {
 
 	encBuf.Reset()
 	enc = bcs.NewEncoder(&encBuf)
-	enc.Encode(TesstMsgWrapped)
+	enc.Encode(TestMsgWrapped)
 	enc.Encode(WrappedMsg{C: []bool{true, false}})
 	require.NoError(t, enc.Err())
 

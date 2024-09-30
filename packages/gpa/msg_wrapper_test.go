@@ -34,16 +34,9 @@ func TestMsgWrapper(t *testing.T) {
 	msg2 := &TestWrappedMessage2{V: "hello"}
 	wrapped1 := wrapper.WrapMessage(2, 3, msg1)
 	wrapped2 := wrapper.WrapMessage(4, 5, msg2)
-	unknownSubsystem := wrapper.WrapMessage(2, 4, msg1)
-	wrongSubsystem := wrapper.WrapMessage(2, 3, msg2)
 
-	wrapped1Enc := lo.Must(wrapper.MarshalMessage(wrapped1))
-	wrapped2Enc := lo.Must(wrapper.MarshalMessage(wrapped2))
-
-	_, err := wrapper.MarshalMessage(unknownSubsystem)
-	require.Error(t, err)
-	_, err = wrapper.MarshalMessage(wrongSubsystem)
-	require.Error(t, err)
+	wrapped1Enc := bcs.MustMarshal(lo.ToPtr[any](wrapped1))
+	wrapped2Enc := bcs.MustMarshal(lo.ToPtr[any](wrapped2))
 
 	unwrapped1, err := wrapper.UnmarshalMessage(wrapped1Enc)
 	require.NoError(t, err)
@@ -52,6 +45,17 @@ func TestMsgWrapper(t *testing.T) {
 	unwrapped2, err := wrapper.UnmarshalMessage(wrapped2Enc)
 	require.NoError(t, err)
 	require.Equal(t, msg2, unwrapped2.(*gpa.WrappingMsg).Wrapped())
+
+	unknownSubsystem := wrapper.WrapMessage(2, 4, msg1)
+	wrongSubsystem := wrapper.WrapMessage(2, 3, msg2)
+
+	unknownSubsystemEnc := bcs.MustMarshal(lo.ToPtr[any](unknownSubsystem))
+	wrongSubsystemEnc := bcs.MustMarshal(lo.ToPtr[any](wrongSubsystem))
+
+	_, err = wrapper.UnmarshalMessage(unknownSubsystemEnc)
+	require.Error(t, err)
+	_, err = wrapper.UnmarshalMessage(wrongSubsystemEnc)
+	require.Error(t, err)
 }
 
 type subsystemGPA1 struct {
@@ -67,6 +71,10 @@ type TestWrappedMessage1 struct {
 	V int
 }
 
+func (m *TestWrappedMessage1) MsgType() gpa.MessageType {
+	return 1
+}
+
 type subsystemGPA2 struct {
 	testGPABase[*TestWrappedMessage2]
 }
@@ -80,6 +88,10 @@ type TestWrappedMessage2 struct {
 	V string
 }
 
+func (m *TestWrappedMessage2) MsgType() gpa.MessageType {
+	return 2
+}
+
 type testGPABase[MsgType gpa.Message] struct {
 }
 
@@ -87,15 +99,6 @@ func (testGPABase[_]) Input(inp gpa.Input) gpa.OutMessages     { return nil }
 func (testGPABase[_]) Message(msg gpa.Message) gpa.OutMessages { return nil }
 func (testGPABase[_]) Output() gpa.Output                      { return nil }
 func (testGPABase[_]) StatusString() string                    { return "" }
-
-func (testGPABase[MsgType]) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	m, ok := msg.(MsgType)
-	if !ok {
-		return nil, fmt.Errorf("unexpected message type %T", msg)
-	}
-
-	return bcs.Marshal(&m)
-}
 
 func (testGPABase[MsgType]) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return bcs.Unmarshal[MsgType](data)

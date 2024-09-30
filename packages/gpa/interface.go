@@ -118,7 +118,6 @@ type GPA interface {
 	Message(msg Message) OutMessages // Can return nil for NoMessages.
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
-	MarshalMessage(msg Message) ([]byte, error)
 	UnmarshalMessage(data []byte) (Message, error)
 }
 
@@ -127,24 +126,10 @@ type (
 	Fallback map[MessageType]func(data []byte) (Message, error)
 )
 
-func MarshalMessage(msgType MessageType, msg Message) ([]byte, error) {
+func MarshalMessage(msg Message) ([]byte, error) {
 	e := bcs.NewBytesEncoder()
-	e.WriteEnumIdx(int(msgType))
+	e.WriteEnumIdx(int(msg.MsgType()))
 	e.Encode(msg)
-
-	return e.Bytes(), e.Err()
-}
-
-func MarshalWrappedMessage(msgType MessageType, msg Message, wrapper *MsgWrapper) ([]byte, error) {
-	e := bcs.NewBytesEncoder()
-	e.WriteEnumIdx(int(msgType))
-
-	data, err := wrapper.MarshalMessage(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	e.Write(data)
 
 	return e.Bytes(), e.Err()
 }

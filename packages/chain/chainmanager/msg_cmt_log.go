@@ -42,24 +42,23 @@ func (msg *msgCmtLog) SetSender(sender gpa.NodeID) {
 }
 
 func (msg *msgCmtLog) MarshalBCS(e *bcs.Encoder) error {
-	e.Encode(msg.committeeAddr)
-
-	wrapped, err := cmt_log.MarshalMessage(msg.wrapped)
+	wrappedBytes, err := gpa.MarshalMessage(msg.wrapped)
 	if err != nil {
 		return fmt.Errorf("marshaling wrapped message: %w", err)
 	}
 
-	e.Encode(wrapped)
+	e.Encode(msg.committeeAddr)
+	e.Encode(wrappedBytes)
 
 	return nil
 }
 
 func (msg *msgCmtLog) UnmarshalBCS(d *bcs.Decoder) error {
 	d.Decode(&msg.committeeAddr)
-	wrapped := bcs.Decode[[]byte](d)
+	wrappedBytes := bcs.Decode[[]byte](d)
 
 	var err error
-	msg.wrapped, err = cmt_log.UnmarshalMessage(wrapped)
+	msg.wrapped, err = cmt_log.UnmarshalMessage(wrappedBytes)
 	if err != nil {
 		return fmt.Errorf("unmarshaling wrapped message: %w", err)
 	}

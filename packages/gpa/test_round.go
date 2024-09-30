@@ -55,10 +55,6 @@ func (tr *testRound) StatusString() string {
 	return fmt.Sprintf("{testRound, received=%v}", tr.received)
 }
 
-func (tr *testRound) MarshalMessage(msg Message) ([]byte, error) {
-	panic(errors.New("not implemented"))
-}
-
 func (tr *testRound) UnmarshalMessage(data []byte) (Message, error) {
 	panic(errors.New("not implemented"))
 }

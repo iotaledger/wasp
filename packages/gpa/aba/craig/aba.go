@@ -34,10 +34,6 @@ func (a *abaImpl) StatusString() string {
 	return "{ABA:Craig, TBD}"
 }
 
-func (a *abaImpl) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	return nil, errors.New("not implemented") // TODO: XXX: Impl.
-}
-
 func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return nil, errors.New("not implemented") // TODO: XXX: Impl.
 }

@@ -11,10 +11,6 @@ const (
 	msgTypeWrapped gpa.MessageType = iota
 )
 
-func (a *acsImpl) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	return a.msgWrapper.MarshalMessage(msg)
-}
-
 func (a *acsImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return a.msgWrapper.UnmarshalMessage(data)
 }

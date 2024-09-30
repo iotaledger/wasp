@@ -269,10 +269,6 @@ func (r *rbc) StatusString() string {
 	)
 }
 
-func (r *rbc) MarshalMessage(msg gpa.Message) ([]byte, error) {
-	return bcs.Marshal(msg.(*msgBracha))
-}
-
 // Implements the GPA interface.
 func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return bcs.Unmarshal[*msgBracha](data)

@@ -31,10 +31,6 @@ func (s *silentNode) StatusString() string {
 	return "{silentNode}"
 }
 
-func (s *silentNode) MarshalMessage(msg Message) ([]byte, error) {
-	panic(errors.New("not implemented"))
-}
-
 func (s *silentNode) UnmarshalMessage(data []byte) (Message, error) {
 	panic(errors.New("not implemented"))
 }

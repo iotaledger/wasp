@@ -103,17 +103,6 @@ func (a *ackHandler) StatusString() string {
 	return fmt.Sprintf("{ACK:%s}", a.nested.StatusString())
 }
 
-func (a *ackHandler) MarshalMessage(msg Message) ([]byte, error) {
-	switch msg := msg.(type) {
-	case *ackHandlerReset:
-		return MarshalMessage(msgTypeAckHandlerReset, msg)
-	case *ackHandlerBatch:
-		return MarshalMessage(msgTypeAckHandlerBatch, msg)
-	default:
-		return nil, fmt.Errorf("unknown message type for %T: %T", a, msg)
-	}
-}
-
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return UnmarshalMessage(data, Mapper{
 		msgTypeAckHandlerReset: func() Message { return &ackHandlerReset{} },
