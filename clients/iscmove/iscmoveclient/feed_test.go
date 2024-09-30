@@ -99,10 +99,8 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
 
-	txb := sui.NewProgrammableTransactionBuilder()
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
-		txb,
 		chainOwner,
 		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,

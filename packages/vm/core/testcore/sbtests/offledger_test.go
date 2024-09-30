@@ -20,7 +20,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		cAID := setupTestSandboxSC(t, chain, nil)
 
 		user, userAddr := env.NewKeyPairWithFunds()
-		userAgentID := isc.NewAgentID(userAddr)
+		userAgentID := isc.NewAddressAgentID(userAddr)
 
 		chain.AssertL2BaseTokens(userAgentID, 0)
 		chain.AssertL2BaseTokens(cAID, 0)
@@ -44,7 +44,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		cAID := setupTestSandboxSC(t, ch, nil)
 
 		user, userAddr := env.NewKeyPairWithFunds()
-		userAgentID := isc.NewAgentID(userAddr)
+		userAgentID := isc.NewAddressAgentID(userAddr)
 
 		ch.AssertL2BaseTokens(userAgentID, 0)
 		ch.AssertL2BaseTokens(cAID, 0)

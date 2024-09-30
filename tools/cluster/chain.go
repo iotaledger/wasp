@@ -53,7 +53,7 @@ func (ch *Chain) OriginatorAddress() *cryptolib.Address {
 }
 
 func (ch *Chain) OriginatorID() isc.AgentID {
-	ret := isc.NewAgentID(ch.OriginatorAddress())
+	ret := isc.NewAddressAgentID(ch.OriginatorAddress())
 	return ret
 }
 
@@ -163,7 +163,7 @@ func (ch *Chain) GetCounterValue(nodeIndex ...int) (int64, error) {
 		return 0, err
 	}
 
-	return inccounter.ViewGetCounter.Output1.Decode(parsedDict)
+	return inccounter.ViewGetCounter.DecodeOutput(parsedDict)
 }
 
 func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex ...int) ([]byte, error) {

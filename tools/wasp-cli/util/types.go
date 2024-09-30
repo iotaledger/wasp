@@ -243,7 +243,7 @@ func UnmarshalDict() dict.Dict {
 
 func AgentIDFromArgs(args []string, chainID isc.ChainID) isc.AgentID {
 	if len(args) == 0 {
-		return isc.NewAgentID(wallet.Load().Address())
+		return isc.NewAddressAgentID(wallet.Load().Address())
 	}
 	return AgentIDFromString(args[0], chainID)
 }

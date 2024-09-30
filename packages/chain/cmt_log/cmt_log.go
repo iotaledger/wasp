@@ -127,10 +127,10 @@ var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 // logIndex (there will be no different baseAliasOutputs for the same logIndex).
 type Output struct {
 	logIndex        LogIndex
-	baseAliasOutput *iscmove.Anchor
+	baseAliasOutput *iscmove.AnchorWithRef
 }
 
-func makeOutput(logIndex LogIndex, baseAliasOutput *iscmove.Anchor) *Output {
+func makeOutput(logIndex LogIndex, baseAliasOutput *iscmove.AnchorWithRef) *Output {
 	return &Output{logIndex: logIndex, baseAliasOutput: baseAliasOutput}
 }
 
@@ -138,7 +138,7 @@ func (o *Output) GetLogIndex() LogIndex {
 	return o.logIndex
 }
 
-func (o *Output) GetBaseAliasOutput() *iscmove.Anchor {
+func (o *Output) GetBaseAliasOutput() *iscmove.AnchorWithRef {
 	return o.baseAliasOutput
 }
 

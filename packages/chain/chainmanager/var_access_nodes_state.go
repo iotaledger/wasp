@@ -14,19 +14,19 @@ import (
 // committee should be used. The algorithm itself is similar to the `varLocalView`
 // in the `cmtLog`.
 type VarAccessNodeState interface {
-	Tip() *iscmove.Anchor
+	Tip() *iscmove.AnchorWithRef
 	// Considers the produced (not yet confirmed) block / TX and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
 	// This function should return L1 commitment, if the corresponding block should be added to the store.
-	BlockProduced(tx *suisigner.SignedTransaction) (*iscmove.Anchor, bool, *state.L1Commitment)
+	BlockProduced(tx *suisigner.SignedTransaction) (*iscmove.AnchorWithRef, bool, *state.L1Commitment)
 	// Considers a confirmed AO and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
-	BlockConfirmed(ao *iscmove.Anchor) (*iscmove.Anchor, bool)
+	BlockConfirmed(ao *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool)
 }
 
 type varAccessNodeStateImpl struct {
 	chainID isc.ChainID
-	tipAO   *iscmove.Anchor
+	tipAO   *iscmove.AnchorWithRef
 	log     *logger.Logger
 }
 
@@ -43,22 +43,22 @@ func NewVarAccessNodeState(chainID isc.ChainID, log *logger.Logger) VarAccessNod
 	}
 }
 
-func (vas *varAccessNodeStateImpl) Tip() *iscmove.Anchor {
+func (vas *varAccessNodeStateImpl) Tip() *iscmove.AnchorWithRef {
 	return vas.tipAO
 }
 
 // TODO: Probably this function can be removed at all. This left from the pipelining.
-func (vas *varAccessNodeStateImpl) BlockProduced(tx *suisigner.SignedTransaction) (*iscmove.Anchor, bool, *state.L1Commitment) {
+func (vas *varAccessNodeStateImpl) BlockProduced(tx *suisigner.SignedTransaction) (*iscmove.AnchorWithRef, bool, *state.L1Commitment) {
 	vas.log.Debugf("BlockProduced: tx=%v", tx)
 	return vas.tipAO, false, nil
 }
 
-func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *iscmove.Anchor) (*iscmove.Anchor, bool) {
+func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool) {
 	vas.log.Debugf("BlockConfirmed: confirmed=%v", confirmed)
 	return vas.outputIfChanged(confirmed)
 }
 
-func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *iscmove.Anchor) (*iscmove.Anchor, bool) {
+func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool) {
 	if vas.tipAO == nil && newTip == nil {
 		vas.log.Debugf("⊳ Tip remains nil.")
 		return vas.tipAO, false
@@ -72,7 +72,7 @@ func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *iscmove.Anchor) (*isc
 		vas.tipAO = newTip
 		return vas.tipAO, true
 	}
-	if vas.tipAO.Equals(newTip) {
+	if vas.tipAO.Equals(&newTip.ObjectRef) {
 		vas.log.Debugf("⊳ Tip remains %v.", vas.tipAO)
 		return vas.tipAO, false
 	}

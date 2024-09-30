@@ -11,8 +11,8 @@ type ResourceType struct {
 	Module     Identifier
 	ObjectName Identifier // it can be function name or struct name, etc.
 
-	SubType1 *ResourceType
-	SubType2 *ResourceType
+	SubType1 *ResourceType `bcs:"optional"`
+	SubType2 *ResourceType `bcs:"optional"`
 }
 
 func NewResourceType(str string) (*ResourceType, error) {

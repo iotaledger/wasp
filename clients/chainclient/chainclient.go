@@ -149,7 +149,7 @@ func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 			FunctionHName: accounts.ViewGetAccountNonce.Hname().String(),
 			Arguments:     apiextensions.JSONDictToAPIJSONDict(dict.Dict{
 				// TODO: Fix all msg conversions here..
-				// accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
+				// accounts.ParamAgentID: isc.NewAddressAgentID(c.KeyPair.Address()).Bytes(),
 			}.JSONDict()),
 		}).Execute()
 	if err != nil {

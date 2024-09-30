@@ -44,9 +44,9 @@ type VMTaskResult struct {
 	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress *cryptolib.Address
-	// UnsignedTransaction is the transaction data for the next block,
-	// or nil if the task does not produce a normal block
-	UnsignedTransaction *sui.TransactionData
+	// PTB is the ProgrammableTransaction to be sent to L1 for the next anchor
+	// transition, or nil if the task does not produce a normal block
+	UnsignedTransaction sui.TransactionData
 	StateMetadata       []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult

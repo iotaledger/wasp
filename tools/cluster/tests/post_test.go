@@ -120,7 +120,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := isc.NewAgentID(myAddress)
+	myAgentID := isc.NewAddressAgentID(myAddress)
 	myClient := e.Chain.Client(myWallet)
 
 	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, 0)
@@ -152,7 +152,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := isc.NewAgentID(myAddress)
+	myAgentID := isc.NewAddressAgentID(myAddress)
 
 	myClient := e.Chain.Client(myWallet)
 

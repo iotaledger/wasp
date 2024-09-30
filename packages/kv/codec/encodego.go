@@ -14,8 +14,10 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
+// TODO: remove this function, use bcs.Encode() or similar instead
+//
 //nolint:gocyclo,funlen
-func Encode(v interface{}) []byte {
+func Encode(v any) []byte {
 	switch vt := v.(type) {
 	case bool:
 		return Bool.Encode(vt)

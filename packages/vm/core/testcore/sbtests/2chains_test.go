@@ -47,7 +47,7 @@ func test2Chains(t *testing.T) {
 	contractAgentID2 := setupTestSandboxSC(t, chain2, nil)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := isc.NewAgentID(userAddress)
+	userAgentID := isc.NewAddressAgentID(userAddress)
 	env.AssertL1BaseTokens(userAddress /*, utxodb.FundsFromFaucetAmount*/)
 
 	fmt.Println("---------------chain1---------------")

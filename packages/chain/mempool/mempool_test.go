@@ -825,7 +825,6 @@ func getRequestsOnLedger(t *testing.T, chainAddress *cryptolib.Address, amount i
 				Allowance: nil,
 				GasBudget: 1000,
 			},
-			AdjustToMinimumStorageDeposit: true,
 		}
 		if len(f) == 1 {
 			f[0](i, &requestParams)

@@ -109,9 +109,8 @@ func testConsBasic(t *testing.T, n, f int) {
 			UnspentOutputs:   outputs,
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
-				TargetAddress:                 chainID.AsAddress(),
-				Assets:                        isc.NewAssets(100_000_000),
-				AdjustToMinimumStorageDeposit: false,
+				TargetAddress: chainID.AsAddress(),
+				Assets:        isc.NewAssets(100_000_000),
 				Metadata: &isc.SendMetadata{
 					Message:   accounts.FuncDeposit.Message(),
 					GasBudget: 10_000,

@@ -19,13 +19,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/kvstore"
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -34,18 +33,15 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -62,16 +58,15 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                         Context
-	logger                    *logger.Logger
-	chainStateDatabaseManager *database.ChainStateDatabaseManager
-	chainsMutex               sync.RWMutex
-	chains                    map[isc.ChainID]*Chain
-	processorConfig           *processors.Config
-	enableGasBurnLogging      bool
-	seed                      cryptolib.Seed
-	publisher                 *publisher.Publisher
-	ctx                       context.Context
+	T                    Context
+	logger               *logger.Logger
+	chainsMutex          sync.RWMutex
+	chains               map[isc.ChainID]*Chain
+	processorConfig      *processors.Config
+	enableGasBurnLogging bool
+	seed                 cryptolib.Seed
+	publisher            *publisher.Publisher
+	ctx                  context.Context
 
 	l1Config L1Config
 }
@@ -95,8 +90,7 @@ type chainData struct {
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
 	ValidatorFeeTarget isc.AgentID
 
-	db         kvstore.KVStore
-	writeMutex *sync.Mutex
+	db kvstore.KVStore
 
 	migrationScheme *migrations.MigrationScheme
 }
@@ -177,28 +171,19 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	}
 	evmlogger.Init(opt.Log)
 
-	chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl("")
-	require.NoError(t, err)
-
-	chainStateDatabaseManager, err := database.NewChainStateDatabaseManager(chainRecordRegistryProvider, database.WithEngine(hivedb.EngineMapDB))
-	if err != nil {
-		panic(err)
-	}
-
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
 
 	ret := &Solo{
-		T:                         t,
-		logger:                    opt.Log,
-		chainStateDatabaseManager: chainStateDatabaseManager,
-		l1Config:                  opt.L1Config,
-		chains:                    make(map[isc.ChainID]*Chain),
-		processorConfig:           coreprocessors.NewConfigWithCoreContracts(),
-		enableGasBurnLogging:      opt.GasBurnLogEnabled,
-		seed:                      opt.Seed,
-		publisher:                 publisher.New(opt.Log.Named("publisher")),
-		ctx:                       ctx,
+		T:                    t,
+		logger:               opt.Log,
+		l1Config:             opt.L1Config,
+		chains:               make(map[isc.ChainID]*Chain),
+		processorConfig:      coreprocessors.NewConfigWithCoreContracts(),
+		enableGasBurnLogging: opt.GasBurnLogEnabled,
+		seed:                 opt.Seed,
+		publisher:            publisher.New(opt.Log.Named("publisher")),
+		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
 		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
@@ -316,7 +301,7 @@ func (env *Solo) deployChain(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (chainData, *iscmove.RefWithObject[iscmove.Anchor]) {
+) (chainData, *iscmove.AnchorWithRef) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	if chainOriginator == nil {
@@ -326,29 +311,25 @@ func (env *Solo) deployChain(
 	}
 
 	initParams := origin.EncodeInitParams(
-		isc.NewAgentID(chainOriginator.Address()),
+		isc.NewAddressAgentID(chainOriginator.Address()),
 		evmChainID,
 		blockKeepAmount,
 	)
 
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-	originatorAgentID := isc.NewAgentID(originatorAddr)
+	originatorAgentID := isc.NewAddressAgentID(originatorAddr)
 
 	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
 
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	originCommitment := origin.L1Commitment(
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	block, stateMetadata := origin.InitChain(
 		schemaVersion,
+		store,
 		initParams,
 		initBaseTokens,
 		baseTokenCoinInfo,
-	)
-	stateMetadata := transaction.NewStateMetadata(
-		schemaVersion,
-		originCommitment,
-		gas.DefaultFeePolicy(),
-		initParams,
-		"",
 	)
 
 	panic("refactor me: validate StartNewChain call (initCoinRef, gasPayments)")
@@ -363,21 +344,8 @@ func (env *Solo) deployChain(
 		suiclient.DefaultGasBudget,
 		false,
 	)
-	require.NoError(env.T, err)
-
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
-	db, writeMutex, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
-	require.NoError(env.T, err)
-
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	block := origin.InitChain(
-		schemaVersion,
-		store,
-		initParams,
-		initBaseTokens,
-		baseTokenCoinInfo,
-	)
 	env.logger.Infof(
 		"deployed chain '%s' - ID: %s - state controller address: %s - origin trie root: %s",
 		name,
@@ -392,7 +360,6 @@ func (env *Solo) deployChain(
 		OriginatorPrivateKey: chainOriginator,
 		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
-		writeMutex:           writeMutex,
 	}, anchorRef
 }
 
@@ -416,7 +383,7 @@ func (env *Solo) NewChainExt(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (*Chain, *iscmove.RefWithObject[iscmove.Anchor]) {
+) (*Chain, *iscmove.AnchorWithRef) {
 	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
 
 	env.chainsMutex.Lock()
@@ -431,9 +398,9 @@ func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
 		chainData:         chData,
 		OriginatorAddress: chData.OriginatorPrivateKey.GetPublicKey().AsAddress(),
-		OriginatorAgentID: isc.NewAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
+		OriginatorAgentID: isc.NewAddressAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
 		Env:               env,
-		store:             indexedstore.New(state.NewStore(chData.db, chData.writeMutex)),
+		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
 		proc:              processors.MustNew(env.processorConfig),
 		log:               env.logger.Named(chData.Name),
 		metrics:           metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),

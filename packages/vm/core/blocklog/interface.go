@@ -18,7 +18,7 @@ var (
 	ViewGetBlockInfo = coreutil.NewViewEP12(Contract, "getBlockInfo",
 		coreutil.FieldWithCodecOptional(codec.Uint32),
 		coreutil.FieldWithCodec(codec.Uint32),
-		coreutil.FieldWithCodec(codec.NewCodecEx(BlockInfoFromBytes)),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*BlockInfo]()),
 	)
 	ViewGetRequestIDsForBlock = coreutil.NewViewEP12(Contract, "getRequestIDsForBlock",
 		coreutil.FieldWithCodecOptional(codec.Uint32),
@@ -39,12 +39,12 @@ var (
 	)
 	ViewGetEventsForRequest = coreutil.NewViewEP11(Contract, "getEventsForRequest",
 		coreutil.FieldWithCodec(codec.RequestID),
-		coreutil.FieldArrayWithCodec(codec.NewCodecEx(isc.EventFromBytes)),
+		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*isc.Event]()),
 	)
 	ViewGetEventsForBlock = coreutil.NewViewEP12(Contract, "getEventsForBlock",
 		coreutil.FieldWithCodecOptional(codec.Uint32),
 		coreutil.FieldWithCodec(codec.Uint32),
-		coreutil.FieldArrayWithCodec(codec.NewCodecEx(isc.EventFromBytes)),
+		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*isc.Event]()),
 	)
 )
 

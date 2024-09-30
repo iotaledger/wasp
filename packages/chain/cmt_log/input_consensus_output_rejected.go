@@ -11,11 +11,11 @@ import (
 )
 
 type inputConsensusOutputRejected struct {
-	aliasOutput *iscmove.Anchor
+	aliasOutput *iscmove.AnchorWithRef
 	logIndex    LogIndex
 }
 
-func NewInputConsensusOutputRejected(aliasOutput *iscmove.Anchor, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputRejected(aliasOutput *iscmove.AnchorWithRef, logIndex LogIndex) gpa.Input {
 	return &inputConsensusOutputRejected{
 		aliasOutput: aliasOutput,
 		logIndex:    logIndex,

@@ -19,7 +19,7 @@ import (
 func testDeployChain(t *testing.T, env *ChainEnv) {
 	chainID, chainOwnerID := env.getChainInfo()
 	require.EqualValues(t, chainID, env.Chain.ChainID)
-	require.EqualValues(t, chainOwnerID, isc.NewAgentID(env.Chain.OriginatorAddress()))
+	require.EqualValues(t, chainOwnerID, isc.NewAddressAgentID(env.Chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 

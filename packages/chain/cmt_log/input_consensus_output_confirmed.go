@@ -11,11 +11,11 @@ import (
 )
 
 type inputConsensusOutputConfirmed struct {
-	aliasOutput *iscmove.Anchor
+	aliasOutput *iscmove.AnchorWithRef
 	logIndex    LogIndex
 }
 
-func NewInputConsensusOutputConfirmed(aliasOutput *iscmove.Anchor, logIndex LogIndex) gpa.Input {
+func NewInputConsensusOutputConfirmed(aliasOutput *iscmove.AnchorWithRef, logIndex LogIndex) gpa.Input {
 	return &inputConsensusOutputConfirmed{
 		aliasOutput: aliasOutput,
 		logIndex:    logIndex,

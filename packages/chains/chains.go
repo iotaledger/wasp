@@ -367,7 +367,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {
-		validatorAgentID = isc.NewAgentID(c.validatorFeeAddr)
+		validatorAgentID = isc.NewAddressAgentID(c.validatorFeeAddr)
 	}
 	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
 	blockHash, ok := c.snapshotsToLoad[chainID.Key()]

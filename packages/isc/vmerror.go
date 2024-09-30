@@ -6,10 +6,11 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/samber/lo"
 )
 
 const VMErrorMessageLimit = math.MaxUint16

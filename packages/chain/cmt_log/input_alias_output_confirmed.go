@@ -11,10 +11,10 @@ import (
 )
 
 type inputAliasOutputConfirmed struct {
-	aliasOutput *iscmove.Anchor
+	aliasOutput *iscmove.AnchorWithRef
 }
 
-func NewInputAliasOutputConfirmed(aliasOutput *iscmove.Anchor) gpa.Input {
+func NewInputAliasOutputConfirmed(aliasOutput *iscmove.AnchorWithRef) gpa.Input {
 	return &inputAliasOutputConfirmed{
 		aliasOutput: aliasOutput,
 	}

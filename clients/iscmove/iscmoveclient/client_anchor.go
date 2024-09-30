@@ -94,7 +94,6 @@ func (c *Client) StartNewChain(
 
 func (c *Client) ReceiveRequestAndTransition(
 	ctx context.Context,
-	ptb *sui.ProgrammableTransactionBuilder,
 	cryptolibSigner cryptolib.Signer,
 	packageID sui.PackageID,
 	anchorRef *sui.ObjectRef,
@@ -121,6 +120,7 @@ func (c *Client) ReceiveRequestAndTransition(
 		reqAssetsBagsMap[reqRef] = assetsBag
 	}
 
+	ptb := sui.NewProgrammableTransactionBuilder()
 	ptb = PTBReceiveRequestAndTransition(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef}), reqs, reqAssetsBagsMap, stateMetadata)
 	pt := ptb.Finish()
 

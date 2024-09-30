@@ -29,8 +29,8 @@ func TestDepositWithdraw(t *testing.T) {
 		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount)),
 	)
 
-	myAgentID := isc.NewAgentID(myAddress)
-	// origAgentID := isc.NewAgentID(chain.OriginatorAddress(), 0)
+	myAgentID := isc.NewAddressAgentID(myAddress)
+	// origAgentID := isc.NewAddressAgentID(chain.OriginatorAddress(), 0)
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)

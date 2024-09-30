@@ -14,11 +14,11 @@ type inputChainTxPublishResult struct {
 	committeeAddr cryptolib.Address
 	logIndex      cmt_log.LogIndex
 	txHash        hashing.HashValue
-	aliasOutput   *iscmove.Anchor
+	aliasOutput   *iscmove.AnchorWithRef
 	confirmed     bool
 }
 
-func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex, txHash hashing.HashValue, aliasOutput *iscmove.Anchor, confirmed bool) gpa.Input {
+func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex, txHash hashing.HashValue, aliasOutput *iscmove.AnchorWithRef, confirmed bool) gpa.Input {
 	return &inputChainTxPublishResult{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

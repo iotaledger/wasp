@@ -51,7 +51,7 @@ func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *cryptolib.
 }
 
 func (r *ImpersonatedOffLedgerRequestData) SenderAccount() AgentID {
-	return NewAgentID(r.address)
+	return NewAddressAgentID(r.address)
 }
 
 func NewOffLedgerRequest(
@@ -148,7 +148,7 @@ func (req *OffLedgerRequestData) ReturnAmount() (uint64, bool) {
 }
 
 func (req *OffLedgerRequestData) SenderAccount() AgentID {
-	return NewAgentID(req.signature.GetPublicKey().AsAddress())
+	return NewAddressAgentID(req.signature.GetPublicKey().AsAddress())
 }
 
 // Sign signs the essence

@@ -103,7 +103,7 @@ func (reqctx *requestContext) callCore(c *coreutil.ContractInfo, f func(s kv.KVS
 	} else {
 		caller = reqctx.req.SenderAccount()
 	}
-	reqctx.pushCallContext(c.Hname(), nil, nil, caller)
+	reqctx.pushCallContext(c.Hname(), nil, isc.NewEmptyAssets(), caller)
 	defer reqctx.popCallContext()
 
 	f(reqctx.contractStateWithGasBurn())

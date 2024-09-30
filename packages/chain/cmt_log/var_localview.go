@@ -83,37 +83,37 @@ type VarLocalView interface {
 	// Returns alias output to produce next transaction on, or nil if we should wait.
 	// In the case of nil, we either wait for the first AO to receive, or we are
 	// still recovering from a TX rejection.
-	Value() *iscmove.Anchor
+	Value() *iscmove.AnchorWithRef
 	//
 	// Corresponds to the `tx_posted` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
-	ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*iscmove.Anchor, bool) // TODO: Recheck, if consumed AO is the decided one.
+	ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*iscmove.AnchorWithRef, bool) // TODO: Recheck, if consumed AO is the decided one.
 	//
 	// Corresponds to the `ao_received` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
 	// Also it returns confirmed log index, if a received AO confirms it, or NIL otherwise.
-	AliasOutputConfirmed(confirmed *iscmove.Anchor) (*iscmove.Anchor, bool, LogIndex)
+	AliasOutputConfirmed(confirmed *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool, LogIndex)
 	//
 	// Corresponds to the `tx_rejected` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
-	AliasOutputRejected(rejected *iscmove.Anchor) (*iscmove.Anchor, bool)
+	AliasOutputRejected(rejected *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool)
 	//
 	// Support functions.
 	StatusString() string
 }
 
 type varLocalViewEntry struct {
-	output   *iscmove.Anchor // The AO published.
-	consumed sui.ObjectID    // The AO used as an input for the TX.
-	rejected bool            // True, if the AO as rejected. We keep them to detect the other rejected AOs.
-	logIndex LogIndex        // LogIndex of the consensus produced the output, if any.
+	output   *iscmove.AnchorWithRef // The AO published.
+	consumed sui.ObjectID           // The AO used as an input for the TX.
+	rejected bool                   // True, if the AO as rejected. We keep them to detect the other rejected AOs.
+	logIndex LogIndex               // LogIndex of the consensus produced the output, if any.
 }
 
 type varLocalViewImpl struct {
 	// The latest confirmed AO, as received from L1.
 	// All the pending entries are built on top of this one.
 	// It can be nil, if the latest AO is unclear (either not received yet, or some rejections happened).
-	confirmed *iscmove.Anchor
+	confirmed *iscmove.AnchorWithRef
 	// AOs produced by this committee, but not confirmed yet.
 	// It is possible to have several AOs for a StateIndex in the case of
 	// Recovery/Timeout notices. Then the next consensus is started o build a TX.
@@ -123,12 +123,12 @@ type varLocalViewImpl struct {
 	// -1 -- infinite, 0 -- disabled, x -- up to x TXes ahead.
 	pipeliningLimit int
 	// Callback for the TIP changes.
-	tipUpdatedCB func(ao *iscmove.Anchor)
+	tipUpdatedCB func(ao *iscmove.AnchorWithRef)
 	// Just a logger.
 	log *logger.Logger
 }
 
-func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *iscmove.Anchor), log *logger.Logger) VarLocalView {
+func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *iscmove.AnchorWithRef), log *logger.Logger) VarLocalView {
 	log.Debugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &varLocalViewImpl{
 		confirmed:       nil,
@@ -141,11 +141,11 @@ func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *iscmove.Anchor),
 
 // Return latest AO to be used as an input for the following TX.
 // nil means we have to wait: either we have no AO, or we have some rejections and waiting until a re-sync.
-func (lvi *varLocalViewImpl) Value() *iscmove.Anchor {
+func (lvi *varLocalViewImpl) Value() *iscmove.AnchorWithRef {
 	return lvi.findLatestPending()
 }
 
-func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*iscmove.Anchor, bool) {
+func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*iscmove.AnchorWithRef, bool) {
 	panic("implement: varLocalViewImpl.ConsensusOutputDone") // TODO:
 	// lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.Ref=%s, published=%v", logIndex, consumed.String())
 	// stateIndex := published.GetStateIndex()
@@ -193,10 +193,10 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *su
 // A confirmed AO is received from L1. Base on that, we either truncate our local
 // history until the received AO (if we know it was posted before), or we replace
 // the entire history with an unseen AO (probably produced not by this chain×cmt).
-func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *iscmove.Anchor) (*iscmove.Anchor, bool, LogIndex) {
+func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool, LogIndex) {
 	lvi.log.Debugf("AliasOutputConfirmed: confirmed=%v", confirmed)
 	cnfLogIndex := NilLogIndex()
-	stateIndex := confirmed.GetStateIndex()
+	stateIndex := confirmed.Object.GetStateIndex()
 	oldTip := lvi.findLatestPending()
 	lvi.confirmed = confirmed
 	if lvi.isAliasOutputPending(confirmed) {
@@ -204,7 +204,7 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *iscmove.Anchor) (*i
 			if si <= stateIndex {
 				for _, e := range es {
 					lvi.log.Debugf("⊳ Removing[%v≤%v] %v", si, stateIndex, e.output)
-					if e.output.Equals(lvi.confirmed) {
+					if e.output.Equals(&lvi.confirmed.ObjectRef) {
 						cnfLogIndex = e.logIndex
 					}
 				}
@@ -228,15 +228,15 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *iscmove.Anchor) (*i
 
 // Mark the specified AO as rejected.
 // Trim the suffix of rejected AOs.
-func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *iscmove.Anchor) (*iscmove.Anchor, bool) {
+func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool) {
 	lvi.log.Debugf("AliasOutputRejected: rejected=%v", rejected)
-	stateIndex := rejected.GetStateIndex()
+	stateIndex := rejected.Object.GetStateIndex()
 	oldTip := lvi.findLatestPending()
 	//
 	// Mark the output as rejected, as well as all the outputs depending on it.
 	if entries, ok := lvi.pending.Get(stateIndex); ok {
 		for _, entry := range entries {
-			if entry.output.Equals(rejected) {
+			if entry.output.Equals(&rejected.ObjectRef) {
 				lvi.log.Debugf("⊳ Entry marked as rejected.")
 				entry.rejected = true
 				lvi.markDependentAsRejected(rejected)
@@ -249,9 +249,9 @@ func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *iscmove.Anchor) (*isc
 	return lvi.outputIfChanged(oldTip, lvi.findLatestPending())
 }
 
-func (lvi *varLocalViewImpl) markDependentAsRejected(ao *iscmove.Anchor) {
-	accRejected := map[sui.ObjectIDKey]struct{}{ao.ID.Key(): {}}
-	for si := ao.GetStateIndex() + 1; ; si++ {
+func (lvi *varLocalViewImpl) markDependentAsRejected(ao *iscmove.AnchorWithRef) {
+	accRejected := map[sui.ObjectIDKey]struct{}{ao.Object.ID.Key(): {}}
+	for si := ao.Object.GetStateIndex() + 1; ; si++ {
 		es, esFound := lvi.pending.Get(si)
 		if !esFound {
 			break
@@ -260,7 +260,7 @@ func (lvi *varLocalViewImpl) markDependentAsRejected(ao *iscmove.Anchor) {
 			if _, ok := accRejected[e.consumed.Key()]; ok && !e.rejected {
 				lvi.log.Debugf("⊳ Also marking %v as rejected.", e.output)
 				e.rejected = true
-				accRejected[e.output.ID.Key()] = struct{}{}
+				accRejected[e.output.Object.ID.Key()] = struct{}{}
 			}
 		}
 	}
@@ -280,7 +280,7 @@ func (lvi *varLocalViewImpl) clearPendingIfAllRejected() {
 	})
 }
 
-func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *iscmove.Anchor) (*iscmove.Anchor, bool) {
+func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool) {
 	if oldTip == nil && newTip == nil {
 		lvi.log.Debugf("⊳ Tip remains nil.")
 		return nil, false
@@ -290,7 +290,7 @@ func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *iscmove.Anchor) (*i
 		lvi.tipUpdatedCB(newTip)
 		return newTip, true
 	}
-	if oldTip.Equals(newTip) {
+	if oldTip.Equals(&newTip.ObjectRef) {
 		lvi.log.Debugf("⊳ Tip remains %v.", newTip)
 		return newTip, false
 	}
@@ -306,12 +306,12 @@ func (lvi *varLocalViewImpl) StatusString() string {
 // Latest pending AO is only considered existing, if the current pending
 // set of AOs is a chain, with no gaps, or alternatives, and all the AOs
 // are not rejected.
-func (lvi *varLocalViewImpl) findLatestPending() *iscmove.Anchor {
+func (lvi *varLocalViewImpl) findLatestPending() *iscmove.AnchorWithRef {
 	if lvi.confirmed == nil {
 		return nil
 	}
 	latest := lvi.confirmed
-	confirmedSI := lvi.confirmed.GetStateIndex()
+	confirmedSI := lvi.confirmed.Object.GetStateIndex()
 	pendingSICount := uint32(lvi.pending.Size())
 	if lvi.pipeliningLimit >= 0 && pendingSICount > uint32(lvi.pipeliningLimit) {
 		// pipeliningLimit < 0 ==> no limit on the pipelining.
@@ -330,7 +330,7 @@ func (lvi *varLocalViewImpl) findLatestPending() *iscmove.Anchor {
 		if entries[0].rejected {
 			return nil // Some are rejected.
 		}
-		if !latest.ID.Equals(entries[0].consumed) {
+		if !latest.Object.ID.Equals(entries[0].consumed) {
 			return nil // Don't form a chain.
 		}
 		latest = entries[0].output
@@ -338,11 +338,11 @@ func (lvi *varLocalViewImpl) findLatestPending() *iscmove.Anchor {
 	return latest
 }
 
-func (lvi *varLocalViewImpl) isAliasOutputPending(ao *iscmove.Anchor) bool {
+func (lvi *varLocalViewImpl) isAliasOutputPending(ao *iscmove.AnchorWithRef) bool {
 	found := false
 	lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
 		found = lo.ContainsBy(es, func(e *varLocalViewEntry) bool {
-			return e.output.Equals(ao)
+			return e.output.Equals(&ao.ObjectRef)
 		})
 		return !found
 	})
