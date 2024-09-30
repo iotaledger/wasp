@@ -943,7 +943,8 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 			cni.log.Warnf("Pub key for the recipient not found: %v", msg.Recipient())
 			return
 		}
-		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msgBytes)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }

@@ -30,24 +30,13 @@ type PeerMessageData struct {
 	serializedOnce sync.Once
 }
 
-func NewPeerMessageData(peeringID PeeringID, receiver byte, msgType byte, msgData ...any) (ret *PeerMessageData) {
-	ret = &PeerMessageData{
+func NewPeerMessageData(peeringID PeeringID, receiver byte, msgType byte, msgData []byte) *PeerMessageData {
+	return &PeerMessageData{
 		PeeringID:   peeringID,
 		MsgReceiver: receiver,
 		MsgType:     msgType,
+		MsgData:     msgData,
 	}
-	if len(msgData) == 0 {
-		return ret
-	}
-	if msg, ok := msgData[0].(rwutil.IoWriter); ok {
-		ret.MsgData = rwutil.WriteToBytes(msg)
-		return ret
-	}
-	if data, ok := msgData[0].([]byte); ok {
-		ret.MsgData = data
-		return ret
-	}
-	panic("invalid message data type")
 }
 
 // peerMessageDataFromBytes creates a new PeerMessageData from bytes.

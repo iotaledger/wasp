@@ -977,7 +977,8 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msgBytes)
 		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient()], pm)
 	})
 }

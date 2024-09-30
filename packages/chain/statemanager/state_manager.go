@@ -390,7 +390,8 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msgBytes)
 		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
 		if !ok {
 			smT.log.Debugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient().ShortString())
