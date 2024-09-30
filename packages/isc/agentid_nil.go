@@ -1,5 +1,10 @@
 package isc
 
+import (
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
+)
+
 const nilAgentIDString = "-"
 
 type NilAgentID struct{}
@@ -7,7 +12,8 @@ type NilAgentID struct{}
 var _ AgentID = &NilAgentID{}
 
 func (a *NilAgentID) Bytes() []byte {
-	return nil
+	// TODO: remove this function from codebase because it is not needed anymore
+	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 
 func (a *NilAgentID) BelongsToChain(cID ChainID) bool {
