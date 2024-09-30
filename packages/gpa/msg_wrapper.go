@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/samber/lo"
 )
 
 // MsgWrapper can be used to compose an algorithm out of other abstractions.
@@ -116,7 +115,7 @@ func (msg *WrappingMsg) SetSender(sender NodeID) {
 }
 
 func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
-	wrappedMsgBytes, err := bcs.Marshal(lo.ToPtr[any](msg.wrapped))
+	wrappedMsgBytes, err := bcs.Marshal(&msg.wrapped)
 	if err != nil {
 		return fmt.Errorf("marshaling wrapped message: %w", err)
 	}
