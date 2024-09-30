@@ -81,12 +81,20 @@ type RefEnum2 struct {
 
 func (e RefEnum2) IsBcsEnum() {}
 
-type structWithEnum[EnumType any] struct {
-	A EnumType
+type structWithField[FieldType any] struct {
+	A FieldType
 }
 
-func StructWithEnum[EnumType any](v EnumType) structWithEnum[EnumType] {
-	return structWithEnum[EnumType]{A: v}
+func StructWithField[FieldType any](v FieldType) structWithField[FieldType] {
+	return structWithField[FieldType]{A: v}
+}
+
+type structWithOptionalField[FieldType any] struct {
+	A FieldType `bcs:"optional"`
+}
+
+type structWithNotEnumField[FieldType any] struct {
+	A FieldType `bcs:"not_enum"`
 }
 
 func TestBasicInterfaceEnumCodec(t *testing.T) {
@@ -99,19 +107,19 @@ func TestBasicInterfaceEnumCodec(t *testing.T) {
 	vS := "foo"
 	refEnumEnc := ref_bcs.MustMarshal(RefEnum1{B: &vS})
 	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytes(t, StructWithEnum(InfEnum1(vS)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, StructWithField(InfEnum1(vS)), refEnumEnc)
 
 	vI := int32(42)
 	refEnumEnc = ref_bcs.MustMarshal(RefEnum2{B: &vI})
 	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytes(t, StructWithEnum(InfEnum2(vI)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, StructWithField(InfEnum2(vI)), refEnumEnc)
 
 	var e InfEnumWithMethods = EnumVariant1{A: 42}
-	bcs.TestCodecAndBytes(t, StructWithEnum(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, StructWithField(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytes(t, &e, []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 
 	e = EnumVariant2{A: "bar"}
-	bcs.TestCodecAndBytes(t, StructWithEnum(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
+	bcs.TestCodecAndBytes(t, StructWithField(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
 	bcs.TestCodecAndBytes(t, &e, []byte{0x1, 0x3, 0x62, 0x61, 0x72})
 
 	bcs.TestEncodeErr(t, InfEnum1(int8(42)))
@@ -198,6 +206,37 @@ func TestInfNotEnum(t *testing.T) {
 	bcs.TestCodecAndBytes(t, &WithNonEnumByteArrInf{A: 42, B: 10}, []byte{0x8, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xa, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 }
 
+func TestInfNotEnumIgnoresEnumRegistration(t *testing.T) {
+	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
+
+	// Cannot decode because value of A is not set upon decoding and
+	// it is not enum (because it is not yet registered)
+	type WithEnum structWithField[InfEnum1]
+	bcs.TestDecodeErr[WithEnum](t, &WithEnum{A: 42})
+
+	// Can decode because although value of A is not enum (because it is not yet registered),
+	// it is not set upon decoding
+	vEnc := bcs.MustMarshal(&WithEnum{A: 42})
+	vDec := bcs.MustUnmarshalInto(vEnc, &WithEnum{A: 0})
+	require.Equal(t, &WithEnum{A: 42}, vDec)
+
+	// Registering enum
+	bcs.RegisterEnumType2[InfEnum1, int, string]()
+
+	// Can encode/decode because value of A is now enum
+	bcs.TestCodecAndBytes(t, &WithEnum{A: 42}, []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+
+	// Cannot decode because although InfEnum1 is now registered as enum,
+	// field A is marked as "not_enum".
+	type WithNonEnum structWithNotEnumField[InfEnum1]
+	bcs.TestDecodeErr[WithNonEnum](t, &WithNonEnum{A: 42})
+
+	// But we can decode because if we preset value before decoding
+	vEncNotEnum := bcs.MustMarshal(&WithNonEnum{A: 42})
+	vDecNotEnum := bcs.MustUnmarshalInto(vEncNotEnum, &WithNonEnum{A: 0})
+	require.Equal(t, &WithNonEnum{A: 42}, vDecNotEnum)
+}
+
 func TestInfEnumNone(t *testing.T) {
 	t.Cleanup(func() { maps.Clear(bcs.EnumTypes) })
 
@@ -209,4 +248,15 @@ func TestInfEnumNone(t *testing.T) {
 
 	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnumWithMethods](EnumVariant1{A: 42}), []byte{0x1, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytes(t, lo.ToPtr[InfEnumWithMethods](nil), []byte{0x0})
+
+	type WithEnum structWithField[InfEnumWithMethods]
+	bcs.RegisterEnumType3[InfEnum1, bcs.None, int, string]()
+	bcs.TestCodecAndBytes(t, WithEnum{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytes(t, WithEnum{A: EnumVariant1{A: 42}}, []byte{0x1, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+
+	type WithOptionalInf structWithOptionalField[any]
+	bcs.TestCodecAndBytes(t, WithOptionalInf{A: nil}, []byte{0x0})
+
+	type WithInf structWithField[any]
+	bcs.TestEncodeErr(t, WithInf{A: nil})
 }
