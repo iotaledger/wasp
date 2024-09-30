@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 )
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
@@ -37,7 +38,8 @@ func (a *ContractAgentID) Address() *cryptolib.Address {
 }
 
 func (a *ContractAgentID) Bytes() []byte {
-	return bcs.MustMarshal(a)
+	// TODO: remove this function from codebase because it is not needed anymore
+	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 
 func (a *ContractAgentID) ChainID() ChainID {

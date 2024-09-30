@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/samber/lo"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -40,7 +41,8 @@ func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAge
 }
 
 func (a *EthereumAddressAgentID) Bytes() []byte {
-	return bcs.MustMarshal(a)
+	// TODO: remove this function from codebase because it is not needed anymore
+	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 
 func (a *EthereumAddressAgentID) Equals(other AgentID) bool {
