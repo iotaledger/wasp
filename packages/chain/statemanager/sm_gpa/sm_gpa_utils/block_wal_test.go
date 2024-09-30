@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const constTestFolder = "basicWALTest"
@@ -229,7 +230,7 @@ func writeBlocksLegacy(t *testing.T, chainID isc.ChainID, blocks []state.Block) 
 		filePath := walPathNoSubfolderFromHash(chainID, block.Hash())
 		f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 		require.NoError(t, err)
-		err = block.Write(f)
+		err = bcs.MarshalStream(&block, f)
 		require.NoError(t, err)
 		err = f.Close()
 		require.NoError(t, err)
