@@ -26,7 +26,8 @@ type Writable interface {
 var writableT = reflect.TypeOf((*Writable)(nil)).Elem()
 
 type EncoderConfig struct {
-	TagName string
+	TagName                  string
+	InterfaceIsEnumByDefault bool
 	// IncludeUnexported bool
 	// IncludeUntaggedUnexported bool
 	// ExcludeUntagged           bool
@@ -307,11 +308,7 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 			err = e.encodeStruct(v, tInfo)
 		}
 	case reflect.Interface:
-		if typeOptions.InterfaceIsNotEnum {
-			err = e.encodeValue(v.Elem(), nil, nil)
-		} else {
-			err = e.encodeInterfaceEnum(v)
-		}
+		err = e.encodeInterface(v, !typeOptions.InterfaceIsNotEnum)
 	default:
 		return e.handleErrorf("%v: cannot encode unknown type", v.Type())
 	}
@@ -482,76 +479,6 @@ func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 	}
 
 	return nil
-}
-
-func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumVariantID, _ error) {
-	t := v.Type()
-
-	enumVariants, registered := EnumTypes[t]
-	if !registered {
-		return -1, e.handleErrorf("interface %v is not registered as enum type", t)
-	}
-
-	isNil := v.IsNil()
-
-	var valT reflect.Type
-	if isNil {
-		valT = noneT
-	} else {
-		valT = v.Elem().Type()
-	}
-
-	enumVariantIdx = -1
-
-	for id, variant := range enumVariants {
-		if valT == variant {
-			enumVariantIdx = id
-		}
-	}
-
-	if enumVariantIdx == -1 {
-		if isNil {
-			return -1, e.handleErrorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", t)
-		} else {
-			return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, t)
-		}
-	}
-
-	return enumVariantIdx, nil
-}
-
-func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumVariantID, _ error) {
-	enumVariantIdx = -1
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-
-		k := field.Kind()
-		switch k {
-		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
-			if field.IsNil() {
-				continue
-			}
-
-			if enumVariantIdx != -1 {
-				prevSetField := v.Type().Field(int(enumVariantIdx))
-				currentField := v.Type().Field(i)
-				return -1, e.handleErrorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
-			}
-
-			enumVariantIdx = i
-			// We do not break here to check if there are multiple options set
-		default:
-			fieldType := v.Type().Field(i)
-			return -1, e.handleErrorf("field %v of enum %v is of non-nullable type %v", fieldType.Name, v.Type(), fieldType.Type)
-		}
-	}
-
-	if enumVariantIdx == -1 {
-		return -1, e.handleErrorf("no options are set in enum struct %v", v.Type())
-	}
-
-	return enumVariantIdx, nil
 }
 
 func (e *Encoder) encodeInt(v reflect.Value, encodedType reflect.Kind) error {
@@ -781,7 +708,7 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 			isNil := fieldVal.IsNil()
 
-			if isNil && !fieldOpts.Optional {
+			if isNil && !fieldOpts.Optional && fieldKind != reflect.Interface {
 				return e.handleErrorf("%v: non-optional nil value", fieldType.Name)
 			}
 
@@ -825,8 +752,65 @@ func (e *Encoder) encodeStructEnum(v reflect.Value) error {
 	return nil
 }
 
-func (e *Encoder) encodeInterfaceEnum(v reflect.Value) error {
-	enumVariantIdx, err := e.getInterfaceEnumVariantIdx(v)
+func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumVariantID, _ error) {
+	enumVariantIdx = -1
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+
+		k := field.Kind()
+		switch k {
+		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
+			if field.IsNil() {
+				continue
+			}
+
+			if enumVariantIdx != -1 {
+				prevSetField := v.Type().Field(int(enumVariantIdx))
+				currentField := v.Type().Field(i)
+				return -1, e.handleErrorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
+			}
+
+			enumVariantIdx = i
+			// We do not break here to check if there are multiple options set
+		default:
+			fieldType := v.Type().Field(i)
+			return -1, e.handleErrorf("field %v of enum %v is of non-nullable type %v", fieldType.Name, v.Type(), fieldType.Type)
+		}
+	}
+
+	if enumVariantIdx == -1 {
+		return -1, e.handleErrorf("no options are set in enum struct %v", v.Type())
+	}
+
+	return enumVariantIdx, nil
+}
+
+func (e *Encoder) encodeInterface(v reflect.Value, couldBeEnum bool) error {
+	if !couldBeEnum {
+		if v.IsNil() {
+			return e.handleErrorf("cannot encode nil interface, which is not enum and not optional")
+		}
+
+		return e.encodeValue(v.Elem(), nil, nil)
+	}
+
+	t := v.Type()
+
+	enumVariants, registered := EnumTypes[t]
+	if !registered {
+		if e.cfg.InterfaceIsEnumByDefault {
+			return e.handleErrorf("interface %v is not registered as enum type", t)
+		}
+
+		if v.IsNil() {
+			return e.handleErrorf("cannot encode nil interface, which is not enum and not optional")
+		}
+
+		return e.encodeValue(v.Elem(), nil, nil)
+	}
+
+	enumVariantIdx, err := e.getInterfaceEnumVariantIdx(v, enumVariants)
 	if err != nil {
 		return err
 	}
@@ -836,6 +820,35 @@ func (e *Encoder) encodeInterfaceEnum(v reflect.Value) error {
 	}
 
 	return nil
+}
+
+func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value, enumVariants map[int]reflect.Type) (enumVariantIdx EnumVariantID, _ error) {
+	isNil := v.IsNil()
+
+	var valT reflect.Type
+	if isNil {
+		valT = noneT
+	} else {
+		valT = v.Elem().Type()
+	}
+
+	enumVariantIdx = -1
+
+	for id, variant := range enumVariants {
+		if valT == variant {
+			enumVariantIdx = id
+		}
+	}
+
+	if enumVariantIdx == -1 {
+		if isNil {
+			return -1, e.handleErrorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", v.Type())
+		} else {
+			return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, v.Type())
+		}
+	}
+
+	return enumVariantIdx, nil
 }
 
 func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
