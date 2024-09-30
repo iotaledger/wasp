@@ -41,12 +41,12 @@ func (f *ChainFeed) WaitUntilStopped() {
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.Request, error) {
+func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.RefWithObject[iscmove.Request], error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	reqs := make([]*iscmove.Request, 0)
+	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
 	var lastSeen *sui.ObjectID
 	for {
 		res, err := f.wsClient.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
@@ -76,7 +76,18 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
 			}
-			reqs = append(reqs, &req)
+			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
+			if ctx.Err() != nil {
+				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", ctx.Err())
+			}
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
+			}
+			req.AssetsBag.Value = bals
+			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
+				ObjectRef: reqData.Data.Ref(),
+				Object:    &req,
+			})
 		}
 	}
 	return anchor, reqs, nil
@@ -86,7 +97,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
 	anchorCh chan<- *iscmove.AnchorWithRef,
-	requestsCh chan<- *iscmove.Request,
+	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	go f.subscribeToAnchorUpdates(ctx, anchorCh)
 	go f.subscribeToNewRequests(ctx, requestsCh)
@@ -94,7 +105,7 @@ func (f *ChainFeed) SubscribeToUpdates(
 
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
-	requests chan<- *iscmove.Request,
+	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
 		events := make(chan *suijsonrpc.SuiEvent)
@@ -129,7 +140,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
 	events <-chan *suijsonrpc.SuiEvent,
-	requests chan<- *iscmove.Request,
+	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
 		select {
@@ -150,7 +161,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
-			requests <- reqWithObj.Object
+			requests <- reqWithObj
 		}
 	}
 }
@@ -227,4 +238,8 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			}
 		}
 	}
+}
+
+func (f *ChainFeed) GetISCPackageID() sui.PackageID {
+	return f.iscPackageID
 }

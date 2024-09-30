@@ -164,15 +164,6 @@ type RequestMetadata struct {
 	GasBudget uint64 `json:"gasBudget"`
 }
 
-func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
-	metadataFeatBlock := set.MetadataFeature()
-	if metadataFeatBlock == nil {
-		// IMPORTANT: this cannot return an empty `&RequestMetadata{}` object because that could cause `isInternalUTXO` check to fail
-		return nil, nil
-	}
-	return RequestMetadataFromBytes(metadataFeatBlock.Data)
-}
-
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
 	return bcs.Unmarshal[*RequestMetadata](data)
 }

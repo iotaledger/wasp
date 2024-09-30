@@ -2,7 +2,6 @@ package chainmanager
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -14,25 +13,25 @@ import (
 // committee should be used. The algorithm itself is similar to the `varLocalView`
 // in the `cmtLog`.
 type VarAccessNodeState interface {
-	Tip() *iscmove.AnchorWithRef
+	Tip() *isc.StateAnchor
 	// Considers the produced (not yet confirmed) block / TX and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
 	// This function should return L1 commitment, if the corresponding block should be added to the store.
-	BlockProduced(tx *suisigner.SignedTransaction) (*iscmove.AnchorWithRef, bool, *state.L1Commitment)
+	BlockProduced(tx *suisigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment)
 	// Considers a confirmed AO and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
-	BlockConfirmed(ao *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool)
+	BlockConfirmed(ao *isc.StateAnchor) (*isc.StateAnchor, bool)
 }
 
 type varAccessNodeStateImpl struct {
 	chainID isc.ChainID
-	tipAO   *iscmove.AnchorWithRef
+	tipAO   *isc.StateAnchor
 	log     *logger.Logger
 }
 
 type varAccessNodeStateEntry struct {
-	output   *iscmove.Anchor // The published AO.
-	consumed sui.ObjectID    // The AO used as an input for the TX.
+	output   *isc.StateAnchor // The published AO.
+	consumed sui.ObjectID     // The AO used as an input for the TX.
 }
 
 func NewVarAccessNodeState(chainID isc.ChainID, log *logger.Logger) VarAccessNodeState {
@@ -43,22 +42,22 @@ func NewVarAccessNodeState(chainID isc.ChainID, log *logger.Logger) VarAccessNod
 	}
 }
 
-func (vas *varAccessNodeStateImpl) Tip() *iscmove.AnchorWithRef {
+func (vas *varAccessNodeStateImpl) Tip() *isc.StateAnchor {
 	return vas.tipAO
 }
 
 // TODO: Probably this function can be removed at all. This left from the pipelining.
-func (vas *varAccessNodeStateImpl) BlockProduced(tx *suisigner.SignedTransaction) (*iscmove.AnchorWithRef, bool, *state.L1Commitment) {
+func (vas *varAccessNodeStateImpl) BlockProduced(tx *suisigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment) {
 	vas.log.Debugf("BlockProduced: tx=%v", tx)
 	return vas.tipAO, false, nil
 }
 
-func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool) {
+func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.StateAnchor) (*isc.StateAnchor, bool) {
 	vas.log.Debugf("BlockConfirmed: confirmed=%v", confirmed)
 	return vas.outputIfChanged(confirmed)
 }
 
-func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *iscmove.AnchorWithRef) (*iscmove.AnchorWithRef, bool) {
+func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *isc.StateAnchor) (*isc.StateAnchor, bool) {
 	if vas.tipAO == nil && newTip == nil {
 		vas.log.Debugf("⊳ Tip remains nil.")
 		return vas.tipAO, false
@@ -72,7 +71,7 @@ func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *iscmove.AnchorWithRef
 		vas.tipAO = newTip
 		return vas.tipAO, true
 	}
-	if vas.tipAO.Equals(&newTip.ObjectRef) {
+	if vas.tipAO.Equals(newTip) {
 		vas.log.Debugf("⊳ Tip remains %v.", vas.tipAO)
 		return vas.tipAO, false
 	}

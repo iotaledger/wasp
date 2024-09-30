@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
@@ -387,7 +386,7 @@ type testEnv struct {
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
-	originAO         *iscmove.AnchorWithRef
+	originAO         *isc.StateAnchor
 	originTx         *iotago.Transaction
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain

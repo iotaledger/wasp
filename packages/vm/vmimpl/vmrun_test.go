@@ -98,7 +98,7 @@ func TestRunVM(t *testing.T) {
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	anchor := initChain(chainCreator, store)
 
-	chainID := isc.ChainIDFromObjectID(*anchor.Ref.ObjectID)
+	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
 
 	// create a request
 	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))

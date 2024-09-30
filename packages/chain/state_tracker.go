@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -19,7 +19,7 @@ import (
 type StateTracker interface {
 	//
 	// The main functions provided by this component.
-	TrackAliasOutput(ao *iscmove.AnchorWithRef, strict bool)
+	TrackAliasOutput(ao *isc.StateAnchor, strict bool)
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
@@ -27,16 +27,16 @@ type StateTracker interface {
 	ChainNodeStateMgrResponse(*sm_inputs.ChainFetchStateDiffResults)
 }
 
-type StateTrackerStepCB = func(st state.State, from, till *iscmove.AnchorWithRef, added, removed []state.Block)
+type StateTrackerStepCB = func(st state.State, from, till *isc.StateAnchor, added, removed []state.Block)
 
 type stateTrackerImpl struct {
 	ctx                    context.Context
 	stateMgr               statemanager.StateMgr
 	haveLatestCB           StateTrackerStepCB
 	haveAOState            state.State
-	haveAO                 *iscmove.AnchorWithRef // We have a state ready for this AO.
-	nextAO                 *iscmove.AnchorWithRef // For this state a query was made, but the response not received yet.
-	nextAOCancel           context.CancelFunc     // Cancel for a context used to query for the nextAO state.
+	haveAO                 *isc.StateAnchor   // We have a state ready for this AO.
+	nextAO                 *isc.StateAnchor   // For this state a query was made, but the response not received yet.
+	nextAOCancel           context.CancelFunc // Cancel for a context used to query for the nextAO state.
 	nextAOWaitCh           <-chan *sm_inputs.ChainFetchStateDiffResults
 	awaitReceipt           AwaitReceipt
 	metricWantStateIndexCB func(uint32)
@@ -70,16 +70,16 @@ func NewStateTracker(
 	}
 }
 
-func (sti *stateTrackerImpl) TrackAliasOutput(ao *iscmove.AnchorWithRef, strict bool) {
+func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.StateAnchor, strict bool) {
 	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
-	if !strict && sti.haveAO != nil && sti.haveAO.Object.GetStateIndex() >= ao.Object.GetStateIndex() {
+	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
 		return
 	}
-	if ao.Equals(&sti.nextAO.ObjectRef) {
+	if ao.Equals(sti.nextAO) {
 		return
 	}
-	sti.metricWantStateIndexCB(ao.Object.GetStateIndex())
-	if ao.Equals(&sti.haveAO.ObjectRef) {
+	sti.metricWantStateIndexCB(ao.GetStateIndex())
+	if ao.Equals(sti.haveAO) {
 		sti.nextAO = sti.haveAO // All done, state is already received.
 		sti.cancelQuery()       // Cancel the request, if pending.
 		return

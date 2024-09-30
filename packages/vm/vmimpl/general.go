@@ -17,7 +17,7 @@ func (reqctx *requestContext) ChainID() isc.ChainID {
 }
 
 func (vmctx *vmContext) ChainID() isc.ChainID {
-	return isc.ChainID(*vmctx.task.Anchor.Ref.ObjectID)
+	return isc.ChainID(*vmctx.task.Anchor.GetObjectID())
 }
 
 func (reqctx *requestContext) ChainInfo() *isc.ChainInfo {

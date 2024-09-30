@@ -432,7 +432,7 @@ func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof
 // GetL1Commitment returns state commitment taken from the anchor output
 func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorRef := ch.GetLatestAnchor()
-	ret, err := transaction.L1CommitmentFromAnchor(anchorRef.Object)
+	ret, err := transaction.L1CommitmentFromAnchor(anchorRef)
 	require.NoError(ch.Env.T, err)
 	return ret
 }

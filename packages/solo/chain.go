@@ -434,11 +434,7 @@ func (*Chain) GetTimeData() time.Time {
 
 // LatestAnchor implements chain.Chain
 func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*isc.StateAnchor, error) {
-	return &isc.StateAnchor{
-		Ref:        ch.GetLatestAnchor(),
-		Owner:      ch.OriginatorAddress,
-		ISCPackage: ch.Env.ISCPackageID(),
-	}, nil
+	return ch.GetLatestAnchor(), nil
 }
 
 // LatestState implements chain.Chain
@@ -447,7 +443,7 @@ func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error
 		return ch.store.LatestState()
 	}
 	anchor, _ := ch.LatestAnchor(chain.ActiveOrCommittedState)
-	m := lo.Must(transaction.StateMetadataFromBytes(anchor.Ref.Object.StateMetadata))
+	m := lo.Must(transaction.StateMetadataFromBytes(anchor.GetStateMetadata()))
 	st := lo.Must(ch.store.StateByTrieRoot(m.L1Commitment.TrieRoot()))
 	return st, nil
 }

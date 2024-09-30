@@ -62,7 +62,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -113,12 +112,12 @@ type Output struct {
 	Terminated bool
 	//
 	// Requests for other components.
-	NeedMempoolProposal       *iscmove.AnchorWithRef // Requests for the mempool are needed for this Base Alias Output.
-	NeedMempoolRequests       []*isc.RequestRef      // Request payloads are needed from mempool for this IDs/Hash.
-	NeedStateMgrStateProposal *iscmove.AnchorWithRef // Query for a proposal for Virtual State (it will go to the batch proposal).
-	NeedStateMgrDecidedState  *iscmove.AnchorWithRef // Query for a decided Virtual State to be used by VM.
-	NeedStateMgrSaveBlock     state.StateDraft       // Ask StateMgr to save the produced block.
-	NeedVMResult              *vm.VMTask             // VM Result is needed for this (agreed) batch.
+	NeedMempoolProposal       *isc.StateAnchor  // Requests for the mempool are needed for this Base Alias Output.
+	NeedMempoolRequests       []*isc.RequestRef // Request payloads are needed from mempool for this IDs/Hash.
+	NeedStateMgrStateProposal *isc.StateAnchor  // Query for a proposal for Virtual State (it will go to the batch proposal).
+	NeedStateMgrDecidedState  *isc.StateAnchor  // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
+	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
@@ -380,7 +379,7 @@ func (c *consImpl) StatusString() string {
 ////////////////////////////////////////////////////////////////////////////////
 // MP -- MemPool
 
-func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
+func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedMempoolProposal = baseAliasOutput
 	return nil
 }
@@ -403,17 +402,17 @@ func (c *consImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessage
 ////////////////////////////////////////////////////////////////////////////////
 // SM -- StateManager
 
-func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = baseAliasOutput
 	return nil
 }
 
-func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
+func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
 	return c.subACS.StateProposalReceived(proposedAliasOutput)
 }
 
-func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
+func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutput
 	return nil
 }
@@ -477,7 +476,7 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 // ACS
 
-func (c *consImpl) uponACSInputsReceived(baseAliasOutput *iscmove.AnchorWithRef, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
+func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.StateAnchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
@@ -506,7 +505,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		return nil
 	}
 	bao := aggr.DecidedBaseAliasOutput()
-	baoID := bao.ObjectRef
+	baoID := bao.GetObjectID()
 	reqs := aggr.DecidedRequestRefs()
 	c.log.Debugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
 	return gpa.NoMessages().
@@ -560,7 +559,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	c.output.NeedVMResult = &vm.VMTask{
 		Processors: c.processorCache,
 		Anchor: &isc.StateAnchor{
-			Ref: decidedBaseAliasOutput,
+			Ref: decidedBaseAliasOutput.Ref,
 		},
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),

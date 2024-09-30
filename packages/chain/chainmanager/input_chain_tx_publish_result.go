@@ -3,22 +3,22 @@ package chainmanager
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type inputChainTxPublishResult struct {
 	committeeAddr cryptolib.Address
 	logIndex      cmt_log.LogIndex
 	txHash        hashing.HashValue
-	aliasOutput   *iscmove.AnchorWithRef
+	aliasOutput   *isc.StateAnchor
 	confirmed     bool
 }
 
-func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex, txHash hashing.HashValue, aliasOutput *iscmove.AnchorWithRef, confirmed bool) gpa.Input {
+func NewInputChainTxPublishResult(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex, txHash hashing.HashValue, aliasOutput *isc.StateAnchor, confirmed bool) gpa.Input {
 	return &inputChainTxPublishResult{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

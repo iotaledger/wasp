@@ -49,7 +49,7 @@ func incCounter(ctx isc.Sandbox, incOpt *int64) {
 
 	val := codec.Int64.MustDecode(ctx.State().Get(VarCounter))
 	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor version: #%d",
-		val, inc, ctx.StateAnchor().Ref.Version)
+		val, inc, ctx.StateAnchor().GetObjectRef().Version)
 	tra := "(empty)"
 	if ctx.AllowanceAvailable() != nil {
 		tra = ctx.AllowanceAvailable().String()

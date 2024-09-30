@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -525,7 +524,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		return blockFn(te, nodeDecidedReqs, ao, tangleTime)
 	}
 
-	emptyProposalFn := func(ao *iscmove.AnchorWithRef) {
+	emptyProposalFn := func(ao *isc.StateAnchor) {
 		// ask again, nothing to be proposed
 		//
 		// Ask proposals for the next
@@ -723,7 +722,7 @@ type testEnv struct {
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
-	originAO         *iscmove.AnchorWithRef
+	originAO         *isc.StateAnchor
 	mempools         []mempool.Mempool
 	stores           []state.Store
 }
@@ -794,7 +793,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	return te
 }
 
-func (te *testEnv) stateForAO(i int, ao *iscmove.AnchorWithRef) state.State {
+func (te *testEnv) stateForAO(i int, ao *isc.StateAnchor) state.State {
 	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
 	require.NoError(te.t, err)
 	st, err := te.stores[i].StateByTrieRoot(l1Commitment.TrieRoot())
