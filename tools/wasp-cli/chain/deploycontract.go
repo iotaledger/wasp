@@ -34,7 +34,7 @@ func initDeployContractCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			vmtype := args[0]
 			name := args[1]
-			initParams := util.EncodeParams(args[4:], chainID)
+			initParams := util.EncodeParams(args[3:], chainID)
 
 			var progHash hashing.HashValue
 
@@ -44,7 +44,7 @@ func initDeployContractCmd() *cobra.Command {
 
 			case vmtypes.Native:
 				var err error
-				progHash, err = hashing.HashValueFromHex(args[3])
+				progHash, err = hashing.HashValueFromHex(args[2])
 				log.Check(err)
 
 			default:
