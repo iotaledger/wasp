@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 // ensures a nodes resumes normal operation after rebooting

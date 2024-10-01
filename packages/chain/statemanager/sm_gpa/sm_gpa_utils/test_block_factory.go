@@ -63,9 +63,9 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 			Digest:   nil, // TODO
 		},
 		assets: iscmove.Referent[iscmove.AssetsBag]{
-			//ID: nil, // TODO
+			// ID: nil, // TODO
 			Value: &iscmove.AssetsBag{
-				//ID:   nil, // TODO
+				// ID:   nil, // TODO
 				Size: 0,
 			},
 		},

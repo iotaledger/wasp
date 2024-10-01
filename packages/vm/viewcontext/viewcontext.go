@@ -211,7 +211,7 @@ func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 func (ctx *ViewContext) callView(msg isc.Message) (ret isc.CallArguments) {
 	contractRecord := ctx.GetContractRecord(msg.Target.Contract)
 	if contractRecord == nil {
-		panic(vm.ErrContractNotFound.Create(msg.Target.Contract))
+		panic(vm.ErrContractNotFound.Create(uint32(msg.Target.Contract)))
 	}
 	ep := execution.GetEntryPointByProgHash(ctx, msg.Target.Contract, msg.Target.EntryPoint, contractRecord.ProgramHash)
 

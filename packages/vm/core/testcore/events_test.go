@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 var (
@@ -151,24 +151,20 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []*isc.Event {
 	res, err := chain.CallView(blocklog.ViewGetEventsForRequest.Message(reqID))
 	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
+	return lo.Must(blocklog.ViewGetEventsForRequest.DecodeOutput(res))
 }
 
 func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) []*isc.Event {
 	res, err := chain.CallView(blocklog.ViewGetEventsForBlock.Message(coreutil.Optional(blockNumber...)))
 	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
+	return lo.Must(blocklog.ViewGetEventsForRequest.DecodeOutput(res))
 }
 
 func TestGetEvents(t *testing.T) {
-	env := solo.New(t).
-		WithNativeContract(inccounter.Processor)
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(10_000, nil)
-	require.NoError(t, err)
-
-	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, nil)
 	require.NoError(t, err)
 
 	// block 1 = ch init

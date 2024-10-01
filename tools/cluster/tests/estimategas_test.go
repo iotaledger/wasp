@@ -50,7 +50,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	par.WithGasBudget(gasBudget)
 
 	tx, err := client.PostRequest(
-		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(cryptolib.NewEmptyAddress())),
+		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		par,
 	)
 	require.NoError(t, err)
@@ -119,7 +119,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	estimationReq := isc.NewOffLedgerRequest(
 		env.Chain.ChainID,
-		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(cryptolib.NewEmptyAddress())),
+		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		0,
 		1*isc.Million,
 	).WithAllowance(isc.NewAssets(5000)).
@@ -154,7 +154,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	req, err := client.PostOffLedgerRequest(
 		context.Background(),
-		accounts.FuncTransferAllowanceTo.Message(isc.NewAgentID(cryptolib.NewEmptyAddress())),
+		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		par,
 	)
 	require.NoError(t, err)

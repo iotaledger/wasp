@@ -3,6 +3,7 @@ package isc
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/samber/lo"
 )
 
 // AddressAgentID is an AgentID backed by a L1 address
@@ -29,7 +30,8 @@ func (a *AddressAgentID) Address() *cryptolib.Address {
 }
 
 func (a *AddressAgentID) Bytes() []byte {
-	return bcs.MustMarshal(a)
+	// TODO: remove this function from codebase because it is not needed anymore
+	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 
 func (a *AddressAgentID) BelongsToChain(ChainID) bool {

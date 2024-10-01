@@ -8,10 +8,10 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
 
 type Chain struct {
@@ -53,7 +53,7 @@ func (ch *Chain) OriginatorAddress() *cryptolib.Address {
 }
 
 func (ch *Chain) OriginatorID() isc.AgentID {
-	ret := isc.NewAgentID(ch.OriginatorAddress())
+	ret := isc.NewAddressAgentID(ch.OriginatorAddress())
 	return ret
 }
 
@@ -163,7 +163,7 @@ func (ch *Chain) GetCounterValue(nodeIndex ...int) (int64, error) {
 		return 0, err
 	}
 
-	return inccounter.ViewGetCounter.Output1.Decode(parsedDict)
+	return inccounter.ViewGetCounter.DecodeOutput(parsedDict)
 }
 
 func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex ...int) ([]byte, error) {

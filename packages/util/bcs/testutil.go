@@ -65,6 +65,19 @@ func TestEncodeErr[V any](t *testing.T, v V, errMustContain ...string) {
 	}
 }
 
+// Checks that decoding fails
+func TestDecodeErr[V any, Encoded any](t *testing.T, v Encoded, errMustContain ...string) {
+	encoded, err := Marshal(&v)
+	require.NoError(t, err)
+
+	_, err = Unmarshal[V](encoded)
+	require.Error(t, err)
+
+	for _, s := range errMustContain {
+		require.Contains(t, err.Error(), s)
+	}
+}
+
 // Checks that:
 //   - encoding and decoding succeed
 //   - decoded value is NOT equal to the original

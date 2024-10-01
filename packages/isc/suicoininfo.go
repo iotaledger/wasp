@@ -52,3 +52,5 @@ func SuiCoinInfoFromL1Metadata(
 		TotalSupply: totalSupply,
 	}
 }
+
+var BaseTokenCoinInfo = &SuiCoinInfo{CoinType: coin.BaseTokenType}

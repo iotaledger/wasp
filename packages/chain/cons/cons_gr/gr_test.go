@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -103,7 +102,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	nodes := make([]*consGR.ConsGr, len(peerIdentities))
 	mempools := make([]*testMempool, len(peerIdentities))
 	stateMgrs := make([]*testStateMgr, len(peerIdentities))
-	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
+	procConfig := coreprocessors.NewConfigWithCoreContracts()
 	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
 	_, originAO, chainID := tcl.MakeTxChainOrigin(cmtAddress)
 	ctx, ctxCancel := context.WithCancel(context.Background())

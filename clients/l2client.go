@@ -41,7 +41,6 @@ type L2Client interface {
 	) (*suijsonrpc.SuiTransactionBlockResponse, error)
 	ReceiveRequestAndTransition(
 		ctx context.Context,
-		ptb *sui.ProgrammableTransactionBuilder,
 		cryptolibSigner cryptolib.Signer,
 		packageID sui.PackageID,
 		anchorRef *sui.ObjectRef,

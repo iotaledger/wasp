@@ -101,14 +101,14 @@ type Output struct {
 	cmi *chainMgrImpl
 }
 
-func (o *Output) LatestActiveAliasOutput() *iscmove.Anchor {
+func (o *Output) LatestActiveAliasOutput() *iscmove.AnchorWithRef {
 	if o.cmi.needConsensus == nil {
 		return nil
 	}
 	return o.cmi.needConsensus.BaseAliasOutput
 }
-func (o *Output) LatestConfirmedAliasOutput() *iscmove.Anchor { return o.cmi.latestConfirmedAO }
-func (o *Output) NeedConsensus() *NeedConsensus               { return o.cmi.needConsensus }
+func (o *Output) LatestConfirmedAliasOutput() *iscmove.AnchorWithRef { return o.cmi.latestConfirmedAO }
+func (o *Output) NeedConsensus() *NeedConsensus                      { return o.cmi.needConsensus }
 func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] {
 	return o.cmi.needPublishTX
 }
@@ -126,11 +126,11 @@ type NeedConsensus struct {
 	CommitteeAddr   cryptolib.Address
 	LogIndex        cmt_log.LogIndex
 	DKShare         tcrypto.DKShare
-	BaseAliasOutput *iscmove.Anchor
+	BaseAliasOutput *iscmove.AnchorWithRef
 }
 
 func (nc *NeedConsensus) IsFor(output *cmt_log.Output) bool {
-	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(nc.BaseAliasOutput)
+	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(&nc.BaseAliasOutput.ObjectRef)
 }
 
 func (nc *NeedConsensus) String() string {
@@ -166,9 +166,9 @@ type chainMgrImpl struct {
 	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                          // All the committee log instances for this chain.
 	consensusStateRegistry     cmt_log.ConsensusStateRegistry                                // Persistent store for log indexes.
 	latestActiveCmt            *cryptolib.Address                                            // The latest active committee.
-	latestConfirmedAO          *iscmove.Anchor                                               // The latest confirmed AO (follows Active AO).
+	latestConfirmedAO          *iscmove.AnchorWithRef                                        // The latest confirmed AO (follows Active AO).
 	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)       // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *iscmove.Anchor)                                      // We will call this to set new AO for the active state.
+	trackActiveStateCB         func(ao *iscmove.AnchorWithRef)               // We will call this to set new AO for the active state.
 	savePreliminaryBlockCB     func(block state.Block)                                       // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                 // Will be called, when a committee changes.
 	needConsensus              *NeedConsensus                                                // Query for a consensus.
@@ -199,7 +199,7 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
-	trackActiveStateCB func(ao *iscmove.Anchor),
+	trackActiveStateCB func(ao *iscmove.AnchorWithRef),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	deriveAOByQuorum bool,
@@ -284,8 +284,8 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	cmi.log.Debugf("handleInputAliasOutputConfirmed: %+v", input)
 	//
 	// >     Set LatestConfirmedAO <- ConfirmedAO
-	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor.Object)
-	cmi.latestConfirmedAO = input.anchor.Object
+	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor)
+	cmi.latestConfirmedAO = input.anchor
 	msgs := gpa.NoMessages()
 	committeeLog, err := cmi.ensureCmtLog(*input.stateController) // TODO: input.stateController.Key()
 	if errors.Is(err, ErrNotInCommittee) {
@@ -315,7 +315,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.handleCmtLogOutput(
 		committeeLog,
-		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.anchor.Object)),
+		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.anchor)),
 	))
 	return msgs
 }

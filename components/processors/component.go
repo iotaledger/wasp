@@ -1,13 +1,11 @@
 package processors
 
 import (
-	"go.uber.org/dig"
-
 	"github.com/iotaledger/hive.go/app"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"go.uber.org/dig"
 )
 
 func init() {
@@ -29,9 +27,7 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func() processorsConfigResult {
 		Component.LogInfo("Registering native contracts...")
 
-		nativeContracts := []*coreutil.ContractProcessor{
-			inccounter.Processor,
-		}
+		nativeContracts := []*coreutil.ContractProcessor{}
 
 		for _, c := range nativeContracts {
 			Component.LogDebugf(

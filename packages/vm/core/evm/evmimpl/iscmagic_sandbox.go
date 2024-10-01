@@ -81,16 +81,14 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 func (h *magicContractHandler) Send(
 	targetAddress sui.Address,
 	assets iscmagic.ISCAssets,
-	adjustMinimumStorageDeposit bool,
 	metadata iscmagic.ISCSendMetadata,
 	sendOptions isc.SendOptions,
 ) {
 	req := isc.RequestParameters{
-		TargetAddress:                 cryptolib.NewAddressFromSui(&targetAddress),
-		Assets:                        assets.Unwrap(),
-		AdjustToMinimumStorageDeposit: adjustMinimumStorageDeposit,
-		Metadata:                      metadata.Unwrap(),
-		Options:                       sendOptions,
+		TargetAddress: cryptolib.NewAddressFromSui(&targetAddress),
+		Assets:        assets.Unwrap(),
+		Metadata:      metadata.Unwrap(),
+		Options:       sendOptions,
 	}
 
 	if h.callValue.BitLen() > 0 {

@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -19,7 +19,8 @@ import (
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(0, cs, nil, 0, baseTokenCoinInfo)
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	_ = initChain(chainCreator, cs)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
@@ -80,7 +81,8 @@ func TestSetThenGet(t *testing.T) {
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(0, cs, nil, 0, baseTokenCoinInfo)
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	_ = initChain(chainCreator, cs)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())

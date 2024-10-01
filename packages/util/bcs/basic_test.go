@@ -191,6 +191,13 @@ func TestBasicTypesCodec(t *testing.T) {
 	bcs.TestCodecAndBytes(t, BasicWithCustomCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 	bcs.TestCodecAndBytes(t, lo.ToPtr[BasicWithCustomPtrCodec]("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 	bcs.TestCodecAndBytes(t, BasicWithRwUtilCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
+
+	// By default, InterfaceIsEnumByDefault is false, so this should work.
+	var infVal any = "hello"
+	infEnc := bcs.MustMarshal(&infVal)
+	var infDec any = ""
+	bcs.MustUnmarshalInto(infEnc, &infDec)
+	require.Equal(t, infVal, infDec)
 }
 
 func TestBasicInit(t *testing.T) {
@@ -481,17 +488,22 @@ func TestHighLevelCodecFuncs(t *testing.T) {
 	require.Equal(t, vEncWithoutMarker, vAutoEnc)
 }
 
-func TestMarshalAny(t *testing.T) {
+func TestMarshalInterfaceEnumByDefault(t *testing.T) {
+	e := bcs.NewEncoderWithOpts(&bytes.Buffer{}, bcs.EncoderConfig{InterfaceIsEnumByDefault: true})
 	var v any = "hello"
-	vEnc := bcs.MustMarshal(&v)
-	vDec := bcs.MustUnmarshal[string](vEnc)
-	require.Equal(t, v, vDec)
-
-	type SameAsAny any
-	var vSameAsAny SameAsAny = "hello"
-	_, err := bcs.Marshal(&vSameAsAny)
+	err := e.Encode(&v)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "not registered as enum")
+
+	var buf bytes.Buffer
+	e = bcs.NewEncoderWithOpts(&buf, bcs.EncoderConfig{InterfaceIsEnumByDefault: true})
+	err = e.Encode(v)
+	require.NoError(t, err)
+	vEnc := buf.Bytes()
+
+	d := bcs.NewDecoderWithOpts(bytes.NewReader(vEnc), bcs.DecoderConfig{InterfaceIsEnumByDefault: true})
+	var vDec any
+	err = d.Decode(&vDec)
+	require.Error(t, err)
 }
 
 func TestBytesCoders(t *testing.T) {

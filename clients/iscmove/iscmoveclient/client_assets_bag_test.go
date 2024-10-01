@@ -80,7 +80,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 
 	coinResource, err := sui.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
+	testCointype := suijsonrpc.CoinType(coinResource.SubType1.String())
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
@@ -125,7 +125,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 	coinResource, err := sui.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
+	testCointype := suijsonrpc.CoinType(coinResource.SubType1.String())
 
 	_, err = client.AssetsBagPlaceCoinAmount(
 		context.Background(),
@@ -172,7 +172,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 
 	coinResource, err := sui.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
+	testCointype := suijsonrpc.CoinType(coinResource.SubType1.String())
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
@@ -215,7 +215,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	coinResource, err := sui.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
+	testCointype := suijsonrpc.CoinType(coinResource.SubType1.String())
 
 	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &anchor.ObjectRef, testcoinInfo)
 
@@ -326,7 +326,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	coinResource, err := sui.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc.CoinType(coinResource.SubType.String())
+	testCointype := suijsonrpc.CoinType(coinResource.SubType1.String())
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),

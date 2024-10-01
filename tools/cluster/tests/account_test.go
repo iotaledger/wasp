@@ -12,10 +12,11 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -43,12 +44,6 @@ func TestBasicAccountsNLow(t *testing.T) {
 }
 
 func testAccounts(e *ChainEnv) {
-	tx, err := e.Chain.DeployContract(inccounter.Contract.Name, inccounter.Contract.ProgramHash.String(), inccounter.InitParams(42))
-	require.NoError(e.t, err)
-
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(e.t, err)
-
 	e.t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
 	e.t.Logf("   %s: %s", accounts.Contract.Name, accounts.Contract.Hname().String())
 
@@ -78,7 +73,7 @@ func testAccounts(e *ChainEnv) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	transferBaseTokens := 1 * isc.Million
+	transferBaseTokens := coin.Value(1 * isc.Million)
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
@@ -91,7 +86,7 @@ func testAccounts(e *ChainEnv) {
 	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(e.t, err)
 
-	e.checkBalanceOnChain(isc.NewAgentID(myAddress), isc.BaseTokenID, transferBaseTokens-fees)
+	e.checkBalanceOnChain(isc.NewAddressAgentID(myAddress), coin.BaseTokenType, transferBaseTokens-coin.Value(fees))
 
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(i)
@@ -104,18 +99,12 @@ func testAccounts(e *ChainEnv) {
 	}
 
 	incCounterAgentID := isc.NewContractAgentID(e.Chain.ChainID, inccounter.Contract.Hname())
-	e.checkBalanceOnChain(incCounterAgentID, isc.BaseTokenID, 0)
+	e.checkBalanceOnChain(incCounterAgentID, coin.BaseTokenType, 0)
 }
 
 // executed in cluster_test.go
 func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	chain := env.Chain
-
-	tx, err := chain.DeployContract(inccounter.Contract.Name, inccounter.Contract.ProgramHash.String(), inccounter.InitParams(42))
-	require.NoError(t, err)
-
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(env.t, err)
 
 	env.checkCoreContracts()
 
@@ -148,7 +137,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	myWallet, myAddress, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	transferBaseTokens := 1 * isc.Million
+	transferBaseTokens := coin.Value(1 * isc.Million)
 	myWalletClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
@@ -169,9 +158,9 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 
 	// withdraw back 500 base tokens to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.String())
-	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens
+	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens()
 	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	allowanceBaseTokens := uint64(800_000)
+	allowanceBaseTokens := coin.Value(uint64(800_000))
 	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssets(allowanceBaseTokens),

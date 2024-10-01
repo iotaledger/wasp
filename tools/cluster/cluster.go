@@ -261,7 +261,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	encodedInitParams := origin.EncodeInitParams(isc.NewAgentID(chain.OriginatorAddress()), 1074, blockKeepAmount[0])
+	encodedInitParams := origin.EncodeInitParams(isc.NewAddressAgentID(chain.OriginatorAddress()), 1074, blockKeepAmount[0])
 
 	stateMetaData := *transaction.NewStateMetadata(
 		allmigrations.DefaultScheme.LatestSchemaVersion(),

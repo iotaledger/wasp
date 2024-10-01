@@ -64,6 +64,21 @@ dec.MustDecode(&v2)
 
 **NOTE:** Althouth `Encode`() supports both value and pointer as argument, try prefering passing a pointer (see perf section)
 
+#### Using BytesEncoder/BytesDecoder
+
+```
+v1 := "hello"
+v2 := 123
+enc := bcs.NewBytesEncoder()
+enc.MustEncode(v1)
+enc.MustEncode(&v2) // note both value and pointer supported
+encoded := enc.Bytes()
+
+dec := bcs.NewBytesDecoder(encoded)
+dec.MustDecode(&v1)
+dec.MustDecode(&v2)
+```
+
 #### Decoder with helper functions
 
 ```
@@ -220,11 +235,39 @@ require.Equal(t, v, ***vDec)
 
 Interface can be serialized in three different ways:
 
-* By default, interface values are considered as **enumerations** (see sections below), so uses registered enum specification for serialization.
-* If interface is marked as **"not_enum"** (see sections below), the library treats interface value as just regular value (but only for **encoding**).
-* If interface has custom serialization **functor**, they is called anything else.
+* **By default**, interface is encoded just as plain value. For decoding it **must** contain some value to specify an actual type.
+* If interface is registered as **enumeration** (see sections below), the library uses its registered enum specification for serialization. In that case, no need to preset value on decoding.
+* If structure's interface field is marked as **"not_enum"** (see sections below), the library ignores enum registration for that field.
+* If interface has custom serialization **functor**, that functor is used for serialization and everything else is ignored.
 
 If interface does not satisfy any of those criterias, serialization will return an **error**.
+
+###### Encoding enum interface's value using Marshal/Encode
+
+If you need to encode the value wrapped by the interface, which is registered as enum, you can pass interface **by value** to `Encode()` of `bcs.Encoder`:
+
+```
+type Message interface{}
+
+var m Message = "hello"
+e := bcs.NewBytesEncoder()
+e.Encode(m)
+```
+
+This works, because `Encode()` function has argument of type `any`, so information about `Message` interface is lost - value in unpacked from `Message` and packed as `any`.
+
+With `bcs.Marshal` this won't work, because it enforces pointer argument, so passing interface by value is not an option.
+For that purpose, you can either cast interface to actual value (`bcs.Marshal(m.(string)`). But if the type is unknown, you can cast to `any` and then take its pointer:
+
+```
+...
+var eI any = m
+bcs.Marshal(&eI)
+
+// Or:
+
+bcs.Marshal(lo.ToPtr[any](m))
+```
 
 ## Enumerations
 
@@ -319,7 +362,7 @@ type TestStruct struct {
    hidden bool   `bcs:""`
    Excluded bool `bcs:"-"`
    S []*int64    `bcs:"len_bytes=4" bcs_elem:"compact"`
-   M map[int]int `bcs:"len_bytes=2" bcs_key:"bytes=4" bcs_value:"bytearr"`
+   M map[int]int `bcs:"len_bytes=2" bcs_key:"type=int32" bcs_value:"bytearr"`
    F interface{} `bcs:"not_enum"`
 }
 ```
@@ -360,7 +403,7 @@ Custom serialization can be provided **for** **any type:** basic types, structs,
 
 There are multiple methods available in Encoder and Decoder to help implement manual serialization, including serialization of optionals, collections and enumerations (see sections below).
 
-###### Custom serialization methods:
+###### MarshalBCS/UnmarshalBCS methods:
 
 One or both methods of the following methods can be defined to implement manual serialization.
 
@@ -384,12 +427,37 @@ func (s *TestStruct) UnmarshalBCS(d *bcs.Decoder) error {
 }
 ```
 
+###### Read/Write methods:
+
+In addition to MarshalBCS/UnmarshalBCS, another pair of methods is supported: **Read()** and **Write()**.
+This is done to ensure compatibility with others libraries (specifically **rwutil**).
+
+```
+type TestStruct struct {
+   A int
+   ...
+}
+
+func (s *TestStruct) Write(w io.Writer) error {
+   e := bcs.NewEncoder(w)  
+   e.WriteInt(s.A)
+   ...
+}
+
+func (s *TestStruct) Read(r io.Reader) error {
+   d := bcs.NewDecoder(r)
+   e.A = d.ReadInt()
+   ...
+}
+
+```
+
 ###### Custom serialization functors:
 
 Special functions can be registered to customize serialization of a type. This has two **advantages** over using methods:
 
 * Allows to implement custom serialization for **third-party types** (like it is implemented for **time.Time** and **big.Int**).
-* Allows to implement custom serialization for **interfaces** without registering them as enumerations.
+* Allows to implement custom serialization for **interfaces**.
 
 It is convenient (but not required) to run register them upon program initialization using Golang's package **init()** function.
 It is permitted to register **separate functors** for the **type itself** and its **pointer type**.
@@ -453,19 +521,21 @@ In **rwutil** library this was represented as **WriteSize32**, **WriteGas**, **W
 
 **WARNING:** BCS specification does not have mentions about ULEB128 being used for anything other than length of collections and enumeration variant indexes. So this logic is a custom extension mostly designed for usage with types, which are not used for interaction with other actors.
 
-###### "bytes=N"
+###### "type=T"
 
-Allows to **override size** of integer value. For example, if field has type int64, using this tag you can store it as int16.
+Allows to **override type** of integer value. For example, if field has type int64, using this tag you can store it as int16.
 Applicable to: **integers**.
-Possible values of **N**: 1, 2, 4, 8.
+Possible values of **T**: i8, i16, i32, i64, u8, u16, u32, u64 (and corresponding aliases int8, uint16, ...).
 
 ```
 type TestStruct struct {
-   A int64 `bcs:"bytes=2"`
+   A int64 `bcs:"type=i16"`
 }
 
 bcs.Marshal(&TestStruct{A: 10}) // []byte{10, 0}
 ```
+
+**WARNING:** In case of overflow an **error** is returned. This is done to ensure, that field is not accidentally missused when type from definition is bigger than serialized type.
 
 ###### "len_bytes=N"
 
@@ -501,14 +571,8 @@ bcs.Marshal(&TestStruct{A: 10, B: 10}) // []byte{
 
 ###### "not_enum"
 
-Specified that interface field as not an enumeration.
-Applicable to: **interfaces**.
-
-Interfaces are considered **enumerations by default**, so attept to encode interface without registering enumation will result in an error.
-To enforce **encoding** of the actual value wrapped by the interface `not_enum` tag can be used.
-
-**NOTE:** Interface values still **cannot be decoded**, because the library has no way to know which actual type it should put there.
-To decode an interface it either must be registered an enum, have registred custom decoding functor and be decoded manually.
+Forces interface field to be encoded/decoded as plain value and not as enumeration.
+Applicable to: **interfaces, that are registered as enums.**
 
 ## Performance considerations
 
@@ -517,11 +581,15 @@ To decode an interface it either must be registered an enum, have registred cust
 Unlike from function `Marshal`(), method `Encode`() accepts both value and pointer. But passing by value will force encoder to copy value to make it addressable to support `MarshalBCS`() method with pointer receiver. It will also not work properly when interface is passed by value, because value is unpacked and packed again as `any` thus information about type of initial interface will be lost.
 So it is better to pass a pointer always when it is easy to do.
 
-#### Serialization of arrays of intergers is optimized
+#### Serialization of byte arrays is optimized
 
-If elements of array are of integer type, and they dont have any customization specified for them (except of `"bytes=N"`), such array will be serialized using optimized version of code. Especially this is noticeable for byte arrays.
+Arrays of bytes, whose elements does not have any customizations, are directly copied into/from the stream.
 
-#### Caching of type parsing
+#### Serialization of arrays of intergers is NOT yet optimized
+
+If elements of array are of integer type, and they dont have any customization specified for them (except of `"type=T"`), serialization of such array could be optimized to avoid redudant calls for each array element. But this not done specifically to keep code simple while it is maturing.
+
+#### Type parsing is cached
 
 Upon serialization the types are checked for the presense of customizations. This make take significant time.
 To improve that, the type information is stored in cache.

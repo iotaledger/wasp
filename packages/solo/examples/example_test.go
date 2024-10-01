@@ -20,7 +20,7 @@ package examples
 // 	t.Logf("chainID: %s", chainID.String())
 // 	t.Logf("chain owner ID: %s", chainOwner.String())
 // 	for hname, rec := range coreContracts {
-// 		cid := isc.NewAgentID(chain.ChainID.AsAddress(), hname)
+// 		cid := isc.NewAddressAgentID(chain.ChainID.AsAddress(), hname)
 // 		t.Logf("    Core contract '%s': %s", rec.Name, cid)
 // 	}
 // }
