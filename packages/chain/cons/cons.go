@@ -595,19 +595,19 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 			c.term.haveOutputProduced()
 			return nil
 		}
-		vmResult.UnsignedTransaction = rotationTX
+		vmResult.UnsignedTransaction = *rotationTX
 		vmResult.StateDraft = nil
 	}
 
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
-	signingMsg, err := bcs.Marshal(unsignedTX)
+	signingMsg, err := bcs.Marshal(&unsignedTX)
 	if err != nil {
 		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.UnsignedTXReceived(unsignedTX)).
+		AddAll(c.subTX.UnsignedTXReceived(&unsignedTX)).
 		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }
 
