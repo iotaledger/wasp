@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -17,7 +16,6 @@ import (
 // The following interfaces define the common functionality for SC execution (VM/external view calls)
 
 type WaspContext interface {
-	LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error)
 	GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord)
 	Processors() *processors.Cache
 }

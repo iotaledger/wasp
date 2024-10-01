@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -49,14 +48,9 @@ func TestGetInfo(t *testing.T) {
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
-	recBlob, ok := contracts[blob.Contract.Hname()]
-	require.True(t, ok)
+
 	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
-
-	rec, err := chain.FindContract(blob.Contract.Name)
-	require.NoError(t, err)
-	require.EqualValues(t, recBlob.Bytes(), rec.Bytes())
 }
 
 func TestDeployExample(t *testing.T) {
@@ -78,8 +72,7 @@ func TestDeployExample(t *testing.T) {
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[blob.Contract.Hname()]
-	require.True(t, ok)
+
 	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 
@@ -117,8 +110,7 @@ func TestDeployDouble(t *testing.T) {
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[blob.Contract.Hname()]
-	require.True(t, ok)
+
 	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 

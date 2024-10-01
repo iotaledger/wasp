@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -17,7 +16,6 @@ var All = map[isc.Hname]*coreutil.ContractInfo{
 	root.Contract.Hname():       root.Contract,
 	errors.Contract.Hname():     errors.Contract,
 	accounts.Contract.Hname():   accounts.Contract,
-	blob.Contract.Hname():       blob.Contract,
 	blocklog.Contract.Hname():   blocklog.Contract,
 	governance.Contract.Hname(): governance.Contract,
 	evm.Contract.Hname():        evm.Contract,

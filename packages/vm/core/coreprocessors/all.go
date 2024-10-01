@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -22,7 +21,6 @@ var All = map[hashing.HashValue]isc.VMProcessor{
 	root.Contract.ProgramHash:       rootimpl.Processor,
 	errors.Contract.ProgramHash:     errors.Processor,
 	accounts.Contract.ProgramHash:   accounts.Processor,
-	blob.Contract.ProgramHash:       blob.Processor,
 	blocklog.Contract.ProgramHash:   blocklog.Processor,
 	governance.Contract.ProgramHash: governanceimpl.Processor,
 	evm.Contract.ProgramHash:        evmimpl.Processor,

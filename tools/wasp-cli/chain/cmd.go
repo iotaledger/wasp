@@ -21,8 +21,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
-	initUploadFlags(chainCmd)
-
 	chainCmd.AddCommand(initListCmd())
 	chainCmd.AddCommand(initDeployCmd())
 	chainCmd.AddCommand(initInfoCmd())
@@ -31,8 +29,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initBalanceCmd())
 	chainCmd.AddCommand(initAccountNFTsCmd())
 	chainCmd.AddCommand(initDepositCmd())
-	chainCmd.AddCommand(initStoreBlobCmd())
-	chainCmd.AddCommand(initShowBlobCmd())
 	chainCmd.AddCommand(initBlockCmd())
 	chainCmd.AddCommand(initRequestCmd())
 	chainCmd.AddCommand(initPostRequestCmd())

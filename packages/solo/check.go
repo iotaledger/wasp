@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -67,8 +66,6 @@ func (ch *Chain) CheckAccountLedger() {
 	}
 	require.True(ch.Env.T, total.Equals(sum))
 	coreacc := isc.NewContractAgentID(ch.ChainID, root.Contract.Hname())
-	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
-	coreacc = isc.NewContractAgentID(ch.ChainID, blob.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	coreacc = isc.NewContractAgentID(ch.ChainID, accounts.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())

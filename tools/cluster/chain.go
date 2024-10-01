@@ -3,13 +3,11 @@ package cluster
 import (
 	"context"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 )
@@ -88,22 +86,6 @@ func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
 	}
 
 	return multiclient.New(resolver, ch.AllAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
-}
-
-func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
-	v, _, err := ch.Cluster.WaspClient(0).CorecontractsApi.
-		BlobsGetBlobValue(context.Background(), ch.ChainID.String(), blobHash.Hex(), field).
-		Execute() //nolint:bodyclose // false positive
-	if err != nil {
-		return nil, err
-	}
-
-	decodedValue, err := iotago.DecodeHex(v.ValueData)
-	if err != nil {
-		return nil, err
-	}
-
-	return decodedValue, nil
 }
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {

@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
@@ -172,10 +171,6 @@ func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestRe
 	if vmctx.blockGas.feeCharged != sumGasFeeCharged {
 		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
 	}
-}
-
-func (vmctx *vmContext) locateProgram(chainState kv.KVStore, programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	return blob.NewStateReader(blob.Contract.StateSubrealm(chainState)).LocateProgram(programHash)
 }
 
 func (vmctx *vmContext) onBlockClose(f blockCloseCallback) {

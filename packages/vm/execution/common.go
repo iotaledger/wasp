@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -14,7 +15,7 @@ func GetProgramBinary(ctx WaspContext, programHash hashing.HashValue) (vmtype st
 	if ok {
 		return vmtype, nil, nil
 	}
-	return ctx.LocateProgram(programHash)
+	return "", nil, coreerrors.ErrProcessorNotFound
 }
 
 func GetEntryPointByProgHash(ctx WaspContext, targetContract, epCode isc.Hname, progHash hashing.HashValue) isc.VMProcessorEntryPoint {

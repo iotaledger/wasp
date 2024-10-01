@@ -6,4 +6,5 @@ var (
 	ErrErrorMessageTooLong   = Register("error message is too long").Create()
 	ErrErrorNotFound         = Register("error not found").Create()
 	ErrMessageFormatEmpty    = Register("error message is empty").Create()
+	ErrProcessorNotFound     = Register("error processor not found for program").Create()
 )

@@ -1,7 +1,6 @@
 package testcore
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 	"strconv"
@@ -537,14 +536,6 @@ func TestAccountBalances(t *testing.T) {
 	require.NoError(t, err)
 
 	checkBalance()
-
-	for i := 0; i < 5; i++ {
-		blobData := []byte(fmt.Sprintf("dummy blob data #%d", i+1))
-		_, err := ch.UploadBlob(sender, dict.Dict{"field": blobData})
-		require.NoError(t, err)
-
-		checkBalance()
-	}
 }
 
 type testParams struct {

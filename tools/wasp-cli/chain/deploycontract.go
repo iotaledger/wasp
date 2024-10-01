@@ -8,9 +8,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -25,7 +23,7 @@ func initDeployContractCmd() *cobra.Command {
 	var chain string
 
 	cmd := &cobra.Command{
-		Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash> [init-params]",
+		Use:   "deploy-contract <vmtype> <name> <filename|program-hash> [init-params]",
 		Short: "Deploy a contract in the chain",
 		Args:  cobra.MinimumNArgs(4),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -36,8 +34,7 @@ func initDeployContractCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 			vmtype := args[0]
 			name := args[1]
-			description := args[2]
-			initParams := util.EncodeParams(args[4:], chainID)
+			initParams := util.EncodeParams(args[3:], chainID)
 
 			var progHash hashing.HashValue
 
@@ -47,17 +44,12 @@ func initDeployContractCmd() *cobra.Command {
 
 			case vmtypes.Native:
 				var err error
-				progHash, err = hashing.HashValueFromHex(args[3])
+				progHash, err = hashing.HashValueFromHex(args[2])
 				log.Check(err)
 
 			default:
-				filename := args[3]
-				blobFieldValues := codec.MakeDict(map[string]interface{}{
-					blob.VarFieldVMType:             vmtype,
-					blob.VarFieldProgramDescription: description,
-					blob.VarFieldProgramBinary:      util.ReadFile(filename),
-				})
-				progHash = uploadBlob(client, chainID, blobFieldValues)
+				log.Fatal("you can only deploy native (non-core) contracts")
+
 			}
 			deployContract(client, chainID, node, name, progHash, initParams)
 		},

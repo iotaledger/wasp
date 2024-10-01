@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"os"
 	"strings"
 	"time"
 
@@ -25,12 +24,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -38,7 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -95,15 +89,6 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	return record, err
 }
 
-// GetBlobInfo return info about blob with the given hash with existence flag
-// The blob information is returned as a map of pairs 'blobFieldName': 'fieldDataLength'
-func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
-	res, err := ch.CallView(blob.ViewGetBlobInfo.Message(blobHash))
-	require.NoError(ch.Env.T, err)
-	ret := lo.Must(blob.ViewGetBlobInfo.DecodeOutput(res))
-	return ret, len(ret) > 0
-}
-
 func (ch *Chain) GetGasFeePolicy() *gas.FeePolicy {
 	res, err := ch.CallView(governance.ViewGetFeePolicy.Message())
 	require.NoError(ch.Env.T, err)
@@ -124,83 +109,6 @@ func (ch *Chain) GetGasLimits() *gas.Limits {
 func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
 	_, err := ch.PostRequestOffLedger(NewCallParams(governance.FuncSetGasLimits.Message(gl)), user)
 	require.NoError(ch.Env.T, err)
-}
-
-// UploadBlob calls core 'blob' smart contract blob.FuncStoreBlob entry point to upload blob
-// data to the chain. It returns hash of the blob, the unique identifier of it.
-// The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
-// Requires at least 2 x gasFeeEstimate to be on sender's L2 account
-func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, fields dict.Dict) (ret hashing.HashValue, err error) {
-	if user == nil {
-		user = ch.OriginatorPrivateKey
-	}
-
-	expectedHash := blob.MustGetBlobHash(fields)
-	if _, ok := ch.GetBlobInfo(expectedHash); ok {
-		// blob exists, return hash of existing
-		return expectedHash, nil
-	}
-	req := NewCallParams(blob.FuncStoreBlob.Message(fields))
-	req.WithMaxAffordableGasBudget()
-	_, estimate, err := ch.EstimateGasOffLedger(req, user)
-	if err != nil {
-		return [32]byte{}, err
-	}
-	req.WithGasBudget(estimate.GasBurned)
-	res, err := ch.PostRequestOffLedger(req, user)
-	if err != nil {
-		return ret, err
-	}
-	blobHash := lo.Must(blob.FuncStoreBlob.DecodeOutput(res))
-	require.EqualValues(ch.Env.T, expectedHash, blobHash)
-	return ret, err
-}
-
-// UploadBlobFromFile uploads blob from file data in the specified blob field plus optional other fields
-func (ch *Chain) UploadBlobFromFile(keyPair *cryptolib.KeyPair, fileName, fieldName string) (hashing.HashValue, error) {
-	fileBinary, err := os.ReadFile(fileName)
-	if err != nil {
-		return hashing.HashValue{}, err
-	}
-	return ch.UploadBlob(keyPair, dict.Dict{kv.Key(fieldName): fileBinary})
-}
-
-// UploadContractBinary is a shortcut for calling UploadBlob in order to upload
-// a contract binary to the chain.
-//
-// The blob for the contract binary uses fixed field names that are statically known by the
-// 'root' smart contract which is responsible for the deployment of contracts on the chain
-func (ch *Chain) UploadContractBinary(keyPair *cryptolib.KeyPair, vmType string, binaryCode []byte) (ret hashing.HashValue, err error) {
-	return ch.UploadBlob(keyPair, dict.Dict{
-		blob.VarFieldVMType:        codec.String.Encode(vmType),
-		blob.VarFieldProgramBinary: binaryCode,
-	})
-}
-
-// UploadContractBinaryFromFile is a syntactic sugar to upload file content as blob data to the chain
-func (ch *Chain) UploadContractBinaryFromFile(keyPair *cryptolib.KeyPair, vmType, fileName string) (hashing.HashValue, error) {
-	var binary []byte
-	binary, err := os.ReadFile(fileName)
-	if err != nil {
-		return hashing.HashValue{}, err
-	}
-	return ch.UploadContractBinary(keyPair, vmType, binary)
-}
-
-// GetContractBinary retrieves a program binary by its hash.
-func (ch *Chain) GetContractBinary(progHash hashing.HashValue) (string, []byte, error) {
-	res, err := ch.CallView(blob.ViewGetBlobField.Message(progHash, codec.String.Encode(blob.VarFieldVMType)))
-	if err != nil {
-		return "", nil, err
-	}
-	vmType := codec.String.MustDecode(lo.Must(blob.ViewGetBlobField.DecodeOutput(res)))
-
-	res, err = ch.CallView(blob.ViewGetBlobField.Message(progHash, codec.String.Encode(blob.VarFieldProgramBinary)))
-	if err != nil {
-		return "", nil, err
-	}
-	binary := lo.Must(blob.ViewGetBlobField.DecodeOutput(res))
-	return vmType, binary, nil
 }
 
 func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...interface{}) (abi.ABI, []byte) {
