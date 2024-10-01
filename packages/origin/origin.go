@@ -88,7 +88,7 @@ func InitChain(
 		governance.Contract,
 		evm.Contract,
 	})
-	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit)
+	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, baseTokenCoinInfo)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(chainOwner, blockKeepAmount)
