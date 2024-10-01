@@ -54,7 +54,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	}
 	chainID := isc.RandomChainID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	originBlock := origin.InitChain(0, chainStore, chainInitParams, 0)
+	originBlock := origin.InitChain(0, chainStore, chainInitParams, 0, nil)
 	originCommitment := originBlock.L1Commitment()
 	originAnchorData := anchorData{
 		ref: &sui.ObjectRef{
@@ -129,11 +129,11 @@ func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 }
 
 func (bfT *BlockFactory) GetOriginAnchor() *iscmove.AnchorWithRef {
-	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
+	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0, nil))
 }
 
 func (bfT *BlockFactory) GetOriginBlock() state.Block {
-	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(0, bfT.chainInitParams, 0).TrieRoot())
+	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(0, bfT.chainInitParams, 0, nil).TrieRoot())
 	require.NoError(bfT.t, err)
 	return block
 }

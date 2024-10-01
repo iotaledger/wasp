@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -51,14 +52,20 @@ func (b *BatchProposal) Bytes() []byte {
 }
 
 func (b *BatchProposal) Read(r io.Reader) error {
+	var err error
 	rr := rwutil.NewReader(r)
 	b.nodeIndex = rr.ReadUint16()
-	b.baseAliasOutput = &iscmove.AnchorWithRef{}
-	rr.Read(b.baseAliasOutput)
+	b.baseAliasOutput, err = bcs.Unmarshal[*iscmove.AnchorWithRef](rr.ReadBytes())
+	if err != nil {
+		return err
+	}
 	b.dssIndexProposal = util.NewFixedSizeBitVector(0)
 	rr.Read(b.dssIndexProposal)
 	b.timeData = time.Unix(0, rr.ReadInt64())
-	b.validatorFeeDestination = isc.AgentIDFromReader(rr)
+	b.validatorFeeDestination, err = isc.AgentIDFromBytes(rr.ReadBytes())
+	if err != nil {
+		return err
+	}
 	size := rr.ReadSize16()
 	b.requestRefs = make([]*isc.RequestRef, size)
 	for i := range b.requestRefs {
@@ -72,10 +79,14 @@ func (b *BatchProposal) Read(r io.Reader) error {
 func (b *BatchProposal) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
 	ww.WriteUint16(b.nodeIndex)
-	ww.Write(b.baseAliasOutput)
+	bytes, err := bcs.Marshal(b.baseAliasOutput)
+	if err != nil {
+		return err
+	}
+	ww.WriteBytes(bytes)
 	ww.Write(b.dssIndexProposal)
 	ww.WriteInt64(b.timeData.UnixNano())
-	ww.Write(b.validatorFeeDestination)
+	ww.WriteBytes(b.validatorFeeDestination.Bytes())
 	ww.WriteSize16(len(b.requestRefs))
 	for i := range b.requestRefs {
 		ww.WriteN(b.requestRefs[i].ID[:])
