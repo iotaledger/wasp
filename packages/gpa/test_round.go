@@ -6,7 +6,10 @@ package gpa
 import (
 	"errors"
 	"fmt"
-	"io"
+)
+
+const (
+	msgTypeTestRound MessageType = iota
 )
 
 // A protocol for testing infrastructure.
@@ -62,10 +65,6 @@ type testRoundMsg struct {
 
 var _ Message = new(testRoundMsg)
 
-func (msg *testRoundMsg) Read(r io.Reader) error {
-	panic(errors.New("should be not used"))
-}
-
-func (msg *testRoundMsg) Write(w io.Writer) error {
-	panic(errors.New("should be not used"))
+func (msg *testRoundMsg) MsgType() MessageType {
+	return msgTypeTestRound
 }

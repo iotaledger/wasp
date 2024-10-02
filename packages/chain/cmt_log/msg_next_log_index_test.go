@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgNextLogIndexSerialization(t *testing.T) {
@@ -20,7 +20,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 			false,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(MsgNextLogIndex))
+		bcs.TestCodec(t, msg)
 	}
 	msg := &MsgNextLogIndex{
 		gpa.BasicMessage{},
@@ -29,5 +29,5 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 		true,
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(MsgNextLogIndex))
+	bcs.TestCodec(t, msg)
 }

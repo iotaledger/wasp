@@ -5,10 +5,8 @@ package cmt_log
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type MsgNextLogIndexCause byte
@@ -64,27 +62,13 @@ func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 	}
 }
 
+func (msg *MsgNextLogIndex) MsgType() gpa.MessageType {
+	return msgTypeNextLogIndex
+}
+
 func (msg *MsgNextLogIndex) String() string {
 	return fmt.Sprintf(
 		"{MsgNextLogIndex[%v], sender=%v, nextLogIndex=%v, pleaseRepeat=%v",
 		msg.Cause, msg.Sender().ShortString(), msg.NextLogIndex, msg.PleaseRepeat,
 	)
-}
-
-func (msg *MsgNextLogIndex) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeNextLogIndex.ReadAndVerify(rr)
-	msg.NextLogIndex = LogIndex(rr.ReadUint32())
-	msg.Cause = MsgNextLogIndexCause(rr.ReadByte())
-	msg.PleaseRepeat = rr.ReadBool()
-	return rr.Err
-}
-
-func (msg *MsgNextLogIndex) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeNextLogIndex.Write(ww)
-	ww.WriteUint32(msg.NextLogIndex.AsUint32())
-	ww.WriteByte(byte(msg.Cause))
-	ww.WriteBool(msg.PleaseRepeat)
-	return ww.Err
 }

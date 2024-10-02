@@ -125,7 +125,8 @@ type msgByteCoder interface {
 
 func makePeerMessage(peeringID peering.PeeringID, receiver, step byte, msg msgByteCoder) *peering.PeerMessageData {
 	msg.SetStep(step)
-	return peering.NewPeerMessageData(peeringID, receiver, msg.MsgType(), msg)
+	msgBytes := rwutil.WriteToBytes(msg)
+	return peering.NewPeerMessageData(peeringID, receiver, msg.MsgType(), msgBytes)
 }
 
 // All the messages in this module have a step as a first byte in the payload.

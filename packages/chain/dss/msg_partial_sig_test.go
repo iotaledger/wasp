@@ -12,7 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgPartialSigSerialization(t *testing.T) {
@@ -38,7 +38,6 @@ func TestMsgPartialSigSerialization(t *testing.T) {
 		partialSig,
 	}
 
-	newobj := new(msgPartialSig)
-	newobj.suite = s
-	rwutil.ReadWriteTest(t, msg, newobj)
+	msgEnv := bcs.MustMarshal(msg)
+	bcs.MustUnmarshalInto(msgEnv, &msgPartialSig{suite: s})
 }

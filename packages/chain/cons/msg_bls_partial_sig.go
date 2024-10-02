@@ -4,18 +4,15 @@
 package cons
 
 import (
-	"io"
-
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgBLSPartialSig struct {
 	gpa.BasicMessage
 	blsSuite   suites.Suite
-	partialSig []byte
+	partialSig []byte `bcs:""`
 }
 
 var _ gpa.Message = new(msgBLSPartialSig)
@@ -28,16 +25,6 @@ func newMsgBLSPartialSig(blsSuite suites.Suite, recipient gpa.NodeID, partialSig
 	}
 }
 
-func (msg *msgBLSPartialSig) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeBLSShare.ReadAndVerify(rr)
-	msg.partialSig = rr.ReadBytes()
-	return rr.Err
-}
-
-func (msg *msgBLSPartialSig) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeBLSShare.Write(ww)
-	ww.WriteBytes(msg.partialSig)
-	return ww.Err
+func (msg *msgBLSPartialSig) MsgType() gpa.MessageType {
+	return msgTypeBLSShare
 }

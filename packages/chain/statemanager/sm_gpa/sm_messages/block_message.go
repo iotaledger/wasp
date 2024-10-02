@@ -1,11 +1,9 @@
 package sm_messages
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BlockMessage struct {
@@ -30,17 +28,18 @@ func (msg *BlockMessage) GetBlock() state.Block {
 	return msg.block
 }
 
-func (msg *BlockMessage) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	MsgTypeBlockMessage.ReadAndVerify(rr)
+func (msg *BlockMessage) UnmarshalBCS(d *bcs.Decoder) error {
 	msg.block = state.NewBlock()
-	rr.Read(msg.block)
-	return rr.Err
+	d.Decode(msg.block)
+
+	return nil
 }
 
-func (msg *BlockMessage) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	MsgTypeBlockMessage.Write(ww)
-	ww.Write(msg.block)
-	return ww.Err
+func (msg *BlockMessage) MarshalBCS(e *bcs.Encoder) error {
+	e.Encode(msg.block)
+	return nil
+}
+
+func (msg *BlockMessage) MsgType() gpa.MessageType {
+	return MsgTypeBlockMessage
 }

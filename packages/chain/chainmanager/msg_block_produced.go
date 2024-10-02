@@ -27,6 +27,10 @@ func NewMsgBlockProduced(recipient gpa.NodeID, tx *suisigner.SignedTransaction, 
 	}
 }
 
+func (msg *msgBlockProduced) MsgType() gpa.MessageType {
+	return msgTypeBlockProduced
+}
+
 func (msg *msgBlockProduced) String() string {
 	return fmt.Sprintf(
 		"{chainMgr.msgBlockProduced, stateIndex=%v, l1Commitment=%v, txHash=%v}",

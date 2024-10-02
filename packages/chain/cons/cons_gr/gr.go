@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/samber/lo"
 )
 
 const (
@@ -416,7 +417,8 @@ func (cgr *ConsGr) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msgBytes)
 		cgr.net.SendMsgByPubKey(cgr.netPeerPubs[msg.Recipient()], pm)
 	})
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -26,5 +26,5 @@ func TestMsgMissingRequestSerialization(t *testing.T) {
 		isc.RequestRefFromRequest(req),
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgMissingRequest))
+	bcs.TestCodec(t, msg)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/samber/lo"
 )
 
 type AccessMgr interface {
@@ -218,7 +219,8 @@ func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(ami.netPeeringID, peering.ReceiverAccessMgr, msgTypeAccessMgr, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(ami.netPeeringID, peering.ReceiverAccessMgr, msgTypeAccessMgr, msgBytes)
 		ami.net.SendMsgByPubKey(ami.netPeerPubs[msg.Recipient()], pm)
 	})
 }
