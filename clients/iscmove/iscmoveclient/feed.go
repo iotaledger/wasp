@@ -96,15 +96,17 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
+	anchorID sui.ObjectID,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	go f.subscribeToAnchorUpdates(ctx, anchorCh)
-	go f.subscribeToNewRequests(ctx, requestsCh)
+	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
 }
 
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
+	anchorID sui.ObjectID,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
@@ -112,10 +114,16 @@ func (f *ChainFeed) subscribeToNewRequests(
 		err := f.wsClient.SubscribeEvent(
 			ctx,
 			&suijsonrpc.EventFilter{
-				MoveEventType: &sui.StructTag{
-					Address: &f.iscPackageID,
-					Module:  iscmove.RequestModuleName,
-					Name:    iscmove.RequestEventObjectName,
+				And: &suijsonrpc.AndOrEventFilter{
+					Filter1: &suijsonrpc.EventFilter{MoveEventType: &sui.StructTag{
+						Address: &f.iscPackageID,
+						Module:  iscmove.RequestModuleName,
+						Name:    iscmove.RequestEventObjectName,
+					}},
+					Filter2: &suijsonrpc.EventFilter{MoveEventField: &suijsonrpc.EventFilterMoveEventField{
+						Path:  iscmove.RequestEventAnchorFieldName,
+						Value: anchorID.String(),
+					}},
 				},
 			},
 			events,
