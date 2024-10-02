@@ -168,7 +168,7 @@ type chainMgrImpl struct {
 	latestActiveCmt            *cryptolib.Address                                            // The latest active committee.
 	latestConfirmedAO          *iscmove.AnchorWithRef                                        // The latest confirmed AO (follows Active AO).
 	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)       // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *iscmove.AnchorWithRef)               // We will call this to set new AO for the active state.
+	trackActiveStateCB         func(ao *iscmove.AnchorWithRef)                               // We will call this to set new AO for the active state.
 	savePreliminaryBlockCB     func(block state.Block)                                       // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                 // Will be called, when a committee changes.
 	needConsensus              *NeedConsensus                                                // Query for a consensus.
@@ -537,8 +537,8 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
-		cmi.output.LatestConfirmedAliasOutput().ID.String(),
-		cmi.output.LatestActiveAliasOutput().ID.String(),
+		cmi.output.LatestConfirmedAliasOutput().ObjectID.String(),
+		cmi.output.LatestActiveAliasOutput().ObjectID.String(),
 	)
 }
 
