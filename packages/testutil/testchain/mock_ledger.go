@@ -33,7 +33,7 @@ type MockedLedger struct {
 func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, isc.ChainID) {
 	originOutput := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
-		StateMetadata: testutil.DummyStateMetadata(origin.L1Commitment(0, nil, 0)).Bytes(),
+		StateMetadata: testutil.DummyStateMetadata(origin.L1Commitment(0, nil, 0, isc.BaseTokenCoinInfo)).Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
@@ -45,7 +45,7 @@ func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLe
 		},
 	}
 	outputID := getOriginOutputID()
-	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(outputID))
+	chainID := isc.ChainIDFromObjectID(iotago.AliasIDFromOutputID(outputID))
 	originOutput.AliasID = chainID.AsAliasID() // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
 	outputs := make(map[iotago.OutputID]*iotago.AliasOutput)
 	outputs[outputID] = originOutput

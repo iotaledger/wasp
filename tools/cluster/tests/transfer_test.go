@@ -9,9 +9,10 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 func TestDepositWithdraw(t *testing.T) {
@@ -26,17 +27,17 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(e.t, err)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount)),
 	)
 
 	myAgentID := isc.NewAddressAgentID(myAddress)
 	// origAgentID := isc.NewAddressAgentID(chain.OriginatorAddress(), 0)
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
-	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)
+	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, 0)
 
 	// deposit some base tokens to the chain
-	depositBaseTokens := 10 * isc.Million
+	var depositBaseTokens coin.Value = 10 * isc.Million
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(depositBaseTokens)
@@ -50,15 +51,15 @@ func TestDepositWithdraw(t *testing.T) {
 	gasFees1, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(t, err)
 
-	onChainBalance := depositBaseTokens - gasFees1
-	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
+	var onChainBalance coin.Value = depositBaseTokens - coin.Value(gasFees1)
+	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount-depositBaseTokens)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-depositBaseTokens)),
 	)
 
 	// withdraw some base tokens back
-	baseTokensToWithdraw := 1 * isc.Million
+	var baseTokensToWithdraw coin.Value = 1 * isc.Million
 	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAssets(baseTokensToWithdraw),
@@ -71,9 +72,9 @@ func TestDepositWithdraw(t *testing.T) {
 	gasFees2, err := iotago.DecodeUint64(receipt.GasFeeCharged)
 	require.NoError(t, err)
 
-	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance-baseTokensToWithdraw-gasFees2)
+	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance-baseTokensToWithdraw-coin.Value(gasFees2))
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
 	)
 
 	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining base tokens

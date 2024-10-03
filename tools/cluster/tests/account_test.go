@@ -14,10 +14,10 @@ import (
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 // executed in cluster_test.go
@@ -94,7 +94,7 @@ func testAccounts(e *ChainEnv) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-transferBaseTokens)) {
 		e.t.Fatal()
 	}
 
@@ -152,7 +152,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssets(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 

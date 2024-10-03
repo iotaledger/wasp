@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -85,7 +86,7 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 	return chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, wallet)
 }
 
-func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
+func (e *ChainEnv) DepositFunds(amount coin.Value, keyPair *cryptolib.KeyPair) {
 	client := e.Chain.Client(keyPair)
 	tx, err := client.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssets(amount),

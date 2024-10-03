@@ -11,9 +11,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/utxodb"
 
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -161,7 +161,7 @@ func testPingBaseTokens1(t *testing.T) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	const expectedBack = 1 * isc.Million
-	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, suiclient.FundsFromFaucetAmount)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddBaseTokens(expectedBack + 500). // add extra base tokens besides allowance in order to estimate the gas fees
@@ -190,9 +190,9 @@ func testPingBaseTokens1(t *testing.T) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.BaseTokens, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged)
+	require.EqualValues(t, userFundsAfter.AssetsL1.BaseTokens, suiclient.FundsFromFaucetAmount-receipt.GasFeeCharged)
 	require.EqualValues(t, int(commonBefore.BaseTokens), int(commonAfter.BaseTokens))
-	require.EqualValues(t, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.AssetsL1.BaseTokens)
+	require.EqualValues(t, suiclient.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.AssetsL1.BaseTokens)
 	require.Zero(t, userFundsAfter.AssetsL2.BaseTokens)
 }
 

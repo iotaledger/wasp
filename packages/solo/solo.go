@@ -344,6 +344,7 @@ func (env *Solo) deployChain(
 		suiclient.DefaultGasBudget,
 		false,
 	)
+	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
 	env.logger.Infof(

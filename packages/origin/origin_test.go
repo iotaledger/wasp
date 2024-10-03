@@ -18,10 +18,12 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
@@ -55,7 +57,7 @@ func TestCreateOrigin(t *testing.T) {
 		stateKey := cryptolib.NewKeyPair()
 		stateAddr = stateKey.GetPublicKey().AsAddress()
 
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
+		require.EqualValues(t, suiclient.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 	}
 	createOrigin := func() {
@@ -126,7 +128,7 @@ func TestCreateOrigin(t *testing.T) {
 
 		t.Logf("chainBaseTokens: %d", chainBaseTokens)
 
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount-chainBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
+		require.EqualValues(t, suiclient.FundsFromFaucetAmount-chainBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 		allOutputs, ids := u.GetUnspentOutputs(chainID.AsAddress())
 		require.EqualValues(t, 1, len(allOutputs))
@@ -153,12 +155,12 @@ func TestMetadataBad(t *testing.T) {
 	for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
 		db := mapdb.NewMapDB()
 		st := state.NewStoreWithUniqueWriteMutex(db)
-		block1A := origin.InitChain(0, st, initParams, deposit)
-		block1B := origin.InitChain(0, st, initParams, 10*isc.Million-deposit)
-		block1C := origin.InitChain(0, st, initParams, 10*isc.Million+deposit)
-		block2A := origin.InitChain(0, st, nil, deposit)
-		block2B := origin.InitChain(0, st, nil, 10*isc.Million-deposit)
-		block2C := origin.InitChain(0, st, nil, 10*isc.Million+deposit)
+		block1A, _ := origin.InitChain(0, st, initParams, deposit, isc.BaseTokenCoinInfo)
+		block1B, _ := origin.InitChain(0, st, initParams, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
+		block1C, _ := origin.InitChain(0, st, initParams, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
+		block2A, _ := origin.InitChain(0, st, nil, deposit, isc.BaseTokenCoinInfo)
+		block2B, _ := origin.InitChain(0, st, nil, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
+		block2C, _ := origin.InitChain(0, st, nil, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
 		t.Logf("Block0, deposit=%v => %v %v %v / %v %v %v", deposit,
 			block1A.L1Commitment(), block1B.L1Commitment(), block1C.L1Commitment(),
 			block2A.L1Commitment(), block2B.L1Commitment(), block2C.L1Commitment(),

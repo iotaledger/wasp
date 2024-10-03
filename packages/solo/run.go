@@ -83,7 +83,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 	res := ch.runTaskNoLock(reqs, false)
 
-	txnBytes, err := bcs.Marshal(res.UnsignedTransaction)
+	txnBytes, err := bcs.Marshal(&res.UnsignedTransaction)
 	require.NoError(ch.Env.T, err)
 
 	txBlockRes, err := ch.Env.SuiClient().SignAndExecuteTransaction(

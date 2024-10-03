@@ -13,6 +13,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -42,7 +43,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(feeCharged),
+		Transfer:  isc.NewAssets(coin.Value(feeCharged)),
 		Allowance: isc.NewAssets(5000),
 	}
 	gasBudget, err := strconv.ParseUint(estimatedReceipt.GasBurned, 10, 64)
@@ -95,7 +96,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(output.Deposit()),
-		Allowance: isc.NewEmptyAssets().AddNFTs(nft.ID),
+		Allowance: isc.NewEmptyAssets().AddObject(nft.ID),
 		NFT:       nft,
 	}
 	gasBudget, err := strconv.ParseUint(estimatedReceipt.GasBurned, 10, 64)
