@@ -85,8 +85,10 @@ func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 	return governance.NewStateReaderFromChainState(vmctx.stateDraft).GetPayoutAgentID()
 }
 
-// creditAssetsToChain credits L1 accounts with attached assets and accrues all of them to the sender's account on-chain
-func (reqctx *requestContext) creditAssetsToChain() {
+// consumeRequest Consumes incoming request and updating the sender's L2 Balance according to the current request.
+// In the Sui ver impl, For L1's perspective ISC anchor credits all the assets attached on the
+// requests, when calling txbuilder.BuildTransactionEssence
+func (reqctx *requestContext) consumeRequest() {
 	req, ok := reqctx.req.(isc.OnLedgerRequest)
 	if !ok {
 		// off ledger request does not bring any deposit
@@ -98,7 +100,8 @@ func (reqctx *requestContext) creditAssetsToChain() {
 	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		// onleger request with no sender, send all assets to the payoutAddress
+		// TODO more description about what are the no sender scenarios
+		// onledger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
 		reqctx.creditObjectsToAccount(payoutAgentID, req.Assets().Objects.Sorted())
 		reqctx.creditToAccount(payoutAgentID, req.Assets().Coins)
@@ -173,7 +176,7 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 	// pre execution ---------------------------------------------------------------
 	err := panicutil.CatchPanic(func() {
 		// transfer all attached assets to the sender's account
-		reqctx.creditAssetsToChain()
+		reqctx.consumeRequest()
 		// load gas and fee policy, calculate and set gas budget
 		reqctx.prepareGasBudget()
 		// run the contract program
@@ -188,7 +191,7 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 
 	result := &vm.RequestResult{Request: reqctx.req}
 
-	txSnapshot := reqctx.vm.createTxBuilderSnapshot() // take the txbuilder snapshot **after** the request has been consumed (in `creditAssetsToChain`)
+	txSnapshot := reqctx.vm.createTxBuilderSnapshot() // take the txbuilder snapshot **after** the request has been consumed (in `consumeRequest`)
 	stateSnapshot := reqctx.uncommittedState.Clone()
 
 	rollback := func() {
@@ -472,7 +475,11 @@ func (vmctx *vmContext) loadChainConfig() {
 
 // checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
 func (vmctx *vmContext) checkTransactionSize() error {
-	// TODO
+	// TODO the following requirements we need to check
+	// * The encoded bytes of ptb should be smaller than `max_tx_size_bytes`
+	// * max_size_written_objects
+	// * max_serialized_tx_effects_size_bytes
+	// * max_pure_argument_size
 	vmctx.task.Log.Warn("TODO: checkTransactionSize")
 	return nil
 }

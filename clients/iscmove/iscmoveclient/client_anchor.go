@@ -113,7 +113,7 @@ func (c *Client) ReceiveRequestAndTransition(
 		if err != nil {
 			return nil, err
 		}
-		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &reqWithObj.Object.AssetsBag.Value.ID)
+		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &reqWithObj.Object.AssetsBag.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -178,13 +178,13 @@ func (c *Client) GetAnchorFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
-	var anchor iscmove.Anchor
-	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &anchor)
+	var moveAnchor moveAnchor
+	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
 	return &iscmove.AnchorWithRef{
 		ObjectRef: getObjectResponse.Data.Ref(),
-		Object:    &anchor,
+		Object:    moveAnchor.ToAnchor(),
 	}, nil
 }

@@ -18,6 +18,7 @@ var emptyChainID = ChainID{}
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
 type (
+	// ChainID is the anchor ObjectID
 	ChainID    sui.ObjectID
 	ChainIDKey string
 )

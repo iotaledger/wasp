@@ -69,24 +69,12 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		originDeposit,
 		baseTokenCoinInfo,
 	)
-	anchorObjectRef := sui.RandomObjectRef()
-	anchorAssetsBagRef := sui.RandomObjectRef()
-	anchorAssetsReferentRef := sui.RandomObjectRef()
+	stateMetadataBytes := stateMetadata.Bytes()
+	randomAnchor := iscmove.RandomAnchor(iscmove.RandomAnchorOption{StateMetadata: &stateMetadataBytes})
 	anchor := &isc.StateAnchor{
-		Ref: &iscmove.AnchorWithRef{
-			ObjectRef: *anchorObjectRef,
-			Object: &iscmove.Anchor{
-				ID: *anchorObjectRef.ObjectID,
-				Assets: iscmove.Referent[iscmove.AssetsBag]{
-					ID: *anchorAssetsReferentRef.ObjectID,
-					Value: &iscmove.AssetsBag{
-						ID:   *anchorAssetsBagRef.ObjectID,
-						Size: 0,
-					},
-				},
-				StateMetadata: stateMetadata.Bytes(),
-				StateIndex:    0,
-			},
+		Anchor: &iscmove.AnchorWithRef{
+			ObjectRef: *sui.RandomObjectRef(),
+			Object:    &randomAnchor,
 		},
 		Owner: chainCreator.Address(),
 	}
@@ -104,7 +92,6 @@ func TestRunVM(t *testing.T) {
 	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
 	requestRef := sui.RandomObjectRef()
 	requestAssetsBagRef := sui.RandomObjectRef()
-	requestAssetsReferentRef := sui.RandomObjectRef()
 	msg := accounts.FuncDeposit.Message()
 	const tokensForGas = 1 * isc.Million
 	request := &iscmove.RefWithObject[iscmove.Request]{
@@ -112,19 +99,16 @@ func TestRunVM(t *testing.T) {
 		Object: &iscmove.Request{
 			ID:     *requestRef.ObjectID,
 			Sender: sender.Address(),
-			AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
-				ID: *requestAssetsReferentRef.ObjectID,
-				Value: &iscmove.AssetsBagWithBalances{
-					AssetsBag: iscmove.AssetsBag{
-						ID:   *requestAssetsBagRef.ObjectID,
-						Size: 1,
-					},
-					Balances: map[string]*suijsonrpc.Balance{
-						string(coin.BaseTokenType): {
-							CoinType:        string(coin.BaseTokenType),
-							CoinObjectCount: 1,
-							TotalBalance:    tokensForGas,
-						},
+			AssetsBag: iscmove.AssetsBagWithBalances{
+				AssetsBag: iscmove.AssetsBag{
+					ID:   *requestAssetsBagRef.ObjectID,
+					Size: 1,
+				},
+				Balances: map[string]*suijsonrpc.Balance{
+					string(coin.BaseTokenType): {
+						CoinType:        string(coin.BaseTokenType),
+						CoinObjectCount: 1,
+						TotalBalance:    tokensForGas,
 					},
 				},
 			},

@@ -37,16 +37,16 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	_, err := rand.Read(digest)
 	require.NoError(t, err)
 
-	anchorRef := iscmove.AnchorWithRef{
+	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
 		ObjectRef: sui.ObjectRef{
 			ObjectID: &anchor.ID,
 			Version:  13,
 			Digest:   &digest,
 		},
 		Object: &anchor,
-	}
+	}, cryptolib.NewEmptyAddress(), *sui.RandomAddress())
 
-	batchProposal := NewBatchProposal(10, &anchorRef, util.NewFixedSizeBitVector(11), time.Now(), isc.NewRandomAgentID(), reqRefs)
+	batchProposal := NewBatchProposal(10, &stateAnchor, util.NewFixedSizeBitVector(11), time.Now(), isc.NewRandomAgentID(), reqRefs)
 
 	bpEncoded := lo.Must1(bcs.Marshal(batchProposal))
 	bpDecoded, err := bcs.Unmarshal[BatchProposal](bpEncoded)

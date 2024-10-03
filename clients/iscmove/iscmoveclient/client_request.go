@@ -108,18 +108,18 @@ func (c *Client) GetRequestFromObjectID(
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
-	var req iscmove.Request
+	var req moveRequest
 	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.assetsBag.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
-	req.AssetsBag.Value = bals
+	req.assetsBag.Value = bals
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: getObjectResponse.Data.Ref(),
-		Object:    &req,
+		Object:    req.ToRequest(),
 	}, nil
 }

@@ -296,29 +296,29 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	Ref        *iscmove.AnchorWithRef
+	Anchor     *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
 	ISCPackage sui.Address
 }
 
 func NewStateAnchor(
-	ref *iscmove.AnchorWithRef,
+	anchor *iscmove.AnchorWithRef,
 	owner *cryptolib.Address,
 	iscPackage sui.Address,
 ) StateAnchor {
 	return StateAnchor{
-		Ref:        ref,
+		Anchor:     anchor,
 		Owner:      owner,
 		ISCPackage: iscPackage,
 	}
 }
 
 func (s StateAnchor) GetObjectRef() *sui.ObjectRef {
-	return &s.Ref.ObjectRef
+	return &s.Anchor.ObjectRef
 }
 
 func (s StateAnchor) GetObjectID() *sui.ObjectID {
-	return s.Ref.ObjectID
+	return s.Anchor.ObjectID
 }
 
 func (s StateAnchor) GetAssets() *Assets {
@@ -326,18 +326,18 @@ func (s StateAnchor) GetAssets() *Assets {
 }
 
 func (s StateAnchor) GetStateMetadata() []byte {
-	return s.Ref.Object.StateMetadata
+	return s.Anchor.Object.StateMetadata
 }
 
 func (s StateAnchor) GetStateIndex() uint32 {
-	return s.Ref.Object.StateIndex
+	return s.Anchor.Object.StateIndex
 }
 func (s StateAnchor) Hash() hashing.HashValue {
-	return s.Ref.Hash()
+	return s.Anchor.Hash()
 }
 
 func (s StateAnchor) Equals(input *StateAnchor) bool {
-	return iscmove.AnchorWithRefEquals(*s.Ref, *input.Ref)
+	return iscmove.AnchorWithRefEquals(*s.Anchor, *input.Anchor)
 }
 
 type SendOptions struct {
