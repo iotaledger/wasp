@@ -9,8 +9,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -20,7 +20,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(suiclient.FundsFromFaucetAmount, keyPair)
 
 	// spin a new node
 	clu2 := newCluster(t, waspClusterOpts{

@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -73,12 +74,12 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 
 const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 
-func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	ethKey, ethAddr := newEthereumAccount()
 	walletKey, walletAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.T, err)
 
-	var amount uint64
+	var amount coin.Value
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
@@ -87,7 +88,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	tx, err := e.Chain.Client(walletKey).PostRequest(
 		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)),
 		chainclient.PostRequestParams{
-			Transfer:  isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
+			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
 			Allowance: isc.NewAssets(amount),
 		},
 	)

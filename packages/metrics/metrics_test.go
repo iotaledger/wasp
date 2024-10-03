@@ -4,15 +4,18 @@
 package metrics
 
 import (
-	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestRegister(t *testing.T) {
@@ -59,31 +62,47 @@ func TestRegister(t *testing.T) {
 }
 
 func createOnLedgerRequest() isc.OnLedgerRequest {
-	requestMetadata := &isc.RequestMetadata{
-		SenderContract: isc.ContractIdentityFromHname(isc.Hn("sender_contract")),
-		Message:        isc.NewMessage(isc.Hn("target_contract"), isc.Hn("entrypoint")),
-		Allowance:      isc.NewAssets(1),
-		GasBudget:      1000,
-	}
+	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
 
-	outputOn := &iotago.BasicOutput{
-		Amount: 123,
-		NativeTokens: iotago.NativeTokens{
-			&iotago.NativeToken{
-				ID:     [iotago.NativeTokenIDLength]byte{1},
-				Amount: big.NewInt(100),
+	requestRef := sui.RandomObjectRef()
+	const tokensForGas = 1 * isc.Million
+
+	request := &iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: *requestRef,
+		Object: &iscmove.Request{
+			ID:     *requestRef.ObjectID,
+			Sender: sender.Address(),
+			Message: iscmove.Message{
+				Contract: uint32(isc.Hn("target_contract")),
+				Function: uint32(isc.Hn("entrypoint")),
 			},
-		},
-		Features: iotago.Features{
-			&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
-			&iotago.SenderFeature{Address: tpkg.RandAliasAddress()},
-		},
-		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: tpkg.RandAliasAddress()},
+			AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
+				ID: *sui.RandomAddress(),
+				Value: &iscmove.AssetsBagWithBalances{
+					AssetsBag: iscmove.AssetsBag{
+						ID:   *sui.RandomAddress(),
+						Size: 1,
+					},
+					Balances: map[string]*suijsonrpc.Balance{
+						string(coin.BaseTokenType): {
+							CoinType:        string(coin.BaseTokenType),
+							CoinObjectCount: 1,
+							TotalBalance:    tokensForGas,
+						},
+					},
+				},
+			},
+			Allowance: []iscmove.CoinAllowance{
+				{
+					CoinType: string(coin.BaseTokenType),
+					Balance:  1,
+				},
+			},
+			GasBudget: 1000,
 		},
 	}
 
-	onLedgerRequest1, _ := isc.OnLedgerFromUTXO(outputOn, iotago.OutputID{})
+	onLedgerRequest1, _ := isc.OnLedgerFromRequest(request, cryptolib.NewRandomAddress())
 	return onLedgerRequest1
 }
 

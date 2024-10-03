@@ -3,7 +3,6 @@ package solo
 import (
 	"encoding/json"
 	"os"
-	"sync"
 
 	"github.com/stretchr/testify/require"
 
@@ -92,7 +91,6 @@ func (env *Solo) RestoreSnapshot(snapshot *Snapshot) {
 			OriginatorPrivateKey:   okp,
 			ValidatorFeeTarget:     val,
 			db:                     db,
-			writeMutex:             &sync.Mutex{},
 			migrationScheme:        &migrations.MigrationScheme{},
 		}
 		env.addChain(chainData)
