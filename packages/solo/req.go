@@ -62,7 +62,7 @@ func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceBaseTokens(amount coin.Value) *CallParams {
-	return r.AddAllowanceNativeTokens(coin.BaseTokenType, amount)
+	return r.AddAllowanceCoins(coin.BaseTokenType, amount)
 }
 
 // func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
@@ -76,7 +76,7 @@ func (r *CallParams) AddAllowanceBaseTokens(amount coin.Value) *CallParams {
 // 	return r
 // }
 
-func (r *CallParams) AddAllowanceNativeTokens(coinType coin.Type, amount coin.Value) *CallParams {
+func (r *CallParams) AddAllowanceCoins(coinType coin.Type, amount coin.Value) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
