@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -301,7 +300,7 @@ func (env *Solo) deployChain(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (chainData, *iscmove.AnchorWithRef) {
+) (chainData, *isc.StateAnchor) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	if chainOriginator == nil {
@@ -344,6 +343,7 @@ func (env *Solo) deployChain(
 		suiclient.DefaultGasBudget,
 		false,
 	)
+	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
 	env.logger.Infof(
@@ -360,7 +360,7 @@ func (env *Solo) deployChain(
 		OriginatorPrivateKey: chainOriginator,
 		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
-	}, anchorRef
+	}, nil
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
@@ -383,7 +383,7 @@ func (env *Solo) NewChainExt(
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) (*Chain, *iscmove.AnchorWithRef) {
+) (*Chain, *isc.StateAnchor) {
 	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
 
 	env.chainsMutex.Lock()
@@ -435,10 +435,14 @@ func (env *Solo) EnqueueRequests(requests map[isc.ChainID][]isc.Request) {
 	}
 }
 
-func (ch *Chain) GetLatestAnchor() *iscmove.AnchorWithRef {
+func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsSuiAddress())
 	require.NoError(ch.Env.T, err)
-	return anchor
+	return &isc.StateAnchor{
+		Ref:        anchor,
+		Owner:      ch.OriginatorAddress,
+		ISCPackage: ch.Env.ISCPackageID(),
+	}
 }
 
 // collateBatch selects requests which are not time locked

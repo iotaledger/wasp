@@ -305,7 +305,7 @@ func AddDummyTxWithTransferEvents(
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData = append(txData, assets.Bytes()...)
-	txData = append(txData, codec.Encode(ctx.StateAnchor().Ref.Object.StateIndex+1)...) // +1 because "current block = anchor state index +1"
+	txData = append(txData, codec.Encode(ctx.StateAnchor().GetStateIndex()+1)...) // +1 because "current block = anchor state index +1"
 	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
 
 	tx := types.NewTx(

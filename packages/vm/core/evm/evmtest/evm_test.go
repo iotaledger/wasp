@@ -24,7 +24,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
@@ -38,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -467,12 +467,12 @@ func TestISCNFTData(t *testing.T) {
 	// mint an NFT and send it to the chain
 	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
-	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
+	nft, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
 	require.NoError(t, err)
 	_, err = env.Chain.PostRequestSync(
 		solo.NewCallParams(accounts.FuncDeposit.Message()).
 			AddBaseTokens(100000).
-			WithNFT(nft).
+			WithObject(nft.ID).
 			WithMaxAffordableGasBudget().
 			WithSender(cryptolib.NewAddressFromSui(&nft.ID)),
 		issuerWallet,
@@ -948,7 +948,7 @@ func TestSendNFT(t *testing.T) {
 
 	iscTest := env.deployISCTestContract(ethKey)
 
-	nft, _, err := env.solo.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, []byte("foobar"))
+	nft, err := env.solo.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, []byte("foobar"))
 	require.NoError(t, err)
 	env.Chain.MustDepositNFT(nft, ethAgentID, env.Chain.OriginatorPrivateKey)
 
@@ -974,10 +974,7 @@ func TestSendNFT(t *testing.T) {
 	require.Empty(t, env.Chain.L2NFTs(ethAgentID))
 	require.Equal(t,
 		[]sui.ObjectID{nft.ID},
-		lo.Map(
-			lo.Values(env.solo.L1NFTs(receiver)),
-			func(v *iotago.NFTOutput, _ int) (ret sui.ObjectID) { return },
-		),
+		env.solo.L1NFTs(receiver),
 	)
 	// there must be 2 Transfer events emitted from the ERC721NFTs contract:
 	// 1. Transfer NFT ethAddress -> ISCTest
@@ -1020,7 +1017,7 @@ func TestERC721NFTs(t *testing.T) {
 		require.EqualValues(t, 0, n.Uint64())
 	}
 
-	nft, _, err := env.solo.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, []byte("foobar"))
+	nft, err := env.solo.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, []byte("foobar"))
 	require.NoError(t, err)
 	env.Chain.MustDepositNFT(nft, ethAgentID, env.Chain.OriginatorPrivateKey)
 
@@ -1108,7 +1105,7 @@ func TestERC721NFTCollection(t *testing.T) {
 		[]interface{}{`{"trait_type": "collection", "value": "super"}`},
 	)
 
-	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
+	collection, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.Bytes())
 	require.NoError(t, err)
 
 	nftMetadatas := []*isc.IRC27NFTMetadata{
@@ -1125,7 +1122,7 @@ func TestERC721NFTCollection(t *testing.T) {
 			[]interface{}{`{"trait_type": "Bar", "value": "Baz"}`},
 		),
 	}
-	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
+	allNFTs, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collection.ID,
 		lo.Map(nftMetadatas, func(item *isc.IRC27NFTMetadata, index int) []byte {
 			return item.Bytes()
 		}),
@@ -2705,10 +2702,9 @@ func TestL1DepositEVM(t *testing.T) {
 	// assert txData has the expected information (<agentID sender> + assets)
 	buf := (bytes.NewReader(tx.Data()))
 	rr := rwutil.NewReader(buf)
-	a := isc.AgentIDFromReader(rr)
+	a := bcs.MustUnmarshalStream[isc.AgentID](buf)
 	require.True(t, a.Equals(isc.NewAddressAgentID(l1Addr)))
-	var assets isc.Assets
-	assets.Read(buf)
+	assets := bcs.MustUnmarshalStream[isc.Assets](buf)
 
 	// blockIndex
 	blockIndex := rr.ReadUint32()

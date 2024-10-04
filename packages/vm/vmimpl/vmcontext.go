@@ -145,7 +145,7 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
-		PreviousL1Commitment:  lo.Must(transaction.L1CommitmentFromAnchor(vmctx.task.Anchor.Ref.Object)),
+		PreviousL1Commitment:  lo.Must(transaction.L1CommitmentFromAnchor(vmctx.task.Anchor)),
 		GasBurned:             vmctx.blockGas.burned,
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}

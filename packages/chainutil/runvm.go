@@ -56,7 +56,7 @@ func runISCTask(
 }
 
 func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnchor) (*migrations.MigrationScheme, error) {
-	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(anchor.Ref.Object)
+	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	if err != nil {
 		panic(err)
 	}

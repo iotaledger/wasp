@@ -15,10 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 // ensures a nodes resumes normal operation after rebooting
@@ -301,7 +301,7 @@ func TestRebootDuringTasks(t *testing.T) {
 		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 
-		env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
+		env.DepositFunds(suiclient.FundsFromFaucetAmount, keyPair)
 		client := env.Chain.Client(keyPair)
 
 		go func() {
@@ -353,7 +353,7 @@ func TestRebootDuringTasks(t *testing.T) {
 		keyPair2, _, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		// deposit funds, then move them via off-ledger request
-		env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair2)
+		env.DepositFunds(suiclient.FundsFromFaucetAmount, keyPair2)
 		client := env.Chain.Client(keyPair2)
 		targetAgentID := isc.NewRandomAgentID()
 		req, err := client.PostOffLedgerRequest(

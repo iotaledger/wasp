@@ -48,9 +48,9 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		panic("invalid params: must be at least 1 request")
 	}
 
-	prevL1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(task.Anchor.Ref.Object))
+	prevL1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(task.Anchor))
 	stateDraft := lo.Must(task.Store.NewStateDraft(task.Timestamp, prevL1Commitment))
-	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage, task.Anchor.Ref, task.Anchor.Owner)
+	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage, task.Anchor, task.Anchor.Owner)
 	vmctx := newVmContext(task, stateDraft, txbuilder)
 	vmctx.init()
 

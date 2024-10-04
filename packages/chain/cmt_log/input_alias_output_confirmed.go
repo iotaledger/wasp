@@ -6,15 +6,15 @@ package cmt_log
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type inputAliasOutputConfirmed struct {
-	aliasOutput *iscmove.AnchorWithRef
+	aliasOutput *isc.StateAnchor
 }
 
-func NewInputAliasOutputConfirmed(aliasOutput *iscmove.AnchorWithRef) gpa.Input {
+func NewInputAliasOutputConfirmed(aliasOutput *isc.StateAnchor) gpa.Input {
 	return &inputAliasOutputConfirmed{
 		aliasOutput: aliasOutput,
 	}

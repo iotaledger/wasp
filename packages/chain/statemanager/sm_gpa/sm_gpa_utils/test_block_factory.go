@@ -103,7 +103,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   		},
 	   	}
 
-	   aliasOutputs := make(map[state.BlockHash]*iscmove.AnchorWithRef)
+	   aliasOutputs := make(map[state.BlockHash]*isc.StateAnchor)
 	   originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	   aliasOutputs[originCommitment.BlockHash()] = originOutput
 	   chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
@@ -128,7 +128,7 @@ func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *iscmove.AnchorWithRef {
+func (bfT *BlockFactory) GetOriginAnchor() *isc.StateAnchor {
 	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0, isc.BaseTokenCoinInfo))
 }
 
@@ -198,13 +198,13 @@ func (bfT *BlockFactory) GetNextBlock(
 
 	newAnchorData := anchorData{
 		ref: &sui.ObjectRef{
-			ObjectID: consumedAnchor.ObjectRef.ObjectID,
-			Version:  consumedAnchor.ObjectRef.Version + 1,
+			ObjectID: consumedAnchor.GetObjectID(),
+			Version:  consumedAnchor.GetObjectRef().Version + 1,
 			Digest:   nil, // TODO
 		},
-		assets:       consumedAnchor.Object.Assets,
+		assets:       consumedAnchor.GetAssets(),
 		l1Commitment: newCommitment,
-		stateIndex:   consumedAnchor.Object.StateIndex + 1,
+		stateIndex:   consumedAnchor.GetStateIndex() + 1,
 	}
 	bfT.anchorData[newCommitment.BlockHash()] = newAnchorData
 
@@ -222,7 +222,7 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.AnchorWithRef {
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *isc.StateAnchor {
 	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
 
@@ -234,14 +234,18 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.Anch
 		PublicURL:     "",
 	}
 
-	return &iscmove.AnchorWithRef{
-		ObjectRef: *anchorData.ref,
-		Object: &iscmove.Anchor{
-			ID:            *anchorData.ref.ObjectID,
-			Assets:        anchorData.assets,
-			StateMetadata: metadata.Bytes(),
-			StateIndex:    anchorData.stateIndex,
+	return &isc.StateAnchor{
+		Ref: &iscmove.RefWithObject[iscmove.Anchor]{
+			ObjectRef: *anchorData.ref,
+			Object: &iscmove.Anchor{
+				ID:            *anchorData.ref.ObjectID,
+				Assets:        anchorData.assets,
+				StateMetadata: metadata.Bytes(),
+				StateIndex:    anchorData.stateIndex,
+			},
 		},
+		Owner:      nil,                            //FIXME
+		ISCPackage: *sui.MustAddressFromHex("0x0"), //FIXME,
 	}
 }
 

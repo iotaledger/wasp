@@ -3,8 +3,8 @@ package sm_inputs
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
@@ -18,15 +18,15 @@ type ConsensusStateProposal struct {
 
 var _ gpa.Input = &ConsensusStateProposal{}
 
-func NewConsensusStateProposal(ctx context.Context, anchor *iscmove.AnchorWithRef) (*ConsensusStateProposal, <-chan interface{}) {
-	commitment, err := transaction.L1CommitmentFromAnchor(anchor.Object)
+func NewConsensusStateProposal(ctx context.Context, anchor *isc.StateAnchor) (*ConsensusStateProposal, <-chan interface{}) {
+	commitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	if err != nil {
 		panic("Cannot make L1 commitment from anchor")
 	}
 	resultChannel := make(chan interface{}, 1)
 	return &ConsensusStateProposal{
 		context:      ctx,
-		stateIndex:   anchor.Object.StateIndex,
+		stateIndex:   anchor.GetStateIndex(),
 		l1Commitment: commitment,
 		resultCh:     resultChannel,
 	}, resultChannel

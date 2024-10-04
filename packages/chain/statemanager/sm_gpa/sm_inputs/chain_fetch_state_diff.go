@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
@@ -21,24 +21,24 @@ type ChainFetchStateDiff struct {
 
 var _ gpa.Input = &ChainFetchStateDiff{}
 
-func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *iscmove.AnchorWithRef) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
+func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.StateAnchor) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
 	if prevAnchor == nil {
 		// Only the current state is needed, if prevAO is unknown.
 		prevAnchor = nextAnchor
 	}
-	oldCommitment, err := transaction.L1CommitmentFromAnchor(prevAnchor.Object)
+	oldCommitment, err := transaction.L1CommitmentFromAnchor(prevAnchor)
 	if err != nil {
 		panic(fmt.Errorf("Cannot make L1 commitment from previous anchor, error: %w", err))
 	}
-	newCommitment, err := transaction.L1CommitmentFromAnchor(nextAnchor.Object)
+	newCommitment, err := transaction.L1CommitmentFromAnchor(nextAnchor)
 	if err != nil {
 		panic(fmt.Errorf("Cannot make L1 commitment from next anchor, error: %w", err))
 	}
 	resultChannel := make(chan *ChainFetchStateDiffResults, 1)
 	return &ChainFetchStateDiff{
 		context:         ctx,
-		oldStateIndex:   prevAnchor.Object.StateIndex,
-		newStateIndex:   nextAnchor.Object.StateIndex,
+		oldStateIndex:   prevAnchor.GetStateIndex(),
+		newStateIndex:   nextAnchor.GetStateIndex(),
 		oldL1Commitment: oldCommitment,
 		newL1Commitment: newCommitment,
 		resultCh:        resultChannel,

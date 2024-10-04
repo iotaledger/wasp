@@ -81,7 +81,6 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -101,14 +100,14 @@ type Output struct {
 	cmi *chainMgrImpl
 }
 
-func (o *Output) LatestActiveAliasOutput() *iscmove.AnchorWithRef {
+func (o *Output) LatestActiveAliasOutput() *isc.StateAnchor {
 	if o.cmi.needConsensus == nil {
 		return nil
 	}
 	return o.cmi.needConsensus.BaseAliasOutput
 }
-func (o *Output) LatestConfirmedAliasOutput() *iscmove.AnchorWithRef { return o.cmi.latestConfirmedAO }
-func (o *Output) NeedConsensus() *NeedConsensus                      { return o.cmi.needConsensus }
+func (o *Output) LatestConfirmedAliasOutput() *isc.StateAnchor { return o.cmi.latestConfirmedAO }
+func (o *Output) NeedConsensus() *NeedConsensus                { return o.cmi.needConsensus }
 func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] {
 	return o.cmi.needPublishTX
 }
@@ -126,11 +125,11 @@ type NeedConsensus struct {
 	CommitteeAddr   cryptolib.Address
 	LogIndex        cmt_log.LogIndex
 	DKShare         tcrypto.DKShare
-	BaseAliasOutput *iscmove.AnchorWithRef
+	BaseAliasOutput *isc.StateAnchor
 }
 
 func (nc *NeedConsensus) IsFor(output *cmt_log.Output) bool {
-	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(&nc.BaseAliasOutput.ObjectRef)
+	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(nc.BaseAliasOutput)
 }
 
 func (nc *NeedConsensus) String() string {
@@ -166,9 +165,9 @@ type chainMgrImpl struct {
 	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                          // All the committee log instances for this chain.
 	consensusStateRegistry     cmt_log.ConsensusStateRegistry                                // Persistent store for log indexes.
 	latestActiveCmt            *cryptolib.Address                                            // The latest active committee.
-	latestConfirmedAO          *iscmove.AnchorWithRef                                        // The latest confirmed AO (follows Active AO).
+	latestConfirmedAO          *isc.StateAnchor                                              // The latest confirmed AO (follows Active AO).
 	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)       // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *iscmove.AnchorWithRef)                               // We will call this to set new AO for the active state.
+	trackActiveStateCB         func(ao *isc.StateAnchor)                                     // We will call this to set new AO for the active state.
 	savePreliminaryBlockCB     func(block state.Block)                                       // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                 // Will be called, when a committee changes.
 	needConsensus              *NeedConsensus                                                // Query for a consensus.
@@ -199,7 +198,7 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
-	trackActiveStateCB func(ao *iscmove.AnchorWithRef),
+	trackActiveStateCB func(ao *isc.StateAnchor),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
 	deriveAOByQuorum bool,
@@ -537,8 +536,8 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
-		cmi.output.LatestConfirmedAliasOutput().ObjectID.String(),
-		cmi.output.LatestActiveAliasOutput().ObjectID.String(),
+		cmi.output.LatestConfirmedAliasOutput().GetObjectID().String(),
+		cmi.output.LatestActiveAliasOutput().GetObjectID().String(),
 	)
 }
 
