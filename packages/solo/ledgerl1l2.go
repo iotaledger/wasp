@@ -131,6 +131,7 @@ type NewNativeTokenParams struct {
 	tokenName     string
 	tokenSymbol   string
 	tokenDecimals uint8
+	coinType      coin.Type
 }
 
 // CreateFoundryGasBudgetBaseTokens always takes 100000 base tokens as gas budget and ftokens for the call
@@ -141,11 +142,11 @@ const (
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
-func (ch *Chain) NewNativeTokenParams(maxSupply *big.Int) *NewNativeTokenParams { //nolint:revive
+func (ch *Chain) NewNativeTokenParams(maxSupply coin.Value) *NewNativeTokenParams { //nolint:revive
 	ret := &NewNativeTokenParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{
-			MaximumSupply: maxSupply,
+			MaximumSupply: big.NewInt(int64(maxSupply.Uint64())),
 			MeltedTokens:  big.NewInt(0),
 			MintedTokens:  big.NewInt(0),
 		},
@@ -186,7 +187,7 @@ const (
 	allowanceForModifySupply          = 1 * isc.Million
 )
 
-func (fp *NewNativeTokenParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
+func (fp *NewNativeTokenParams) CreateFoundry() (uint32, coin.Type, error) {
 	panic("Implement solo::'CreateFoundry'")
 	/*
 

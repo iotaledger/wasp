@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -98,7 +97,7 @@ func (ch *Chain) AssertControlAddresses() {
 	require.EqualValues(ch.Env.T, ch.LatestBlock().StateIndex(), rec.SinceBlockIndex)
 }
 
-func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID *iotago.NFTID) bool {
+func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID sui.ObjectID) bool {
 	accNFTIDs := ch.L2NFTs(agentID)
 	for _, id := range accNFTIDs {
 		if bytes.Equal(id[:], nftID[:]) {

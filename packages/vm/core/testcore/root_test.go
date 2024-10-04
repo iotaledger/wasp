@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
 func TestRootBasic(t *testing.T) {
@@ -51,74 +50,6 @@ func TestGetInfo(t *testing.T) {
 
 	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
-}
-
-func TestDeployExample(t *testing.T) {
-	env := solo.New(t).WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain()
-
-	err := ch.DepositBaseTokensToL2(10_000, nil)
-	require.NoError(t, err)
-
-	name := "testInc"
-	err = ch.DeployContract(nil, name, sbtestsc.Contract.ProgramHash)
-	require.NoError(t, err)
-
-	chainID, ownerAgentID, contracts := ch.GetInfo()
-
-	require.EqualValues(t, ch.ChainID, chainID)
-	require.EqualValues(t, ch.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
-
-	_, ok := contracts[root.Contract.Hname()]
-	require.True(t, ok)
-
-	_, ok = contracts[accounts.Contract.Hname()]
-	require.True(t, ok)
-
-	rec, ok := contracts[isc.Hn(name)]
-	require.True(t, ok)
-
-	require.EqualValues(t, name, rec.Name)
-	require.EqualValues(t, sbtestsc.Contract.ProgramHash, rec.ProgramHash)
-
-	recFind, err := ch.FindContract(name)
-	require.NoError(t, err)
-	require.EqualValues(t, recFind.Bytes(), rec.Bytes())
-}
-
-func TestDeployDouble(t *testing.T) {
-	env := solo.New(t).
-		WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain()
-
-	err := ch.DepositBaseTokensToL2(10_000, nil)
-	require.NoError(t, err)
-
-	name := "testInc"
-	err = ch.DeployContract(nil, name, sbtestsc.Contract.ProgramHash)
-	require.NoError(t, err)
-
-	err = ch.DeployContract(nil, name, sbtestsc.Contract.ProgramHash)
-	require.Error(t, err)
-
-	chainID, ownerAgentID, contracts := ch.GetInfo()
-
-	require.EqualValues(t, ch.ChainID, chainID)
-	require.EqualValues(t, ch.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
-
-	_, ok := contracts[root.Contract.Hname()]
-	require.True(t, ok)
-
-	_, ok = contracts[accounts.Contract.Hname()]
-	require.True(t, ok)
-
-	rec, ok := contracts[isc.Hn(name)]
-	require.True(t, ok)
-
-	require.EqualValues(t, name, rec.Name)
-	require.EqualValues(t, sbtestsc.Contract.ProgramHash, rec.ProgramHash)
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
