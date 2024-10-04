@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/sui-go/suisigner"
@@ -114,21 +116,27 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	anchorRef, reqs, err := ncc.feed.FetchCurrentState(ctx)
+	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
 	if err != nil {
 		return err
 	}
-	ncc.anchorHandler(anchorRef)
+	panic("FIXME the owner should not be empty")
+	anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
+	ncc.anchorHandler(&anchor)
 	for _, req := range reqs {
-		ncc.requestHandler(req)
+		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromSui(moveAnchor.ObjectID))
+		if err != nil {
+			return err
+		}
+		ncc.requestHandler(onledgerReq)
 	}
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil
 }
 
-func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
+func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID sui.ObjectID) {
 	anchorUpdates := make(chan *iscmove.AnchorWithRef)
-	newRequests := make(chan *iscmove.Request)
+	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
 	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)
@@ -138,10 +146,16 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case anchorRef := <-anchorUpdates:
-				ncc.anchorHandler(anchorRef)
+			case moveAnchor := <-anchorUpdates:
+				panic("FIXME the owner should not be empty")
+				anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
+				ncc.anchorHandler(&anchor)
 			case req := <-newRequests:
-				ncc.requestHandler(req)
+				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromSui(&anchorID))
+				if err != nil {
+					panic(err)
+				}
+				ncc.requestHandler(onledgerReq)
 			}
 		}
 	}()

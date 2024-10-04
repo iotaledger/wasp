@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -111,7 +110,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *iscmove.Anchor) map[gpa.NodeID]gpa.Input {
+func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = cmt_log.NewInputAliasOutputConfirmed(ao)
@@ -119,7 +118,7 @@ func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *iscmove.Anch
 	return inputs
 }
 
-func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *iscmove.Anchor) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().ID, consReq.GetBaseAliasOutput().ID, nextAO)
@@ -127,7 +126,7 @@ func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Outp
 	return inputs
 }
 
-func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *iscmove.Anchor {
+func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *isc.StateAnchor {
 	outputID := testiotago.RandOutputID()
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       aliasID,

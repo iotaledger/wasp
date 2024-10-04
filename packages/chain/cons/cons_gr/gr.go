@@ -14,7 +14,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -49,7 +48,7 @@ func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) Cons
 }
 
 type Mempool interface {
-	ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.AnchorWithRef, consensusID ConsensusID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.StateAnchor, consensusID ConsensusID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
@@ -60,13 +59,13 @@ type StateMgr interface {
 	// in the database. Context is used to cancel a request.
 	ConsensusStateProposal(
 		ctx context.Context,
-		anchor *iscmove.AnchorWithRef,
+		anchor *isc.StateAnchor,
 	) <-chan interface{}
 	// State manager has to ensure all the data needed for the specified alias
 	// output (presented as aliasOutputID+stateCommitment) is present in the DB.
 	ConsensusDecidedState(
 		ctx context.Context,
-		anchor *iscmove.AnchorWithRef,
+		anchor *isc.StateAnchor,
 	) <-chan state.State
 	// State manager has to persistently store the block and respond only after
 	// the block was flushed to the disk. A WAL can be used for that as well.
@@ -93,7 +92,7 @@ func (o *Output) String() string {
 }
 
 type input struct {
-	baseAliasOutput *iscmove.AnchorWithRef
+	baseAliasOutput *isc.StateAnchor
 	outputCB        func(*Output)
 	recoverCB       func()
 }
@@ -213,7 +212,7 @@ func New(
 	return cgr
 }
 
-func (cgr *ConsGr) Input(baseAliasOutput *iscmove.AnchorWithRef, outputCB func(*Output), recoverCB func()) {
+func (cgr *ConsGr) Input(baseAliasOutput *isc.StateAnchor, outputCB func(*Output), recoverCB func()) {
 	wasReceivedBefore := cgr.inputReceived.Swap(true)
 	if wasReceivedBefore {
 		panic(fmt.Errorf("duplicate input: %v", baseAliasOutput))

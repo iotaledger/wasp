@@ -19,6 +19,6 @@ func (reqctx *requestContext) send(params isc.RequestParameters) {
 		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsSuiAddress(), params.Assets)
 	} else {
 		// sending cross chain request to a contract on the other chain
-		reqctx.vm.txbuilder.SendCrossChainRequest(params.TargetAddress.AsSuiAddress(), reqctx.vm.task.Anchor.Ref.ObjectID, params.Assets, params.Metadata)
+		reqctx.vm.txbuilder.SendCrossChainRequest(params.TargetAddress.AsSuiAddress(), reqctx.vm.task.Anchor.GetObjectID(), params.Assets, params.Metadata)
 	}
 }

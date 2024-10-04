@@ -1,6 +1,8 @@
 package iscmove
 
 import (
+	"bytes"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -83,15 +85,42 @@ type Anchor struct {
 	StateIndex    uint32
 }
 
-func (a *Anchor) GetStateIndex() uint32 {
-	return a.StateIndex
-}
-
-func (a *Anchor) Equals(b *Anchor) bool {
-	return a.ID.Equals(b.ID)
+func (a1 Anchor) Equals(a2 *Anchor) bool {
+	if !bytes.Equal(a1.ID[:], a2.ID[:]) {
+		return false
+	}
+	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+		return false
+	}
+	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+		return false
+	}
+	if !bytes.Equal(a1.Assets.Value.ID[:], a2.Assets.Value.ID[:]) {
+		return false
+	}
+	if a1.Assets.Value.Size != a2.Assets.Value.Size {
+		return false
+	}
+	if !bytes.Equal(a1.StateMetadata, a2.StateMetadata) {
+		return false
+	}
+	if a1.StateIndex != a2.StateIndex {
+		return false
+	}
+	return true
 }
 
 type AnchorWithRef = RefWithObject[Anchor]
+
+func AnchorWithRefEquals(a1 AnchorWithRef, a2 AnchorWithRef) bool {
+	if !a1.ObjectRef.Equals(&a2.ObjectRef) {
+		return false
+	}
+	if !a1.Object.Equals(a2.Object) {
+		return false
+	}
+	return true
+}
 
 type Receipt struct {
 	RequestID sui.ObjectID

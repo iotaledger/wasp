@@ -16,7 +16,7 @@ type AnchorTransactionBuilder struct {
 	iscPackage sui.Address
 
 	// anchorOutput output of the chain
-	anchor *iscmove.AnchorWithRef
+	anchor *isc.StateAnchor
 
 	// already consumed requests, specified by entire Request. It is needed for checking validity
 	consumed []isc.OnLedgerRequest
@@ -31,7 +31,7 @@ var _ TransactionBuilder = &AnchorTransactionBuilder{}
 // NewAnchorTransactionBuilder creates new AnchorTransactionBuilder object
 func NewAnchorTransactionBuilder(
 	iscPackage sui.Address,
-	anchor *iscmove.RefWithObject[iscmove.Anchor],
+	anchor *isc.StateAnchor,
 	ownerAddr *cryptolib.Address,
 ) *AnchorTransactionBuilder {
 	return &AnchorTransactionBuilder{
@@ -73,7 +73,7 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *sui.Address, assets *isc
 	txb.ptb = iscmoveclient.PTBTakeAndTransferCoinBalance(
 		txb.ptb,
 		txb.iscPackage,
-		txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef}),
+		txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		target,
 		assets,
 	)
@@ -85,7 +85,7 @@ func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *sui.Ad
 	}
 	txb.ptb = iscmoveclient.PTBAssetsBagNew(txb.ptb, txb.iscPackage, txb.ownerAddr)
 	argAssetsBag := txb.ptb.LastCommandResultArg()
-	argAnchor := txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef})
+	argAnchor := txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()})
 	for coinType, coinBalance := range assets.Coins {
 		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
 	}
@@ -115,7 +115,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 	ptb := iscmoveclient.PTBReceiveRequestAndTransition(
 		txb.ptb,
 		txb.iscPackage,
-		txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: &txb.anchor.ObjectRef}),
+		txb.ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		onRequestsToRequestRefs(txb.consumed),
 		onRequestsToAssetsBagMap(txb.consumed),
 		stateMetadata,

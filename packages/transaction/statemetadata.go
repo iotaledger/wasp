@@ -1,7 +1,6 @@
 package transaction
 
 import (
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -41,8 +40,8 @@ func (s *StateMetadata) Bytes() []byte {
 	return bcs.MustMarshal(s)
 }
 
-func L1CommitmentFromAnchor(anchor *iscmove.Anchor) (*state.L1Commitment, error) {
-	stateMetadata, err := StateMetadataFromBytes(anchor.StateMetadata)
+func L1CommitmentFromAnchor(anchor *isc.StateAnchor) (*state.L1Commitment, error) {
+	stateMetadata, err := StateMetadataFromBytes(anchor.GetStateMetadata())
 	if err != nil {
 		return nil, err
 	}

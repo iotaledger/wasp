@@ -64,7 +64,7 @@ func TestRequestsFeed(t *testing.T) {
 	}()
 
 	anchorUpdates := make(chan *iscmove.AnchorWithRef, 10)
-	newRequests := make(chan *iscmove.Request, 10)
+	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request], 10)
 	chainFeed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
 
 	// create a Request and send to anchor
@@ -89,7 +89,7 @@ func TestRequestsFeed(t *testing.T) {
 	require.NoError(t, err)
 
 	req := <-newRequests
-	require.Equal(t, *requestRef.ObjectID, req.ID)
+	require.Equal(t, *requestRef.ObjectID, req.Object.ID)
 
 	updatedAnchor, ownedReqs, err := chainFeed.FetchCurrentState(ctx)
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestRequestsFeed(t *testing.T) {
 	require.Equal(t, anchor.Version, updatedAnchor.Version)
 
 	require.Len(t, ownedReqs, 1)
-	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].ID)
+	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),

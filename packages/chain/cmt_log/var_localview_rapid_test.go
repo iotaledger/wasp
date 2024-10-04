@@ -39,7 +39,7 @@ var _ rapid.StateMachine = &varLocalViewSM{}
 
 func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
 	sm := new(varLocalViewSM)
-	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *iscmove.Anchor) {}, testlogger.NewLogger(t))
+	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *isc.StateAnchor) {}, testlogger.NewLogger(t))
 	sm.confirmed = []*iscmove.Anchor{}
 	sm.pending = []*iscmove.Anchor{}
 	sm.rejected = []*iscmove.Anchor{}
@@ -164,7 +164,7 @@ func (sm *varLocalViewSM) Check(t *rapid.T) {
 }
 
 // We don't use randomness to generate AOs because they have to be unique.
-func (sm *varLocalViewSM) nextAO(prevAO ...*iscmove.Anchor) *iscmove.Anchor {
+func (sm *varLocalViewSM) nextAO(prevAO ...*isc.StateAnchor) *isc.StateAnchor {
 	sm.utxoIDCounter++
 	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
 	utxoInput := iotago.UTXOInput{}

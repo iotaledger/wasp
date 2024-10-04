@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -21,7 +20,7 @@ type AggregatedBatchProposals struct {
 	shouldBeSkipped        bool
 	batchProposalSet       batchProposalSet
 	decidedIndexProposals  map[gpa.NodeID][]int
-	decidedBaseAliasOutput *iscmove.AnchorWithRef
+	decidedBaseAliasOutput *isc.StateAnchor
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
 }
@@ -78,7 +77,7 @@ func (abp *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][
 	return abp.decidedIndexProposals
 }
 
-func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *iscmove.AnchorWithRef {
+func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *isc.StateAnchor {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}

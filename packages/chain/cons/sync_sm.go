@@ -4,19 +4,19 @@
 package cons
 
 import (
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type SyncSM interface {
 	//
 	// State proposal.
-	ProposedBaseAliasOutputReceived(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages
+	ProposedBaseAliasOutputReceived(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
 	StateProposalConfirmedByStateMgr() gpa.OutMessages
 	//
 	// Decided state.
-	DecidedVirtualStateNeeded(decidedBaseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages
+	DecidedVirtualStateNeeded(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages
 	DecidedVirtualStateReceived(chainState state.State) gpa.OutMessages
 	//
 	// Save the block.
@@ -30,14 +30,14 @@ type SyncSM interface {
 type syncSMImpl struct {
 	//
 	// Query for a proposal.
-	proposedBaseAliasOutput         *iscmove.AnchorWithRef
-	stateProposalQueryInputsReadyCB func(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages
+	proposedBaseAliasOutput         *isc.StateAnchor
+	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
 	stateProposalReceived           bool
-	stateProposalReceivedCB         func(proposedAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages
+	stateProposalReceivedCB         func(proposedAliasOutput *isc.StateAnchor) gpa.OutMessages
 	//
 	// Query for a decided Virtual State.
-	decidedBaseAliasOutput         *iscmove.AnchorWithRef
-	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages
+	decidedBaseAliasOutput         *isc.StateAnchor
+	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages
 	decidedStateReceived           bool
 	decidedStateReceivedCB         func(chainState state.State) gpa.OutMessages
 	//
@@ -50,9 +50,9 @@ type syncSMImpl struct {
 }
 
 func NewSyncSM(
-	stateProposalQueryInputsReadyCB func(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages,
-	stateProposalReceivedCB func(proposedAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages,
-	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages,
+	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages,
+	stateProposalReceivedCB func(proposedAliasOutput *isc.StateAnchor) gpa.OutMessages,
+	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages,
 	decidedStateReceivedCB func(chainState state.State) gpa.OutMessages,
 	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages,
 	saveProducedBlockDoneCB func(savedBlock state.Block) gpa.OutMessages,
@@ -67,7 +67,7 @@ func NewSyncSM(
 	}
 }
 
-func (sub *syncSMImpl) ProposedBaseAliasOutputReceived(baseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
+func (sub *syncSMImpl) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	if sub.proposedBaseAliasOutput != nil {
 		return nil
 	}
@@ -83,7 +83,7 @@ func (sub *syncSMImpl) StateProposalConfirmedByStateMgr() gpa.OutMessages {
 	return sub.stateProposalReceivedCB(sub.proposedBaseAliasOutput)
 }
 
-func (sub *syncSMImpl) DecidedVirtualStateNeeded(decidedBaseAliasOutput *iscmove.AnchorWithRef) gpa.OutMessages {
+func (sub *syncSMImpl) DecidedVirtualStateNeeded(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	if sub.decidedBaseAliasOutput != nil {
 		return nil
 	}

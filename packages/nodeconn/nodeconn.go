@@ -99,7 +99,7 @@ func (nc *nodeConnection) AttachChain(
 			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
 			true)
 	}
-	ncc.subscribeToUpdates(ctx)
+	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
 
 	// disconnect the chain after the context is done
 	go func() {

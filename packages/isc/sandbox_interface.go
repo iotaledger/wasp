@@ -301,6 +301,45 @@ type StateAnchor struct {
 	ISCPackage sui.Address
 }
 
+func NewStateAnchor(
+	ref *iscmove.AnchorWithRef,
+	owner *cryptolib.Address,
+	iscPackage sui.Address,
+) StateAnchor {
+	return StateAnchor{
+		Ref:        ref,
+		Owner:      owner,
+		ISCPackage: iscPackage,
+	}
+}
+
+func (s StateAnchor) GetObjectRef() *sui.ObjectRef {
+	return &s.Ref.ObjectRef
+}
+
+func (s StateAnchor) GetObjectID() *sui.ObjectID {
+	return s.Ref.ObjectID
+}
+
+func (s StateAnchor) GetAssets() *Assets {
+	panic("unimplement")
+}
+
+func (s StateAnchor) GetStateMetadata() []byte {
+	return s.Ref.Object.StateMetadata
+}
+
+func (s StateAnchor) GetStateIndex() uint32 {
+	return s.Ref.Object.StateIndex
+}
+func (s StateAnchor) Hash() hashing.HashValue {
+	return s.Ref.Hash()
+}
+
+func (s StateAnchor) Equals(input *StateAnchor) bool {
+	return iscmove.AnchorWithRefEquals(*s.Ref, *input.Ref)
+}
+
 type SendOptions struct {
 	Timelock   time.Time
 	Expiration *Expiration

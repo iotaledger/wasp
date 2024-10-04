@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -109,11 +108,11 @@ func InitChain(
 
 func InitChainByAnchor(
 	chainStore state.Store,
-	anchor *iscmove.AnchorWithRef,
+	anchor *isc.StateAnchor,
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.SuiCoinInfo,
 ) (state.Block, error) {
-	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
 	if err != nil {
 		return nil, err
 	}

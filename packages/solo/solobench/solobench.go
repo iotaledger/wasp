@@ -41,7 +41,7 @@ func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams,
 		request, err := chain.Env.ISCMoveClient().GetRequestFromObjectID(chain.Env.Ctx(), &suiAddress)
 		require.NoError(b, err)
 
-		address := cryptolib.NewAddressFromSui(chain.GetLatestAnchor().ObjectID)
+		address := cryptolib.NewAddressFromSui(chain.GetLatestAnchor().GetObjectID())
 		iscRequest, err := isc.OnLedgerFromRequest(request, address)
 		require.NoError(b, err)
 
