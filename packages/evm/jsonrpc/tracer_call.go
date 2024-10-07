@@ -33,8 +33,29 @@ type callLog struct {
 	Position hexutil.Uint `json:"position"`
 }
 
+type OpCodeJSON struct {
+	vm.OpCode
+}
+
+func NewOpCodeJSON(code vm.OpCode) OpCodeJSON {
+	return OpCodeJSON{OpCode: code}
+}
+
+func (o OpCodeJSON) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToLower(o.String()))
+}
+
+func (o *OpCodeJSON) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	o.OpCode = vm.StringToOp(strings.ToUpper(s))
+	return nil
+}
+
 type CallFrame struct {
-	Type         vm.OpCode       `json:"type"`
+	Type         OpCodeJSON      `json:"type"`
 	From         common.Address  `json:"from"`
 	Gas          hexutil.Uint64  `json:"gas"`
 	GasUsed      hexutil.Uint64  `json:"gasUsed"`
@@ -49,37 +70,6 @@ type CallFrame struct {
 	// nil if there are non-empty elements after in the struct.
 	Value            hexutil.Big `json:"value,omitempty" rlp:"optional"`
 	revertedSnapshot bool
-}
-
-/*
-MarshalJSON / UnMarshalJSON functions are only there to return/take `Type` as a string (like `call`). Otherwise, it would simply return a number.
-It returns the type in lowercase as it was before. But EVM internal functions require uppercase, so it's converted to that in UnMarshal.
-*/
-func (f CallFrame) MarshalJSON() ([]byte, error) {
-	type Alias CallFrame
-	return json.Marshal(&struct {
-		Type string `json:"type"`
-		Alias
-	}{
-		Type:  strings.ToLower(f.Type.String()),
-		Alias: Alias(f),
-	})
-}
-
-func (f *CallFrame) UnmarshalJSON(data []byte) error {
-	type Alias CallFrame
-	aux := &struct {
-		Type string `json:"type"`
-		*Alias
-	}{
-		Alias: (*Alias)(f),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	// Convert string back to OpCode
-	f.Type = vm.StringToOp(strings.ToUpper(aux.Type))
-	return nil
 }
 
 func (f CallFrame) TypeString() string {
@@ -103,7 +93,7 @@ func (f *CallFrame) processOutput(output []byte, err error, reverted bool) {
 	}
 	f.Error = err.Error()
 	f.revertedSnapshot = reverted
-	if f.Type == vm.CREATE || f.Type == vm.CREATE2 {
+	if f.Type.OpCode == vm.CREATE || f.Type.OpCode == vm.CREATE2 {
 		f.To = nil
 	}
 	if !errors.Is(err, vm.ErrExecutionReverted) || len(output) == 0 {
@@ -193,7 +183,7 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 
 	toCopy := to
 	call := CallFrame{
-		Type:  vm.OpCode(typ),
+		Type:  NewOpCodeJSON(vm.OpCode(typ)),
 		From:  from,
 		To:    &toCopy,
 		Input: common.CopyBytes(input),
