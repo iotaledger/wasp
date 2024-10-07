@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -25,7 +26,7 @@ func TestBlockWALBasic(t *testing.T) {
 	blocksInWAL := blocks[:4]
 	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), mockBlockWALMetrics())
+	walBad, err := NewBlockWAL(log, constTestFolder, isctest.RandomChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])

@@ -55,7 +55,7 @@ func DecodeAgentID(e echo.Context) (isc.AgentID, error) {
 }
 
 func DecodeNFTID(e echo.Context) (*iotago.NFTID, error) {
-	nftIDBytes, err := iotago.DecodeHex(e.Param(ParamNFTID))
+	nftIDBytes, err := cryptolib.DecodeHex(e.Param(ParamNFTID))
 	if err != nil {
 		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
 	}

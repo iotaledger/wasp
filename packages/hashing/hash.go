@@ -2,6 +2,7 @@ package hashing
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -64,8 +66,11 @@ func MustHashValueFromHex(s string) HashValue {
 }
 
 func HashValueFromHex(s string) (HashValue, error) {
-	b, err := iotago.DecodeHex(s)
+	b, err := hexutil.Decode(s)
 	if err != nil {
+		if errors.Is(err, hexutil.ErrEmptyString) {
+			return NilHash, nil
+		}
 		return NilHash, err
 	}
 	return HashValueFromBytes(b)

@@ -5,12 +5,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 )
 
 func TestObjectRecordCodec(t *testing.T) {
 	bcs.TestCodec(t, &accounts.ObjectRecord{
-		ID:  *sui.RandomAddress(),
+		ID:  *suitest.RandomAddress(),
 		BCS: []byte{1, 2, 3},
 	})
 }

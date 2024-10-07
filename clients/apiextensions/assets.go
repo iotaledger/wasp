@@ -23,7 +23,7 @@ func AssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.Asset
 	assets := isc.NewAssets(coin.Value(baseTokens))
 	/*
 		for _, nativeToken := range assetsResponse.NativeTokens {
-			nativeTokenIDHex, err2 := iotago.DecodeHex(nativeToken.Id)
+			nativeTokenIDHex, err2 := cryptolib.DecodeHex(nativeToken.Id)
 			if err2 != nil {
 				return nil, err2
 			}

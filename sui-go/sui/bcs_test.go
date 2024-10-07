@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +30,7 @@ func TestBCS(t *testing.T) {
 				//Pure: &[]byte{1, 2, 3},
 				Object: &sui.ObjectArg{
 					SharedObject: &sui.SharedObjectArg{
-						Id:                   sui.RandomAddress(),
+						Id:                   suitest.RandomAddress(),
 						InitialSharedVersion: 13,
 						Mutable:              true,
 					},
@@ -39,7 +40,7 @@ func TestBCS(t *testing.T) {
 		Commands: []sui.Command{
 			{
 				MoveCall: &sui.ProgrammableMoveCall{
-					Package:  sui.RandomAddress(),
+					Package:  suitest.RandomAddress(),
 					Module:   "aaa",
 					Function: "bbb",
 					TypeArguments: []sui.TypeTag{

@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -51,7 +51,7 @@ func TestSuccessfulEventHandling(t *testing.T) {
 
 	subscriptionManager.Subscribe(1, string(publisher.ISCEventKindNewBlock))
 
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 
 	publisherEvent.Hook(func(iscEvent *ISCEvent) {
 		require.Exactly(t, iscEvent.ChainID, chainID.String())
@@ -61,7 +61,7 @@ func TestSuccessfulEventHandling(t *testing.T) {
 	pub.Events.NewBlock.Trigger(&publisher.ISCEvent[*publisher.BlockWithTrieRoot]{
 		Kind:    publisher.ISCEventKindNewBlock,
 		ChainID: chainID,
-		Issuer:  isc.NewRandomAgentID(),
+		Issuer:  isctest.NewRandomAgentID(),
 		Payload: &publisher.BlockWithTrieRoot{
 			BlockInfo: &blocklog.BlockInfo{},
 			TrieRoot:  trie.Hash{},

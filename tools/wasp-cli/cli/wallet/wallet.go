@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
@@ -75,7 +74,7 @@ func Migrate(provider WalletProvider) {
 		return
 	}
 
-	seedBytes, err := iotago.DecodeHex(seedHex)
+	seedBytes, err := cryptolib.DecodeHex(seedHex)
 	log.Check(err)
 	seed := cryptolib.SeedFromBytes(seedBytes)
 

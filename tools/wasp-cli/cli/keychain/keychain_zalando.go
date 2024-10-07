@@ -47,7 +47,7 @@ func (k *KeyChainZalando) GetSeed() (*cryptolib.Seed, error) {
 		return nil, err
 	}
 
-	seedBytes, err := iotago.DecodeHex(seedItem)
+	seedBytes, err := cryptolib.DecodeHex(seedItem)
 	if err != nil {
 		return nil, err
 	}

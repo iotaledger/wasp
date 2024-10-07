@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -118,7 +119,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 
 	//
 	offLedgerReq := isc.NewOffLedgerRequest(
-		isc.RandomChainID(),
+		isctest.RandomChainID(),
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -169,7 +170,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Add a message, we should get it now.
 	offLedgerReq2 := isc.NewOffLedgerRequest(
-		isc.RandomChainID(),
+		isctest.RandomChainID(),
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		1,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -475,7 +476,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// send nonces 0,1,3,6,10
 	createReqWithNonce := func(nonce uint64) isc.OffLedgerRequest {
 		return isc.NewOffLedgerRequest(
-			isc.RandomChainID(),
+			isctest.RandomChainID(),
 			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 			nonce,
 			gas.LimitsDefault.MaxGasPerRequest,
@@ -614,7 +615,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
 
 	initialReq := isc.NewOffLedgerRequest(
-		isc.RandomChainID(),
+		isctest.RandomChainID(),
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -624,7 +625,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	overwritingReq := isc.NewOffLedgerRequest(
-		isc.RandomChainID(),
+		isctest.RandomChainID(),
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -683,7 +684,7 @@ func TestTTL(t *testing.T) {
 
 	// send offledger request, assert it is returned, make 201ms pass, assert it is not returned anymore
 	offLedgerReq := isc.NewOffLedgerRequest(
-		isc.RandomChainID(),
+		isctest.RandomChainID(),
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), dict.New()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,

@@ -421,7 +421,7 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	decodedCert, err := iotago.DecodeHex(cert.Certificate)
+	decodedCert, err := cryptolib.DecodeHex(cert.Certificate)
 	if err != nil {
 		return nil, err
 	}

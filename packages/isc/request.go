@@ -24,7 +24,7 @@ type Request interface {
 }
 
 func init() {
-	bcs.RegisterEnumType4[Request, *onLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest]()
+	bcs.RegisterEnumType4[Request, *OnLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest]()
 }
 
 func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
@@ -81,7 +81,7 @@ type OnLedgerRequest interface {
 }
 
 func init() {
-	bcs.RegisterEnumType1[OnLedgerRequest, *onLedgerRequestData]()
+	bcs.RegisterEnumType1[OnLedgerRequest, *OnLedgerRequestData]()
 }
 
 func RequestHash(req Request) hashing.HashValue {

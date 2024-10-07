@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 )
 
@@ -398,7 +398,7 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 }
 
 func decodeAddress(s string) (common.Address, error) {
-	b, err := iotago.DecodeHex(s)
+	b, err := cryptolib.DecodeHex(s)
 	if err == nil && len(b) != common.AddressLength {
 		err = fmt.Errorf("hex has invalid length %d after decoding; expected %d for address", len(b), common.AddressLength)
 	}
@@ -406,7 +406,7 @@ func decodeAddress(s string) (common.Address, error) {
 }
 
 func decodeTopic(s string) (common.Hash, error) {
-	b, err := iotago.DecodeHex(s)
+	b, err := cryptolib.DecodeHex(s)
 	if err == nil && len(b) != common.HashLength {
 		err = fmt.Errorf("hex has invalid length %d after decoding; expected %d for topic", len(b), common.HashLength)
 	}

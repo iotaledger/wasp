@@ -9,6 +9,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	wasp_util "github.com/iotaledger/wasp/packages/util"
@@ -141,7 +142,7 @@ func initDecodeGasFeePolicy() *cobra.Command {
 		Short: "Translates gas fee policy from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			bytes, err := iotago.DecodeHex(args[0])
+			bytes, err := cryptolib.DecodeHex(args[0])
 			log.Check(err)
 			log.Printf(gas.MustFeePolicyFromBytes(bytes).String())
 		},

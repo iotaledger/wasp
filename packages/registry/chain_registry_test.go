@@ -3,16 +3,15 @@ package registry
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func TestNewChainStateDatabaseManager(t *testing.T) {
 	chainRecordRegistry, err := NewChainRecordRegistryImpl("")
 	require.NoError(t, err)
 
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 
 	err = chainRecordRegistry.AddChainRecord(NewChainRecord(chainID, false, nil))
 	require.NoError(t, err)

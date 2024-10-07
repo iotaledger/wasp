@@ -59,18 +59,18 @@ func (p *ChainNodeConnMetricsProvider) createForChain(chainID isc.ChainID) *Chai
 }
 
 type ChainNodeConnMetrics struct {
-	ncL1RequestReceived     prometheus.Counter
-	ncL1AliasOutputReceived prometheus.Counter
-	ncTXPublishStarted      prometheus.Counter
-	ncTXPublishResult       map[bool]prometheus.Observer
+	ncL1RequestReceived prometheus.Counter
+	ncL1AnchorReceived  prometheus.Counter
+	ncTXPublishStarted  prometheus.Counter
+	ncTXPublishResult   map[bool]prometheus.Observer
 }
 
 func newChainNodeConnMetrics(collectors *ChainNodeConnMetricsProvider, chainID isc.ChainID) *ChainNodeConnMetrics {
 	labels := getChainLabels(chainID)
 	return &ChainNodeConnMetrics{
-		ncL1RequestReceived:     collectors.l1RequestReceived.With(labels),
-		ncL1AliasOutputReceived: collectors.l1AliasOutputReceived.With(labels),
-		ncTXPublishStarted:      collectors.txPublishStarted.With(labels),
+		ncL1RequestReceived: collectors.l1RequestReceived.With(labels),
+		ncL1AnchorReceived:  collectors.l1AliasOutputReceived.With(labels),
+		ncTXPublishStarted:  collectors.txPublishStarted.With(labels),
 		ncTXPublishResult: map[bool]prometheus.Observer{
 			true:  collectors.txPublishResult.MustCurryWith(labels).With(prometheus.Labels{labelTxPublishResult: "confirmed"}),
 			false: collectors.txPublishResult.MustCurryWith(labels).With(prometheus.Labels{labelTxPublishResult: "rejected"}),
@@ -82,8 +82,8 @@ func (m *ChainNodeConnMetrics) L1RequestReceived() {
 	m.ncL1RequestReceived.Inc()
 }
 
-func (m *ChainNodeConnMetrics) L1AliasOutputReceived() {
-	m.ncL1AliasOutputReceived.Inc()
+func (m *ChainNodeConnMetrics) L1AnchorReceived() {
+	m.ncL1AnchorReceived.Inc()
 }
 
 func (m *ChainNodeConnMetrics) TXPublishStarted() {

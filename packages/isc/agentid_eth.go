@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -24,7 +24,7 @@ func NewEthereumAddressAgentID(chainID ChainID, eth common.Address) *EthereumAdd
 }
 
 func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAgentID, error) {
-	data, err := iotago.DecodeHex(contractPart)
+	data, err := cryptolib.DecodeHex(contractPart)
 	if err != nil {
 		return nil, err
 	}

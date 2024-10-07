@@ -39,7 +39,7 @@ func NewEmptyPublicKey() *PublicKey {
 }
 
 func PublicKeyFromString(s string) (publicKey *PublicKey, err error) {
-	bytes, err := iotago.DecodeHex(s)
+	bytes, err := DecodeHex(s)
 	if err != nil {
 		return publicKey, fmt.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}

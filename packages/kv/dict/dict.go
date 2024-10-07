@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/lo"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -246,12 +247,12 @@ func FromJSONDict(jsonDict JSONDict) (Dict, error) {
 
 	if jsonDict.Items != nil {
 		for _, k := range jsonDict.Items {
-			key, err := iotago.DecodeHex(k.Key)
+			key, err := cryptolib.DecodeHex(k.Key)
 			if err != nil {
 				return nil, err
 			}
 
-			value, err := iotago.DecodeHex(k.Value)
+			value, err := cryptolib.DecodeHex(k.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -274,11 +275,11 @@ func (d *Dict) UnmarshalJSON(b []byte) error {
 	}
 	*d = make(Dict)
 	for _, item := range j.Items {
-		k, err := iotago.DecodeHex(item.Key)
+		k, err := cryptolib.DecodeHex(item.Key)
 		if err != nil {
 			return err
 		}
-		v, err := iotago.DecodeHex(item.Value)
+		v, err := cryptolib.DecodeHex(item.Value)
 		if err != nil {
 			return err
 		}

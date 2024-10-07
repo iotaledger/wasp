@@ -2,7 +2,6 @@ package iscmove
 
 import (
 	"bytes"
-	mathrand "math/rand"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -55,13 +54,6 @@ type AssetsBag struct {
 	Size uint64
 }
 
-func RandomAssetsBag() AssetsBag {
-	return AssetsBag{
-		ID:   *sui.RandomAddress(),
-		Size: 0,
-	}
-}
-
 type AssetsBagBalances map[suijsonrpc.CoinType]*suijsonrpc.Balance
 
 type AssetsBagWithBalances struct {
@@ -99,43 +91,6 @@ func (a1 Anchor) Equals(a2 *Anchor) bool {
 		return false
 	}
 	return true
-}
-
-// test only
-type RandomAnchorOption struct {
-	ID            *sui.ObjectID
-	Assets        *AssetsBag
-	StateMetadata *[]byte
-	StateIndex    *uint32
-}
-
-func RandomAnchor(opt ...RandomAnchorOption) Anchor {
-	id := *sui.RandomAddress()
-	assets := AssetsBag{
-		ID:   *sui.RandomAddress(),
-		Size: uint64(mathrand.Int63()),
-	}
-	stateMetadata := make([]byte, 128)
-	mathrand.Read(stateMetadata)
-	stateIndex := uint32(mathrand.Int31())
-	if opt[0].ID != nil {
-		id = *opt[0].ID
-	}
-	if opt[0].Assets != nil {
-		assets = *opt[0].Assets
-	}
-	if opt[0].StateMetadata != nil {
-		stateMetadata = *opt[0].StateMetadata
-	}
-	if opt[0].StateIndex != nil {
-		stateIndex = *opt[0].StateIndex
-	}
-	return Anchor{
-		ID:            id,
-		Assets:        assets,
-		StateMetadata: stateMetadata,
-		StateIndex:    stateIndex,
-	}
 }
 
 type AnchorWithRef = RefWithObject[Anchor]

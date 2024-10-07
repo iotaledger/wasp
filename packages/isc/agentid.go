@@ -93,8 +93,3 @@ func AgentIDFromString(s string) (AgentID, error) {
 
 	return addressAgentIDFromString(s)
 }
-
-// NewRandomAgentID creates random AgentID
-func NewRandomAgentID() AgentID {
-	return NewContractAgentID(RandomChainID(), Hn("testName"))
-}

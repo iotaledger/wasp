@@ -106,7 +106,7 @@ type PeerStatus struct {
 	Connected  bool
 }
 
-type RequestHandler = func(req isc.Request)
+type RequestHandler = func(req isc.OnLedgerRequest)
 
 // The Anchor versions must be passed here in-order. The last one
 // is the current one.
@@ -124,7 +124,7 @@ type chainNodeImpl struct {
 	tangleTime          time.Time
 	mempool             mempool.Mempool
 	stateMgr            statemanager.StateMgr
-	recvAliasOutputPipe pipe.Pipe[isc.StateAnchor]
+	recvAnchorPipe      pipe.Pipe[isc.StateAnchor]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	recvMilestonePipe   pipe.Pipe[time.Time]
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
@@ -271,7 +271,7 @@ func New(
 		chainStore:             chainStore,
 		nodeConn:               nodeConn,
 		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
-		recvAliasOutputPipe:    pipe.NewInfinitePipe[isc.StateAnchor](),
+		recvAnchorPipe:         pipe.NewInfinitePipe[isc.StateAnchor](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
 		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
@@ -313,7 +313,7 @@ func New(
 		log:                    log,
 	}
 
-	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAliasOutputPipe", cni.recvAliasOutputPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAnchorPipe", cni.recvAnchorPipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-recvMilestonePipe", cni.recvMilestonePipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
@@ -432,36 +432,18 @@ func New(
 	})
 	//
 	// Attach to the L1.
-	recvRequestCB := func(outputInfo *isc.OutputInfo) {
-		log.Debugf("recvRequestCB[%p], consumed=%v, outputID=%v", cni, outputInfo.Consumed(), outputInfo.OutputID.ToHex())
+	recvRequestCB := func(req isc.OnLedgerRequest) {
+		log.Debugf("recvRequestCB[%p], requestID=%v", cni, req.ID())
 		cni.chainMetrics.NodeConn.L1RequestReceived()
-		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
-		if err != nil {
-			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
-			return
-		}
-		if req.IsInternalUTXO(cni.chainID) {
-			cni.log.Debugf("Ignoring internal UTXO with ID=%v, will not consider it a request: %v", outputInfo.OutputID.ToHex(), req.String())
-			return
-		}
 		cni.mempool.ReceiveOnLedgerRequest(req)
 	}
-	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
-	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
-		log.Debugf("recvAliasOutputCB[%p], %v", cni, outputInfo.OutputID.ToHex())
-		cni.chainMetrics.NodeConn.L1AliasOutputReceived()
-		if outputInfo.Consumed() {
-			// we don't need to send consumed alias outputs to the pipe
-			return
-		}
-		recvAliasOutputPipeInCh <- outputInfo.AliasOutputWithID()
+	recvAnchorPipeInCh := cni.recvAnchorPipe.In()
+	recvAnchorCB := func(anchor *isc.StateAnchor) {
+		log.Debugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
+		cni.chainMetrics.NodeConn.L1AnchorReceived()
+		recvAnchorPipeInCh <- *anchor
 	}
-	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
-	recvMilestoneCB := func(timestamp time.Time) {
-		log.Debugf("recvMilestoneCB[%p], %v", cni, timestamp)
-		recvMilestonePipeInCh <- timestamp
-	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB, onChainConnect, onChainDisconnect)
+	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
 	//
 	// Run the main thread.
 
@@ -497,7 +479,7 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
 	defer util.ExecuteIfNotNil(cleanupFunc)
 
-	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
+	recvAnchorPipeOutCh := cni.recvAnchorPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
 	netRecvPipeOutCh := cni.netRecvPipe.Out()
@@ -523,9 +505,9 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				continue
 			}
 			cni.handleTxPublished(ctx, txPublishResult)
-		case aliasOutput, ok := <-recvAliasOutputPipeOutCh:
+		case aliasOutput, ok := <-recvAnchorPipeOutCh:
 			if !ok {
-				recvAliasOutputPipeOutCh = nil
+				recvAnchorPipeOutCh = nil
 				continue
 			}
 			cni.handleAliasOutput(ctx, aliasOutput)

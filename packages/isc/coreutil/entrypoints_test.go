@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -238,7 +239,7 @@ func TestEntryPointViewFunc(t *testing.T) {
 	testViewFuncHandler := testViewFunc.WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
 		return id
 	})
-	testAgentIDInput := isc.NewRandomAgentID()
+	testAgentIDInput := isctest.NewRandomAgentID()
 
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(

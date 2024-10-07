@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
@@ -355,7 +356,7 @@ func TestRebootDuringTasks(t *testing.T) {
 		// deposit funds, then move them via off-ledger request
 		env.DepositFunds(suiclient.FundsFromFaucetAmount, keyPair2)
 		client := env.Chain.Client(keyPair2)
-		targetAgentID := isc.NewRandomAgentID()
+		targetAgentID := isctest.NewRandomAgentID()
 		req, err := client.PostOffLedgerRequest(
 			context.Background(),
 			accounts.FuncTransferAllowanceTo.Message(targetAgentID),

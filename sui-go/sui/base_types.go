@@ -3,7 +3,6 @@ package sui
 import (
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 
 	"github.com/iotaledger/wasp/sui-go/sui/serialization"
 )
@@ -80,14 +79,6 @@ func ObjectRefFromBytes(b []byte) *ObjectRef {
 	ref.ObjectID = AddressFromArray(arr)
 	// TODO: Why Digest is not read here?
 	return &ref
-}
-
-func RandomObjectRef() *ObjectRef {
-	return &ObjectRef{
-		ObjectID: RandomAddress(),
-		Version:  rand.Uint64(),
-		Digest:   RandomDigest(),
-	}
 }
 
 func (or *ObjectRef) Equals(other *ObjectRef) bool {
