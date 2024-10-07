@@ -78,7 +78,7 @@ func TestStructCodec(t *testing.T) {
 type WitUnexported struct {
 	A int
 	b int
-	c int `bcs:""`
+	c int `bcs:"export"`
 	D int `bcs:"-"`
 }
 
@@ -114,7 +114,7 @@ type WithEmbeddedPrivate struct {
 }
 
 type WithEmbeddedPrivateWithTag struct {
-	embeddedPrivate `bcs:""`
+	embeddedPrivate `bcs:"export"`
 	B               int
 }
 

@@ -674,7 +674,7 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 	t := v.Type()
 
 	for i := 0; i < v.NumField(); i++ {
-		fieldOpts, hasTag := tInfo.FieldOptions[i], tInfo.FieldHasTag[i]
+		fieldOpts := tInfo.FieldOptions[i]
 		if fieldOpts.Skip {
 			continue
 		}
@@ -683,8 +683,8 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 		fieldVal := v.Field(i)
 
 		if !fieldType.IsExported() {
-			if !hasTag {
-				// Unexported fields without tags are skipped
+			if !fieldOpts.ExportAnonymousField {
+				// Unexported fields are skipped by default if not explicitly marked as exported
 				continue
 			}
 

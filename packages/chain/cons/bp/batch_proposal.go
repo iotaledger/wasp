@@ -12,12 +12,12 @@ import (
 )
 
 type BatchProposal struct {
-	nodeIndex               uint16            `bcs:""` // Just for a double-check.
-	baseAliasOutput         *isc.StateAnchor  `bcs:""` // Proposed Base AliasOutput to use.
-	dssIndexProposal        util.BitVector    `bcs:""` // DSS Index proposal.
-	timeData                time.Time         `bcs:""` // Our view of time.
-	validatorFeeDestination isc.AgentID       `bcs:""` // Proposed destination for fees.
-	requestRefs             []*isc.RequestRef `bcs:""` // Requests we propose to include into the execution.
+	nodeIndex               uint16            `bcs:"export"` // Just for a double-check.
+	baseAliasOutput         *isc.StateAnchor  `bcs:"export"` // Proposed Base AliasOutput to use.
+	dssIndexProposal        util.BitVector    `bcs:"export"` // DSS Index proposal.
+	timeData                time.Time         `bcs:"export"` // Our view of time.
+	validatorFeeDestination isc.AgentID       `bcs:"export"` // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef `bcs:"export"` // Requests we propose to include into the execution.
 	//
 	// TODO: Add these fields? How to aggregate them?
 	//

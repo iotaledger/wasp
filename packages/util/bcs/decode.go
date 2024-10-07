@@ -641,7 +641,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 	for i := 0; i < v.NumField(); i++ {
 		fieldType := t.Field(i)
-		fieldOpts, hasTag := tInfo.FieldOptions[i], tInfo.FieldHasTag[i]
+		fieldOpts := tInfo.FieldOptions[i]
 
 		if fieldOpts.Skip {
 			continue
@@ -650,7 +650,8 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 		fieldVal := v.Field(i)
 
 		if !fieldType.IsExported() {
-			if !hasTag {
+			if !fieldOpts.ExportAnonymousField {
+				// Unexported fields are skipped by default if not explicitly marked as exported
 				continue
 			}
 

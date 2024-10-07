@@ -17,8 +17,8 @@ import (
 
 // evmOffLedgerTxRequest is used to wrap an EVM tx
 type evmOffLedgerTxRequest struct {
-	chainID ChainID                 `bcs:""`
-	tx      *types.Transaction      `bcs:""`
+	chainID ChainID                 `bcs:"export"`
+	tx      *types.Transaction      `bcs:"export"`
 	sender  *EthereumAddressAgentID // not serialized
 }
 

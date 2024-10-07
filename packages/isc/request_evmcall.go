@@ -18,8 +18,8 @@ import (
 
 // evmOffLedgerCallRequest is used to wrap an EVM call (for the eth_call or eth_estimateGas jsonrpc methods)
 type evmOffLedgerCallRequest struct {
-	chainID ChainID          `bcs:""`
-	callMsg ethereum.CallMsg `bcs:""`
+	chainID ChainID          `bcs:"export"`
+	callMsg ethereum.CallMsg `bcs:"export"`
 }
 
 var _ OffLedgerRequest = &evmOffLedgerCallRequest{}

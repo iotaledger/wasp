@@ -24,8 +24,8 @@ func init() {
 }
 
 type fixBitVector struct {
-	size uint16 `bcs:""`
-	data []byte `bcs:""`
+	size uint16 `bcs:"export"`
+	data []byte `bcs:"export"`
 }
 
 func NewFixedSizeBitVector(size uint16) BitVector {

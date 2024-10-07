@@ -12,7 +12,7 @@ import (
 type msgBLSPartialSig struct {
 	gpa.BasicMessage
 	blsSuite   suites.Suite
-	partialSig []byte `bcs:""`
+	partialSig []byte `bcs:"export"`
 }
 
 var _ gpa.Message = new(msgBLSPartialSig)

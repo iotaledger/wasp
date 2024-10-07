@@ -8,7 +8,7 @@ import (
 
 // AddressAgentID is an AgentID backed by a L1 address
 type AddressAgentID struct {
-	a *cryptolib.Address `bcs:""`
+	a *cryptolib.Address `bcs:"export"`
 }
 
 var _ AgentIDWithL1Address = &AddressAgentID{}

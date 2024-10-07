@@ -53,7 +53,7 @@ type VMErrorBase interface {
 }
 
 type VMErrorTemplate struct {
-	code          VMErrorCode `bcs:""`
+	code          VMErrorCode `bcs:"export"`
 	messageFormat string
 }
 
@@ -149,8 +149,8 @@ func humanlyReadableParams(params []VMParam) []string {
 }
 
 type VMError struct {
-	template *VMErrorTemplate `bcs:""`
-	params   []VMParam        `bcs:""`
+	template *VMErrorTemplate `bcs:"export"`
+	params   []VMParam        `bcs:"export"`
 }
 
 var _ VMErrorBase = &VMError{}

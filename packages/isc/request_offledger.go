@@ -15,12 +15,12 @@ import (
 )
 
 type OffLedgerRequestData struct {
-	allowance *Assets              `bcs:""`
-	chainID   ChainID              `bcs:""`
-	msg       Message              `bcs:""`
-	gasBudget uint64               `bcs:""`
-	nonce     uint64               `bcs:""`
-	signature *cryptolib.Signature `bcs:""`
+	allowance *Assets              `bcs:"export"`
+	chainID   ChainID              `bcs:"export"`
+	msg       Message              `bcs:"export"`
+	gasBudget uint64               `bcs:"export"`
+	nonce     uint64               `bcs:"export"`
+	signature *cryptolib.Signature `bcs:"export"`
 }
 
 var (
