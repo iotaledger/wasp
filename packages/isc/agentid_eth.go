@@ -13,8 +13,8 @@ import (
 
 // EthereumAddressAgentID is an AgentID formed by an Ethereum address
 type EthereumAddressAgentID struct {
-	chainID ChainID        `bcs:""`
-	eth     common.Address `bcs:""`
+	chainID ChainID        `bcs:"export"`
+	eth     common.Address `bcs:"export"`
 }
 
 var _ AgentID = &EthereumAddressAgentID{}

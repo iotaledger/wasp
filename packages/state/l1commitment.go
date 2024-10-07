@@ -11,9 +11,9 @@ import (
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	trieRoot trie.Hash `bcs:""`
+	trieRoot trie.Hash `bcs:"export"`
 	// hash of the essence of the block
-	blockHash BlockHash `bcs:""`
+	blockHash BlockHash `bcs:"export"`
 }
 
 const L1CommitmentSize = trie.HashSizeBytes + BlockHashSize

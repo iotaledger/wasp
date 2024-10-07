@@ -145,7 +145,7 @@ v := bcs.MustUnmarshal[string](encoded)
 
 Structures are encoded/decoded same way as basic types. Fields are encoded in the order of their definition. Fields may have any encodable type, including nested structs and collections.
 
-Only **public** **fields** of structure are serialized **by default**. To include **private fields** in serialization they must have `bcs` tag. Empty tag is allowed: \`bcs:""`.
+Only **public** **fields** of structure are serialized **by default**. To include **private fields** use  `bcs:"export"`.
 
 To **exclude field** from serialization, use \`bcs:"-"\`.
 
@@ -154,7 +154,7 @@ type TestStruct struct {
    A int
    B string
    C []byte `bcs:"-"` // excluded
-   d bool   `bcs:""` // notice fiels is unexported
+   d bool   `bcs:"export"` // notice fiels is unexported, but we force it to be exported through BCS
 }
 
 v := TestStruct{10, "hello", true}
@@ -359,7 +359,7 @@ Example:
 ```
 type TestStruct struct {
    I *int        `bcs:"optional"`
-   hidden bool   `bcs:""`
+   hidden bool   `bcs:"export"`
    Excluded bool `bcs:"-"`
    S []*int64    `bcs:"len_bytes=4" bcs_elem:"compact"`
    M map[int]int `bcs:"len_bytes=2" bcs_key:"type=int32" bcs_value:"bytearr"`
@@ -482,6 +482,9 @@ func init() {
 Type can have custom initializer function to be executed after the value is decoded.
 It is implemented by defining **BCSInit** method. It **must** have **pointer receiver**.
 
+Serialization will **fail** if unexported field has BCS tag, but is not marked as "export". Reason: such case signals mixed intention.
+Serialization will also **fail** if already exported field has "export" tag. Reason: engineers might have a standard expectation, that when field is renamed it becomes hidden. But they may forget about BCS serialization.
+
 ```
 type TestStruct struct {
    A int
@@ -494,6 +497,18 @@ func (s *TestStruct) BCSInit() error {
 ```
 
 #### Available field tags
+
+###### "export"
+
+Marks unexported field to be exported through BCS.
+Appicable to: **unexported fields of structrures**.
+
+```
+type TestStruct struct {
+   unexportedField         int                   // This field won't be serialized because it is unexported
+   unexportedButSerialized string `bcs:"export"` // Although this field is unexported too, it will be serialized 
+}
+```
 
 ###### "optional"
 

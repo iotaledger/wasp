@@ -296,8 +296,8 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 
 type ackHandlerReset struct {
 	BasicMessage
-	response bool `bcs:""`
-	latestID int  `bcs:""`
+	response bool `bcs:"export"`
+	latestID int  `bcs:"export"`
 }
 
 var _ Message = new(ackHandlerReset)
@@ -313,9 +313,9 @@ func (msg *ackHandlerReset) MsgType() MessageType {
 type ackHandlerBatch struct {
 	sender    NodeID
 	recipient NodeID
-	id        *int       `bcs:"optional"`                       // That's ACK only, if nil.
-	msgs      []Message  `bcs:"len_bytes=2" bcs_elem:"bytearr"` // Messages in the batch.
-	acks      []int      `bcs:"len_bytes=2"`                    // Acknowledged batches.
+	id        *int       `bcs:"export,optional"`                       // That's ACK only, if nil.
+	msgs      []Message  `bcs:"export,len_bytes=2" bcs_elem:"bytearr"` // Messages in the batch.
+	acks      []int      `bcs:"export,len_bytes=2"`                    // Acknowledged batches.
 	sent      *time.Time // Transient, only used for outgoing messages, not sent to the outside.
 	nestedGPA GPA        // Transient, for un-marshaling only.
 }

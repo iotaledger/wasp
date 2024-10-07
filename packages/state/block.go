@@ -19,9 +19,9 @@ import (
 )
 
 type block struct {
-	trieRoot             trie.Hash           `bcs:""`
-	mutations            *buffered.Mutations `bcs:""`
-	previousL1Commitment *L1Commitment       `bcs:"optional"`
+	trieRoot             trie.Hash           `bcs:"export"`
+	mutations            *buffered.Mutations `bcs:"export"`
+	previousL1Commitment *L1Commitment       `bcs:"export,optional"`
 }
 
 var _ Block = &block{}

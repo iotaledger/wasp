@@ -16,8 +16,9 @@ type TypeOptions struct {
 	// TODO: Isthis really useful? The engineer can just change type of int to indicate its size.
 	UnderlayingType reflect.Kind
 
-	IsCompactInt       bool
-	InterfaceIsNotEnum bool
+	IsCompactInt         bool
+	InterfaceIsNotEnum   bool
+	ExportAnonymousField bool
 
 	ArrayElement *ArrayElemOptions
 	MapKey       *TypeOptions
@@ -59,6 +60,9 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	}
 	if other.InterfaceIsNotEnum {
 		o.InterfaceIsNotEnum = true
+	}
+	if other.ExportAnonymousField {
+		o.ExportAnonymousField = true
 	}
 	if other.ArrayElement != nil {
 		if o.ArrayElement == nil {
@@ -220,8 +224,10 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 			opts.AsByteArray = true
 		case "not_enum":
 			opts.InterfaceIsNotEnum = true
+		case "export":
+			opts.ExportAnonymousField = true
 		case "":
-			return FieldOptions{}, fmt.Errorf("empty field tag")
+			return FieldOptions{}, fmt.Errorf("empty field tag entry")
 		default:
 			return FieldOptions{}, fmt.Errorf("unknown field tag: %s", key)
 		}

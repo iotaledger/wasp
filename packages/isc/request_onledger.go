@@ -12,12 +12,12 @@ import (
 )
 
 type onLedgerRequestData struct {
-	requestRef      sui.ObjectRef      `bcs:""`
-	senderAddress   *cryptolib.Address `bcs:""`
-	targetAddress   *cryptolib.Address `bcs:""`
+	requestRef      sui.ObjectRef      `bcs:"export"`
+	senderAddress   *cryptolib.Address `bcs:"export"`
+	targetAddress   *cryptolib.Address `bcs:"export"`
 	assets          *Assets
 	assetsBag       *iscmove.AssetsBag
-	requestMetadata *RequestMetadata `bcs:""`
+	requestMetadata *RequestMetadata `bcs:"export"`
 }
 
 var (

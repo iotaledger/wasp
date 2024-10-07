@@ -650,13 +650,20 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 		fieldVal := v.Field(i)
 
 		if !fieldType.IsExported() {
-			if !hasTag {
+			if !fieldOpts.ExportAnonymousField {
+				if hasTag {
+					return d.handleErrorf("%v: unexported field %v has tag, but is not marked for export", t.Name(), fieldType.Name)
+				}
+
+				// Unexported fields are skipped by default if not explicitly marked as exported
 				continue
 			}
 
 			// The field is unexported, but it has a tag, so we need to serialize it.
 			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
+		} else if fieldOpts.ExportAnonymousField {
+			return d.handleErrorf("%v: field %v is already exported, but is marked for export", t.Name(), fieldType.Name)
 		}
 
 		fieldKind := fieldVal.Kind()

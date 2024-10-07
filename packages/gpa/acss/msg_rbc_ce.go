@@ -15,7 +15,7 @@ import (
 type msgRBCCEPayload struct {
 	gpa.BasicMessage
 	suite suites.Suite
-	data  []byte `bcs:""`
+	data  []byte `bcs:"export"`
 	err   error  // Transient field, should not be serialized.
 }
 

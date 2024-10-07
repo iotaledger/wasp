@@ -11,10 +11,10 @@ import (
 // Send by a node which has a chain enabled to a node it considers an access node.
 type msgAccess struct {
 	gpa.BasicMessage
-	senderLClock    int           `bcs:"type=u32"`
-	receiverLClock  int           `bcs:"type=u32"`
-	accessForChains []isc.ChainID `bcs:"len_bytes=2"`
-	serverForChains []isc.ChainID `bcs:"len_bytes=2"`
+	senderLClock    int           `bcs:"export,type=u32"`
+	receiverLClock  int           `bcs:"export,type=u32"`
+	accessForChains []isc.ChainID `bcs:"export,len_bytes=2"`
+	serverForChains []isc.ChainID `bcs:"export,len_bytes=2"`
 }
 
 var _ gpa.Message = new(msgAccess)

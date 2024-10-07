@@ -10,8 +10,8 @@ import (
 
 type msgShareRequest struct {
 	gpa.BasicMessage
-	ttl     byte        `bcs:""`
-	request isc.Request `bcs:""`
+	ttl     byte        `bcs:"export"`
+	request isc.Request `bcs:"export"`
 }
 
 var _ gpa.Message = new(msgShareRequest)
