@@ -559,7 +559,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	c.output.NeedVMResult = &vm.VMTask{
 		Processors: c.processorCache,
 		Anchor: &isc.StateAnchor{
-			Ref: decidedBaseAliasOutput.Ref,
+			Anchor: decidedBaseAliasOutput.Anchor,
 		},
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),

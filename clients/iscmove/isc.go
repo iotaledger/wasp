@@ -2,6 +2,7 @@ package iscmove
 
 import (
 	"bytes"
+	mathrand "math/rand"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -16,7 +17,6 @@ const (
 
 	AssetsBagModuleName = "assets_bag"
 	AssetsBagObjectName = "AssetsBag"
-	AssetObjectName     = "Asset"
 
 	RequestModuleName      = "request"
 	RequestObjectName      = "Request"
@@ -37,23 +37,6 @@ const (
   * Type "Table" is a typed map: map[K]V
 */
 
-// Related to: https://github.com/iotaledger/kinesis/tree/isc-suijsonrpc/dapps/isc/sources
-// Might change completely: https://github.com/iotaledger/iota/pull/370#discussion_r1617682560
-type AllowanceWithVales struct {
-	CoinAmounts []uint64
-	CoinTypes   []suijsonrpc.CoinType
-	NFTs        []sui.ObjectID
-}
-
-type Allowance struct {
-	ID sui.ObjectID
-}
-
-type Referent[T any] struct {
-	ID    sui.ObjectID
-	Value *T `bcs:"optional"`
-}
-
 type RefWithObject[T any] struct {
 	sui.ObjectRef
 	Object *T
@@ -72,6 +55,13 @@ type AssetsBag struct {
 	Size uint64
 }
 
+func RandomAssetsBag() AssetsBag {
+	return AssetsBag{
+		ID:   *sui.RandomAddress(),
+		Size: 0,
+	}
+}
+
 type AssetsBagBalances map[suijsonrpc.CoinType]*suijsonrpc.Balance
 
 type AssetsBagWithBalances struct {
@@ -79,10 +69,9 @@ type AssetsBagWithBalances struct {
 	Balances AssetsBagBalances `bcs:"-"`
 }
 
-// Anchor is the BCS equivalent for the move type Anchor
 type Anchor struct {
 	ID            sui.ObjectID
-	Assets        Referent[AssetsBag]
+	Assets        AssetsBag
 	StateMetadata []byte
 	StateIndex    uint32
 }
@@ -97,10 +86,10 @@ func (a1 Anchor) Equals(a2 *Anchor) bool {
 	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
 		return false
 	}
-	if !bytes.Equal(a1.Assets.Value.ID[:], a2.Assets.Value.ID[:]) {
+	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
 		return false
 	}
-	if a1.Assets.Value.Size != a2.Assets.Value.Size {
+	if a1.Assets.Size != a2.Assets.Size {
 		return false
 	}
 	if !bytes.Equal(a1.StateMetadata, a2.StateMetadata) {
@@ -110,6 +99,43 @@ func (a1 Anchor) Equals(a2 *Anchor) bool {
 		return false
 	}
 	return true
+}
+
+// test only
+type RandomAnchorOption struct {
+	ID            *sui.ObjectID
+	Assets        *AssetsBag
+	StateMetadata *[]byte
+	StateIndex    *uint32
+}
+
+func RandomAnchor(opt ...RandomAnchorOption) Anchor {
+	id := *sui.RandomAddress()
+	assets := AssetsBag{
+		ID:   *sui.RandomAddress(),
+		Size: uint64(mathrand.Int63()),
+	}
+	stateMetadata := make([]byte, 128)
+	mathrand.Read(stateMetadata)
+	stateIndex := uint32(mathrand.Int31())
+	if opt[0].ID != nil {
+		id = *opt[0].ID
+	}
+	if opt[0].Assets != nil {
+		assets = *opt[0].Assets
+	}
+	if opt[0].StateMetadata != nil {
+		stateMetadata = *opt[0].StateMetadata
+	}
+	if opt[0].StateIndex != nil {
+		stateIndex = *opt[0].StateIndex
+	}
+	return Anchor{
+		ID:            id,
+		Assets:        assets,
+		StateMetadata: stateMetadata,
+		StateIndex:    stateIndex,
+	}
 }
 
 type AnchorWithRef = RefWithObject[Anchor]
@@ -135,7 +161,7 @@ type Message struct {
 }
 
 type CoinAllowance struct {
-	CoinType string
+	CoinType suijsonrpc.CoinType
 	Balance  uint64
 }
 
@@ -143,10 +169,15 @@ type Request struct {
 	ID     sui.ObjectID
 	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
-	AssetsBag Referent[AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
 	Allowance []CoinAllowance
 	GasBudget uint64
+}
+
+type RequestEvent struct {
+	RequestID sui.ObjectID
+	Anchor    sui.Address
 }
 
 // Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move

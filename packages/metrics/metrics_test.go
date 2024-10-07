@@ -76,19 +76,16 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 				Contract: uint32(isc.Hn("target_contract")),
 				Function: uint32(isc.Hn("entrypoint")),
 			},
-			AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
-				ID: *sui.RandomAddress(),
-				Value: &iscmove.AssetsBagWithBalances{
-					AssetsBag: iscmove.AssetsBag{
-						ID:   *sui.RandomAddress(),
-						Size: 1,
-					},
-					Balances: map[string]*suijsonrpc.Balance{
-						string(coin.BaseTokenType): {
-							CoinType:        string(coin.BaseTokenType),
-							CoinObjectCount: 1,
-							TotalBalance:    tokensForGas,
-						},
+			AssetsBag: iscmove.AssetsBagWithBalances{
+				AssetsBag: iscmove.AssetsBag{
+					ID:   *sui.RandomAddress(),
+					Size: 1,
+				},
+				Balances: map[string]*suijsonrpc.Balance{
+					string(coin.BaseTokenType): {
+						CoinType:        string(coin.BaseTokenType),
+						CoinObjectCount: 1,
+						TotalBalance:    tokensForGas,
 					},
 				},
 			},

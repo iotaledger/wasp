@@ -1046,7 +1046,7 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 	return cni.log
 }
 
-func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.StateAnchor, error) {
+func (cni *chainNodeImpl) LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error) {
 	cni.accessLock.RLock()
 	latestActiveAO := cni.latestActiveStateAO
 	latestConfirmedAO := cni.latestConfirmedStateAO

@@ -439,7 +439,7 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsSuiAddress())
 	require.NoError(ch.Env.T, err)
 	return &isc.StateAnchor{
-		Ref:        anchor,
+		Anchor:     anchor,
 		Owner:      ch.OriginatorAddress,
 		ISCPackage: ch.Env.ISCPackageID(),
 	}

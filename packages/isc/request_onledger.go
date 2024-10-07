@@ -31,7 +31,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
-		assetsBag:     &request.Object.AssetsBag.Value.AssetsBag,
+		assetsBag:     &request.Object.AssetsBag.AssetsBag,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
@@ -44,7 +44,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 			Allowance: NewEmptyAssets(),
 			GasBudget: 0,
 		},
-		assets: AssetsFromAssetsBagWithBalances(*request.Object.AssetsBag.Value),
+		assets: AssetsFromAssetsBagWithBalances(request.Object.AssetsBag),
 	}
 
 	return r, nil
@@ -69,7 +69,6 @@ func (req *onLedgerRequestData) Message() Message {
 	if req.requestMetadata == nil {
 		return Message{}
 	}
-
 	return req.requestMetadata.Message
 }
 
@@ -153,26 +152,4 @@ func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
 
 func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
-}
-
-// region RetryOnLedgerRequest //////////////////////////////////////////////////////////////////
-
-type RetryOnLedgerRequest struct {
-	OnLedgerRequest
-	retryOutputID sui.ObjectID
-}
-
-func NewRetryOnLedgerRequest(req OnLedgerRequest, retryOutput sui.ObjectID) *RetryOnLedgerRequest {
-	return &RetryOnLedgerRequest{
-		OnLedgerRequest: req,
-		retryOutputID:   retryOutput,
-	}
-}
-
-func (r *RetryOnLedgerRequest) RetryOutputID() sui.ObjectID {
-	return r.retryOutputID
-}
-
-func (r *RetryOnLedgerRequest) SetRetryOutputID(oid sui.ObjectID) {
-	r.retryOutputID = oid
 }

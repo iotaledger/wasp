@@ -2,7 +2,6 @@ package chainclient
 
 import (
 	"context"
-	"errors"
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -14,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -113,33 +111,34 @@ func (c *Client) post1RequestWithOutputs(
 	outputs iotago.OutputSet,
 	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
-	par := defaultParams(params...)
-	tx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    c.KeyPair,
-			SenderAddress:    c.KeyPair.Address(),
-			UnspentOutputs:   outputs,
-			UnspentOutputIDs: isc.OutputSetToOutputIDs(outputs),
-			Request: &isc.RequestParameters{
-				TargetAddress: c.ChainID.AsAddress(),
-				Assets:        par.Transfer,
-				Metadata: &isc.SendMetadata{
-					Message:   msg,
-					Allowance: par.Allowance,
-					GasBudget: par.GasBudget(),
-				},
-			},
-			NFT: par.NFT,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+	// par := defaultParams(params...)
+	// tx, err := transaction.NewRequestTransaction(
+	// 	transaction.NewRequestTransactionParams{
+	// 		SenderKeyPair:    c.KeyPair,
+	// 		SenderAddress:    c.KeyPair.Address(),
+	// 		UnspentOutputs:   outputs,
+	// 		UnspentOutputIDs: isc.OutputSetToOutputIDs(outputs),
+	// 		Request: &isc.RequestParameters{
+	// 			TargetAddress: c.ChainID.AsAddress(),
+	// 			Assets:        par.Transfer,
+	// 			Metadata: &isc.SendMetadata{
+	// 				Message:   msg,
+	// 				Allowance: par.Allowance,
+	// 				GasBudget: par.GasBudget(),
+	// 			},
+	// 		},
+	// 		NFT: par.NFT,
+	// 	},
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
-	err = errors.New("refactor me: post1RequestWithOutputs")
+	// panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
+	// err = errors.New("refactor me: post1RequestWithOutputs")
 
-	return tx, err
+	// return tx, err
+	return nil, nil
 }
 
 func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {

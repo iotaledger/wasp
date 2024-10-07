@@ -71,22 +71,22 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 		}
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
-			var req iscmove.Request
+			var req moveRequest
 			err := suiclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
 			}
-			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
+			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.assetsBag.ID)
 			if ctx.Err() != nil {
 				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", ctx.Err())
 			}
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 			}
-			req.AssetsBag.Value = bals
+			req.assetsBag.Value = bals
 			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
 				ObjectRef: reqData.Data.Ref(),
-				Object:    &req,
+				Object:    req.ToRequest(),
 			})
 		}
 	}
