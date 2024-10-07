@@ -22,6 +22,8 @@ const (
 	RequestObjectName      = "Request"
 	MessageObjectName      = "Message"
 	RequestEventObjectName = "RequestEvent"
+
+	RequestEventAnchorFieldName = "/anchor"
 )
 
 /*

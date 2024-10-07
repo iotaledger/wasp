@@ -1,6 +1,8 @@
 package suijsonrpc
 
 import (
+	"encoding/json"
+
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
@@ -79,4 +81,8 @@ type EventFilterTimeRange struct {
 type AndOrEventFilter struct {
 	Filter1 *EventFilter
 	Filter2 *EventFilter
+}
+
+func (f AndOrEventFilter) MarshalJSON() ([]byte, error) {
+	return json.Marshal([2]interface{}{f.Filter1, f.Filter2})
 }

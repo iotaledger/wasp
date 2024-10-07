@@ -137,7 +137,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID sui.ObjectID) {
 	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
-	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
+	ncc.feed.SubscribeToUpdates(ctx, anchorID, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)
 	go func() {
