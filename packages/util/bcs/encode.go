@@ -674,7 +674,7 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 	t := v.Type()
 
 	for i := 0; i < v.NumField(); i++ {
-		fieldOpts := tInfo.FieldOptions[i]
+		fieldOpts, hasTag := tInfo.FieldOptions[i], tInfo.FieldHasTag[i]
 		if fieldOpts.Skip {
 			continue
 		}
@@ -684,6 +684,10 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 		if !fieldType.IsExported() {
 			if !fieldOpts.ExportAnonymousField {
+				if hasTag {
+					return e.handleErrorf("%v: unexported field %v has BCS tag, but is not marked for export", t.Name(), fieldType.Name)
+				}
+
 				// Unexported fields are skipped by default if not explicitly marked as exported
 				continue
 			}
@@ -699,6 +703,8 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 			// Accesing unexported field
 			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
+		} else if fieldOpts.ExportAnonymousField {
+			return e.handleErrorf("%v: field %v is already exported, but is marked for export", t.Name(), fieldType.Name)
 		}
 
 		fieldKind := fieldVal.Kind()

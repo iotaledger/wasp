@@ -482,6 +482,9 @@ func init() {
 Type can have custom initializer function to be executed after the value is decoded.
 It is implemented by defining **BCSInit** method. It **must** have **pointer receiver**.
 
+Serialization will **fail** if unexported field has BCS tag, but is not marked as "export". Reason: such case signals mixed intention.
+Serialization will also **fail** if already exported field has "export" tag. Reason: engineers might have a standard expectation, that when field is renamed it becomes hidden. But they may forget about BCS serialization.
+
 ```
 type TestStruct struct {
    A int

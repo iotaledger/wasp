@@ -75,24 +75,36 @@ func TestStructCodec(t *testing.T) {
 	bcs.TestCodecAndBytesVsRef(t, OptionalEmbeddedStruct{BasicStruct: nil, C: 43}, []byte{0, 43, 0, 0, 0, 0, 0, 0, 0})
 }
 
-type WitUnexported struct {
+type WithUnexported struct {
 	A int
 	b int
 	c int `bcs:"export"`
 	D int `bcs:"-"`
 }
 
+type WithUnexportedWithoutMark struct {
+	A int
+	b int `bcs:"type=u16"`
+}
+
+type WithUnexportedWrongTag struct {
+	A int `bcs:"export"`
+}
+
 func TestUnexportedFieldsCodec(t *testing.T) {
-	v := WitUnexported{A: 42, b: 43, c: 44, D: 45}
+	v := WithUnexported{A: 42, b: 43, c: 44, D: 45}
 	vEnc := lo.Must1(bcs.Marshal(&v))
 	require.Equal(t, []byte{42, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 44, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, vEnc)
-	vDec := lo.Must1(bcs.Unmarshal[WitUnexported](vEnc))
+	vDec := lo.Must1(bcs.Unmarshal[WithUnexported](vEnc))
 	require.NotEqual(t, v, vDec)
 	require.Equal(t, 0, vDec.b)
 	require.Equal(t, 0, vDec.D)
 	vDec.b = 43
 	vDec.D = 45
 	require.Equal(t, v, vDec)
+
+	bcs.TestEncodeErr(t, WithUnexportedWithoutMark{A: 42, b: 43})
+	bcs.TestEncodeErr(t, WithUnexportedWrongTag{A: 42})
 }
 
 type Embedded struct {
