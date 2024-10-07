@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -33,7 +34,7 @@ type callLog struct {
 }
 
 type CallFrame struct {
-	Type         vm.OpCode       `json:"-"`
+	Type         vm.OpCode       `json:"type"`
 	From         common.Address  `json:"from"`
 	Gas          hexutil.Uint64  `json:"gas"`
 	GasUsed      hexutil.Uint64  `json:"gasUsed"`
@@ -48,6 +49,36 @@ type CallFrame struct {
 	// nil if there are non-empty elements after in the struct.
 	Value            hexutil.Big `json:"value,omitempty" rlp:"optional"`
 	revertedSnapshot bool
+}
+
+/*
+MarshalJSON / UnMarshalJSON functions are only there to return/take `Type` as a string (like `call`). Otherwise, it would simply return a number.
+*/
+func (f CallFrame) MarshalJSON() ([]byte, error) {
+	type Alias CallFrame
+	return json.Marshal(&struct {
+		Type string `json:"type"`
+		Alias
+	}{
+		Type:  strings.ToLower(f.Type.String()),
+		Alias: Alias(f),
+	})
+}
+
+func (f *CallFrame) UnmarshalJSON(data []byte) error {
+	type Alias CallFrame
+	aux := &struct {
+		Type string `json:"type"`
+		*Alias
+	}{
+		Alias: (*Alias)(f),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	// Convert string back to OpCode
+	f.Type = vm.StringToOp(strings.ToUpper(aux.Type))
+	return nil
 }
 
 func (f CallFrame) TypeString() string {
