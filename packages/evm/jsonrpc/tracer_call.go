@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -32,8 +33,29 @@ type callLog struct {
 	Position hexutil.Uint `json:"position"`
 }
 
+type OpCodeJSON struct {
+	vm.OpCode
+}
+
+func NewOpCodeJSON(code vm.OpCode) OpCodeJSON {
+	return OpCodeJSON{OpCode: code}
+}
+
+func (o OpCodeJSON) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToLower(o.String()))
+}
+
+func (o *OpCodeJSON) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	o.OpCode = vm.StringToOp(strings.ToUpper(s))
+	return nil
+}
+
 type CallFrame struct {
-	Type         vm.OpCode       `json:"-"`
+	Type         OpCodeJSON      `json:"type"`
 	From         common.Address  `json:"from"`
 	Gas          hexutil.Uint64  `json:"gas"`
 	GasUsed      hexutil.Uint64  `json:"gasUsed"`
@@ -71,7 +93,7 @@ func (f *CallFrame) processOutput(output []byte, err error, reverted bool) {
 	}
 	f.Error = err.Error()
 	f.revertedSnapshot = reverted
-	if f.Type == vm.CREATE || f.Type == vm.CREATE2 {
+	if f.Type.OpCode == vm.CREATE || f.Type.OpCode == vm.CREATE2 {
 		f.To = nil
 	}
 	if !errors.Is(err, vm.ErrExecutionReverted) || len(output) == 0 {
@@ -161,7 +183,7 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 
 	toCopy := to
 	call := CallFrame{
-		Type:  vm.OpCode(typ),
+		Type:  NewOpCodeJSON(vm.OpCode(typ)),
 		From:  from,
 		To:    &toCopy,
 		Input: common.CopyBytes(input),
