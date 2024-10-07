@@ -53,6 +53,7 @@ type CallFrame struct {
 
 /*
 MarshalJSON / UnMarshalJSON functions are only there to return/take `Type` as a string (like `call`). Otherwise, it would simply return a number.
+It returns the type in lowercase as it was before. But EVM internal functions require uppercase, so it's converted to that in UnMarshal.
 */
 func (f CallFrame) MarshalJSON() ([]byte, error) {
 	type Alias CallFrame
