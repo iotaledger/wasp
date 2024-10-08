@@ -22,7 +22,7 @@ func TestBlockInfoLatest(t *testing.T) {
 
 	bi := chain.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 1, bi.BlockIndex())
+	require.EqualValues(t, 1, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
@@ -37,7 +37,7 @@ func TestBlockInfo(t *testing.T) {
 	bi, err := chain.GetBlockInfo(0)
 	require.NoError(t, err)
 	require.NotNil(t, bi)
-	require.EqualValues(t, 0, bi.BlockIndex())
+	require.EqualValues(t, 0, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
@@ -46,7 +46,7 @@ func TestBlockInfo(t *testing.T) {
 	bi, err = chain.GetBlockInfo(1)
 	require.NoError(t, err)
 	require.NotNil(t, bi)
-	require.EqualValues(t, 1, bi.BlockIndex())
+	require.EqualValues(t, 1, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
@@ -66,7 +66,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 	bi = ch.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 3, bi.BlockIndex())
+	require.EqualValues(t, 3, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 1, bi.NumOffLedgerRequests)
@@ -83,14 +83,14 @@ func TestBlockInfoSeveral(t *testing.T) {
 	const numReqs = 5
 
 	bi := ch.GetLatestBlockInfo()
-	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex()))
+	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex))
 
-	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex(); blockIndex++ {
+	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex; blockIndex++ {
 		bi1, err := ch.GetBlockInfo(blockIndex)
 		require.NoError(t, err)
 		require.NotNil(t, bi1)
 		t.Logf("%s", bi1.String())
-		require.EqualValues(t, blockIndex, bi1.BlockIndex())
+		require.EqualValues(t, blockIndex, bi1.BlockIndex)
 		require.EqualValues(t, 1, bi1.TotalRequests)
 		require.EqualValues(t, 1, bi1.NumSuccessfulRequests)
 		require.LessOrEqual(t, bi1.NumOffLedgerRequests, bi1.TotalRequests)
@@ -222,7 +222,7 @@ func TestBlocklogPruning(t *testing.T) {
 	for i := uint32(11); i <= 20; i++ {
 		bi, err := ch.GetBlockInfo(i)
 		require.NoError(t, err)
-		require.EqualValues(t, i, bi.BlockIndex())
+		require.EqualValues(t, i, bi.BlockIndex)
 		evmBlock, err := ch.EVM().BlockByNumber(big.NewInt(int64(i)))
 		require.NoError(t, err)
 		require.EqualValues(t, i, evmBlock.Number().Uint64())
@@ -238,7 +238,7 @@ func TestBlocklogFoundriesWithPruning(t *testing.T) {
 	})
 	ch.DepositBaseTokensToL2(1*isc.Million, nil)
 
-	sn, _, err := ch.NewNativeTokenParams(big.NewInt(10)).CreateFoundry()
+	sn, _, err := ch.NewNativeTokenParams(10).CreateFoundry()
 	require.NoError(t, err)
 
 	// provoke the block where the foundry was stored to be pruned

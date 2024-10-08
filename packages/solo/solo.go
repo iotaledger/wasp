@@ -415,6 +415,10 @@ func (env *Solo) Ctx() context.Context {
 	return env.ctx
 }
 
+func (env *Solo) SuiFaucetURL() string {
+	return env.l1Config.SuiFaucetURL
+}
+
 // AddRequestsToMempool adds all the requests to the chain mempool,
 func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
 	ch.mempool.ReceiveRequests(reqs...)
