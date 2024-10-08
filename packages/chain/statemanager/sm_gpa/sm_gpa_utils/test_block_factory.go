@@ -10,8 +10,10 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -35,13 +37,13 @@ type BlockFactoryCallArguments struct {
 
 func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallArguments) *BlockFactory {
 	var chainInitParams isc.CallArguments
-	agentId := isc.NewRandomAgentID()
+	agentId := isctest.NewRandomAgentID()
 	if len(chainInitParamsOpt) > 0 {
 		chainInitParams = isc.NewCallArguments(agentId.Bytes(), codec.Uint16.Encode(evm.DefaultChainID), codec.Int32.Encode(int32(chainInitParamsOpt[0].BlockKeepAmount)))
 	} else {
 		chainInitParams = isc.NewCallArguments(agentId.Bytes())
 	}
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 	chainIDObjID := chainID.AsObjectID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	originBlock, _ := origin.InitChain(0, chainStore, chainInitParams, 0, isc.BaseTokenCoinInfo)
@@ -54,7 +56,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 		},
 		Object: &iscmove.Anchor{
 			ID:            chainIDObjID,
-			Assets:        iscmove.RandomAssetsBag(),
+			Assets:        iscmovetest.RandomAssetsBag(),
 			StateMetadata: originCommitment.Bytes(),
 			StateIndex:    0,
 		},

@@ -104,7 +104,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
+	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
 	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
@@ -189,7 +189,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
+	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
 	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)

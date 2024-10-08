@@ -12,8 +12,8 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -37,7 +37,7 @@ func TestCreateChainStateDatabase(t *testing.T) {
 	chainStateDatabaseManager, err := NewChainStateDatabaseManager(chainRecordRegistry, WithEngine(hivedb.EngineMapDB))
 	require.NoError(t, err)
 
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 	store, _ := chainStateDatabaseManager.chainStateKVStore(chainID)
 	require.Nil(t, store)
 	store, _, err = chainStateDatabaseManager.ChainStateKVStore(chainID)
@@ -54,7 +54,7 @@ func TestWriteAmplification(t *testing.T) {
 	t.Skip("that's heavy, enable only if needed, only works on linux.")
 	printIoStats("IO-Start", t)
 
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 
 	chainRecordRegistry, err := registry.NewChainRecordRegistryImpl("")
 	require.NoError(t, err)

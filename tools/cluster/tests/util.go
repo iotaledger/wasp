@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -86,7 +87,7 @@ func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 
 	ret := make([]iotago.NFTID, len(nftsResp.NftIds))
 	for i, nftIDStr := range nftsResp.NftIds {
-		nftIDBytes, err := iotago.DecodeHex(nftIDStr)
+		nftIDBytes, err := cryptolib.DecodeHex(nftIDStr)
 		require.NoError(e.t, err)
 		ret[i] = iotago.NFTID{}
 		copy(ret[i][:], nftIDBytes)

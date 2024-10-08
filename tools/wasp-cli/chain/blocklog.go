@@ -11,6 +11,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -112,7 +113,7 @@ func reqIDFromString(s string) isc.RequestID {
 		log.Check(err)
 		return reqID
 	case hexLenFromByteLen(common.HashLength):
-		bytes, err := iotago.DecodeHex(s)
+		bytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
 		var txHash common.Hash
 		copy(txHash[:], bytes)

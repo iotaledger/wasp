@@ -1,75 +1,82 @@
-package isc
+package isc_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
+	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestRequestDataSerialization(t *testing.T) {
-	panic("FIXME")
-
-	/*
-		var req Request
-		var err error
-		t.Run("off ledger", func(t *testing.T) {
-			req = NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, dict.New()), 1337, 100).Sign(cryptolib.NewKeyPair())
-			rwutil.ReadWriteTest(t, req.(*OffLedgerRequestData), new(OffLedgerRequestData))
-			rwutil.BytesTest(t, req, RequestFromBytes)
+	t.Run("off ledger", func(t *testing.T) {
+		req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.NewKeyPair())
+		bcs.TestCodec(t, req.(*isc.OffLedgerRequestData))
+		rwutil.BytesTest(t, req.(*isc.OffLedgerRequestData), func(data []byte) (*isc.OffLedgerRequestData, error) {
+			return bcs.Unmarshal[*isc.OffLedgerRequestData](data)
 		})
+	})
 
-		t.Run("on ledger", func(t *testing.T) {
-			sender := tpkg.RandAliasAddress()
-			requestMetadata := &RequestMetadata{
-				SenderContract: ContractIdentityFromHname(Hn("sender_contract")),
-				Message:        NewMessage(Hn("target_contract"), Hn("entrypoint")),
-				Allowance:      NewAssetsBaseTokens(1),
-				GasBudget:      1000,
-			}
-			basicOutput := &iotago.BasicOutput{
-				Amount: 123,
-				NativeTokens: iotago.NativeTokens{
-					&iotago.NativeToken{
-						ID:     [iotago.NativeTokenIDLength]byte{1},
-						Amount: big.NewInt(100),
+	t.Run("on ledger", func(t *testing.T) {
+		sender := cryptolib.NewRandomAddress()
+		objectRef := suitest.RandomObjectRef()
+		onledgerReq := iscmove.RefWithObject[iscmove.Request]{
+			ObjectRef: *objectRef,
+			Object: &iscmove.Request{
+				ID:     *objectRef.ObjectID,
+				Sender: sender,
+				AssetsBag: iscmove.AssetsBagWithBalances{
+					AssetsBag: iscmove.AssetsBag{
+						ID:   *suitest.RandomAddress(),
+						Size: 1,
 					},
+					Balances: iscmove.AssetsBagBalances{suijsonrpc.CoinType(coin.BaseTokenType): &suijsonrpc.Balance{CoinType: suijsonrpc.CoinType(coin.BaseTokenType), TotalBalance: 200}},
 				},
-				Features: iotago.Features{
-					&iotago.SenderFeature{Address: sender},
-					&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
+				Message: iscmove.Message{
+					Contract: uint32(isc.Hn("target_contract")),
+					Function: uint32(isc.Hn("entrypoint")),
 				},
-				Conditions: iotago.UnlockConditions{
-					&iotago.AddressUnlockCondition{Address: sender},
-				},
-			}
-			req, err = OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
-			require.NoError(t, err)
-			rwutil.ReadWriteTest(t, req.(*onLedgerRequestData), new(onLedgerRequestData))
+				Allowance: []iscmove.CoinAllowance{{
+					CoinType: coin.BaseTokenType.String(),
+					Balance:  100,
+				}},
+				GasBudget: 1000,
+			},
+		}
+		req, err := isc.OnLedgerFromRequest(&onledgerReq, cryptolib.NewRandomAddress())
+		require.NoError(t, err)
+		bcs.TestCodec(t, req)
+		rwutil.BytesTest(t, req.(*isc.OnLedgerRequestData), func(data []byte) (*isc.OnLedgerRequestData, error) {
+			return bcs.Unmarshal[*isc.OnLedgerRequestData](data)
 		})
-	*/
+	})
 }
 
 func TestRequestIDSerialization(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
 	bcs.TestCodec(t, requestID)
-	rwutil.StringTest(t, requestID, RequestIDFromString)
+	rwutil.StringTest(t, requestID, isc.RequestIDFromString)
 }
 
 func TestRequestRefSerialization(t *testing.T) {
-	req := NewOffLedgerRequest(RandomChainID(), NewMessage(3, 14, NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
-	reqRef0 := &RequestRef{
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
+	reqRef0 := &isc.RequestRef{
 		ID:   req.ID(),
 		Hash: hashing.PseudoRandomHash(nil),
 	}
 
 	b := reqRef0.Bytes()
-	reqRef1, err := RequestRefFromBytes(b)
+	reqRef1, err := isc.RequestRefFromBytes(b)
 	require.NoError(t, err)
 	require.Equal(t, reqRef0, reqRef1)
 

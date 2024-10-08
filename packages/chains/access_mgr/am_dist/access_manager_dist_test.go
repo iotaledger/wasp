@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/util"
@@ -29,7 +30,7 @@ func testBasic(t *testing.T, n int) {
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	nodePubs := testpeers.PublicKeys(peerIdentities)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(nodePubs)
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 
 	servers := map[gpa.NodeID][]*cryptolib.PublicKey{}
 	nodes := map[gpa.NodeID]gpa.GPA{}

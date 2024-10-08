@@ -14,6 +14,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -134,7 +135,7 @@ func (c *Controller) getState(e echo.Context) error {
 		return err
 	}
 
-	stateKey, err := iotago.DecodeHex(e.Param(params.ParamStateKey))
+	stateKey, err := cryptolib.DecodeHex(e.Param(params.ParamStateKey))
 	if err != nil {
 		return apierrors.InvalidPropertyError(params.ParamStateKey, err)
 	}

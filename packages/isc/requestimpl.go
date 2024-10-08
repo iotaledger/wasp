@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -112,12 +113,12 @@ func RequestIDFromEVMTxHash(txHash common.Hash) RequestID {
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
-	data, err := iotago.DecodeHex(s)
+	data, err := cryptolib.DecodeHex(s)
 	if err != nil {
 		return RequestID{}, err
 	}
 
-	if len(data) != iotago.OutputIDLength {
+	if len(data) != sui.AddressLen {
 		return ret, errors.New("error parsing requestID: wrong length")
 	}
 

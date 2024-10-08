@@ -11,23 +11,23 @@ import (
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-type onLedgerRequestData struct {
+type OnLedgerRequestData struct {
 	requestRef      sui.ObjectRef      `bcs:"export"`
 	senderAddress   *cryptolib.Address `bcs:"export"`
 	targetAddress   *cryptolib.Address `bcs:"export"`
-	assets          *Assets
-	assetsBag       *iscmove.AssetsBag
-	requestMetadata *RequestMetadata `bcs:"export"`
+	assets          *Assets            `bcs:"export"`
+	assetsBag       *iscmove.AssetsBag `bcs:"export"`
+	requestMetadata *RequestMetadata   `bcs:"export"`
 }
 
 var (
-	_ Request         = new(onLedgerRequestData)
-	_ OnLedgerRequest = new(onLedgerRequestData)
-	_ Calldata        = new(onLedgerRequestData)
+	_ Request         = new(OnLedgerRequestData)
+	_ OnLedgerRequest = new(OnLedgerRequestData)
+	_ Calldata        = new(OnLedgerRequestData)
 )
 
 func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
-	r := &onLedgerRequestData{
+	r := &OnLedgerRequestData{
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
@@ -39,7 +39,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 					Contract:   Hname(request.Object.Message.Contract),
 					EntryPoint: Hname(request.Object.Message.Function),
 				},
-				Params: CallArguments{},
+				Params: nil,
 			},
 			Allowance: NewEmptyAssets(),
 			GasBudget: 0,
@@ -50,32 +50,32 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 	return r, nil
 }
 
-func (req *onLedgerRequestData) Allowance() *Assets {
+func (req *OnLedgerRequestData) Allowance() *Assets {
 	if req.requestMetadata == nil {
 		return NewEmptyAssets()
 	}
 	return req.requestMetadata.Allowance
 }
 
-func (req *onLedgerRequestData) Assets() *Assets {
+func (req *OnLedgerRequestData) Assets() *Assets {
 	return req.assets
 }
 
-func (req *onLedgerRequestData) Bytes() []byte {
+func (req *OnLedgerRequestData) Bytes() []byte {
 	return bcs.MustMarshal(req)
 }
 
-func (req *onLedgerRequestData) Message() Message {
+func (req *OnLedgerRequestData) Message() Message {
 	if req.requestMetadata == nil {
 		return Message{}
 	}
 	return req.requestMetadata.Message
 }
 
-func (req *onLedgerRequestData) Clone() OnLedgerRequest {
+func (req *OnLedgerRequestData) Clone() OnLedgerRequest {
 	outputRef := sui.ObjectRefFromBytes(req.requestRef.Bytes())
 
-	ret := &onLedgerRequestData{
+	ret := &OnLedgerRequestData{
 		requestRef:    *outputRef,
 		senderAddress: req.senderAddress.Clone(),
 		targetAddress: req.targetAddress.Clone(),
@@ -88,26 +88,26 @@ func (req *onLedgerRequestData) Clone() OnLedgerRequest {
 	return ret
 }
 
-func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
+func (req *OnLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 	if req.requestMetadata == nil {
 		return 0, false
 	}
 	return req.requestMetadata.GasBudget, false
 }
 
-func (req *onLedgerRequestData) ID() RequestID {
+func (req *OnLedgerRequestData) ID() RequestID {
 	return RequestID(*req.requestRef.ObjectID)
 }
 
-func (req *onLedgerRequestData) IsOffLedger() bool {
+func (req *OnLedgerRequestData) IsOffLedger() bool {
 	return false
 }
 
-func (req *onLedgerRequestData) RequestID() sui.ObjectID {
+func (req *OnLedgerRequestData) RequestID() sui.ObjectID {
 	return *req.requestRef.ObjectID
 }
 
-func (req *onLedgerRequestData) SenderAccount() AgentID {
+func (req *OnLedgerRequestData) SenderAccount() AgentID {
 	sender := req.SenderAddress()
 	if sender == nil {
 		return nil
@@ -119,37 +119,38 @@ func (req *onLedgerRequestData) SenderAccount() AgentID {
 	return NewAddressAgentID(sender)
 }
 
-func (req *onLedgerRequestData) SenderAddress() *cryptolib.Address {
+func (req *OnLedgerRequestData) SenderAddress() *cryptolib.Address {
 	return req.senderAddress
 }
 
-func (req *onLedgerRequestData) String() string {
+func (req *OnLedgerRequestData) String() string {
 	metadata := req.requestMetadata
 	if metadata == nil {
 		return "onledger request without metadata"
 	}
-	return fmt.Sprintf("onLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, GasBudget: %d }",
+	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, Assets: %v, GasBudget: %d }",
 		req.ID().String(),
 		metadata.SenderContract.String(),
 		metadata.Message.Target.Contract.String(),
 		metadata.Message.Target.EntryPoint.String(),
 		metadata.Message.Params.String(),
+		req.assets,
 		metadata.GasBudget,
 	)
 }
 
-func (req *onLedgerRequestData) RequestRef() sui.ObjectRef {
+func (req *OnLedgerRequestData) RequestRef() sui.ObjectRef {
 	return req.requestRef
 }
 
-func (req *onLedgerRequestData) AssetsBag() *iscmove.AssetsBag {
+func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBag {
 	return req.assetsBag
 }
 
-func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
+func (req *OnLedgerRequestData) TargetAddress() *cryptolib.Address {
 	return req.targetAddress
 }
 
-func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
+func (req *OnLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
 }

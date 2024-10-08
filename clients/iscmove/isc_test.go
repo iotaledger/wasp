@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,11 +18,11 @@ func TestIscCodec(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, iscmove.RefWithObject[ExampleObj]{
-		ObjectRef: *sui.RandomObjectRef(),
+		ObjectRef: *suitest.RandomObjectRef(),
 		Object:    &ExampleObj{A: 42},
 	})
 
-	anchor := iscmove.RandomAnchor()
+	anchor := iscmovetest.RandomAnchor()
 
 	var digest sui.Base58
 	_, err := rand.Read(digest)

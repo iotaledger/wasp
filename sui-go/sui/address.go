@@ -1,7 +1,6 @@
 package sui
 
 import (
-	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -42,12 +41,6 @@ func MustAddressFromHex(str string) *Address {
 		panic(err)
 	}
 	return addr
-}
-
-func RandomAddress() *Address {
-	var a Address
-	_, _ = rand.Read(a[:])
-	return &a
 }
 
 func (a Address) Bytes() []byte { // NOTE: Bytes() is more conventional name for such method; I am not sure, if Data() method is necessary.

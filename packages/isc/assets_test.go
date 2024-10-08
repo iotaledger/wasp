@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
@@ -101,7 +102,7 @@ func TestAssetsCodec(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin("0xa1::a::A", 100).
-		AddObject(*sui.RandomAddress())
+		AddObject(*suitest.RandomAddress())
 	bcs.TestCodec(t, assets)
 }
 

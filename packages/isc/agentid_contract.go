@@ -10,8 +10,8 @@ import (
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
 type ContractAgentID struct {
-	chainID ChainID `bcs:""`
-	hname   Hname   `bcs:""`
+	chainID ChainID `bcs:"export"`
+	hname   Hname   `bcs:"export"`
 }
 
 var _ AgentIDWithL1Address = &ContractAgentID{}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -19,7 +20,5 @@ func (c *Client) StateGet(ctx context.Context, key string) ([]byte, error) {
 		return nil, err
 	}
 
-	hexBytes, err := iotago.DecodeHex(stateResponse.State)
-
-	return hexBytes, err
+	return cryptolib.DecodeHex(stateResponse.State)
 }

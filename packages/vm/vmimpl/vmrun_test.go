@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -22,7 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
@@ -67,13 +68,13 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		store,
 		initParams,
 		originDeposit,
-		baseTokenCoinInfo,
+		&isc.SuiCoinInfo{CoinType: coin.BaseTokenType},
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
-	randomAnchor := iscmove.RandomAnchor(iscmove.RandomAnchorOption{StateMetadata: &stateMetadataBytes})
+	randomAnchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &stateMetadataBytes})
 	anchor := &isc.StateAnchor{
 		Anchor: &iscmove.AnchorWithRef{
-			ObjectRef: *sui.RandomObjectRef(),
+			ObjectRef: *suitest.RandomObjectRef(),
 			Object:    &randomAnchor,
 		},
 		Owner: chainCreator.Address(),
@@ -90,8 +91,8 @@ func TestRunVM(t *testing.T) {
 
 	// create a request
 	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
-	requestRef := sui.RandomObjectRef()
-	requestAssetsBagRef := sui.RandomObjectRef()
+	requestRef := suitest.RandomObjectRef()
+	requestAssetsBagRef := suitest.RandomObjectRef()
 	msg := accounts.FuncDeposit.Message()
 	const tokensForGas = 1 * isc.Million
 	request := &iscmove.RefWithObject[iscmove.Request]{

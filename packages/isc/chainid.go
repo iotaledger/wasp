@@ -6,7 +6,6 @@ package isc
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
 )
@@ -52,21 +51,6 @@ func ChainIDFromString(hexAddress string) (ChainID, error) {
 
 func ChainIDFromKey(key ChainIDKey) ChainID {
 	chainID, err := ChainIDFromString(string(key))
-	if err != nil {
-		panic(err)
-	}
-	return chainID
-}
-
-// RandomChainID creates a random chain ID. Used for testing only
-func RandomChainID(seed ...[]byte) ChainID {
-	var h hashing.HashValue
-	if len(seed) > 0 {
-		h = hashing.HashData(seed[0])
-	} else {
-		h = hashing.PseudoRandomHash(nil)
-	}
-	chainID, err := ChainIDFromBytes(h[:ChainIDLength])
 	if err != nil {
 		panic(err)
 	}

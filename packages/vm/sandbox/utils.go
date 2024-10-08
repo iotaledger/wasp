@@ -46,7 +46,7 @@ func (u utilImpl) BLS() isc.BLS {
 
 func (u utilImpl) Decode(s string) ([]byte, error) {
 	u.gas.Burn(gas.BurnCodeUtilsHexDecode)
-	return iotago.DecodeHex(s)
+	return cryptolib.DecodeHex(s)
 }
 
 func (u utilImpl) Encode(data []byte) string {

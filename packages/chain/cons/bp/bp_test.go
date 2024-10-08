@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -64,7 +65,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 		ao0,
 		util.NewFixedSizeBitVector(1).SetBits([]int{0}),
 		time.Now(),
-		isc.NewRandomAgentID(),
+		isctest.NewRandomAgentID(),
 		isc.RequestRefsFromRequests(rs),
 	)
 	bp0.Bytes()

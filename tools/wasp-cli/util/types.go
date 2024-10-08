@@ -41,7 +41,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 		log.Check(err)
 		return codec.Bool.Encode(b)
 	case "bytes", "hex":
-		b, err := iotago.DecodeHex(s)
+		b, err := cryptolib.DecodeHex(s)
 		log.Check(err)
 		return b
 	case "chainid":
@@ -80,7 +80,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 		log.Check(err)
 		return codec.Int64.Encode(n)
 	case "nftid":
-		nid, err := iotago.DecodeHex(s)
+		nid, err := cryptolib.DecodeHex(s)
 		log.Check(err)
 		if len(nid) != iotago.NFTIDLength {
 			log.Fatal("invalid nftid length")
@@ -93,7 +93,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "string":
 		return []byte(s)
 	case "tokenid":
-		tid, err := iotago.DecodeHex(s)
+		tid, err := cryptolib.DecodeHex(s)
 		log.Check(err)
 		if len(tid) != iotago.FoundryIDLength {
 			log.Fatal("invalid tokenid length")

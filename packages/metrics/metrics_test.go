@@ -14,14 +14,15 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestRegister(t *testing.T) {
-	chainID1 := isc.RandomChainID()
-	chainID2 := isc.RandomChainID()
-	chainID3 := isc.RandomChainID()
+	chainID1 := isctest.RandomChainID()
+	chainID2 := isctest.RandomChainID()
+	chainID3 := isctest.RandomChainID()
 	ncm := NewChainMetricsProvider()
 
 	require.Equal(t, []isc.ChainID{}, ncm.RegisteredChains())
@@ -64,7 +65,7 @@ func TestRegister(t *testing.T) {
 func createOnLedgerRequest() isc.OnLedgerRequest {
 	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
 
-	requestRef := sui.RandomObjectRef()
+	requestRef := suitest.RandomObjectRef()
 	const tokensForGas = 1 * isc.Million
 
 	request := &iscmove.RefWithObject[iscmove.Request]{
@@ -78,7 +79,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 			},
 			AssetsBag: iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmove.AssetsBag{
-					ID:   *sui.RandomAddress(),
+					ID:   *suitest.RandomAddress(),
 					Size: 1,
 				},
 				Balances: map[string]*suijsonrpc.Balance{
@@ -106,8 +107,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 func TestMessageMetrics(t *testing.T) {
 	p := NewChainMetricsProvider()
 	ncm := p.Message
-	cncm1 := p.GetChainMetrics(isc.RandomChainID()).Message
-	cncm2 := p.GetChainMetrics(isc.RandomChainID()).Message
+	cncm1 := p.GetChainMetrics(isctest.RandomChainID()).Message
+	cncm2 := p.GetChainMetrics(isctest.RandomChainID()).Message
 
 	// IN State output
 	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}

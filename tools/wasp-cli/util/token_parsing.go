@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"strings"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -12,7 +12,7 @@ import (
 const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
-	ret, err := iotago.DecodeHex(s)
+	ret, err := cryptolib.DecodeHex(s)
 	if err != nil {
 		log.Fatalf("Invalid token id: %s", s)
 	}
