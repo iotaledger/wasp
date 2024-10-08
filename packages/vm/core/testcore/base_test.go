@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -20,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -37,18 +39,18 @@ func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1BaseTokens(userAddr, suiclient.FundsFromFaucetAmount)
-	originAmount := 10 * isc.Million
+	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1")
 	_ = ch.Log().Sync()
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,
-		originAmount-parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput()),
-		cassets.BaseTokens)
-	require.EqualValues(t, 0, len(cassets.NativeTokens))
+		originAmount-coin.Value(parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())),
+		cassets.BaseTokens())
+	require.EqualValues(t, 0, len(cassets.Coins))
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, cassets.BaseTokens >= governance.DefaultMinBaseTokensOnCommonAccount)
+	require.True(t, cassets.BaseTokens() >= governance.DefaultMinBaseTokensOnCommonAccount)
 
 	testdbhash.VerifyDBHash(env, t.Name())
 }
@@ -57,18 +59,18 @@ func TestInitLoad(t *testing.T) {
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
 	genesisAddr := env.L1Ledger().GenesisAddress()
-	assets := env.L1Assets(genesisAddr)
-	require.EqualValues(t, env.L1Ledger().Supply(), assets.BaseTokens)
+	assets := env.l1L1Assets(genesisAddr)
+	require.EqualValues(t, env.L1CoinInfo(coin.BaseTokenType).TotalSupply, assets.BaseTokens)
 
 	// create chain
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1")
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	defer func() {
 		_ = ch.Log().Sync()
 	}()
 
-	// get all native tokens. Must be empty
-	nativeTokenIDs := ch.GetOnChainTokenIDs()
-	require.EqualValues(t, 0, len(nativeTokenIDs))
+	// get all native tokens. Must be 1 (base token type)
+	nativeTokenIDs := ch.L2TotalAssets().Coins
+	require.EqualValues(t, 1, len(nativeTokenIDs))
 
 	// all goes to storage deposit and to total base tokens on chain
 	// what has left on L1 address
@@ -85,7 +87,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// check total on chain assets
 	totalAssets := ch.L2TotalAssets()
 	// no native tokens expected
-	require.EqualValues(t, 0, len(totalAssets.NativeTokens))
+	require.EqualValues(t, 0, len(totalAssets.Coins))
 	// what spent all goes to the alias output
 	// require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
 	// total base tokens on L2 must be equal to alias output base tokens - storage deposit
@@ -107,7 +109,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, 0, "chain")
+		ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
@@ -141,7 +143,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, 0, "chain")
+		ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
@@ -184,7 +186,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, 0, "chain")
+		ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
@@ -218,7 +220,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, 0, "chain")
+		ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
@@ -304,11 +306,12 @@ func TestEstimateGas(t *testing.T) {
 		return n
 	}
 
-	var estimatedGas, estimatedGasFee uint64
+	var estimatedGas uint64
+	var estimatedGasFee coin.Value
 	{
 		keyPair, _ := env.NewKeyPairWithFunds()
 
-		req := callParams().WithFungibleTokens(isc.NewAssets(1 * isc.Million)).WithMaxAffordableGasBudget()
+		req := callParams().WithFungibleTokens(isc.NewAssets(1 * isc.Million).Coins).WithMaxAffordableGasBudget()
 		_, estimate, err2 := ch.EstimateGasOnLedger(req, keyPair)
 		estimatedGas = estimate.GasBurned
 		estimatedGasFee = estimate.GasFeeCharged
@@ -323,7 +326,7 @@ func TestEstimateGas(t *testing.T) {
 
 	for _, testCase := range []struct {
 		Desc          string
-		L2Balance     uint64
+		L2Balance     coin.Value
 		GasBudget     uint64
 		ExpectedError string
 	}{
@@ -449,8 +452,8 @@ func TestDeployNativeContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// get more base tokens for originator
-	originatorBalance := env.L1Assets(ch.OriginatorAddress).BaseTokens
-	_, err = env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
+	originatorBalance := env.L1BaseTokens(ch.OriginatorAddress)
+	err = suiclient.RequestFundsFromFaucet(env.Ctx(), ch.OriginatorAddress.AsSuiAddress(), env.SuiFaucetURL())
 	require.NoError(t, err)
 	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+suiclient.FundsFromFaucetAmount)
 
@@ -500,7 +503,7 @@ func TestMessageSize(t *testing.T) {
 	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 
-	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex()
+	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
 	storageDeposit := 1 * isc.Million
@@ -569,6 +572,6 @@ func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
 	// block has been created with only 1 request, calling 	`GetRequestReceiptsForBlock` must yield 1 receipt as expected
 	bi := ch.GetLatestBlockInfo()
 	require.EqualValues(t, 1, bi.TotalRequests)
-	receipts := ch.GetRequestReceiptsForBlock(bi.BlockIndex())
+	receipts := ch.GetRequestReceiptsForBlock(bi.BlockIndex)
 	require.Len(t, receipts, 1)
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/sui-go/suiclient"
 
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -520,7 +520,7 @@ func TestAccountBalances(t *testing.T) {
 
 		bi := ch.GetLatestBlockInfo()
 
-		anchorSD := parameters.L1().Protocol.RentStructure.MinRent(anchor)
+		var anchorSD coin.Value = coin.Value(parameters.L1().Protocol.RentStructure.MinRent(anchor))
 		require.EqualValues(t,
 			anchor.Deposit(),
 			anchorSD+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(senderAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
@@ -528,11 +528,11 @@ func TestAccountBalances(t *testing.T) {
 
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
-			utxodb.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
+			suiclient.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
 			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
 		)
 		require.EqualValues(t,
-			utxodb.FundsFromFaucetAmount-totalGasFeeCharged,
+			suiclient.FundsFromFaucetAmount-totalGasFeeCharged,
 			l1BaseTokens(senderAddr)+ch.L2BaseTokens(senderAgentID),
 		)
 	}
