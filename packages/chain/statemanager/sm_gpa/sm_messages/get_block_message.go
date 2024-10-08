@@ -7,7 +7,7 @@ import (
 
 type GetBlockMessage struct {
 	gpa.BasicMessage
-	commitment *state.L1Commitment `bcs:""`
+	commitment *state.L1Commitment `bcs:"export"`
 }
 
 var _ gpa.Message = new(GetBlockMessage)

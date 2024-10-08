@@ -9,7 +9,7 @@ import (
 
 type msgSigShare struct {
 	gpa.BasicMessage
-	sigShare []byte `bcs:""`
+	sigShare []byte `bcs:"export"`
 }
 
 var _ gpa.Message = new(msgSigShare)

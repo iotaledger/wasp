@@ -10,7 +10,7 @@ import (
 
 type msgMissingRequest struct {
 	gpa.BasicMessage
-	requestRef *isc.RequestRef `bcs:""`
+	requestRef *isc.RequestRef `bcs:"export"`
 }
 
 var _ gpa.Message = new(msgMissingRequest)

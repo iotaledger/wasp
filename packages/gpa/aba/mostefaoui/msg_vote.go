@@ -16,9 +16,9 @@ const (
 
 type msgVote struct {
 	gpa.BasicMessage
-	round    int         `bcs:"type=u16"`
-	voteType msgVoteType `bcs:""`
-	value    bool        `bcs:""`
+	round    int         `bcs:"export,type=u16"`
+	voteType msgVoteType `bcs:"export"`
+	value    bool        `bcs:"export"`
 }
 
 var _ gpa.Message = new(msgVote)
