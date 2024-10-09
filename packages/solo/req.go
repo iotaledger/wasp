@@ -31,7 +31,7 @@ type CallParams struct {
 	msg       isc.Message
 	assets    *isc.Assets // ignored off-ledger
 	allowance *isc.Assets
-	gasBudget coin.Value
+	gasBudget uint64
 	nonce     uint64 // ignored for on-ledger
 	sender    *cryptolib.Address
 }
@@ -129,11 +129,11 @@ func (r *CallParams) WithObject(objectID sui.ObjectID) *CallParams {
 	return r
 }
 
-func (r *CallParams) GasBudget() coin.Value {
+func (r *CallParams) GasBudget() uint64 {
 	return r.gasBudget
 }
 
-func (r *CallParams) WithGasBudget(gasBudget coin.Value) *CallParams {
+func (r *CallParams) WithGasBudget(gasBudget uint64) *CallParams {
 	r.gasBudget = gasBudget
 	return r
 }

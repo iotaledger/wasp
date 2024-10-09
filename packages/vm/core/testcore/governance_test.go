@@ -626,7 +626,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 		).
 			AddBaseTokens(gasGreaterThanEstimatedGas).
 			AddAllowanceBaseTokens(gasGreaterThanEstimatedGas).
-			WithGasBudget(gasGreaterThanEstimatedGas),
+			WithGasBudget(uint64(gasGreaterThanEstimatedGas)),
 		user1,
 	)
 	require.NoError(t, err)
@@ -644,7 +644,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 			accounts.FuncTransferAllowanceTo.Message(userAgentID2),
 		).
 			AddBaseTokens(gasLessThanEstimatedGas).
-			WithGasBudget(gasLessThanEstimatedGas),
+			WithGasBudget(uint64(gasLessThanEstimatedGas)),
 		user1,
 	)
 	require.NoError(t, err)
