@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -128,15 +128,13 @@ func TestAccessNodes(t *testing.T) {
 	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
 	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
-	chain, _ := env.NewChainExt(chainKP, 0, "chain1")
-	var res dict.Dict
-	var err error
+	chain, _ := env.NewChainExt(chainKP, 0, "chain1", 0, 0)
 
 	//
 	// Initially the state is empty.
-	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
+	res, err := chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
-	getChainNodesResponse := lo.Must(governance.ViewGetChainNodes.DecodeOutput(res))
+	getChainNodesResponse, _ := lo.Must2(governance.ViewGetChainNodes.DecodeOutput(res))
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
 
@@ -144,11 +142,10 @@ func TestAccessNodes(t *testing.T) {
 	// Add a single access node candidate.
 	_, err = chain.PostRequestSync(
 		solo.NewCallParams(governance.FuncAddCandidateNode.Message(
-			(&governance.AccessNodeInfo{
-				NodePubKey:   node1KP.GetPublicKey().AsBytes(),
-				ForCommittee: false,
-				AccessAPI:    "http://my-api/url",
-			}).AddCertificate(node1KP, node1OwnerAddr),
+			node1KP.GetPublicKey(),
+			governance.NewNodeOwnershipCertificate(node1KP, node1OwnerAddr).Bytes(),
+			"http://my-api/url",
+			false,
 		)).WithMaxAffordableGasBudget(),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
@@ -186,9 +183,8 @@ func TestAccessNodes(t *testing.T) {
 	// Revoke the access node (by the node owner).
 	_, err = chain.PostRequestSync(
 		solo.NewCallParams(governance.FuncRevokeAccessNode.Message(
-			(&governance.AccessNodeInfo{
-				NodePubKey: node1KP.GetPublicKey().AsBytes(),
-			}).AddCertificate(node1KP, node1OwnerAddr),
+			node1KP.GetPublicKey(),
+			governance.NewNodeOwnershipCertificate(node1KP, node1OwnerAddr).Bytes(),
 		)).WithMaxAffordableGasBudget(),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
@@ -484,8 +480,7 @@ func TestMetadata(t *testing.T) {
 		solo.NewCallParamsEx(
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
-			governance.ParamMetadata,
-			[]byte{},
+			isc.NewCallArguments([]byte{}),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -496,8 +491,9 @@ func TestMetadata(t *testing.T) {
 		solo.NewCallParamsEx(
 			governance.Contract.Name,
 			governance.FuncSetMetadata.Name,
-			governance.ParamMetadata,
-			string(make([]byte, governanceimpl.MaxCustomMetadataLength+1)),
+			isc.NewCallArguments(
+				make([]byte, governanceimpl.MaxCustomMetadataLength+1),
+			),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -623,7 +619,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	userL2Bal1 := ch.L2BaseTokens(userAgentID1)
 	userL1Bal1 := ch.Env.L1BaseTokens(userAddr1)
 
-	gasGreaterThanEstimatedGas := estimate.GasBurned + 100
+	gasGreaterThanEstimatedGas := coin.Value(estimate.GasBurned + 100)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.FuncTransferAllowanceTo.Message(userAgentID2),
@@ -642,7 +638,7 @@ func TestGovernanceZeroGasFee(t *testing.T) {
 	require.Greater(t, ch.LastReceipt().GasBurned, uint64(0))
 	require.Zero(t, ch.LastReceipt().GasFeeCharged)
 
-	gasLessThanEstimatedGas := estimate.GasBurned - 100
+	gasLessThanEstimatedGas := coin.Value(estimate.GasBurned - 100)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			accounts.FuncTransferAllowanceTo.Message(userAgentID2),
@@ -696,7 +692,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.DecodeOutput(initRetDict))
 	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
-	minCommonAccountBalance := uint64(123456)
+	minCommonAccountBalance := coin.Value(123456)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			governance.FuncSetMinCommonAccountBalance.Message(minCommonAccountBalance),
@@ -741,7 +737,7 @@ func TestGasPayout(t *testing.T) {
 	// transfer some tokens from a new account (user1)
 	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
 	user1Bal1 := ch.L2Assets(user1AgentID)
-	transferAmt := uint64(2000)
+	transferAmt := coin.Value(2000)
 	_, err := ch.PostRequestSync(
 		solo.NewCallParams(accounts.FuncDeposit.Message()).
 			AddBaseTokens(transferAmt),
@@ -754,8 +750,8 @@ func TestGasPayout(t *testing.T) {
 	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal2 := ch.L2CommonAccountAssets()
 	user1Bal2 := ch.L2Assets(user1AgentID)
-	require.Equal(t, ownerBal1.BaseTokens+gasFees, ownerBal2.BaseTokens)
-	require.Equal(t, user1Bal1.BaseTokens+transferAmt-gasFees, user1Bal2.BaseTokens)
+	require.Equal(t, ownerBal1.BaseTokens()+gasFees, ownerBal2.BaseTokens())
+	require.Equal(t, user1Bal1.BaseTokens()+transferAmt-gasFees, user1Bal2.BaseTokens())
 
 	// change the payoutAddress, so that user1 now receives the fees charged by the chain
 	_, err = ch.PostRequestOffLedger(
@@ -770,9 +766,9 @@ func TestGasPayout(t *testing.T) {
 	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal3 := ch.L2CommonAccountAssets()
 	user1Bal3 := ch.L2Assets(user1AgentID)
-	require.Equal(t, ownerBal2.BaseTokens, ownerBal3.BaseTokens)
-	require.Equal(t, commonBal2.BaseTokens, commonBal3.BaseTokens)
-	require.Equal(t, user1Bal2.BaseTokens, user1Bal3.BaseTokens)
+	require.Equal(t, ownerBal2.BaseTokens(), ownerBal3.BaseTokens())
+	require.Equal(t, commonBal2.BaseTokens(), commonBal3.BaseTokens())
+	require.Equal(t, user1Bal2.BaseTokens(), user1Bal3.BaseTokens())
 
 	// assert new payoutAddr is correctly set
 	retDict, err := ch.CallView(governance.ViewGetPayoutAgentID.Message())
@@ -792,15 +788,15 @@ func TestGasPayout(t *testing.T) {
 	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
-	require.Equal(t, ownerBal3.BaseTokens, ownerBal4.BaseTokens)
+	require.Equal(t, ownerBal3.BaseTokens(), ownerBal4.BaseTokens())
 	// because common account has less balance than minimum, fees go to the common account
-	require.Less(t, commonBal3.BaseTokens, governance.DefaultMinBaseTokensOnCommonAccount)
-	require.Equal(t, commonBal3.BaseTokens+gasFees, commonBal4.BaseTokens)
-	require.Equal(t, user1Bal3.BaseTokens+transferAmt-gasFees, user1Bal4.BaseTokens)
+	require.Less(t, commonBal3.BaseTokens(), governance.DefaultMinBaseTokensOnCommonAccount)
+	require.Equal(t, commonBal3.BaseTokens()+gasFees, commonBal4.BaseTokens())
+	require.Equal(t, user1Bal3.BaseTokens()+transferAmt-gasFees, user1Bal4.BaseTokens())
 
 	// top-up the common account, so its the minBalance - 10 tokens, assert what happens with the fees
 	err = ch.TransferAllowanceTo(
-		isc.NewAssets(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens-10),
+		isc.NewAssets(governance.DefaultMinBaseTokensOnCommonAccount-commonBal4.BaseTokens()-10),
 		accounts.CommonAccount(),
 		nil,
 	)
@@ -808,6 +804,6 @@ func TestGasPayout(t *testing.T) {
 	commonBal5 := ch.L2CommonAccountAssets()
 	user1Bal5 := ch.L2Assets(user1AgentID)
 	gasFees = ch.LastReceipt().GasFeeCharged
-	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, commonBal5.BaseTokens)
-	require.Equal(t, user1Bal4.BaseTokens+gasFees-10, user1Bal5.BaseTokens)
+	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, commonBal5.BaseTokens())
+	require.Equal(t, user1Bal4.BaseTokens()+gasFees-10, user1Bal5.BaseTokens())
 }
