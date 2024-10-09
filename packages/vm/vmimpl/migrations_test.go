@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -44,8 +43,6 @@ func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 		root.NewStateWriter(root.Contract.StateSubrealm(chainState)).SetSchemaVersion(v)
 	})
 }
-
-var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
 
 func newMigrationsTest(t *testing.T) *migrationsTestEnv {
 	db := mapdb.NewMapDB()

@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,13 +16,16 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/sui-go/sui"
 	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
@@ -55,7 +58,12 @@ import (
 // 	require.Nil(t, res.RequestResults[0].Receipt.Error)
 // }
 
+var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
+
+// initChain initializes a new chain state on the given empty store, and returns a fake L1
+// anchor with a random ObjectID and the corresponding StateMetadata.
 func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnchor {
+	baseTokenCoinInfo := &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
 	// create the anchor for a new chain
 	initParams := origin.EncodeInitParams(
 		isc.NewAddressAgentID(chainCreator.Address()),
@@ -64,37 +72,44 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 	)
 	const originDeposit = 1 * isc.Million
 	_, stateMetadata := origin.InitChain(
-		allmigrations.SchemaVersionIotaRebased,
+		schemaVersion,
 		store,
 		initParams,
 		originDeposit,
-		&isc.SuiCoinInfo{CoinType: coin.BaseTokenType},
+		baseTokenCoinInfo,
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
-	randomAnchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &stateMetadataBytes})
-	anchor := &isc.StateAnchor{
+	anchor := iscmove.Anchor{
+		ID:            *suitest.RandomAddress(),
+		StateMetadata: stateMetadataBytes,
+		StateIndex:    0,
+		Assets: iscmove.AssetsBag{
+			ID:   *suitest.RandomAddress(),
+			Size: 1,
+		},
+	}
+	return &isc.StateAnchor{
 		Anchor: &iscmove.AnchorWithRef{
-			ObjectRef: *suitest.RandomObjectRef(),
-			Object:    &randomAnchor,
+			ObjectRef: sui.ObjectRef{
+				ObjectID: &anchor.ID,
+				Version:  0,
+			},
+			Object: &anchor,
 		},
 		Owner: chainCreator.Address(),
 	}
-	return anchor
 }
 
-func TestRunVM(t *testing.T) {
-	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	anchor := initChain(chainCreator, store)
-
-	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
-
-	// create a request
-	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
+// makeOnLedgerRequest creates a fake OnLedgerRequest
+func makeOnLedgerRequest(
+	t *testing.T,
+	sender *cryptolib.KeyPair,
+	chainID isc.ChainID,
+	msg isc.Message,
+	baseTokens uint64,
+) isc.OnLedgerRequest {
 	requestRef := suitest.RandomObjectRef()
 	requestAssetsBagRef := suitest.RandomObjectRef()
-	msg := accounts.FuncDeposit.Message()
-	const tokensForGas = 1 * isc.Million
 	request := &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *requestRef,
 		Object: &iscmove.Request{
@@ -109,7 +124,7 @@ func TestRunVM(t *testing.T) {
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
 						CoinObjectCount: 1,
-						TotalBalance:    tokensForGas,
+						TotalBalance:    baseTokens,
 					},
 				},
 			},
@@ -124,13 +139,67 @@ func TestRunVM(t *testing.T) {
 	}
 	req, err := isc.OnLedgerFromRequest(request, chainID.AsAddress())
 	require.NoError(t, err)
+	return req
+}
 
-	// create task and run it
+// transitionAnchor creates a new version of the Anchor given the result of the VM run
+func transitionAnchor(
+	t *testing.T,
+	anchor *isc.StateAnchor,
+	store indexedstore.IndexedStore,
+	block state.Block,
+) *isc.StateAnchor {
+	require.EqualValues(t, anchor.Anchor.Version+1, block.StateIndex())
+
+	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(anchor.Anchor.Object.StateMetadata))
+
+	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
+	chainInfo := governance.NewStateReaderFromChainState(state).
+		GetChainInfo(isc.ChainIDFromObjectID(*anchor.Anchor.ObjectID))
+	allCoinBalances := accounts.NewStateReaderFromChainState(stateMetadata.SchemaVersion, state).
+		GetTotalL2FungibleTokens()
+
+	newStateMetadata := transaction.NewStateMetadata(
+		stateMetadata.SchemaVersion,
+		block.L1Commitment(),
+		chainInfo.GasFeePolicy,
+		stateMetadata.InitParams,
+		chainInfo.PublicURL,
+	)
+	return &isc.StateAnchor{
+		Anchor: &iscmove.AnchorWithRef{
+			ObjectRef: sui.ObjectRef{
+				ObjectID: anchor.Anchor.ObjectID,
+				Version:  anchor.Anchor.Version + 1,
+			},
+			Object: &iscmove.Anchor{
+				ID: *anchor.Anchor.ObjectID,
+				Assets: iscmove.AssetsBag{
+					ID:   anchor.Anchor.Object.Assets.ID,
+					Size: uint64(len(allCoinBalances)),
+				},
+				StateMetadata: newStateMetadata.Bytes(),
+				StateIndex:    block.StateIndex(),
+			},
+		},
+		Owner: anchor.Owner,
+	}
+}
+
+func runRequestsAndTransitionAnchor(
+	t *testing.T,
+	anchor *isc.StateAnchor,
+	store indexedstore.IndexedStore,
+	reqs []isc.Request,
+) (
+	state.Block,
+	*isc.StateAnchor,
+) {
 	task := &vm.VMTask{
 		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
 		Anchor:               anchor,
 		Store:                store,
-		Requests:             []isc.Request{req},
+		Requests:             reqs,
 		Timestamp:            time.Time{},
 		Entropy:              [32]byte{},
 		ValidatorFeeTarget:   nil,
@@ -140,8 +209,57 @@ func TestRunVM(t *testing.T) {
 		Migrations:           allmigrations.DefaultScheme,
 		Log:                  testlogger.NewLogger(t),
 	}
-	res := runTask(task)
+	res, err := Run(task)
+	require.NoError(t, err)
 	require.Len(t, res.RequestResults, 1)
 	require.Nil(t, res.RequestResults[0].Receipt.Error)
 	require.NotNil(t, res.UnsignedTransaction)
+	require.NotNil(t, res.StateDraft)
+
+	block := store.Commit(res.StateDraft)
+	store.SetLatest(block.TrieRoot())
+	anchor = transitionAnchor(t, anchor, store, block)
+	return block, anchor
+}
+
+func TestOnLedgerAccountsDeposit(t *testing.T) {
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	anchor := initChain(chainCreator, store)
+	chainID := isc.ChainIDFromObjectID(*anchor.Anchor.ObjectID)
+
+	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
+	{
+		state := lo.Must(store.LatestState())
+		senderL2Balance := accounts.NewStateReaderFromChainState(schemaVersion, state).
+			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()), chainID)
+		require.Zero(t, senderL2Balance.BaseTokens())
+	}
+
+	const baseTokens = 1 * isc.Million
+	req := makeOnLedgerRequest(
+		t,
+		sender,
+		chainID,
+		accounts.FuncDeposit.Message(),
+		baseTokens,
+	)
+
+	block, nextAnchor := runRequestsAndTransitionAnchor(
+		t,
+		anchor,
+		store,
+		[]isc.Request{req},
+	)
+	require.Equal(t, block.StateIndex(), nextAnchor.Anchor.Object.StateIndex)
+
+	{
+		state := lo.Must(store.LatestState())
+		require.Equal(t, block.StateIndex(), state.BlockIndex())
+		senderL2Balance := accounts.NewStateReaderFromChainState(schemaVersion, state).
+			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()), chainID)
+		receipt := lo.Must(blocklog.NewStateReaderFromChainState(state).
+			GetRequestReceipt(req.ID()))
+		require.EqualValues(t, baseTokens-receipt.GasFeeCharged, senderL2Balance.BaseTokens())
+	}
 }

@@ -49,7 +49,7 @@ func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCo
 // It does nothing because assets are already on the sender's account
 // Allowance is ignored
 func deposit(ctx isc.Sandbox) {
-	ctx.Log().Debugf("accounts.deposit")
+	ctx.Log().Debugf("accounts.deposit: %s", ctx.Request().Assets())
 }
 
 // transferAllowanceTo moves whole allowance from the caller to the specified account on the chain.
