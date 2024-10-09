@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -140,7 +139,7 @@ func TestFoundries(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{})
 		ch, _ = env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-		var ts iotago.TokenScheme = &iotago.SimpleTokenScheme{MaximumSupply: coin.Value(1), MintedTokens: util.Big0, MeltedTokens: util.Big0}
+		var ts iotago.TokenScheme = &iotago.SimpleTokenScheme{MaximumSupply: coin.Value(1), MintedTokens: coin.Zero, MeltedTokens: coin.Zero}
 		req := solo.NewCallParams(accounts.FuncNativeTokenCreate.Message(
 			isc.NewIRC30NativeTokenMetadata("TEST", "TEST", 8),
 			&ts,
@@ -187,29 +186,13 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		testmisc.RequireErrorToBe(t, err, vm.ErrCreateFoundryMaxSupplyMustBePositive)
 	})
-	t.Run("supply negative", func(t *testing.T) {
-		initTest()
-		require.Panics(t, func() {
-			_, _, _ = ch.NewNativeTokenParams(coin.Value(-1)).
-				WithUser(senderKeyPair).
-				CreateFoundry()
-		})
-	})
 	t.Run("supply max possible", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewNativeTokenParams(abi.MaxUint256).
+		sn, _, err := ch.NewNativeTokenParams(coin.MaxValue).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-	})
-	t.Run("supply exceed max possible", func(t *testing.T) {
-		initTest()
-		maxSupply := new(big.Int).Set(util.MaxUint256)
-		maxSupply.Add(maxSupply, coin.Value(1))
-		require.Panics(t, func() {
-			_, _, _ = ch.NewNativeTokenParams(maxSupply).CreateFoundry()
-		})
 	})
 	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
 		initTest()
@@ -218,8 +201,8 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, util.Big0)
-		ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
+		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 
 		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
@@ -240,8 +223,8 @@ func TestFoundries(t *testing.T) {
 			CreateFoundry()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, util.Big0)
-		ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
+		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 
 		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 		require.NoError(t, err)
@@ -263,8 +246,8 @@ func TestFoundries(t *testing.T) {
 		err = ch.MintTokens(sn, coin.Value(2), senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, vm.ErrNativeTokenSupplyOutOffBounds)
 
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, util.Big0)
-		ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
+		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 		// })
 		t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
 			initTest()
@@ -294,7 +277,7 @@ func TestFoundries(t *testing.T) {
 		})
 		t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
 			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(abi.MaxUint256).
+			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
 				WithUser(senderKeyPair).
 				CreateFoundry()
 			require.NoError(t, err)
@@ -302,19 +285,19 @@ func TestFoundries(t *testing.T) {
 
 			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 			require.NoError(t, err)
-			err = ch.MintTokens(sn, abi.MaxUint256, senderKeyPair)
+			err = ch.MintTokens(sn, coin.MaxValue, senderKeyPair)
 			require.NoError(t, err)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, abi.MaxUint256)
+			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.MaxValue)
 
 			err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
 			testmisc.RequireErrorToBe(t, err, vm.ErrOverflow)
 
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, abi.MaxUint256)
-			ch.AssertL2TotalCoins(nativeTokenID, abi.MaxUint256)
+			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.MaxValue)
+			ch.AssertL2TotalCoins(nativeTokenID, coin.MaxValue)
 		})
 		t.Run("max supply 100, destroy fail", func(t *testing.T) {
 			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(abi.MaxUint256).
+			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
 				WithUser(senderKeyPair).
 				CreateFoundry()
 			require.NoError(t, err)
@@ -322,8 +305,8 @@ func TestFoundries(t *testing.T) {
 
 			err = ch.DestroyTokensOnL2(nativeTokenID, coin.Value(1), senderKeyPair)
 			testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, util.Big0)
-			ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
+			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+			ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 		})
 		t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
 			initTest()
@@ -336,8 +319,8 @@ func TestFoundries(t *testing.T) {
 			out, err := ch.GetFoundryOutput(1)
 			require.NoError(t, err)
 			require.EqualValues(t, out.MustNativeTokenID(), nativeTokenID)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, util.Big0)
-			ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
+			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+			ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 
 			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
 			require.NoError(t, err)
@@ -379,11 +362,11 @@ func TestFoundries(t *testing.T) {
 			// FIXME bug iotago can't destroy foundry
 			// err = destroyTokens(sn, coin.Value(1000000))
 			// require.NoError(t, err)
-			// ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
-			// ch.AssertL2Coins(userAgentID, nativeTokenID, util.Big0)
+			// ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+			// ch.AssertL2Coins(userAgentID, nativeTokenID, coin.Zero)
 			// out, err = ch.GetFoundryOutput(1)
 			// require.NoError(t, err)
-			// require.True(t, util.Big0.Cmp(out.MintedTokens) == 0)
+			// require.True(t, coin.Zero.Cmp(out.MintedTokens) == 0)
 		})
 		t.Run("10 foundries", func(t *testing.T) {
 			initTest()
@@ -396,8 +379,8 @@ func TestFoundries(t *testing.T) {
 				nativeTokenIDs[sn] = nativeTokenID
 				require.NoError(t, err)
 				require.EqualValues(t, int(sn), int(snBack))
-				ch.AssertL2Coins(senderAgentID, nativeTokenID, util.Big0)
-				ch.AssertL2TotalCoins(nativeTokenID, util.Big0)
+				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+				ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 			}
 			// mint max supply from each
 			ch.MustDepositBaseTokensToL2(50_000_000, senderKeyPair)
@@ -441,7 +424,7 @@ func TestFoundries(t *testing.T) {
 	t.Run("constant storage deposit to hold a token UTXO", func(t *testing.T) {
 		initTest()
 		// create a foundry for the maximum amount of tokens possible
-		sn, nativeTokenID, err := ch.NewNativeTokenParams(util.MaxUint256).
+		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -461,7 +444,7 @@ func TestFoundries(t *testing.T) {
 		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountBaseTokens()
 
 		// after minting 1 token, try to mint the remaining tokens
-		allOtherTokens := new(big.Int).Set(util.MaxUint256)
+		allOtherTokens := new(big.Int).Set(coin.MaxValue)
 		allOtherTokens = allOtherTokens.Sub(allOtherTokens, big1)
 
 		err = ch.MintTokens(sn, allOtherTokens, senderKeyPair)
@@ -476,7 +459,7 @@ func TestFoundries(t *testing.T) {
 	})
 	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
 		initTest()
-		sn, _, err := ch.NewNativeTokenParams(abi.MaxUint256).
+		sn, _, err := ch.NewNativeTokenParams(coin.MaxValue).
 			WithUser(senderKeyPair).
 			CreateFoundry()
 		require.NoError(t, err)
@@ -943,7 +926,7 @@ func TestMintedTokensBurn(t *testing.T) {
 			SerialNumber: 1,
 			TokenScheme: &iotago.SimpleTokenScheme{
 				MintedTokens:  coin.Value(50),
-				MeltedTokens:  util.Big0,
+				MeltedTokens:  coin.Zero,
 				MaximumSupply: coin.Value(50),
 			},
 			Conditions: iotago.UnlockConditions{

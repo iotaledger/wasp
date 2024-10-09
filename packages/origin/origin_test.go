@@ -1,7 +1,6 @@
 package origin_test
 
 import (
-	"encoding/hex"
 	"errors"
 	"testing"
 
@@ -102,8 +101,9 @@ func TestCreateOrigin(t *testing.T) {
 		originStateMetadata := transaction.NewStateMetadata(
 			origin.L1Commitment(
 				allmigrations.DefaultScheme.LatestSchemaVersion(),
-				dict.Dict{origin.ParamChainOwner: isc.NewAddressAgentID(anchor.GovernanceController).Bytes()},
+				isc.NewCallArguments(isc.NewAddressAgentID(anchor.GovernanceController).Bytes()),
 				governance.DefaultMinBaseTokensOnCommonAccount,
+				baseTokenCoinInfo,
 			),
 			gas.DefaultFeePolicy(),
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
@@ -139,33 +139,38 @@ func TestCreateOrigin(t *testing.T) {
 // Was used to find proper deposit values for a specific metadata according to the existing hashes.
 func TestMetadataBad(t *testing.T) {
 	t.SkipNow()
-	metadataHex := "0300000001006102000000e60701006204000000ffffffff01006322000000010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067"
-	metadataBin, err := hex.DecodeString(metadataHex)
-	require.NoError(t, err)
-	var initParams dict.Dict
-	initParams, err = dict.FromBytes(metadataBin)
-	require.NoError(t, err)
-	require.NotNil(t, initParams)
-	t.Logf("Args=%v", initParams)
-	initParams.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
-		t.Logf("Args, %v ===> %v", key, value)
-		return true
-	})
 
-	for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
-		db := mapdb.NewMapDB()
-		st := state.NewStoreWithUniqueWriteMutex(db)
-		block1A, _ := origin.InitChain(0, st, initParams, deposit, isc.BaseTokenCoinInfo)
-		block1B, _ := origin.InitChain(0, st, initParams, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
-		block1C, _ := origin.InitChain(0, st, initParams, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
-		block2A, _ := origin.InitChain(0, st, nil, deposit, isc.BaseTokenCoinInfo)
-		block2B, _ := origin.InitChain(0, st, nil, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
-		block2C, _ := origin.InitChain(0, st, nil, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
-		t.Logf("Block0, deposit=%v => %v %v %v / %v %v %v", deposit,
-			block1A.L1Commitment(), block1B.L1Commitment(), block1C.L1Commitment(),
-			block2A.L1Commitment(), block2B.L1Commitment(), block2C.L1Commitment(),
-		)
-	}
+	// This test was also skipped for wasp.
+	// When it is enabled, it fails in both repos, so I have no easy way to decode that string of bytes
+	// to be able then to re-implement it for isc.CallArguments instead of dict.Dict.
+
+	// metadataHex := "0300000001006102000000e60701006204000000ffffffff01006322000000010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067"
+	// metadataBin, err := hex.DecodeString(metadataHex)
+	// require.NoError(t, err)
+	// var initParams dict.Dict
+	// initParams, err = dict.FromBytes(metadataBin)
+	// require.NoError(t, err)
+	// require.NotNil(t, initParams)
+	// t.Logf("Args=%v", initParams)
+	// initParams.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
+	// 	t.Logf("Args, %v ===> %v", key, value)
+	// 	return true
+	// })
+
+	// for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
+	// 	db := mapdb.NewMapDB()
+	// 	st := state.NewStoreWithUniqueWriteMutex(db)
+	// 	block1A, _ := origin.InitChain(0, st, initParams, deposit, isc.BaseTokenCoinInfo)
+	// 	block1B, _ := origin.InitChain(0, st, initParams, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
+	// 	block1C, _ := origin.InitChain(0, st, initParams, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
+	// 	block2A, _ := origin.InitChain(0, st, nil, deposit, isc.BaseTokenCoinInfo)
+	// 	block2B, _ := origin.InitChain(0, st, nil, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
+	// 	block2C, _ := origin.InitChain(0, st, nil, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
+	// 	t.Logf("Block0, deposit=%v => %v %v %v / %v %v %v", deposit,
+	// 		block1A.L1Commitment(), block1B.L1Commitment(), block1C.L1Commitment(),
+	// 		block2A.L1Commitment(), block2B.L1Commitment(), block2C.L1Commitment(),
+	// 	)
+	// }
 }
 
 func TestDictBytes(t *testing.T) {

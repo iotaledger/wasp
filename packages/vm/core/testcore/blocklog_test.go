@@ -7,9 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -203,9 +200,8 @@ func TestViewGetRequestReceipt(t *testing.T) {
 
 func TestBlocklogPruning(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true})
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
-		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
-	})
+
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", 0, 10)
 	for i := 1; i <= 20; i++ {
 		ch.DepositBaseTokensToL2(1000, nil)
 	}
@@ -233,9 +229,7 @@ func TestBlocklogFoundriesWithPruning(t *testing.T) {
 	// test that foundries can be accessed even after the block is pruned
 
 	env := solo.New(t, &solo.InitOptions{Debug: true})
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
-		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
-	})
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", 0, 10)
 	ch.DepositBaseTokensToL2(1*isc.Million, nil)
 
 	sn, _, err := ch.NewNativeTokenParams(10).CreateFoundry()

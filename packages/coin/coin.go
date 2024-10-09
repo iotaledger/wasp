@@ -2,6 +2,7 @@ package coin
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/sui-go/sui"
@@ -79,3 +80,6 @@ func TypeFromBytes(b []byte) (Type, error) {
 	r, err := bcs.Unmarshal[Type](b)
 	return r, err
 }
+
+var Zero = Value(0)
+var MaxValue = Value(math.MaxUint64)

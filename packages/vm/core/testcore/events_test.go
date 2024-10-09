@@ -26,14 +26,14 @@ var (
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
 		funcManyEvents.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-			n := codec.Uint32.MustDecode(ctx.Params().Get("n"))
+			n := codec.Uint32.MustDecode(ctx.Params().MustAt(0))
 			for i := uint32(0); i < n; i++ {
 				ctx.Event("event.test", codec.Uint32.Encode(n))
 			}
 			return nil
 		}),
 		funcBigEvent.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-			n := codec.Uint32.MustDecode(ctx.Params().Get("n"))
+			n := codec.Uint32.MustDecode(ctx.Params().MustAt(0))
 			ctx.Event("event.big", make([]byte, n))
 			return nil
 		}),
@@ -85,7 +85,9 @@ func TestManyEvents(t *testing.T) {
 	postEvents := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
 		tx, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParamsEx(manyEventsContract.Name, funcManyEvents.Name, "n", n).
+			solo.NewCallParamsEx(manyEventsContract.Name, funcManyEvents.Name, isc.NewCallArguments(
+				codec.Uint32.Encode(n),
+			)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -118,7 +120,9 @@ func TestEventTooLarge(t *testing.T) {
 	postEvent := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
 		tx, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParamsEx(manyEventsContract.Name, funcBigEvent.Name, "n", n).
+			solo.NewCallParamsEx(manyEventsContract.Name, funcBigEvent.Name, isc.NewCallArguments(
+				codec.Uint32.Encode(n),
+			)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
