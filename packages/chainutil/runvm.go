@@ -4,11 +4,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 
-	"github.com/samber/lo"
-
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -18,24 +17,26 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 func runISCTask(
-	ch chain.ChainCore,
 	anchor *isc.StateAnchor,
+	store indexedstore.IndexedStore,
+	processors *processors.Cache,
+	log *logger.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
-	store := ch.Store()
 	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
 	}
 	task := &vm.VMTask{
-		Processors:           ch.Processors(),
+		Processors:           processors,
 		Anchor:               anchor,
 		Store:                store,
 		Requests:             reqs,
@@ -45,7 +46,7 @@ func runISCTask(
 		EnableGasBurnLogging: estimateGasMode,
 		EstimateGasMode:      estimateGasMode,
 		EVMTracer:            evmTracer,
-		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		Log:                  log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		Migrations:           migs,
 	}
 	res, err := vmimpl.Run(task)
@@ -76,15 +77,19 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnc
 }
 
 func runISCRequest(
-	ch chain.ChainCore,
 	anchor *isc.StateAnchor,
+	store indexedstore.IndexedStore,
+	processors *processors.Cache,
+	log *logger.Logger,
 	blockTime time.Time,
 	req isc.Request,
 	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
-		ch,
 		anchor,
+		store,
+		processors,
+		log,
 		blockTime,
 		[]isc.Request{req},
 		estimateGasMode,

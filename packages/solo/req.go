@@ -13,7 +13,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -353,7 +352,7 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 
 // CallView calls a view entry point of a smart contract.
 func (ch *Chain) CallView(msg isc.Message) (isc.CallArguments, error) {
-	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
+	latestState, err := ch.LatestState()
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +380,13 @@ func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message)
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, chainState, false)
+	vmctx, err := viewcontext.New(
+		ch.GetLatestAnchor(),
+		chainState,
+		ch.proc,
+		ch.log,
+		false,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -395,9 +400,15 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
+	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState, false)
+	vmctx, err := viewcontext.New(
+		ch.GetLatestAnchor(),
+		latestState,
+		ch.proc,
+		ch.log,
+		false,
+	)
 	require.NoError(ch.Env.T, err)
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
@@ -411,9 +422,15 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
+	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState, false)
+	vmctx, err := viewcontext.New(
+		ch.GetLatestAnchor(),
+		latestState,
+		ch.proc,
+		ch.log,
+		false,
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -446,9 +463,15 @@ func (ch *Chain) GetRootCommitment() trie.Hash {
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
-	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
+	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
-	vmctx, err := viewcontext.New(ch, latestState, false)
+	vmctx, err := viewcontext.New(
+		ch.GetLatestAnchor(),
+		latestState,
+		ch.proc,
+		ch.log,
+		false,
+	)
 	if err != nil {
 		return nil, err
 	}

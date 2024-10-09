@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -58,7 +57,7 @@ func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {
 	task := &vm.VMTask{
 		Processors:         ch.proc,
-		Anchor:             lo.Must(ch.LatestAnchor(chain.ActiveOrCommittedState)),
+		Anchor:             ch.GetLatestAnchor(),
 		Requests:           reqs,
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
@@ -110,7 +109,7 @@ func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
 		panic(err)
 	}
 
-	latestState, _ := ch.LatestState(chain.ActiveOrCommittedState)
+	latestState := lo.Must(ch.LatestState())
 
 	ch.Env.Publisher().BlockApplied(ch.ChainID, block, latestState)
 

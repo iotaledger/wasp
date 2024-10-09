@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package jsonrpc
+package services
 
 import (
 	"errors"
@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -24,14 +25,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-// WaspEVMBackend is the implementation of [ChainBackend] for the production environment.
+// WaspEVMBackend is the implementation of [jsonrpc.ChainBackend] for the production environment.
 type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
 	baseToken  *parameters.BaseToken
 }
 
-var _ ChainBackend = &WaspEVMBackend{}
+var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
 
 func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *WaspEVMBackend {
 	return &WaspEVMBackend{
@@ -76,11 +77,23 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 }
 
 func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.EVMCall(b.chain, anchor, callMsg)
+	return chainutil.EVMCall(
+		anchor,
+		b.chain.Store(),
+		b.chain.Processors(),
+		b.chain.Log(),
+		callMsg,
+	)
 }
 
 func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EVMEstimateGas(b.chain, anchor, callMsg)
+	return chainutil.EVMEstimateGas(
+		anchor,
+		b.chain.Store(),
+		b.chain.Processors(),
+		b.chain.Log(),
+		callMsg,
+	)
 }
 
 func (b *WaspEVMBackend) EVMTraceTransaction(
@@ -91,8 +104,10 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	tracer *tracers.Tracer,
 ) error {
 	return chainutil.EVMTraceTransaction(
-		b.chain,
 		anchor,
+		b.chain.Store(),
+		b.chain.Processors(),
+		b.chain.Log(),
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
@@ -101,7 +116,17 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 }
 
 func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
-	return chainutil.CallView(chainState, b.chain, msg)
+	latestAnchor, err := b.ISCLatestAnchor()
+	if err != nil {
+		return nil, err
+	}
+	return chainutil.CallView(
+		latestAnchor,
+		chainState,
+		b.chain.Processors(),
+		b.chain.Log(),
+		msg,
+	)
 }
 
 func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {

@@ -11,10 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/samber/lo"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -56,11 +54,23 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 }
 
 func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.EVMCall(b.Chain, anchor, callMsg)
+	return chainutil.EVMCall(
+		anchor,
+		b.Chain.store,
+		b.Chain.proc,
+		b.Chain.log,
+		callMsg,
+	)
 }
 
 func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EVMEstimateGas(b.Chain, anchor, callMsg)
+	return chainutil.EVMEstimateGas(
+		anchor,
+		b.Chain.store,
+		b.Chain.proc,
+		b.Chain.log,
+		callMsg,
+	)
 }
 
 func (b *jsonRPCSoloBackend) EVMTraceTransaction(
@@ -71,8 +81,10 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 	tracer *tracers.Tracer,
 ) error {
 	return chainutil.EVMTraceTransaction(
-		b.Chain,
 		anchor,
+		b.Chain.store,
+		b.Chain.proc,
+		b.Chain.log,
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
@@ -85,12 +97,12 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
-	anchor := lo.Must(b.Chain.LatestAnchor(chain.ActiveOrCommittedState))
+	anchor := b.Chain.GetLatestAnchor()
 	return anchor, nil
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
-	return b.Chain.LatestState(chain.ActiveOrCommittedState)
+	return b.Chain.LatestState()
 }
 
 func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {

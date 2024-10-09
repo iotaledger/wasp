@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -44,13 +43,19 @@ type ViewContext struct {
 
 var _ execution.WaspCallContext = &ViewContext{}
 
-func New(ch chain.ChainCore, stateReader state.State, gasBurnLoggingEnabled bool) (*ViewContext, error) {
-	chainID := ch.ID()
+func New(
+	anchor *isc.StateAnchor,
+	stateReader state.State,
+	processors *processors.Cache,
+	log *logger.Logger,
+	gasBurnLoggingEnabled bool,
+) (*ViewContext, error) {
+	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
 	return &ViewContext{
-		processors:            ch.Processors(),
+		processors:            processors,
 		stateReader:           stateReader,
 		chainID:               chainID,
-		log:                   ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		log:                   log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 		schemaVersion:         stateReader.SchemaVersion(),
 	}, nil

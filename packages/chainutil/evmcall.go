@@ -6,19 +6,29 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // EVMCall executes an EVM contract call and returns its output, discarding any state changes
 func EVMCall(
-	ch chain.ChainCore,
 	anchor *isc.StateAnchor,
+	store indexedstore.IndexedStore,
+	processors *processors.Cache,
+	log *logger.Logger,
 	call ethereum.CallMsg,
 ) ([]byte, error) {
-	info := getChainInfo(ch)
+	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
+
+	latestState, err := store.LatestState()
+	if err != nil {
+		return nil, err
+	}
+	info := getChainInfo(chainID, latestState)
 
 	// 0 means view call
 	gasLimit := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
@@ -30,14 +40,22 @@ func EVMCall(
 		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 	}
 
-	iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
+	iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
 	// TODO: setting EstimateGasMode = true feels wrong here
-	res, err := runISCRequest(ch, anchor, time.Now(), iscReq, true)
+	res, err := runISCRequest(
+		anchor,
+		store,
+		processors,
+		log,
+		time.Now(),
+		iscReq,
+		true,
+	)
 	if err != nil {
 		return nil, err
 	}
 	if res.Receipt.Error != nil {
-		vmerr, resolvingErr := ResolveError(ch, res.Receipt.Error)
+		vmerr, resolvingErr := ResolveError(latestState, res.Receipt.Error)
 		if resolvingErr != nil {
 			panic(fmt.Errorf("error resolving vmerror %w", resolvingErr))
 		}
