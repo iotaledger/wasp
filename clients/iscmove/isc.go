@@ -3,10 +3,10 @@ package iscmove
 import (
 	"bytes"
 
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -37,7 +37,7 @@ const (
 */
 
 type RefWithObject[T any] struct {
-	sui.ObjectRef
+	sui2.ObjectRef
 	Object *T
 }
 
@@ -50,7 +50,7 @@ func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
-	ID   sui.ObjectID
+	ID   sui2.ObjectID
 	Size uint64
 }
 
@@ -62,8 +62,8 @@ type AssetsBagWithBalances struct {
 }
 
 type Anchor struct {
-	ID            sui.ObjectID
-	Assets        AssetsBag
+	ID     sui2.ObjectID
+	Assets AssetsBag
 	StateMetadata []byte
 	StateIndex    uint32
 }
@@ -106,7 +106,7 @@ func AnchorWithRefEquals(a1 AnchorWithRef, a2 AnchorWithRef) bool {
 }
 
 type Receipt struct {
-	RequestID sui.ObjectID
+	RequestID sui2.ObjectID
 }
 
 type Message struct {
@@ -121,7 +121,7 @@ type CoinAllowance struct {
 }
 
 type Request struct {
-	ID     sui.ObjectID
+	ID     sui2.ObjectID
 	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
 	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
@@ -131,8 +131,8 @@ type Request struct {
 }
 
 type RequestEvent struct {
-	RequestID sui.ObjectID
-	Anchor    sui.Address
+	RequestID sui2.ObjectID
+	Anchor    sui2.Address
 }
 
 // Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
@@ -150,8 +150,8 @@ type IRC27MetaData struct {
 }
 
 type NFT struct {
-	ID                sui.ObjectID
-	LegacySender      *cryptolib.Address `bcs:"optional"`
+	ID           sui2.ObjectID
+	LegacySender *cryptolib.Address `bcs:"optional"`
 	Metadata          *[]uint8           `bcs:"optional"`
 	Tag               *[]uint8           `bcs:"optional"`
 	ImmutableIssuer   *cryptolib.Address `bcs:"optional"`

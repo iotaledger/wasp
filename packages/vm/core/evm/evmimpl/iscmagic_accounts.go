@@ -8,10 +8,10 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // handler for ISCAccounts::getL2BalanceBaseTokens

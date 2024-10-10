@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type SyncTX interface {

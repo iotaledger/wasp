@@ -6,14 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type OnLedgerRequestData struct {
-	requestRef      sui.ObjectRef      `bcs:"export"`
-	senderAddress   *cryptolib.Address `bcs:"export"`
+	requestRef    sui.ObjectRef      `bcs:"export"`
+	senderAddress *cryptolib.Address `bcs:"export"`
 	targetAddress   *cryptolib.Address `bcs:"export"`
 	assets          *Assets            `bcs:"export"`
 	assetsBag       *iscmove.AssetsBag `bcs:"export"`

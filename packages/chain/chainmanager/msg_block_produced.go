@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 // This message is used to inform access nodes on new blocks

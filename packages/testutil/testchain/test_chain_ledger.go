@@ -45,7 +45,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*iotago.Transaction, *isc.StateAnchor, isc.ChainID) {
+func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*iotago.Transaction, isc.StateAnchor, isc.ChainID) {
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.governor.Address())
 	panic("refactor me: origin.NewChainOriginTransaction")
 	var originTX *iotago.Transaction
@@ -60,7 +60,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	require.NoError(tcl.t, err)
 	require.NotNil(tcl.t, stateAnchor)
 	require.NotNil(tcl.t, aliasOutput)
-	originAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
+	originAO := isc.NewStateAnchor(aliasOutput, stateAnchor)
 	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(originTX))
 	tcl.chainID = chainID
 	return originTX, originAO, chainID

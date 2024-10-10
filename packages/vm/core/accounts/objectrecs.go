@@ -3,8 +3,8 @@ package accounts
 import (
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (s *StateWriter) objectRecordsMap() *collections.Map {

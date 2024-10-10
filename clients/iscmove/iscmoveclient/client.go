@@ -4,17 +4,17 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/logger"
+	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
-	*suiclient.Client
+	*suiclient2.Client
 	faucetURL string
 }
 
-func NewClient(client *suiclient.Client, faucetURL string) *Client {
+func NewClient(client *suiclient2.Client, faucetURL string) *Client {
 	return &Client{
 		Client:    client,
 		faucetURL: faucetURL,
@@ -23,7 +23,7 @@ func NewClient(client *suiclient.Client, faucetURL string) *Client {
 
 func NewHTTPClient(apiURL, faucetURL string) *Client {
 	return NewClient(
-		suiclient.NewHTTP(apiURL),
+		suiclient2.NewHTTP(apiURL),
 		faucetURL,
 	)
 }
@@ -33,7 +33,7 @@ func NewWebsocketClient(
 	wsURL, faucetURL string,
 	log *logger.Logger,
 ) (*Client, error) {
-	ws, err := suiclient.NewWebsocket(ctx, wsURL, log)
+	ws, err := suiclient2.NewWebsocket(ctx, wsURL, log)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) er
 	if c.faucetURL == "" {
 		panic("missing faucetURL")
 	}
-	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), c.faucetURL)
+	return suiclient2.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), c.faucetURL)
 }
 
 func (c *Client) Health(ctx context.Context) error {

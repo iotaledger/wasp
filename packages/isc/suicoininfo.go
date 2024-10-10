@@ -1,9 +1,9 @@
 package isc
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 type SuiCoinInfo struct {

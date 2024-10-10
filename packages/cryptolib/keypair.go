@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
+	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type KeyPair struct {

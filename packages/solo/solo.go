@@ -19,6 +19,10 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
+	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
@@ -39,10 +43,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -130,7 +130,7 @@ type InitOptions struct {
 type L1Config struct {
 	SuiRPCURL    string
 	SuiFaucetURL string
-	ISCPackageID sui.PackageID
+	ISCPackageID sui2.PackageID
 }
 
 func DefaultInitOptions() *InitOptions {
@@ -288,14 +288,14 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	return ret
 }
 
-func (env *Solo) ISCPackageID() sui.PackageID {
+func (env *Solo) ISCPackageID() sui2.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
 func (env *Solo) pickCoinsForInitChain(
 	chainOriginator *cryptolib.KeyPair,
 	initBaseTokens coin.Value,
-) (initBaseTokensCoin *suijsonrpc.Coin, gasCoins suijsonrpc.Coins) {
+) (initBaseTokensCoin *suijsonrpc2.Coin, gasCoins suijsonrpc2.Coins) {
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 	coins, err := env.SuiClient().GetCoinObjsForTargetAmount(
 		env.ctx,
@@ -303,26 +303,26 @@ func (env *Solo) pickCoinsForInitChain(
 		initBaseTokens.Uint64(),
 	)
 	require.NoError(env.T, err)
-	pickedCoin, ok := lo.Find(coins, func(c *suijsonrpc.Coin) bool {
+	pickedCoin, ok := lo.Find(coins, func(c *suijsonrpc2.Coin) bool {
 		return c.Balance.Uint64() >= initBaseTokens.Uint64()
 	})
 	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
 	if pickedCoin.Balance.Uint64() == initBaseTokens.Uint64() {
-		return pickedCoin, lo.Filter(coins, func(c *suijsonrpc.Coin, _ int) bool {
+		return pickedCoin, lo.Filter(coins, func(c *suijsonrpc2.Coin, _ int) bool {
 			return c != pickedCoin
 		})
 	}
-	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, suiclient.SplitCoinRequest{
+	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, suiclient2.SplitCoinRequest{
 		Signer:       originatorAddr.AsSuiAddress(),
 		Coin:         pickedCoin.CoinObjectID,
-		SplitAmounts: []*suijsonrpc.BigInt{suijsonrpc.NewBigInt(initBaseTokens.Uint64())},
-		GasBudget:    suijsonrpc.NewBigInt(suiclient.DefaultGasBudget),
+		SplitAmounts: []*suijsonrpc2.BigInt{suijsonrpc2.NewBigInt(initBaseTokens.Uint64())},
+		GasBudget:    suijsonrpc2.NewBigInt(suiclient2.DefaultGasBudget),
 	}))
 	env.SuiClient().SignAndExecuteTransaction(
 		env.ctx,
 		cryptolib.SignerToSuiSigner(chainOriginator),
 		tx.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
+		&suijsonrpc2.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -333,11 +333,11 @@ func (env *Solo) pickCoinsForInitChain(
 		initBaseTokens.Uint64(),
 	)
 	require.NoError(env.T, err)
-	pickedCoin, ok = lo.Find(coins, func(c *suijsonrpc.Coin) bool {
+	pickedCoin, ok = lo.Find(coins, func(c *suijsonrpc2.Coin) bool {
 		return c.Balance.Uint64() == initBaseTokens.Uint64()
 	})
 	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
-	return pickedCoin, lo.Filter(coins, func(c *suijsonrpc.Coin, _ int) bool {
+	return pickedCoin, lo.Filter(coins, func(c *suijsonrpc2.Coin, _ int) bool {
 		return c != pickedCoin
 	})
 }
@@ -392,8 +392,8 @@ func (env *Solo) deployChain(
 		stateMetadata.Bytes(),
 		initCoin.Ref(),
 		gasPayments.CoinRefs(),
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		suiclient2.DefaultGasPrice,
+		suiclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(env.T, err)
@@ -559,12 +559,12 @@ func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.SuiCoinInfo {
 	return isc.SuiCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
 
-func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
+func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*suijsonrpc2.Coin {
 	return env.L1Coins(addr, coin.BaseTokenType)
 }
 
-func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
-	r, err := env.SuiClient().GetCoins(env.ctx, suiclient.GetCoinsRequest{
+func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*suijsonrpc2.Coin {
+	r, err := env.SuiClient().GetCoins(env.ctx, suiclient2.GetCoinsRequest{
 		Owner: addr.AsSuiAddress(),
 		Limit: math.MaxUint,
 	})
@@ -572,8 +572,8 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*suijsonrpc.Coin {
 	return r.Data
 }
 
-func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*suijsonrpc.Coin {
-	r, err := env.SuiClient().GetCoins(env.ctx, suiclient.GetCoinsRequest{
+func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*suijsonrpc2.Coin {
+	r, err := env.SuiClient().GetCoins(env.ctx, suiclient2.GetCoinsRequest{
 		Owner:    addr.AsSuiAddress(),
 		CoinType: (*string)(&coinType),
 		Limit:    math.MaxUint,
@@ -587,7 +587,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 }
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
-	r, err := env.SuiClient().GetBalance(env.ctx, suiclient.GetBalanceRequest{
+	r, err := env.SuiClient().GetBalance(env.ctx, suiclient2.GetBalanceRequest{
 		Owner:    addr.AsSuiAddress(),
 		CoinType: string(coinType),
 	})
@@ -595,7 +595,7 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 	return coin.Value(r.TotalBalance)
 }
 
-func (env *Solo) L1NFTs(addr *cryptolib.Address) []sui.ObjectID {
+func (env *Solo) L1NFTs(addr *cryptolib.Address) []sui2.ObjectID {
 	panic("TODO")
 }
 
@@ -631,7 +631,7 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address,
 func (env *Solo) MintNFTsL1(
 	issuer *cryptolib.KeyPair,
 	target *cryptolib.Address,
-	collectionID *sui.ObjectID,
+	collectionID *sui2.ObjectID,
 	metadata [][]byte,
 ) ([]*isc.NFT, error) {
 	panic("TODO")
@@ -673,13 +673,13 @@ func (env *Solo) MintNFTsL1(
 	*/
 }
 
-func (env *Solo) executePTB(ptb sui.ProgrammableTransaction, wallet *cryptolib.KeyPair) *suijsonrpc.SuiTransactionBlockResponse {
-	tx := sui.NewProgrammable(
+func (env *Solo) executePTB(ptb sui2.ProgrammableTransaction, wallet *cryptolib.KeyPair) *suijsonrpc2.SuiTransactionBlockResponse {
+	tx := sui2.NewProgrammable(
 		wallet.Address().AsSuiAddress(),
 		ptb,
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		suiclient2.DefaultGasPrice,
+		suiclient2.DefaultGasBudget,
 	)
 
 	txnBytes, err := bcs.Marshal(&tx)
@@ -689,7 +689,7 @@ func (env *Solo) executePTB(ptb sui.ProgrammableTransaction, wallet *cryptolib.K
 		env.ctx,
 		cryptolib.SignerToSuiSigner(wallet),
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
+		&suijsonrpc2.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -701,19 +701,19 @@ func (env *Solo) executePTB(ptb sui.ProgrammableTransaction, wallet *cryptolib.K
 
 // SendL1 sends coins to another L1 address
 func (env *Solo) SendL1(targetAddress *cryptolib.Address, coins isc.CoinBalances, wallet *cryptolib.KeyPair) {
-	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb := sui2.NewProgrammableTransactionBuilder()
 	allCoins := env.L1AllCoins(wallet.Address())
 	coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
 		ptb.Pay(
 			lo.Map(
-				lo.Filter(allCoins, func(c *suijsonrpc.Coin, _ int) bool {
+				lo.Filter(allCoins, func(c *suijsonrpc2.Coin, _ int) bool {
 					return c.CoinType == string(coinType)
 				}),
-				func(c *suijsonrpc.Coin, _ int) *sui.ObjectRef {
+				func(c *suijsonrpc2.Coin, _ int) *sui2.ObjectRef {
 					return c.Ref()
 				},
 			),
-			[]*sui.Address{targetAddress.AsSuiAddress()},
+			[]*sui2.Address{targetAddress.AsSuiAddress()},
 			[]uint64{uint64(amount)},
 		)
 		return true

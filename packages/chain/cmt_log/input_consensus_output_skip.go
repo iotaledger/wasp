@@ -6,8 +6,8 @@ package cmt_log
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputSkip struct {

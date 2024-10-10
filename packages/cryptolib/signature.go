@@ -15,8 +15,8 @@ import (
 	// an extended version of this package repackaged as an importable module.
 	"filippo.io/edwards25519"
 
+	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 const SignatureSize = ed25519.SignatureSize

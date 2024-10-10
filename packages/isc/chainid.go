@@ -5,12 +5,12 @@ package isc
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-const ChainIDLength = sui.AddressLen
+const ChainIDLength = sui2.AddressLen
 
 var emptyChainID = ChainID{}
 
@@ -18,7 +18,7 @@ var emptyChainID = ChainID{}
 // It is wrapped AliasAddress, an address without a private key behind
 type (
 	// ChainID is the anchor ObjectID
-	ChainID    sui.ObjectID
+	ChainID    sui2.ObjectID
 	ChainIDKey string
 )
 
@@ -31,7 +31,7 @@ func ChainIDFromAddress(addr *cryptolib.Address) ChainID {
 	return ChainID(addr[:])
 }
 
-func ChainIDFromObjectID(addr sui.ObjectID) ChainID {
+func ChainIDFromObjectID(addr sui2.ObjectID) ChainID {
 	return ChainID(addr[:])
 }
 
@@ -57,8 +57,8 @@ func ChainIDFromKey(key ChainIDKey) ChainID {
 	return chainID
 }
 
-func (id ChainID) AsObjectID() sui.ObjectID {
-	return sui.ObjectID(id)
+func (id ChainID) AsObjectID() sui2.ObjectID {
+	return sui2.ObjectID(id)
 }
 
 func (id ChainID) AsAddress() *cryptolib.Address {

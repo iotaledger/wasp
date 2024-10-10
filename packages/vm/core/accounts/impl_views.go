@@ -3,11 +3,11 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // viewBalance returns the balances of the account belonging to the AgentID

@@ -22,24 +22,24 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
+	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	suisigner2 "github.com/iotaledger/wasp/clients/iota-go/suisigner"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 var (
-	ISCPackageOwner suisigner.Signer
+	ISCPackageOwner suisigner2.Signer
 	instance        atomic.Pointer[SuiTestValidator]
 )
 
 func init() {
 	var seed [ed25519.SeedSize]byte
 	copy(seed[:], []byte("iscPackageOwner"))
-	ISCPackageOwner = suisigner.NewSigner(seed[:], suisigner.KeySchemeFlagDefault)
+	ISCPackageOwner = suisigner2.NewSigner(seed[:], suisigner2.KeySchemeFlagDefault)
 }
 
 func Instance() *SuiTestValidator {
@@ -143,8 +143,8 @@ func (stv *SuiTestValidator) Stop() {
 	}
 }
 
-func (stv *SuiTestValidator) Client() *suiclient.Client {
-	return suiclient.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
+func (stv *SuiTestValidator) Client() *suiclient2.Client {
+	return suiclient2.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
 }
 
 func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
@@ -179,7 +179,7 @@ func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
 	})
 
 	tryLoop(func() bool {
-		err := suiclient.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), suiconn.LocalnetFaucetURL)
+		err := suiclient2.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), suiconn.LocalnetFaucetURL)
 		return err == nil
 	})
 
@@ -216,17 +216,17 @@ func scanLog(reader io.Reader, out *os.File) {
 func (stv *SuiTestValidator) deployISCContracts() sui.PackageID {
 	client := stv.Client()
 	iscBytecode := contracts.ISC()
-	txnBytes := lo.Must(client.Publish(context.Background(), suiclient.PublishRequest{
+	txnBytes := lo.Must(client.Publish(context.Background(), suiclient2.PublishRequest{
 		Sender:          ISCPackageOwner.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
+		GasBudget:       suijsonrpc2.NewBigInt(suiclient2.DefaultGasBudget * 10),
 	}))
 	txnResponse := lo.Must(client.SignAndExecuteTransaction(
 		context.Background(),
 		ISCPackageOwner,
 		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
+		&suijsonrpc2.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

@@ -14,13 +14,13 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -50,7 +50,7 @@ type SandboxBase interface {
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
-	GetObjectBCS(id sui.ObjectID) ([]byte, bool)
+	GetObjectBCS(id sui2.ObjectID) ([]byte, bool)
 	// GetCoinInfo returns information about a coin known by the chain
 	GetCoinInfo(coinType coin.Type) (*SuiCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
@@ -82,7 +82,7 @@ type Balance interface {
 	// CoinBalances returns the balance of all coins owned by the smart contract
 	CoinBalances() CoinBalances
 	// OwnedObjects returns the ids of objects owned by the smart contract
-	OwnedObjects() []sui.ObjectID
+	OwnedObjects() []sui2.ObjectID
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }
@@ -298,13 +298,13 @@ type Gas interface {
 type StateAnchor struct {
 	Anchor     *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
-	ISCPackage sui.Address
+	ISCPackage sui2.Address
 }
 
 func NewStateAnchor(
 	anchor *iscmove.AnchorWithRef,
 	owner *cryptolib.Address,
-	iscPackage sui.Address,
+	iscPackage sui2.Address,
 ) StateAnchor {
 	return StateAnchor{
 		Anchor:     anchor,
@@ -313,11 +313,11 @@ func NewStateAnchor(
 	}
 }
 
-func (s StateAnchor) GetObjectRef() *sui.ObjectRef {
+func (s StateAnchor) GetObjectRef() *sui2.ObjectRef {
 	return &s.Anchor.ObjectRef
 }
 
-func (s StateAnchor) GetObjectID() *sui.ObjectID {
+func (s StateAnchor) GetObjectID() *sui2.ObjectID {
 	return s.Anchor.ObjectID
 }
 

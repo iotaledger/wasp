@@ -9,7 +9,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 )
 
 const AddressSize = 32

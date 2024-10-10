@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestMain(m *testing.M) {
@@ -23,22 +23,22 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectInfo) {
+func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*sui2.ObjectRef, *sui2.ObjectInfo) {
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 
-	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), suiclient2.PublishRequest{
 		Sender:          signer.Address().AsSuiAddress(),
 		CompiledModules: testcoinBytecode.Modules,
 		Dependencies:    testcoinBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
+		GasBudget:       suijsonrpc2.NewBigInt(suiclient2.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		suiSigner,
 		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
+		&suijsonrpc2.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -48,9 +48,9 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
-	getObjectRes, err := client.GetObject(context.Background(), suiclient.GetObjectRequest{
+	getObjectRes, err := client.GetObject(context.Background(), suiclient2.GetObjectRequest{
 		ObjectID: packageID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowType: true},
+		Options:  &suijsonrpc2.SuiObjectDataOptions{ShowType: true},
 	})
 	require.NoError(t, err)
 	packageRef := getObjectRes.Data.Ref()
@@ -66,7 +66,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 		"testcoin",
 		treasuryCapRef.ObjectID,
 		mintAmount,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
+		&suijsonrpc2.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -76,7 +76,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 
 	coinRef, err := txnRes.GetCreatedObjectInfo("testcoin", "TESTCOIN")
 	require.NoError(t, err)
-	coinInfo := sui.NewObjectInfo(coinRef, &sui.ResourceType{Address: packageID, Module: "testcoin", ObjectName: "TESTCOIN"})
+	coinInfo := sui2.NewObjectInfo(coinRef, &sui2.ResourceType{Address: packageID, Module: "testcoin", ObjectName: "TESTCOIN"})
 
 	return &packageRef, coinInfo
 }

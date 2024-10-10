@@ -4,26 +4,26 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func PTBStartNewChain(
-	ptb *sui.ProgrammableTransactionBuilder,
-	packageID sui.PackageID,
+	ptb *sui2.ProgrammableTransactionBuilder,
+	packageID sui2.PackageID,
 	stateMetadata []byte,
-	argInitCoin sui.Argument,
+	argInitCoin sui2.Argument,
 	ownerAddress *cryptolib.Address,
-) *sui.ProgrammableTransactionBuilder {
+) *sui2.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "start_new_chain",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					ptb.MustPure(stateMetadata),
 					argInitCoin,
 				},
@@ -31,9 +31,9 @@ func PTBStartNewChain(
 		},
 	)
 	ptb.Command(
-		sui.Command{
-			TransferObjects: &sui.ProgrammableTransferObjects{
-				Objects: []sui.Argument{arg1},
+		sui2.Command{
+			TransferObjects: &sui2.ProgrammableTransferObjects{
+				Objects: []sui2.Argument{arg1},
 				Address: ptb.MustPure(ownerAddress.AsSuiAddress()),
 			},
 		},
@@ -42,37 +42,37 @@ func PTBStartNewChain(
 }
 
 func PTBTakeAndTransferCoinBalance(
-	ptb *sui.ProgrammableTransactionBuilder,
-	packageID sui.PackageID,
-	argAnchor sui.Argument,
-	target *sui.Address,
+	ptb *sui2.ProgrammableTransactionBuilder,
+	packageID sui2.PackageID,
+	argAnchor sui2.Argument,
+	target *sui2.Address,
 	assets *isc.Assets,
-) *sui.ProgrammableTransactionBuilder {
+) *sui2.ProgrammableTransactionBuilder {
 	argBorrow := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "borrow_assets",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					argAnchor,
 				},
 			},
 		},
 	)
-	argAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
-	argB := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
+	argAssets := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
+	argB := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
 
 	for coinType, coinBalance := range assets.Coins {
 		argBal := ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
+			sui2.Command{
+				MoveCall: &sui2.ProgrammableMoveCall{
 					Package:       &packageID,
 					Module:        iscmove.AssetsBagModuleName,
 					Function:      "take_coin_balance",
-					TypeArguments: []sui.TypeTag{coinType.TypeTag()},
-					Arguments: []sui.Argument{
+					TypeArguments: []sui2.TypeTag{coinType.TypeTag()},
+					Arguments: []sui2.Argument{
 						argAssets,
 						ptb.MustPure(coinBalance.Uint64()),
 					},
@@ -80,35 +80,35 @@ func PTBTakeAndTransferCoinBalance(
 			},
 		)
 		argTransferCoin := ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
-					Package:       sui.SuiPackageIdSuiFramework,
+			sui2.Command{
+				MoveCall: &sui2.ProgrammableMoveCall{
+					Package:       sui2.SuiPackageIdSuiFramework,
 					Module:        "coin",
 					Function:      "from_balance",
-					TypeArguments: []sui.TypeTag{coinType.TypeTag()},
-					Arguments: []sui.Argument{
+					TypeArguments: []sui2.TypeTag{coinType.TypeTag()},
+					Arguments: []sui2.Argument{
 						argBal,
 					},
 				},
 			},
 		)
 		ptb.Command(
-			sui.Command{
-				TransferObjects: &sui.ProgrammableTransferObjects{
-					Objects: []sui.Argument{argTransferCoin},
+			sui2.Command{
+				TransferObjects: &sui2.ProgrammableTransferObjects{
+					Objects: []sui2.Argument{argTransferCoin},
 					Address: ptb.MustForceSeparatePure(target),
 				},
 			},
 		)
 	}
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "return_assets_from_borrow",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					argAnchor,
 					argAssets,
 					argB,
@@ -120,40 +120,40 @@ func PTBTakeAndTransferCoinBalance(
 }
 
 func PTBTakeAndPlaceToAssetsBag(
-	ptb *sui.ProgrammableTransactionBuilder,
-	packageID sui.PackageID,
-	argAnchor sui.Argument,
-	argAssetsBag sui.Argument,
+	ptb *sui2.ProgrammableTransactionBuilder,
+	packageID sui2.PackageID,
+	argAnchor sui2.Argument,
+	argAssetsBag sui2.Argument,
 	amount uint64,
 	coinType string,
-) *sui.ProgrammableTransactionBuilder {
-	typeTag, err := sui.TypeTagFromString(coinType)
+) *sui2.ProgrammableTransactionBuilder {
+	typeTag, err := sui2.TypeTagFromString(coinType)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 	argBorrow := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "borrow_assets",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					argAnchor,
 				},
 			},
 		},
 	)
-	argAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
-	argB := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
+	argAssets := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
+	argB := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
 	argBal := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "take_coin_balance",
-				TypeArguments: []sui.TypeTag{*typeTag},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{*typeTag},
+				Arguments: []sui2.Argument{
 					argAssets,
 					ptb.MustPure(amount),
 				},
@@ -161,13 +161,13 @@ func PTBTakeAndPlaceToAssetsBag(
 		},
 	)
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin_balance",
-				TypeArguments: []sui.TypeTag{*typeTag},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{*typeTag},
+				Arguments: []sui2.Argument{
 					argAssetsBag,
 					argBal,
 				},
@@ -175,13 +175,13 @@ func PTBTakeAndPlaceToAssetsBag(
 		},
 	)
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "return_assets_from_borrow",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					argAnchor,
 					argAssets,
 					argB,
@@ -193,110 +193,110 @@ func PTBTakeAndPlaceToAssetsBag(
 }
 
 func PTBReceiveRequestAndTransition(
-	ptb *sui.ProgrammableTransactionBuilder,
-	packageID sui.PackageID,
-	argAnchor sui.Argument,
-	requestRefs []sui.ObjectRef,
-	reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances,
+	ptb *sui2.ProgrammableTransactionBuilder,
+	packageID sui2.PackageID,
+	argAnchor sui2.Argument,
+	requestRefs []sui2.ObjectRef,
+	reqAssetsBagsMap map[sui2.ObjectRef]*iscmove.AssetsBagWithBalances,
 	stateMetadata []byte,
-) *sui.ProgrammableTransactionBuilder {
-	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
+) *sui2.ProgrammableTransactionBuilder {
+	typeReceipt, err := sui2.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
 		panic(fmt.Sprintf("can't parse Receipt's TypeTag: %s", err))
 	}
 
-	var argReceiveRequests []sui.Argument
+	var argReceiveRequests []sui2.Argument
 	argBorrowAssets := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "borrow_assets",
-				TypeArguments: []sui.TypeTag{},
-				Arguments:     []sui.Argument{argAnchor},
+				TypeArguments: []sui2.TypeTag{},
+				Arguments:     []sui2.Argument{argAnchor},
 			},
 		},
 	)
-	argAnchorAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
-	argAnchorBorrow := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
+	argAnchorAssets := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
+	argAnchorBorrow := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
 	for _, reqObject := range requestRefs {
 		reqObject := reqObject
-		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: &reqObject})
+		argReqObject := ptb.MustObj(sui2.ObjectArg{Receiving: &reqObject})
 		argReceiveRequest := ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
+			sui2.Command{
+				MoveCall: &sui2.ProgrammableMoveCall{
 					Package:       &packageID,
 					Module:        iscmove.AnchorModuleName,
 					Function:      "receive_request",
-					TypeArguments: []sui.TypeTag{},
-					Arguments:     []sui.Argument{argAnchor, argReqObject},
+					TypeArguments: []sui2.TypeTag{},
+					Arguments:     []sui2.Argument{argAnchor, argReqObject},
 				},
 			},
 		)
 		argReceiveRequests = append(argReceiveRequests, argReceiveRequest)
 
 		assetsBag := reqAssetsBagsMap[reqObject]
-		argAssetsBag := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
+		argAssetsBag := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
 		for _, bal := range assetsBag.Balances {
-			typeTag, err := sui.TypeTagFromString(bal.CoinType)
+			typeTag, err := sui2.TypeTagFromString(bal.CoinType)
 			if err != nil {
 				panic(fmt.Sprintf("can't parse Balance's Coin TypeTag: %s", err))
 			}
 			argBal := ptb.Command(
-				sui.Command{
-					MoveCall: &sui.ProgrammableMoveCall{
+				sui2.Command{
+					MoveCall: &sui2.ProgrammableMoveCall{
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "take_all_coin_balance",
-						TypeArguments: []sui.TypeTag{*typeTag},
-						Arguments:     []sui.Argument{argAssetsBag},
+						TypeArguments: []sui2.TypeTag{*typeTag},
+						Arguments:     []sui2.Argument{argAssetsBag},
 					},
 				},
 			)
 			ptb.Command(
-				sui.Command{
-					MoveCall: &sui.ProgrammableMoveCall{
+				sui2.Command{
+					MoveCall: &sui2.ProgrammableMoveCall{
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "place_coin_balance",
-						TypeArguments: []sui.TypeTag{*typeTag},
-						Arguments:     []sui.Argument{argAnchorAssets, argBal},
+						TypeArguments: []sui2.TypeTag{*typeTag},
+						Arguments:     []sui2.Argument{argAnchorAssets, argBal},
 					},
 				},
 			)
 		}
 		ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
+			sui2.Command{
+				MoveCall: &sui2.ProgrammableMoveCall{
 					Package:       &packageID,
 					Module:        iscmove.AssetsBagModuleName,
 					Function:      "destroy_empty",
-					TypeArguments: []sui.TypeTag{},
-					Arguments:     []sui.Argument{argAssetsBag},
+					TypeArguments: []sui2.TypeTag{},
+					Arguments:     []sui2.Argument{argAssetsBag},
 				},
 			},
 		)
 	}
 
-	var nestedResults []sui.Argument
+	var nestedResults []sui2.Argument
 	for _, argReceiveRequest := range argReceiveRequests {
-		nestedResults = append(nestedResults, sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 0}})
+		nestedResults = append(nestedResults, sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: *argReceiveRequest.Result, Result: 0}})
 	}
-	argReceipts := ptb.Command(sui.Command{
-		MakeMoveVec: &sui.ProgrammableMakeMoveVec{
+	argReceipts := ptb.Command(sui2.Command{
+		MakeMoveVec: &sui2.ProgrammableMakeMoveVec{
 			Type:    typeReceipt,
 			Objects: nestedResults,
 		},
 	})
 
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "return_assets_from_borrow",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					argAnchor,
 					argAnchorAssets,
 					argAnchorBorrow,
@@ -306,13 +306,13 @@ func PTBReceiveRequestAndTransition(
 	)
 
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		sui2.Command{
+			MoveCall: &sui2.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "transition",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []sui2.TypeTag{},
+				Arguments: []sui2.Argument{
 					argAnchor,
 					ptb.MustPure(stateMetadata),
 					argReceipts,

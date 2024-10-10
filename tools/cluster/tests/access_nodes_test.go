@@ -9,8 +9,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 

@@ -1,9 +1,9 @@
 package accounts
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func eventCoinCreated(ctx isc.Sandbox, treasuryCapID sui.ObjectID) {

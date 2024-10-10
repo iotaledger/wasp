@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
@@ -19,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type BlockFactory struct {
@@ -49,7 +49,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	originBlock, _ := origin.InitChain(0, chainStore, chainInitParams, 0, isc.BaseTokenCoinInfo)
 	originCommitment := originBlock.L1Commitment()
 	originAnchorData := iscmove.RefWithObject[iscmove.Anchor]{
-		ObjectRef: sui.ObjectRef{
+		ObjectRef: sui2.ObjectRef{
 			ObjectID: &chainIDObjID,
 			Version:  0,
 			Digest:   nil, // TODO
@@ -209,7 +209,7 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *isc.StateAnc
 
 	return &isc.StateAnchor{
 		Anchor:     &anchor,
-		Owner:      nil,                            //FIXME
-		ISCPackage: *sui.MustAddressFromHex("0x0"), //FIXME,
+		Owner:      nil,                             //FIXME
+		ISCPackage: *sui2.MustAddressFromHex("0x0"), //FIXME,
 	}
 }

@@ -6,11 +6,11 @@ package evmimpl
 import (
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // handler for ISCSandbox::getChainID

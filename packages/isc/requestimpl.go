@@ -8,10 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type RequestKind byte
@@ -37,14 +37,14 @@ func RequestFromBytes(data []byte) (Request, error) {
 
 // region RequestID //////////////////////////////////////////////////////////////////
 
-type RequestID sui.ObjectID
+type RequestID sui2.ObjectID
 
-func (id *RequestID) AsSuiObjectID() sui.ObjectID {
-	return sui.ObjectID(*id)
+func (id *RequestID) AsSuiObjectID() sui2.ObjectID {
+	return sui2.ObjectID(*id)
 }
 
-func (id *RequestID) AsSuiAddress() sui.Address {
-	return sui.Address(*id)
+func (id *RequestID) AsSuiAddress() sui2.Address {
+	return sui2.Address(*id)
 }
 
 const RequestIDDigestLen = 6
@@ -54,7 +54,7 @@ type RequestRef struct {
 	Hash hashing.HashValue
 }
 
-const RequestRefKeyLen = sui.AddressLen + 32
+const RequestRefKeyLen = sui2.AddressLen + 32
 
 type RequestRefKey [RequestRefKeyLen]byte
 
@@ -118,7 +118,7 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 		return RequestID{}, err
 	}
 
-	if len(data) != sui.AddressLen {
+	if len(data) != sui2.AddressLen {
 		return ret, errors.New("error parsing requestID: wrong length")
 	}
 

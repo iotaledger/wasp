@@ -3,11 +3,11 @@ package iscmovetest
 // Everything in this file should be test only
 
 import (
-	rand "math/rand"
+	"math/rand"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/sui/suitest"
 )
 
 type RandomAnchorOption struct {

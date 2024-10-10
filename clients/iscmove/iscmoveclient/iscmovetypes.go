@@ -2,8 +2,8 @@ package iscmoveclient
 
 import (
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type referent[T any] struct {
@@ -13,8 +13,8 @@ type referent[T any] struct {
 
 // moveAnchor is the BCS equivalent for the move type moveAnchor
 type moveAnchor struct {
-	id            sui.ObjectID
-	assets        referent[iscmove.AssetsBag]
+	id     sui.ObjectID
+	assets referent[iscmove.AssetsBag]
 	stateMetadata []byte
 	stateIndex    uint32
 }

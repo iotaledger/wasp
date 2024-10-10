@@ -3,7 +3,7 @@ package isc
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 )
 
 // IRC27NFTMetadata represents an NFT metadata according to IRC27.

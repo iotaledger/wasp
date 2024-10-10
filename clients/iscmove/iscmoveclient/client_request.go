@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // CreateAndSendRequest calls <packageID>::request::create_and_send_request() and transfers the created
@@ -17,33 +17,33 @@ import (
 func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	anchorAddress *sui.ObjectID,
-	assetsBagRef *sui.ObjectRef,
+	packageID sui2.PackageID,
+	anchorAddress *sui2.ObjectID,
+	assetsBagRef *sui2.ObjectRef,
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
 	allowanceArray []iscmove.CoinAllowance,
 	onchainGasBudget uint64,
-	gasPayments []*sui.ObjectRef, // optional
+	gasPayments []*sui2.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+) (*suijsonrpc2.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	anchorRes, err := c.GetObject(ctx, suiclient.GetObjectRequest{ObjectID: anchorAddress})
+	anchorRes, err := c.GetObject(ctx, suiclient2.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb := sui2.NewProgrammableTransactionBuilder()
 	ptb = PTBCreateAndSendRequest(
 		ptb,
 		packageID,
 		*anchorRef.ObjectID,
-		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+		ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 		iscContractHname,
 		iscFunctionHname,
 		args,
@@ -53,14 +53,14 @@ func (c *Client) CreateAndSendRequest(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, suiclient2.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
+		gasPayments = []*sui2.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
-	tx := sui.NewProgrammable(
+	tx := sui2.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
@@ -85,7 +85,7 @@ func (c *Client) CreateAndSendRequest(
 		ctx,
 		signer,
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&suijsonrpc2.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -98,18 +98,18 @@ func (c *Client) CreateAndSendRequest(
 
 func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
-	reqID *sui.ObjectID,
+	reqID *sui2.ObjectID,
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, suiclient2.GetObjectRequest{
 		ObjectID: reqID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+		Options:  &suijsonrpc2.SuiObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
 	var req moveRequest
-	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+	err = suiclient2.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}

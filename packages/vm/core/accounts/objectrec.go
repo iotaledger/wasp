@@ -1,9 +1,9 @@
 package accounts
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // ObjectRecord represents a L1 generic object owned by the chain (e.g. NFT)

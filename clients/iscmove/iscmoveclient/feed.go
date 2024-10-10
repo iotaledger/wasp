@@ -7,24 +7,24 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/serialization"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/sui/serialization"
+	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 )
 
 type ChainFeed struct {
 	wsClient      *Client
-	iscPackageID  sui.PackageID
-	anchorAddress sui.ObjectID
+	iscPackageID  sui2.PackageID
+	anchorAddress sui2.ObjectID
 	log           *logger.Logger
 }
 
 func NewChainFeed(
 	ctx context.Context,
 	wsClient *Client,
-	iscPackageID sui.PackageID,
-	anchorAddress sui.ObjectID,
+	iscPackageID sui2.PackageID,
+	anchorAddress sui2.ObjectID,
 	log *logger.Logger,
 ) *ChainFeed {
 	return &ChainFeed{
@@ -47,19 +47,19 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
 	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
-	var lastSeen *sui.ObjectID
+	var lastSeen *sui2.ObjectID
 	for {
-		res, err := f.wsClient.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
+		res, err := f.wsClient.GetOwnedObjects(ctx, suiclient2.GetOwnedObjectsRequest{
 			Address: &f.anchorAddress,
-			Query: &suijsonrpc.SuiObjectResponseQuery{
-				Filter: &suijsonrpc.SuiObjectDataFilter{
-					StructType: &sui.StructTag{
+			Query: &suijsonrpc2.SuiObjectResponseQuery{
+				Filter: &suijsonrpc2.SuiObjectDataFilter{
+					StructType: &sui2.StructTag{
 						Address: &f.iscPackageID,
 						Module:  iscmove.RequestModuleName,
 						Name:    iscmove.RequestObjectName,
 					},
 				},
-				Options: &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+				Options: &suijsonrpc2.SuiObjectDataOptions{ShowBcs: true},
 			},
 			Cursor: lastSeen,
 		})
@@ -72,7 +72,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
 			var req moveRequest
-			err := suiclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+			err := suiclient2.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
 			}
@@ -96,7 +96,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
-	anchorID sui.ObjectID,
+	anchorID sui2.ObjectID,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
@@ -106,21 +106,21 @@ func (f *ChainFeed) SubscribeToUpdates(
 
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
-	anchorID sui.ObjectID,
+	anchorID sui2.ObjectID,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
-		events := make(chan *suijsonrpc.SuiEvent)
+		events := make(chan *suijsonrpc2.SuiEvent)
 		err := f.wsClient.SubscribeEvent(
 			ctx,
-			&suijsonrpc.EventFilter{
-				And: &suijsonrpc.AndOrEventFilter{
-					Filter1: &suijsonrpc.EventFilter{MoveEventType: &sui.StructTag{
+			&suijsonrpc2.EventFilter{
+				And: &suijsonrpc2.AndOrEventFilter{
+					Filter1: &suijsonrpc2.EventFilter{MoveEventType: &sui2.StructTag{
 						Address: &f.iscPackageID,
 						Module:  iscmove.RequestModuleName,
 						Name:    iscmove.RequestEventObjectName,
 					}},
-					Filter2: &suijsonrpc.EventFilter{MoveEventField: &suijsonrpc.EventFilterMoveEventField{
+					Filter2: &suijsonrpc2.EventFilter{MoveEventField: &suijsonrpc2.EventFilterMoveEventField{
 						Path:  iscmove.RequestEventAnchorFieldName,
 						Value: anchorID.String(),
 					}},
@@ -147,7 +147,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
-	events <-chan *suijsonrpc.SuiEvent,
+	events <-chan *suijsonrpc2.SuiEvent,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
@@ -159,7 +159,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				return
 			}
 			var reqEvent iscmove.RequestEvent
-			err := suiclient.UnmarshalBCS(ev.Bcs, &reqEvent)
+			err := suiclient2.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
@@ -179,10 +179,10 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
-		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
+		changes := make(chan *serialization.TagJson[suijsonrpc2.SuiTransactionBlockEffects])
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
-			&suijsonrpc.TransactionFilter{
+			&suijsonrpc2.TransactionFilter{
 				ChangedObject: &f.anchorAddress,
 			},
 			changes,
@@ -206,7 +206,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
+	changes <-chan *serialization.TagJson[suijsonrpc2.SuiTransactionBlockEffects],
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
@@ -219,10 +219,10 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			}
 			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == f.anchorAddress {
-					r, err := f.wsClient.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
+					r, err := f.wsClient.TryGetPastObject(ctx, suiclient2.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
-						Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+						Options:  &suijsonrpc2.SuiObjectDataOptions{ShowBcs: true},
 					})
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
@@ -233,7 +233,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						continue
 					}
 					var anchor *iscmove.Anchor
-					err = suiclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+					err = suiclient2.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
@@ -248,6 +248,6 @@ func (f *ChainFeed) consumeAnchorUpdates(
 	}
 }
 
-func (f *ChainFeed) GetISCPackageID() sui.PackageID {
+func (f *ChainFeed) GetISCPackageID() sui2.PackageID {
 	return f.iscPackageID
 }

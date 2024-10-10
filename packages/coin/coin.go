@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math"
 
+	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // Value is the balance of a given coin
@@ -35,13 +35,13 @@ func ValueFromBytes(b []byte) (Value, error) {
 }
 
 // TODO: maybe it is not ok to consider this constant?
-const BaseTokenType = Type(suijsonrpc.SuiCoinType)
+const BaseTokenType = Type(suijsonrpc.IotaCoinType)
 
 // Type is the string representation of a Sui coin type, e.g. `0x2::sui::SUI`
 type Type string
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
-	rt, err := sui.NewResourceType(string(*t))
+	rt, err := sui2.NewResourceType(string(*t))
 	if err != nil {
 		return fmt.Errorf("invalid Type %q: %w", t, err)
 	}
@@ -50,7 +50,7 @@ func (t *Type) MarshalBCS(e *bcs.Encoder) error {
 }
 
 func (t *Type) UnmarshalBCS(d *bcs.Decoder) error {
-	var rt sui.ResourceType
+	var rt sui2.ResourceType
 	d.Decode(&rt)
 	if d.Err() != nil {
 		return d.Err()
@@ -63,8 +63,8 @@ func (t Type) String() string {
 	return string(t)
 }
 
-func (t Type) TypeTag() sui.TypeTag {
-	coinTypeTag, err := sui.TypeTagFromString(t.String())
+func (t Type) TypeTag() sui2.TypeTag {
+	coinTypeTag, err := sui2.TypeTagFromString(t.String())
 	if err != nil {
 		panic(err)
 	}

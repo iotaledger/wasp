@@ -1,14 +1,14 @@
 package isc
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type NFT struct {
-	ID       sui.ObjectID
-	Issuer   *cryptolib.Address
+	ID     sui.ObjectID
+	Issuer *cryptolib.Address
 	Metadata []byte
 	Owner    AgentID // can be nil
 }

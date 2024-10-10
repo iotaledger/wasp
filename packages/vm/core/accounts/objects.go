@@ -3,11 +3,11 @@ package accounts
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func objectsMapKey(agentID isc.AgentID) string {
