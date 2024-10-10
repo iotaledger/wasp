@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -49,7 +50,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		ch.AssertL2BaseTokens(userAgentID, 0)
 		ch.AssertL2BaseTokens(cAID, 0)
 
-		depositBaseTokens := 1 * isc.Million
+		var depositBaseTokens coin.Value = 1 * isc.Million
 		err := ch.DepositBaseTokensToL2(depositBaseTokens, user)
 		expectedUser := depositBaseTokens - ch.LastReceipt().GasFeeCharged
 		ch.AssertL2BaseTokens(userAgentID, expectedUser)
