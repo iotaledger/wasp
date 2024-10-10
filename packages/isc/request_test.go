@@ -39,7 +39,7 @@ func TestRequestDataSerialization(t *testing.T) {
 						ID:   *suitest.RandomAddress(),
 						Size: 1,
 					},
-					Balances: iscmove.AssetsBagBalances{iotajsonrpc.CoinType(coin.BaseTokenType): &iotajsonrpc.Balance{CoinType: iotajsonrpc.CoinType(coin.BaseTokenType), TotalBalance: 200}},
+					Balances: iscmove.AssetsBagBalances{iotajsonrpc.CoinType(coin.BaseTokenType): &iotajsonrpc.Balance{CoinType: iotajsonrpc.CoinType(coin.BaseTokenType), TotalBalance: suijsonrpc.NewBigInt(200)}},
 				},
 				Message: iscmove.Message{
 					Contract: uint32(isc.Hn("target_contract")),

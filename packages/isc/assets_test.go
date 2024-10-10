@@ -22,9 +22,9 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			Size: 2,
 		},
 		Balances: iscmove.AssetsBagBalances{
-			iotajsonrpc.IotaCoinType: &iotajsonrpc.Balance{TotalBalance: 33},
-			"0xa1::a::A":             &iotajsonrpc.Balance{TotalBalance: 11},
-			"0xa2::b::B":             &iotajsonrpc.Balance{TotalBalance: 22},
+			iotajsonrpc.IotaCoinType: &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(33)},
+			"0xa1::a::A":             &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(11)},
+			"0xa2::b::B":             &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(22)},
 		},
 	}
 	assets := isc.AssetsFromAssetsBagWithBalances(assetsBag)

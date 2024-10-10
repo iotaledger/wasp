@@ -91,7 +91,7 @@ func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.ObjectID {
 	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(res))
 }
 
-func (ch *Chain) L2NativeTokens(agentID isc.AgentID, coinType coin.Type) coin.Value {
+func (ch *Chain) L2CoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
 	return ch.L2Assets(agentID).CoinBalance(coinType)
 }
 

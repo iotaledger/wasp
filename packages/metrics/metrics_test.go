@@ -10,9 +10,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -85,8 +85,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 				Balances: map[string]*iotajsonrpc.Balance{
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
-						CoinObjectCount: 1,
-						TotalBalance:    tokensForGas,
+						CoinObjectCount: iotajsonrpc.NewBigInt(1),
+						TotalBalance:    iotajsonrpc.NewBigInt(tokensForGas),
 					},
 				},
 			},

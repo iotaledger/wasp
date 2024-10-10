@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
@@ -31,7 +31,7 @@ func (c *Client) AssetsBagNew(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient2.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -99,7 +99,7 @@ func (c *Client) AssetsBagPlaceCoin(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient2.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -162,7 +162,7 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient2.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -222,7 +222,7 @@ func (c *Client) AssetsDestroyEmpty(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient2.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -268,7 +268,7 @@ func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
 	assetsBagID *iotago.ObjectID,
 ) (*iscmove.AssetsBagWithBalances, error) {
-	fields, err := c.GetDynamicFields(ctx, iotaclient2.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
+	fields, err := c.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
@@ -281,7 +281,7 @@ func (c *Client) GetAssetsBagWithBalances(
 		Balances: make(iscmove.AssetsBagBalances),
 	}
 	for _, data := range fields.Data {
-		resGetObject, err := c.GetObject(ctx, iotaclient2.GetObjectRequest{
+		resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: &data.ObjectID,
 			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowContent: true},
 		})
@@ -298,7 +298,7 @@ func (c *Client) GetAssetsBagWithBalances(
 		cointype := iotajsonrpc.CoinType("0x" + data.Name.Value.(string))
 		bag.Balances[cointype] = &iotajsonrpc.Balance{
 			CoinType:     cointype,
-			TotalBalance: iotajsonrpc.CoinValue(moveBalance.Value.Uint64()),
+			TotalBalance: iotajsonrpc.NewBigInt(moveBalance.Value.Uint64()),
 		}
 	}
 

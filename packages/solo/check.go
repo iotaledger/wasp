@@ -79,12 +79,12 @@ func (ch *Chain) AssertL2TotalCoins(coinType coin.Type, bal coin.Value) {
 	require.Equal(ch.Env.T, bal, bals.Coins.Get(coinType))
 }
 
-func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
+func (ch *Chain) AssertL2TotalBaseTokens(bal coin.Value) {
 	if h, ok := ch.Env.T.(tHelper); ok {
 		h.Helper()
 	}
 	baseTokens := ch.L2TotalBaseTokens()
-	require.EqualValues(ch.Env.T, int(bal), int(baseTokens))
+	require.EqualValues(ch.Env.T, bal, baseTokens)
 }
 
 func (ch *Chain) AssertControlAddresses() {

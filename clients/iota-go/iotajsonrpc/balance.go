@@ -31,8 +31,8 @@ func (t *CoinValue) UnmarshalJSON(data []byte) error {
 
 type Balance struct {
 	CoinType        CoinType            `json:"coinType"`
-	CoinObjectCount uint64              `json:"coinObjectCount"`
-	TotalBalance    CoinValue           `json:"totalBalance"`
+	CoinObjectCount *BigInt             `json:"coinObjectCount"`
+	TotalBalance    *BigInt             `json:"totalBalance"`
 	LockedBalance   map[EpochId]Uint128 `json:"lockedBalance"`
 }
 

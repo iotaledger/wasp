@@ -2,12 +2,11 @@ package sbtestsc
 
 import (
 	"fmt"
-	"math/big"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller
@@ -15,11 +14,11 @@ func testSplitFunds(ctx isc.Sandbox) isc.CallArguments {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claim 1Mi base tokens from allowance at a time
-	baseTokensToTransfer := 1 * isc.Million
-	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().BaseTokens >= baseTokensToTransfer {
+	var baseTokensToTransfer coin.Value = 1 * isc.Million
+	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().BaseTokens() >= baseTokensToTransfer {
 		// send back to caller's address
 		// depending on the amount of base tokens, it will exceed number of outputs or not
-		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(baseTokensToTransfer, nil))
+		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(baseTokensToTransfer))
 		ctx.Send(
 			isc.RequestParameters{
 				TargetAddress: addr,
@@ -36,13 +35,13 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claims all base tokens from allowance
 	accountID := ctx.AccountID()
-	ctx.TransferAllowedFunds(accountID, isc.NewAssets(ctx.AllowanceAvailable().BaseTokens, nil))
-	for _, nativeToken := range ctx.AllowanceAvailable().NativeTokens {
-		for ctx.AllowanceAvailable().AmountNativeToken(nativeToken.ID).Cmp(util.Big0) > 0 {
+	ctx.TransferAllowedFunds(accountID, isc.NewAssets(ctx.AllowanceAvailable().BaseTokens()))
+	for coinType, coinValue := range ctx.AllowanceAvailable().Coins {
+		for coinValue > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
-			assets := isc.NewEmptyAssets().AddNativeTokens(nativeToken.ID, big.NewInt(1))
+			assets := isc.NewEmptyAssets().AddCoin(coinType, 1)
 			rem := ctx.TransferAllowedFunds(accountID, assets)
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
@@ -109,10 +108,10 @@ func sendNFTsBack(ctx isc.Sandbox) isc.CallArguments {
 
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	for _, nftID := range allowance.NFTs {
+	for nftID := range allowance.Objects {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
-			Assets:        isc.NewEmptyAssets().AddNFTs(nftID),
+			Assets:        isc.NewEmptyAssets().AddObject(nftID),
 
 			Metadata: &isc.SendMetadata{},
 			Options:  isc.SendOptions{},
@@ -124,11 +123,11 @@ func sendNFTsBack(ctx isc.Sandbox) isc.CallArguments {
 // just claims everything from allowance and does nothing with it
 // tests the "getData" sandbox call for every NFT sent in allowance
 func claimAllowance(ctx isc.Sandbox) isc.CallArguments {
-	initialNFTset := ctx.OwnedNFTs()
+	initialNFTset := ctx.OwnedObjects()
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	ctx.Requiref(len(ctx.OwnedNFTs())-len(initialNFTset) == len(allowance.NFTs), "must get all NFTs from allowance")
-	for _, id := range allowance.NFTs {
+	ctx.Requiref(len(ctx.OwnedObjects())-len(initialNFTset) == len(allowance.Objects), "must get all NFTs from allowance")
+	for _, id := range allowance.Objects {
 		nftData := ctx.GetNFTData(id)
 		ctx.Requiref(!nftData.ID.Empty(), "must have NFTID")
 		ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
@@ -157,7 +156,7 @@ func sendLargeRequest(ctx isc.Sandbox) isc.CallArguments {
 		panic("not enough funds for storage deposit")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(storageDeposit))
-	req.Assets.BaseTokens = storageDeposit
+	req.Assets.Coins[coin.BaseTokenType] = storageDeposit
 	ctx.Send(req)
 	return nil
 }
