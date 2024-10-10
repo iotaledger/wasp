@@ -82,7 +82,7 @@ type IotaTestValidator struct {
 func Start(ctx context.Context, cfg Config) *IotaTestValidator {
 	stv := &IotaTestValidator{Config: cfg}
 	if !instance.CompareAndSwap(nil, stv) {
-		panic("an instance of iotago-test-validator is already running")
+		panic("an instance of iota-test-validator is already running")
 	}
 	stv.start(ctx)
 	return stv
@@ -90,10 +90,10 @@ func Start(ctx context.Context, cfg Config) *IotaTestValidator {
 
 func (stv *IotaTestValidator) start(ctx context.Context) {
 	stv.ctx = ctx
-	stv.logf("Starting iotago-test-validator...")
+	stv.logf("Starting iota-test-validator...")
 	ts := time.Now()
 	stv.execCmd()
-	stv.logf("Starting iotago-test-validator... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+	stv.logf("Starting iota-test-validator... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 	stv.waitAllHealthy(5 * time.Minute)
 	stv.logf("Deploying ISC contracts...")
 	stv.ISCPackageID = stv.deployISCContracts()
@@ -105,7 +105,7 @@ func (stv *IotaTestValidator) execCmd() {
 	// ctx is done
 	testValidatorCmd := exec.CommandContext(
 		stv.ctx,
-		"iotago-test-validator",
+		"iota-test-validator",
 		fmt.Sprintf("--epoch-duration-ms=%d", 60000),
 		fmt.Sprintf("--fullnode-rpc-port=%d", stv.Config.RPCPort),
 		fmt.Sprintf("--faucet-port=%d", stv.Config.FaucetPort),
@@ -123,7 +123,7 @@ func (stv *IotaTestValidator) Stop() {
 	stv.logf("Stopping...")
 
 	if err := stv.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		panic(fmt.Errorf("unable to send TERM signal to iotago-test-validator: %w", err))
+		panic(fmt.Errorf("unable to send TERM signal to iota-test-validator: %w", err))
 	}
 
 	if err := stv.Cmd.Wait(); err != nil {
@@ -162,7 +162,7 @@ func (stv *IotaTestValidator) waitAllHealthy(timeout time.Duration) {
 			if f() {
 				return
 			}
-			stv.logf("Waiting until iotago-test-validator becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
+			stv.logf("Waiting until iota-test-validator becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
@@ -183,7 +183,7 @@ func (stv *IotaTestValidator) waitAllHealthy(timeout time.Duration) {
 		return err == nil
 	})
 
-	stv.logf("Waiting until iotago-test-validator becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+	stv.logf("Waiting until iota-test-validator becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 }
 
 func (stv *IotaTestValidator) logf(msg string, args ...any) {
@@ -196,11 +196,11 @@ func (stv *IotaTestValidator) redirectOutput() {
 	stdout := lo.Must(stv.Cmd.StdoutPipe())
 	stderr := lo.Must(stv.Cmd.StderrPipe())
 
-	outFilePath := filepath.Join(os.TempDir(), "iotago-test-validator-stdout.log")
+	outFilePath := filepath.Join(os.TempDir(), "iota-test-validator-stdout.log")
 	outFile := lo.Must(os.Create(outFilePath))
 	go scanLog(stdout, outFile)
 
-	errFilePath := filepath.Join(os.TempDir(), "iotago-test-validator-stderr.log")
+	errFilePath := filepath.Join(os.TempDir(), "iota-test-validator-stderr.log")
 	errFile := lo.Must(os.Create(errFilePath))
 	go scanLog(stderr, errFile)
 }
