@@ -8,8 +8,8 @@ type CoinType = string
 
 type Balance struct {
 	CoinType        CoinType            `json:"coinType"`
-	CoinObjectCount uint64              `json:"coinObjectCount"`
-	TotalBalance    uint64              `json:"totalBalance"`
+	CoinObjectCount BigInt              `json:"coinObjectCount"`
+	TotalBalance    BigInt              `json:"totalBalance"`
 	LockedBalance   map[EpochId]Uint128 `json:"lockedBalance"`
 }
 
