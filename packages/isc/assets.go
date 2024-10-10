@@ -269,7 +269,7 @@ func NewAssets(baseTokens coin.Value) *Assets {
 func AssetsFromAssetsBagWithBalances(assetsBag iscmove.AssetsBagWithBalances) *Assets {
 	assets := NewEmptyAssets()
 	for k, v := range assetsBag.Balances {
-		assets.Coins.Add(coin.Type(k), coin.Value(v.TotalBalance))
+		assets.Coins.Add(coin.Type(k), coin.Value(v.TotalBalance.Uint64()))
 	}
 	return assets
 }

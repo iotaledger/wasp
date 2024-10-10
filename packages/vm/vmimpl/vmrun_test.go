@@ -123,8 +123,8 @@ func makeOnLedgerRequest(
 				Balances: map[string]*suijsonrpc.Balance{
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
-						CoinObjectCount: 1,
-						TotalBalance:    baseTokens,
+						CoinObjectCount: suijsonrpc.NewBigInt(1),
+						TotalBalance:    suijsonrpc.NewBigInt(baseTokens),
 					},
 				},
 			},

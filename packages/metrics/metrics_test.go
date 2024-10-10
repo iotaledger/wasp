@@ -85,8 +85,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 				Balances: map[string]*suijsonrpc.Balance{
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
-						CoinObjectCount: 1,
-						TotalBalance:    tokensForGas,
+						CoinObjectCount: suijsonrpc.NewBigInt(1),
+						TotalBalance:    suijsonrpc.NewBigInt(tokensForGas),
 					},
 				},
 			},
