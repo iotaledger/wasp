@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -20,7 +20,7 @@ var testSeed = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116,
 func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seed[0] = seed[0] + byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient2.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 	return kp
 }
@@ -37,11 +37,11 @@ func TestKeys(t *testing.T) {
 	client := newLocalnetClient()
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(context.Background(), iotaclient2.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
 		Sender:          cryptolibSigner.Address().AsSuiAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 

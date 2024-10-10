@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -32,7 +32,7 @@ func (c *Client) CreateAndSendRequest(
 ) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	anchorRes, err := c.GetObject(ctx, iotaclient2.GetObjectRequest{ObjectID: anchorAddress})
+	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
@@ -53,7 +53,7 @@ func (c *Client) CreateAndSendRequest(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient2.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
@@ -100,7 +100,7 @@ func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	reqID *iotago.ObjectID,
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient2.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: reqID,
 		Options:  &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
 	})
@@ -109,7 +109,7 @@ func (c *Client) GetRequestFromObjectID(
 	}
 
 	var req moveRequest
-	err = iotaclient2.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+	err = iotaclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}

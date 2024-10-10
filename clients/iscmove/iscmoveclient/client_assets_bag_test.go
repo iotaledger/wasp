@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
@@ -27,8 +27,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -41,8 +41,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		l1starter.ISCPackageID(),
 		assetsBagRef,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -60,8 +60,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient2.GetObjectRequest{
+		iotaclient.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
 			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
@@ -89,8 +89,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		coinInfo.Ref,
 		testCointype,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -105,8 +105,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient2.GetObjectRequest{
+		iotaclient.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
 			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
@@ -136,8 +136,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		testCointype,
 		10,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -152,8 +152,8 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -163,7 +163,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient2.GetObjectRequest{
+		iotaclient.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
 			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
@@ -181,8 +181,8 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		coinInfo.Ref,
 		testCointype,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -206,7 +206,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient2.GetObjectRequest{
+		iotaclient.GetObjectRequest{
 			ObjectID: testcoinInfo.Ref.ObjectID,
 			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
@@ -286,7 +286,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 		},
 	)
 	pt := ptb.Finish()
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), iotaclient2.DefaultGasBudget)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 	gasPayments := coins.CoinRefs()
 
@@ -294,8 +294,8 @@ func borrowAnchorAssetsAndPlaceCoin(
 		signer.Address(),
 		pt,
 		gasPayments,
-		iotaclient2.DefaultGasBudget,
-		iotaclient2.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
 	)
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
@@ -317,7 +317,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		iotaclient2.GetObjectRequest{
+		iotaclient.GetObjectRequest{
 			ObjectID: testcoinInfo.Ref.ObjectID,
 			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
@@ -333,8 +333,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -349,13 +349,13 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		testcoinInfo.Ref,
 		testCointype,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
 
-	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotaclient2.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
+	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
 
@@ -371,8 +371,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		nil,
 		0,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)

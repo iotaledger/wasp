@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -49,7 +49,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
 	var lastSeen *iotago.ObjectID
 	for {
-		res, err := f.wsClient.GetOwnedObjects(ctx, iotaclient2.GetOwnedObjectsRequest{
+		res, err := f.wsClient.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
 			Address: &f.anchorAddress,
 			Query: &iotajsonrpc.SuiObjectResponseQuery{
 				Filter: &iotajsonrpc.SuiObjectDataFilter{
@@ -72,7 +72,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
 			var req moveRequest
-			err := iotaclient2.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+			err := iotaclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
 			}
@@ -159,7 +159,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				return
 			}
 			var reqEvent iscmove.RequestEvent
-			err := iotaclient2.UnmarshalBCS(ev.Bcs, &reqEvent)
+			err := iotaclient.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
@@ -219,7 +219,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			}
 			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == f.anchorAddress {
-					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient2.TryGetPastObjectRequest{
+					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
 						Options:  &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
@@ -233,7 +233,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						continue
 					}
 					var anchor *iscmove.Anchor
-					err = iotaclient2.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+					err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
