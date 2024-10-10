@@ -47,7 +47,7 @@ func testPanicFullEP(ctx isc.Sandbox) {
 	ctx.Log().Panicf(MsgFullPanic)
 }
 
-func testCustomError(_ isc.Sandbox) {
+func testCustomError(_ isc.Sandbox) isc.CallArguments {
 	panic(testError.Create("CUSTOM_ERROR"))
 }
 

@@ -330,9 +330,11 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		ch.Env.ISCPackageID(),
 		ch.ID().AsAddress().AsIotaAddress(),
 		ch.Env.makeAssetsBag(keyPair, req.assets),
-		uint32(req.msg.Target.Contract),
-		uint32(req.msg.Target.EntryPoint),
-		req.msg.Params,
+		iscmove.Message{
+			Contract: uint32(req.msg.Target.Contract),
+			Function: uint32(req.msg.Target.EntryPoint),
+			Args:     req.msg.Params,
+		},
 		nil, // Add allowance here
 		req.gasBudget,
 		nil,

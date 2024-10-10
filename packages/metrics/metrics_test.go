@@ -90,11 +90,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					},
 				},
 			},
-			Allowance: []iscmove.CoinAllowance{
-				{
-					CoinType: coin.BaseTokenType.String(),
-					Balance:  1,
-				},
+			Allowance: iscmove.Assets{
+				Coins: iscmove.CoinBalances{coin.BaseTokenType.String(): 1},
 			},
 			GasBudget: 1000,
 		},

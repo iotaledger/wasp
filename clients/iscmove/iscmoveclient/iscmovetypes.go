@@ -39,12 +39,16 @@ type moveRequest struct {
 }
 
 func (mr *moveRequest) ToRequest() *iscmove.Request {
+	assets := iscmove.NewAssets(0)
+	for _, allowance := range mr.Allowance {
+		assets.AddCoin(allowance.CoinType, allowance.Balance)
+	}
 	return &iscmove.Request{
 		ID:        mr.ID,
 		Sender:    mr.Sender,
 		AssetsBag: *mr.AssetsBag.Value,
 		Message:   mr.Message,
-		Allowance: mr.Allowance,
+		Allowance: *assets,
 		GasBudget: mr.GasBudget,
 	}
 }

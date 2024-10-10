@@ -66,7 +66,7 @@ func (p *ProgrammableTransactionBuilder) MustPure(value any) Argument {
 
 // refer crates/iotago-types/src/programmable_transaction_builder.rs
 func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error) {
-	id := objArg.id()
+	id := objArg.ID()
 	var oj ObjectArg
 	if oldValue, ok := p.Inputs.Get(BuilderArg{Object: id}); ok {
 		var oldObjArg ObjectArg
@@ -79,7 +79,7 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 
 		if (oldObjArg.SharedObject != nil && objArg.SharedObject != nil) &&
 			(oldObjArg.SharedObject.InitialSharedVersion == objArg.SharedObject.InitialSharedVersion) {
-			if oldObjArg.id() != objArg.id() {
+			if oldObjArg.ID() != objArg.ID() {
 				return Argument{}, errors.New("invariant violation! object has id does not match call arg")
 			}
 			oj = ObjectArg{
