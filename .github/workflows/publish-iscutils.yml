@@ -1,4 +1,4 @@
-name: Publish @iotago/iscutils
+name: Publish @iota/iscutils
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: lts/*
           registry-url: "https://registry.npmjs.org"
-          scope: iotago
+          scope: iota
       - run: find . -type f -name "*.abi" -exec bash -c 'mv "$0" "${0%.abi}.json"' {} \;
       - run: npm version ${{ inputs.version }}
       - run: npm publish --access public
