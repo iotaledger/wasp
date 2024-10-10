@@ -21,7 +21,7 @@ import (
 )
 
 type chainServer struct {
-	backend *jsonrpc.WaspEVMBackend
+	backend *WaspEVMBackend
 	rpc     *rpc.Server
 }
 
@@ -82,7 +82,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	}
 
 	nodePubKey := e.networkProvider.Self().PubKey()
-	backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
+	backend := NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
 	srv, err := jsonrpc.NewServer(
 		jsonrpc.NewEVMChain(backend, e.publisher, e.chainsProvider().IsArchiveNode(), hivedb.EngineRocksDB, e.indexDbPath, e.log.Named("EVMChain")),

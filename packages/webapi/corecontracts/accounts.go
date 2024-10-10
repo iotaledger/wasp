@@ -45,7 +45,7 @@ func GetAccountNonce(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot s
 	return accounts.ViewGetAccountNonce.DecodeOutput(ret)
 }
 
-func GetNFTData(ch chain.Chain, nftID iotago.NFTID, blockIndexOrTrieRoot string) (*isc.NFT, error) {
+func GetNFTData(ch chain.Chain, nftID iotago.ObjectID, blockIndexOrTrieRoot string) (*isc.NFT, error) {
 	panic("TODO")
 	// ret, err := common.CallView(ch, accounts.ViewNFTData.Message(nftID), blockIndexOrTrieRoot)
 	// if err != nil {
@@ -54,24 +54,11 @@ func GetNFTData(ch chain.Chain, nftID iotago.NFTID, blockIndexOrTrieRoot string)
 	// return accounts.ViewNFTData.DecodeOutput(ret)
 }
 
-func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]iotago.NativeTokenID, error) {
+func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]coin.Type, error) {
 	panic("TODO")
 	// ret, err := common.CallView(ch, accounts.ViewGetNativeTokenIDRegistry.Message(), blockIndexOrTrieRoot)
 	// if err != nil {
 	// 	return nil, err
 	// }
 	// return accounts.ViewGetNativeTokenIDRegistry.DecodeOutput(ret)
-}
-
-func GetFoundryOutput(ch chain.Chain, serialNumber uint32, blockIndexOrTrieRoot string) (*iotago.FoundryOutput, error) {
-	panic("TODO")
-	// ret, err := common.CallView(ch, accounts.ViewNativeToken.Message(serialNumber), blockIndexOrTrieRoot)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// out, err := accounts.ViewNativeToken.DecodeOutput(ret)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return out.(*iotago.FoundryOutput), nil
 }
