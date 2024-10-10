@@ -2,13 +2,13 @@ package testcore
 
 import (
 	"math"
-	"math/big"
 	"testing"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -29,11 +29,11 @@ func TestNoSenderFeature(t *testing.T) {
 
 	// mint some NTs and withdraw them
 	gasFee := 10 * gas.LimitsDefault.MinGasPerRequest
-	withdrawAmount := 3 * gas.LimitsDefault.MinGasPerRequest
-	err := ch.DepositAssetsToL2(isc.NewAssets(withdrawAmount+gasFee), wallet)
+	withdrawAmount := coin.Value(13 * gas.LimitsDefault.MinGasPerRequest)
+	err := ch.DepositAssetsToL2(isc.NewAssets(withdrawAmount+coin.Value(gasFee)), wallet)
 	require.NoError(t, err)
-	nativeTokenAmount := big.NewInt(123)
-	sn, nativeTokenID, err := ch.NewNativeTokenParams(big.NewInt(1234)).
+	nativeTokenAmount := coin.Value(123)
+	sn, coinType, err := ch.NewNativeTokenParams(1234).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)
@@ -43,19 +43,16 @@ func TestNoSenderFeature(t *testing.T) {
 
 	// withdraw native tokens to L1
 	allowance := withdrawAmount
-	baseTokensToSend := allowance + gasFee
+	baseTokensToSend := allowance + coin.Value(gasFee)
 	_, err = ch.PostRequestOffLedger(solo.NewCallParams(accounts.FuncWithdraw.Message()).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(allowance).
-		AddAllowanceNativeTokensVect(&isc.NativeToken{
-			ID:     nativeTokenID,
-			Amount: nativeTokenAmount,
-		}).
+		AddAllowanceCoins(coinType, nativeTokenAmount).
 		WithGasBudget(gasFee),
 		wallet)
 	require.NoError(t, err)
 
-	nft, _, err := ch.Env.MintNFTL1(wallet, addr, []byte("foobar"))
+	nft, err := ch.Env.MintNFTL1(wallet, addr, []byte("foobar"))
 	require.NoError(t, err)
 
 	// ----------------------------------------------------------------
@@ -71,11 +68,9 @@ func TestNoSenderFeature(t *testing.T) {
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress: ch.ChainID.AsAddress(),
-			Assets: &isc.Assets{
-				BaseTokens:   5 * isc.Million,
-				NativeTokens: []*isc.NativeToken{{ID: nativeTokenID, Amount: nativeTokenAmount}},
-				NFTs:         []isc.NFTID{nft.ID},
-			},
+			Assets: isc.NewAssets(5*isc.Million).
+				AddCoin(coinType, nativeTokenAmount).
+				AddObject(nft.ID),
 			Metadata: &isc.SendMetadata{
 				Message:   inccounter.FuncIncCounter.Message(nil),
 				GasBudget: math.MaxUint64,
@@ -112,9 +107,11 @@ func TestNoSenderFeature(t *testing.T) {
 	// assert the assets were credited to the payout address
 	payoutAgentIDBalance := ch.L2Assets(ch.OriginatorAgentID)
 	require.Greater(t, payoutAgentIDBalance.BaseTokens, payoutAgentIDBalanceBefore.BaseTokens)
-	require.EqualValues(t, payoutAgentIDBalance.NativeTokens[0].ID, nativeTokenID)
-	require.EqualValues(t, payoutAgentIDBalance.NativeTokens[0].Amount.Uint64(), nativeTokenAmount.Uint64())
-	require.EqualValues(t, payoutAgentIDBalance.NFTs[0], nft.ID)
+	require.Len(t, payoutAgentIDBalance.Coins, 1)
+	require.Contains(t, payoutAgentIDBalance.Coins, coinType)
+	require.EqualValues(t, payoutAgentIDBalance.Coins[coinType], nativeTokenAmount)
+	require.Len(t, payoutAgentIDBalance.Objects, 1)
+	require.Contains(t, payoutAgentIDBalance.Objects, nft.ID)
 }
 
 func TestSendBack(t *testing.T) {
@@ -146,7 +143,7 @@ func TestSendBack(t *testing.T) {
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress: ch.ChainID.AsAddress(),
-			Assets:        &isc.Assets{BaseTokens: 1 * isc.Million},
+			Assets:        isc.NewAssets(1 * isc.Million),
 			Metadata: &isc.SendMetadata{
 				Message:   inccounter.FuncIncCounter.Message(nil),
 				GasBudget: math.MaxUint64,
@@ -203,7 +200,7 @@ func TestBadMetadata(t *testing.T) {
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress: ch.ChainID.AsAddress(),
-			Assets:        &isc.Assets{BaseTokens: 1 * isc.Million},
+			Assets:        isc.NewAssets(1 * isc.Million),
 			Metadata: &isc.SendMetadata{
 				Message:   inccounter.FuncIncCounter.Message(nil),
 				GasBudget: math.MaxUint64,

@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 var errorMessageToTest = "Test error message %v"
@@ -49,7 +51,7 @@ var errorContractProcessor = errorContract.Processor(nil,
 func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{Debug: true}).WithNativeContract(errorContractProcessor)
-	chain, _ := env.NewChainExt(nil, 100_000, "chain1")
+	chain, _ := env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	err := chain.DeployContract(nil, errorContract.Name, errorContract.ProgramHash)
 
 	require.NoError(t, err)
@@ -65,7 +67,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{Debug: true})
-	chain, _ := env.NewChainExt(nil, 1, "chain1")
+	chain, _ := env.NewChainExt(nil, 1, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	chain.MustDepositBaseTokensToL2(1, nil)
 	defer chain.Log().Sync()
