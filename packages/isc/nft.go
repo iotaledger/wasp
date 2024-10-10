@@ -1,14 +1,14 @@
 package isc
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type NFT struct {
-	ID       sui.ObjectID
-	Issuer   *cryptolib.Address
+	ID     iotago.ObjectID
+	Issuer *cryptolib.Address
 	Metadata []byte
 	Owner    AgentID // can be nil
 }
@@ -23,7 +23,7 @@ func (nft *NFT) Bytes() []byte {
 
 // CollectionNFTObjectID returns the address of the collection NFT, if the NFT
 // belongs to a collection.
-func (nft *NFT) CollectionNFTObjectID() (sui.ObjectID, bool) {
+func (nft *NFT) CollectionNFTObjectID() (iotago.ObjectID, bool) {
 	// TODO implement me
-	return sui.ObjectID{}, false
+	return iotago.ObjectID{}, false
 }

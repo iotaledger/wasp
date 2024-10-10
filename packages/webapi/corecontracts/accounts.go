@@ -1,13 +1,12 @@
 package corecontracts
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/common"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (isc.CoinBalances, error) {
@@ -26,7 +25,7 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	return accounts.ViewTotalAssets.DecodeOutput(ret)
 }
 
-func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]sui.Address, error) {
+func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]iotago.Address, error) {
 	ret, err := common.CallView(ch, accounts.ViewAccountObjects.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func GetAccountNonce(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot s
 	return accounts.ViewGetAccountNonce.DecodeOutput(ret)
 }
 
-func GetNFTData(ch chain.Chain, nftID iotago.NFTID, blockIndexOrTrieRoot string) (*isc.NFT, error) {
+func GetNFTData(ch chain.Chain, nftID iotago.ObjectID, blockIndexOrTrieRoot string) (*isc.NFT, error) {
 	panic("TODO")
 	// ret, err := common.CallView(ch, accounts.ViewNFTData.Message(nftID), blockIndexOrTrieRoot)
 	// if err != nil {
@@ -55,24 +54,11 @@ func GetNFTData(ch chain.Chain, nftID iotago.NFTID, blockIndexOrTrieRoot string)
 	// return accounts.ViewNFTData.DecodeOutput(ret)
 }
 
-func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]iotago.NativeTokenID, error) {
+func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]coin.Type, error) {
 	panic("TODO")
 	// ret, err := common.CallView(ch, accounts.ViewGetNativeTokenIDRegistry.Message(), blockIndexOrTrieRoot)
 	// if err != nil {
 	// 	return nil, err
 	// }
 	// return accounts.ViewGetNativeTokenIDRegistry.DecodeOutput(ret)
-}
-
-func GetFoundryOutput(ch chain.Chain, serialNumber uint32, blockIndexOrTrieRoot string) (*iotago.FoundryOutput, error) {
-	panic("TODO")
-	// ret, err := common.CallView(ch, accounts.ViewNativeToken.Message(serialNumber), blockIndexOrTrieRoot)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// out, err := accounts.ViewNativeToken.DecodeOutput(ret)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return out.(*iotago.FoundryOutput), nil
 }

@@ -6,14 +6,14 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type OnLedgerRequestData struct {
-	requestRef      sui.ObjectRef      `bcs:"export"`
-	senderAddress   *cryptolib.Address `bcs:"export"`
+	requestRef    iotago.ObjectRef   `bcs:"export"`
+	senderAddress *cryptolib.Address `bcs:"export"`
 	targetAddress   *cryptolib.Address `bcs:"export"`
 	assets          *Assets            `bcs:"export"`
 	assetsBag       *iscmove.AssetsBag `bcs:"export"`
@@ -73,7 +73,7 @@ func (req *OnLedgerRequestData) Message() Message {
 }
 
 func (req *OnLedgerRequestData) Clone() OnLedgerRequest {
-	outputRef := sui.ObjectRefFromBytes(req.requestRef.Bytes())
+	outputRef := iotago.ObjectRefFromBytes(req.requestRef.Bytes())
 
 	ret := &OnLedgerRequestData{
 		requestRef:    *outputRef,
@@ -103,7 +103,7 @@ func (req *OnLedgerRequestData) IsOffLedger() bool {
 	return false
 }
 
-func (req *OnLedgerRequestData) RequestID() sui.ObjectID {
+func (req *OnLedgerRequestData) RequestID() iotago.ObjectID {
 	return *req.requestRef.ObjectID
 }
 
@@ -139,7 +139,7 @@ func (req *OnLedgerRequestData) String() string {
 	)
 }
 
-func (req *OnLedgerRequestData) RequestRef() sui.ObjectRef {
+func (req *OnLedgerRequestData) RequestRef() iotago.ObjectRef {
 	return req.requestRef
 }
 

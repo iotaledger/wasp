@@ -1,13 +1,13 @@
 package vmimpl
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
@@ -25,12 +25,12 @@ func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
 	return stateMetadata.Bytes()
 }
 
-func (vmctx *vmContext) BuildTransactionEssence(stateMetadata []byte) sui.TransactionData {
+func (vmctx *vmContext) BuildTransactionEssence(stateMetadata []byte) iotago.TransactionData {
 	ptb := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
-	return sui.NewProgrammable(
+	return iotago.NewProgrammable(
 		vmctx.stateAnchor().Owner.AsSuiAddress(),
 		ptb,
-		[]*sui.ObjectRef{}, // TODO: handle L1 gas
+		[]*iotago.ObjectRef{}, // TODO: handle L1 gas
 		0,
 		0,
 	)

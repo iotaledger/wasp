@@ -1,37 +1,37 @@
 package iscmoveclient
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func PTBCreateAndSendRequest(
-	ptb *sui.ProgrammableTransactionBuilder,
-	packageID sui.PackageID,
-	anchorID sui.ObjectID,
-	argAssetsBag sui.Argument,
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	anchorID iotago.ObjectID,
+	argAssetsBag iotago.Argument,
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
 	// the order of the allowance will be reversed after processed by
 	allowanceArray []iscmove.CoinAllowance,
 	onchainGasBudget uint64,
-) *sui.ProgrammableTransactionBuilder {
-	allowanceCoinTypes := make([]suijsonrpc.CoinType, len(allowanceArray))
+) *iotago.ProgrammableTransactionBuilder {
+	allowanceCoinTypes := make([]iotajsonrpc.CoinType, len(allowanceArray))
 	allowanceBalances := make([]uint64, len(allowanceArray))
 	for i, val := range allowanceArray {
 		allowanceCoinTypes[i] = val.CoinType
 		allowanceBalances[i] = val.Balance
 	}
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.RequestModuleName,
 				Function:      "create_and_send_request",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
 					ptb.MustForceSeparatePure(anchorID),
 					argAssetsBag,
 					ptb.MustForceSeparatePure(iscContractHname),
@@ -48,25 +48,25 @@ func PTBCreateAndSendRequest(
 }
 
 func PTBCreateAndSendCrossRequest(
-	ptb *sui.ProgrammableTransactionBuilder,
-	packageID sui.PackageID,
-	anchorID sui.ObjectID,
-	argAssetsBag sui.Argument,
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	anchorID iotago.ObjectID,
+	argAssetsBag iotago.Argument,
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
-	allowanceCointypes sui.Argument,
-	allowanceBalances sui.Argument,
+	allowanceCointypes iotago.Argument,
+	allowanceBalances iotago.Argument,
 	onchainGasBudget uint64,
-) *sui.ProgrammableTransactionBuilder {
+) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.RequestModuleName,
 				Function:      "create_and_send_request",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
 					ptb.MustForceSeparatePure(anchorID),
 					argAssetsBag,
 					ptb.MustForceSeparatePure(iscContractHname),

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
@@ -46,7 +46,7 @@ type VMTaskResult struct {
 	RotationAddress *cryptolib.Address
 	// PTB is the ProgrammableTransaction to be sent to L1 for the next anchor
 	// transition, or nil if the task does not produce a normal block
-	UnsignedTransaction sui.TransactionData
+	UnsignedTransaction iotago.TransactionData
 	StateMetadata       []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult

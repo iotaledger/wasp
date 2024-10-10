@@ -21,7 +21,7 @@ type BatchProposal struct {
 	//
 	// TODO: Add these fields? How to aggregate them?
 	//
-	// - gasPayments []*sui.ObjectRef, // optional
+	// - gasPayments []*iotago.ObjectRef, // optional
 	// - gasPrice uint64,
 	// - gasBudget uint64,
 }

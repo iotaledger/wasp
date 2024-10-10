@@ -9,6 +9,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type tHelper interface {
@@ -97,7 +97,7 @@ func (ch *Chain) AssertControlAddresses() {
 	require.EqualValues(ch.Env.T, ch.LatestBlock().StateIndex(), rec.SinceBlockIndex)
 }
 
-func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID sui.ObjectID) bool {
+func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID iotago.ObjectID) bool {
 	accNFTIDs := ch.L2NFTs(agentID)
 	for _, id := range accNFTIDs {
 		if bytes.Equal(id[:], nftID[:]) {
@@ -121,7 +121,7 @@ func (env *Solo) AssertL1Coins(addr *cryptolib.Address, coinType coin.Type, expe
 	require.True(env.T, env.L1CoinBalance(addr, coinType) == expected)
 }
 
-func (env *Solo) HasL1NFT(addr *cryptolib.Address, id sui.ObjectID) bool {
+func (env *Solo) HasL1NFT(addr *cryptolib.Address, id iotago.ObjectID) bool {
 	accountNFTs := env.L1NFTs(addr)
 	return lo.Contains(accountNFTs, id)
 }

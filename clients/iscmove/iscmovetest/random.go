@@ -3,15 +3,15 @@ package iscmovetest
 // Everything in this file should be test only
 
 import (
-	rand "math/rand"
+	"math/rand"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 )
 
 type RandomAnchorOption struct {
-	ID            *sui.ObjectID
+	ID            *iotago.ObjectID
 	Assets        *iscmove.AssetsBag
 	StateMetadata *[]byte
 	StateIndex    *uint32

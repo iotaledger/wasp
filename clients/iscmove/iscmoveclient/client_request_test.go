@@ -6,10 +6,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 func TestCreateAndSendRequest(t *testing.T) {
@@ -23,8 +23,8 @@ func TestCreateAndSendRequest(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -43,8 +43,8 @@ func TestCreateAndSendRequest(t *testing.T) {
 		[]iscmove.CoinAllowance{{CoinType: "SUI", Balance: 10}, {CoinType: "SUI", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
 		0,
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -64,8 +64,8 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -84,8 +84,8 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		[]iscmove.CoinAllowance{{CoinType: "SUI", Balance: 10}, {CoinType: "SUI", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
 		0,
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)

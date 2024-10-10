@@ -3,13 +3,13 @@ package clients
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type L1Config struct {
@@ -21,174 +21,174 @@ type L1Config struct {
 type L1Client interface {
 	GetDynamicFieldObject(
 		ctx context.Context,
-		req suiclient.GetDynamicFieldObjectRequest,
-	) (*suijsonrpc.SuiObjectResponse, error)
+		req iotaclient.GetDynamicFieldObjectRequest,
+	) (*iotajsonrpc.SuiObjectResponse, error)
 	GetDynamicFields(
 		ctx context.Context,
-		req suiclient.GetDynamicFieldsRequest,
-	) (*suijsonrpc.DynamicFieldPage, error)
+		req iotaclient.GetDynamicFieldsRequest,
+	) (*iotajsonrpc.DynamicFieldPage, error)
 	GetOwnedObjects(
 		ctx context.Context,
-		req suiclient.GetOwnedObjectsRequest,
-	) (*suijsonrpc.ObjectsPage, error)
+		req iotaclient.GetOwnedObjectsRequest,
+	) (*iotajsonrpc.ObjectsPage, error)
 	QueryEvents(
 		ctx context.Context,
-		req suiclient.QueryEventsRequest,
-	) (*suijsonrpc.EventPage, error)
+		req iotaclient.QueryEventsRequest,
+	) (*iotajsonrpc.EventPage, error)
 	QueryTransactionBlocks(
 		ctx context.Context,
-		req suiclient.QueryTransactionBlocksRequest,
-	) (*suijsonrpc.TransactionBlocksPage, error)
-	ResolveNameServiceAddress(ctx context.Context, suiName string) (*sui.Address, error)
+		req iotaclient.QueryTransactionBlocksRequest,
+	) (*iotajsonrpc.TransactionBlocksPage, error)
+	ResolveNameServiceAddress(ctx context.Context, suiName string) (*iotago.Address, error)
 	ResolveNameServiceNames(
 		ctx context.Context,
-		req suiclient.ResolveNameServiceNamesRequest,
-	) (*suijsonrpc.SuiNamePage, error)
+		req iotaclient.ResolveNameServiceNamesRequest,
+	) (*iotajsonrpc.SuiNamePage, error)
 	DevInspectTransactionBlock(
 		ctx context.Context,
-		req suiclient.DevInspectTransactionBlockRequest,
-	) (*suijsonrpc.DevInspectResults, error)
+		req iotaclient.DevInspectTransactionBlockRequest,
+	) (*iotajsonrpc.DevInspectResults, error)
 	DryRunTransaction(
 		ctx context.Context,
-		txDataBytes sui.Base64Data,
-	) (*suijsonrpc.DryRunTransactionBlockResponse, error)
+		txDataBytes iotago.Base64Data,
+	) (*iotajsonrpc.DryRunTransactionBlockResponse, error)
 	ExecuteTransactionBlock(
 		ctx context.Context,
-		req suiclient.ExecuteTransactionBlockRequest,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+		req iotaclient.ExecuteTransactionBlockRequest,
+	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
 	GetCommitteeInfo(
 		ctx context.Context,
-		epoch *suijsonrpc.BigInt, // optional
-	) (*suijsonrpc.CommitteeInfo, error)
-	GetLatestSuiSystemState(ctx context.Context) (*suijsonrpc.SuiSystemStateSummary, error)
-	GetReferenceGasPrice(ctx context.Context) (*suijsonrpc.BigInt, error)
-	GetStakes(ctx context.Context, owner *sui.Address) ([]*suijsonrpc.DelegatedStake, error)
-	GetStakesByIds(ctx context.Context, stakedSuiIds []sui.ObjectID) ([]*suijsonrpc.DelegatedStake, error)
-	GetValidatorsApy(ctx context.Context) (*suijsonrpc.ValidatorsApy, error)
+		epoch *iotajsonrpc.BigInt, // optional
+	) (*iotajsonrpc.CommitteeInfo, error)
+	GetLatestSuiSystemState(ctx context.Context) (*iotajsonrpc.SuiSystemStateSummary, error)
+	GetReferenceGasPrice(ctx context.Context) (*iotajsonrpc.BigInt, error)
+	GetStakes(ctx context.Context, owner *iotago.Address) ([]*iotajsonrpc.DelegatedStake, error)
+	GetStakesByIds(ctx context.Context, stakedSuiIds []iotago.ObjectID) ([]*iotajsonrpc.DelegatedStake, error)
+	GetValidatorsApy(ctx context.Context) (*iotajsonrpc.ValidatorsApy, error)
 	BatchTransaction(
 		ctx context.Context,
-		req suiclient.BatchTransactionRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.BatchTransactionRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	MergeCoins(
 		ctx context.Context,
-		req suiclient.MergeCoinsRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.MergeCoinsRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	MoveCall(
 		ctx context.Context,
-		req suiclient.MoveCallRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.MoveCallRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	Pay(
 		ctx context.Context,
-		req suiclient.PayRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.PayRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	PayAllSui(
 		ctx context.Context,
-		req suiclient.PayAllSuiRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.PayAllSuiRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	PaySui(
 		ctx context.Context,
-		req suiclient.PaySuiRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.PaySuiRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	Publish(
 		ctx context.Context,
-		req suiclient.PublishRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.PublishRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	RequestAddStake(
 		ctx context.Context,
-		req suiclient.RequestAddStakeRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.RequestAddStakeRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	RequestWithdrawStake(
 		ctx context.Context,
-		req suiclient.RequestWithdrawStakeRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.RequestWithdrawStakeRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	SplitCoin(
 		ctx context.Context,
-		req suiclient.SplitCoinRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.SplitCoinRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	SplitCoinEqual(
 		ctx context.Context,
-		req suiclient.SplitCoinEqualRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.SplitCoinEqualRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	TransferObject(
 		ctx context.Context,
-		req suiclient.TransferObjectRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.TransferObjectRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	TransferSui(
 		ctx context.Context,
-		req suiclient.TransferSuiRequest,
-	) (*suijsonrpc.TransactionBytes, error)
+		req iotaclient.TransferSuiRequest,
+	) (*iotajsonrpc.TransactionBytes, error)
 	GetCoinObjsForTargetAmount(
 		ctx context.Context,
-		address *sui.Address,
+		address *iotago.Address,
 		targetAmount uint64,
-	) (suijsonrpc.Coins, error)
+	) (iotajsonrpc.Coins, error)
 	SignAndExecuteTransaction(
 		ctx context.Context,
-		signer suisigner.Signer,
-		txBytes sui.Base64Data,
-		options *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+		signer iotasigner.Signer,
+		txBytes iotago.Base64Data,
+		options *iotajsonrpc.SuiTransactionBlockResponseOptions,
+	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
 	PublishContract(
 		ctx context.Context,
-		signer suisigner.Signer,
-		modules []*sui.Base64Data,
-		dependencies []*sui.Address,
+		signer iotasigner.Signer,
+		modules []*iotago.Base64Data,
+		dependencies []*iotago.Address,
 		gasBudget uint64,
-		options *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, *sui.PackageID, error)
+		options *iotajsonrpc.SuiTransactionBlockResponseOptions,
+	) (*iotajsonrpc.SuiTransactionBlockResponse, *iotago.PackageID, error)
 	MintToken(
 		ctx context.Context,
-		signer suisigner.Signer,
-		packageID *sui.PackageID,
+		signer iotasigner.Signer,
+		packageID *iotago.PackageID,
 		tokenName string,
-		treasuryCap *sui.ObjectID,
+		treasuryCap *iotago.ObjectID,
 		mintAmount uint64,
-		options *suijsonrpc.SuiTransactionBlockResponseOptions,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	GetSuiCoinsOwnedByAddress(ctx context.Context, address *sui.Address) (suijsonrpc.Coins, error)
+		options *iotajsonrpc.SuiTransactionBlockResponseOptions,
+	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	GetSuiCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (iotajsonrpc.Coins, error)
 	BatchGetObjectsOwnedByAddress(
 		ctx context.Context,
-		address *sui.Address,
-		options *suijsonrpc.SuiObjectDataOptions,
+		address *iotago.Address,
+		options *iotajsonrpc.SuiObjectDataOptions,
 		filterType string,
-	) ([]suijsonrpc.SuiObjectResponse, error)
+	) ([]iotajsonrpc.SuiObjectResponse, error)
 	BatchGetFilteredObjectsOwnedByAddress(
 		ctx context.Context,
-		address *sui.Address,
-		options *suijsonrpc.SuiObjectDataOptions,
-		filter func(*suijsonrpc.SuiObjectData) bool,
-	) ([]suijsonrpc.SuiObjectResponse, error)
-	GetAllBalances(ctx context.Context, owner *sui.Address) ([]*suijsonrpc.Balance, error)
-	GetAllCoins(ctx context.Context, req suiclient.GetAllCoinsRequest) (*suijsonrpc.CoinPage, error)
-	GetBalance(ctx context.Context, req suiclient.GetBalanceRequest) (*suijsonrpc.Balance, error)
-	GetCoinMetadata(ctx context.Context, coinType string) (*suijsonrpc.SuiCoinMetadata, error)
-	GetCoins(ctx context.Context, req suiclient.GetCoinsRequest) (*suijsonrpc.CoinPage, error)
-	GetTotalSupply(ctx context.Context, coinType sui.ObjectType) (*suijsonrpc.Supply, error)
+		address *iotago.Address,
+		options *iotajsonrpc.SuiObjectDataOptions,
+		filter func(*iotajsonrpc.SuiObjectData) bool,
+	) ([]iotajsonrpc.SuiObjectResponse, error)
+	GetAllBalances(ctx context.Context, owner *iotago.Address) ([]*iotajsonrpc.Balance, error)
+	GetAllCoins(ctx context.Context, req iotaclient.GetAllCoinsRequest) (*iotajsonrpc.CoinPage, error)
+	GetBalance(ctx context.Context, req iotaclient.GetBalanceRequest) (*iotajsonrpc.Balance, error)
+	GetCoinMetadata(ctx context.Context, coinType string) (*iotajsonrpc.SuiCoinMetadata, error)
+	GetCoins(ctx context.Context, req iotaclient.GetCoinsRequest) (*iotajsonrpc.CoinPage, error)
+	GetTotalSupply(ctx context.Context, coinType iotago.ObjectType) (*iotajsonrpc.Supply, error)
 	GetChainIdentifier(ctx context.Context) (string, error)
-	GetCheckpoint(ctx context.Context, checkpointId *suijsonrpc.BigInt) (*suijsonrpc.Checkpoint, error)
-	GetCheckpoints(ctx context.Context, req suiclient.GetCheckpointsRequest) (*suijsonrpc.CheckpointPage, error)
-	GetEvents(ctx context.Context, digest *sui.TransactionDigest) ([]*suijsonrpc.SuiEvent, error)
+	GetCheckpoint(ctx context.Context, checkpointId *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error)
+	GetCheckpoints(ctx context.Context, req iotaclient.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error)
+	GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.SuiEvent, error)
 	GetLatestCheckpointSequenceNumber(ctx context.Context) (string, error)
-	GetObject(ctx context.Context, req suiclient.GetObjectRequest) (*suijsonrpc.SuiObjectResponse, error)
+	GetObject(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.SuiObjectResponse, error)
 	GetProtocolConfig(
 		ctx context.Context,
-		version *suijsonrpc.BigInt, // optional
-	) (*suijsonrpc.ProtocolConfig, error)
+		version *iotajsonrpc.BigInt, // optional
+	) (*iotajsonrpc.ProtocolConfig, error)
 	GetTotalTransactionBlocks(ctx context.Context) (string, error)
-	GetTransactionBlock(ctx context.Context, req suiclient.GetTransactionBlockRequest) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	MultiGetObjects(ctx context.Context, req suiclient.MultiGetObjectsRequest) ([]suijsonrpc.SuiObjectResponse, error)
+	GetTransactionBlock(ctx context.Context, req iotaclient.GetTransactionBlockRequest) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	MultiGetObjects(ctx context.Context, req iotaclient.MultiGetObjectsRequest) ([]iotajsonrpc.SuiObjectResponse, error)
 	MultiGetTransactionBlocks(
 		ctx context.Context,
-		req suiclient.MultiGetTransactionBlocksRequest,
-	) ([]*suijsonrpc.SuiTransactionBlockResponse, error)
+		req iotaclient.MultiGetTransactionBlocksRequest,
+	) ([]*iotajsonrpc.SuiTransactionBlockResponse, error)
 	TryGetPastObject(
 		ctx context.Context,
-		req suiclient.TryGetPastObjectRequest,
-	) (*suijsonrpc.SuiPastObjectResponse, error)
+		req iotaclient.TryGetPastObjectRequest,
+	) (*iotajsonrpc.SuiPastObjectResponse, error)
 	TryMultiGetPastObjects(
 		ctx context.Context,
-		req suiclient.TryMultiGetPastObjectsRequest,
-	) ([]*suijsonrpc.SuiPastObjectResponse, error)
+		req iotaclient.TryMultiGetPastObjectsRequest,
+	) ([]*iotajsonrpc.SuiPastObjectResponse, error)
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
@@ -197,7 +197,7 @@ type L1Client interface {
 var _ L1Client = &l1Client{}
 
 type l1Client struct {
-	*suiclient.Client
+	*iotaclient.Client
 
 	Config L1Config
 }
@@ -205,9 +205,9 @@ type l1Client struct {
 func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
 	faucetURL := c.Config.FaucetURL
 	if faucetURL == "" {
-		faucetURL = suiconn.FaucetURL(c.Config.APIURL)
+		faucetURL = iotaconn.FaucetURL(c.Config.APIURL)
 	}
-	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
+	return iotaclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
 }
 
 func (c *l1Client) Health(ctx context.Context) error {
@@ -221,7 +221,7 @@ func (c *l1Client) L2() L2Client {
 
 func NewL1Client(l1Config L1Config) L1Client {
 	return &l1Client{
-		suiclient.NewHTTP(l1Config.APIURL),
+		iotaclient.NewHTTP(l1Config.APIURL),
 		l1Config,
 	}
 }

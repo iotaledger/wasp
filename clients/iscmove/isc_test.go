@@ -4,12 +4,13 @@ import (
 	"crypto/rand"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/suitest"
-	"github.com/stretchr/testify/require"
 )
 
 func TestIscCodec(t *testing.T) {
@@ -24,12 +25,12 @@ func TestIscCodec(t *testing.T) {
 
 	anchor := iscmovetest.RandomAnchor()
 
-	var digest sui.Base58
+	var digest iotago.Base58
 	_, err := rand.Read(digest)
 	require.NoError(t, err)
 
 	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
-		ObjectRef: sui.ObjectRef{
+		ObjectRef: iotago.ObjectRef{
 			ObjectID: &anchor.ID,
 			Version:  13,
 			Digest:   &digest,

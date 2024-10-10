@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -17,12 +18,10 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
@@ -38,7 +37,7 @@ func TestOrigin(t *testing.T) {
 }
 
 func TestCreateOrigin(t *testing.T) {
-	var u *UtxoDB
+	var u *_UtxoDB
 	var originTx *iotago.Transaction
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *cryptolib.Address
@@ -47,7 +46,7 @@ func TestCreateOrigin(t *testing.T) {
 	var originTxID iotago.TransactionID
 
 	initTest := func() {
-		u = utxodb.New()
+		u = _utxodb.New()
 		userKey = cryptolib.NewKeyPair()
 		userAddr = userKey.GetPublicKey().AsAddress()
 		_, err2 := u.GetFundsFromFaucet(userAddr)
@@ -56,7 +55,7 @@ func TestCreateOrigin(t *testing.T) {
 		stateKey := cryptolib.NewKeyPair()
 		stateAddr = stateKey.GetPublicKey().AsAddress()
 
-		require.EqualValues(t, suiclient.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
+		require.EqualValues(t, iotaclient.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 	}
 	createOrigin := func() {
@@ -128,7 +127,7 @@ func TestCreateOrigin(t *testing.T) {
 
 		t.Logf("chainBaseTokens: %d", chainBaseTokens)
 
-		require.EqualValues(t, suiclient.FundsFromFaucetAmount-chainBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
+		require.EqualValues(t, iotaclient.FundsFromFaucetAmount-chainBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 		allOutputs, ids := u.GetUnspentOutputs(chainID.AsAddress())
 		require.EqualValues(t, 1, len(allOutputs))

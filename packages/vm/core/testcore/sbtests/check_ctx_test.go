@@ -43,5 +43,7 @@ func testMainCallsFromViewEP(t *testing.T) {
 		sbtestsc.ParamAgentID, isc.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 	)
-	require.NoError(t, err)
+
+	sbtestsc.FuncCheckContextFromViewEP.
+		require.NoError(t, err)
 }

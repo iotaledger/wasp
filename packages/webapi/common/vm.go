@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -15,18 +14,22 @@ import (
 )
 
 func ParseReceipt(chain chainpkg.Chain, receipt *blocklog.RequestReceipt) (*isc.Receipt, error) {
-	resolvedReceiptErr, err := chainutil.ResolveError(chain, receipt.Error)
+	panic("refactor me: ParseReceipt")
+	/*resolvedReceiptErr, err := chainutil.ResolveError(chain, receipt.Error)
 	if err != nil {
 		return nil, err
 	}
 
 	iscReceipt := receipt.ToISCReceipt(resolvedReceiptErr)
 
-	return iscReceipt, nil
+	return iscReceipt, nil*/
 }
 
 func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.CallArguments, error) {
+	panic("refactor me: CallView")
+
 	var chainState state.State
+	_ = chainState
 	var err error
 	switch {
 	case blockIndexOrHash == "":
@@ -57,14 +60,20 @@ func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.
 			return nil, fmt.Errorf("error getting block by index: %w", err)
 		}
 	}
-	return chainutil.CallView(chainState, ch, msg)
+
+	return nil, nil
+	//return chainutil.CallView(chainState, ch, msg)
 }
 
 func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
-	rec, err := chainutil.SimulateRequest(ch, req, true)
-	if err != nil {
-		return nil, err
-	}
-	parsedRec, err := ParseReceipt(ch, rec)
-	return parsedRec, err
+	panic("refactor me: EstimateGas")
+
+	/*
+			rec, err := chainutil.SimulateRequest(ch, req, true)
+		if err != nil {
+			return nil, err
+		}
+		parsedRec, err := ParseReceipt(ch, rec)
+		return parsedRec, err
+	*/
 }

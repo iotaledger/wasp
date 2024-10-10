@@ -5,30 +5,30 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/suitest"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 	assetsBag := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{
-			ID:   *sui.MustAddressFromHex("0x123"),
+			ID:   *iotago.MustAddressFromHex("0x123"),
 			Size: 2,
 		},
 		Balances: iscmove.AssetsBagBalances{
-			suijsonrpc.SuiCoinType: &suijsonrpc.Balance{TotalBalance: suijsonrpc.NewBigInt(33)},
-			"0xa1::a::A":           &suijsonrpc.Balance{TotalBalance: suijsonrpc.NewBigInt(11)},
-			"0xa2::b::B":           &suijsonrpc.Balance{TotalBalance: suijsonrpc.NewBigInt(22)},
+			iotajsonrpc.IotaCoinType: &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(33)},
+			"0xa1::a::A":             &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(11)},
+			"0xa2::b::B":             &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(22)},
 		},
 	}
 	assets := isc.AssetsFromAssetsBagWithBalances(assetsBag)
-	require.Equal(t, assetsBag.Balances[suijsonrpc.SuiCoinType].TotalBalance, uint64(assets.BaseTokens()))
+	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType].TotalBalance, uint64(assets.BaseTokens()))
 	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance("0xa1::a::A")))
 	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance, uint64(assets.CoinBalance("0xa2::b::B")))
 }
@@ -37,7 +37,7 @@ func TestAssetsSerialization(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin("0xa1::a::A", 100).
-		AddObject(sui.ObjectID{})
+		AddObject(iotago.ObjectID{})
 	bcs.TestCodec(t, assets)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }

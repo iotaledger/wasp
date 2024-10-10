@@ -1,0 +1,182 @@
+package iotaclient
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"log"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+)
+
+type GetDynamicFieldObjectRequest struct {
+	ParentObjectID *iotago.ObjectID
+	Name           *iotago.DynamicFieldName
+}
+
+func (c *Client) GetDynamicFieldObject(
+	ctx context.Context,
+	req GetDynamicFieldObjectRequest,
+) (*iotajsonrpc.SuiObjectResponse, error) {
+	var resp iotajsonrpc.SuiObjectResponse
+	return &resp, c.transport.Call(ctx, &resp, getDynamicFieldObject, req.ParentObjectID, req.Name)
+}
+
+type GetDynamicFieldsRequest struct {
+	ParentObjectID *iotago.ObjectID
+	Cursor         *iotago.ObjectID // optional
+	Limit          *uint            // optional
+}
+
+func (c *Client) GetDynamicFields(
+	ctx context.Context,
+	req GetDynamicFieldsRequest,
+) (*iotajsonrpc.DynamicFieldPage, error) {
+	var resp iotajsonrpc.DynamicFieldPage
+	return &resp, c.transport.Call(ctx, &resp, getDynamicFields, req.ParentObjectID, req.Cursor, req.Limit)
+}
+
+type GetOwnedObjectsRequest struct {
+	// Address is the owner's Sui address
+	Address *iotago.Address
+	// [optional] Query is the objects query criteria.
+	Query *iotajsonrpc.SuiObjectResponseQuery
+	// [optional] Cursor is an optional paging cursor.
+	// If provided, the query will start from the next item after the specified cursor.
+	Cursor *iotago.ObjectID
+	// [optional] Limit is the maximum number of items returned per page, defaults to [QUERY_MAX_RESULT_LIMIT_OBJECTS] if not
+	// provided
+	Limit *uint
+}
+
+func (c *Client) GetOwnedObjects(
+	ctx context.Context,
+	req GetOwnedObjectsRequest,
+) (*iotajsonrpc.ObjectsPage, error) {
+	var resp iotajsonrpc.ObjectsPage
+	return &resp, c.transport.Call(ctx, &resp, getOwnedObjects, req.Address, req.Query, req.Cursor, req.Limit)
+}
+
+type QueryEventsRequest struct {
+	Query           *iotajsonrpc.EventFilter
+	Cursor          *iotajsonrpc.EventId // optional
+	Limit           *uint                // optional
+	DescendingOrder bool                 // optional
+}
+
+func (c *Client) QueryEvents(
+	ctx context.Context,
+	req QueryEventsRequest,
+) (*iotajsonrpc.EventPage, error) {
+	var resp iotajsonrpc.EventPage
+	return &resp, c.transport.Call(ctx, &resp, queryEvents, req.Query, req.Cursor, req.Limit, req.DescendingOrder)
+}
+
+type QueryTransactionBlocksRequest struct {
+	Query           *iotajsonrpc.SuiTransactionBlockResponseQuery
+	Cursor          *iotago.TransactionDigest // optional
+	Limit           *uint                     // optional
+	DescendingOrder bool                      // optional
+}
+
+func (c *Client) QueryTransactionBlocks(
+	ctx context.Context,
+	req QueryTransactionBlocksRequest,
+) (*iotajsonrpc.TransactionBlocksPage, error) {
+	resp := iotajsonrpc.TransactionBlocksPage{}
+	return &resp, c.transport.Call(
+		ctx,
+		&resp,
+		queryTransactionBlocks,
+		req.Query,
+		req.Cursor,
+		req.Limit,
+		req.DescendingOrder,
+	)
+}
+
+func (c *Client) ResolveNameServiceAddress(ctx context.Context, suiName string) (*iotago.Address, error) {
+	var resp iotago.Address
+	err := c.transport.Call(ctx, &resp, resolveNameServiceAddress, suiName)
+	if err != nil && err.Error() == "nil address" {
+		return nil, errors.New("iotago name not found")
+	}
+	return &resp, nil
+}
+
+type ResolveNameServiceNamesRequest struct {
+	Owner  *iotago.Address
+	Cursor *iotago.ObjectID // optional
+	Limit  *uint            // optional
+}
+
+func (c *Client) ResolveNameServiceNames(
+	ctx context.Context,
+	req ResolveNameServiceNamesRequest,
+) (*iotajsonrpc.SuiNamePage, error) {
+	var resp iotajsonrpc.SuiNamePage
+	return &resp, c.transport.Call(ctx, &resp, resolveNameServiceNames, req.Owner, req.Cursor, req.Limit)
+}
+
+func (s *Client) SubscribeEvent(
+	ctx context.Context,
+	filter *iotajsonrpc.EventFilter,
+	resultCh chan<- *iotajsonrpc.SuiEvent,
+) error {
+	wsCh := make(chan []byte, 10)
+	err := s.transport.Subscribe(ctx, wsCh, subscribeEvent, filter)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case messageData, ok := <-wsCh:
+				if !ok {
+					return
+				}
+				var result *iotajsonrpc.SuiEvent
+				if err := json.Unmarshal(messageData, &result); err != nil {
+					log.Fatal(err)
+				}
+				resultCh <- result
+			}
+		}
+	}()
+	return nil
+}
+
+func (s *Client) SubscribeTransaction(
+	ctx context.Context,
+	filter *iotajsonrpc.TransactionFilter,
+	resultCh chan<- *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects],
+) error {
+	wsCh := make(chan []byte, 10)
+	err := s.transport.Subscribe(ctx, wsCh, subscribeTransaction, filter)
+	if err != nil {
+		return err
+	}
+	go func() {
+		defer close(resultCh)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case messageData, ok := <-wsCh:
+				if !ok {
+					return
+				}
+				var result *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects]
+				if err := json.Unmarshal(messageData, &result); err != nil {
+					log.Fatal(err)
+				}
+				resultCh <- result
+			}
+		}
+	}()
+	return nil
+}

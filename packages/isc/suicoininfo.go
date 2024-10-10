@@ -1,9 +1,9 @@
 package isc
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 type SuiCoinInfo struct {
@@ -39,7 +39,7 @@ func SuiCoinInfoFromBytes(b []byte) (*SuiCoinInfo, error) {
 
 func SuiCoinInfoFromL1Metadata(
 	coinType coin.Type,
-	metadata *suijsonrpc.SuiCoinMetadata,
+	metadata *iotajsonrpc.SuiCoinMetadata,
 	totalSupply coin.Value,
 ) *SuiCoinInfo {
 	return &SuiCoinInfo{

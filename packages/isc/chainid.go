@@ -4,13 +4,13 @@
 package isc
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	iotago2 "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-const ChainIDLength = sui.AddressLen
+const ChainIDLength = iotago.AddressLen
 
 var emptyChainID = ChainID{}
 
@@ -18,7 +18,7 @@ var emptyChainID = ChainID{}
 // It is wrapped AliasAddress, an address without a private key behind
 type (
 	// ChainID is the anchor ObjectID
-	ChainID    sui.ObjectID
+	ChainID    iotago.ObjectID
 	ChainIDKey string
 )
 
@@ -31,7 +31,7 @@ func ChainIDFromAddress(addr *cryptolib.Address) ChainID {
 	return ChainID(addr[:])
 }
 
-func ChainIDFromObjectID(addr sui.ObjectID) ChainID {
+func ChainIDFromObjectID(addr iotago.ObjectID) ChainID {
 	return ChainID(addr[:])
 }
 
@@ -57,8 +57,8 @@ func ChainIDFromKey(key ChainIDKey) ChainID {
 	return chainID
 }
 
-func (id ChainID) AsObjectID() sui.ObjectID {
-	return sui.ObjectID(id)
+func (id ChainID) AsObjectID() iotago.ObjectID {
+	return iotago.ObjectID(id)
 }
 
 func (id ChainID) AsAddress() *cryptolib.Address {
@@ -66,12 +66,8 @@ func (id ChainID) AsAddress() *cryptolib.Address {
 	return &addr
 }
 
-func (id ChainID) AsAliasAddress() iotago.AliasAddress {
-	return iotago.AliasAddress(id)
-}
-
-func (id ChainID) AsAliasID() iotago.AliasID {
-	return iotago.AliasID(id)
+func (id ChainID) AsAliasID() iotago2.AliasID {
+	return iotago2.AliasID(id)
 }
 
 func (id ChainID) Bytes() []byte {

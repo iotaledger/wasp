@@ -6,24 +6,24 @@ package chainmanager
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type inputConsensusOutputDone struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
-	proposedBaseAO  sui.ObjectID
+	proposedBaseAO  iotago.ObjectID
 	consensusResult *cons.Result
 }
 
 func NewInputConsensusOutputDone(
 	committeeAddr cryptolib.Address,
 	logIndex cmt_log.LogIndex,
-	proposedBaseAO sui.ObjectID,
+	proposedBaseAO iotago.ObjectID,
 	consensusResult *cons.Result,
 ) gpa.Input {
 	return &inputConsensusOutputDone{

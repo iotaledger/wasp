@@ -10,9 +10,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type addressKind uint8
@@ -42,7 +42,7 @@ func ERC20CoinAddress(coinType coin.Type) common.Address {
 	return packMagicAddress(addressKindERC20Coin, hash[:maxPayloadLength])
 }
 
-func ERC721NFTCollectionAddress(collectionID sui.ObjectID) common.Address {
+func ERC721NFTCollectionAddress(collectionID iotago.ObjectID) common.Address {
 	return packMagicAddress(addressKindERC721NFTCollection, collectionID[:maxPayloadLength])
 }
 

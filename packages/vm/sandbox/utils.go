@@ -7,7 +7,8 @@ import (
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -51,7 +52,7 @@ func (u utilImpl) Decode(s string) ([]byte, error) {
 
 func (u utilImpl) Encode(data []byte) string {
 	u.gas.Burn(gas.BurnCodeUtilsHexEncode)
-	return iotago.EncodeHex(data)
+	return hexutil.Encode(data)
 }
 
 // --- isc.Hashing interface

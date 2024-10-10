@@ -13,6 +13,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -25,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type SoloChainEnv struct {
@@ -184,7 +184,7 @@ func (e *SoloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *IscContractI
 	}
 }
 
-func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID sui.ObjectID) *IscContractInstance {
+func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID iotago.ObjectID) *IscContractInstance {
 	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
@@ -243,7 +243,7 @@ func (e *SoloChainEnv) registerERC20Coin(foundryOwner *cryptolib.KeyPair, coinTy
 	return err
 }
 
-func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID sui.ObjectID) error {
+func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.ObjectID) error {
 	_, err := e.Chain.PostRequestOffLedger(
 		solo.NewCallParams(evm.FuncRegisterERC721NFTCollection.Message(collectionID)).
 			WithMaxAffordableGasBudget(),

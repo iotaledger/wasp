@@ -1,14 +1,14 @@
 package vmimpl
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 const MaxPostedOutputsInOneRequest = 4
 
-func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID sui.ObjectID) *isc.NFT {
+func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.ObjectID) *isc.NFT {
 	panic("refactor me: getNFTData vm.send")
 	//return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
 }

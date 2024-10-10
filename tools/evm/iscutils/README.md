@@ -11,7 +11,7 @@ For further information on the Magic contract, check the [Wiki](https://wiki.iot
 The @iota/iscutils contracts are installable via __NPM__ with
 
 ```bash
-npm install @iota/iscutils
+npm install @iotago/iscutils
 ```
 
 After installing `@iota/iscutils` you can use the functions by importing them as you normally would.

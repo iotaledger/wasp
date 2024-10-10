@@ -355,7 +355,7 @@ func testChained(t *testing.T, n, f, b int) {
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
 		testNodeStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(testNodeStates[nid], originAO)
+		origin.InitChainByAnchor(testNodeStates[nid], originAO)
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {

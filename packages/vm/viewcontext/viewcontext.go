@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -23,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
@@ -119,11 +119,11 @@ func (ctx *ViewContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
 	return ctx.accountsStateWithGasBurn().GetCoins(agentID, ctx.chainID)
 }
 
-func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []sui.ObjectID {
+func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
 	return ctx.accountsStateWithGasBurn().GetAccountObjects(agentID)
 }
 
-func (ctx *ViewContext) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
+func (ctx *ViewContext) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("refactor me")
 }
 

@@ -3,9 +3,9 @@ package isc
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui/suitest"
 )
 
 func TestChainIDSerialization(t *testing.T) {

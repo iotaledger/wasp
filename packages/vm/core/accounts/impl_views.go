@@ -3,11 +3,11 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // viewBalance returns the balances of the account belonging to the AgentID
@@ -50,13 +50,13 @@ func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint
 }
 
 // viewAccountObjects returns the ObjectIDs of Objects owned by an account
-func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []sui.ObjectID {
+func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []iotago.ObjectID {
 	ctx.Log().Debugf("accounts.viewAccountObjects")
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountObjects(aid)
 }
 
-func viewAccountObjectsInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID sui.ObjectID) []sui.ObjectID {
+func viewAccountObjectsInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID iotago.ObjectID) []iotago.ObjectID {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountObjectsInCollection(aid, collectionID)
 }
@@ -64,7 +64,7 @@ func viewAccountObjectsInCollection(ctx isc.SandboxView, optionalAgentID *isc.Ag
 var errObjectNotFound = coreerrors.Register("object not found").Create()
 
 // viewObjectBCS returns the Object data for a given ObjectID
-func viewObjectBCS(ctx isc.SandboxView, objectID sui.ObjectID) []byte {
+func viewObjectBCS(ctx isc.SandboxView, objectID iotago.ObjectID) []byte {
 	data := NewStateReaderFromSandbox(ctx).GetObjectBCS(objectID)
 	if data == nil {
 		panic(errObjectNotFound)

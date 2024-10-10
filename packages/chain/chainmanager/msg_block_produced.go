@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 // This message is used to inform access nodes on new blocks
 // produced so that they can update their active state faster.
 type msgBlockProduced struct {
 	gpa.BasicMessage
-	tx    *suisigner.SignedTransaction
+	tx    *iotasigner.SignedTransaction
 	block state.Block
 }
 
 var _ gpa.Message = new(msgBlockProduced)
 
-func NewMsgBlockProduced(recipient gpa.NodeID, tx *suisigner.SignedTransaction, block state.Block) gpa.Message {
+func NewMsgBlockProduced(recipient gpa.NodeID, tx *iotasigner.SignedTransaction, block state.Block) gpa.Message {
 	return &msgBlockProduced{
 		BasicMessage: gpa.NewBasicMessage(recipient),
 		tx:           tx,
@@ -42,7 +42,7 @@ func (msg *msgBlockProduced) Read(r io.Reader) error {
 	panic("implement msgBlockProduced.Read") // TODO: ..
 	// rr := rwutil.NewReader(r)
 	// msgTypeBlockProduced.ReadAndVerify(rr)
-	// msg.tx = new(suisigner.SignedTransaction)
+	// msg.tx = new(iotasigner.SignedTransaction)
 	// rr.ReadSerialized(msg.tx)
 	// msg.block = state.NewBlock()
 	// rr.Read(msg.block)

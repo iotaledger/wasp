@@ -3,7 +3,7 @@ package isc
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
 // IRC27NFTMetadata represents an NFT metadata according to IRC27.
@@ -54,6 +54,6 @@ func IRC27NFTMetadataFromBCS(bcs []byte) (*IRC27NFTMetadata, error) {
 	panic("implement me")
 }
 
-func IRC27NFTCollectionIDFromBCS(bcs []byte) (sui.ObjectID, bool, error) {
+func IRC27NFTCollectionIDFromBCS(bcs []byte) (iotago.ObjectID, bool, error) {
 	panic("implement me")
 }

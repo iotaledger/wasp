@@ -3,10 +3,10 @@ package iscmove
 import (
 	"bytes"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -37,7 +37,7 @@ const (
 */
 
 type RefWithObject[T any] struct {
-	sui.ObjectRef
+	iotago.ObjectRef
 	Object *T
 }
 
@@ -50,11 +50,11 @@ func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
-	ID   sui.ObjectID
+	ID   iotago.ObjectID
 	Size uint64
 }
 
-type AssetsBagBalances map[suijsonrpc.CoinType]*suijsonrpc.Balance
+type AssetsBagBalances map[iotajsonrpc.CoinType]*iotajsonrpc.Balance
 
 type AssetsBagWithBalances struct {
 	AssetsBag
@@ -62,7 +62,7 @@ type AssetsBagWithBalances struct {
 }
 
 type Anchor struct {
-	ID            sui.ObjectID
+	ID            iotago.ObjectID
 	Assets        AssetsBag
 	StateMetadata []byte
 	StateIndex    uint32
@@ -106,7 +106,7 @@ func AnchorWithRefEquals(a1 AnchorWithRef, a2 AnchorWithRef) bool {
 }
 
 type Receipt struct {
-	RequestID sui.ObjectID
+	RequestID iotago.ObjectID
 }
 
 type Message struct {
@@ -116,12 +116,12 @@ type Message struct {
 }
 
 type CoinAllowance struct {
-	CoinType suijsonrpc.CoinType
+	CoinType iotajsonrpc.CoinType
 	Balance  uint64
 }
 
 type Request struct {
-	ID     sui.ObjectID
+	ID     iotago.ObjectID
 	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
 	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
@@ -131,11 +131,11 @@ type Request struct {
 }
 
 type RequestEvent struct {
-	RequestID sui.ObjectID
-	Anchor    sui.Address
+	RequestID iotago.ObjectID
+	Anchor    iotago.Address
 }
 
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
+// Related to: https://github.com/iotaledger/kinesis/blob/isc-iotajsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
 type IRC27MetaData struct {
 	Version           string
 	MediaType         string
@@ -150,7 +150,7 @@ type IRC27MetaData struct {
 }
 
 type NFT struct {
-	ID                sui.ObjectID
+	ID                iotago.ObjectID
 	LegacySender      *cryptolib.Address `bcs:"optional"`
 	Metadata          *[]uint8           `bcs:"optional"`
 	Tag               *[]uint8           `bcs:"optional"`

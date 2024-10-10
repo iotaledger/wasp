@@ -11,6 +11,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -21,8 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -511,11 +510,11 @@ func TestAccountBalances(t *testing.T) {
 
 		totalGasFeeCharged += bi.GasFeeCharged
 		require.EqualValues(t,
-			suiclient.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
+			iotaclient.FundsFromFaucetAmount+totalGasFeeCharged-anchorSD,
 			l1BaseTokens(chainOwnerAddr)+ch.L2BaseTokens(chainOwnerAgentID)+ch.L2BaseTokens(accounts.CommonAccount()),
 		)
 		require.EqualValues(t,
-			suiclient.FundsFromFaucetAmount-totalGasFeeCharged,
+			iotaclient.FundsFromFaucetAmount-totalGasFeeCharged,
 			l1BaseTokens(senderAddr)+ch.L2BaseTokens(senderAgentID),
 		)
 	}
@@ -892,7 +891,7 @@ func TestTransferPartialAssets(t *testing.T) {
 	v.ch.AssertL2TotalCoins(nativeTokenID, coin.Value(10))
 }
 
-// TestMintedTokensBurn belongs to iota.go
+// TestMintedTokensBurn belongs to iotago.go
 func TestMintedTokensBurn(t *testing.T) {
 	const OneMi = 1_000_000
 

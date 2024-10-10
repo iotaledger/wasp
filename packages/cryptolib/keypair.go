@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type KeyPair struct {
@@ -72,8 +72,8 @@ func (k *KeyPair) Sign(payload []byte) (*Signature, error) {
 	return NewSignature(k.GetPublicKey(), k.SignBytes(payload)), nil
 }
 
-func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent suisigner.Intent) (*Signature, error) {
-	data := suisigner.MessageWithIntent(intent, txnBytes)
+func (k *KeyPair) SignTransactionBlock(txnBytes []byte, intent iotasigner.Intent) (*Signature, error) {
+	data := iotasigner.MessageWithIntent(intent, txnBytes)
 	hash := blake2b.Sum256(data)
 	sig := ed25519.Sign(k.privateKey.key, hash[:])
 

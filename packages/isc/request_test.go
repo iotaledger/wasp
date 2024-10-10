@@ -5,6 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -13,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui/suitest"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func TestRequestDataSerialization(t *testing.T) {
@@ -39,7 +39,7 @@ func TestRequestDataSerialization(t *testing.T) {
 						ID:   *suitest.RandomAddress(),
 						Size: 1,
 					},
-					Balances: iscmove.AssetsBagBalances{suijsonrpc.CoinType(coin.BaseTokenType): &suijsonrpc.Balance{CoinType: suijsonrpc.CoinType(coin.BaseTokenType), TotalBalance: suijsonrpc.NewBigInt(200)}},
+					Balances: iscmove.AssetsBagBalances{iotajsonrpc.CoinType(coin.BaseTokenType): &iotajsonrpc.Balance{CoinType: iotajsonrpc.CoinType(coin.BaseTokenType), TotalBalance: iotajsonrpc.NewBigInt(200)}},
 				},
 				Message: iscmove.Message{
 					Contract: uint32(isc.Hn("target_contract")),

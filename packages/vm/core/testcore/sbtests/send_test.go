@@ -6,14 +6,13 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -161,7 +160,7 @@ func testPingBaseTokens1(t *testing.T) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	const expectedBack = 1 * isc.Million
-	ch.Env.AssertL1BaseTokens(userAddr, suiclient.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPingAllowanceBack.Name).
 		AddBaseTokens(expectedBack + 500). // add extra base tokens besides allowance in order to estimate the gas fees
@@ -190,9 +189,9 @@ func testPingBaseTokens1(t *testing.T) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.L1.BaseTokens(), suiclient.FundsFromFaucetAmount-receipt.GasFeeCharged)
+	require.EqualValues(t, userFundsAfter.L1.BaseTokens(), iotaclient.FundsFromFaucetAmount-receipt.GasFeeCharged)
 	require.EqualValues(t, commonBefore.BaseTokens(), commonAfter.BaseTokens())
-	require.EqualValues(t, suiclient.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.L1.BaseTokens())
+	require.EqualValues(t, iotaclient.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.L1.BaseTokens())
 	require.Zero(t, userFundsAfter.L2.BaseTokens())
 }
 
@@ -306,7 +305,7 @@ func testNFTMintToChain(t *testing.T) {
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(0))
 
 	nftToBeMinted := &isc.NFT{
-		ID:       sui.ObjectID{},
+		ID:       iotago.ObjectID{},
 		Issuer:   addr,
 		Metadata: []byte("foobar"),
 	}

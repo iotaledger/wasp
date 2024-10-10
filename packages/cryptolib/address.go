@@ -9,7 +9,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
 const AddressSize = 32
@@ -63,14 +63,14 @@ func NewAddressFromKey(key AddressKey) *Address {
 	return &result
 }
 
-func NewAddressFromSui(addr *sui.Address) *Address {
+func NewAddressFromSui(addr *iotago.Address) *Address {
 	a := Address(addr[:])
 	return &a
 }
 
 // TODO: remove when not needed
-func (a *Address) AsSuiAddress() *sui.Address {
-	result := sui.Address(a[:])
+func (a *Address) AsSuiAddress() *iotago.Address {
+	result := iotago.Address(a[:])
 	return &result
 }
 
@@ -121,11 +121,11 @@ func AddressFromHex(str string) (*Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > sui.AddressLen {
+	if len(data) > iotago.AddressLen {
 		return nil, errors.New("the len is invalid")
 	}
 	var address Address
-	copy(address[sui.AddressLen-len(data):], data[:])
+	copy(address[iotago.AddressLen-len(data):], data[:])
 	return &address, nil
 }
 

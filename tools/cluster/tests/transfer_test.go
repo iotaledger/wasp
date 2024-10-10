@@ -9,10 +9,10 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 func TestDepositWithdraw(t *testing.T) {
@@ -27,7 +27,7 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(e.t, err)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(iotaclient.FundsFromFaucetAmount)),
 	)
 
 	myAgentID := isc.NewAddressAgentID(myAddress)
@@ -55,7 +55,7 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-depositBaseTokens)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(iotaclient.FundsFromFaucetAmount-depositBaseTokens)),
 	)
 
 	// withdraw some base tokens back
@@ -74,7 +74,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance-baseTokensToWithdraw-coin.Value(gasFees2))
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(iotaclient.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
 	)
 
 	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining base tokens

@@ -7,13 +7,13 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type SandboxBase struct {
@@ -55,7 +55,7 @@ func (s *SandboxBase) CoinBalances() isc.CoinBalances {
 	return s.Ctx.GetCoinBalances(s.AccountID())
 }
 
-func (s *SandboxBase) OwnedObjects() []sui.ObjectID {
+func (s *SandboxBase) OwnedObjects() []iotago.ObjectID {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAccountObjects(s.AccountID())
 }
@@ -71,7 +71,7 @@ func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool
 	return accountAssets.Spend(assets)
 }
 
-func (s *SandboxBase) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
+func (s *SandboxBase) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
 	return s.Ctx.GetObjectBCS(id)
 }

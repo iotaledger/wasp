@@ -9,15 +9,14 @@ import (
 	"pgregory.net/rapid"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type cmtLogTestRapidSM struct {
@@ -82,7 +81,7 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 
 func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.StateAnchor {
 	sm.genAOSerial++
-	var outputID sui.ObjectID // TODO -> ObjectRef
+	var outputID iotago.ObjectID // TODO -> ObjectRef
 	binary.BigEndian.PutUint32(outputID[:], sm.genAOSerial)
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       sm.aliasID,
@@ -99,8 +98,8 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.State
 // func (sm *cmtLogTestRapidSM) ConsDone(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	var li cmtLog.LogIndex         // TODO: Set it.
-// 	var pAO sui.ObjectID        // TODO: Set it.
-// 	var bAO sui.ObjectID        // TODO: Set it.
+// 	var pAO iotago.ObjectID        // TODO: Set it.
+// 	var bAO iotago.ObjectID        // TODO: Set it.
 // 	var nAO *isc.StateAnchor // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputDone(li, pAO, bAO, nAO))
 // 	sm.tc.RunAll()
@@ -109,7 +108,7 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.State
 // func (sm *cmtLogTestRapidSM) ConsSkip(t *rapid.T) {
 // 	nodeID := sm.genNodeID.Draw(t, "node")
 // 	var li cmtLog.LogIndex  // TODO: Set it.
-// 	var pAO sui.ObjectID // TODO: Set it.
+// 	var pAO iotago.ObjectID // TODO: Set it.
 // 	sm.tc.WithInput(nodeID, cmtLog.NewInputConsensusOutputSkip(li, pAO))
 // 	sm.tc.RunAll()
 // }

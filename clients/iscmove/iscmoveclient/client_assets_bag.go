@@ -5,40 +5,40 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 func (c *Client) AssetsBagNew(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	gasPayments []*sui.ObjectRef, // optional
+	packageID iotago.PackageID,
+	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagNewAndTransfer(ptb, packageID, cryptolibSigner.Address())
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
+		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
-	tx := sui.NewProgrammable(
+	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
@@ -62,7 +62,7 @@ func (c *Client) AssetsBagNew(
 		ctx,
 		signer,
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -76,37 +76,37 @@ func (c *Client) AssetsBagNew(
 func (c *Client) AssetsBagPlaceCoin(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	assetsBagRef *sui.ObjectRef,
-	coin *sui.ObjectRef,
-	coinType suijsonrpc.CoinType,
-	gasPayments []*sui.ObjectRef, // optional
+	packageID iotago.PackageID,
+	assetsBagRef *iotago.ObjectRef,
+	coin *iotago.ObjectRef,
+	coinType iotajsonrpc.CoinType,
+	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagPlaceCoin(
 		ptb,
 		packageID,
-		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-		ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coin}),
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coin}),
 		string(coinType),
 	)
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
+		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
-	tx := sui.NewProgrammable(
+	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
@@ -130,7 +130,7 @@ func (c *Client) AssetsBagPlaceCoin(
 		ctx,
 		signer,
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -144,32 +144,32 @@ func (c *Client) AssetsBagPlaceCoin(
 func (c *Client) AssetsBagPlaceCoinAmount(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	assetsBagRef *sui.ObjectRef,
-	coin *sui.ObjectRef,
-	coinType suijsonrpc.CoinType,
+	packageID iotago.PackageID,
+	assetsBagRef *iotago.ObjectRef,
+	coin *iotago.ObjectRef,
+	coinType iotajsonrpc.CoinType,
 	amount uint64,
-	gasPayments []*sui.ObjectRef, // optional
+	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
+	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagPlaceCoinWithAmount(ptb, packageID, assetsBagRef, coin, amount, string(coinType))
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
+		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
-	tx := sui.NewProgrammable(
+	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
@@ -193,7 +193,7 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 		ctx,
 		signer,
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -207,29 +207,29 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 func (c *Client) AssetsDestroyEmpty(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	assetsBagRef *sui.ObjectRef,
-	gasPayments []*sui.ObjectRef, // optional
+	packageID iotago.PackageID,
+	assetsBagRef *iotago.ObjectRef,
+	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	ptb := sui.NewProgrammableTransactionBuilder()
-	ptb = PTBAssetsDestroyEmpty(ptb, packageID, ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: assetsBagRef}))
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBAssetsDestroyEmpty(ptb, packageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}))
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, suiclient.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = []*sui.ObjectRef{coinPage.Data[0].Ref()}
+		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
-	tx := sui.NewProgrammable(
+	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
@@ -253,7 +253,7 @@ func (c *Client) AssetsDestroyEmpty(
 		ctx,
 		signer,
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -266,9 +266,9 @@ func (c *Client) AssetsDestroyEmpty(
 
 func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
-	assetsBagID *sui.ObjectID,
+	assetsBagID *iotago.ObjectID,
 ) (*iscmove.AssetsBagWithBalances, error) {
-	fields, err := c.GetDynamicFields(ctx, suiclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
+	fields, err := c.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
@@ -281,24 +281,24 @@ func (c *Client) GetAssetsBagWithBalances(
 		Balances: make(iscmove.AssetsBagBalances),
 	}
 	for _, data := range fields.Data {
-		resGetObject, err := c.GetObject(ctx, suiclient.GetObjectRequest{
+		resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: &data.ObjectID,
-			Options:  &suijsonrpc.SuiObjectDataOptions{ShowContent: true},
+			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowContent: true},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)
 		}
 
-		var moveBalance suijsonrpc.MoveBalance
+		var moveBalance iotajsonrpc.MoveBalance
 		err = json.Unmarshal(resGetObject.Data.Content.Data.MoveObject.Fields, &moveBalance)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal fields in Balance: %w", err)
 		}
 
-		cointype := suijsonrpc.CoinType("0x" + data.Name.Value.(string))
-		bag.Balances[cointype] = &suijsonrpc.Balance{
+		cointype := iotajsonrpc.CoinType("0x" + data.Name.Value.(string))
+		bag.Balances[cointype] = &iotajsonrpc.Balance{
 			CoinType:     cointype,
-			TotalBalance: suijsonrpc.NewBigInt(moveBalance.Value.Uint64()),
+			TotalBalance: iotajsonrpc.NewBigInt(moveBalance.Value.Uint64()),
 		}
 	}
 

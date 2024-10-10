@@ -6,12 +6,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -31,14 +30,14 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
-	err := chain.SendFromL1ToL2AccountBaseTokens(1000, suiclient.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
+	err := chain.SendFromL1ToL2AccountBaseTokens(1000, iotaclient.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
 }
 
 func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
-	ch.Env.AssertL1BaseTokens(userAddr, suiclient.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 
 	err := ch.DepositBaseTokensToL2(coin.Value(10*gas.LimitsDefault.MinGasPerRequest), user)
 	require.NoError(t, err)

@@ -30,7 +30,7 @@ package examples
 // 	_, userAddress := env.NewKeyPair()
 // 	t.Logf("Address of the userWallet is: %s", userAddress.String())
 // 	numBaseTokens := env.L1NativeTokens(userAddress, colored.IOTA)
-// 	t.Logf("balance of the userWallet is: %d iota", numBaseTokens)
+// 	t.Logf("balance of the userWallet is: %d iotago", numBaseTokens)
 // 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, 0)
 // }
 
@@ -39,6 +39,6 @@ package examples
 // 	_, userAddress := env.NewKeyPairWithFunds()
 // 	t.Logf("Address of the userWallet is: %s", userAddress.String())
 // 	numBaseTokens := env.L1NativeTokens(userAddress, colored.IOTA)
-// 	t.Logf("balance of the userWallet is: %d iota", numBaseTokens)
+// 	t.Logf("balance of the userWallet is: %d iotago", numBaseTokens)
 // 	env.AssertAddressNativeTokenBalance(userAddress, colored.IOTA, utxodb.FundsFromFaucetAmount)
 // }

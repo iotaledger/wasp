@@ -8,10 +8,10 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // handler for ISCAccounts::getL2BalanceBaseTokens
@@ -32,7 +32,7 @@ func (h *magicContractHandler) GetL2BalanceCoin(
 }
 
 // handler for ISCAccounts::getL2Objects
-func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []sui.ObjectID {
+func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []iotago.ObjectID {
 	aid := lo.Must(agentID.Unwrap())
 	r := h.callView(accounts.ViewAccountObjects.Message(&aid))
 	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(r))
@@ -47,8 +47,8 @@ func (h *magicContractHandler) GetL2ObjectCount(agentID iscmagic.ISCAgentID) *bi
 // handler for ISCAccounts::getL2ObjectsInCollection
 func (h *magicContractHandler) GetL2ObjectsInCollection(
 	agentID iscmagic.ISCAgentID,
-	collectionID sui.ObjectID,
-) []sui.ObjectID {
+	collectionID iotago.ObjectID,
+) []iotago.ObjectID {
 	aid := lo.Must(agentID.Unwrap())
 	r := h.callView(accounts.ViewAccountObjectsInCollection.Message(&aid, collectionID))
 	return lo.Must(accounts.ViewAccountObjectsInCollection.DecodeOutput(r))
@@ -57,7 +57,7 @@ func (h *magicContractHandler) GetL2ObjectsInCollection(
 // handler for ISCAccounts::getL2ObjectsCountInCollection
 func (h *magicContractHandler) GetL2ObjectsCountInCollection(
 	agentID iscmagic.ISCAgentID,
-	collectionID sui.ObjectID,
+	collectionID iotago.ObjectID,
 ) *big.Int {
 	// TODO: avoid fetching the whole list of objects
 	return new(big.Int).SetUint64(uint64(len(h.GetL2ObjectsInCollection(agentID, collectionID))))

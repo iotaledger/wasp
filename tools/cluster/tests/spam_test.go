@@ -15,6 +15,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -22,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 // executed in cluster_test.go
@@ -122,7 +122,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(suiclient.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(iotaclient.FundsFromFaucetAmount, keyPair)
 
 	myClient := env.Chain.Client(keyPair)
 
@@ -208,7 +208,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, evmAddr)
-	env.TransferFundsTo(isc.NewAssets(suiclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+	env.TransferFundsTo(isc.NewAssets(iotaclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter
 	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))

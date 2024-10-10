@@ -8,6 +8,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
@@ -16,10 +20,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 // ncChain is responsible for maintaining the information related to a single chain.
@@ -39,7 +39,7 @@ type ncChain struct {
 
 type publishTxTask struct {
 	ctx context.Context
-	tx  suisigner.SignedTransaction
+	tx  iotasigner.SignedTransaction
 	cb  chain.TxPostHandler
 }
 
@@ -86,13 +86,13 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, suiclient.ExecuteTransactionBlockRequest{
+		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
-			Options: &suijsonrpc.SuiTransactionBlockResponseOptions{
+			Options: &iotajsonrpc.SuiTransactionBlockResponseOptions{
 				ShowEffects: true,
 			},
-			RequestType: suijsonrpc.TxnRequestTypeWaitForLocalExecution,
+			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
 		if err != nil {
 			return err
@@ -134,7 +134,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	return nil
 }
 
-func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID sui.ObjectID) {
+func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID) {
 	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
 	ncc.feed.SubscribeToUpdates(ctx, anchorID, anchorUpdates, newRequests)

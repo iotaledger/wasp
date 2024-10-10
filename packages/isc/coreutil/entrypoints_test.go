@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 var _ isc.SandboxBase = MockSandBox{}
@@ -139,7 +139,7 @@ func (m MockSandBox) CoinBalances() isc.CoinBalances {
 	panic("implement me")
 }
 
-func (m MockSandBox) OwnedObjects() []sui.ObjectID {
+func (m MockSandBox) OwnedObjects() []iotago.ObjectID {
 	// TODO implement me
 	panic("implement me")
 }
@@ -203,7 +203,7 @@ func (m MockSandBox) Gas() isc.Gas {
 	panic("implement me")
 }
 
-func (m MockSandBox) GetObjectBCS(id sui.ObjectID) ([]byte, bool) {
+func (m MockSandBox) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	// TODO implement me
 	panic("implement me")
 }

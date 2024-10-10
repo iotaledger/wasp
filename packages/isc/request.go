@@ -7,11 +7,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // Request wraps any data which can be potentially be interpreted as a request
@@ -76,7 +76,7 @@ type OffLedgerRequest interface {
 type OnLedgerRequest interface {
 	Request
 	Clone() OnLedgerRequest
-	RequestRef() sui.ObjectRef
+	RequestRef() iotago.ObjectRef
 	AssetsBag() *iscmove.AssetsBag
 }
 

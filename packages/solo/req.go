@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -22,8 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 )
 
 type CallParams struct {
@@ -85,7 +85,7 @@ func (r *CallParams) AddAllowanceCoins(coinType coin.Type, amount coin.Value) *C
 	return r
 }
 
-func (r *CallParams) AddAllowanceNFTs(nftIDs ...sui.ObjectID) *CallParams {
+func (r *CallParams) AddAllowanceNFTs(nftIDs ...iotago.ObjectID) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
@@ -123,7 +123,7 @@ func (r *CallParams) AddCoin(coinType coin.Type, amount coin.Value) *CallParams 
 }
 
 // Adds an nft to be sent (only applicable when the call is made via on-ledger request)
-func (r *CallParams) WithObject(objectID sui.ObjectID) *CallParams {
+func (r *CallParams) WithObject(objectID iotago.ObjectID) *CallParams {
 	r.assets.AddObject(objectID)
 	return r
 }
@@ -178,8 +178,8 @@ func (ch *Chain) requestFromParams(cp *CallParams, keyPair *cryptolib.KeyPair) (
 	panic("TODO")
 }
 
-func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *sui.ObjectRef {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *iotago.ObjectRef {
+	ptb := iotago.NewProgrammableTransactionBuilder()
 	iscmoveclient.PTBAssetsBagNew(
 		ptb,
 		env.l1Config.ISCPackageID,
@@ -194,7 +194,7 @@ func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *
 				continue
 			}
 			coinRef := ownedCoin.Ref()
-			coinArg := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: coinRef})
+			coinArg := ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef})
 			amountAdded := coin.Value(ownedCoin.Balance.Uint64())
 			if amountAdded > amount {
 				err := ptb.SplitCoin(coinRef, []uint64{uint64(amount)})
@@ -219,7 +219,7 @@ func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *
 		}
 		return true
 	})
-	assets.Objects.IterateSorted(func(objectID sui.ObjectID) bool {
+	assets.Objects.IterateSorted(func(objectID iotago.ObjectID) bool {
 		panic("TODO")
 	})
 	res := env.executePTB(ptb.Finish(), keyPair)
@@ -244,8 +244,8 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		nil, // Add allowance here
 		req.gasBudget,
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	if err != nil {
@@ -308,7 +308,7 @@ func (ch *Chain) PostRequestSyncExt(callParams *CallParams, keyPair *cryptolib.K
 
 	reqID, err := ch.RequestFromParamsToLedger(callParams, keyPair)
 	require.NoError(ch.Env.T, err)
-	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, (*sui.ObjectID)(&reqID))
+	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, (*iotago.ObjectID)(&reqID))
 	req, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
 	results := ch.RunRequestsSync([]isc.Request{req}, "post")
 	if len(results) == 0 {

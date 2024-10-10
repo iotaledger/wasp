@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 type ChainNodeConn interface {
@@ -42,7 +41,7 @@ type ChainNodeConn interface {
 	PublishTX(
 		ctx context.Context,
 		chainID isc.ChainID,
-		tx suisigner.SignedTransaction,
+		tx iotasigner.SignedTransaction,
 		callback TxPostHandler,
 	) error
 	// RefreshOnLedgerRequests synchronously fetches all owned requests by the
@@ -58,7 +57,6 @@ type NodeConnection interface {
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
 	GetL1Params() *parameters.L1Params
-	GetL1ProtocolParams() *iotago.ProtocolParameters
 }
 
 type StateFreshness byte

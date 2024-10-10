@@ -14,14 +14,13 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 const (
@@ -39,7 +38,7 @@ var ErrOperationAborted = errors.New("operation was aborted")
 type nodeConnection struct {
 	*logger.WrappedLogger
 
-	iscPackageID sui.PackageID
+	iscPackageID iotago.PackageID
 	wsClient     *iscmoveclient.Client
 
 	synced     sync.WaitGroup
@@ -51,7 +50,7 @@ type nodeConnection struct {
 
 func New(
 	ctx context.Context,
-	iscPackageID sui.PackageID,
+	iscPackageID iotago.PackageID,
 	wsURL string,
 	log *logger.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
@@ -155,16 +154,6 @@ func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
 	// return nc.l1Params
 }
 
-func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
-	panic("TODO")
-	/*
-		if nc.l1Params == nil {
-			panic("L1 parameters unknown")
-		}
-		return nc.l1Params.Protocol
-	*/
-}
-
 // GetChain returns the chain if it was registered, otherwise it returns an error.
 func (nc *nodeConnection) getChain(chainID isc.ChainID) (*ncChain, error) {
 	nc.chainsLock.RLock()
@@ -180,7 +169,7 @@ func (nc *nodeConnection) getChain(chainID isc.ChainID) (*ncChain, error) {
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
 	chainID isc.ChainID,
-	tx suisigner.SignedTransaction,
+	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	// check if the chain exists

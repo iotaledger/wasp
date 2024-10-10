@@ -6,11 +6,11 @@ package evmimpl
 import (
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // handler for ISCSandbox::getChainID
@@ -24,14 +24,14 @@ func (h *magicContractHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 }
 
 // handler for ISCSandbox::getObjectBCS
-func (h *magicContractHandler) GetObjectBCS(objectID sui.ObjectID) []byte {
+func (h *magicContractHandler) GetObjectBCS(objectID iotago.ObjectID) []byte {
 	bcs, ok := h.ctx.GetObjectBCS(objectID)
 	h.ctx.Requiref(ok, errUnknownObject.Error())
 	return bcs
 }
 
 // handler for ISCSandbox::getIRC27NFTData
-func (h *magicContractHandler) GetIRC27NFTData(nftID sui.ObjectID) iscmagic.IRC27NFTMetadata {
+func (h *magicContractHandler) GetIRC27NFTData(nftID iotago.ObjectID) iscmagic.IRC27NFTMetadata {
 	bcs := h.GetObjectBCS(nftID)
 	metadata, err := isc.IRC27NFTMetadataFromBCS(bcs)
 	h.ctx.RequireNoError(err)
@@ -39,7 +39,7 @@ func (h *magicContractHandler) GetIRC27NFTData(nftID sui.ObjectID) iscmagic.IRC2
 }
 
 // handler for ISCSandbox::getIRC27TokenURI
-func (h *magicContractHandler) GetIRC27TokenURI(nftID sui.ObjectID) string {
+func (h *magicContractHandler) GetIRC27TokenURI(nftID iotago.ObjectID) string {
 	bcs := h.GetObjectBCS(nftID)
 	metadata, err := isc.IRC27NFTMetadataFromBCS(bcs)
 	h.ctx.RequireNoError(err)
@@ -89,6 +89,6 @@ func (h *magicContractHandler) ERC20CoinAddress(coinType coin.Type) common.Addre
 }
 
 // handler for ISCSandbox::erc721NFTCollectionAddress
-func (h *magicContractHandler) Erc721NFTCollectionAddress(collectionID sui.ObjectID) common.Address {
+func (h *magicContractHandler) Erc721NFTCollectionAddress(collectionID iotago.ObjectID) common.Address {
 	return iscmagic.ERC721NFTCollectionAddress(collectionID)
 }
