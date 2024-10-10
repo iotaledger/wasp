@@ -142,7 +142,7 @@ func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[sui.ObjectRef]*isc
 		for k, v := range assets.Coins {
 			assetsBagWithBalances.Balances[suijsonrpc.CoinType(k)] = &suijsonrpc.Balance{
 				CoinType:     suijsonrpc.CoinType(k),
-				TotalBalance: uint64(v),
+				TotalBalance: suijsonrpc.NewBigInt(v.Uint64()),
 			}
 		}
 		m[req.RequestRef()] = assetsBagWithBalances
