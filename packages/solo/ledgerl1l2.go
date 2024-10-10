@@ -2,13 +2,11 @@ package solo
 
 import (
 	"math"
-	"math/big"
 	"sort"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -125,9 +123,9 @@ func (ch *Chain) L2TotalBaseTokens() coin.Value {
 }
 
 type NewNativeTokenParams struct {
-	ch            *Chain
-	user          *cryptolib.KeyPair
-	sch           iotago.TokenScheme
+	ch   *Chain
+	user *cryptolib.KeyPair
+	//sch           iotago.TokenScheme
 	tokenName     string
 	tokenSymbol   string
 	tokenDecimals uint8
@@ -145,11 +143,11 @@ const (
 func (ch *Chain) NewNativeTokenParams(maxSupply coin.Value) *NewNativeTokenParams { //nolint:revive
 	ret := &NewNativeTokenParams{
 		ch: ch,
-		sch: &iotago.SimpleTokenScheme{
-			MaximumSupply: big.NewInt(int64(maxSupply.Uint64())),
-			MeltedTokens:  big.NewInt(0),
-			MintedTokens:  big.NewInt(0),
-		},
+		/*		sch: &iotago.SimpleTokenScheme{
+				MaximumSupply: big.NewInt(int64(maxSupply.Uint64())),
+				MeltedTokens:  big.NewInt(0),
+				MintedTokens:  big.NewInt(0),
+			},*/
 		tokenSymbol:   "TST",
 		tokenName:     "TEST",
 		tokenDecimals: uint8(8),
@@ -159,11 +157,6 @@ func (ch *Chain) NewNativeTokenParams(maxSupply coin.Value) *NewNativeTokenParam
 
 func (fp *NewNativeTokenParams) WithUser(user *cryptolib.KeyPair) *NewNativeTokenParams {
 	fp.user = user
-	return fp
-}
-
-func (fp *NewNativeTokenParams) WithTokenScheme(sch iotago.TokenScheme) *NewNativeTokenParams {
-	fp.sch = sch
 	return fp
 }
 

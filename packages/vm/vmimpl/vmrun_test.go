@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -123,8 +123,8 @@ func makeOnLedgerRequest(
 				Balances: map[string]*iotajsonrpc.Balance{
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
-						CoinObjectCount: suijsonrpc.NewBigInt(1),
-						TotalBalance:    suijsonrpc.NewBigInt(baseTokens),
+						CoinObjectCount: iotajsonrpc.NewBigInt(1),
+						TotalBalance:    iotajsonrpc.NewBigInt(baseTokens),
 					},
 				},
 			},

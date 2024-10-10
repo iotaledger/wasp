@@ -592,7 +592,7 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 		CoinType: string(coinType),
 	})
 	require.NoError(env.T, err)
-	return coin.Value(r.TotalBalance)
+	return coin.Value(r.TotalBalance.Uint64())
 }
 
 func (env *Solo) L1NFTs(addr *cryptolib.Address) []iotago.ObjectID {
@@ -605,7 +605,7 @@ func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
-		cb.Add(coin.Type(b.CoinType), coin.Value(b.TotalBalance))
+		cb.Add(coin.Type(b.CoinType), coin.Value(b.TotalBalance.Uint64()))
 	}
 	return cb
 }

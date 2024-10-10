@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -153,16 +152,6 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
 	panic("TODO")
 	// return nc.l1Params
-}
-
-func (nc *nodeConnection) GetL1ProtocolParams() *iotago.ProtocolParameters {
-	panic("TODO")
-	/*
-		if nc.l1Params == nil {
-			panic("L1 parameters unknown")
-		}
-		return nc.l1Params.Protocol
-	*/
 }
 
 // GetChain returns the chain if it was registered, otherwise it returns an error.

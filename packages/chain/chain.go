@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -58,7 +57,6 @@ type NodeConnection interface {
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
 	GetL1Params() *parameters.L1Params
-	GetL1ProtocolParams() *iotago.ProtocolParameters
 }
 
 type StateFreshness byte

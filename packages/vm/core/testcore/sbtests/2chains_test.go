@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -52,7 +52,7 @@ func test2Chains(t *testing.T) {
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := isc.NewAddressAgentID(userAddress)
-	env.AssertL1BaseTokens(userAddress, suiclient.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount)
 
 	fmt.Println("---------------chain1---------------")
 	fmt.Println(chain1.DumpAccounts())
@@ -79,7 +79,7 @@ func test2Chains(t *testing.T) {
 	chain1TransferAllowanceReceipt := chain1.LastReceipt()
 	chain1TransferAllowanceGas := chain1TransferAllowanceReceipt.GasFeeCharged
 
-	env.AssertL1BaseTokens(userAddress, suiclient.FundsFromFaucetAmount-creditBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount-creditBaseTokensToSend)
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID2, baseTokensCreditedToScOnChain1)
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + creditBaseTokensToSend)
@@ -165,7 +165,7 @@ func test2Chains(t *testing.T) {
 	fmt.Println("------------------------------------")
 
 	// the 2 function call we did above are requests from L1
-	env.AssertL1BaseTokens(userAddress, suiclient.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend)
 	// on chain1 user only made the first transaction, so it is the same as its balance before 'WithdrawFromChain' function call
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	// gasFeeTransferAccountToChain is is used for paying the gas fee of the 'TransferAccountToChain' func call
