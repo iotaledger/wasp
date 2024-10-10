@@ -332,6 +332,11 @@ func (s StateAnchor) GetStateMetadata() []byte {
 func (s StateAnchor) GetStateIndex() uint32 {
 	return s.Anchor.Object.StateIndex
 }
+
+func (s StateAnchor) ChainID() ChainID {
+	return ChainIDFromObjectID(*s.Anchor.ObjectID)
+}
+
 func (s StateAnchor) Hash() hashing.HashValue {
 	return s.Anchor.Hash()
 }

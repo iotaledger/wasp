@@ -22,7 +22,7 @@ func EVMCall(
 	log *logger.Logger,
 	call ethereum.CallMsg,
 ) ([]byte, error) {
-	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
+	chainID := anchor.ChainID()
 
 	latestState, err := store.LatestState()
 	if err != nil {

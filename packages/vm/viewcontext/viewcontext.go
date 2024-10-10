@@ -50,7 +50,7 @@ func New(
 	log *logger.Logger,
 	gasBurnLoggingEnabled bool,
 ) (*ViewContext, error) {
-	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
+	chainID := anchor.ChainID()
 	return &ViewContext{
 		processors:            processors,
 		stateReader:           stateReader,

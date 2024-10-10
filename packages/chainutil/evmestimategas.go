@@ -31,7 +31,7 @@ func EVMEstimateGas(
 	log *logger.Logger,
 	call ethereum.CallMsg,
 ) (uint64, error) { //nolint:gocyclo,funlen
-	chainID := isc.ChainIDFromObjectID(*anchor.GetObjectID())
+	chainID := anchor.ChainID()
 	// Determine the lowest and highest possible gas limits to binary search in between
 	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, call.To == nil, true, true, true)
 	if err != nil {
