@@ -10,11 +10,6 @@ MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-
 Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/stardust", rev = "l1sc/isc-models" }
 Sui = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "l1sc/isc-models" }
 
-
-#MoveStdlib = {local = "../../crates/iotago-framework/packages/move-stdlib"}
-#Stardust = { local = "../../crates/iotago-framework/packages/stardust" }
-#Sui = { local = "../../crates/iotago-framework/packages/iotago-framework" }
-
 [addresses]
 isc = "0x0"
 std = "0x1"

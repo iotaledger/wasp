@@ -120,7 +120,7 @@ module isc::anchor_tests {
         // ServerPTB.2.4: place it to the anchor assets bag.
         anchor_assets.place_coin_balance(extracted_test_a_coin_balance);
         
-        // ServerPTB.3.1: extract the iotago balance.
+        // ServerPTB.3.1: extract the iota balance.
         let extracted_iota_balance = req_extracted_assets.take_all_coin_balance<SUI>();
         assert!(extracted_iota_balance.value() == 3);
         // ServerPTB.3.2: place it to the anchor assets bag.
