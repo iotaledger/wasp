@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -312,11 +312,11 @@ func (env *Solo) pickCoinsForInitChain(
 			return c != pickedCoin
 		})
 	}
-	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, iotaclient2.SplitCoinRequest{
+	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, iotaclient.SplitCoinRequest{
 		Signer:       originatorAddr.AsSuiAddress(),
 		Coin:         pickedCoin.CoinObjectID,
 		SplitAmounts: []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(initBaseTokens.Uint64())},
-		GasBudget:    iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget),
+		GasBudget:    iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
 	}))
 	env.SuiClient().SignAndExecuteTransaction(
 		env.ctx,
@@ -392,8 +392,8 @@ func (env *Solo) deployChain(
 		stateMetadata.Bytes(),
 		initCoin.Ref(),
 		gasPayments.CoinRefs(),
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(env.T, err)
@@ -564,7 +564,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 }
 
 func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
-	r, err := env.SuiClient().GetCoins(env.ctx, iotaclient2.GetCoinsRequest{
+	r, err := env.SuiClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner: addr.AsSuiAddress(),
 		Limit: math.MaxUint,
 	})
@@ -573,7 +573,7 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 }
 
 func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajsonrpc.Coin {
-	r, err := env.SuiClient().GetCoins(env.ctx, iotaclient2.GetCoinsRequest{
+	r, err := env.SuiClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsSuiAddress(),
 		CoinType: (*string)(&coinType),
 		Limit:    math.MaxUint,
@@ -587,7 +587,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 }
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
-	r, err := env.SuiClient().GetBalance(env.ctx, iotaclient2.GetBalanceRequest{
+	r, err := env.SuiClient().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
 		Owner:    addr.AsSuiAddress(),
 		CoinType: string(coinType),
 	})
@@ -678,8 +678,8 @@ func (env *Solo) executePTB(ptb iotago.ProgrammableTransaction, wallet *cryptoli
 		wallet.Address().AsSuiAddress(),
 		ptb,
 		nil,
-		iotaclient2.DefaultGasPrice,
-		iotaclient2.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 	)
 
 	txnBytes, err := bcs.Marshal(&tx)

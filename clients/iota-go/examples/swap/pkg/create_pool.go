@@ -3,15 +3,15 @@ package pkg
 import (
 	"context"
 
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func CreatePool(
-	suiClient *iotaclient2.Client,
+	suiClient *iotaclient.Client,
 	signer iotasigner.Signer,
 	swapPackageID *iotago.PackageID,
 	testcoinID *iotago.ObjectID,
@@ -56,8 +56,8 @@ func CreatePool(
 		signer.Address(),
 		pt,
 		[]*iotago.ObjectRef{suiCoins[1].Ref()},
-		iotaclient2.DefaultGasBudget,
-		iotaclient2.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
 	)
 
 	txBytes, err := bcs.Marshal(&txData)

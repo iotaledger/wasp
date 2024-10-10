@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func SwapSui(
-	suiClient *iotaclient2.Client,
+	suiClient *iotaclient.Client,
 	swapper iotasigner.Signer,
 	swapPackageID *iotago.PackageID,
 	testcoinID *iotago.ObjectID,
@@ -20,7 +20,7 @@ func SwapSui(
 	suiCoins []*iotajsonrpc.Coin,
 ) {
 	poolGetObjectRes, err := suiClient.GetObject(
-		context.Background(), iotaclient2.GetObjectRequest{
+		context.Background(), iotaclient.GetObjectRequest{
 			ObjectID: poolObjectID,
 			Options: &iotajsonrpc.SuiObjectDataOptions{
 				ShowType:    true,
@@ -78,8 +78,8 @@ func SwapSui(
 		swapper.Address(),
 		pt,
 		[]*iotago.ObjectRef{suiCoins[1].Ref()},
-		iotaclient2.DefaultGasBudget,
-		iotaclient2.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
 	)
 	txBytes, err := bcs.Marshal(&txData)
 	if err != nil {

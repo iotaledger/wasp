@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	pkg2 "github.com/iotaledger/wasp/clients/iota-go/examples/swap/pkg"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/move"
@@ -17,7 +17,7 @@ import (
 var swapBytecodeJSON []byte
 
 func main() {
-	suiClient := iotaclient2.NewHTTP(iotaconn.LocalnetEndpointURL)
+	suiClient := iotaclient.NewHTTP(iotaconn.LocalnetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.LocalnetFaucetURL)
 	swapper := iotatest.MakeSignerWithFunds(1, iotaconn.LocalnetFaucetURL)
 
@@ -33,7 +33,7 @@ func main() {
 
 	testcoinCoins, err := suiClient.GetCoins(
 		context.Background(),
-		iotaclient2.GetCoinsRequest{
+		iotaclient.GetCoinsRequest{
 			Owner:    signer.Address(),
 			CoinType: &testcoinCoinType,
 		},
@@ -44,7 +44,7 @@ func main() {
 
 	signerSuiCoinPage, err := suiClient.GetCoins(
 		context.Background(),
-		iotaclient2.GetCoinsRequest{Owner: signer.Address()},
+		iotaclient.GetCoinsRequest{Owner: signer.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func main() {
 
 	swapperSuiCoinPage1, err := suiClient.GetAllCoins(
 		context.Background(),
-		iotaclient2.GetAllCoinsRequest{Owner: swapper.Address()},
+		iotaclient.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -71,7 +71,7 @@ func main() {
 
 	swapperSuiCoinPage2, err := suiClient.GetAllCoins(
 		context.Background(),
-		iotaclient2.GetAllCoinsRequest{Owner: swapper.Address()},
+		iotaclient.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)

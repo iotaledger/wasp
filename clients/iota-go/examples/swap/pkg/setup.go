@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
@@ -12,17 +12,17 @@ import (
 )
 
 func Publish(
-	client *iotaclient2.Client,
+	client *iotaclient.Client,
 	signer iotasigner.Signer,
 	bytecode move.PackageBytecode,
 ) *iotago.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
-		iotaclient2.PublishRequest{
+		iotaclient.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: bytecode.Modules,
 			Dependencies:    bytecode.Dependencies,
-			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient2.DefaultGasBudget),
+			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient.DefaultGasBudget),
 		},
 	)
 	if err != nil {
@@ -44,7 +44,7 @@ func Publish(
 	return packageID
 }
 
-func PublishMintTestcoin(client *iotaclient2.Client, signer iotasigner.Signer) (
+func PublishMintTestcoin(client *iotaclient.Client, signer iotasigner.Signer) (
 	*iotago.PackageID,
 	*iotago.ObjectID,
 ) {
@@ -52,11 +52,11 @@ func PublishMintTestcoin(client *iotaclient2.Client, signer iotasigner.Signer) (
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		iotaclient2.PublishRequest{
+		iotaclient.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: testcoinBytecode.Modules,
 			Dependencies:    testcoinBytecode.Dependencies,
-			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient2.DefaultGasBudget),
+			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient.DefaultGasBudget),
 		},
 	)
 	if err != nil {

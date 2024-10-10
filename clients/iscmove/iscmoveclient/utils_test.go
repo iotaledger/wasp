@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -27,11 +27,11 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 	testcoinBytecode := contracts.Testcoin()
 	suiSigner := cryptolib.SignerToSuiSigner(signer)
 
-	txnBytes, err := client.Publish(context.Background(), iotaclient2.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
 		Sender:          signer.Address().AsSuiAddress(),
 		CompiledModules: testcoinBytecode.Modules,
 		Dependencies:    testcoinBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
@@ -48,7 +48,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
-	getObjectRes, err := client.GetObject(context.Background(), iotaclient2.GetObjectRequest{
+	getObjectRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: packageID,
 		Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 	})

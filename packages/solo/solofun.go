@@ -5,14 +5,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
-func (env *Solo) SuiClient() *iotaclient2.Client {
-	return iotaclient2.NewHTTP(env.l1Config.SuiRPCURL)
+func (env *Solo) SuiClient() *iotaclient.Client {
+	return iotaclient.NewHTTP(env.l1Config.SuiRPCURL)
 }
 
 func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
@@ -47,9 +47,9 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 }
 
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
-	err := iotaclient2.RequestFundsFromFaucet(env.ctx, target.AsSuiAddress(), env.l1Config.SuiFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsSuiAddress(), env.l1Config.SuiFaucetURL)
 	require.NoError(env.T, err)
-	env.AssertL1BaseTokens(target, iotaclient2.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(target, iotaclient.FundsFromFaucetAmount)
 }
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
