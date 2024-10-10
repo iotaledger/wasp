@@ -3,7 +3,7 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -42,11 +42,11 @@ func (s *StateWriter) objectsByCollectionMap(agentID isc.AgentID, collectionKey 
 	return collections.NewMap(s.state, objectsByCollectionMapKey(agentID, collectionKey))
 }
 
-func (s *StateReader) hasObject(agentID isc.AgentID, objectID sui.ObjectID) bool {
+func (s *StateReader) hasObject(agentID isc.AgentID, objectID iotago.ObjectID) bool {
 	return s.accountToObjectsMapR(agentID).HasAt(objectID[:])
 }
 
-func (s *StateWriter) removeObjectOwner(objectID sui.ObjectID, agentID isc.AgentID) bool {
+func (s *StateWriter) removeObjectOwner(objectID iotago.ObjectID, agentID isc.AgentID) bool {
 	// remove the mapping of ObjectID => owner
 	objectMap := s.objectToOwnerMap()
 	if !objectMap.HasAt(objectID[:]) {
@@ -63,7 +63,7 @@ func (s *StateWriter) removeObjectOwner(objectID sui.ObjectID, agentID isc.Agent
 	return true
 }
 
-func (s *StateWriter) setObjectOwner(objectID sui.ObjectID, agentID isc.AgentID) {
+func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, agentID isc.AgentID) {
 	// add to the mapping of ObjectID => owner
 	objectMap := s.objectToOwnerMap()
 	objectMap.SetAt(objectID[:], agentID.Bytes())
@@ -90,7 +90,7 @@ func (s *StateWriter) creditObjectToAccount(agentID isc.AgentID, object *ObjectR
 
 // DebitObjectFromAccount removes an Object from an account.
 // If the account does not own the object, it panics.
-func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID sui.ObjectID, chainID isc.ChainID) {
+func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, chainID isc.ChainID) {
 	object := s.GetObject(objectID)
 	if object == nil {
 		panic(fmt.Errorf("cannot debit unknown Object %s", objectID.String()))
@@ -117,10 +117,10 @@ func (s *StateWriter) debitObjectFromAccount(agentID isc.AgentID, object *Object
 	return true
 }
 
-func collectObjectIDs(m *collections.ImmutableMap) []sui.ObjectID {
-	var ret []sui.ObjectID
+func collectObjectIDs(m *collections.ImmutableMap) []iotago.ObjectID {
+	var ret []iotago.ObjectID
 	m.Iterate(func(idBytes []byte, val []byte) bool {
-		id := sui.ObjectID{}
+		id := iotago.ObjectID{}
 		copy(id[:], idBytes)
 		ret = append(ret, id)
 		return true
@@ -128,23 +128,23 @@ func collectObjectIDs(m *collections.ImmutableMap) []sui.ObjectID {
 	return ret
 }
 
-func (s *StateReader) getAccountObjects(agentID isc.AgentID) []sui.ObjectID {
+func (s *StateReader) getAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
 	return collectObjectIDs(s.accountToObjectsMapR(agentID))
 }
 
-func (s *StateReader) getAccountObjectsInCollection(agentID isc.AgentID, collectionID sui.ObjectID) []sui.ObjectID {
+func (s *StateReader) getAccountObjectsInCollection(agentID isc.AgentID, collectionID iotago.ObjectID) []iotago.ObjectID {
 	return collectObjectIDs(s.objectsByCollectionMapR(agentID, kv.Key(collectionID[:])))
 }
 
-func (s *StateReader) getL2TotalObjects() []sui.ObjectID {
+func (s *StateReader) getL2TotalObjects() []iotago.ObjectID {
 	return collectObjectIDs(s.objectToOwnerMapR())
 }
 
 // GetAccountObjects returns all Objects belonging to the agentID on the state
-func (s *StateReader) GetAccountObjects(agentID isc.AgentID) []sui.ObjectID {
+func (s *StateReader) GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
 	return s.getAccountObjects(agentID)
 }
 
-func (s *StateReader) GetTotalL2Objects() []sui.ObjectID {
+func (s *StateReader) GetTotalL2Objects() []iotago.ObjectID {
 	return s.getL2TotalObjects()
 }

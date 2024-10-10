@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -89,7 +89,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 		ch.Env.ctx,
 		cryptolib.SignerToSuiSigner(ch.StateControllerKeyPair),
 		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, txBlockRes.Effects.Data.IsSuccess())

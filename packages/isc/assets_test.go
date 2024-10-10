@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/sui/suitest"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -18,17 +18,17 @@ import (
 func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 	assetsBag := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{
-			ID:   *sui2.MustAddressFromHex("0x123"),
+			ID:   *iotago.MustAddressFromHex("0x123"),
 			Size: 2,
 		},
 		Balances: iscmove.AssetsBagBalances{
-			suijsonrpc2.IotaCoinType: &suijsonrpc2.Balance{TotalBalance: 33},
-			"0xa1::a::A":             &suijsonrpc2.Balance{TotalBalance: 11},
-			"0xa2::b::B":             &suijsonrpc2.Balance{TotalBalance: 22},
+			iotajsonrpc.IotaCoinType: &iotajsonrpc.Balance{TotalBalance: 33},
+			"0xa1::a::A":             &iotajsonrpc.Balance{TotalBalance: 11},
+			"0xa2::b::B":             &iotajsonrpc.Balance{TotalBalance: 22},
 		},
 	}
 	assets := isc.AssetsFromAssetsBagWithBalances(assetsBag)
-	require.Equal(t, assetsBag.Balances[suijsonrpc2.IotaCoinType].TotalBalance, uint64(assets.BaseTokens()))
+	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType].TotalBalance, uint64(assets.BaseTokens()))
 	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance("0xa1::a::A")))
 	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance, uint64(assets.CoinBalance("0xa2::b::B")))
 }
@@ -37,7 +37,7 @@ func TestAssetsSerialization(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin("0xa1::a::A", 100).
-		AddObject(sui2.ObjectID{})
+		AddObject(iotago.ObjectID{})
 	bcs.TestCodec(t, assets)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }

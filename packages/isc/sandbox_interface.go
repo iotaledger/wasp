@@ -12,9 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -50,7 +49,7 @@ type SandboxBase interface {
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
-	GetObjectBCS(id sui2.ObjectID) ([]byte, bool)
+	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
 	// GetCoinInfo returns information about a coin known by the chain
 	GetCoinInfo(coinType coin.Type) (*SuiCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
@@ -82,7 +81,7 @@ type Balance interface {
 	// CoinBalances returns the balance of all coins owned by the smart contract
 	CoinBalances() CoinBalances
 	// OwnedObjects returns the ids of objects owned by the smart contract
-	OwnedObjects() []sui2.ObjectID
+	OwnedObjects() []iotago.ObjectID
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }
@@ -298,13 +297,13 @@ type Gas interface {
 type StateAnchor struct {
 	Anchor     *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
-	ISCPackage sui2.Address
+	ISCPackage iotago.Address
 }
 
 func NewStateAnchor(
 	anchor *iscmove.AnchorWithRef,
 	owner *cryptolib.Address,
-	iscPackage sui2.Address,
+	iscPackage iotago.Address,
 ) StateAnchor {
 	return StateAnchor{
 		Anchor:     anchor,
@@ -313,11 +312,11 @@ func NewStateAnchor(
 	}
 }
 
-func (s StateAnchor) GetObjectRef() *sui2.ObjectRef {
+func (s StateAnchor) GetObjectRef() *iotago.ObjectRef {
 	return &s.Anchor.ObjectRef
 }
 
-func (s StateAnchor) GetObjectID() *sui2.ObjectID {
+func (s StateAnchor) GetObjectID() *iotago.ObjectID {
 	return s.Anchor.ObjectID
 }
 

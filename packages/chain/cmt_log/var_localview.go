@@ -74,7 +74,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -87,7 +87,7 @@ type VarLocalView interface {
 	//
 	// Corresponds to the `tx_posted` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
-	ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*isc.StateAnchor, bool) // TODO: Recheck, if consumed AO is the decided one.
+	ConsensusOutputDone(logIndex LogIndex, consumed *iotago.ObjectRef) (*isc.StateAnchor, bool) // TODO: Recheck, if consumed AO is the decided one.
 	//
 	// Corresponds to the `ao_received` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
@@ -104,7 +104,7 @@ type VarLocalView interface {
 
 type varLocalViewEntry struct {
 	output   *isc.StateAnchor // The AO published.
-	consumed sui.ObjectID     // The AO used as an input for the TX.
+	consumed iotago.ObjectID  // The AO used as an input for the TX.
 	rejected bool             // True, if the AO as rejected. We keep them to detect the other rejected AOs.
 	logIndex LogIndex         // LogIndex of the consensus produced the output, if any.
 }
@@ -145,7 +145,7 @@ func (lvi *varLocalViewImpl) Value() *isc.StateAnchor {
 	return lvi.findLatestPending()
 }
 
-func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *sui.ObjectRef) (*isc.StateAnchor, bool) {
+func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *iotago.ObjectRef) (*isc.StateAnchor, bool) {
 	panic("implement: varLocalViewImpl.ConsensusOutputDone") // TODO:
 	// lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.Ref=%s, published=%v", logIndex, consumed.String())
 	// stateIndex := published.GetStateIndex()
@@ -250,7 +250,7 @@ func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *isc.StateAnchor) (*is
 }
 
 func (lvi *varLocalViewImpl) markDependentAsRejected(ao *isc.StateAnchor) {
-	accRejected := map[sui.ObjectIDKey]struct{}{ao.GetObjectID().Key(): {}}
+	accRejected := map[iotago.ObjectIDKey]struct{}{ao.GetObjectID().Key(): {}}
 	for si := ao.GetStateIndex() + 1; ; si++ {
 		es, esFound := lvi.pending.Get(si)
 		if !esFound {

@@ -7,10 +7,10 @@ import (
 	"syscall"
 
 	serialization "github.com/iotaledger/wasp/clients/iota-go/examples/event_pubsub/lib"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
@@ -24,20 +24,20 @@ func main() {
 	defer cancel()
 
 	log := testlogger.NewSimple(false)
-	api, err := suiclient.NewWebsocket(ctx, suiconn.AlphanetWebsocketEndpointURL, log)
+	api, err := iotaclient.NewWebsocket(ctx, iotaconn.AlphanetWebsocketEndpointURL, log)
 	if err != nil {
 		log.Panic(err)
 	}
-	sender, err := suisigner.NewSignerWithMnemonic(testMnemonic, suisigner.KeySchemeFlagDefault)
+	sender, err := iotasigner.NewSignerWithMnemonic(testMnemonic, iotasigner.KeySchemeFlagDefault)
 	if err != nil {
 		log.Panic(err)
 	}
-	err = suiclient.RequestFundsFromFaucet(ctx, sender.Address(), suiconn.AlphanetFaucetURL)
+	err = iotaclient.RequestFundsFromFaucet(ctx, sender.Address(), iotaconn.AlphanetFaucetURL)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	packageID, err := sui.PackageIDFromHex("")
+	packageID, err := iotago.PackageIDFromHex("")
 	if err != nil {
 		log.Panic(err)
 	}

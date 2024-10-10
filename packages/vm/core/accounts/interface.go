@@ -11,7 +11,7 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 var (
 	// Funcs
 	FuncDeposit = coreutil.NewEP0(Contract, "deposit")
-	// TODO: adapt to iota-rebased
+	// TODO: adapt to iotago-rebased
 	//   FuncFoundryCreateNew
 	//   FuncCoinCreate
 	//   FuncCoinModifySupply

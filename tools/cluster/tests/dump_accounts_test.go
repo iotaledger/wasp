@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -32,7 +32,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		evmAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, evmAddr)
-		env.TransferFundsTo(isc.NewAssets(suiclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+		env.TransferFundsTo(isc.NewAssets(iotaclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 		accs = append(accs, evmAgentID.String())
 	}
 

@@ -1,23 +1,23 @@
 package iscmoveclient
 
 import (
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
+	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
 func PTBOptionSome(
-	ptb *sui2.ProgrammableTransactionBuilder,
-	objTypeTag sui2.TypeTag,
-	objRef *sui2.ObjectRef, // must be ImmOrOwnedObject
-) *sui2.ProgrammableTransactionBuilder {
+	ptb *iotago.ProgrammableTransactionBuilder,
+	objTypeTag iotago.TypeTag,
+	objRef *iotago.ObjectRef, // must be ImmOrOwnedObject
+) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
-				Package:       sui2.SuiPackageIdMoveStdlib,
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       iotago.SuiPackageIdMoveStdlib,
 				Module:        "option",
 				Function:      "some",
-				TypeArguments: []sui2.TypeTag{objTypeTag},
-				Arguments: []sui2.Argument{
-					ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: objRef}),
+				TypeArguments: []iotago.TypeTag{objTypeTag},
+				Arguments: []iotago.Argument{
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: objRef}),
 				},
 			},
 		},
@@ -26,23 +26,23 @@ func PTBOptionSome(
 }
 
 func PTBOptionSomeSuiCoin(
-	ptb *sui2.ProgrammableTransactionBuilder,
-	objRef *sui2.ObjectRef, // must be ImmOrOwnedObject
-) *sui2.ProgrammableTransactionBuilder {
-	return PTBOptionSome(ptb, *sui2.MustTypeTagFromString("0x2::coin::Coin<0x2::sui::SUI>"), objRef)
+	ptb *iotago.ProgrammableTransactionBuilder,
+	objRef *iotago.ObjectRef, // must be ImmOrOwnedObject
+) *iotago.ProgrammableTransactionBuilder {
+	return PTBOptionSome(ptb, *iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iotago::SUI>"), objRef)
 }
 
 func PTBOptionNoneSuiCoin(
-	ptb *sui2.ProgrammableTransactionBuilder,
-) *sui2.ProgrammableTransactionBuilder {
+	ptb *iotago.ProgrammableTransactionBuilder,
+) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
-				Package:       sui2.SuiPackageIdMoveStdlib,
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       iotago.SuiPackageIdMoveStdlib,
 				Module:        "option",
 				Function:      "none",
-				TypeArguments: []sui2.TypeTag{*sui2.MustTypeTagFromString("0x2::coin::Coin<0x2::sui::SUI>")},
-				Arguments:     []sui2.Argument{},
+				TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iotago::SUI>")},
+				Arguments:     []iotago.Argument{},
 			},
 		},
 	)

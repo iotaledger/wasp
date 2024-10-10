@@ -10,8 +10,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/multiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -30,7 +30,7 @@ type CreateChainParams struct {
 	Prefix               string
 	StateMetadata        transaction.StateMetadata
 	GovernanceController *cryptolib.Address
-	PackageID            sui.PackageID
+	PackageID            iotago.PackageID
 }
 
 // DeployChain creates a new chain on specified committee address
@@ -54,8 +54,8 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		par.StateMetadata.Bytes(),
 		nil,
 		nil, // Add gasPayments here (or not)
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	if err != nil {

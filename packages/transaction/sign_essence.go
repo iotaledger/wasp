@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-// alternateSignEssence is basically a 1:1 copy of iota.go with the difference that you can inject your own AddressSigner.
+// alternateSignEssence is basically a 1:1 copy of iotago.go with the difference that you can inject your own AddressSigner.
 // This will ignore passed addressKeys and only use the passed AddressSigner.
 // This is important for HW-wallets where the private key is unknown.
 func alternateSignEssence(essence *iotago.TransactionEssence, inputsCommitment []byte, signers ...cryptolib.Signer) ([]*cryptolib.Signature, error) {

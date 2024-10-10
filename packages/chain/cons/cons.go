@@ -59,8 +59,8 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -125,8 +125,8 @@ type Output struct {
 }
 
 type Result struct {
-	Transaction *suisigner.SignedTransaction // The TX for committing the block.
-	Block       state.Block                  // The state diff produced.
+	Transaction *iotasigner.SignedTransaction // The TX for committing the block.
+	Block       state.Block                   // The state diff produced.
 }
 
 func (r *Result) String() string {
@@ -614,9 +614,9 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 // TX
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(unsignedTX *sui.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
+func (c *consImpl) uponTXInputsReady(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
 	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsSuiSignature()
-	signedTX := suisigner.NewSignedTransaction(unsignedTX, suiSignature)
+	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
 		Transaction: signedTX,
 		Block:       block,

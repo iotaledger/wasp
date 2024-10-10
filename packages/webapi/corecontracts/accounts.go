@@ -1,8 +1,7 @@
 package corecontracts
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -26,7 +25,7 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	return accounts.ViewTotalAssets.DecodeOutput(ret)
 }
 
-func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]sui.Address, error) {
+func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]iotago.Address, error) {
 	ret, err := common.CallView(ch, accounts.ViewAccountObjects.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err

@@ -7,33 +7,33 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type SyncTX interface {
-	UnsignedTXReceived(unsignedTX *sui.TransactionData) gpa.OutMessages
+	UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages
 	SignatureReceived(signature []byte) gpa.OutMessages
 	BlockSaved(block state.Block) gpa.OutMessages
 	String() string
 }
 
 type syncTXImpl struct {
-	unsignedTX *sui.TransactionData
+	unsignedTX *iotago.TransactionData
 	signature  []byte
 	blockSaved bool
 	block      state.Block
 
 	inputsReady   bool
-	inputsReadyCB func(unsignedTX *sui.TransactionData, block state.Block, signature []byte) gpa.OutMessages
+	inputsReadyCB func(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages
 }
 
-func NewSyncTX(inputsReadyCB func(unsignedTX *sui.TransactionData, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
+func NewSyncTX(inputsReadyCB func(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
 	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
 }
 
-func (sub *syncTXImpl) UnsignedTXReceived(unsignedTX *sui.TransactionData) gpa.OutMessages {
+func (sub *syncTXImpl) UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages {
 	if sub.unsignedTX != nil || unsignedTX == nil {
 		return nil
 	}

@@ -13,7 +13,7 @@ Read more in the [Wiki](https://wiki.iota.org/shimmer/smart-contracts/guide/evm/
 The @iota/iscmagic contracts are installable via __NPM__ with 
 
 ```bash
-npm install @iota/iscmagic
+npm install @iotago/iscmagic
 ```
 
 After installing `@iota/iscmagic` you can use the functions by importing them as you normally would.
@@ -21,7 +21,7 @@ After installing `@iota/iscmagic` you can use the functions by importing them as
 ```ts
 pragma solidity >=0.8.5;
 
-import "@iota/iscmagic/ISC.sol";
+import "@iotago/iscmagic/ISC.sol";
 
 contract MyEVMContract {
     event EntropyEvent(bytes32 entropy);

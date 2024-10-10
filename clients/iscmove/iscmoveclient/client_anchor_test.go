@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -20,7 +20,7 @@ func TestStartNewChain(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), suiclient2.GetCoinsRequest{Owner: signer.Address().AsSuiAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient2.GetCoinsRequest{Owner: signer.Address().AsSuiAddress()})
 	require.NoError(t, err)
 
 	anchor, err := client.StartNewChain(
@@ -30,8 +30,8 @@ func TestStartNewChain(t *testing.T) {
 		[]byte{1, 2, 3, 4},
 		getCoinsRes.Data[1].Ref(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -49,8 +49,8 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 		[]byte{1, 2, 3, 4},
 		nil,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -73,15 +73,15 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
 	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), suiclient2.GetCoinsRequest{Owner: cryptolibSigner.Address().AsSuiAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient2.GetCoinsRequest{Owner: cryptolibSigner.Address().AsSuiAddress()})
 	require.NoError(t, err)
 
 	_, err = client.AssetsBagPlaceCoinAmount(
@@ -90,11 +90,11 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		l1starter.ISCPackageID(),
 		sentAssetsBagRef,
 		getCoinsRes.Data[len(getCoinsRes.Data)-1].Ref(),
-		suijsonrpc.IotaCoinType,
+		iotajsonrpc.IotaCoinType,
 		10,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -114,8 +114,8 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		nil,
 		0,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 
@@ -129,11 +129,11 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		chainSigner,
 		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,
-		[]sui.ObjectRef{*requestRef},
+		[]iotago.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -147,8 +147,8 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 		[]byte{1, 2, 3, 4},
 		nil,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)

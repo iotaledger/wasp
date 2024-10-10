@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
 // L1Params describes parameters coming from the L1Params node
@@ -25,7 +25,7 @@ type BaseToken struct {
 	Subunit         string               `json:"subunit" swagger:"desc(The token subunit),required"`
 	Decimals        uint8                `json:"decimals" swagger:"desc(The token decimals),required"`
 	UseMetricPrefix bool                 `json:"useMetricPrefix" swagger:"desc(Whether or not the token uses a metric prefix),required"`
-	CoinType        suijsonrpc2.CoinType `json:"coinType"`
+	CoinType        iotajsonrpc.CoinType `json:"coinType"`
 }
 
 // NetworkPrefix denotes the different network prefixes.
@@ -33,7 +33,7 @@ type NetworkPrefix string
 
 // Network prefixes.
 const (
-	PrefixMainnet NetworkPrefix = "iota"
+	PrefixMainnet NetworkPrefix = "iotago"
 )
 
 const (
@@ -49,7 +49,7 @@ var Token = &BaseToken{
 	Subunit:         "IOTA",
 	Decimals:        9,
 	UseMetricPrefix: false,
-	CoinType:        suijsonrpc2.IotaCoinType,
+	CoinType:        iotajsonrpc.IotaCoinType,
 }
 
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax

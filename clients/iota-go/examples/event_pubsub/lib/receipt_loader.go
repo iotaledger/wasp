@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
 type PublishReceipt struct {
@@ -115,7 +115,7 @@ type PublishReceipt struct {
 	ConfirmedLocalExecution bool `json:"confirmedLocalExecution"`
 }
 
-func GetPublishedPackageID(receiptJson string) *sui.PackageID {
+func GetPublishedPackageID(receiptJson string) *iotago.PackageID {
 	filePath := "path/to/your/file.json" + getGitRoot()
 	jsonData, err := os.ReadFile(filePath)
 	if err != nil {
@@ -133,7 +133,7 @@ func GetPublishedPackageID(receiptJson string) *sui.PackageID {
 			packageID = change.PackageID
 		}
 	}
-	suiPackageID, err := sui.PackageIDFromHex(packageID)
+	suiPackageID, err := iotago.PackageIDFromHex(packageID)
 	if err != nil {
 		log.Fatalf("failed to decode hex package ID: %v", err)
 	}

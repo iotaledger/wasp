@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -180,7 +180,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, onChainBalance)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		isc.NewAssets(suiclient.FundsFromFaucetAmount-5*baseTokesSent)) {
+		isc.NewAssets(iotaclient.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
 }

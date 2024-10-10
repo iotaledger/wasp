@@ -19,10 +19,10 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
@@ -130,14 +130,14 @@ type InitOptions struct {
 type L1Config struct {
 	SuiRPCURL    string
 	SuiFaucetURL string
-	ISCPackageID sui2.PackageID
+	ISCPackageID iotago.PackageID
 }
 
 func DefaultInitOptions() *InitOptions {
 	return &InitOptions{
 		L1Config: L1Config{
-			SuiRPCURL:    suiconn.LocalnetEndpointURL,
-			SuiFaucetURL: suiconn.LocalnetFaucetURL,
+			SuiRPCURL:    iotaconn.LocalnetEndpointURL,
+			SuiFaucetURL: iotaconn.LocalnetFaucetURL,
 			ISCPackageID: l1starter.ISCPackageID(),
 		},
 		Debug:             false,
@@ -288,14 +288,14 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	return ret
 }
 
-func (env *Solo) ISCPackageID() sui2.PackageID {
+func (env *Solo) ISCPackageID() iotago.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
 func (env *Solo) pickCoinsForInitChain(
 	chainOriginator *cryptolib.KeyPair,
 	initBaseTokens coin.Value,
-) (initBaseTokensCoin *suijsonrpc2.Coin, gasCoins suijsonrpc2.Coins) {
+) (initBaseTokensCoin *iotajsonrpc.Coin, gasCoins iotajsonrpc.Coins) {
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 	coins, err := env.SuiClient().GetCoinObjsForTargetAmount(
 		env.ctx,
@@ -303,26 +303,26 @@ func (env *Solo) pickCoinsForInitChain(
 		initBaseTokens.Uint64(),
 	)
 	require.NoError(env.T, err)
-	pickedCoin, ok := lo.Find(coins, func(c *suijsonrpc2.Coin) bool {
+	pickedCoin, ok := lo.Find(coins, func(c *iotajsonrpc.Coin) bool {
 		return c.Balance.Uint64() >= initBaseTokens.Uint64()
 	})
 	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
 	if pickedCoin.Balance.Uint64() == initBaseTokens.Uint64() {
-		return pickedCoin, lo.Filter(coins, func(c *suijsonrpc2.Coin, _ int) bool {
+		return pickedCoin, lo.Filter(coins, func(c *iotajsonrpc.Coin, _ int) bool {
 			return c != pickedCoin
 		})
 	}
-	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, suiclient2.SplitCoinRequest{
+	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, iotaclient2.SplitCoinRequest{
 		Signer:       originatorAddr.AsSuiAddress(),
 		Coin:         pickedCoin.CoinObjectID,
-		SplitAmounts: []*suijsonrpc2.BigInt{suijsonrpc2.NewBigInt(initBaseTokens.Uint64())},
-		GasBudget:    suijsonrpc2.NewBigInt(suiclient2.DefaultGasBudget),
+		SplitAmounts: []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(initBaseTokens.Uint64())},
+		GasBudget:    iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget),
 	}))
 	env.SuiClient().SignAndExecuteTransaction(
 		env.ctx,
 		cryptolib.SignerToSuiSigner(chainOriginator),
 		tx.TxBytes,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -333,11 +333,11 @@ func (env *Solo) pickCoinsForInitChain(
 		initBaseTokens.Uint64(),
 	)
 	require.NoError(env.T, err)
-	pickedCoin, ok = lo.Find(coins, func(c *suijsonrpc2.Coin) bool {
+	pickedCoin, ok = lo.Find(coins, func(c *iotajsonrpc.Coin) bool {
 		return c.Balance.Uint64() == initBaseTokens.Uint64()
 	})
 	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
-	return pickedCoin, lo.Filter(coins, func(c *suijsonrpc2.Coin, _ int) bool {
+	return pickedCoin, lo.Filter(coins, func(c *iotajsonrpc.Coin, _ int) bool {
 		return c != pickedCoin
 	})
 }
@@ -392,8 +392,8 @@ func (env *Solo) deployChain(
 		stateMetadata.Bytes(),
 		initCoin.Ref(),
 		gasPayments.CoinRefs(),
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(env.T, err)
@@ -559,12 +559,12 @@ func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.SuiCoinInfo {
 	return isc.SuiCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
 
-func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*suijsonrpc2.Coin {
+func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 	return env.L1Coins(addr, coin.BaseTokenType)
 }
 
-func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*suijsonrpc2.Coin {
-	r, err := env.SuiClient().GetCoins(env.ctx, suiclient2.GetCoinsRequest{
+func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
+	r, err := env.SuiClient().GetCoins(env.ctx, iotaclient2.GetCoinsRequest{
 		Owner: addr.AsSuiAddress(),
 		Limit: math.MaxUint,
 	})
@@ -572,8 +572,8 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*suijsonrpc2.Coin {
 	return r.Data
 }
 
-func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*suijsonrpc2.Coin {
-	r, err := env.SuiClient().GetCoins(env.ctx, suiclient2.GetCoinsRequest{
+func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajsonrpc.Coin {
+	r, err := env.SuiClient().GetCoins(env.ctx, iotaclient2.GetCoinsRequest{
 		Owner:    addr.AsSuiAddress(),
 		CoinType: (*string)(&coinType),
 		Limit:    math.MaxUint,
@@ -587,7 +587,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 }
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
-	r, err := env.SuiClient().GetBalance(env.ctx, suiclient2.GetBalanceRequest{
+	r, err := env.SuiClient().GetBalance(env.ctx, iotaclient2.GetBalanceRequest{
 		Owner:    addr.AsSuiAddress(),
 		CoinType: string(coinType),
 	})
@@ -595,7 +595,7 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 	return coin.Value(r.TotalBalance)
 }
 
-func (env *Solo) L1NFTs(addr *cryptolib.Address) []sui2.ObjectID {
+func (env *Solo) L1NFTs(addr *cryptolib.Address) []iotago.ObjectID {
 	panic("TODO")
 }
 
@@ -631,7 +631,7 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address,
 func (env *Solo) MintNFTsL1(
 	issuer *cryptolib.KeyPair,
 	target *cryptolib.Address,
-	collectionID *sui2.ObjectID,
+	collectionID *iotago.ObjectID,
 	metadata [][]byte,
 ) ([]*isc.NFT, error) {
 	panic("TODO")
@@ -673,13 +673,13 @@ func (env *Solo) MintNFTsL1(
 	*/
 }
 
-func (env *Solo) executePTB(ptb sui2.ProgrammableTransaction, wallet *cryptolib.KeyPair) *suijsonrpc2.SuiTransactionBlockResponse {
-	tx := sui2.NewProgrammable(
+func (env *Solo) executePTB(ptb iotago.ProgrammableTransaction, wallet *cryptolib.KeyPair) *iotajsonrpc.SuiTransactionBlockResponse {
+	tx := iotago.NewProgrammable(
 		wallet.Address().AsSuiAddress(),
 		ptb,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 	)
 
 	txnBytes, err := bcs.Marshal(&tx)
@@ -689,7 +689,7 @@ func (env *Solo) executePTB(ptb sui2.ProgrammableTransaction, wallet *cryptolib.
 		env.ctx,
 		cryptolib.SignerToSuiSigner(wallet),
 		txnBytes,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -701,19 +701,19 @@ func (env *Solo) executePTB(ptb sui2.ProgrammableTransaction, wallet *cryptolib.
 
 // SendL1 sends coins to another L1 address
 func (env *Solo) SendL1(targetAddress *cryptolib.Address, coins isc.CoinBalances, wallet *cryptolib.KeyPair) {
-	ptb := sui2.NewProgrammableTransactionBuilder()
+	ptb := iotago.NewProgrammableTransactionBuilder()
 	allCoins := env.L1AllCoins(wallet.Address())
 	coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
 		ptb.Pay(
 			lo.Map(
-				lo.Filter(allCoins, func(c *suijsonrpc2.Coin, _ int) bool {
+				lo.Filter(allCoins, func(c *iotajsonrpc.Coin, _ int) bool {
 					return c.CoinType == string(coinType)
 				}),
-				func(c *suijsonrpc2.Coin, _ int) *sui2.ObjectRef {
+				func(c *iotajsonrpc.Coin, _ int) *iotago.ObjectRef {
 					return c.Ref()
 				},
 			),
-			[]*sui2.Address{targetAddress.AsSuiAddress()},
+			[]*iotago.Address{targetAddress.AsSuiAddress()},
 			[]uint64{uint64(amount)},
 		)
 		return true

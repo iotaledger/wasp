@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -55,7 +55,7 @@ func TestCreateOrigin(t *testing.T) {
 		stateKey := cryptolib.NewKeyPair()
 		stateAddr = stateKey.GetPublicKey().AsAddress()
 
-		require.EqualValues(t, suiclient.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
+		require.EqualValues(t, iotaclient.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 	}
 	createOrigin := func() {
@@ -127,7 +127,7 @@ func TestCreateOrigin(t *testing.T) {
 
 		t.Logf("chainBaseTokens: %d", chainBaseTokens)
 
-		require.EqualValues(t, suiclient.FundsFromFaucetAmount-chainBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
+		require.EqualValues(t, iotaclient.FundsFromFaucetAmount-chainBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
 		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 		allOutputs, ids := u.GetUnspentOutputs(chainID.AsAddress())
 		require.EqualValues(t, 1, len(allOutputs))

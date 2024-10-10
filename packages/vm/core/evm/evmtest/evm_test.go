@@ -24,7 +24,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
@@ -973,7 +973,7 @@ func TestSendNFT(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, env.Chain.L2NFTs(ethAgentID))
 	require.Equal(t,
-		[]sui.ObjectID{nft.ID},
+		[]iotago.ObjectID{nft.ID},
 		env.solo.L1NFTs(receiver),
 	)
 	// there must be 2 Transfer events emitted from the ERC721NFTs contract:

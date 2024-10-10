@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/nodeconn"
@@ -41,7 +41,7 @@ func provide(c *dig.Container) error {
 		dig.In
 
 		WebsocketURL    string
-		PackageID       sui.Address
+		PackageID       iotago.Address
 		ShutdownHandler *shutdown.ShutdownHandler
 	}
 

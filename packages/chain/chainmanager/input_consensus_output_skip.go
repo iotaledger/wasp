@@ -6,7 +6,7 @@ package chainmanager
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -15,13 +15,13 @@ import (
 type inputConsensusOutputSkip struct {
 	committeeAddr  cryptolib.Address
 	logIndex       cmt_log.LogIndex
-	proposedBaseAO *sui.ObjectRef
+	proposedBaseAO *iotago.ObjectRef
 }
 
 func NewInputConsensusOutputSkip(
 	committeeAddr cryptolib.Address,
 	logIndex cmt_log.LogIndex,
-	proposedBaseAO *sui.ObjectRef,
+	proposedBaseAO *iotago.ObjectRef,
 ) gpa.Input {
 	return &inputConsensusOutputSkip{
 		committeeAddr:  committeeAddr,

@@ -4,58 +4,58 @@ import (
 	"context"
 	"log"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
-	suisigner2 "github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 )
 
 type Publisher struct {
-	client *suiclient2.Client
-	signer suisigner2.Signer
+	client *iotaclient.Client
+	signer iotasigner.Signer
 }
 
-func NewPublisher(client *suiclient2.Client, signer suisigner2.Signer) *Publisher {
+func NewPublisher(client *iotaclient.Client, signer iotasigner.Signer) *Publisher {
 	return &Publisher{
 		client: client,
 		signer: signer,
 	}
 }
 
-func (p *Publisher) PublishEvents(ctx context.Context, packageID *sui.PackageID) {
+func (p *Publisher) PublishEvents(ctx context.Context, packageID *iotago.PackageID) {
 	txnBytes, err := p.client.MoveCall(
 		ctx,
-		suiclient2.MoveCallRequest{
+		iotaclient.MoveCallRequest{
 			Signer:    p.signer.Address(),
 			PackageID: packageID,
 			Module:    "eventpub",
 			Function:  "emit_clock",
 			TypeArgs:  []string{},
 			Arguments: []any{},
-			GasBudget: suijsonrpc2.NewBigInt(100000),
+			GasBudget: iotajsonrpc.NewBigInt(100000),
 		},
 	)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	signature, err := p.signer.SignTransactionBlock(txnBytes.TxBytes.Data(), suisigner2.DefaultIntent())
+	signature, err := p.signer.SignTransactionBlock(txnBytes.TxBytes.Data(), iotasigner.DefaultIntent())
 	if err != nil {
 		log.Panic(err)
 	}
 
 	txnResponse, err := p.client.ExecuteTransactionBlock(
-		ctx, suiclient2.ExecuteTransactionBlockRequest{
+		ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txnBytes.TxBytes.Data(),
-			Signatures:  []*suisigner2.Signature{signature},
-			Options: &suijsonrpc2.SuiTransactionBlockResponseOptions{
+			Signatures:  []*iotasigner.Signature{signature},
+			Options: &iotajsonrpc.SuiTransactionBlockResponseOptions{
 				ShowInput:          true,
 				ShowEffects:        true,
 				ShowEvents:         true,
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
 			},
-			RequestType: suijsonrpc2.TxnRequestTypeWaitForLocalExecution,
+			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		},
 	)
 	if err != nil {

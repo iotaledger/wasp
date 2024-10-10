@@ -4,32 +4,32 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iota-go/move"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
 )
 
 func Publish(
-	client *suiclient2.Client,
-	signer suisigner.Signer,
+	client *iotaclient2.Client,
+	signer iotasigner.Signer,
 	bytecode move.PackageBytecode,
-) *sui.PackageID {
+) *iotago.PackageID {
 	txnBytes, err := client.Publish(
 		context.Background(),
-		suiclient2.PublishRequest{
+		iotaclient2.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: bytecode.Modules,
 			Dependencies:    bytecode.Dependencies,
-			GasBudget:       suijsonrpc2.NewBigInt(10 * suiclient2.DefaultGasBudget),
+			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient2.DefaultGasBudget),
 		},
 	)
 	if err != nil {
 		panic(err)
 	}
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &suijsonrpc2.SuiTransactionBlockResponseOptions{
+		context.Background(), signer, txnBytes.TxBytes, &iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -44,26 +44,26 @@ func Publish(
 	return packageID
 }
 
-func PublishMintTestcoin(client *suiclient2.Client, signer suisigner.Signer) (
-	*sui.PackageID,
-	*sui.ObjectID,
+func PublishMintTestcoin(client *iotaclient2.Client, signer iotasigner.Signer) (
+	*iotago.PackageID,
+	*iotago.ObjectID,
 ) {
 	testcoinBytecode := contracts.Testcoin()
 
 	txnBytes, err := client.Publish(
 		context.Background(),
-		suiclient2.PublishRequest{
+		iotaclient2.PublishRequest{
 			Sender:          signer.Address(),
 			CompiledModules: testcoinBytecode.Modules,
 			Dependencies:    testcoinBytecode.Dependencies,
-			GasBudget:       suijsonrpc2.NewBigInt(10 * suiclient2.DefaultGasBudget),
+			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient2.DefaultGasBudget),
 		},
 	)
 	if err != nil {
 		panic(err)
 	}
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &suijsonrpc2.SuiTransactionBlockResponseOptions{
+		context.Background(), signer, txnBytes.TxBytes, &iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -90,7 +90,7 @@ func PublishMintTestcoin(client *suiclient2.Client, signer suisigner.Signer) (
 		"testcoin",
 		treasuryCap.ObjectID,
 		mintAmount,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

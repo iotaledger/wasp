@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
@@ -17,33 +17,33 @@ import (
 func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID sui2.PackageID,
-	anchorAddress *sui2.ObjectID,
-	assetsBagRef *sui2.ObjectRef,
+	packageID iotago.PackageID,
+	anchorAddress *iotago.ObjectID,
+	assetsBagRef *iotago.ObjectRef,
 	iscContractHname uint32,
 	iscFunctionHname uint32,
 	args [][]byte,
 	allowanceArray []iscmove.CoinAllowance,
 	onchainGasBudget uint64,
-	gasPayments []*sui2.ObjectRef, // optional
+	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*suijsonrpc2.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 
-	anchorRes, err := c.GetObject(ctx, suiclient2.GetObjectRequest{ObjectID: anchorAddress})
+	anchorRes, err := c.GetObject(ctx, iotaclient2.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	ptb := sui2.NewProgrammableTransactionBuilder()
+	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBCreateAndSendRequest(
 		ptb,
 		packageID,
 		*anchorRef.ObjectID,
-		ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 		iscContractHname,
 		iscFunctionHname,
 		args,
@@ -53,14 +53,14 @@ func (c *Client) CreateAndSendRequest(
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, suiclient2.GetCoinsRequest{Owner: signer.Address()})
+		coinPage, err := c.GetCoins(ctx, iotaclient2.GetCoinsRequest{Owner: signer.Address()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		gasPayments = []*sui2.ObjectRef{coinPage.Data[0].Ref()}
+		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
-	tx := sui2.NewProgrammable(
+	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
@@ -85,7 +85,7 @@ func (c *Client) CreateAndSendRequest(
 		ctx,
 		signer,
 		txnBytes,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -98,18 +98,18 @@ func (c *Client) CreateAndSendRequest(
 
 func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
-	reqID *sui2.ObjectID,
+	reqID *iotago.ObjectID,
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, suiclient2.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, iotaclient2.GetObjectRequest{
 		ObjectID: reqID,
-		Options:  &suijsonrpc2.SuiObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
 
 	var req moveRequest
-	err = suiclient2.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+	err = iotaclient2.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}

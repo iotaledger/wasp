@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// l1starter allows starting and stopping the sui-test-validator tool
+// l1starter allows starting and stopping the iotago-test-validator tool
 // for testing purposes.
 package l1starter
 
@@ -23,23 +23,23 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
-	suisigner2 "github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 var (
-	ISCPackageOwner suisigner2.Signer
+	ISCPackageOwner iotasigner.Signer
 	instance        atomic.Pointer[SuiTestValidator]
 )
 
 func init() {
 	var seed [ed25519.SeedSize]byte
 	copy(seed[:], []byte("iscPackageOwner"))
-	ISCPackageOwner = suisigner2.NewSigner(seed[:], suisigner2.KeySchemeFlagDefault)
+	ISCPackageOwner = iotasigner.NewSigner(seed[:], iotasigner.KeySchemeFlagDefault)
 }
 
 func Instance() *SuiTestValidator {
@@ -50,7 +50,7 @@ func Instance() *SuiTestValidator {
 	return stv
 }
 
-func ISCPackageID() sui.PackageID {
+func ISCPackageID() iotago.PackageID {
 	return Instance().ISCPackageID
 }
 
@@ -76,13 +76,13 @@ type SuiTestValidator struct {
 	ctx          context.Context
 	Config       Config
 	Cmd          *exec.Cmd
-	ISCPackageID sui.PackageID
+	ISCPackageID iotago.PackageID
 }
 
 func Start(ctx context.Context, cfg Config) *SuiTestValidator {
 	stv := &SuiTestValidator{Config: cfg}
 	if !instance.CompareAndSwap(nil, stv) {
-		panic("an instance of sui-test-validator is already running")
+		panic("an instance of iotago-test-validator is already running")
 	}
 	stv.start(ctx)
 	return stv
@@ -90,10 +90,10 @@ func Start(ctx context.Context, cfg Config) *SuiTestValidator {
 
 func (stv *SuiTestValidator) start(ctx context.Context) {
 	stv.ctx = ctx
-	stv.logf("Starting sui-test-validator...")
+	stv.logf("Starting iotago-test-validator...")
 	ts := time.Now()
 	stv.execCmd()
-	stv.logf("Starting sui-test-validator... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+	stv.logf("Starting iotago-test-validator... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 	stv.waitAllHealthy(5 * time.Minute)
 	stv.logf("Deploying ISC contracts...")
 	stv.ISCPackageID = stv.deployISCContracts()
@@ -101,16 +101,16 @@ func (stv *SuiTestValidator) start(ctx context.Context) {
 }
 
 func (stv *SuiTestValidator) execCmd() {
-	// using CommandContext so that the sui process is killed when the
+	// using CommandContext so that the iotago process is killed when the
 	// ctx is done
 	testValidatorCmd := exec.CommandContext(
 		stv.ctx,
-		"sui-test-validator",
+		"iotago-test-validator",
 		fmt.Sprintf("--epoch-duration-ms=%d", 60000),
 		fmt.Sprintf("--fullnode-rpc-port=%d", stv.Config.RPCPort),
 		fmt.Sprintf("--faucet-port=%d", stv.Config.FaucetPort),
 	)
-	// also kill the sui process if the go process dies
+	// also kill the iotago process if the go process dies
 	util.TerminateCmdWhenTestStops(testValidatorCmd)
 
 	testValidatorCmd.Env = os.Environ()
@@ -123,7 +123,7 @@ func (stv *SuiTestValidator) Stop() {
 	stv.logf("Stopping...")
 
 	if err := stv.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		panic(fmt.Errorf("unable to send TERM signal to sui-test-validator: %w", err))
+		panic(fmt.Errorf("unable to send TERM signal to iotago-test-validator: %w", err))
 	}
 
 	if err := stv.Cmd.Wait(); err != nil {
@@ -143,8 +143,8 @@ func (stv *SuiTestValidator) Stop() {
 	}
 }
 
-func (stv *SuiTestValidator) Client() *suiclient2.Client {
-	return suiclient2.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
+func (stv *SuiTestValidator) Client() *iotaclient2.Client {
+	return iotaclient2.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
 }
 
 func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
@@ -162,7 +162,7 @@ func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
 			if f() {
 				return
 			}
-			stv.logf("Waiting until sui-test-validator becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
+			stv.logf("Waiting until iotago-test-validator becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
@@ -179,11 +179,11 @@ func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
 	})
 
 	tryLoop(func() bool {
-		err := suiclient2.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), suiconn.LocalnetFaucetURL)
+		err := iotaclient2.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), iotaconn.LocalnetFaucetURL)
 		return err == nil
 	})
 
-	stv.logf("Waiting until sui-test-validator becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+	stv.logf("Waiting until iotago-test-validator becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 }
 
 func (stv *SuiTestValidator) logf(msg string, args ...any) {
@@ -196,11 +196,11 @@ func (stv *SuiTestValidator) redirectOutput() {
 	stdout := lo.Must(stv.Cmd.StdoutPipe())
 	stderr := lo.Must(stv.Cmd.StderrPipe())
 
-	outFilePath := filepath.Join(os.TempDir(), "sui-test-validator-stdout.log")
+	outFilePath := filepath.Join(os.TempDir(), "iotago-test-validator-stdout.log")
 	outFile := lo.Must(os.Create(outFilePath))
 	go scanLog(stdout, outFile)
 
-	errFilePath := filepath.Join(os.TempDir(), "sui-test-validator-stderr.log")
+	errFilePath := filepath.Join(os.TempDir(), "iotago-test-validator-stderr.log")
 	errFile := lo.Must(os.Create(errFilePath))
 	go scanLog(stderr, errFile)
 }
@@ -213,20 +213,20 @@ func scanLog(reader io.Reader, out *os.File) {
 	}
 }
 
-func (stv *SuiTestValidator) deployISCContracts() sui.PackageID {
+func (stv *SuiTestValidator) deployISCContracts() iotago.PackageID {
 	client := stv.Client()
 	iscBytecode := contracts.ISC()
-	txnBytes := lo.Must(client.Publish(context.Background(), suiclient2.PublishRequest{
+	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient2.PublishRequest{
 		Sender:          ISCPackageOwner.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc2.NewBigInt(suiclient2.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget * 10),
 	}))
 	txnResponse := lo.Must(client.SignAndExecuteTransaction(
 		context.Background(),
 		ISCPackageOwner,
 		txnBytes.TxBytes,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

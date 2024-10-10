@@ -11,9 +11,9 @@ Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-fr
 Sui = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "l1sc/isc-models" }
 
 
-#MoveStdlib = {local = "../../crates/sui-framework/packages/move-stdlib"}
-#Stardust = { local = "../../crates/sui-framework/packages/stardust" }
-#Sui = { local = "../../crates/sui-framework/packages/sui-framework" }
+#MoveStdlib = {local = "../../crates/iotago-framework/packages/move-stdlib"}
+#Stardust = { local = "../../crates/iotago-framework/packages/stardust" }
+#Sui = { local = "../../crates/iotago-framework/packages/iotago-framework" }
 
 [addresses]
 isc = "0x0"

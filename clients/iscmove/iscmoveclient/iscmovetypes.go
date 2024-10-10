@@ -2,18 +2,18 @@ package iscmoveclient
 
 import (
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 type referent[T any] struct {
-	ID    sui.ObjectID
+	ID    iotago.ObjectID
 	Value *T `bcs:"optional"`
 }
 
 // moveAnchor is the BCS equivalent for the move type moveAnchor
 type moveAnchor struct {
-	id     sui.ObjectID
+	id     iotago.ObjectID
 	assets referent[iscmove.AssetsBag]
 	stateMetadata []byte
 	stateIndex    uint32
@@ -29,7 +29,7 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 }
 
 type moveRequest struct {
-	id     sui.ObjectID
+	id     iotago.ObjectID
 	sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
 	assetsBag referent[iscmove.AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`

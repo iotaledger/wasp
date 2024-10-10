@@ -81,8 +81,8 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -144,8 +144,8 @@ func (nc *NeedConsensus) String() string {
 type NeedPublishTX struct {
 	CommitteeAddr cryptolib.Address
 	LogIndex      cmt_log.LogIndex
-	Tx            *suisigner.SignedTransaction
-	BaseAnchorRef *sui.ObjectRef // The consumed Anchor object/version.
+	Tx            *iotasigner.SignedTransaction
+	BaseAnchorRef *iotago.ObjectRef // The consumed Anchor object/version.
 }
 
 type ChainMgr interface {

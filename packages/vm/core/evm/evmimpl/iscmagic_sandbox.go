@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -79,7 +79,7 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 
 // handler for ISCSandbox::send
 func (h *magicContractHandler) Send(
-	targetAddress sui.Address,
+	targetAddress iotago.Address,
 	assets iscmagic.ISCAssets,
 	metadata iscmagic.ISCSendMetadata,
 	sendOptions isc.SendOptions,

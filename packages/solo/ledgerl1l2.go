@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -84,7 +84,7 @@ func (ch *Chain) L2BaseTokensAtStateIndex(agentID isc.AgentID, stateIndex uint32
 	return ch.L2AssetsAtStateIndex(agentID, stateIndex).BaseTokens()
 }
 
-func (ch *Chain) L2NFTs(agentID isc.AgentID) []sui.ObjectID {
+func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.ObjectID {
 	res, err := ch.CallView(accounts.ViewAccountObjects.Message(&agentID))
 	require.NoError(ch.Env.T, err)
 

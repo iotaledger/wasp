@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	pkg2 "github.com/iotaledger/wasp/clients/iota-go/examples/swap/pkg"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/move"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
-	"github.com/iotaledger/wasp/clients/iota-go/suitest"
 )
 
 //go:generate sh -c "cd ../swap && sui move build --dump-bytecode-as-base64 > bytecode.json"
@@ -17,9 +17,9 @@ import (
 var swapBytecodeJSON []byte
 
 func main() {
-	suiClient := suiclient2.NewHTTP(suiconn.LocalnetEndpointURL)
-	signer := suitest.MakeSignerWithFunds(0, suiconn.LocalnetFaucetURL)
-	swapper := suitest.MakeSignerWithFunds(1, suiconn.LocalnetFaucetURL)
+	suiClient := iotaclient2.NewHTTP(iotaconn.LocalnetEndpointURL)
+	signer := iotatest.MakeSignerWithFunds(0, iotaconn.LocalnetFaucetURL)
+	swapper := iotatest.MakeSignerWithFunds(1, iotaconn.LocalnetFaucetURL)
 
 	fmt.Println("signer: ", signer.Address())
 	fmt.Println("swapper: ", swapper.Address())
@@ -33,7 +33,7 @@ func main() {
 
 	testcoinCoins, err := suiClient.GetCoins(
 		context.Background(),
-		suiclient2.GetCoinsRequest{
+		iotaclient2.GetCoinsRequest{
 			Owner:    signer.Address(),
 			CoinType: &testcoinCoinType,
 		},
@@ -44,7 +44,7 @@ func main() {
 
 	signerSuiCoinPage, err := suiClient.GetCoins(
 		context.Background(),
-		suiclient2.GetCoinsRequest{Owner: signer.Address()},
+		iotaclient2.GetCoinsRequest{Owner: signer.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func main() {
 
 	swapperSuiCoinPage1, err := suiClient.GetAllCoins(
 		context.Background(),
-		suiclient2.GetAllCoinsRequest{Owner: swapper.Address()},
+		iotaclient2.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)
@@ -71,7 +71,7 @@ func main() {
 
 	swapperSuiCoinPage2, err := suiClient.GetAllCoins(
 		context.Background(),
-		suiclient2.GetAllCoinsRequest{Owner: swapper.Address()},
+		iotaclient2.GetAllCoinsRequest{Owner: swapper.Address()},
 	)
 	if err != nil {
 		panic(err)

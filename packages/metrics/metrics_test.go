@@ -11,8 +11,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iota-go/sui/suitest"
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -82,7 +82,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					ID:   *suitest.RandomAddress(),
 					Size: 1,
 				},
-				Balances: map[string]*suijsonrpc.Balance{
+				Balances: map[string]*iotajsonrpc.Balance{
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
 						CoinObjectCount: 1,

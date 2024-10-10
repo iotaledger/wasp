@@ -6,7 +6,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -30,7 +30,7 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount, reqctx.ChainID())
 }
 
-func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []sui.ObjectID) {
+func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []iotago.ObjectID) {
 	for _, id := range objectIDs {
 		panic("TODO: how to get the object contents?")
 		rec := accounts.ObjectRecord{
@@ -52,7 +52,7 @@ func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, 
 }
 
 // debitObjectFromAccount removes a Object from an account.
-func (reqctx *requestContext) debitObjectFromAccount(agentID isc.AgentID, objectID sui.ObjectID, gasBurn bool) {
+func (reqctx *requestContext) debitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, gasBurn bool) {
 	reqctx.accountsStateWriter(gasBurn).DebitObjectFromAccount(agentID, objectID, reqctx.ChainID())
 }
 
@@ -108,14 +108,14 @@ func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalan
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []sui.ObjectID) {
+func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []iotago.ObjectID) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetAccountObjects(agentID)
 	})
 	return ret
 }
 
-func (reqctx *requestContext) GetObjectBCS(objectID sui.ObjectID) (ret []byte, ok bool) {
+func (reqctx *requestContext) GetObjectBCS(objectID iotago.ObjectID) (ret []byte, ok bool) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetObjectBCS(objectID)
 	})

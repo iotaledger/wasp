@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -46,7 +46,7 @@ type VMTaskResult struct {
 	RotationAddress *cryptolib.Address
 	// PTB is the ProgrammableTransaction to be sent to L1 for the next anchor
 	// transition, or nil if the task does not produce a normal block
-	UnsignedTransaction sui.TransactionData
+	UnsignedTransaction iotago.TransactionData
 	StateMetadata       []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult

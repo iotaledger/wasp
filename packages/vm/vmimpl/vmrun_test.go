@@ -9,9 +9,9 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/sui/suitest"
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -36,7 +36,7 @@ import (
 // 	o := &iotago.NFTOutput{
 // 		Amount:       100 * isc.Million,
 // 		NativeTokens: []*isc.NativeToken{},
-// 		NFTID:        sui.ObjectID{0x1},
+// 		NFTID:        iotago.ObjectID{0x1},
 // 		Conditions:   []iotago.UnlockCondition{},
 // 		Features: []iotago.Feature{
 // 			&iotago.MetadataFeature{
@@ -90,7 +90,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 	}
 	return &isc.StateAnchor{
 		Anchor: &iscmove.AnchorWithRef{
-			ObjectRef: sui.ObjectRef{
+			ObjectRef: iotago.ObjectRef{
 				ObjectID: &anchor.ID,
 				Version:  0,
 			},
@@ -120,7 +120,7 @@ func makeOnLedgerRequest(
 					ID:   *requestAssetsBagRef.ObjectID,
 					Size: 1,
 				},
-				Balances: map[string]*suijsonrpc.Balance{
+				Balances: map[string]*iotajsonrpc.Balance{
 					string(coin.BaseTokenType): {
 						CoinType:        string(coin.BaseTokenType),
 						CoinObjectCount: 1,
@@ -168,7 +168,7 @@ func transitionAnchor(
 	)
 	return &isc.StateAnchor{
 		Anchor: &iscmove.AnchorWithRef{
-			ObjectRef: sui.ObjectRef{
+			ObjectRef: iotago.ObjectRef{
 				ObjectID: anchor.Anchor.ObjectID,
 				Version:  anchor.Anchor.Version + 1,
 			},

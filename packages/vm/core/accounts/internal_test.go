@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
@@ -310,7 +310,7 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	object1 := &accounts.ObjectRecord{
-		ID:  sui.ObjectID{123},
+		ID:  iotago.ObjectID{123},
 		BCS: []byte("foobar"),
 	}
 	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, object1, isc.ChainID{})
@@ -328,7 +328,7 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isctest.NewRandomAgentID()
 
 	// cannot move an Object that is not owned
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(sui.ObjectID{111}), isc.ChainID{}))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(iotago.ObjectID{111}), isc.ChainID{}))
 
 	// moves successfully when the Object is owned
 	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(object1.ID), isc.ChainID{})
@@ -351,7 +351,7 @@ func testCreditDebitObject1(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := knownAgentID(1, 2)
 	object := &accounts.ObjectRecord{
-		ID:  sui.ObjectID{123},
+		ID:  iotago.ObjectID{123},
 		BCS: []byte("foobar"),
 	}
 	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, object, isc.ChainID{})

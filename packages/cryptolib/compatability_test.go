@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	suisigner2 "github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 )
 
 func TestCompatability(t *testing.T) {
@@ -18,14 +18,14 @@ func TestCompatability(t *testing.T) {
 
 	kp := KeyPairFromSeed(SubSeed(seed, seedIndex))
 	subseed := SubSeed(seed, seedIndex)
-	suikp := suisigner2.NewSigner(subseed[:], suisigner2.KeySchemeFlagIotaEd25519)
+	suikp := iotasigner.NewSigner(subseed[:], iotasigner.KeySchemeFlagIotaEd25519)
 
 	require.Equal(t, kp.Address().AsSuiAddress().Data(), suikp.Address().Data())
 
-	kpSign, err := kp.SignTransactionBlock([]byte{1, 2, 3, 4}, suisigner2.DefaultIntent())
+	kpSign, err := kp.SignTransactionBlock([]byte{1, 2, 3, 4}, iotasigner.DefaultIntent())
 	require.NoError(t, err)
 
-	suiSign, err := suikp.SignTransactionBlock([]byte{1, 2, 3, 4}, suisigner2.DefaultIntent())
+	suiSign, err := suikp.SignTransactionBlock([]byte{1, 2, 3, 4}, iotasigner.DefaultIntent())
 	require.NoError(t, err)
 
 	require.Equal(t, kpSign.AsSuiSignature().Bytes(), suiSign.Bytes())

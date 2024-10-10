@@ -9,7 +9,7 @@ ISC chain, thus adding support for Ethereum smart contracts.
 The @iscmagic contracts are installable via __NPM__ with 
 
 ```bash
-npm install --save @iota/iscmagic
+npm install --save @iotago/iscmagic
 ```
 
 After installing `@iota/iscmagic` you can use the functions by importing them as you normally would.

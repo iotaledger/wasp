@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -150,7 +150,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, 1, out.NeedPublishTX().Size(), "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
-		require.Equal(t, originAO.OutputID(), func() sui.ObjectID {
+		require.Equal(t, originAO.OutputID(), func() iotago.ObjectID {
 			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
 			return tx.BaseAliasOutputID
 		}())

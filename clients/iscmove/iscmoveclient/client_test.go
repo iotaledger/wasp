@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -20,15 +20,15 @@ var testSeed = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116,
 func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seed[0] = seed[0] + byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := suiclient2.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), suiconn.LocalnetFaucetURL)
+	err := iotaclient2.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 	return kp
 }
 
 func newLocalnetClient() *iscmoveclient.Client {
 	return iscmoveclient.NewHTTPClient(
-		suiconn.LocalnetEndpointURL,
-		suiconn.LocalnetFaucetURL,
+		iotaconn.LocalnetEndpointURL,
+		iotaconn.LocalnetFaucetURL,
 	)
 }
 
@@ -37,11 +37,11 @@ func TestKeys(t *testing.T) {
 	client := newLocalnetClient()
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(context.Background(), suiclient2.PublishRequest{
+	txnBytes, err := client.Publish(context.Background(), iotaclient2.PublishRequest{
 		Sender:          cryptolibSigner.Address().AsSuiAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc2.NewBigInt(suiclient2.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestKeys(t *testing.T) {
 		context.Background(),
 		cryptolib.SignerToSuiSigner(cryptolibSigner),
 		txnBytes.TxBytes,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

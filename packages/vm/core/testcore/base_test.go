@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -37,7 +37,7 @@ func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
-	env.AssertL1BaseTokens(userAddr, suiclient.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1")
 	_ = ch.Log().Sync()
@@ -73,7 +73,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 	// all goes to storage deposit and to total base tokens on chain
 	// what has left on L1 address
-	env.AssertL1BaseTokens(ch.OriginatorAddress, suiclient.FundsFromFaucetAmount-10*isc.Million)
+	env.AssertL1BaseTokens(ch.OriginatorAddress, iotaclient.FundsFromFaucetAmount-10*isc.Million)
 
 	// check if there's a single alias output on chain's address
 	aliasOutputs := env.L1Ledger().GetAliasOutputs(ch.ChainID.AsAddress())
@@ -151,7 +151,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		env.AssertL1BaseTokens(senderAddr, suiclient.FundsFromFaucetAmount)
+		env.AssertL1BaseTokens(senderAddr, iotaclient.FundsFromFaucetAmount)
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParamsEx("dummyContract", "dummyEP").
@@ -175,7 +175,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator on L1 does not change
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(senderAddr, suiclient.FundsFromFaucetAmount-reqStorageDeposit)
+		env.AssertL1BaseTokens(senderAddr, iotaclient.FundsFromFaucetAmount-reqStorageDeposit)
 		// originator account does not change
 		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
 		// user is charged with gas fee on L2
@@ -228,7 +228,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		env.AssertL1BaseTokens(senderAddr, suiclient.FundsFromFaucetAmount)
+		env.AssertL1BaseTokens(senderAddr, iotaclient.FundsFromFaucetAmount)
 		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
@@ -251,7 +251,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// originator on L1 does not change
 		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(senderAddr, suiclient.FundsFromFaucetAmount-reqStorageDeposit)
+		env.AssertL1BaseTokens(senderAddr, iotaclient.FundsFromFaucetAmount-reqStorageDeposit)
 		// originator account does not change
 		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
 		// user is charged with gas fee on L2
@@ -452,9 +452,9 @@ func TestDeployNativeContract(t *testing.T) {
 
 	// get more base tokens for originator
 	originatorBalance := env.L1BaseTokens(ch.OriginatorAddress)
-	err = suiclient.RequestFundsFromFaucet(env.Ctx(), ch.OriginatorAddress.AsSuiAddress(), env.SuiFaucetURL())
+	err = iotaclient.RequestFundsFromFaucet(env.Ctx(), ch.OriginatorAddress.AsSuiAddress(), env.SuiFaucetURL())
 	require.NoError(t, err)
-	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+suiclient.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+iotaclient.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAddressAgentID(senderAddr))).
 		AddBaseTokens(100_000).

@@ -12,7 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -94,7 +94,7 @@ func testAccounts(e *ChainEnv) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !e.Clu.AssertAddressBalances(myAddress, isc.NewAssets(iotaclient.FundsFromFaucetAmount-transferBaseTokens)) {
 		e.t.Fatal()
 	}
 
@@ -152,7 +152,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.NoError(t, err2)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssets(suiclient.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !env.Clu.AssertAddressBalances(myAddress, isc.NewAssets(iotaclient.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 

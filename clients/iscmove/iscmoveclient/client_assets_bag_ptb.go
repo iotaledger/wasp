@@ -3,42 +3,42 @@ package iscmoveclient
 import (
 	"fmt"
 
+	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-func PTBAssetsBagNew(ptb *sui2.ProgrammableTransactionBuilder, packageID sui2.PackageID, owner *cryptolib.Address) *sui2.ProgrammableTransactionBuilder {
+func PTBAssetsBagNew(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, owner *cryptolib.Address) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "new",
-				TypeArguments: []sui2.TypeTag{},
-				Arguments:     []sui2.Argument{},
+				TypeArguments: []iotago.TypeTag{},
+				Arguments:     []iotago.Argument{},
 			},
 		},
 	)
 	return ptb
 }
 
-func PTBAssetsBagNewAndTransfer(ptb *sui2.ProgrammableTransactionBuilder, packageID sui2.PackageID, owner *cryptolib.Address) *sui2.ProgrammableTransactionBuilder {
+func PTBAssetsBagNewAndTransfer(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, owner *cryptolib.Address) *iotago.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "new",
-				TypeArguments: []sui2.TypeTag{},
-				Arguments:     []sui2.Argument{},
+				TypeArguments: []iotago.TypeTag{},
+				Arguments:     []iotago.Argument{},
 			},
 		},
 	)
 	ptb.Command(
-		sui2.Command{
-			TransferObjects: &sui2.ProgrammableTransferObjects{
-				Objects: []sui2.Argument{arg1},
+		iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{arg1},
 				Address: ptb.MustForceSeparatePure(owner.AsSuiAddress()),
 			},
 		},
@@ -47,24 +47,24 @@ func PTBAssetsBagNewAndTransfer(ptb *sui2.ProgrammableTransactionBuilder, packag
 }
 
 func PTBAssetsBagPlaceCoin(
-	ptb *sui2.ProgrammableTransactionBuilder,
-	packageID sui2.PackageID,
-	argAssetsBag sui2.Argument,
-	argCoin sui2.Argument,
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAssetsBag iotago.Argument,
+	argCoin iotago.Argument,
 	coinType string,
-) *sui2.ProgrammableTransactionBuilder {
-	typeTag, err := sui2.TypeTagFromString(coinType)
+) *iotago.ProgrammableTransactionBuilder {
+	typeTag, err := iotago.TypeTagFromString(coinType)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin",
-				TypeArguments: []sui2.TypeTag{*typeTag},
-				Arguments: []sui2.Argument{
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
 					argAssetsBag,
 					argCoin,
 				},
@@ -74,19 +74,19 @@ func PTBAssetsBagPlaceCoin(
 	return ptb
 }
 
-func PTBAssetsBagPlaceCoinBalance(ptb *sui2.ProgrammableTransactionBuilder, packageID sui2.PackageID, argAssetsBag sui2.Argument, argCoinBalance sui2.Argument, coinType string) *sui2.ProgrammableTransactionBuilder {
-	typeTag, err := sui2.TypeTagFromString(coinType)
+func PTBAssetsBagPlaceCoinBalance(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, argAssetsBag iotago.Argument, argCoinBalance iotago.Argument, coinType string) *iotago.ProgrammableTransactionBuilder {
+	typeTag, err := iotago.TypeTagFromString(coinType)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin_balance",
-				TypeArguments: []sui2.TypeTag{*typeTag},
-				Arguments: []sui2.Argument{
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
 					argAssetsBag,
 					argCoinBalance,
 				},
@@ -96,28 +96,28 @@ func PTBAssetsBagPlaceCoinBalance(ptb *sui2.ProgrammableTransactionBuilder, pack
 	return ptb
 }
 
-func PTBAssetsBagPlaceCoinWithAmount(ptb *sui2.ProgrammableTransactionBuilder, packageID sui2.PackageID, assetsBagRef *sui2.ObjectRef, coin *sui2.ObjectRef, amount uint64, coinType string) *sui2.ProgrammableTransactionBuilder {
-	typeTag, err := sui2.TypeTagFromString(coinType)
+func PTBAssetsBagPlaceCoinWithAmount(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, assetsBagRef *iotago.ObjectRef, coin *iotago.ObjectRef, amount uint64, coinType string) *iotago.ProgrammableTransactionBuilder {
+	typeTag, err := iotago.TypeTagFromString(coinType)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 	splitCoinArg := ptb.Command(
-		sui2.Command{
-			SplitCoins: &sui2.ProgrammableSplitCoins{
-				Coin:    ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: coin}),
-				Amounts: []sui2.Argument{ptb.MustForceSeparatePure(amount)},
+		iotago.Command{
+			SplitCoins: &iotago.ProgrammableSplitCoins{
+				Coin:    ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coin}),
+				Amounts: []iotago.Argument{ptb.MustForceSeparatePure(amount)},
 			},
 		},
 	)
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin",
-				TypeArguments: []sui2.TypeTag{*typeTag},
-				Arguments: []sui2.Argument{
-					ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 					splitCoinArg,
 				},
 			},
@@ -126,19 +126,19 @@ func PTBAssetsBagPlaceCoinWithAmount(ptb *sui2.ProgrammableTransactionBuilder, p
 	return ptb
 }
 
-func PTBAssetsBagTakeCoinBalance(ptb *sui2.ProgrammableTransactionBuilder, packageID sui2.PackageID, argAssetsBag sui2.Argument, amount uint64, coinType string) *sui2.ProgrammableTransactionBuilder {
-	typeTag, err := sui2.TypeTagFromString(coinType)
+func PTBAssetsBagTakeCoinBalance(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, argAssetsBag iotago.Argument, amount uint64, coinType string) *iotago.ProgrammableTransactionBuilder {
+	typeTag, err := iotago.TypeTagFromString(coinType)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "take_coin_balance",
-				TypeArguments: []sui2.TypeTag{*typeTag},
-				Arguments: []sui2.Argument{
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
 					argAssetsBag,
 					ptb.MustForceSeparatePure(amount),
 				},
@@ -148,15 +148,15 @@ func PTBAssetsBagTakeCoinBalance(ptb *sui2.ProgrammableTransactionBuilder, packa
 	return ptb
 }
 
-func PTBAssetsDestroyEmpty(ptb *sui2.ProgrammableTransactionBuilder, packageID sui2.PackageID, argAssetsBag sui2.Argument) *sui2.ProgrammableTransactionBuilder {
+func PTBAssetsDestroyEmpty(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, argAssetsBag iotago.Argument) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "destroy_empty",
-				TypeArguments: []sui2.TypeTag{},
-				Arguments: []sui2.Argument{
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
 					argAssetsBag,
 				},
 			},

@@ -12,8 +12,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -122,8 +122,8 @@ func (c CoinBalances) IsEmpty() bool {
 }
 
 type CoinJSON struct {
-	CoinType coin.Type          `json:"coinType" swagger:"required"`
-	Balance  *suijsonrpc.BigInt `json:"balance" swagger:"required"`
+	CoinType coin.Type           `json:"coinType" swagger:"required"`
+	Balance  *iotajsonrpc.BigInt `json:"balance" swagger:"required"`
 }
 
 func (c *CoinBalances) UnmarshalJSON(b []byte) error {
@@ -144,7 +144,7 @@ func (c CoinBalances) MarshalJSON() ([]byte, error) {
 	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		coins = append(coins, CoinJSON{
 			CoinType: t,
-			Balance:  &suijsonrpc.BigInt{Int: new(big.Int).SetUint64(uint64(v))},
+			Balance:  &iotajsonrpc.BigInt{Int: new(big.Int).SetUint64(uint64(v))},
 		})
 		return true
 	})
@@ -179,13 +179,13 @@ func (c CoinBalances) Clone() CoinBalances {
 	return r
 }
 
-type ObjectIDSet map[sui.ObjectID]struct{}
+type ObjectIDSet map[iotago.ObjectID]struct{}
 
 func NewObjectIDSet() ObjectIDSet {
-	return make(map[sui.ObjectID]struct{})
+	return make(map[iotago.ObjectID]struct{})
 }
 
-func NewObjectIDSetFromArray(ids []sui.ObjectID) ObjectIDSet {
+func NewObjectIDSetFromArray(ids []iotago.ObjectID) ObjectIDSet {
 	set := NewObjectIDSet()
 
 	for _, id := range ids {
@@ -195,22 +195,22 @@ func NewObjectIDSetFromArray(ids []sui.ObjectID) ObjectIDSet {
 	return set
 }
 
-func (o ObjectIDSet) Add(id sui.ObjectID) {
+func (o ObjectIDSet) Add(id iotago.ObjectID) {
 	o[id] = struct{}{}
 }
 
-func (o ObjectIDSet) Has(id sui.ObjectID) bool {
+func (o ObjectIDSet) Has(id iotago.ObjectID) bool {
 	_, ok := o[id]
 	return ok
 }
 
-func (o ObjectIDSet) Sorted() []sui.ObjectID {
+func (o ObjectIDSet) Sorted() []iotago.ObjectID {
 	ids := lo.Keys(o)
-	slices.SortFunc(ids, func(a, b sui.ObjectID) int { return bytes.Compare(a[:], b[:]) })
+	slices.SortFunc(ids, func(a, b iotago.ObjectID) int { return bytes.Compare(a[:], b[:]) })
 	return ids
 }
 
-func (o ObjectIDSet) IterateSorted(f func(sui.ObjectID) bool) {
+func (o ObjectIDSet) IterateSorted(f func(iotago.ObjectID) bool) {
 	for _, id := range o.Sorted() {
 		if !f(id) {
 			return
@@ -219,7 +219,7 @@ func (o ObjectIDSet) IterateSorted(f func(sui.ObjectID) bool) {
 }
 
 func (o *ObjectIDSet) UnmarshalJSON(b []byte) error {
-	var ids []sui.ObjectID
+	var ids []iotago.ObjectID
 	err := json.Unmarshal(b, &ids)
 	if err != nil {
 		return err
@@ -290,7 +290,7 @@ func (a *Assets) AddCoin(coinType coin.Type, amount coin.Value) *Assets {
 	return a
 }
 
-func (a *Assets) AddObject(id sui.ObjectID) *Assets {
+func (a *Assets) AddObject(id iotago.ObjectID) *Assets {
 	a.Objects.Add(id)
 	return a
 }
@@ -303,7 +303,7 @@ func (a *Assets) String() string {
 	s := lo.MapToSlice(a.Coins, func(coinType coin.Type, amount coin.Value) string {
 		return fmt.Sprintf("%s: %d", coinType, amount)
 	})
-	s = append(s, lo.MapToSlice(a.Objects, func(id sui.ObjectID, _ struct{}) string {
+	s = append(s, lo.MapToSlice(a.Objects, func(id iotago.ObjectID, _ struct{}) string {
 		return id.ShortString()
 	})...)
 	return fmt.Sprintf("Assets{%s}", strings.Join(s, ", "))

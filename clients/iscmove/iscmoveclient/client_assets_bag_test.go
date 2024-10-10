@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -27,8 +27,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -41,8 +41,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		l1starter.ISCPackageID(),
 		assetsBagRef,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -60,8 +60,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -71,16 +71,16 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		suiclient2.GetObjectRequest{
+		iotaclient2.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
-			Options:  &suijsonrpc2.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
 
-	coinResource, err := sui2.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc2.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
@@ -89,8 +89,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		coinInfo.Ref,
 		testCointype,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -105,8 +105,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -116,16 +116,16 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		suiclient2.GetObjectRequest{
+		iotaclient2.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
-			Options:  &suijsonrpc2.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
 
-	coinResource, err := sui2.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc2.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 
 	_, err = client.AssetsBagPlaceCoinAmount(
 		context.Background(),
@@ -136,8 +136,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		testCointype,
 		10,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -152,8 +152,8 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -163,16 +163,16 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		suiclient2.GetObjectRequest{
+		iotaclient2.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
-			Options:  &suijsonrpc2.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
 
-	coinResource, err := sui2.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc2.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 	_, err = client.AssetsBagPlaceCoin(
 		context.Background(),
 		cryptolibSigner,
@@ -181,8 +181,8 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		coinInfo.Ref,
 		testCointype,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -206,16 +206,16 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		suiclient2.GetObjectRequest{
+		iotaclient2.GetObjectRequest{
 			ObjectID: testcoinInfo.Ref.ObjectID,
-			Options:  &suijsonrpc2.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
 
-	coinResource, err := sui2.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc2.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 
 	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &anchor.ObjectRef, testcoinInfo)
 
@@ -232,53 +232,53 @@ func borrowAnchorAssetsAndPlaceCoin(
 	t *testing.T, ctx context.Context,
 	client *iscmoveclient.Client,
 	cryptolibSigner cryptolib.Signer,
-	anchorRef *sui2.ObjectRef,
-	testcoinInfo *sui2.ObjectInfo,
+	anchorRef *iotago.ObjectRef,
+	testcoinInfo *iotago.ObjectInfo,
 ) {
 	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
 	packageID := l1starter.ISCPackageID()
 
-	ptb := sui2.NewProgrammableTransactionBuilder()
-	typeTag, err := sui2.TypeTagFromString(testcoinInfo.Type.String())
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	typeTag, err := iotago.TypeTagFromString(testcoinInfo.Type.String())
 	require.NoError(t, err)
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        "anchor",
 				Function:      "borrow_assets",
-				TypeArguments: []sui2.TypeTag{},
-				Arguments: []sui2.Argument{
-					ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: anchorRef}),
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}),
 				},
 			},
 		},
 	)
-	argAssetsBag := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: 0, Result: 0}}
-	argBorrow := sui2.Argument{NestedResult: &sui2.NestedResult{Cmd: 0, Result: 1}}
+	argAssetsBag := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: 0, Result: 0}}
+	argBorrow := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: 0, Result: 1}}
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        "assets_bag",
 				Function:      "place_coin",
-				TypeArguments: []sui2.TypeTag{*typeTag},
-				Arguments: []sui2.Argument{
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
 					argAssetsBag,
-					ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: testcoinInfo.Ref}),
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: testcoinInfo.Ref}),
 				},
 			},
 		},
 	)
 	ptb.Command(
-		sui2.Command{
-			MoveCall: &sui2.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        "anchor",
 				Function:      "return_assets_from_borrow",
-				TypeArguments: []sui2.TypeTag{},
-				Arguments: []sui2.Argument{
-					ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: anchorRef}),
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}),
 					argAssetsBag,
 					argBorrow,
 				},
@@ -286,21 +286,21 @@ func borrowAnchorAssetsAndPlaceCoin(
 		},
 	)
 	pt := ptb.Finish()
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), suiclient2.DefaultGasBudget)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), iotaclient2.DefaultGasBudget)
 	require.NoError(t, err)
 	gasPayments := coins.CoinRefs()
 
-	tx := sui2.NewProgrammable(
+	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
 		gasPayments,
-		suiclient2.DefaultGasBudget,
-		suiclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
 	)
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
-	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &suijsonrpc2.SuiTransactionBlockResponseOptions{
+	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &iotajsonrpc.SuiTransactionBlockResponseOptions{
 		ShowEffects:       true,
 		ShowObjectChanges: true,
 	})
@@ -317,24 +317,24 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
-		suiclient2.GetObjectRequest{
+		iotaclient2.GetObjectRequest{
 			ObjectID: testcoinInfo.Ref.ObjectID,
-			Options:  &suijsonrpc2.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
 
-	coinResource, err := sui2.NewResourceType(*getCoinRef.Data.Type)
+	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := suijsonrpc2.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -349,13 +349,13 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		testcoinInfo.Ref,
 		testCointype,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
 
-	assetsBagGetObjectRes, err := client.GetObject(context.Background(), suiclient2.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
+	assetsBagGetObjectRes, err := client.GetObject(context.Background(), iotaclient2.GetObjectRequest{ObjectID: assetsBagRef.ObjectID})
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
 
@@ -371,8 +371,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		nil,
 		0,
 		nil,
-		suiclient2.DefaultGasPrice,
-		suiclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
+		iotaclient2.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)

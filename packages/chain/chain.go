@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -42,7 +42,7 @@ type ChainNodeConn interface {
 	PublishTX(
 		ctx context.Context,
 		chainID isc.ChainID,
-		tx suisigner.SignedTransaction,
+		tx iotasigner.SignedTransaction,
 		callback TxPostHandler,
 	) error
 	// RefreshOnLedgerRequests synchronously fetches all owned requests by the

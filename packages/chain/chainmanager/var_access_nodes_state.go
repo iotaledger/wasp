@@ -2,8 +2,8 @@ package chainmanager
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -17,7 +17,7 @@ type VarAccessNodeState interface {
 	// Considers the produced (not yet confirmed) block / TX and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
 	// This function should return L1 commitment, if the corresponding block should be added to the store.
-	BlockProduced(tx *suisigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment)
+	BlockProduced(tx *iotasigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment)
 	// Considers a confirmed AO and returns new tip AO.
 	// The returned bool indicates if the tip has changed because of this call.
 	BlockConfirmed(ao *isc.StateAnchor) (*isc.StateAnchor, bool)
@@ -31,7 +31,7 @@ type varAccessNodeStateImpl struct {
 
 type varAccessNodeStateEntry struct {
 	output   *isc.StateAnchor // The published AO.
-	consumed sui.ObjectID     // The AO used as an input for the TX.
+	consumed iotago.ObjectID  // The AO used as an input for the TX.
 }
 
 func NewVarAccessNodeState(chainID isc.ChainID, log *logger.Logger) VarAccessNodeState {
@@ -47,7 +47,7 @@ func (vas *varAccessNodeStateImpl) Tip() *isc.StateAnchor {
 }
 
 // TODO: Probably this function can be removed at all. This left from the pipelining.
-func (vas *varAccessNodeStateImpl) BlockProduced(tx *suisigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment) {
+func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotasigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment) {
 	vas.log.Debugf("BlockProduced: tx=%v", tx)
 	return vas.tipAO, false, nil
 }

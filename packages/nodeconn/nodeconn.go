@@ -15,9 +15,9 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -39,7 +39,7 @@ var ErrOperationAborted = errors.New("operation was aborted")
 type nodeConnection struct {
 	*logger.WrappedLogger
 
-	iscPackageID sui.PackageID
+	iscPackageID iotago.PackageID
 	wsClient     *iscmoveclient.Client
 
 	synced     sync.WaitGroup
@@ -51,7 +51,7 @@ type nodeConnection struct {
 
 func New(
 	ctx context.Context,
-	iscPackageID sui.PackageID,
+	iscPackageID iotago.PackageID,
 	wsURL string,
 	log *logger.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
@@ -180,7 +180,7 @@ func (nc *nodeConnection) getChain(chainID isc.ChainID) (*ncChain, error) {
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
 	chainID isc.ChainID,
-	tx suisigner.SignedTransaction,
+	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	// check if the chain exists

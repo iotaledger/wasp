@@ -11,10 +11,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/sui/suitest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -36,12 +36,12 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	anchor := iscmovetest.RandomAnchor()
 
 	// TODO: how to properly generate digest?
-	var digest sui2.Base58
+	var digest iotago.Base58
 	_, err := rand.Read(digest)
 	require.NoError(t, err)
 
 	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-		ObjectRef: sui2.ObjectRef{
+		ObjectRef: iotago.ObjectRef{
 			ObjectID: &anchor.ID,
 			Version:  13,
 			Digest:   &digest,

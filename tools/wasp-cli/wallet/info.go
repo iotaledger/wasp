@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -83,8 +83,8 @@ var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
 	AddressIndex uint32                `json:"AddressIndex"`
-	Address      string                `json:"Address"`
-	Tokens       []*suijsonrpc.Balance `json:"BaseTokens"`
+	Address      string                 `json:"Address"`
+	Tokens       []*iotajsonrpc.Balance `json:"BaseTokens"`
 }
 
 func (b *BalanceModel) AsText() (string, error) {

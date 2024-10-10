@@ -3,7 +3,7 @@ package chainmanager
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner/suisignertest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner/suisignertest"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/rwutil"

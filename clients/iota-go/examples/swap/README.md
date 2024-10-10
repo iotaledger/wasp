@@ -10,7 +10,7 @@ Sui toolchain is necessary.
 1.  run a sui test validator:
 
     ```bash
-    $ sui-test-validator
+    $ iotago-test-validator
     ```
 
 2.  run the main program:

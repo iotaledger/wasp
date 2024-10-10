@@ -4,25 +4,25 @@ import (
 	"context"
 	"fmt"
 
-	sui2 "github.com/iotaledger/wasp/clients/iota-go/sui"
-	suiclient2 "github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	suijsonrpc2 "github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func SwapSui(
-	suiClient *suiclient2.Client,
-	swapper suisigner.Signer,
-	swapPackageID *sui2.PackageID,
-	testcoinID *sui2.ObjectID,
-	poolObjectID *sui2.ObjectID,
-	suiCoins []*suijsonrpc2.Coin,
+	suiClient *iotaclient2.Client,
+	swapper iotasigner.Signer,
+	swapPackageID *iotago.PackageID,
+	testcoinID *iotago.ObjectID,
+	poolObjectID *iotago.ObjectID,
+	suiCoins []*iotajsonrpc.Coin,
 ) {
 	poolGetObjectRes, err := suiClient.GetObject(
-		context.Background(), suiclient2.GetObjectRequest{
+		context.Background(), iotaclient2.GetObjectRequest{
 			ObjectID: poolObjectID,
-			Options: &suijsonrpc2.SuiObjectDataOptions{
+			Options: &iotajsonrpc.SuiObjectDataOptions{
 				ShowType:    true,
 				ShowContent: true,
 			},
@@ -32,48 +32,54 @@ func SwapSui(
 		panic(err)
 	}
 
-	// swap sui to testcoin
-	ptb := sui2.NewProgrammableTransactionBuilder()
+	// swap iotago to testcoin
+	ptb := iotago.NewProgrammableTransactionBuilder()
 
 	arg0 := ptb.MustObj(
-		sui2.ObjectArg{
-			SharedObject: &sui2.SharedObjectArg{
+		iotago.ObjectArg{
+			SharedObject: &iotago.SharedObjectArg{
 				Id:                   poolObjectID,
 				InitialSharedVersion: poolGetObjectRes.Data.Ref().Version,
 				Mutable:              true,
 			},
 		},
 	)
-	arg1 := ptb.MustObj(sui2.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
+	arg1 := ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: suiCoins[0].Ref()})
 
-	retCoinArg := ptb.Command(sui2.Command{
-		MoveCall: &sui2.ProgrammableMoveCall{
-			Package:  swapPackageID,
-			Module:   "swap",
-			Function: "swap_sui",
-			TypeArguments: []sui2.TypeTag{{Struct: &sui2.StructTag{
-				Address: testcoinID,
-				Module:  "testcoin",
-				Name:    "TESTCOIN",
-			}}},
-			Arguments: []sui2.Argument{arg0, arg1},
-		}},
+	retCoinArg := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:  swapPackageID,
+				Module:   "swap",
+				Function: "swap_sui",
+				TypeArguments: []iotago.TypeTag{
+					{
+						Struct: &iotago.StructTag{
+							Address: testcoinID,
+							Module:  "testcoin",
+							Name:    "TESTCOIN",
+						},
+					},
+				},
+				Arguments: []iotago.Argument{arg0, arg1},
+			},
+		},
 	)
 	ptb.Command(
-		sui2.Command{
-			TransferObjects: &sui2.ProgrammableTransferObjects{
-				Objects: []sui2.Argument{retCoinArg},
+		iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{retCoinArg},
 				Address: ptb.MustPure(swapper.Address()),
 			},
 		},
 	)
 	pt := ptb.Finish()
-	txData := sui2.NewProgrammable(
+	txData := iotago.NewProgrammable(
 		swapper.Address(),
 		pt,
-		[]*sui2.ObjectRef{suiCoins[1].Ref()},
-		suiclient2.DefaultGasBudget,
-		suiclient2.DefaultGasPrice,
+		[]*iotago.ObjectRef{suiCoins[1].Ref()},
+		iotaclient2.DefaultGasBudget,
+		iotaclient2.DefaultGasPrice,
 	)
 	txBytes, err := bcs.Marshal(&txData)
 	if err != nil {
@@ -84,7 +90,7 @@ func SwapSui(
 		context.Background(),
 		swapper,
 		txBytes,
-		&suijsonrpc2.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 			ShowEffects:       true,
 		},

@@ -6,12 +6,12 @@ import (
 	"math/rand"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/sui/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 )
 
 type RandomAnchorOption struct {
-	ID            *sui.ObjectID
+	ID            *iotago.ObjectID
 	Assets        *iscmove.AssetsBag
 	StateMetadata *[]byte
 	StateIndex    *uint32

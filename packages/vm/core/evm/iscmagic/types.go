@@ -6,7 +6,7 @@ package iscmagic
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -39,7 +39,7 @@ func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 }
 
 // TokenIDFromSuiObjectID returns the uint256 tokenID for ERC721
-func TokenIDFromSuiObjectID(o sui.ObjectID) *big.Int {
+func TokenIDFromSuiObjectID(o iotago.ObjectID) *big.Int {
 	return new(big.Int).SetBytes(o[:])
 }
 
@@ -67,7 +67,7 @@ func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
 // ISCAssets matches the struct definition in ISCTypes.sol
 type ISCAssets struct {
 	Coins   []CoinBalance
-	Objects []sui.ObjectID
+	Objects []iotago.ObjectID
 }
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
@@ -79,7 +79,7 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 		})
 		return true
 	})
-	a.Objects.IterateSorted(func(id sui.ObjectID) bool {
+	a.Objects.IterateSorted(func(id iotago.ObjectID) bool {
 		ret.Objects = append(ret.Objects, id)
 		return true
 	})

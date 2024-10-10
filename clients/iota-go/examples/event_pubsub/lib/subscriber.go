@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
 type Subscriber struct {
-	client *suiclient.Client
+	client *iotaclient.Client
 	// *account.Account
 }
 
-func NewSubscriber(client *suiclient.Client) *Subscriber {
+func NewSubscriber(client *iotaclient.Client) *Subscriber {
 	return &Subscriber{client: client}
 }
 
-func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *sui.PackageID) {
-	resultCh := make(chan *suijsonrpc.SuiEvent)
-	err := s.client.SubscribeEvent(context.Background(), &suijsonrpc.EventFilter{Package: packageID}, resultCh)
+func (s *Subscriber) SubscribeEvent(ctx context.Context, packageID *iotago.PackageID) {
+	resultCh := make(chan *iotajsonrpc.SuiEvent)
+	err := s.client.SubscribeEvent(context.Background(), &iotajsonrpc.EventFilter{Package: packageID}, resultCh)
 	if err != nil {
 		log.Fatal(err)
 	}

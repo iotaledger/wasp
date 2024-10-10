@@ -29,7 +29,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
@@ -113,7 +113,7 @@ type RequestHandler = func(req isc.OnLedgerRequest)
 // is the current one.
 type AnchorHandler = func(anchor *isc.StateAnchor)
 
-type TxPostHandler = func(tx suisigner.SignedTransaction, err error)
+type TxPostHandler = func(tx iotasigner.SignedTransaction, err error)
 
 type chainNodeImpl struct {
 	me                  gpa.NodeID

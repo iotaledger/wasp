@@ -15,7 +15,7 @@ import (
 	// an extended version of this package repackaged as an importable module.
 	"filippo.io/edwards25519"
 
-	"github.com/iotaledger/wasp/clients/iota-go/suisigner"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -133,9 +133,9 @@ func (s *Signature) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func (s *Signature) AsSuiSignature() *suisigner.Signature {
-	result := &suisigner.Signature{
-		Ed25519Signature: suisigner.NewEd25519Signature(s.publicKey.AsBytes(), s.signature[:]),
+func (s *Signature) AsSuiSignature() *iotasigner.Signature {
+	result := &iotasigner.Signature{
+		Ed25519Signature: iotasigner.NewEd25519Signature(s.publicKey.AsBytes(), s.signature[:]),
 	}
 	return result
 }

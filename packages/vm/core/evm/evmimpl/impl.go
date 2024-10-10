@@ -14,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/solidity"
@@ -184,7 +184,7 @@ func registerERC20Coin(ctx isc.Sandbox, coinType coin.Type) {
 	addToPrivileged(ctx.State(), addr)
 }
 
-func registerERC721NFTCollection(ctx isc.Sandbox, collectionID sui.ObjectID) {
+func registerERC721NFTCollection(ctx isc.Sandbox, collectionID iotago.ObjectID) {
 	// The collection NFT must be deposited into the chain before registering. Afterwards it may be
 	// withdrawn to L1.
 	bcs, ok := ctx.GetObjectBCS(collectionID)

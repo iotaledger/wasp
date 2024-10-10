@@ -15,9 +15,9 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -58,41 +58,41 @@ func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
 	return govControllerAddr
 }
 
-func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer cryptolib.Signer) (sui.PackageID, error) {
+func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer cryptolib.Signer) (iotago.PackageID, error) {
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(ctx, suiclient.PublishRequest{
+	txnBytes, err := client.Publish(ctx, iotaclient.PublishRequest{
 		Sender:          signer.Address().AsSuiAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
 
 	if err != nil {
-		return sui.PackageID{}, err
+		return iotago.PackageID{}, err
 	}
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		ctx,
 		cryptolib.SignerToSuiSigner(signer),
 		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.SuiTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
 	)
 	if err != nil {
-		return sui.PackageID{}, err
+		return iotago.PackageID{}, err
 	}
 
 	packageId, err := txnResponse.GetPublishedPackageID()
 
 	if err != nil {
-		return sui.PackageID{}, err
+		return iotago.PackageID{}, err
 	}
 
 	if packageId == nil {
-		return sui.PackageID{}, errors.Errorf("no published package ID in response")
+		return iotago.PackageID{}, errors.Errorf("no published package ID in response")
 	}
 
 	return *packageId, err

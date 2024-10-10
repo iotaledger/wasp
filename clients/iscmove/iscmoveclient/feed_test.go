@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/clients/iota-go/sui"
-	"github.com/iotaledger/wasp/clients/iota-go/suiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/suiconn"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -33,8 +33,8 @@ func TestRequestsFeed(t *testing.T) {
 		iscOwner,
 		l1starter.ISCPackageID(),
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -45,8 +45,8 @@ func TestRequestsFeed(t *testing.T) {
 
 	wsClient, err := iscmoveclient.NewWebsocketClient(
 		ctx,
-		suiconn.LocalnetWebsocketEndpointURL,
-		suiconn.LocalnetFaucetURL,
+		iotaconn.LocalnetWebsocketEndpointURL,
+		iotaconn.LocalnetFaucetURL,
 		log,
 	)
 	require.NoError(t, err)
@@ -80,8 +80,8 @@ func TestRequestsFeed(t *testing.T) {
 		nil,
 		0,
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
@@ -104,11 +104,11 @@ func TestRequestsFeed(t *testing.T) {
 		chainOwner,
 		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,
-		[]sui.ObjectRef{*requestRef},
+		[]iotago.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
 		nil,
-		suiclient.DefaultGasPrice,
-		suiclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
 		false,
 	)
 	require.NoError(t, err)
