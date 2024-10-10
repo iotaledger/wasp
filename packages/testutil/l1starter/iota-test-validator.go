@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// l1starter allows starting and stopping the iotago-test-validator tool
+// l1starter allows starting and stopping the iota-test-validator tool
 // for testing purposes.
 package l1starter
 
@@ -23,7 +23,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	iotaclient2 "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -33,7 +33,7 @@ import (
 
 var (
 	ISCPackageOwner iotasigner.Signer
-	instance        atomic.Pointer[SuiTestValidator]
+	instance        atomic.Pointer[IotaTestValidator]
 )
 
 func init() {
@@ -42,10 +42,10 @@ func init() {
 	ISCPackageOwner = iotasigner.NewSigner(seed[:], iotasigner.KeySchemeFlagDefault)
 }
 
-func Instance() *SuiTestValidator {
+func Instance() *IotaTestValidator {
 	stv := instance.Load()
 	if stv == nil {
-		panic("SuiTestValidator not started; call Start() first")
+		panic("IotaTestValidator not started; call Start() first")
 	}
 	return stv
 }
@@ -72,15 +72,15 @@ var DefaultConfig = Config{
 
 type LogFunc func(format string, args ...interface{})
 
-type SuiTestValidator struct {
+type IotaTestValidator struct {
 	ctx          context.Context
 	Config       Config
 	Cmd          *exec.Cmd
 	ISCPackageID iotago.PackageID
 }
 
-func Start(ctx context.Context, cfg Config) *SuiTestValidator {
-	stv := &SuiTestValidator{Config: cfg}
+func Start(ctx context.Context, cfg Config) *IotaTestValidator {
+	stv := &IotaTestValidator{Config: cfg}
 	if !instance.CompareAndSwap(nil, stv) {
 		panic("an instance of iotago-test-validator is already running")
 	}
@@ -88,7 +88,7 @@ func Start(ctx context.Context, cfg Config) *SuiTestValidator {
 	return stv
 }
 
-func (stv *SuiTestValidator) start(ctx context.Context) {
+func (stv *IotaTestValidator) start(ctx context.Context) {
 	stv.ctx = ctx
 	stv.logf("Starting iotago-test-validator...")
 	ts := time.Now()
@@ -97,10 +97,10 @@ func (stv *SuiTestValidator) start(ctx context.Context) {
 	stv.waitAllHealthy(5 * time.Minute)
 	stv.logf("Deploying ISC contracts...")
 	stv.ISCPackageID = stv.deployISCContracts()
-	stv.logf("SuiTestValidator started successfully")
+	stv.logf("IotaTestValidator started successfully")
 }
 
-func (stv *SuiTestValidator) execCmd() {
+func (stv *IotaTestValidator) execCmd() {
 	// using CommandContext so that the iotago process is killed when the
 	// ctx is done
 	testValidatorCmd := exec.CommandContext(
@@ -119,7 +119,7 @@ func (stv *SuiTestValidator) execCmd() {
 	lo.Must0(testValidatorCmd.Start())
 }
 
-func (stv *SuiTestValidator) Stop() {
+func (stv *IotaTestValidator) Stop() {
 	stv.logf("Stopping...")
 
 	if err := stv.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
@@ -143,11 +143,11 @@ func (stv *SuiTestValidator) Stop() {
 	}
 }
 
-func (stv *SuiTestValidator) Client() *iotaclient2.Client {
-	return iotaclient2.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
+func (stv *IotaTestValidator) Client() *iotaclient.Client {
+	return iotaclient.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
 }
 
-func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
+func (stv *IotaTestValidator) waitAllHealthy(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(stv.ctx, timeout)
 	defer cancel()
 
@@ -179,20 +179,20 @@ func (stv *SuiTestValidator) waitAllHealthy(timeout time.Duration) {
 	})
 
 	tryLoop(func() bool {
-		err := iotaclient2.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), iotaconn.LocalnetFaucetURL)
+		err := iotaclient.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), iotaconn.LocalnetFaucetURL)
 		return err == nil
 	})
 
 	stv.logf("Waiting until iotago-test-validator becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 }
 
-func (stv *SuiTestValidator) logf(msg string, args ...any) {
+func (stv *IotaTestValidator) logf(msg string, args ...any) {
 	if stv.Config.LogFunc != nil {
-		stv.Config.LogFunc("SuiTestValidator: "+msg, args...)
+		stv.Config.LogFunc("IotaTestValidator: "+msg, args...)
 	}
 }
 
-func (stv *SuiTestValidator) redirectOutput() {
+func (stv *IotaTestValidator) redirectOutput() {
 	stdout := lo.Must(stv.Cmd.StdoutPipe())
 	stderr := lo.Must(stv.Cmd.StderrPipe())
 
@@ -213,14 +213,14 @@ func scanLog(reader io.Reader, out *os.File) {
 	}
 }
 
-func (stv *SuiTestValidator) deployISCContracts() iotago.PackageID {
+func (stv *IotaTestValidator) deployISCContracts() iotago.PackageID {
 	client := stv.Client()
 	iscBytecode := contracts.ISC()
-	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient2.PublishRequest{
+	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient.PublishRequest{
 		Sender:          ISCPackageOwner.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient2.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	}))
 	txnResponse := lo.Must(client.SignAndExecuteTransaction(
 		context.Background(),
