@@ -155,7 +155,7 @@ func transitionAnchor(
 
 	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
 	chainInfo := governance.NewStateReaderFromChainState(state).
-		GetChainInfo(isc.ChainIDFromObjectID(*anchor.Anchor.ObjectID))
+		GetChainInfo(anchor.ChainID())
 	allCoinBalances := accounts.NewStateReaderFromChainState(stateMetadata.SchemaVersion, state).
 		GetTotalL2FungibleTokens()
 
@@ -226,7 +226,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	anchor := initChain(chainCreator, store)
-	chainID := isc.ChainIDFromObjectID(*anchor.Anchor.ObjectID)
+	chainID := anchor.ChainID()
 
 	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
 	{

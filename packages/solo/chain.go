@@ -4,13 +4,10 @@
 package solo
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"io"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -20,16 +17,13 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -39,9 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
-
-// solo chain implements Chain interface
-var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 func (ch *Chain) String() string {
@@ -387,65 +378,12 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 	require.NoError(ch.Env.T, err)
 }
 
-// AttachToRequestProcessed implements chain.Chain
-func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) context.CancelFunc {
-	panic("unimplemented")
-}
-
-// ResolveError implements chain.Chain
-func (ch *Chain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
-	return ch.ResolveVMError(e), nil
-}
-
-// ConfigUpdated implements chain.Chain
-func (*Chain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
-	panic("unimplemented")
-}
-
-// ServersUpdated implements chain.Chain
-func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
-	panic("unimplemented")
-}
-
-// GetChainMetrics implements chain.Chain
-func (ch *Chain) GetChainMetrics() *metrics.ChainMetrics {
-	return ch.metrics
-}
-
-// GetConsensusPipeMetrics implements chain.Chain
-func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
-	panic("unimplemented")
-}
-
-// GetConsensusWorkflowStatus implements chain.Chain
-func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
-	panic("unimplemented")
-}
-
-// Store implements chain.Chain
 func (ch *Chain) Store() indexedstore.IndexedStore {
 	return ch.store
 }
 
-// GetTimeData implements chain.Chain
-func (*Chain) GetTimeData() time.Time {
-	panic("unimplemented")
-}
-
-// LatestAnchor implements chain.Chain
-func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*isc.StateAnchor, error) {
-	return ch.GetLatestAnchor(), nil
-}
-
-// LatestState implements chain.Chain
-func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error) {
-	if freshness == chain.ActiveOrCommittedState || freshness == chain.ActiveState {
-		return ch.store.LatestState()
-	}
-	anchor, _ := ch.LatestAnchor(chain.ActiveOrCommittedState)
-	m := lo.Must(transaction.StateMetadataFromBytes(anchor.GetStateMetadata()))
-	st := lo.Must(ch.store.StateByTrieRoot(m.L1Commitment.TrieRoot()))
-	return st, nil
+func (ch *Chain) LatestState() (state.State, error) {
+	return ch.store.LatestState()
 }
 
 func (ch *Chain) LatestBlock() state.Block {
@@ -465,20 +403,6 @@ func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
 	return lo.Must(accounts.ViewGetAccountNonce.DecodeOutput(res))
 }
 
-// ReceiveOffLedgerRequest implements chain.Chain
-func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error {
-	panic("unimplemented")
-}
-
-// AwaitRequestProcessed implements chain.Chain
-func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
-	panic("unimplemented")
-}
-
 func (ch *Chain) LatestBlockIndex() uint32 {
 	return ch.GetLatestBlockInfo().BlockIndex
-}
-
-func (ch *Chain) GetMempoolContents() io.Reader {
-	panic("unimplemented")
 }

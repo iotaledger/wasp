@@ -64,23 +64,25 @@ func (mi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) {
 func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
 	mi.mu.Lock()
 	defer mi.mu.Unlock()
-	now := mi.currentTime()
+	// now := mi.currentTime()
 	batch := []isc.Request{}
-	for rid, request := range mi.requests {
+	for _, request := range mi.requests {
 		switch request := request.(type) {
 		case isc.OnLedgerRequest:
-			reqUnlockCondSet := request.Output().UnlockConditionSet()
-			timeLock := reqUnlockCondSet.Timelock()
-			expiration := reqUnlockCondSet.Expiration()
-			if expiration != nil && timeLock.UnixTime >= expiration.UnixTime {
-				// can never be processed, just reject
-				delete(mi.requests, rid)
-				continue
-			}
-			if timeLock == nil || timeLock.UnixTime <= uint32(now.Unix()) {
-				batch = append(batch, request)
-				continue
-			}
+			// TODO: check timelock & expiration
+			// reqUnlockCondSet := request.Output().UnlockConditionSet()
+			// timeLock := reqUnlockCondSet.Timelock()
+			// expiration := reqUnlockCondSet.Expiration()
+			// if expiration != nil && timeLock.UnixTime >= expiration.UnixTime {
+			// 	// can never be processed, just reject
+			// 	delete(mi.requests, rid)
+			// 	continue
+			// }
+			// if timeLock == nil || timeLock.UnixTime <= uint32(now.Unix()) {
+			// 	batch = append(batch, request)
+			// 	continue
+			// }
+			batch = append(batch, request)
 		case isc.OffLedgerRequest:
 			batch = append(batch, request)
 		default:

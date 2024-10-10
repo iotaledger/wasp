@@ -9,12 +9,15 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
 
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 var evmErrOutOfGasRegex = regexp.MustCompile("out of gas|intrinsic gas too low")
@@ -22,10 +25,13 @@ var evmErrOutOfGasRegex = regexp.MustCompile("out of gas|intrinsic gas too low")
 // EVMEstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
 func EVMEstimateGas(
-	ch chain.ChainCore,
 	anchor *isc.StateAnchor,
+	store indexedstore.IndexedStore,
+	processors *processors.Cache,
+	log *logger.Logger,
 	call ethereum.CallMsg,
 ) (uint64, error) { //nolint:gocyclo,funlen
+	chainID := anchor.ChainID()
 	// Determine the lowest and highest possible gas limits to binary search in between
 	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, call.To == nil, true, true, true)
 	if err != nil {
@@ -37,7 +43,11 @@ func EVMEstimateGas(
 		gasCap uint64
 	)
 
-	info := getChainInfo(ch)
+	latestState, err := store.LatestState()
+	if err != nil {
+		return 0, err
+	}
+	info := getChainInfo(chainID, latestState)
 
 	maximumPossibleGas := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
 	if call.Gas >= params.TxGas {
@@ -56,8 +66,16 @@ func EVMEstimateGas(
 	blockTime := time.Now()
 	executable := func(gas uint64) (failed bool, result *vm.RequestResult, err error) {
 		call.Gas = gas
-		iscReq := isc.NewEVMOffLedgerCallRequest(ch.ID(), call)
-		res, err := runISCRequest(ch, anchor, blockTime, iscReq, true)
+		iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
+		res, err := runISCRequest(
+			anchor,
+			store,
+			processors,
+			log,
+			blockTime,
+			iscReq,
+			true,
+		)
 		if err != nil {
 			return true, nil, err
 		}
@@ -111,7 +129,7 @@ func EVMEstimateGas(
 		}
 		if failed {
 			if res.Receipt.Error != nil {
-				isOutOfGas, resolvedErr, err := resolveError(ch, res.Receipt.Error)
+				isOutOfGas, resolvedErr, err := resolveError(latestState, res.Receipt.Error)
 				if err != nil {
 					return 0, err
 				}
@@ -129,16 +147,16 @@ func EVMEstimateGas(
 	return hi, nil
 }
 
-func getChainInfo(ch chain.ChainCore) *isc.ChainInfo {
-	return governance.NewStateReaderFromChainState(mustLatestState(ch)).GetChainInfo(ch.ID())
+func getChainInfo(chainID isc.ChainID, chainState state.State) *isc.ChainInfo {
+	return governance.NewStateReaderFromChainState(chainState).GetChainInfo(chainID)
 }
 
-func resolveError(ch chain.ChainCore, receiptError *isc.UnresolvedVMError) (isOutOfGas bool, resolved *isc.VMError, err error) {
+func resolveError(chainState state.State, receiptError *isc.UnresolvedVMError) (isOutOfGas bool, resolved *isc.VMError, err error) {
 	if receiptError.ErrorCode == vm.ErrGasBudgetExceeded.Code() {
 		// out of gas when charging ISC gas
 		return true, nil, nil
 	}
-	vmerr, resolvingErr := ResolveError(ch, receiptError)
+	vmerr, resolvingErr := ResolveError(chainState, receiptError)
 	if resolvingErr != nil {
 		return true, nil, fmt.Errorf("error resolving vmerror: %w", resolvingErr)
 	}

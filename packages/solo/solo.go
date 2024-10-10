@@ -16,26 +16,22 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -66,6 +62,7 @@ type Solo struct {
 	seed                 cryptolib.Seed
 	publisher            *publisher.Publisher
 	ctx                  context.Context
+	mockTime             time.Time
 
 	l1Config L1Config
 }
@@ -118,12 +115,8 @@ type Chain struct {
 
 	RequestsBlock uint32
 
-	metrics *metrics.ChainMetrics
-
 	migrationScheme *migrations.MigrationScheme
 }
-
-var _ chain.ChainCore = &Chain{}
 
 type InitOptions struct {
 	L1Config          L1Config
@@ -279,12 +272,17 @@ func (env *Solo) WithVMProcessor(vmType string, constructor processors.VMConstru
 	return env
 }
 
+const (
+	DefaultCommonAccountBaseTokens   = 5 * isc.Million
+	DefaultChainOriginatorBaseTokens = 5 * isc.Million
+)
+
 // NewChain deploys new default chain instance.
 func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositAssetsToL2(isc.NewAssets(5*isc.Million), nil)
+		err := ret.DepositAssetsToL2(isc.NewAssets(DefaultCommonAccountBaseTokens), nil)
 		require.NoError(env.T, err)
 	}
 	return ret
@@ -292,6 +290,56 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 
 func (env *Solo) ISCPackageID() sui.PackageID {
 	return env.l1Config.ISCPackageID
+}
+
+func (env *Solo) pickCoinsForInitChain(
+	chainOriginator *cryptolib.KeyPair,
+	initBaseTokens coin.Value,
+) (initBaseTokensCoin *suijsonrpc.Coin, gasCoins suijsonrpc.Coins) {
+	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
+	coins, err := env.SuiClient().GetCoinObjsForTargetAmount(
+		env.ctx,
+		originatorAddr.AsSuiAddress(),
+		initBaseTokens.Uint64(),
+	)
+	require.NoError(env.T, err)
+	pickedCoin, ok := lo.Find(coins, func(c *suijsonrpc.Coin) bool {
+		return c.Balance.Uint64() >= initBaseTokens.Uint64()
+	})
+	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
+	if pickedCoin.Balance.Uint64() == initBaseTokens.Uint64() {
+		return pickedCoin, lo.Filter(coins, func(c *suijsonrpc.Coin, _ int) bool {
+			return c != pickedCoin
+		})
+	}
+	tx := lo.Must(env.SuiClient().SplitCoin(env.ctx, suiclient.SplitCoinRequest{
+		Signer:       originatorAddr.AsSuiAddress(),
+		Coin:         pickedCoin.CoinObjectID,
+		SplitAmounts: []*suijsonrpc.BigInt{suijsonrpc.NewBigInt(initBaseTokens.Uint64())},
+		GasBudget:    suijsonrpc.NewBigInt(suiclient.DefaultGasBudget),
+	}))
+	env.SuiClient().SignAndExecuteTransaction(
+		env.ctx,
+		cryptolib.SignerToSuiSigner(chainOriginator),
+		tx.TxBytes,
+		&suijsonrpc.SuiTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	coins, err = env.SuiClient().GetCoinObjsForTargetAmount(
+		env.ctx,
+		originatorAddr.AsSuiAddress(),
+		initBaseTokens.Uint64(),
+	)
+	require.NoError(env.T, err)
+	pickedCoin, ok = lo.Find(coins, func(c *suijsonrpc.Coin) bool {
+		return c.Balance.Uint64() == initBaseTokens.Uint64()
+	})
+	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
+	return pickedCoin, lo.Filter(coins, func(c *suijsonrpc.Coin, _ int) bool {
+		return c != pickedCoin
+	})
 }
 
 func (env *Solo) deployChain(
@@ -302,6 +350,10 @@ func (env *Solo) deployChain(
 	blockKeepAmount int32,
 ) (chainData, *isc.StateAnchor) {
 	env.logger.Debugf("deploying new chain '%s'", name)
+
+	if initBaseTokens == 0 {
+		initBaseTokens = DefaultCommonAccountBaseTokens
+	}
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -331,14 +383,15 @@ func (env *Solo) deployChain(
 		baseTokenCoinInfo,
 	)
 
-	panic("refactor me: validate StartNewChain call (initCoinRef, gasPayments)")
+	initCoin, gasPayments := env.pickCoinsForInitChain(chainOriginator, initBaseTokens)
+
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		chainOriginator,
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
-		nil,
-		nil,
+		initCoin.Ref(),
+		gasPayments.CoinRefs(),
 		suiclient.DefaultGasPrice,
 		suiclient.DefaultGasBudget,
 		false,
@@ -403,7 +456,6 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
 		proc:              processors.MustNew(env.processorConfig),
 		log:               env.logger.Named(chData.Name),
-		metrics:           metrics.NewChainMetricsProvider().GetChainMetrics(chData.ChainID),
 		mempool:           newMempool(env.GlobalTime, chData.ChainID),
 		migrationScheme:   chData.migrationScheme,
 	}
@@ -483,18 +535,6 @@ func (ch *Chain) collateAndRunBatch() {
 
 func (ch *Chain) AddMigration(m migrations.Migration) {
 	ch.migrationScheme.Migrations = append(ch.migrationScheme.Migrations, m)
-}
-
-func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
-	panic("unimplemented")
-}
-
-func (ch *Chain) GetChainNodes() []peering.PeerStatusProvider {
-	panic("unimplemented")
-}
-
-func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
-	panic("unimplemented")
 }
 
 func (ch *Chain) ID() isc.ChainID {

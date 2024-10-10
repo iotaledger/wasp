@@ -46,8 +46,8 @@
 //     [jsonrpc.ChainBackend.EVMSendTransaction].
 //
 //     The main implementation of the ChainBackend interface is
-//     [jsonrpc.WaspEVMBackend]. So,
-//     [jsonrpc.WaspEVMBackend.EVMSendTransaction] is called.
+//     [services.WaspEVMBackend]. So,
+//     [services.WaspEVMBackend.EVMSendTransaction] is called.
 //
 //   - The Ethereum transaction is wrapped into an ISC off-ledger request by
 //     calling [isc.NewEVMOffLedgerTxRequest], and sent to the mempool for later
@@ -77,7 +77,7 @@
 //     unsigned call parameters instead of a signed transaction.
 //
 //   - [jsonrpc.ChainBackend.EVMEstimateGas] is called
-//     ([jsonrpc.WaspEVMBackend.EVMEstimateGas] in the production environment),
+//     ([services.WaspEVMBackend.EVMEstimateGas] in the production environment),
 //     which, in turn, calls [chainutil.EVMEstimateGas].
 //
 //   - [chainutil.EVMEstimateGas] performs a binary search, executing the call
@@ -103,7 +103,7 @@
 //   - The method [jsonrpc.EthService.Call] is invoked.
 //
 //   - [jsonrpc.ChainBackend.EVMCall] is called
-//     ([jsonrpc.WaspEVMBackend.EVMCall] in the production environment),
+//     ([services.WaspEVMBackend.EVMCall] in the production environment),
 //     which, in turn, calls [chainutil.EVMCall].
 //
 //   - The call is wrapped in a fake off-ledger request via
@@ -126,6 +126,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/webapi/services"
 )
 
 // dummy variables to keep the imports
@@ -139,4 +140,5 @@ var (
 	_ = chainutil.EVMEstimateGas
 	_ chain.ChainRequests
 	_ core.BlockChain
+	_ services.WaspEVMBackend
 )
