@@ -46,7 +46,7 @@ module isc::assets_bag {
 
     /// Adds a the balance of a Coin as a dynamic field of the AssetsBag where the key is
     /// the type of the Coin (OTW).
-    /// Aborts with `EInvalidSuiCoin` if the coin is of type IOTA.
+    /// Aborts with `EInvalidIOTACoin` if the coin is of type IOTA.
     public fun place_coin<T>(self: &mut AssetsBag, coin: Coin<T>) {
         let balance = coin::into_balance(coin);
         place_coin_balance_internal(self, balance)
@@ -54,7 +54,7 @@ module isc::assets_bag {
 
     /// Adds a the balance as a dynamic field of the AssetsBag where the key is
     /// the type of the Coin (OTW).
-    /// Aborts with `EInvalidSuiCoin` if the coin is of type IOTA.
+    /// Aborts with `EInvalidIOTACoin` if the coin is of type IOTA.
     public fun place_coin_balance<T>(self: &mut AssetsBag, balance: Balance<T>) {
         place_coin_balance_internal(self, balance)
     }
@@ -68,13 +68,13 @@ module isc::assets_bag {
     // === Take from the AssetsBag ===
 
     /// Takes an amount from the balance of a Coin set as a dynamic field of the AssetsBag.
-    /// Aborts with `EInvalidSuiCoin` if the coin is of type IOTA.
+    /// Aborts with `EInvalidIOTACoin` if the coin is of type IOTA.
     public fun take_coin_balance<T>(self: &mut AssetsBag, amount: u64): Balance<T> {
         take_coin_balance_internal(self, amount)
     }
 
     /// Takes all the balance of a Coin set as a dynamic field of the AssetsBag.
-    /// Aborts with `EInvalidSuiCoin` if the coin is of type IOTA.
+    /// Aborts with `EInvalidIOTACoin` if the coin is of type IOTA.
     public fun take_all_coin_balance<T>(self: &mut AssetsBag): Balance<T> {
         let coin_type = type_name::get<T>().into_string();
         self.size = self.size - 1;
@@ -89,7 +89,7 @@ module isc::assets_bag {
     // === Internal Core ===
 
     /// Internal: "place" a balance to the AssetsBag.
-    /// Aborts with `EInvalidSuiCoin` if the coin is of type IOTA.
+    /// Aborts with `EInvalidIOTACoin` if the coin is of type IOTA.
     fun place_coin_balance_internal<T>(self: &mut AssetsBag, balance: Balance<T>) {
         let coin_type = type_name::get<T>().into_string();
         if(df::exists_(&self.id, coin_type)) {
@@ -108,7 +108,7 @@ module isc::assets_bag {
     }
 
     /// Internal: "take" a balance from the AssetsBag.
-    /// Aborts with `EInvalidSuiCoin` if the coin is of type IOTA.
+    /// Aborts with `EInvalidIOTACoin` if the coin is of type IOTA.
     fun take_coin_balance_internal<T>(self: &mut AssetsBag, amount: u64): Balance<T> {
         let coin_type = type_name::get<T>().into_string();
         let placed_balance = df::borrow_mut<String, Balance<T>>(&mut self.id, coin_type);
