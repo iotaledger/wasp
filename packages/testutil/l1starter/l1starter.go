@@ -116,8 +116,6 @@ func (in *IotaNode) execCmd() {
 		fmt.Sprintf("--with-faucet=%d", in.Config.FaucetPort),
 	)
 
-	in.logf("%v", testValidatorCmd.Args)
-
 	// also kill the iotago process if the go process dies
 	util.TerminateCmdWhenTestStops(testValidatorCmd)
 
