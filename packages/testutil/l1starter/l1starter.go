@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// l1starter allows starting and stopping the iota-test-validator tool
+// l1starter allows starting and stopping the iota validator tool
 // for testing purposes.
 package l1starter
 
@@ -33,7 +33,7 @@ import (
 
 var (
 	ISCPackageOwner iotasigner.Signer
-	instance        atomic.Pointer[IotaTestValidator]
+	instance        atomic.Pointer[IotaNode]
 )
 
 func init() {
@@ -42,12 +42,12 @@ func init() {
 	ISCPackageOwner = iotasigner.NewSigner(seed[:], iotasigner.KeySchemeFlagDefault)
 }
 
-func Instance() *IotaTestValidator {
-	stv := instance.Load()
-	if stv == nil {
-		panic("IotaTestValidator not started; call Start() first")
+func Instance() *IotaNode {
+	in := instance.Load()
+	if in == nil {
+		panic("IotaNode not started; call Start() first")
 	}
-	return stv
+	return in
 }
 
 func ISCPackageID() iotago.PackageID {
@@ -72,87 +72,92 @@ var DefaultConfig = Config{
 
 type LogFunc func(format string, args ...interface{})
 
-type IotaTestValidator struct {
+type IotaNode struct {
 	ctx          context.Context
 	Config       Config
 	Cmd          *exec.Cmd
 	ISCPackageID iotago.PackageID
 }
 
-func Start(ctx context.Context, cfg Config) *IotaTestValidator {
-	stv := &IotaTestValidator{Config: cfg}
-	if !instance.CompareAndSwap(nil, stv) {
-		panic("an instance of iota-test-validator is already running")
+func Start(ctx context.Context, cfg Config) *IotaNode {
+	in := &IotaNode{Config: cfg}
+	if !instance.CompareAndSwap(nil, in) {
+		panic("an instance of IotaNode is already running")
 	}
-	stv.start(ctx)
-	return stv
+	in.start(ctx)
+	return in
 }
 
-func (stv *IotaTestValidator) start(ctx context.Context) {
-	stv.ctx = ctx
-	stv.logf("Starting iota-test-validator...")
+func (in *IotaNode) start(ctx context.Context) {
+	in.ctx = ctx
+	in.logf("Starting IotaNode...")
 	ts := time.Now()
-	stv.execCmd()
-	stv.logf("Starting iota-test-validator... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
-	stv.waitAllHealthy(5 * time.Minute)
-	stv.logf("Deploying ISC contracts...")
-	stv.ISCPackageID = stv.deployISCContracts()
-	stv.logf("IotaTestValidator started successfully")
+	in.execCmd()
+	in.logf("Starting IotaNode... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+	in.waitAllHealthy(5 * time.Minute)
+	in.logf("Deploying ISC contracts...")
+	in.ISCPackageID = in.deployISCContracts()
+	in.logf("IotaNode started successfully")
 }
 
-func (stv *IotaTestValidator) execCmd() {
+func (in *IotaNode) execCmd() {
 	// using CommandContext so that the iotago process is killed when the
 	// ctx is done
 	testValidatorCmd := exec.CommandContext(
-		stv.ctx,
-		"iota-test-validator",
+		in.ctx,
+		"iota",
+		"start",
+		"--force-regenesis",
+		// TODO: remove when this is fixed: https://github.com/iotaledger/iota/issues/3212
+		// Run postgres with: docker run  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432  postgres:latest
+		"--pg-user=postgres", "--pg-password=postgres", "--pg-db-name=postgres",
 		fmt.Sprintf("--epoch-duration-ms=%d", 60000),
-		fmt.Sprintf("--fullnode-rpc-port=%d", stv.Config.RPCPort),
-		fmt.Sprintf("--faucet-port=%d", stv.Config.FaucetPort),
+		fmt.Sprintf("--fullnode-rpc-port=%d", in.Config.RPCPort),
+		fmt.Sprintf("--with-faucet=%d", in.Config.FaucetPort),
 	)
 	// also kill the iotago process if the go process dies
 	util.TerminateCmdWhenTestStops(testValidatorCmd)
 
 	testValidatorCmd.Env = os.Environ()
-	stv.Cmd = testValidatorCmd
-	stv.redirectOutput()
+	in.Cmd = testValidatorCmd
+	in.redirectOutput()
 	lo.Must0(testValidatorCmd.Start())
 }
 
-func (stv *IotaTestValidator) Stop() {
-	stv.logf("Stopping...")
+func (in *IotaNode) Stop() {
+	in.logf("Stopping...")
 
-	if err := stv.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		panic(fmt.Errorf("unable to send TERM signal to iota-test-validator: %w", err))
+	if err := in.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		panic(fmt.Errorf("unable to send TERM signal to IotaNode: %w", err))
 	}
 
-	if err := stv.Cmd.Wait(); err != nil {
+	if err := in.Cmd.Wait(); err != nil {
 		var errCode *exec.ExitError
 		ok := errors.As(err, &errCode)
 
 		if ok && strings.Contains(errCode.Error(), "terminated") {
-			stv.logf("Stopping... Done")
+			in.logf("Stopping... Done")
 			return
 		}
 
-		panic(fmt.Errorf("SUI node failed: %s", stv.Cmd.ProcessState.String()))
+		panic(fmt.Errorf("SUI node failed: %s", in.Cmd.ProcessState.String()))
 	}
 
-	if !instance.CompareAndSwap(stv, nil) {
+	if !instance.CompareAndSwap(in, nil) {
 		panic("should not happen")
 	}
 }
 
-func (stv *IotaTestValidator) Client() *iotaclient.Client {
-	return iotaclient.NewHTTP(fmt.Sprintf("%s:%d", stv.Config.Host, stv.Config.RPCPort))
+func (in *IotaNode) Client() *iotaclient.Client {
+	return iotaclient.NewHTTP(fmt.Sprintf("%s:%d", in.Config.Host, in.Config.RPCPort))
 }
 
-func (stv *IotaTestValidator) waitAllHealthy(timeout time.Duration) {
-	ctx, cancel := context.WithTimeout(stv.ctx, timeout)
+func (in *IotaNode) waitAllHealthy(timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(in.ctx, timeout)
 	defer cancel()
 
 	ts := time.Now()
-	stv.logf("Waiting for all SUI nodes to become healthy...")
+	in.logf("Waiting for all SUI nodes to become healthy...")
 
 	tryLoop := func(f func() bool) {
 		for {
@@ -162,13 +167,16 @@ func (stv *IotaTestValidator) waitAllHealthy(timeout time.Duration) {
 			if f() {
 				return
 			}
-			stv.logf("Waiting until iota-test-validator becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
+			in.logf("Waiting until IotaNode becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
 	tryLoop(func() bool {
-		res, err := stv.Client().GetLatestSuiSystemState(stv.ctx)
+		res, err := in.Client().GetLatestSuiSystemState(in.ctx)
+		if err != nil {
+			in.logf("err: %s", err)
+		}
 		if err != nil || res == nil {
 			return false
 		}
@@ -180,27 +188,30 @@ func (stv *IotaTestValidator) waitAllHealthy(timeout time.Duration) {
 
 	tryLoop(func() bool {
 		err := iotaclient.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), iotaconn.LocalnetFaucetURL)
+		if err != nil {
+			in.logf("err: %s", err)
+		}
 		return err == nil
 	})
 
-	stv.logf("Waiting until iota-test-validator becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
+	in.logf("Waiting until IotaNode becomes ready... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 }
 
-func (stv *IotaTestValidator) logf(msg string, args ...any) {
-	if stv.Config.LogFunc != nil {
-		stv.Config.LogFunc("IotaTestValidator: "+msg, args...)
+func (in *IotaNode) logf(msg string, args ...any) {
+	if in.Config.LogFunc != nil {
+		in.Config.LogFunc("IotaNode: "+msg, args...)
 	}
 }
 
-func (stv *IotaTestValidator) redirectOutput() {
-	stdout := lo.Must(stv.Cmd.StdoutPipe())
-	stderr := lo.Must(stv.Cmd.StderrPipe())
+func (in *IotaNode) redirectOutput() {
+	stdout := lo.Must(in.Cmd.StdoutPipe())
+	stderr := lo.Must(in.Cmd.StderrPipe())
 
-	outFilePath := filepath.Join(os.TempDir(), "iota-test-validator-stdout.log")
+	outFilePath := filepath.Join(os.TempDir(), "iota-validator-stdout.log")
 	outFile := lo.Must(os.Create(outFilePath))
 	go scanLog(stdout, outFile)
 
-	errFilePath := filepath.Join(os.TempDir(), "iota-test-validator-stderr.log")
+	errFilePath := filepath.Join(os.TempDir(), "iota-validator-stderr.log")
 	errFile := lo.Must(os.Create(errFilePath))
 	go scanLog(stderr, errFile)
 }
@@ -213,8 +224,8 @@ func scanLog(reader io.Reader, out *os.File) {
 	}
 }
 
-func (stv *IotaTestValidator) deployISCContracts() iotago.PackageID {
-	client := stv.Client()
+func (in *IotaNode) deployISCContracts() iotago.PackageID {
+	client := in.Client()
 	iscBytecode := contracts.ISC()
 	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient.PublishRequest{
 		Sender:          ISCPackageOwner.Address(),

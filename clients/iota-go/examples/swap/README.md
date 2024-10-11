@@ -3,14 +3,14 @@
 An example shows how to implement an extremely basic defi swap. 
 The swap contract refers the [official example](https://github.com/MystenLabs/sui/blob/main/sui_programmability/examples/defi/sources/pool.move)
 
-Sui toolchain is necessary. 
+Iota toolchain is necessary. 
 
 ## How to Run
 
-1.  run a sui test validator:
+1.  run a Iota test validator:
 
     ```bash
-    $ iota-test-validator
+    $ iota start
     ```
 
 2.  run the main program:

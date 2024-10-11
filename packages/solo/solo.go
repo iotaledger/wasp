@@ -119,7 +119,7 @@ type Chain struct {
 }
 
 type InitOptions struct {
-	L1Config          L1Config
+	L1Config          *L1Config
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
@@ -135,11 +135,6 @@ type L1Config struct {
 
 func DefaultInitOptions() *InitOptions {
 	return &InitOptions{
-		L1Config: L1Config{
-			SuiRPCURL:    iotaconn.LocalnetEndpointURL,
-			SuiFaucetURL: iotaconn.LocalnetFaucetURL,
-			ISCPackageID: l1starter.ISCPackageID(),
-		},
 		Debug:             false,
 		PrintStackTrace:   false,
 		Seed:              cryptolib.Seed{},
@@ -163,13 +158,21 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	}
 	evmlogger.Init(opt.Log)
 
+	if opt.L1Config == nil {
+		opt.L1Config = &L1Config{
+			SuiRPCURL:    iotaconn.LocalnetEndpointURL,
+			SuiFaucetURL: iotaconn.LocalnetFaucetURL,
+			ISCPackageID: l1starter.ISCPackageID(),
+		}
+	}
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
 
 	ret := &Solo{
 		T:                    t,
 		logger:               opt.Log,
-		l1Config:             opt.L1Config,
+		l1Config:             *opt.L1Config,
 		chains:               make(map[isc.ChainID]*Chain),
 		processorConfig:      coreprocessors.NewConfigWithCoreContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
