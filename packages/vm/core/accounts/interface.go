@@ -31,6 +31,14 @@ var (
 		coreutil.FieldWithCodec(codec.CoinType),
 	)
 
+	// [32]byte
+
+	// ret := []ObjectID{...}
+	// ret := [][]byte{} => array(encode(objectID))
+
+	// (len, bytesOfObjectID_1, bytesOfObjectID_2, ...)
+	// (len, len_of_1, id_1, len_of_2, id_2, ...)
+
 	// Views
 	// TODO: implement pagination
 	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",

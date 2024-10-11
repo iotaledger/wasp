@@ -2,6 +2,7 @@ package coreutil
 
 import (
 	"fmt"
+	"io"
 	"math"
 
 	"github.com/samber/lo"
@@ -66,18 +67,24 @@ func FieldWithCodec[T any](codec codec.Codec[T]) Field[T] {
 
 // OptionalCodec is a Codec that converts to/from an optional value of type T.
 type OptionalCodec[T any] struct {
-	codec.Codec[T]
+	Codec codec.Codec[T]
 }
 
+var _ codec.Codec[*any] = &OptionalCodec[any]{}
+
 func (c *OptionalCodec[T]) Decode(b []byte, def ...*T) (r *T, err error) {
-	if b == nil {
+	if b[0] == 0 {
 		if len(def) != 0 {
 			err = fmt.Errorf("%T: unexpected default value", r)
 			return
 		}
 		return nil, nil
 	}
-	v, err := c.Codec.Decode(b)
+	if b[0] != 1 {
+		return nil, fmt.Errorf("%T: invalid optional flag value '%v'", b[0], r)
+	}
+
+	v, err := c.Codec.Decode(b[1:])
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +97,46 @@ func (c *OptionalCodec[T]) MustDecode(b []byte, def ...*T) *T {
 
 func (c *OptionalCodec[T]) Encode(v *T) []byte {
 	if v == nil {
-		return nil
+		return []byte{0}
 	}
-	return c.Codec.Encode(*v)
+
+	b := c.Codec.Encode(*v)
+	return append([]byte{1}, b...)
+}
+
+func (c *OptionalCodec[T]) EncodeStream(w io.Writer, v *T) {
+	if v == nil {
+		w.Write([]byte{0})
+		return
+	}
+
+	w.Write([]byte{1})
+	c.Codec.EncodeStream(w, *v)
+}
+
+func (c *OptionalCodec[T]) DecodeStream(r io.Reader) (*T, error) {
+	var flag [1]byte
+	if _, err := r.Read(flag[:]); err != nil {
+		return nil, err
+	}
+
+	if flag[0] == 0 {
+		return nil, nil
+	}
+	if flag[0] != 1 {
+		return nil, fmt.Errorf("%T: invalid optional flag value '%v'", new(T), flag[0])
+	}
+
+	v, err := c.Codec.DecodeStream(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v, nil
+}
+
+func (c *OptionalCodec[T]) MustDecodeStream(r io.Reader) *T {
+	return lo.Must(c.DecodeStream(r))
 }
 
 // FieldWithCodecOptional returns a Field that accepts an optional value
