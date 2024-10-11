@@ -8,10 +8,10 @@ module isc::anchor_tests {
         string::{Self, String},
         ascii::Self,
     };
-    use sui::{
+    use iota::{
         table::Self,
         coin::Self,
-        sui::SUI,
+        iota::IOTA,
         url::Self,
         vec_set::Self,
     };
@@ -44,7 +44,7 @@ module isc::anchor_tests {
         let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
-        let mut iota = coin::mint_for_testing<SUI>(initial_iota_in_request, &mut ctx);
+        let mut iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
         let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
         let test_b_nft = nft::create_for_testing(
             option::some(sender),
@@ -74,7 +74,7 @@ module isc::anchor_tests {
         allowance_balances.push_back(100);
         allowance_cointypes.push_back(string::utf8(b"TEST_A"));
         allowance_balances.push_back(111);
-        allowance_cointypes.push_back(string::utf8(b"SUI"));
+        allowance_cointypes.push_back(string::utf8(b"IOTA"));
         allowance_balances.push_back(32);
 
         // ClientPTB.3 Add the assets to the bag.
@@ -121,7 +121,7 @@ module isc::anchor_tests {
         anchor_assets.place_coin_balance(extracted_test_a_coin_balance);
         
         // ServerPTB.3.1: extract the iota balance.
-        let extracted_iota_balance = req_extracted_assets.take_all_coin_balance<SUI>();
+        let extracted_iota_balance = req_extracted_assets.take_all_coin_balance<IOTA>();
         assert!(extracted_iota_balance.value() == 3);
         // ServerPTB.3.2: place it to the anchor assets bag.
         anchor_assets.place_coin_balance(extracted_iota_balance);

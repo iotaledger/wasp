@@ -1,5 +1,5 @@
 module testcoin::testcoin {
-    use sui::coin::{Self, TreasuryCap};
+    use iota::coin::{Self, TreasuryCap};
 
     /// The type identifier of coin. The coin will have a type
     /// tag of kind: `Coin<package_object::testcoin::TESTCOIN>`

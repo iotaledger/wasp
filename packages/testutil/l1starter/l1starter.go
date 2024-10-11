@@ -110,11 +110,12 @@ func (in *IotaNode) execCmd() {
 		"--force-regenesis",
 		// TODO: remove when this is fixed: https://github.com/iotaledger/iota/issues/3212
 		// Run postgres with: docker run  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432  postgres:latest
-		"--pg-user=postgres", "--pg-password=postgres", "--pg-db-name=postgres",
+		"--with-indexer", "--pg-user=postgres", "--pg-password=postgres", "--pg-db-name=postgres",
 		fmt.Sprintf("--epoch-duration-ms=%d", 60000),
 		fmt.Sprintf("--fullnode-rpc-port=%d", in.Config.RPCPort),
 		fmt.Sprintf("--with-faucet=%d", in.Config.FaucetPort),
 	)
+
 	// also kill the iotago process if the go process dies
 	util.TerminateCmdWhenTestStops(testValidatorCmd)
 

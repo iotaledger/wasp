@@ -1,7 +1,7 @@
 // Module: sdk_verify
 module sdk_verify::sdk_verify {
     use std::debug;
-    use sui::event;
+    use iota::event;
 
     public struct ReadInputBytesArrayEvent has drop, copy {
         data: vector<vector<u8>>,
