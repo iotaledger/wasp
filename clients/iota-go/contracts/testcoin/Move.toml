@@ -5,7 +5,9 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 
 [dependencies]
-Sui = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "l1sc/isc-models" }
+MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/move-stdlib", rev = "develop" }
+Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/stardust",  rev = "develop"  }
+Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev = "develop" }
 
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
 # Revision can be a branch, a tag, and a commit hash.

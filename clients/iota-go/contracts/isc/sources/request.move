@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::request {
-    use sui::{
+    use iota::{
         borrow::{Self, Referent},
         event::Self,
     };

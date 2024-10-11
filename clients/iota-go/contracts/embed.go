@@ -10,7 +10,7 @@ import (
 // the `iotago` binary installed in your system. Then, simply run `go generate`
 // in this directory.
 
-//go:generate sh -c "cd ./isc && sui move build --dump-bytecode-as-base64 > bytecode.json"
+//go:generate sh -c "cd ./isc && iota move build --dump-bytecode-as-base64 > bytecode.json"
 //go:embed isc/bytecode.json
 var iscBytecodeJSON []byte
 
@@ -18,7 +18,7 @@ func ISC() move.PackageBytecode {
 	return move.DecodePackageBytecode(iscBytecodeJSON)
 }
 
-//go:generate sh -c "cd ./sdk_verify && sui move build --dump-bytecode-as-base64 > bytecode.json"
+//go:generate sh -c "cd ./sdk_verify && iota move build --dump-bytecode-as-base64 > bytecode.json"
 //go:embed sdk_verify/bytecode.json
 var sdkVerifyBytecodeJSON []byte
 
@@ -26,7 +26,7 @@ func SDKVerify() move.PackageBytecode {
 	return move.DecodePackageBytecode(sdkVerifyBytecodeJSON)
 }
 
-//go:generate sh -c "cd ./testcoin && sui move build --dump-bytecode-as-base64 > bytecode.json"
+//go:generate sh -c "cd ./testcoin && iota move build --dump-bytecode-as-base64 > bytecode.json"
 //go:embed testcoin/bytecode.json
 var testcoinBytecodeJSON []byte
 
