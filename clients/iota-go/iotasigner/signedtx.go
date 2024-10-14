@@ -17,8 +17,13 @@ func NewSignedTransaction(unsignedTx *iotago.TransactionData, signature *Signatu
 	}
 }
 
-func (st *SignedTransaction) Hash() hashing.HashValue {
-	panic("SignedTransaction.Hash not implemented") // TODO: Implement it.
+func (st *SignedTransaction) Hash() (hashing.HashValue, error) {
+	digest, err := st.Data.Digest()
+	if err != nil {
+		return hashing.NilHash, err
+	}
+
+	return hashing.HashValue(digest.Data()), nil
 }
 
 // We use it to find the consumed anchor ref from the TX.

@@ -6,8 +6,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/orderedmap"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/clients/iota-go/orderedmap"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -37,9 +37,11 @@ func (p *ProgrammableTransactionBuilder) LastCommandResultArg() Argument {
 
 func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
 	var inputs []CallArg
-	p.Inputs.ForEach(func(k BuilderArg, v CallArg) {
-		inputs = append(inputs, v)
-	})
+	p.Inputs.ForEach(
+		func(k BuilderArg, v CallArg) {
+			inputs = append(inputs, v)
+		},
+	)
 	return ProgrammableTransaction{
 		Inputs:   inputs,
 		Commands: p.Commands,
@@ -99,10 +101,12 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 	} else {
 		oj = objArg
 	}
-	i := uint16(p.Inputs.InsertFull(
-		BuilderArg{Object: id},
-		CallArg{Object: &oj},
-	))
+	i := uint16(
+		p.Inputs.InsertFull(
+			BuilderArg{Object: id},
+			CallArg{Object: &oj},
+		),
+	)
 	return Argument{Input: &i}, nil
 }
 
@@ -142,10 +146,12 @@ func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate b
 			Pure: &bytes,
 		}
 	}
-	i := uint16(p.Inputs.InsertFull(
-		arg,
-		CallArg{Pure: &bytes},
-	))
+	i := uint16(
+		p.Inputs.InsertFull(
+			arg,
+			CallArg{Pure: &bytes},
+		),
+	)
 	return Argument{
 		Input: &i,
 	}
@@ -185,9 +191,11 @@ func (p *ProgrammableTransactionBuilder) MakeObjVec(objs []ObjectArg) (Argument,
 		}
 		objArgs = append(objArgs, objArg)
 	}
-	arg := p.Command(Command{
-		MakeMoveVec: &ProgrammableMakeMoveVec{Type: nil, Objects: objArgs},
-	})
+	arg := p.Command(
+		Command{
+			MakeMoveVec: &ProgrammableMakeMoveVec{Type: nil, Objects: objArgs},
+		},
+	)
 	return arg, nil
 }
 
@@ -207,15 +215,16 @@ func (p *ProgrammableTransactionBuilder) MoveCall(
 		}
 		arguments = append(arguments, argument)
 	}
-	p.Command(Command{
-		MoveCall: &ProgrammableMoveCall{
-			Package:       packageID,
-			Module:        module,
-			Function:      function,
-			TypeArguments: typeArguments,
-			Arguments:     arguments,
+	p.Command(
+		Command{
+			MoveCall: &ProgrammableMoveCall{
+				Package:       packageID,
+				Module:        module,
+				Function:      function,
+				TypeArguments: typeArguments,
+				Arguments:     arguments,
+			},
 		},
-	},
 	)
 	return nil
 }
@@ -228,15 +237,16 @@ func (p *ProgrammableTransactionBuilder) ProgrammableMoveCall(
 	typeArguments []TypeTag,
 	arguments []Argument,
 ) Argument {
-	return p.Command(Command{
-		MoveCall: &ProgrammableMoveCall{
-			Package:       packageID,
-			Module:        module,
-			Function:      function,
-			TypeArguments: typeArguments,
-			Arguments:     arguments,
+	return p.Command(
+		Command{
+			MoveCall: &ProgrammableMoveCall{
+				Package:       packageID,
+				Module:        module,
+				Function:      function,
+				TypeArguments: typeArguments,
+				Arguments:     arguments,
+			},
 		},
-	},
 	)
 }
 
@@ -244,12 +254,13 @@ func (p *ProgrammableTransactionBuilder) PublishUpgradeable(
 	modules [][]byte,
 	dependencies []*ObjectID,
 ) Argument {
-	return p.Command(Command{
-		Publish: &ProgrammablePublish{
-			Modules:      modules,
-			Dependencies: dependencies,
+	return p.Command(
+		Command{
+			Publish: &ProgrammablePublish{
+				Modules:      modules,
+				Dependencies: dependencies,
+			},
 		},
-	},
 	)
 }
 
@@ -257,15 +268,16 @@ func (p *ProgrammableTransactionBuilder) PublishImmutable(
 	modules [][]byte,
 	dependencies []*ObjectID,
 ) Argument {
-	return p.Command(Command{
-		MoveCall: &ProgrammableMoveCall{
-			Package:       SuiPackageIdSuiFramework,
-			Module:        SuiSystemModuleName,
-			Function:      "make_immutable",
-			TypeArguments: nil,
-			Arguments:     []Argument{p.PublishUpgradeable(modules, dependencies)},
+	return p.Command(
+		Command{
+			MoveCall: &ProgrammableMoveCall{
+				Package:       IotaPackageIdIotaFramework,
+				Module:        IotaSystemModuleName,
+				Function:      "make_immutable",
+				TypeArguments: nil,
+				Arguments:     []Argument{p.PublishUpgradeable(modules, dependencies)},
+			},
 		},
-	},
 	)
 }
 
@@ -275,14 +287,15 @@ func (p *ProgrammableTransactionBuilder) Upgrade(
 	transitiveDeps []*ObjectID,
 	modules [][]byte,
 ) Argument {
-	return p.Command(Command{
-		Upgrade: &ProgrammableUpgrade{
-			Modules:      modules,
-			Dependencies: transitiveDeps,
-			PackageId:    currentPackageObjectId,
-			Ticket:       upgradeTicket,
+	return p.Command(
+		Command{
+			Upgrade: &ProgrammableUpgrade{
+				Modules:      modules,
+				Dependencies: transitiveDeps,
+				PackageId:    currentPackageObjectId,
+				Ticket:       upgradeTicket,
+			},
 		},
-	},
 	)
 }
 
@@ -291,12 +304,13 @@ func (p *ProgrammableTransactionBuilder) TransferArg(recipient *Address, arg Arg
 }
 
 func (p *ProgrammableTransactionBuilder) TransferArgs(recipient *Address, args []Argument) {
-	p.Command(Command{
-		TransferObjects: &ProgrammableTransferObjects{
-			Objects: args,
-			Address: p.MustPure(recipient),
+	p.Command(
+		Command{
+			TransferObjects: &ProgrammableTransferObjects{
+				Objects: args,
+				Address: p.MustPure(recipient),
+			},
 		},
-	},
 	)
 }
 
@@ -309,12 +323,13 @@ func (p *ProgrammableTransactionBuilder) TransferObject(recipient *Address, obje
 	if err != nil {
 		return err
 	}
-	p.Command(Command{
-		TransferObjects: &ProgrammableTransferObjects{
-			Objects: []Argument{objArg},
-			Address: recArg,
+	p.Command(
+		Command{
+			TransferObjects: &ProgrammableTransferObjects{
+				Objects: []Argument{objArg},
+				Address: recArg,
+			},
 		},
-	},
 	)
 	return nil
 }
@@ -327,22 +342,24 @@ func (p *ProgrammableTransactionBuilder) TransferSui(recipient *Address, amount 
 	var coinArg Argument
 	if amount != nil {
 		amtArg := p.MustPure(amount)
-		coinArg = p.Command(Command{
-			SplitCoins: &ProgrammableSplitCoins{
-				Coin:    Argument{GasCoin: &serialization.EmptyEnum{}},
-				Amounts: []Argument{amtArg},
+		coinArg = p.Command(
+			Command{
+				SplitCoins: &ProgrammableSplitCoins{
+					Coin:    Argument{GasCoin: &serialization.EmptyEnum{}},
+					Amounts: []Argument{amtArg},
+				},
 			},
-		},
 		)
 	} else {
 		coinArg = Argument{GasCoin: &serialization.EmptyEnum{}}
 	}
-	p.Command(Command{
-		TransferObjects: &ProgrammableTransferObjects{
-			Objects: []Argument{coinArg},
-			Address: recArg,
+	p.Command(
+		Command{
+			TransferObjects: &ProgrammableTransferObjects{
+				Objects: []Argument{coinArg},
+				Address: recArg,
+			},
 		},
-	},
 	)
 	return nil
 }
@@ -353,12 +370,13 @@ func (p *ProgrammableTransactionBuilder) PayAllSui(recipient *Address) error {
 	if err != nil {
 		return fmt.Errorf("can't add recipient as arg: %w", err)
 	}
-	p.Command(Command{
-		TransferObjects: &ProgrammableTransferObjects{
-			Objects: []Argument{{GasCoin: &serialization.EmptyEnum{}}},
-			Address: recArg,
+	p.Command(
+		Command{
+			TransferObjects: &ProgrammableTransferObjects{
+				Objects: []Argument{{GasCoin: &serialization.EmptyEnum{}}},
+				Address: recArg,
+			},
 		},
-	},
 	)
 	return nil
 }
@@ -368,12 +386,14 @@ func (p *ProgrammableTransactionBuilder) SplitCoin(coinRef *ObjectRef, amounts [
 	if err != nil {
 		return err
 	}
-	p.Command(Command{
-		SplitCoins: &ProgrammableSplitCoins{
-			Coin:    coinArg,
-			Amounts: lo.Map(amounts, func(v uint64, _ int) Argument { return lo.Must(p.Pure(v)) }),
+	p.Command(
+		Command{
+			SplitCoins: &ProgrammableSplitCoins{
+				Coin:    coinArg,
+				Amounts: lo.Map(amounts, func(v uint64, _ int) Argument { return lo.Must(p.Pure(v)) }),
+			},
 		},
-	})
+	)
 	return nil
 }
 

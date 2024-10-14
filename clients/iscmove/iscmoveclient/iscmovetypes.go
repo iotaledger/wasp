@@ -13,38 +13,38 @@ type referent[T any] struct {
 
 // moveAnchor is the BCS equivalent for the move type moveAnchor
 type moveAnchor struct {
-	id            iotago.ObjectID
-	assets        referent[iscmove.AssetsBag]
-	stateMetadata []byte
-	stateIndex    uint32
+	ID            iotago.ObjectID
+	Assets        referent[iscmove.AssetsBag]
+	StateMetadata []byte
+	StateIndex    uint32
 }
 
 func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 	return &iscmove.Anchor{
-		ID:            ma.id,
-		Assets:        *ma.assets.Value,
-		StateMetadata: ma.stateMetadata,
-		StateIndex:    ma.stateIndex,
+		ID:            ma.ID,
+		Assets:        *ma.Assets.Value,
+		StateMetadata: ma.StateMetadata,
+		StateIndex:    ma.StateIndex,
 	}
 }
 
 type moveRequest struct {
-	id     iotago.ObjectID
-	sender *cryptolib.Address
+	ID     iotago.ObjectID
+	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
-	assetsBag referent[iscmove.AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
-	message   iscmove.Message
-	allowance []iscmove.CoinAllowance
-	gasBudget uint64
+	AssetsBag referent[iscmove.AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	Message   iscmove.Message
+	Allowance []iscmove.CoinAllowance
+	GasBudget uint64
 }
 
 func (mr *moveRequest) ToRequest() *iscmove.Request {
 	return &iscmove.Request{
-		ID:        mr.id,
-		Sender:    mr.sender,
-		AssetsBag: *mr.assetsBag.Value,
-		Message:   mr.message,
-		Allowance: mr.allowance,
-		GasBudget: mr.gasBudget,
+		ID:        mr.ID,
+		Sender:    mr.Sender,
+		AssetsBag: *mr.AssetsBag.Value,
+		Message:   mr.Message,
+		Allowance: mr.Allowance,
+		GasBudget: mr.GasBudget,
 	}
 }

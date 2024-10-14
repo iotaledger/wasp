@@ -113,11 +113,11 @@ func (c *Client) GetRequestFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.assetsBag.ID)
+	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
-	req.assetsBag.Value = bals
+	req.AssetsBag.Value = bals
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: getObjectResponse.Data.Ref(),
 		Object:    req.ToRequest(),

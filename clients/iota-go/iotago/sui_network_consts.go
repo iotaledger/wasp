@@ -1,28 +1,28 @@
 package iotago
 
 var (
-	SuiPackageIdMoveStdlib   = MustPackageIDFromHex("0x1")
-	SuiPackageIdSuiFramework = MustPackageIDFromHex("0x2")
-	SuiPackageIdSuiSystem    = MustPackageIDFromHex("0x3")
-	SuiPackageIdBridge       = MustPackageIDFromHex("0xb")
-	SuiPackageIdDeepbook     = MustPackageIDFromHex("0xdee9")
+	IotaPackageIdMoveStdlib    = MustPackageIDFromHex("0x1")
+	IotaPackageIdIotaFramework = MustPackageIDFromHex("0x2")
+	IotaPackageIdIotaSystem    = MustPackageIDFromHex("0x3")
+	IotaPackageIdBridge        = MustPackageIDFromHex("0xb")
+	IotaPackageIdDeepbook      = MustPackageIDFromHex("0xdee9")
 )
 
 var (
-	SuiObjectIdSystemState        = MustObjectIDFromHex("0x5")
-	SuiObjectIdClock              = MustObjectIDFromHex("0x6")
-	SuiObjectIdAuthenticatorState = MustObjectIDFromHex("0x7")
-	SuiObjectIdRandomnessState    = MustObjectIDFromHex("0x8")
-	SuiObjectIdBridge             = MustObjectIDFromHex("0x9")
-	SuiObjectIdDenyList           = MustObjectIDFromHex("0x403")
+	IotaObjectIdSystemState        = MustObjectIDFromHex("0x5")
+	IotaObjectIdClock              = MustObjectIDFromHex("0x6")
+	IotaObjectIdAuthenticatorState = MustObjectIDFromHex("0x7")
+	IotaObjectIdRandomnessState    = MustObjectIDFromHex("0x8")
+	IotaObjectIdBridge             = MustObjectIDFromHex("0x9")
+	IotaObjectIdDenyList           = MustObjectIDFromHex("0x403")
 )
 
 var (
-	SuiSystemModuleName Identifier = "iota_system"
+	IotaSystemModuleName Identifier = "iota_system"
 )
 
 var (
-	SuiSystemStateObjectSharedVersion        = SequenceNumber(1)
-	SuiClockObjectSharedVersion              = SequenceNumber(1)
-	SuiAuthenticatorStateObjectSharedVersion = SequenceNumber(1)
+	IotaSystemStateObjectSharedVersion        = SequenceNumber(1)
+	IotaClockObjectSharedVersion              = SequenceNumber(1)
+	IotaAuthenticatorStateObjectSharedVersion = SequenceNumber(1)
 )

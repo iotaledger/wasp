@@ -209,7 +209,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPathNested(blocks{}).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get([]models.ReceiptResponse{}), nil).
+		//AddResponse(http.StatusOK, "The receipts", mocker.Get([]models.ReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfBlock").
 		SetSummary("Get all receipts of a certain block")
 
@@ -217,7 +217,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get([]models.ReceiptResponse{}), nil).
+		//AddResponse(http.StatusOK, "The receipts", mocker.Get([]models.ReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfLatestBlock").
 		SetSummary("Get all receipts of the latest block")
 
@@ -226,7 +226,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipt", mocker.Get(models.ReceiptResponse{}), nil).
+		//AddResponse(http.StatusOK, "The receipt", mocker.Get(models.ReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceipt").
 		SetSummary("Get the receipt of a certain request id")
 

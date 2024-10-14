@@ -18,7 +18,7 @@ func TestNewResourceType(t *testing.T) {
 	}{
 		{
 			name: "with array",
-			str:  "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iotago::IOTA>>",
+			str:  "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iota::IOTA>>",
 			want: &iotago.ResourceType{
 				iotago.MustAddressFromHex("0x2"), "dynamic_field", "Field",
 				&iotago.ResourceType{
@@ -29,7 +29,7 @@ func TestNewResourceType(t *testing.T) {
 				&iotago.ResourceType{
 					iotago.MustAddressFromHex("0x2"), "balance", "Balance",
 					&iotago.ResourceType{
-						iotago.MustAddressFromHex("0x2"), "iotago", "SUI",
+						iotago.MustAddressFromHex("0x2"), "iota", "IOTA",
 						nil,
 						nil,
 					},

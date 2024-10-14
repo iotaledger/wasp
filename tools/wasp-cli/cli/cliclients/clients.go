@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -53,11 +52,7 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 }
 
 func L2Client() clients.L2Client {
-	return clients.NewL2Client(
-		iscmove.Config{
-			APIURL: iotaconn.LocalnetEndpointURL,
-		},
-	)
+	return L1Client().L2()
 }
 
 func L1Client() clients.L1Client {
