@@ -23,15 +23,22 @@
     ],
     "disableEvents": true
   },
-  "inx": {
-    "address": "localhost:9029",
+  "ws": {
+    "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe/websocket",
+    "packageID": "",
     "maxConnectionAttempts": 30,
     "targetNetworkName": ""
+  },
+  "cache": {
+    "cacheSize": "64MiB",
+    "cacheStatsInterval": "30s",
+    "enabled": true
   },
   "db": {
     "engine": "rocksdb",
     "chainState": {
-      "path": "waspdb/chains/data"
+      "path": "waspdb/chains/data",
+      "cacheSize": 33554432
     },
     "debugSkipHealthCheck": true
   },
@@ -64,27 +71,50 @@
   },
   "chains": {
     "broadcastUpToNPeers": 2,
-    "broadcastInterval": "5s",
+    "broadcastInterval": "0s",
     "apiCacheTTL": "5m",
     "pullMissingRequestsFromCommittee": true,
     "deriveAliasOutputByQuorum": true,
     "pipeliningLimit": -1,
-    "consensusDelay": "500ms"
+    "postponeRecoveryMilestones": 3,
+    "consensusDelay": "500ms",
+    "recoveryTimeout": "20s",
+    "redeliveryPeriod": "2s",
+    "printStatusPeriod": "3s",
+    "consensusInstsInAdvance": 3,
+    "awaitReceiptCleanupEvery": 100,
+    "mempoolTTL": "24h",
+    "mempoolMaxOffledgerInPool": 2000,
+    "mempoolMaxOnledgerInPool": 1000,
+    "mempoolMaxTimedInPool": 100,
+    "mempoolMaxOffledgerToPropose": 500,
+    "mempoolMaxOnledgerToPropose": 100,
+    "mempoolOnLedgerRefreshMinInterval": "10m"
+  },
+  "snapshots": {
+    "snapshotsToLoad": [],
+    "period": 0,
+    "delay": 20,
+    "localPath": "waspdb/snap",
+    "networkPaths": []
   },
   "stateManager": {
     "blockCacheMaxSize": 1000,
     "blockCacheBlocksInCacheDuration": "1h",
     "blockCacheBlockCleaningPeriod": "1m",
+    "stateManagerGetBlockNodeCount": 5,
     "stateManagerGetBlockRetry": "3s",
-    "stateManagerRequestCleaningPeriod": "1s",
+    "stateManagerRequestCleaningPeriod": "5m",
+    "stateManagerStatusLogPeriod": "1m",
     "stateManagerTimerTickPeriod": "1s",
     "pruningMinStatesToKeep": 10000,
-    "pruningMaxStatesToDelete": 1000
+    "pruningMaxStatesToDelete": 10
   },
   "validator": {
     "address": ""
   },
   "wal": {
+    "loadToStore": false,
     "enabled": true,
     "path": "waspdb/wal"
   },
@@ -95,16 +125,10 @@
       "scheme": "jwt",
       "jwt": {
         "duration": "24h"
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": [
-          "0.0.0.0"
-        ]
       }
     },
+    "indexDbPath": "waspdb/chains/index",
+    "accountDumpsPath": "waspdb/account_dumps",
     "limits": {
       "timeout": "30s",
       "readTimeout": "10s",
@@ -112,7 +136,7 @@
       "maxBodyLength": "2M",
       "maxTopicSubscriptionsPerClient": 0,
       "confirmedStateLagThreshold": 2,
-      "jsonRpc": {
+      "jsonrpc": {
         "maxBlocksInLogsFilterRange": 1000,
         "maxLogsInResult": 10000,
         "websocketRateLimitMessagesPerSecond": 20,
