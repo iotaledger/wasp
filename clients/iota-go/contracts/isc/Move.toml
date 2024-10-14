@@ -3,14 +3,12 @@ name = "ISC"
 version = "0.0.1"
 edition = "2024.beta"
 
-
-
 [dependencies]
-MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "l1sc/isc-models" }
-Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/stardust", rev = "l1sc/isc-models" }
-Sui = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "l1sc/isc-models" }
+MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/move-stdlib", rev = "develop" }
+Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/stardust",  rev = "develop"  }
+Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev = "develop" }
 
 [addresses]
 isc = "0x0"
 std = "0x1"
-sui = "0x2"
+iota = "0x2"

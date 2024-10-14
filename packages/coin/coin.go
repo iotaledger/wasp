@@ -17,6 +17,7 @@ func (v Value) Uint64() uint64 {
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
+	fmt.Printf("!!%d\n", *v)
 	e.WriteCompactUint(uint64(*v))
 	return e.Err()
 }
@@ -81,5 +82,7 @@ func TypeFromBytes(b []byte) (Type, error) {
 	return r, err
 }
 
-var Zero = Value(0)
-var MaxValue = Value(math.MaxUint64)
+var (
+	Zero     = Value(0)
+	MaxValue = Value(math.MaxUint64)
+)

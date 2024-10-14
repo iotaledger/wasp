@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module isc::anchor {
-    use sui::{
+    use iota::{
         borrow::{Self, Referent, Borrow},
         coin::Coin,
-        sui::SUI,
+        iota::IOTA,
     };
     use isc::{
         request::{Self, Request},
@@ -31,10 +31,10 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<SUI>>, ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<IOTA>>, ctx: &mut TxContext): Anchor {
         let mut assets_bag = assets_bag::new(ctx);
         if (coin.is_some()) {
-            assets_bag.place_coin<SUI>(coin.destroy_some());
+            assets_bag.place_coin<IOTA>(coin.destroy_some());
         } else {
             coin.destroy_none()
         };
