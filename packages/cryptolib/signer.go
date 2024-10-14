@@ -15,31 +15,31 @@ type Signer interface {
 	SignTransactionBlock(txnBytes []byte, intent iotasigner.Intent) (*Signature, error)
 }
 
-type suiSigner struct {
+type iotaSigner struct {
 	s Signer
 }
 
 // TODO: remove, when it is not needed
-func SignerToSuiSigner(s Signer) iotasigner.Signer {
-	return &suiSigner{s}
+func SignerToIotaSigner(s Signer) iotasigner.Signer {
+	return &iotaSigner{s}
 }
 
-func (is *suiSigner) Address() *iotago.Address {
-	return is.s.Address().AsSuiAddress()
+func (is *iotaSigner) Address() *iotago.Address {
+	return is.s.Address().AsIotaAddress()
 }
 
-func (is *suiSigner) Sign(msg []byte) (signature *iotasigner.Signature, err error) {
+func (is *iotaSigner) Sign(msg []byte) (signature *iotasigner.Signature, err error) {
 	b, err := is.s.Sign(msg)
 	if err != nil {
 		return nil, err
 	}
-	return b.AsSuiSignature(), err
+	return b.AsIotaSignature(), err
 }
 
-func (is *suiSigner) SignTransactionBlock(txnBytes []byte, intent iotasigner.Intent) (*iotasigner.Signature, error) {
+func (is *iotaSigner) SignTransactionBlock(txnBytes []byte, intent iotasigner.Intent) (*iotasigner.Signature, error) {
 	signature, err := is.s.SignTransactionBlock(txnBytes, intent)
 	if err != nil {
 		return nil, err
 	}
-	return signature.AsSuiSignature(), nil
+	return signature.AsIotaSignature(), nil
 }

@@ -25,7 +25,7 @@ func DefaultIntent() Intent {
 			V0: &serialization.EmptyEnum{},
 		},
 		AppID: AppID{
-			Sui: &serialization.EmptyEnum{},
+			Iota: &serialization.EmptyEnum{},
 		},
 	}
 }
@@ -58,7 +58,7 @@ type IntentVersion struct {
 func (i IntentVersion) IsBcsEnum() {}
 
 type AppID struct {
-	Sui     *serialization.EmptyEnum
+	Iota    *serialization.EmptyEnum
 	Narwhal *serialization.EmptyEnum
 }
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -28,7 +28,7 @@ func TestRequestDataSerialization(t *testing.T) {
 
 	t.Run("on ledger", func(t *testing.T) {
 		sender := cryptolib.NewRandomAddress()
-		objectRef := suitest.RandomObjectRef()
+		objectRef := iotatest.RandomObjectRef()
 		onledgerReq := iscmove.RefWithObject[iscmove.Request]{
 			ObjectRef: *objectRef,
 			Object: &iscmove.Request{
@@ -36,7 +36,7 @@ func TestRequestDataSerialization(t *testing.T) {
 				Sender: sender,
 				AssetsBag: iscmove.AssetsBagWithBalances{
 					AssetsBag: iscmove.AssetsBag{
-						ID:   *suitest.RandomAddress(),
+						ID:   *iotatest.RandomAddress(),
 						Size: 1,
 					},
 					Balances: iscmove.AssetsBagBalances{iotajsonrpc.CoinType(coin.BaseTokenType): &iotajsonrpc.Balance{CoinType: iotajsonrpc.CoinType(coin.BaseTokenType), TotalBalance: iotajsonrpc.NewBigInt(200)}},

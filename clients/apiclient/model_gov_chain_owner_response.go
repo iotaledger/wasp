@@ -19,7 +19,7 @@ var _ MappedNullable = &GovChainOwnerResponse{}
 
 // GovChainOwnerResponse struct for GovChainOwnerResponse
 type GovChainOwnerResponse struct {
-	// The chain owner (Bech32-encoded)
+	// The chain owner (Hex Address)
 	ChainOwner *string `json:"chainOwner,omitempty"`
 }
 

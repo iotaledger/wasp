@@ -37,13 +37,13 @@ type ModulePublish struct {
 	Modules [][]byte `json:"modules"`
 }
 type MoveCall struct {
-	Package iotago.ObjectID `json:"package"`
-	Module  string          `json:"module"`
-	Function string        `json:"function"`
-	TypeArgs []interface{} `json:"typeArguments"`
-	Args     []interface{} `json:"arguments"`
+	Package  iotago.ObjectID `json:"package"`
+	Module   string          `json:"module"`
+	Function string          `json:"function"`
+	TypeArgs []interface{}   `json:"typeArguments"`
+	Args     []interface{}   `json:"arguments"`
 }
-type TransferSui struct {
+type TransferIota struct {
 	Recipient iotago.Address `json:"recipient"`
 	Amount    uint64         `json:"amount"`
 }
@@ -52,12 +52,12 @@ type Pay struct {
 	Recipients []iotago.Address   `json:"recipients"`
 	Amounts    []uint64           `json:"amounts"`
 }
-type PaySui struct {
+type PayIota struct {
 	Coins      []iotago.ObjectRef `json:"coins"`
 	Recipients []iotago.Address   `json:"recipients"`
 	Amounts    []uint64           `json:"amounts"`
 }
-type PayAllSui struct {
+type PayAllIota struct {
 	Coins     []iotago.ObjectRef `json:"coins"`
 	Recipient iotago.Address     `json:"recipient"`
 }
@@ -71,11 +71,11 @@ type SingleTransactionKind struct {
 	TransferObject *TransferObject `json:"TransferObject,omitempty"`
 	Publish        *ModulePublish  `json:"Publish,omitempty"`
 	Call           *MoveCall       `json:"Call,omitempty"`
-	TransferSui    *TransferSui    `json:"TransferSui,omitempty"`
+	TransferIota   *TransferIota   `json:"TransferIota,omitempty"`
 	ChangeEpoch    *ChangeEpoch    `json:"ChangeEpoch,omitempty"`
-	PaySui         *PaySui         `json:"PaySui,omitempty"`
+	PayIota        *PayIota        `json:"PayIota,omitempty"`
 	Pay            *Pay            `json:"Pay,omitempty"`
-	PayAllSui      *PayAllSui      `json:"PayAllSui,omitempty"`
+	PayAllIota     *PayAllIota     `json:"PayAllIota,omitempty"`
 }
 
 type SenderSignedData struct {

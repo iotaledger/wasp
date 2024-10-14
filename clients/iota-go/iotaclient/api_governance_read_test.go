@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
@@ -22,9 +22,9 @@ func TestGetCommitteeInfo(t *testing.T) {
 	require.Greater(t, len(committeeInfo.Validators), 3)
 }
 
-func TestGetLatestSuiSystemState(t *testing.T) {
+func TestGetLatestIotaSystemState(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	state, err := client.GetLatestSuiSystemState(context.Background())
+	state, err := client.GetLatestIotaSystemState(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, state)
 }
@@ -72,7 +72,7 @@ func TestGetStakesByIds(t *testing.T) {
 	require.GreaterOrEqual(t, len(stakes), 1)
 
 	stake1 := stakes[0].Stakes[0].Data
-	stakeId := stake1.StakedSuiId
+	stakeId := stake1.StakedIotaId
 	stakesFromId, err := api.GetStakesByIds(context.Background(), []iotago.ObjectID{stakeId})
 	require.NoError(t, err)
 	require.Equal(t, len(stakesFromId), 0)

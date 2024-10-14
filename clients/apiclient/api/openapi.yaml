@@ -92,7 +92,7 @@ paths:
     get:
       operationId: getChainInfo
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -119,7 +119,7 @@ paths:
     delete:
       operationId: removeAccessNode
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -151,7 +151,7 @@ paths:
     put:
       operationId: addAccessNode
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -184,7 +184,7 @@ paths:
     post:
       operationId: activateChain
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -215,7 +215,7 @@ paths:
         \ are supplied, HName are used."
       operationId: callView
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -234,7 +234,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JSONDict_'
+                items:
+                  items:
+                    example: 1
+                    format: int32
+                    type: integer
+                  type: array
+                type: array
           description: Result
       summary: Call a view function on a contract by Hname
       tags:
@@ -244,7 +250,7 @@ paths:
     post:
       operationId: setChainRecord
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -278,7 +284,7 @@ paths:
     get:
       operationId: getCommitteeInfo
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -313,7 +319,7 @@ paths:
     get:
       operationId: getContracts
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -350,14 +356,14 @@ paths:
     get:
       operationId: accountsGetAccountBalance
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+      - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
         required: true
@@ -390,14 +396,14 @@ paths:
     get:
       operationId: accountsGetAccountFoundries
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+      - description: "AgentID (Hex Address for L1 accounts, Hex for EVM)"
         in: path
         name: agentID
         required: true
@@ -430,14 +436,14 @@ paths:
     get:
       operationId: accountsGetAccountNFTIDs
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+      - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
         required: true
@@ -470,14 +476,14 @@ paths:
     get:
       operationId: accountsGetAccountNonce
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
         schema:
           format: string
           type: string
-      - description: AgentID (Bech32 for WasmVM | Hex for EVM)
+      - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
         required: true
@@ -510,7 +516,7 @@ paths:
     get:
       operationId: accountsGetFoundryOutput
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -551,7 +557,7 @@ paths:
     get:
       operationId: accountsGetNFTData
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -572,12 +578,6 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NFTJSON'
-          description: The NFT data
         "401":
           content:
             application/json:
@@ -591,7 +591,7 @@ paths:
     get:
       operationId: accountsGetNativeTokenIDRegistry
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -624,7 +624,7 @@ paths:
     get:
       operationId: accountsGetTotalAssets
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -653,98 +653,11 @@ paths:
       summary: Get all stored assets
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blobs/{blobHash}:
-    get:
-      operationId: blobsGetBlobInfo
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: BlobHash (Hex)
-        in: path
-        name: blobHash
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlobInfoResponse'
-          description: All blob fields and their values
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get all fields of a blob
-      tags:
-      - corecontracts
-  /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey}:
-    get:
-      operationId: blobsGetBlobValue
-      parameters:
-      - description: ChainID (Bech32)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: BlobHash (Hex)
-        in: path
-        name: blobHash
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: FieldKey (String)
-        in: path
-        name: fieldKey
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlobValueResponse'
-          description: The value of the supplied field (key)
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get the value of the supplied field (key)
-      tags:
-      - corecontracts
   /v1/chains/{chainID}/core/blocklog/blocks/latest:
     get:
       operationId: blocklogGetLatestBlockInfo
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -777,7 +690,7 @@ paths:
     get:
       operationId: blocklogGetRequestReceiptsOfLatestBlock
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -791,14 +704,6 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ReceiptResponse'
-                type: array
-          description: The receipts
         "401":
           content:
             application/json:
@@ -812,7 +717,7 @@ paths:
     get:
       operationId: blocklogGetRequestIDsForLatestBlock
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -845,7 +750,7 @@ paths:
     get:
       operationId: blocklogGetBlockInfo
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -886,7 +791,7 @@ paths:
     get:
       operationId: blocklogGetRequestReceiptsOfBlock
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -908,14 +813,6 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ReceiptResponse'
-                type: array
-          description: The receipts
         "401":
           content:
             application/json:
@@ -929,7 +826,7 @@ paths:
     get:
       operationId: blocklogGetRequestIDsForBlock
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -970,7 +867,7 @@ paths:
     get:
       operationId: blocklogGetControlAddresses
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1003,7 +900,7 @@ paths:
     get:
       operationId: blocklogGetEventsOfLatestBlock
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1036,7 +933,7 @@ paths:
     get:
       operationId: blocklogGetEventsOfBlock
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1077,7 +974,7 @@ paths:
     get:
       operationId: blocklogGetEventsOfRequest
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1117,7 +1014,7 @@ paths:
     get:
       operationId: blocklogGetRequestReceipt
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1138,12 +1035,6 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReceiptResponse'
-          description: The receipt
         "401":
           content:
             application/json:
@@ -1157,7 +1048,7 @@ paths:
     get:
       operationId: blocklogGetRequestIsProcessed
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1197,7 +1088,7 @@ paths:
     get:
       operationId: errorsGetErrorMessageFormat
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1246,7 +1137,7 @@ paths:
       description: Returns the allowed state controller addresses
       operationId: governanceGetAllowedStateControllerAddresses
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1281,7 +1172,7 @@ paths:
         \ want to use '/v1/chains/:chainID' to get information about a chain."
       operationId: governanceGetChainInfo
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1315,7 +1206,7 @@ paths:
       description: Returns the chain owner
       operationId: governanceGetChainOwner
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1348,7 +1239,7 @@ paths:
     post:
       operationId: deactivateChain
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1377,7 +1268,7 @@ paths:
     post:
       operationId: dump-accounts
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1403,7 +1294,7 @@ paths:
     post:
       operationId: estimateGasOffledger
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1418,12 +1309,9 @@ paths:
         description: Request
         required: true
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReceiptResponse'
-          description: ReceiptResponse
+        default:
+          content: {}
+          description: successful operation
       summary: Estimates gas for a given off-ledger ISC request
       tags:
       - chains
@@ -1432,7 +1320,7 @@ paths:
     post:
       operationId: estimateGasOnledger
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1447,12 +1335,9 @@ paths:
         description: Request
         required: true
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReceiptResponse'
-          description: ReceiptResponse
+        default:
+          content: {}
+          description: successful operation
       summary: Estimates gas for a given on-ledger ISC request
       tags:
       - chains
@@ -1460,7 +1345,7 @@ paths:
   /v1/chains/{chainID}/evm:
     post:
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1477,7 +1362,7 @@ paths:
   /v1/chains/{chainID}/evm/ws:
     get:
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1495,7 +1380,7 @@ paths:
     get:
       operationId: getMempoolContents
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1527,7 +1412,7 @@ paths:
     get:
       operationId: getReceipt
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1542,12 +1427,6 @@ paths:
           format: string
           type: string
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReceiptResponse'
-          description: ReceiptResponse
         "404":
           content: {}
           description: Chain or request id not found
@@ -1558,7 +1437,7 @@ paths:
     get:
       operationId: waitForRequest
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1585,12 +1464,6 @@ paths:
           format: boolean
           type: boolean
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReceiptResponse'
-          description: The request receipt
         "404":
           content: {}
           description: The chain or request id not found
@@ -1604,7 +1477,7 @@ paths:
     get:
       operationId: getStateValue
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1632,7 +1505,7 @@ paths:
     get:
       operationId: getChainMessageMetrics
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1664,7 +1537,7 @@ paths:
     get:
       operationId: getChainPipeMetrics
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1696,7 +1569,7 @@ paths:
     get:
       operationId: getChainWorkflowMetrics
       parameters:
-      - description: ChainID (Bech32)
+      - description: ChainID (Hex Address)
         in: path
         name: chainID
         required: true
@@ -1754,7 +1627,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: info
                   format: string
                   type: string
                 type: object
@@ -1803,7 +1676,7 @@ paths:
     get:
       operationId: getDKSInfo
       parameters:
-      - description: SharedAddress (Bech32)
+      - description: SharedAddress (Hex Address)
         in: path
         name: sharedAddress
         required: true
@@ -1882,7 +1755,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/PeeringNodeStatusResponse_'
+                  $ref: '#/components/schemas/PeeringNodeStatusResponse'
                 type: array
           description: A list of all peers
         "401":
@@ -2357,54 +2230,24 @@ components:
       type: object
       xml:
         name: AliasOutputMetricItem
-    AssetsJSON:
-      example:
-        nfts:
-        - nfts
-        - nfts
-        baseTokens: baseTokens
-        nativeTokens:
-        - amount: amount
-          id: id
-        - amount: amount
-          id: id
-      properties:
-        baseTokens:
-          description: The base tokens (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: BaseTokens
-        nativeTokens:
-          items:
-            $ref: '#/components/schemas/NativeTokenJSON'
-          type: array
-          xml:
-            name: NativeTokens
-            wrapped: true
-        nfts:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: NFTs
-            wrapped: true
-      required:
-      - baseTokens
-      - nativeTokens
-      - nfts
-      type: object
-      xml:
-        name: AssetsJSON
     AssetsResponse:
       example:
         baseTokens: baseTokens
         nativeTokens:
-        - amount: amount
-          id: id
-        - amount: amount
-          id: id
+        - coinType: coinType
+          balance:
+            Int:
+              neg: true
+              abs:
+              - 0
+              - 0
+        - coinType: coinType
+          balance:
+            Int:
+              neg: true
+              abs:
+              - 0
+              - 0
       properties:
         baseTokens:
           description: The base tokens (uint64 as string)
@@ -2414,7 +2257,7 @@ components:
             name: BaseTokens
         nativeTokens:
           items:
-            $ref: '#/components/schemas/NativeTokenJSON'
+            $ref: '#/components/schemas/CoinJSON'
           type: array
           xml:
             name: NativeTokens
@@ -2427,18 +2270,16 @@ components:
         name: AssetsResponse
     AuthInfoModel:
       example:
-        authURL: /auth
-        scheme: jwt
+        authURL: authURL
+        scheme: scheme
       properties:
         authURL:
           description: JWT only
-          example: /auth
           format: string
           type: string
           xml:
             name: AuthURL
         scheme:
-          example: jwt
           format: string
           type: string
           xml:
@@ -2451,44 +2292,45 @@ components:
         name: AuthInfoModel
     BaseToken:
       example:
-        unit: TEST
-        decimals: 6
-        name: TestCoin
-        tickerSymbol: TEST
-        subunit: testies
+        coinType: coinType
+        unit: unit
+        decimals: 0
+        name: name
+        tickerSymbol: tickerSymbol
+        subunit: subunit
         useMetricPrefix: true
       properties:
+        coinType:
+          format: string
+          type: string
+          xml:
+            name: CoinType
         decimals:
           description: The token decimals
-          example: 6
           format: int32
           type: integer
           xml:
             name: Decimals
         name:
           description: The base token name
-          example: TestCoin
           format: string
           type: string
           xml:
             name: Name
         subunit:
           description: The token subunit
-          example: testies
           format: string
           type: string
           xml:
             name: Subunit
         tickerSymbol:
           description: The ticker symbol
-          example: TEST
           format: string
           type: string
           xml:
             name: TickerSymbol
         unit:
           description: The token unit
-          example: TEST
           format: string
           type: string
           xml:
@@ -2509,44 +2351,24 @@ components:
       type: object
       xml:
         name: BaseToken
-    BlobInfoResponse:
+    BigInt:
       example:
-        fields:
-          key: 0
+        Int:
+          neg: true
+          abs:
+          - 0
+          - 0
       properties:
-        fields:
-          additionalProperties:
-            format: int32
-            type: integer
-          type: object
-          xml:
-            name: Fields
-      required:
-      - fields
+        Int:
+          $ref: '#/components/schemas/Int'
       type: object
       xml:
-        name: BlobInfoResponse
-    BlobValueResponse:
-      example:
-        valueData: valueData
-      properties:
-        valueData:
-          description: The blob data (Hex)
-          format: string
-          type: string
-          xml:
-            name: ValueData
-      required:
-      - valueData
-      type: object
-      xml:
-        name: BlobValueResponse
+        name: BigInt
     BlockInfoResponse:
       example:
         blockIndex: 1
         numSuccessfulRequests: 1
         gasFeeCharged: gasFeeCharged
-        previousAliasOutput: previousAliasOutput
         gasBurned: gasBurned
         totalRequests: 1
         numOffLedgerRequests: 1
@@ -2582,11 +2404,6 @@ components:
           type: integer
           xml:
             name: NumSuccessfulRequests
-        previousAliasOutput:
-          format: string
-          type: string
-          xml:
-            name: PreviousAliasOutput
         timestamp:
           format: date-time
           type: string
@@ -2604,59 +2421,14 @@ components:
       - gasFeeCharged
       - numOffLedgerRequests
       - numSuccessfulRequests
-      - previousAliasOutput
       - timestamp
       - totalRequests
       type: object
       xml:
         name: BlockInfoResponse
-    BurnRecord:
-      example:
-        code: 6
-        gasBurned: 1
-      properties:
-        code:
-          format: int32
-          type: integer
-          xml:
-            name: Code
-        gasBurned:
-          format: int64
-          type: integer
-          xml:
-            name: GasBurned
-      required:
-      - code
-      - gasBurned
-      type: object
-      xml:
-        name: BurnRecord
-    CallTargetJSON:
-      example:
-        contractHName: contractHName
-        functionHName: functionHName
-      properties:
-        contractHName:
-          description: The contract name as HName (Hex)
-          format: string
-          type: string
-          xml:
-            name: ContractHName
-        functionHName:
-          description: The function name as HName (Hex)
-          format: string
-          type: string
-          xml:
-            name: FunctionHName
-      required:
-      - contractHName
-      - functionHName
-      type: object
-      xml:
-        name: CallTargetJSON
     ChainInfoResponse:
       example:
-        chainOwnerId: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
+        chainOwnerId: chainOwnerId
         metadata:
           website: website
           evmWebSocketURL: evmWebSocketURL
@@ -2664,40 +2436,37 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
-        chainID: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
-        evmChainId: 1074
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 9
+          maxGasPerBlock: 2
+          maxGasPerRequest: 7
+        chainID: chainID
+        evmChainId: 1
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
-            a: 1
-            b: 100
-          validatorFeeShare: 0
+            a: 0
+            b: 0
+          validatorFeeShare: 5
           evmGasRatio:
-            a: 1
-            b: 1
+            a: 0
+            b: 0
         isActive: true
       properties:
         chainID:
-          description: ChainID (Bech32-encoded)
-          example: tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v
+          description: ChainID (Hex Address)
           format: string
           type: string
           xml:
             name: ChainID
         chainOwnerId:
-          description: The chain owner address (Bech32-encoded)
-          example: tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e
+          description: The chain owner address (Hex Address)
           format: string
           type: string
           xml:
             name: ChainOwnerID
         evmChainId:
           description: The EVM chain ID
-          example: 1074
           format: int32
           minimum: 1
           type: integer
@@ -2859,6 +2628,29 @@ components:
       type: object
       xml:
         name: ChainRecord
+    CoinJSON:
+      example:
+        coinType: coinType
+        balance:
+          Int:
+            neg: true
+            abs:
+            - 0
+            - 0
+      properties:
+        balance:
+          $ref: '#/components/schemas/BigInt'
+        coinType:
+          format: string
+          type: string
+          xml:
+            name: CoinType
+      required:
+      - balance
+      - coinType
+      type: object
+      xml:
+        name: CoinJSON
     CommitteeInfoResponse:
       example:
         candidateNodes:
@@ -2881,21 +2673,21 @@ components:
         committeeNodes:
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: publicKey
+            numUsers: 0
             isTrusted: true
           accessAPI: accessAPI
         - node:
             isAlive: true
-            peeringURL: localhost:4000
+            peeringURL: peeringURL
             name: name
-            publicKey: 0x0000
-            numUsers: 1
+            publicKey: publicKey
+            numUsers: 0
             isTrusted: true
           accessAPI: accessAPI
-        chainId: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
+        chainId: chainId
         accessNodes:
         - node:
             isAlive: true
@@ -2913,7 +2705,7 @@ components:
             numUsers: 0
             isTrusted: true
           accessAPI: accessAPI
-        stateAddress: 0xff97a3eb5c56f6a3bc4fb729dedff9bffe37583d81d6c72ac12f2438cc94fb43
+        stateAddress: stateAddress
         active: true
       properties:
         accessNodes:
@@ -2926,7 +2718,6 @@ components:
             wrapped: true
         active:
           description: Whether or not the chain is active.
-          example: true
           format: boolean
           type: boolean
           xml:
@@ -2940,8 +2731,7 @@ components:
             name: CandidateNodes
             wrapped: true
         chainId:
-          description: ChainID (Bech32-encoded).
-          example: tst1pqm5ckama06xhkl080mmvz6l3xy8c8lulrwy7mx4ll0fc69krxfgka70j0e
+          description: ChainID (Hex Address).
           format: string
           type: string
           xml:
@@ -2949,13 +2739,12 @@ components:
         committeeNodes:
           description: A list of all committee nodes and their peering info.
           items:
-            $ref: '#/components/schemas/CommitteeNode_'
+            $ref: '#/components/schemas/CommitteeNode'
           type: array
           xml:
             name: CommitteeNodes
             wrapped: true
         stateAddress:
-          example: 0xff97a3eb5c56f6a3bc4fb729dedff9bffe37583d81d6c72ac12f2438cc94fb43
           format: string
           type: string
           xml:
@@ -2988,30 +2777,6 @@ components:
             name: AccessAPI
         node:
           $ref: '#/components/schemas/PeeringNodeStatusResponse'
-      required:
-      - accessAPI
-      - node
-      type: object
-      xml:
-        name: CommitteeNode
-    CommitteeNode_:
-      example:
-        node:
-          isAlive: true
-          peeringURL: localhost:4000
-          name: name
-          publicKey: 0x0000
-          numUsers: 1
-          isTrusted: true
-        accessAPI: accessAPI
-      properties:
-        accessAPI:
-          format: string
-          type: string
-          xml:
-            name: AccessAPI
-        node:
-          $ref: '#/components/schemas/PeeringNodeStatusResponse_'
       required:
       - accessAPI
       - node
@@ -3230,16 +2995,24 @@ components:
         functionName: functionName
         functionHName: functionHName
         arguments:
-          Items:
-          - value: value
-            key: key
-          - value: value
-            key: key
+        - - 0
+          - 0
+        - - 0
+          - 0
         block: block
         contractName: contractName
       properties:
         arguments:
-          $ref: '#/components/schemas/JSONDict'
+          description: Encoded arguments to be passed to the function
+          items:
+            items:
+              format: int32
+              type: integer
+            type: array
+          type: array
+          xml:
+            name: Arguments
+            wrapped: true
         block:
           format: string
           type: string
@@ -3280,27 +3053,24 @@ components:
         name: ContractCallViewRequest
     ContractInfoResponse:
       example:
-        programHash: 0xc102cb078eb7a8c59b65c3682c878e3189cc696b86098d8c5883d08d0d215a87
-        name: evm
-        hName: 07cb02c1
+        programHash: programHash
+        name: name
+        hName: hName
       properties:
         hName:
           description: The id (HName as Hex)) of the contract.
-          example: 07cb02c1
           format: string
           type: string
           xml:
             name: HName
         name:
           description: The name of the contract.
-          example: evm
           format: string
           type: string
           xml:
             name: Name
         programHash:
           description: The hash of the contract. (Hex encoded)
-          example: 0xc102cb078eb7a8c59b65c3682c878e3189cc696b86098d8c5883d08d0d215a87
           format: string
           type: string
           xml:
@@ -3319,7 +3089,7 @@ components:
         stateAddress: stateAddress
       properties:
         governingAddress:
-          description: The governing address (Bech32)
+          description: The governing address (Hex Address)
           format: string
           type: string
           xml:
@@ -3332,7 +3102,7 @@ components:
           xml:
             name: SinceBlockIndex
         stateAddress:
-          description: The state address (Bech32)
+          description: The state address (Hex Address)
           format: string
           type: string
           xml:
@@ -3567,44 +3337,17 @@ components:
     FeePolicy:
       example:
         gasPerToken:
-          a: 1
-          b: 100
-        validatorFeeShare: 0
+          a: 0
+          b: 0
+        validatorFeeShare: 5
         evmGasRatio:
-          a: 1
-          b: 1
+          a: 0
+          b: 0
       properties:
         evmGasRatio:
           $ref: '#/components/schemas/Ratio32'
         gasPerToken:
-          $ref: '#/components/schemas/Ratio32_'
-        validatorFeeShare:
-          description: The validator fee share.
-          format: int32
-          type: integer
-          xml:
-            name: ValidatorFeeShare
-      required:
-      - evmGasRatio
-      - gasPerToken
-      - validatorFeeShare
-      type: object
-      xml:
-        name: FeePolicy
-    FeePolicy_:
-      example:
-        gasPerToken:
-          a: 0
-          b: 0
-        validatorFeeShare: 1
-        evmGasRatio:
-          a: 0
-          b: 0
-      properties:
-        evmGasRatio:
-          $ref: '#/components/schemas/Ratio32__'
-        gasPerToken:
-          $ref: '#/components/schemas/Ratio32__'
+          $ref: '#/components/schemas/Ratio32'
         validatorFeeShare:
           description: The validator fee share.
           format: int32
@@ -3623,10 +3366,20 @@ components:
         assets:
           baseTokens: baseTokens
           nativeTokens:
-          - amount: amount
-            id: id
-          - amount: amount
-            id: id
+          - coinType: coinType
+            balance:
+              Int:
+                neg: true
+                abs:
+                - 0
+                - 0
+          - coinType: coinType
+            balance:
+              Int:
+                neg: true
+                abs:
+                - 0
+                - 0
         foundryId: foundryId
       properties:
         assets:
@@ -3649,7 +3402,7 @@ components:
         - addresses
       properties:
         addresses:
-          description: The allowed state controller addresses (Bech32-encoded)
+          description: The allowed state controller addresses (Hex Address)
           items:
             format: string
             type: string
@@ -3670,35 +3423,35 @@ components:
           description: description
           evmJsonRpcURL: evmJsonRpcURL
         gasLimits:
-          maxGasExternalViewCall: 6
-          minGasPerRequest: 5
-          maxGasPerBlock: 1
-          maxGasPerRequest: 5
+          maxGasExternalViewCall: 5
+          minGasPerRequest: 9
+          maxGasPerBlock: 2
+          maxGasPerRequest: 7
         chainID: chainID
         publicURL: publicURL
         gasFeePolicy:
           gasPerToken:
             a: 0
             b: 0
-          validatorFeeShare: 1
+          validatorFeeShare: 5
           evmGasRatio:
             a: 0
             b: 0
       properties:
         chainID:
-          description: ChainID (Bech32-encoded).
+          description: ChainID (Hex Address).
           format: string
           type: string
           xml:
             name: ChainID
         chainOwnerId:
-          description: The chain owner address (Bech32-encoded).
+          description: The chain owner address (Hex Address).
           format: string
           type: string
           xml:
             name: ChainOwnerID
         gasFeePolicy:
-          $ref: '#/components/schemas/FeePolicy_'
+          $ref: '#/components/schemas/FeePolicy'
         gasLimits:
           $ref: '#/components/schemas/Limits'
         metadata:
@@ -3724,7 +3477,7 @@ components:
         chainOwner: chainOwner
       properties:
         chainOwner:
-          description: The chain owner (Bech32-encoded)
+          description: The chain owner (Hex Address)
           format: string
           type: string
           xml:
@@ -3883,49 +3636,46 @@ components:
         name: InStateOutputMetricItem
     InfoResponse:
       example:
-        peeringURL: 0.0.0.0:4000
+        peeringURL: peeringURL
         l1Params:
           protocol:
             rentStructure:
-              vByteFactorData: 1
-              vByteCost: 500
-              vByteFactorKey: 10
+              vByteFactorData: 2
+              vByteCost: 1
+              vByteFactorKey: 7
             minPowScore: 1
-            tokenSupply: "2779530283277761"
-            networkName: private_tangle1
-            belowMaxDepth: 15
-            version: 2
-            bech32Hrp: tst
-          maxPayloadSize: 32498
+            tokenSupply: tokenSupply
+            networkName: networkName
+            belowMaxDepth: 1
+            version: 9
+          maxPayloadSize: 6
           baseToken:
-            unit: TEST
-            decimals: 6
-            name: TestCoin
-            tickerSymbol: TEST
-            subunit: testies
+            coinType: coinType
+            unit: unit
+            decimals: 0
+            name: name
+            tickerSymbol: tickerSymbol
+            subunit: subunit
             useMetricPrefix: true
-        publicKey: 0x8fb9555a17393f0e01aadd90f8b6bc8a64b1c5c37c99915942e40b2af99e72d6
-        version: 0.4.0-alpha.2-390-g5470f1925
+        publicKey: publicKey
+        version: version
       properties:
         l1Params:
           $ref: '#/components/schemas/L1Params'
         peeringURL:
           description: The net id of the node
-          example: 0.0.0.0:4000
           format: string
           type: string
           xml:
             name: PeeringURL
         publicKey:
           description: The public key of the node (Hex)
-          example: 0x8fb9555a17393f0e01aadd90f8b6bc8a64b1c5c37c99915942e40b2af99e72d6
           format: string
           type: string
           xml:
             name: PublicKey
         version:
           description: The version of the node
-          example: 0.4.0-alpha.2-390-g5470f1925
           format: string
           type: string
           xml:
@@ -3938,6 +3688,29 @@ components:
       type: object
       xml:
         name: InfoResponse
+    Int:
+      example:
+        neg: true
+        abs:
+        - 0
+        - 0
+      properties:
+        abs:
+          items:
+            format: int32
+            type: integer
+          type: array
+          xml:
+            name: abs
+            wrapped: true
+        neg:
+          format: boolean
+          type: boolean
+          xml:
+            name: neg
+      type: object
+      xml:
+        name: Int
     InterfaceMetricItem:
       example:
         lastMessage: lastMessage
@@ -3967,117 +3740,32 @@ components:
       type: object
       xml:
         name: InterfaceMetricItem
-    Item:
-      example:
-        value: value
-        key: key
-      properties:
-        key:
-          description: key (hex-encoded)
-          format: string
-          type: string
-          xml:
-            name: Key
-        value:
-          description: value (hex-encoded)
-          format: string
-          type: string
-          xml:
-            name: Value
-      required:
-      - key
-      - value
-      type: object
-      xml:
-        name: Item
-    Item_:
-      example:
-        value: 0x76616c756531
-        key: 0x6b657931
-      properties:
-        key:
-          description: key (hex-encoded)
-          example: 0x6b657931
-          format: string
-          type: string
-          xml:
-            name: Key
-        value:
-          description: value (hex-encoded)
-          example: 0x76616c756531
-          format: string
-          type: string
-          xml:
-            name: Value
-      required:
-      - key
-      - value
-      type: object
-      xml:
-        name: Item
-    JSONDict:
-      example:
-        Items:
-        - value: value
-          key: key
-        - value: value
-          key: key
-      properties:
-        Items:
-          items:
-            $ref: '#/components/schemas/Item'
-          type: array
-          xml:
-            name: Items
-            wrapped: true
-      type: object
-      xml:
-        name: JSONDict
-    JSONDict_:
-      example:
-        Items:
-        - value: 0x76616c756531
-          key: 0x6b657931
-        - value: 0x76616c756531
-          key: 0x6b657931
-      properties:
-        Items:
-          items:
-            $ref: '#/components/schemas/Item_'
-          type: array
-          xml:
-            name: Items
-            wrapped: true
-      type: object
-      xml:
-        name: JSONDict
     L1Params:
       example:
         protocol:
           rentStructure:
-            vByteFactorData: 1
-            vByteCost: 500
-            vByteFactorKey: 10
+            vByteFactorData: 2
+            vByteCost: 1
+            vByteFactorKey: 7
           minPowScore: 1
-          tokenSupply: "2779530283277761"
-          networkName: private_tangle1
-          belowMaxDepth: 15
-          version: 2
-          bech32Hrp: tst
-        maxPayloadSize: 32498
+          tokenSupply: tokenSupply
+          networkName: networkName
+          belowMaxDepth: 1
+          version: 9
+        maxPayloadSize: 6
         baseToken:
-          unit: TEST
-          decimals: 6
-          name: TestCoin
-          tickerSymbol: TEST
-          subunit: testies
+          coinType: coinType
+          unit: unit
+          decimals: 0
+          name: name
+          tickerSymbol: tickerSymbol
+          subunit: subunit
           useMetricPrefix: true
       properties:
         baseToken:
           $ref: '#/components/schemas/BaseToken'
         maxPayloadSize:
           description: The max payload size
-          example: 32498
           format: int32
           type: integer
           xml:
@@ -4093,10 +3781,10 @@ components:
         name: L1Params
     Limits:
       example:
-        maxGasExternalViewCall: 6
-        minGasPerRequest: 5
-        maxGasPerBlock: 1
-        maxGasPerRequest: 5
+        maxGasExternalViewCall: 5
+        minGasPerRequest: 9
+        maxGasPerBlock: 2
+        maxGasPerRequest: 7
       properties:
         maxGasExternalViewCall:
           description: The maximum gas per external view call
@@ -4132,17 +3820,15 @@ components:
         name: Limits
     LoginRequest:
       example:
-        password: wasp
-        username: wasp
+        password: password
+        username: username
       properties:
         password:
-          example: wasp
           format: string
           type: string
           xml:
             name: Password
         username:
-          example: wasp
           format: string
           type: string
           xml:
@@ -4155,7 +3841,7 @@ components:
         name: LoginRequest
     LoginResponse:
       example:
-        jwt: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3YXNwIiwic3ViIjoid2FzcCIsImF1ZCI6WyJ3YXNwIl0sImV4cCI6MTY4OTk1MTAyNCwibmJmIjoxNjg5ODY0NjI0LCJpYXQiOjE2ODk4NjQ2MjQsImp0aSI6IjE2ODk4NjQ2MjQiLCJwZXJtaXNzaW9ucyI6eyJ3cml0ZSI6e319fQ.LNUuTaoRjEPQyD2nQ00O6NeadiG7nmOEyVIQmGNb1a0
+        jwt: jwt
         error: error
       properties:
         error:
@@ -4164,7 +3850,6 @@ components:
           xml:
             name: Error
         jwt:
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ3YXNwIiwic3ViIjoid2FzcCIsImF1ZCI6WyJ3YXNwIl0sImV4cCI6MTY4OTk1MTAyNCwibmJmIjoxNjg5ODY0NjI0LCJpYXQiOjE2ODk4NjQ2MjQsImp0aSI6IjE2ODk4NjQ2MjQiLCJwZXJtaXNzaW9ucyI6eyJ3cml0ZSI6e319fQ.LNUuTaoRjEPQyD2nQ00O6NeadiG7nmOEyVIQmGNb1a0
           format: string
           type: string
           xml:
@@ -4230,41 +3915,6 @@ components:
       type: object
       xml:
         name: MilestoneMetricItem
-    NFTJSON:
-      example:
-        owner: owner
-        metadata: metadata
-        id: id
-        issuer: issuer
-      properties:
-        id:
-          format: string
-          type: string
-          xml:
-            name: ID
-        issuer:
-          format: string
-          type: string
-          xml:
-            name: Issuer
-        metadata:
-          format: string
-          type: string
-          xml:
-            name: Metadata
-        owner:
-          format: string
-          type: string
-          xml:
-            name: Owner
-      required:
-      - id
-      - issuer
-      - metadata
-      - owner
-      type: object
-      xml:
-        name: NFTJSON
     NativeTokenIDRegistryResponse:
       example:
         nativeTokenRegistryIds:
@@ -4284,27 +3934,6 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
-    NativeTokenJSON:
-      example:
-        amount: amount
-        id: id
-      properties:
-        amount:
-          format: string
-          type: string
-          xml:
-            name: Amount
-        id:
-          format: string
-          type: string
-          xml:
-            name: ID
-      required:
-      - amount
-      - id
-      type: object
-      xml:
-        name: NativeTokenJSON
     NodeMessageMetrics:
       example:
         outPublishGovernanceTransaction:
@@ -4575,13 +4204,12 @@ components:
         name: OutputID
     PeeringNodeIdentityResponse:
       example:
-        peeringURL: localhost:4000
+        peeringURL: peeringURL
         name: name
-        publicKey: 0x0000
+        publicKey: publicKey
         isTrusted: true
       properties:
         isTrusted:
-          example: true
           format: boolean
           type: boolean
           xml:
@@ -4593,14 +4221,12 @@ components:
             name: Name
         peeringURL:
           description: The peering URL of the peer
-          example: localhost:4000
           format: string
           type: string
           xml:
             name: PeeringURL
         publicKey:
           description: The peers public key encoded in Hex
-          example: 0x0000
           format: string
           type: string
           xml:
@@ -4666,69 +4292,11 @@ components:
       type: object
       xml:
         name: PeeringNodeStatusResponse
-    PeeringNodeStatusResponse_:
-      example:
-        isAlive: true
-        peeringURL: localhost:4000
-        name: name
-        publicKey: 0x0000
-        numUsers: 1
-        isTrusted: true
-      properties:
-        isAlive:
-          description: Whether or not the peer is activated
-          example: true
-          format: boolean
-          type: boolean
-          xml:
-            name: IsAlive
-        isTrusted:
-          example: true
-          format: boolean
-          type: boolean
-          xml:
-            name: IsTrusted
-        name:
-          format: string
-          type: string
-          xml:
-            name: Name
-        numUsers:
-          description: The amount of users attached to the peer
-          example: 1
-          format: int32
-          type: integer
-          xml:
-            name: NumUsers
-        peeringURL:
-          description: The peering URL of the peer
-          example: localhost:4000
-          format: string
-          type: string
-          xml:
-            name: PeeringURL
-        publicKey:
-          description: The peers public key encoded in Hex
-          example: 0x0000
-          format: string
-          type: string
-          xml:
-            name: PublicKey
-      required:
-      - isAlive
-      - isTrusted
-      - name
-      - numUsers
-      - peeringURL
-      - publicKey
-      type: object
-      xml:
-        name: PeeringNodeStatusResponse
     PeeringTrustRequest:
       example:
-        peeringURL: localhost:4000
+        peeringURL: peeringURL
         name: name
-        publicKey: 0x0000
+        publicKey: publicKey
       properties:
         name:
           format: string
@@ -4737,14 +4305,12 @@ components:
             name: Name
         peeringURL:
           description: The peering URL of the peer
-          example: localhost:4000
           format: string
           type: string
           xml:
             name: PeeringURL
         publicKey:
           description: The peers public key encoded in Hex
-          example: 0x0000
           format: string
           type: string
           xml:
@@ -4759,26 +4325,17 @@ components:
     ProtocolParameters:
       example:
         rentStructure:
-          vByteFactorData: 1
-          vByteCost: 500
-          vByteFactorKey: 10
+          vByteFactorData: 2
+          vByteCost: 1
+          vByteFactorKey: 7
         minPowScore: 1
-        tokenSupply: "2779530283277761"
-        networkName: private_tangle1
-        belowMaxDepth: 15
-        version: 2
-        bech32Hrp: tst
+        tokenSupply: tokenSupply
+        networkName: networkName
+        belowMaxDepth: 1
+        version: 9
       properties:
-        bech32Hrp:
-          description: The human readable network prefix
-          example: tst
-          format: string
-          type: string
-          xml:
-            name: Bech32HRP
         belowMaxDepth:
           description: The networks max depth
-          example: 15
           format: int32
           minimum: 1
           type: integer
@@ -4793,7 +4350,6 @@ components:
             name: MinPoWScore
         networkName:
           description: The network name
-          example: private_tangle1
           format: string
           type: string
           xml:
@@ -4802,20 +4358,17 @@ components:
           $ref: '#/components/schemas/RentStructure'
         tokenSupply:
           description: The token supply
-          example: "2779530283277761"
           format: string
           type: string
           xml:
             name: TokenSupply
         version:
           description: The protocol version
-          example: 2
           format: int32
           type: integer
           xml:
             name: Version
       required:
-      - bech32Hrp
       - belowMaxDepth
       - minPowScore
       - networkName
@@ -4902,56 +4455,6 @@ components:
         name: PublisherStateTransactionItem
     Ratio32:
       example:
-        a: 1
-        b: 1
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32_:
-      example:
-        a: 1
-        b: 100
-      properties:
-        a:
-          example: 1
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: A
-        b:
-          example: 100
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: B
-      required:
-      - a
-      - b
-      type: object
-      xml:
-        name: Ratio32
-    Ratio32__:
-      example:
         a: 0
         b: 0
       properties:
@@ -4973,140 +4476,14 @@ components:
       type: object
       xml:
         name: Ratio32
-    ReceiptResponse:
-      example:
-        gasBurnLog:
-        - code: 6
-          gasBurned: 1
-        - code: 6
-          gasBurned: 1
-        request:
-          fungibleTokens:
-            nfts:
-            - nfts
-            - nfts
-            baseTokens: baseTokens
-            nativeTokens:
-            - amount: amount
-              id: id
-            - amount: amount
-              id: id
-          senderAccount: senderAccount
-          isOffLedger: true
-          requestId: requestId
-          callTarget:
-            contractHName: contractHName
-            functionHName: functionHName
-          gasBudget: gasBudget
-          targetAddress: targetAddress
-          allowance:
-            nfts:
-            - nfts
-            - nfts
-            baseTokens: baseTokens
-            nativeTokens:
-            - amount: amount
-              id: id
-            - amount: amount
-              id: id
-          params:
-            Items:
-            - value: value
-              key: key
-            - value: value
-              key: key
-          nft:
-            owner: owner
-            metadata: metadata
-            id: id
-            issuer: issuer
-          isEVM: true
-        blockIndex: 1
-        rawError:
-          code: code
-          params:
-          - params
-          - params
-        requestIndex: 1
-        storageDepositCharged: storageDepositCharged
-        gasFeeCharged: gasFeeCharged
-        errorMessage: errorMessage
-        gasBudget: gasBudget
-        gasBurned: gasBurned
-      properties:
-        blockIndex:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: BlockIndex
-        errorMessage:
-          format: string
-          type: string
-          xml:
-            name: ErrorMessage
-        gasBudget:
-          description: The gas budget (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBudget
-        gasBurnLog:
-          items:
-            $ref: '#/components/schemas/BurnRecord'
-          type: array
-          xml:
-            name: GasBurnLog
-            wrapped: true
-        gasBurned:
-          description: The burned gas (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBurned
-        gasFeeCharged:
-          description: The charged gas fee (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasFeeCharged
-        rawError:
-          $ref: '#/components/schemas/UnresolvedVMErrorJSON'
-        request:
-          $ref: '#/components/schemas/RequestJSON'
-        requestIndex:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: RequestIndex
-        storageDepositCharged:
-          description: Storage deposit charged (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: SDCharged
-      required:
-      - blockIndex
-      - gasBudget
-      - gasBurnLog
-      - gasBurned
-      - gasFeeCharged
-      - request
-      - requestIndex
-      - storageDepositCharged
-      type: object
-      xml:
-        name: ReceiptResponse
     RentStructure:
       example:
-        vByteFactorData: 1
-        vByteCost: 500
-        vByteFactorKey: 10
+        vByteFactorData: 2
+        vByteCost: 1
+        vByteFactorKey: 7
       properties:
         vByteCost:
           description: The virtual byte cost
-          example: 500
           format: int32
           minimum: 1
           type: integer
@@ -5114,14 +4491,12 @@ components:
             name: VByteCost
         vByteFactorData:
           description: The virtual byte factor for data fields
-          example: 1
           format: int32
           type: integer
           xml:
             name: VBFactorData
         vByteFactorKey:
           description: The virtual byte factor for key/lookup generating fields
-          example: 10
           format: int32
           type: integer
           xml:
@@ -5152,105 +4527,6 @@ components:
       type: object
       xml:
         name: RequestIDsResponse
-    RequestJSON:
-      example:
-        fungibleTokens:
-          nfts:
-          - nfts
-          - nfts
-          baseTokens: baseTokens
-          nativeTokens:
-          - amount: amount
-            id: id
-          - amount: amount
-            id: id
-        senderAccount: senderAccount
-        isOffLedger: true
-        requestId: requestId
-        callTarget:
-          contractHName: contractHName
-          functionHName: functionHName
-        gasBudget: gasBudget
-        targetAddress: targetAddress
-        allowance:
-          nfts:
-          - nfts
-          - nfts
-          baseTokens: baseTokens
-          nativeTokens:
-          - amount: amount
-            id: id
-          - amount: amount
-            id: id
-        params:
-          Items:
-          - value: value
-            key: key
-          - value: value
-            key: key
-        nft:
-          owner: owner
-          metadata: metadata
-          id: id
-          issuer: issuer
-        isEVM: true
-      properties:
-        allowance:
-          $ref: '#/components/schemas/AssetsJSON'
-        callTarget:
-          $ref: '#/components/schemas/CallTargetJSON'
-        fungibleTokens:
-          $ref: '#/components/schemas/AssetsJSON'
-        gasBudget:
-          description: The gas budget (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: GasBudget
-        isEVM:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsEVM
-        isOffLedger:
-          format: boolean
-          type: boolean
-          xml:
-            name: IsOffLedger
-        nft:
-          $ref: '#/components/schemas/NFTJSON'
-        params:
-          $ref: '#/components/schemas/JSONDict'
-        requestId:
-          format: string
-          type: string
-          xml:
-            name: RequestID
-        senderAccount:
-          format: string
-          type: string
-          xml:
-            name: SenderAccount
-        targetAddress:
-          format: string
-          type: string
-          xml:
-            name: TargetAddress
-      required:
-      - allowance
-      - callTarget
-      - fungibleTokens
-      - gasBudget
-      - isEVM
-      - isOffLedger
-      - nft
-      - params
-      - requestId
-      - senderAccount
-      - targetAddress
-      type: object
-      xml:
-        name: RequestJSON
     RequestProcessedResponse:
       example:
         chainId: chainId
@@ -5465,29 +4741,6 @@ components:
       type: object
       xml:
         name: UTXOInputMetricItem
-    UnresolvedVMErrorJSON:
-      example:
-        code: code
-        params:
-        - params
-        - params
-      properties:
-        code:
-          format: string
-          type: string
-          xml:
-            name: ErrorCode
-        params:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: Params
-            wrapped: true
-      type: object
-      xml:
-        name: UnresolvedVMErrorJSON
     UpdateUserPasswordRequest:
       example:
         password: password

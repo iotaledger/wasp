@@ -1,4 +1,4 @@
-package suitest
+package iotatest
 
 import (
 	"math/rand"

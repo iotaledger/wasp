@@ -37,11 +37,11 @@ func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams,
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		suiAddress := txs[i].AsSuiAddress()
-		request, err := chain.Env.ISCMoveClient().GetRequestFromObjectID(chain.Env.Ctx(), &suiAddress)
+		iotaAddress := txs[i].AsIotaAddress()
+		request, err := chain.Env.ISCMoveClient().GetRequestFromObjectID(chain.Env.Ctx(), &iotaAddress)
 		require.NoError(b, err)
 
-		address := cryptolib.NewAddressFromSui(chain.GetLatestAnchor().GetObjectID())
+		address := cryptolib.NewAddressFromIota(chain.GetLatestAnchor().GetObjectID())
 		iscRequest, err := isc.OnLedgerFromRequest(request, address)
 		require.NoError(b, err)
 

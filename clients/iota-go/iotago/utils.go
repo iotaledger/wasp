@@ -1,6 +1,6 @@
 package iotago
 
 const (
-	UnitSui  = 1e9
+	UnitIota = 1e9
 	UnitMist = 1
 )

@@ -16,7 +16,7 @@ func (s *StateReader) coinInfosMapR() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, keyCoinInfo)
 }
 
-func (s *StateWriter) SaveCoinInfo(rec *isc.SuiCoinInfo) {
+func (s *StateWriter) SaveCoinInfo(rec *isc.IotaCoinInfo) {
 	s.coinInfosMap().SetAt(rec.CoinType.Bytes(), rec.Bytes())
 }
 
@@ -24,10 +24,10 @@ func (s *StateWriter) DeleteCoinInfo(coinType coin.Type) {
 	s.coinInfosMap().DelAt(coinType.Bytes())
 }
 
-func (s *StateReader) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+func (s *StateReader) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
 	data := s.coinInfosMapR().GetAt(coinType.Bytes())
 	if data == nil {
 		return nil, false
 	}
-	return lo.Must(isc.SuiCoinInfoFromBytes(data)), true
+	return lo.Must(isc.IotaCoinInfoFromBytes(data)), true
 }

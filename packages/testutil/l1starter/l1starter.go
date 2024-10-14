@@ -141,7 +141,7 @@ func (in *IotaNode) Stop() {
 			return
 		}
 
-		panic(fmt.Errorf("SUI node failed: %s", in.Cmd.ProcessState.String()))
+		panic(fmt.Errorf("IOTA node failed: %s", in.Cmd.ProcessState.String()))
 	}
 
 	if !instance.CompareAndSwap(in, nil) {
@@ -158,7 +158,7 @@ func (in *IotaNode) waitAllHealthy(timeout time.Duration) {
 	defer cancel()
 
 	ts := time.Now()
-	in.logf("Waiting for all SUI nodes to become healthy...")
+	in.logf("Waiting for all IOTA nodes to become healthy...")
 
 	tryLoop := func(f func() bool) {
 		for {
@@ -174,7 +174,7 @@ func (in *IotaNode) waitAllHealthy(timeout time.Duration) {
 	}
 
 	tryLoop(func() bool {
-		res, err := in.Client().GetLatestSuiSystemState(in.ctx)
+		res, err := in.Client().GetLatestIotaSystemState(in.ctx)
 		if err != nil {
 			in.logf("err: %s", err)
 		}
@@ -238,7 +238,7 @@ func (in *IotaNode) deployISCContracts() iotago.PackageID {
 		context.Background(),
 		ISCPackageOwner,
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

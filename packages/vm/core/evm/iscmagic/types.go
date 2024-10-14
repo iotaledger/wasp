@@ -38,8 +38,8 @@ func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 	return isc.AgentIDFromBytes(a.Data)
 }
 
-// TokenIDFromSuiObjectID returns the uint256 tokenID for ERC721
-func TokenIDFromSuiObjectID(o iotago.ObjectID) *big.Int {
+// TokenIDFromIotaObjectID returns the uint256 tokenID for ERC721
+func TokenIDFromIotaObjectID(o iotago.ObjectID) *big.Int {
 	return new(big.Int).SetBytes(o[:])
 }
 

@@ -25,10 +25,10 @@ func TestMain(m *testing.M) {
 
 func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*iotago.ObjectRef, *iotago.ObjectInfo) {
 	testcoinBytecode := contracts.Testcoin()
-	suiSigner := cryptolib.SignerToSuiSigner(signer)
+	iotaSigner := cryptolib.SignerToIotaSigner(signer)
 
 	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          signer.Address().AsSuiAddress(),
+		Sender:          signer.Address().AsIotaAddress(),
 		CompiledModules: testcoinBytecode.Modules,
 		Dependencies:    testcoinBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
@@ -36,9 +36,9 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		suiSigner,
+		iotaSigner,
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -50,7 +50,7 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 	require.NoError(t, err)
 	getObjectRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: packageID,
-		Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 	})
 	require.NoError(t, err)
 	packageRef := getObjectRes.Data.Ref()
@@ -61,12 +61,12 @@ func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer 
 	mintAmount := uint64(1000000)
 	txnRes, err := client.MintToken(
 		context.Background(),
-		suiSigner,
+		iotaSigner,
 		packageID,
 		"testcoin",
 		treasuryCapRef.ObjectID,
 		mintAmount,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

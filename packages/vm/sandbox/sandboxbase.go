@@ -76,7 +76,7 @@ func (s *SandboxBase) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	return s.Ctx.GetObjectBCS(id)
 }
 
-func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
 	s.Ctx.GasBurn(gas.BurnCodeGetCoinInfo)
 	return s.Ctx.GetCoinInfo(coinType)
 }

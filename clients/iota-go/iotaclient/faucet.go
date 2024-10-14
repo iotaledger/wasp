@@ -15,8 +15,6 @@ import (
 
 const FundsFromFaucetAmount = 1_000_000_000_000
 
-// refer the implementation of `request_tokens_from_faucet()` in
-// https://github.com/MystenLabs/sui/blob/main/crates/sui-sdk/examples/utils.rs#L91
 func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetUrl string) error {
 	paramJson := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, faucetUrl, bytes.NewBuffer([]byte(paramJson)))

@@ -72,8 +72,8 @@ const apiInstance = new .AuthApi(configuration);
 let body:.AuthApiAuthenticateRequest = {
   // LoginRequest | The login request
   loginRequest: {
-    password: "wasp",
-    username: "wasp",
+    password: "password_example",
+    username: "username_example",
   },
 };
 

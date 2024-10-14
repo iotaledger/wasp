@@ -19,7 +19,8 @@ var _ MappedNullable = &ContractCallViewRequest{}
 
 // ContractCallViewRequest struct for ContractCallViewRequest
 type ContractCallViewRequest struct {
-	Arguments JSONDict `json:"arguments"`
+	// Encoded arguments to be passed to the function
+	Arguments [][]int32 `json:"arguments"`
 	Block *string `json:"block,omitempty"`
 	// The contract name as HName (Hex)
 	ContractHName string `json:"contractHName"`
@@ -35,7 +36,7 @@ type ContractCallViewRequest struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewContractCallViewRequest(arguments JSONDict, contractHName string, contractName string, functionHName string, functionName string) *ContractCallViewRequest {
+func NewContractCallViewRequest(arguments [][]int32, contractHName string, contractName string, functionHName string, functionName string) *ContractCallViewRequest {
 	this := ContractCallViewRequest{}
 	this.Arguments = arguments
 	this.ContractHName = contractHName
@@ -54,9 +55,9 @@ func NewContractCallViewRequestWithDefaults() *ContractCallViewRequest {
 }
 
 // GetArguments returns the Arguments field value
-func (o *ContractCallViewRequest) GetArguments() JSONDict {
+func (o *ContractCallViewRequest) GetArguments() [][]int32 {
 	if o == nil {
-		var ret JSONDict
+		var ret [][]int32
 		return ret
 	}
 
@@ -65,15 +66,15 @@ func (o *ContractCallViewRequest) GetArguments() JSONDict {
 
 // GetArgumentsOk returns a tuple with the Arguments field value
 // and a boolean to check if the value has been set.
-func (o *ContractCallViewRequest) GetArgumentsOk() (*JSONDict, bool) {
+func (o *ContractCallViewRequest) GetArgumentsOk() ([][]int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Arguments, true
+	return o.Arguments, true
 }
 
 // SetArguments sets field value
-func (o *ContractCallViewRequest) SetArguments(v JSONDict) {
+func (o *ContractCallViewRequest) SetArguments(v [][]int32) {
 	o.Arguments = v
 }
 

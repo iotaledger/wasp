@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-type SuiCoinInfo struct {
+type IotaCoinInfo struct {
 	CoinType    coin.Type
 	Decimals    uint8
 	Name        string
@@ -16,13 +16,13 @@ type SuiCoinInfo struct {
 	TotalSupply coin.Value
 }
 
-type SuiCoinInfos = map[coin.Type]*SuiCoinInfo
+type IotaCoinInfos = map[coin.Type]*IotaCoinInfo
 
-func (s *SuiCoinInfo) Bytes() []byte {
+func (s *IotaCoinInfo) Bytes() []byte {
 	return bcs.MustMarshal(s)
 }
 
-func (s *SuiCoinInfo) Equals(other *SuiCoinInfo) bool {
+func (s *IotaCoinInfo) Equals(other *IotaCoinInfo) bool {
 	return s.CoinType == other.CoinType &&
 		s.Decimals == other.Decimals &&
 		s.Name == other.Name &&
@@ -32,17 +32,17 @@ func (s *SuiCoinInfo) Equals(other *SuiCoinInfo) bool {
 		s.TotalSupply == other.TotalSupply
 }
 
-func SuiCoinInfoFromBytes(b []byte) (*SuiCoinInfo, error) {
-	ret, err := bcs.Unmarshal[SuiCoinInfo](b)
+func IotaCoinInfoFromBytes(b []byte) (*IotaCoinInfo, error) {
+	ret, err := bcs.Unmarshal[IotaCoinInfo](b)
 	return &ret, err
 }
 
-func SuiCoinInfoFromL1Metadata(
+func IotaCoinInfoFromL1Metadata(
 	coinType coin.Type,
-	metadata *iotajsonrpc.SuiCoinMetadata,
+	metadata *iotajsonrpc.IotaCoinMetadata,
 	totalSupply coin.Value,
-) *SuiCoinInfo {
-	return &SuiCoinInfo{
+) *IotaCoinInfo {
+	return &IotaCoinInfo{
 		CoinType:    coinType,
 		Decimals:    metadata.Decimals,
 		Name:        metadata.Name,
@@ -53,4 +53,4 @@ func SuiCoinInfoFromL1Metadata(
 	}
 }
 
-var BaseTokenCoinInfo = &SuiCoinInfo{CoinType: coin.BaseTokenType}
+var BaseTokenCoinInfo = &IotaCoinInfo{CoinType: coin.BaseTokenType}

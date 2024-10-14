@@ -6,11 +6,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
-const MAX_INPUT_COUNT_MERGE = 256 - 1 // TODO find reference in Sui monorepo repo
+const MAX_INPUT_COUNT_MERGE = 256 - 1 // TODO find reference in Iota monorepo repo
 
 type PickedCoins struct {
-	Coins       Coins
-	TotalAmount *big.Int
+	Coins        Coins
+	TotalAmount  *big.Int
 	TargetAmount *big.Int
 }
 

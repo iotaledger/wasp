@@ -27,7 +27,6 @@ type BlockInfoResponse struct {
 	GasFeeCharged string `json:"gasFeeCharged"`
 	NumOffLedgerRequests uint32 `json:"numOffLedgerRequests"`
 	NumSuccessfulRequests uint32 `json:"numSuccessfulRequests"`
-	PreviousAliasOutput string `json:"previousAliasOutput"`
 	Timestamp time.Time `json:"timestamp"`
 	TotalRequests uint32 `json:"totalRequests"`
 }
@@ -36,14 +35,13 @@ type BlockInfoResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousAliasOutput string, timestamp time.Time, totalRequests uint32) *BlockInfoResponse {
+func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, timestamp time.Time, totalRequests uint32) *BlockInfoResponse {
 	this := BlockInfoResponse{}
 	this.BlockIndex = blockIndex
 	this.GasBurned = gasBurned
 	this.GasFeeCharged = gasFeeCharged
 	this.NumOffLedgerRequests = numOffLedgerRequests
 	this.NumSuccessfulRequests = numSuccessfulRequests
-	this.PreviousAliasOutput = previousAliasOutput
 	this.Timestamp = timestamp
 	this.TotalRequests = totalRequests
 	return &this
@@ -177,30 +175,6 @@ func (o *BlockInfoResponse) SetNumSuccessfulRequests(v uint32) {
 	o.NumSuccessfulRequests = v
 }
 
-// GetPreviousAliasOutput returns the PreviousAliasOutput field value
-func (o *BlockInfoResponse) GetPreviousAliasOutput() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.PreviousAliasOutput
-}
-
-// GetPreviousAliasOutputOk returns a tuple with the PreviousAliasOutput field value
-// and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetPreviousAliasOutputOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.PreviousAliasOutput, true
-}
-
-// SetPreviousAliasOutput sets field value
-func (o *BlockInfoResponse) SetPreviousAliasOutput(v string) {
-	o.PreviousAliasOutput = v
-}
-
 // GetTimestamp returns the Timestamp field value
 func (o *BlockInfoResponse) GetTimestamp() time.Time {
 	if o == nil {
@@ -264,7 +238,6 @@ func (o BlockInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["gasFeeCharged"] = o.GasFeeCharged
 	toSerialize["numOffLedgerRequests"] = o.NumOffLedgerRequests
 	toSerialize["numSuccessfulRequests"] = o.NumSuccessfulRequests
-	toSerialize["previousAliasOutput"] = o.PreviousAliasOutput
 	toSerialize["timestamp"] = o.Timestamp
 	toSerialize["totalRequests"] = o.TotalRequests
 	return toSerialize, nil

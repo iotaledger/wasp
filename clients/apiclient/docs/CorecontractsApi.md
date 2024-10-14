@@ -12,8 +12,6 @@ Method | HTTP request | Description
 [**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
 [**AccountsGetNativeTokenIDRegistry**](CorecontractsApi.md#AccountsGetNativeTokenIDRegistry) | **Get** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
 [**AccountsGetTotalAssets**](CorecontractsApi.md#AccountsGetTotalAssets) | **Get** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**BlobsGetBlobInfo**](CorecontractsApi.md#BlobsGetBlobInfo) | **Get** /v1/chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
-[**BlobsGetBlobValue**](CorecontractsApi.md#BlobsGetBlobValue) | **Get** /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
 [**BlocklogGetBlockInfo**](CorecontractsApi.md#BlocklogGetBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
 [**BlocklogGetControlAddresses**](CorecontractsApi.md#BlocklogGetControlAddresses) | **Get** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
 [**BlocklogGetEventsOfBlock**](CorecontractsApi.md#BlocklogGetEventsOfBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
@@ -52,8 +50,8 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
+    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -74,8 +72,8 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+**chainID** | **string** | ChainID (Hex Address) | 
+**agentID** | **string** | AgentID (Hex Address for L1 accounts | Hex for EVM) | 
 
 ### Other Parameters
 
@@ -125,8 +123,8 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
+    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts, Hex for EVM)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -147,8 +145,8 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+**chainID** | **string** | ChainID (Hex Address) | 
+**agentID** | **string** | AgentID (Hex Address for L1 accounts, Hex for EVM) | 
 
 ### Other Parameters
 
@@ -198,8 +196,8 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
+    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -220,8 +218,8 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+**chainID** | **string** | ChainID (Hex Address) | 
+**agentID** | **string** | AgentID (Hex Address for L1 accounts | Hex for EVM) | 
 
 ### Other Parameters
 
@@ -271,8 +269,8 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    agentID := "agentID_example" // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
+    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -293,8 +291,8 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**agentID** | **string** | AgentID (Bech32 for WasmVM | Hex for EVM) | 
+**chainID** | **string** | ChainID (Hex Address) | 
+**agentID** | **string** | AgentID (Hex Address for L1 accounts | Hex for EVM) | 
 
 ### Other Parameters
 
@@ -344,7 +342,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     serialNumber := uint32(56) // uint32 | Serial Number (uint32)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -366,7 +364,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **serialNumber** | **uint32** | Serial Number (uint32) | 
 
 ### Other Parameters
@@ -400,7 +398,7 @@ No authorization required
 
 ## AccountsGetNFTData
 
-> NFTJSON AccountsGetNFTData(ctx, chainID, nftID).Block(block).Execute()
+> AccountsGetNFTData(ctx, chainID, nftID).Block(block).Execute()
 
 Get the NFT data by an ID
 
@@ -417,7 +415,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     nftID := "nftID_example" // string | NFT ID (Hex)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -428,8 +426,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetNFTData``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `AccountsGetNFTData`: NFTJSON
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetNFTData`: %v\n", resp)
 }
 ```
 
@@ -439,7 +435,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **nftID** | **string** | NFT ID (Hex) | 
 
 ### Other Parameters
@@ -455,7 +451,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**NFTJSON**](NFTJSON.md)
+ (empty response body)
 
 ### Authorization
 
@@ -490,7 +486,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -511,7 +507,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -560,7 +556,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -581,7 +577,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -596,155 +592,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**AssetsResponse**](AssetsResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## BlobsGetBlobInfo
-
-> BlobInfoResponse BlobsGetBlobInfo(ctx, chainID, blobHash).Block(block).Execute()
-
-Get all fields of a blob
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    blobHash := "blobHash_example" // string | BlobHash (Hex)
-    block := "block_example" // string | Block index or trie root (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlobsGetBlobInfo(context.Background(), chainID, blobHash).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlobsGetBlobInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlobsGetBlobInfo`: BlobInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlobsGetBlobInfo`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**blobHash** | **string** | BlobHash (Hex) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiBlobsGetBlobInfoRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**BlobInfoResponse**](BlobInfoResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## BlobsGetBlobValue
-
-> BlobValueResponse BlobsGetBlobValue(ctx, chainID, blobHash, fieldKey).Block(block).Execute()
-
-Get the value of the supplied field (key)
-
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    blobHash := "blobHash_example" // string | BlobHash (Hex)
-    fieldKey := "fieldKey_example" // string | FieldKey (String)
-    block := "block_example" // string | Block index or trie root (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlobsGetBlobValue(context.Background(), chainID, blobHash, fieldKey).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlobsGetBlobValue``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlobsGetBlobValue`: BlobValueResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlobsGetBlobValue`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
-**blobHash** | **string** | BlobHash (Hex) | 
-**fieldKey** | **string** | FieldKey (String) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiBlobsGetBlobValueRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**BlobValueResponse**](BlobValueResponse.md)
 
 ### Authorization
 
@@ -779,7 +626,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -801,7 +648,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
@@ -852,7 +699,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -873,7 +720,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -922,7 +769,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -944,7 +791,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
@@ -995,7 +842,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1016,7 +863,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1065,7 +912,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     requestID := "requestID_example" // string | RequestID (Hex)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -1087,7 +934,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -1138,7 +985,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1159,7 +1006,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1208,7 +1055,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -1230,7 +1077,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
@@ -1281,7 +1128,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1302,7 +1149,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1351,7 +1198,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     requestID := "requestID_example" // string | RequestID (Hex)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -1373,7 +1220,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -1407,7 +1254,7 @@ No authorization required
 
 ## BlocklogGetRequestReceipt
 
-> ReceiptResponse BlocklogGetRequestReceipt(ctx, chainID, requestID).Block(block).Execute()
+> BlocklogGetRequestReceipt(ctx, chainID, requestID).Block(block).Execute()
 
 Get the receipt of a certain request id
 
@@ -1424,7 +1271,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     requestID := "requestID_example" // string | RequestID (Hex)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -1435,8 +1282,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceipt``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `BlocklogGetRequestReceipt`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceipt`: %v\n", resp)
 }
 ```
 
@@ -1446,7 +1291,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -1462,7 +1307,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -1480,7 +1325,7 @@ No authorization required
 
 ## BlocklogGetRequestReceiptsOfBlock
 
-> []ReceiptResponse BlocklogGetRequestReceiptsOfBlock(ctx, chainID, blockIndex).Block(block).Execute()
+> BlocklogGetRequestReceiptsOfBlock(ctx, chainID, blockIndex).Block(block).Execute()
 
 Get all receipts of a certain block
 
@@ -1497,7 +1342,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
     block := "block_example" // string | Block index or trie root (optional)
 
@@ -1508,8 +1353,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceiptsOfBlock``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `BlocklogGetRequestReceiptsOfBlock`: []ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceiptsOfBlock`: %v\n", resp)
 }
 ```
 
@@ -1519,7 +1362,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
@@ -1535,7 +1378,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**[]ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -1553,7 +1396,7 @@ No authorization required
 
 ## BlocklogGetRequestReceiptsOfLatestBlock
 
-> []ReceiptResponse BlocklogGetRequestReceiptsOfLatestBlock(ctx, chainID).Block(block).Execute()
+> BlocklogGetRequestReceiptsOfLatestBlock(ctx, chainID).Block(block).Execute()
 
 Get all receipts of the latest block
 
@@ -1570,7 +1413,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1580,8 +1423,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `BlocklogGetRequestReceiptsOfLatestBlock`: []ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock`: %v\n", resp)
 }
 ```
 
@@ -1591,7 +1432,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1605,7 +1446,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**[]ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -1640,7 +1481,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     contractHname := "contractHname_example" // string | Contract (Hname as Hex)
     errorID := uint32(56) // uint32 | Error Id (uint16)
     block := "block_example" // string | Block index or trie root (optional)
@@ -1663,7 +1504,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **contractHname** | **string** | Contract (Hname as Hex) | 
 **errorID** | **uint32** | Error Id (uint16) | 
 
@@ -1718,7 +1559,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1739,7 +1580,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1790,7 +1631,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1811,7 +1652,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1862,7 +1703,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -1883,7 +1724,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 

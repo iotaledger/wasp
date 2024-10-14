@@ -19,8 +19,8 @@ type GetDynamicFieldObjectRequest struct {
 func (c *Client) GetDynamicFieldObject(
 	ctx context.Context,
 	req GetDynamicFieldObjectRequest,
-) (*iotajsonrpc.SuiObjectResponse, error) {
-	var resp iotajsonrpc.SuiObjectResponse
+) (*iotajsonrpc.IotaObjectResponse, error) {
+	var resp iotajsonrpc.IotaObjectResponse
 	return &resp, c.transport.Call(ctx, &resp, getDynamicFieldObject, req.ParentObjectID, req.Name)
 }
 
@@ -39,10 +39,10 @@ func (c *Client) GetDynamicFields(
 }
 
 type GetOwnedObjectsRequest struct {
-	// Address is the owner's Sui address
+	// Address is the owner's Iota address
 	Address *iotago.Address
 	// [optional] Query is the objects query criteria.
-	Query *iotajsonrpc.SuiObjectResponseQuery
+	Query *iotajsonrpc.IotaObjectResponseQuery
 	// [optional] Cursor is an optional paging cursor.
 	// If provided, the query will start from the next item after the specified cursor.
 	Cursor *iotago.ObjectID
@@ -75,7 +75,7 @@ func (c *Client) QueryEvents(
 }
 
 type QueryTransactionBlocksRequest struct {
-	Query           *iotajsonrpc.SuiTransactionBlockResponseQuery
+	Query           *iotajsonrpc.IotaTransactionBlockResponseQuery
 	Cursor          *iotago.TransactionDigest // optional
 	Limit           *uint                     // optional
 	DescendingOrder bool                      // optional
@@ -97,11 +97,11 @@ func (c *Client) QueryTransactionBlocks(
 	)
 }
 
-func (c *Client) ResolveNameServiceAddress(ctx context.Context, suiName string) (*iotago.Address, error) {
+func (c *Client) ResolveNameServiceAddress(ctx context.Context, iotaName string) (*iotago.Address, error) {
 	var resp iotago.Address
-	err := c.transport.Call(ctx, &resp, resolveNameServiceAddress, suiName)
+	err := c.transport.Call(ctx, &resp, resolveNameServiceAddress, iotaName)
 	if err != nil && err.Error() == "nil address" {
-		return nil, errors.New("iotago name not found")
+		return nil, errors.New("iota name not found")
 	}
 	return &resp, nil
 }
@@ -115,15 +115,15 @@ type ResolveNameServiceNamesRequest struct {
 func (c *Client) ResolveNameServiceNames(
 	ctx context.Context,
 	req ResolveNameServiceNamesRequest,
-) (*iotajsonrpc.SuiNamePage, error) {
-	var resp iotajsonrpc.SuiNamePage
+) (*iotajsonrpc.IotaNamePage, error) {
+	var resp iotajsonrpc.IotaNamePage
 	return &resp, c.transport.Call(ctx, &resp, resolveNameServiceNames, req.Owner, req.Cursor, req.Limit)
 }
 
 func (s *Client) SubscribeEvent(
 	ctx context.Context,
 	filter *iotajsonrpc.EventFilter,
-	resultCh chan<- *iotajsonrpc.SuiEvent,
+	resultCh chan<- *iotajsonrpc.IotaEvent,
 ) error {
 	wsCh := make(chan []byte, 10)
 	err := s.transport.Subscribe(ctx, wsCh, subscribeEvent, filter)
@@ -139,7 +139,7 @@ func (s *Client) SubscribeEvent(
 				if !ok {
 					return
 				}
-				var result *iotajsonrpc.SuiEvent
+				var result *iotajsonrpc.IotaEvent
 				if err := json.Unmarshal(messageData, &result); err != nil {
 					log.Fatal(err)
 				}
@@ -153,7 +153,7 @@ func (s *Client) SubscribeEvent(
 func (s *Client) SubscribeTransaction(
 	ctx context.Context,
 	filter *iotajsonrpc.TransactionFilter,
-	resultCh chan<- *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects],
+	resultCh chan<- *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
 ) error {
 	wsCh := make(chan []byte, 10)
 	err := s.transport.Subscribe(ctx, wsCh, subscribeTransaction, filter)
@@ -170,7 +170,7 @@ func (s *Client) SubscribeTransaction(
 				if !ok {
 					return
 				}
-				var result *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects]
+				var result *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]
 				if err := json.Unmarshal(messageData, &result); err != nil {
 					log.Fatal(err)
 				}

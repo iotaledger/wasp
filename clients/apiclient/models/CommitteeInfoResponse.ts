@@ -27,7 +27,7 @@ export class CommitteeInfoResponse {
     */
     'candidateNodes': Array<CommitteeNode>;
     /**
-    * ChainID (Bech32-encoded).
+    * ChainID (Hex Address).
     */
     'chainId': string;
     /**

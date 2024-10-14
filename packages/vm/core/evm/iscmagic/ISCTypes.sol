@@ -17,13 +17,13 @@ address constant ISC_ERC20BASETOKENS_ADDRESS = 0x1074010000000000000000000000000
 address constant ISC_ERC721_ADDRESS = 0x1074030000000000000000000000000000000000;
 
 // A L1 address
-type SuiAddress is bytes32;
+type IotaAddress is bytes32;
 
-// A Sui ObjectID
-type SuiObjectID is bytes32;
+// A Iota ObjectID
+type IotaObjectID is bytes32;
 
 // Information about a given L1 coin
-struct SuiCoinInfo {
+struct IotaCoinInfo {
     string coinType;
     uint8 decimals;
     string name;
@@ -98,17 +98,17 @@ struct ISCSendOptions {
 // Expiration of an on-ledger request
 struct ISCExpiration {
     int64 time;
-    SuiAddress returnAddress;
+    IotaAddress returnAddress;
 }
 
 
 // A collection of coins and object IDs
 struct ISCAssets {
     CoinBalance[] coins;
-    SuiObjectID[] objects;
+    IotaObjectID[] objects;
 }
 
-// An amount of some Sui coin
+// An amount of some Iota coin
 struct CoinBalance {
     string coinType;
     uint64 amount;
@@ -139,7 +139,7 @@ library ISCTypes {
         return r;
     }
 
-    function newL1AgentID(SuiAddress addr) internal pure returns (ISCAgentID memory) {
+    function newL1AgentID(IotaAddress addr) internal pure returns (ISCAgentID memory) {
         bytes memory addrBytes = abi.encodePacked(addr);
 
         ISCAgentID memory r;
@@ -177,13 +177,13 @@ library ISCTypes {
         return ISCChainID.wrap(out);
     }
 
-    function asObjectID(uint256 tokenID) internal pure returns (SuiObjectID) {
-        return SuiObjectID.wrap(bytes32(tokenID));
+    function asObjectID(uint256 tokenID) internal pure returns (IotaObjectID) {
+        return IotaObjectID.wrap(bytes32(tokenID));
     }
 
     function isInCollection(
         ISCNFT memory,
-        SuiObjectID
+        IotaObjectID
     ) internal pure returns (bool) {
         assert(false); // TODO
         // return nft.issuer == collectionId;

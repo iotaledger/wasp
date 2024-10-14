@@ -334,7 +334,7 @@ func (p *ProgrammableTransactionBuilder) TransferObject(recipient *Address, obje
 	return nil
 }
 
-func (p *ProgrammableTransactionBuilder) TransferSui(recipient *Address, amount *uint64) error {
+func (p *ProgrammableTransactionBuilder) TransferIota(recipient *Address, amount *uint64) error {
 	recArg, err := p.Pure(recipient)
 	if err != nil {
 		return fmt.Errorf("can't add recipient as arg: %w", err)
@@ -365,7 +365,7 @@ func (p *ProgrammableTransactionBuilder) TransferSui(recipient *Address, amount 
 }
 
 // the gas coin is consumed as the coin to be paid
-func (p *ProgrammableTransactionBuilder) PayAllSui(recipient *Address) error {
+func (p *ProgrammableTransactionBuilder) PayAllIota(recipient *Address) error {
 	recArg, err := p.Pure(recipient)
 	if err != nil {
 		return fmt.Errorf("can't add recipient as arg: %w", err)
@@ -398,7 +398,7 @@ func (p *ProgrammableTransactionBuilder) SplitCoin(coinRef *ObjectRef, amounts [
 }
 
 // the gas coin is consumed as the coin to be paid
-func (p *ProgrammableTransactionBuilder) PaySui(recipients []*Address, amounts []uint64) error {
+func (p *ProgrammableTransactionBuilder) PayIota(recipients []*Address, amounts []uint64) error {
 	return p.payImpl(recipients, amounts, Argument{GasCoin: &serialization.EmptyEnum{}})
 }
 

@@ -14,7 +14,7 @@ import { HttpFile } from '../http/http';
 
 export class GovAllowedStateControllerAddressesResponse {
     /**
-    * The allowed state controller addresses (Bech32-encoded)
+    * The allowed state controller addresses (Hex Address)
     */
     'addresses'?: Array<string>;
 

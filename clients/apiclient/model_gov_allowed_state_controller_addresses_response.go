@@ -19,7 +19,7 @@ var _ MappedNullable = &GovAllowedStateControllerAddressesResponse{}
 
 // GovAllowedStateControllerAddressesResponse struct for GovAllowedStateControllerAddressesResponse
 type GovAllowedStateControllerAddressesResponse struct {
-	// The allowed state controller addresses (Bech32-encoded)
+	// The allowed state controller addresses (Hex Address)
 	Addresses []string `json:"addresses,omitempty"`
 }
 

@@ -39,7 +39,7 @@ var Processor = Contract.Processor(nil,
 )
 
 // this expects the origin amount minus SD
-func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *isc.SuiCoinInfo) {
+func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *isc.IotaCoinInfo) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
 	s.SaveCoinInfo(baseTokenCoinInfo)
 	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor), isc.ChainID{})
@@ -107,7 +107,7 @@ func withdraw(ctx isc.Sandbox) {
 	)
 }
 
-func setCoinMetadata(ctx isc.Sandbox, coinInfo *isc.SuiCoinInfo) {
+func setCoinMetadata(ctx isc.Sandbox, coinInfo *isc.IotaCoinInfo) {
 	ctx.RequireCallerIsChainOwner()
 	NewStateWriterFromSandbox(ctx).SaveCoinInfo(coinInfo)
 }

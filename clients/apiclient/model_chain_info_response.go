@@ -19,9 +19,9 @@ var _ MappedNullable = &ChainInfoResponse{}
 
 // ChainInfoResponse struct for ChainInfoResponse
 type ChainInfoResponse struct {
-	// ChainID (Bech32-encoded)
+	// ChainID (Hex Address)
 	ChainID string `json:"chainID"`
-	// The chain owner address (Bech32-encoded)
+	// The chain owner address (Hex Address)
 	ChainOwnerId string `json:"chainOwnerId"`
 	// The EVM chain ID
 	EvmChainId uint32 `json:"evmChainId"`

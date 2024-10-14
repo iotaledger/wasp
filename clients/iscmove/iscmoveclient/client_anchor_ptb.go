@@ -34,7 +34,7 @@ func PTBStartNewChain(
 		iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{arg1},
-				Address: ptb.MustPure(ownerAddress.AsSuiAddress()),
+				Address: ptb.MustPure(ownerAddress.AsIotaAddress()),
 			},
 		},
 	)

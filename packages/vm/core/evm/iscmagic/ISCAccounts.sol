@@ -21,7 +21,7 @@ interface ISCAccounts {
 
     // Get the list of objects owned by an account on L2
     function getL2Objects(ISCAgentID memory agentID) external view
-        returns (SuiObjectID[] memory);
+        returns (IotaObjectID[] memory);
 
     // Get the amount of objects owned by an account on L2
     function getL2ObjectsCount(ISCAgentID memory agentID) external view
@@ -30,13 +30,13 @@ interface ISCAccounts {
     // Get the objects of a given collection owned by an account on L2
     function getL2ObjectsInCollection(
         ISCAgentID memory agentID,
-        SuiObjectID collectionId
-    ) external view returns (SuiObjectID[] memory);
+        IotaObjectID collectionId
+    ) external view returns (IotaObjectID[] memory);
 
     // Get the amount of objects of a given collection owned by an account on L2
     function getL2ObjectsCountInCollection(
         ISCAgentID memory agentID,
-        SuiObjectID collectionId
+        IotaObjectID collectionId
     ) external view returns (uint256);
 }
 

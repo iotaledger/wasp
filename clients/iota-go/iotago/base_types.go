@@ -110,10 +110,10 @@ func (or *ObjectRef) Key() ObjectRefKey {
 }
 
 type MoveObjectType struct {
-	Other     *StructTag
-	GasCoin   *serialization.EmptyEnum
-	StakedSui *serialization.EmptyEnum
-	Coin      *TypeTag
+	Other   *StructTag
+	GasCoin *serialization.EmptyEnum
+	Iota    *serialization.EmptyEnum
+	Coin    *TypeTag
 }
 
 func (o MoveObjectType) IsBcsEnum() {}

@@ -85,7 +85,7 @@ func (h *magicContractHandler) Send(
 	sendOptions isc.SendOptions,
 ) {
 	req := isc.RequestParameters{
-		TargetAddress: cryptolib.NewAddressFromSui(&targetAddress),
+		TargetAddress: cryptolib.NewAddressFromIota(&targetAddress),
 		Assets:        assets.Unwrap(),
 		Metadata:      metadata.Unwrap(),
 		Options:       sendOptions,

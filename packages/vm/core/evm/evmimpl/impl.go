@@ -368,13 +368,13 @@ func makeTransferEvents(
 			if ok {
 				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
 				if stateDB.Exist(erc721CollectionContractAddress) {
-					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, fromAddress, toAddress, iscmagic.TokenIDFromSuiObjectID(nftID)))
+					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, fromAddress, toAddress, iscmagic.TokenIDFromIotaObjectID(nftID)))
 					continue
 				}
 			}
 		}
 		// otherwise, emit a Transfer event from the ERC721NFTs contract
-		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.TokenIDFromSuiObjectID(nftID)))
+		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.TokenIDFromIotaObjectID(nftID)))
 	}
 	return logs
 }

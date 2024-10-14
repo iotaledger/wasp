@@ -61,7 +61,7 @@ func initBalanceCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsSuiAddress())
+			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
 			log.Check(err)
 
 			model := &BalanceModel{
@@ -82,7 +82,7 @@ func initBalanceCmd() *cobra.Command {
 var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
-	AddressIndex uint32                `json:"AddressIndex"`
+	AddressIndex uint32                 `json:"AddressIndex"`
 	Address      string                 `json:"Address"`
 	Tokens       []*iotajsonrpc.Balance `json:"BaseTokens"`
 }

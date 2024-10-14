@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 )
 
-type SuiObjectRef struct {
+type IotaObjectRef struct {
 	/** Base64 string representing the object digest */
 	Digest iotago.TransactionDigest `json:"digest"`
 	/** Hex code as string representing the object id */
@@ -18,58 +18,58 @@ type SuiObjectRef struct {
 	Version iotago.SequenceNumber `json:"version"`
 }
 
-type SuiGasData struct {
-	Payment []SuiObjectRef `json:"payment"`
+type IotaGasData struct {
+	Payment []IotaObjectRef `json:"payment"`
 	/** Gas Object's owner */
 	Owner  string  `json:"owner"`
 	Price  *BigInt `json:"price"`
 	Budget *BigInt `json:"budget"`
 }
 
-type SuiParsedData struct {
-	MoveObject *SuiParsedMoveObject `json:"moveObject,omitempty"`
-	Package    *SuiMovePackage      `json:"package,omitempty"`
+type IotaParsedData struct {
+	MoveObject *IotaParsedMoveObject `json:"moveObject,omitempty"`
+	Package    *IotaMovePackage      `json:"package,omitempty"`
 }
 
-func (p SuiParsedData) Tag() string {
+func (p IotaParsedData) Tag() string {
 	return "dataType"
 }
 
-func (p SuiParsedData) Content() string {
+func (p IotaParsedData) Content() string {
 	return ""
 }
 
-type SuiMovePackage struct {
+type IotaMovePackage struct {
 	Disassembled map[string]interface{} `json:"disassembled"`
 }
 
-type SuiParsedMoveObject struct {
+type IotaParsedMoveObject struct {
 	Type              string          `json:"type"`
 	HasPublicTransfer bool            `json:"hasPublicTransfer"`
 	Fields            json.RawMessage `json:"fields"`
 }
 
-type SuiRawData struct {
-	MoveObject *SuiRawMoveObject  `json:"moveObject,omitempty"`
-	Package    *SuiRawMovePackage `json:"package,omitempty"`
+type IotaRawData struct {
+	MoveObject *IotaRawMoveObject  `json:"moveObject,omitempty"`
+	Package    *IotaRawMovePackage `json:"package,omitempty"`
 }
 
-func (r SuiRawData) Tag() string {
+func (r IotaRawData) Tag() string {
 	return "dataType"
 }
 
-func (r SuiRawData) Content() string {
+func (r IotaRawData) Content() string {
 	return ""
 }
 
-type SuiRawMoveObject struct {
+type IotaRawMoveObject struct {
 	Type              iotago.StructTag      `json:"type"`
 	HasPublicTransfer bool                  `json:"hasPublicTransfer"`
 	Version           iotago.SequenceNumber `json:"version"`
 	BcsBytes          iotago.Base64Data     `json:"bcsBytes"`
 }
 
-type SuiRawMovePackage struct {
+type IotaRawMovePackage struct {
 	Id              *iotago.ObjectID             `json:"id"`
 	Version         iotago.SequenceNumber        `json:"version"`
 	ModuleMap       map[string]iotago.Base64Data `json:"moduleMap"`
@@ -83,52 +83,52 @@ type UpgradeInfo struct {
 }
 
 type TypeOrigin struct {
-	ModuleName string       `json:"moduleName"`
+	ModuleName string          `json:"moduleName"`
 	StructName string          `json:"structName"`
 	Package    iotago.ObjectID `json:"package"`
 }
 
-type SuiObjectData struct {
+type IotaObjectData struct {
 	ObjectID *iotago.ObjectID     `json:"objectId"`
 	Version  *BigInt              `json:"version"`
 	Digest   *iotago.ObjectDigest `json:"digest"`
 	/**
-	 * Type of the object, default to be undefined unless SuiObjectDataOptions.showType is set to true
+	 * Type of the object, default to be undefined unless IotaObjectDataOptions.showType is set to true
 	 */
 	Type *string `json:"type,omitempty"`
 	/**
-	 * Move object content or package content, default to be undefined unless SuiObjectDataOptions.showContent is set to true
+	 * Move object content or package content, default to be undefined unless IotaObjectDataOptions.showContent is set to true
 	 */
-	Content *serialization.TagJson[SuiParsedData] `json:"content,omitempty"`
+	Content *serialization.TagJson[IotaParsedData] `json:"content,omitempty"`
 	/**
-	 * Move object content or package content in BCS bytes, default to be undefined unless SuiObjectDataOptions.showBcs is set to true
+	 * Move object content or package content in BCS bytes, default to be undefined unless IotaObjectDataOptions.showBcs is set to true
 	 */
-	Bcs *serialization.TagJson[SuiRawData] `json:"bcs,omitempty"`
+	Bcs *serialization.TagJson[IotaRawData] `json:"bcs,omitempty"`
 	/**
-	 * The owner of this object. Default to be undefined unless SuiObjectDataOptions.showOwner is set to true
+	 * The owner of this object. Default to be undefined unless IotaObjectDataOptions.showOwner is set to true
 	 */
 	Owner *ObjectOwner `json:"owner,omitempty"`
 	/**
 	 * The digest of the transaction that created or last mutated this object.
-	 * Default to be undefined unless SuiObjectDataOptions.showPreviousTransaction is set to true
+	 * Default to be undefined unless IotaObjectDataOptions.showPreviousTransaction is set to true
 	 */
 	PreviousTransaction *iotago.TransactionDigest `json:"previousTransaction,omitempty"`
 	/**
-	 * The amount of SUI we would rebate if this object gets deleted.
+	 * The amount of IOTA we would rebate if this object gets deleted.
 	 * This number is re-calculated each time the object is mutated based on
 	 * the present storage gas price.
-	 * Default to be undefined unless SuiObjectDataOptions.showStorageRebate is set to true
+	 * Default to be undefined unless IotaObjectDataOptions.showStorageRebate is set to true
 	 */
 	StorageRebate *BigInt `json:"storageRebate,omitempty"`
 	/**
-	 * Display metadata for this object, default to be undefined unless SuiObjectDataOptions.showDisplay is set to true
+	 * Display metadata for this object, default to be undefined unless IotaObjectDataOptions.showDisplay is set to true
 	 * This can also be None if the struct type does not have Display defined
 	 * See more details in https://forums.sui.io/t/nft-object-display-proposal/4872
 	 */
 	Display interface{} `json:"display,omitempty"`
 }
 
-func (data *SuiObjectData) Ref() iotago.ObjectRef {
+func (data *IotaObjectData) Ref() iotago.ObjectRef {
 	return iotago.ObjectRef{
 		ObjectID: data.ObjectID,
 		Version:  data.Version.Uint64(),
@@ -136,7 +136,7 @@ func (data *SuiObjectData) Ref() iotago.ObjectRef {
 	}
 }
 
-type SuiObjectDataOptions struct {
+type IotaObjectDataOptions struct {
 	/* Whether to fetch the object type, default to be false */
 	ShowType bool `json:"showType,omitempty"`
 	/* Whether to fetch the object content, default to be false */
@@ -153,7 +153,7 @@ type SuiObjectDataOptions struct {
 	ShowDisplay bool `json:"showDisplay,omitempty"`
 }
 
-type SuiObjectResponseError struct {
+type IotaObjectResponseError struct {
 	NotExists *struct {
 		ObjectID iotago.ObjectID `json:"object_id"`
 	} `json:"notExists,omitempty"`
@@ -168,27 +168,27 @@ type SuiObjectResponseError struct {
 	} `json:"displayError"`
 }
 
-func (e SuiObjectResponseError) Tag() string {
+func (e IotaObjectResponseError) Tag() string {
 	return "code"
 }
 
-func (e SuiObjectResponseError) Content() string {
+func (e IotaObjectResponseError) Content() string {
 	return ""
 }
 
-type SuiObjectResponse struct {
-	Data  *SuiObjectData                                 `json:"data,omitempty"`
-	Error *serialization.TagJson[SuiObjectResponseError] `json:"error,omitempty"`
+type IotaObjectResponse struct {
+	Data  *IotaObjectData                                 `json:"data,omitempty"`
+	Error *serialization.TagJson[IotaObjectResponseError] `json:"error,omitempty"`
 }
 
 type CheckpointSequenceNumber = uint64
 
-type ObjectsPage = Page[SuiObjectResponse, iotago.ObjectID]
+type ObjectsPage = Page[IotaObjectResponse, iotago.ObjectID]
 
-type SuiObjectDataFilter struct {
-	MatchAll  []*SuiObjectDataFilter `json:"MatchAll,omitempty"`
-	MatchAny  []*SuiObjectDataFilter `json:"MatchAny,omitempty"`
-	MatchNone []*SuiObjectDataFilter `json:"MatchNone,omitempty"`
+type IotaObjectDataFilter struct {
+	MatchAll  []*IotaObjectDataFilter `json:"MatchAll,omitempty"`
+	MatchAny  []*IotaObjectDataFilter `json:"MatchAny,omitempty"`
+	MatchNone []*IotaObjectDataFilter `json:"MatchNone,omitempty"`
 	// Query by type a specified Package.
 	Package *iotago.ObjectID `json:"Package,omitempty"`
 	// Query by type a specified Move module.
@@ -203,20 +203,20 @@ type SuiObjectDataFilter struct {
 	Version   *BigInt            `json:"Version,omitempty"`
 }
 
-type SuiObjectResponseQuery struct {
-	Filter  *SuiObjectDataFilter  `json:"filter,omitempty"`
-	Options *SuiObjectDataOptions `json:"options,omitempty"`
+type IotaObjectResponseQuery struct {
+	Filter  *IotaObjectDataFilter  `json:"filter,omitempty"`
+	Options *IotaObjectDataOptions `json:"options,omitempty"`
 }
 
-type SuiPastObjectResponse = serialization.TagJson[SuiPastObject]
+type IotaPastObjectResponse = serialization.TagJson[IotaPastObject]
 
-type SuiPastObject struct {
+type IotaPastObject struct {
 	// The object exists and is found with this version
-	VersionFound *SuiObjectData `json:"VersionFound,omitempty"`
+	VersionFound *IotaObjectData `json:"VersionFound,omitempty"`
 	// The object does not exist
 	ObjectNotExists *iotago.ObjectID `json:"ObjectNotExists,omitempty"`
 	// The object is found to be deleted with this version
-	ObjectDeleted *SuiObjectRef `json:"ObjectDeleted,omitempty"`
+	ObjectDeleted *IotaObjectRef `json:"ObjectDeleted,omitempty"`
 	// The object exists but not found with this version
 	VersionNotFound *VersionNotFoundData `json:"VersionNotFound,omitempty"`
 	// The asked object version is higher than the latest
@@ -248,17 +248,17 @@ func (c *VersionNotFoundData) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s SuiPastObject) Tag() string {
+func (s IotaPastObject) Tag() string {
 	return "status"
 }
 
-func (s SuiPastObject) Content() string {
+func (s IotaPastObject) Content() string {
 	return "details"
 }
 
-type SuiGetPastObjectRequest struct {
+type IotaGetPastObjectRequest struct {
 	ObjectId *iotago.ObjectID `json:"objectId"`
 	Version  *BigInt          `json:"version"`
 }
 
-type SuiNamePage = Page[string, iotago.ObjectID]
+type IotaNamePage = Page[string, iotago.ObjectID]

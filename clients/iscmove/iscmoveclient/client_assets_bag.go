@@ -22,9 +22,9 @@ func (c *Client) AssetsBagNew(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagNewAndTransfer(ptb, packageID, cryptolibSigner.Address())
@@ -62,7 +62,7 @@ func (c *Client) AssetsBagNew(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -84,9 +84,9 @@ func (c *Client) AssetsBagPlaceCoin(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagPlaceCoin(
@@ -130,7 +130,7 @@ func (c *Client) AssetsBagPlaceCoin(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -153,9 +153,9 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagPlaceCoinWithAmount(ptb, packageID, assetsBagRef, coin, amount, string(coinType))
@@ -193,7 +193,7 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -213,9 +213,9 @@ func (c *Client) AssetsDestroyEmpty(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsDestroyEmpty(ptb, packageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}))
@@ -253,7 +253,7 @@ func (c *Client) AssetsDestroyEmpty(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -283,7 +283,7 @@ func (c *Client) GetAssetsBagWithBalances(
 	for _, data := range fields.Data {
 		resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: &data.ObjectID,
-			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowContent: true},
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)

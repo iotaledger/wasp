@@ -587,7 +587,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		rotationTX, err := vmtxbuilder.NewRotationTransaction(vmResult.RotationAddress.AsSuiAddress())
+		rotationTX, err := vmtxbuilder.NewRotationTransaction(vmResult.RotationAddress.AsIotaAddress())
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
@@ -615,7 +615,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 
 // Everything is ready for the output TX, produce it.
 func (c *consImpl) uponTXInputsReady(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
-	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsSuiSignature()
+	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsIotaSignature()
 	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
 		Transaction: signedTX,

@@ -139,7 +139,7 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 			return ctx.Err()
 
 		case <-ticker.C:
-			_, err := nc.wsClient.GetLatestSuiSystemState(ctx)
+			_, err := nc.wsClient.GetLatestIotaSystemState(ctx)
 			if err != nil {
 				nc.LogWarnf("WaitUntilInitiallySynced: %s", err)
 				continue

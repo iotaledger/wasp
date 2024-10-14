@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ChainOwner** | Pointer to **string** | The chain owner (Bech32-encoded) | [optional] 
+**ChainOwner** | Pointer to **string** | The chain owner (Hex Address) | [optional] 
 
 ## Methods
 
