@@ -28,7 +28,6 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -41,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -131,8 +131,8 @@ type chainNodeImpl struct {
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
 	consOutputPipe      pipe.Pipe[*consOutput]
 	consRecoverPipe     pipe.Pipe[*consRecover]
-	publishingTXes      *shrinkingmap.ShrinkingMap[iotago.TransactionID, context.CancelFunc] // TX'es now being published.
-	procCache           *processors.Cache                                                    // Cache for the SC processors.
+	publishingTXes      *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
+	procCache           *processors.Cache                                                 // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
 	serversUpdatedPipe  pipe.Pipe[*serversUpdate]
 	awaitReceiptActCh   chan *awaitReceiptReq
@@ -211,7 +211,7 @@ func (cr *consRecover) String() string {
 type txPublished struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
-	txID            iotago.TransactionID
+	txID            hashing.HashValue
 	nextAliasOutput *isc.StateAnchor
 	confirmed       bool
 }
@@ -278,7 +278,7 @@ func New(
 		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
-		publishingTXes:         shrinkingmap.New[iotago.TransactionID, context.CancelFunc](),
+		publishingTXes:         shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
 		procCache:              processors.MustNew(processorConfig),
 		configUpdatedCh:        make(chan *configUpdate, 1),
 		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
@@ -680,7 +680,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc
 	cni.stateTrackerCnf.TrackAliasOutput(&aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(&aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputAliasOutputConfirmed(aliasOutput),
+		chainmanager.NewInputAliasOutputConfirmed(cni.activeCommitteeDKShare.GetAddress(), &aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -731,20 +731,20 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	//
 	// Start publishing TX'es, if there not being posted already.
 	outputNeedPostTXes := output.NeedPublishTX()
-	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, needPublishTx *chainmanager.NeedPublishTX) bool {
+	outputNeedPostTXes.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
 		txToPost := needPublishTx // Have to take a copy to be used in callback.
-		if !cni.publishingTXes.Has(txToPost.TxID) {
+		if !cni.publishingTXes.Has(txToPost.Tx.Hash()) {
 			subCtx, subCancel := context.WithCancel(ctx)
-			cni.publishingTXes.Set(txToPost.TxID, subCancel)
+			cni.publishingTXes.Set(txToPost.Tx.Hash(), subCancel)
 			publishStart := time.Now()
-			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(_ *iotago.Transaction, confirmed bool) {
-				cni.chainMetrics.NodeConn.TXPublishResult(confirmed, time.Since(publishStart))
+			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, err error) {
+				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
 					logIndex:        txToPost.LogIndex,
-					txID:            txToPost.TxID,
-					nextAliasOutput: txToPost.NextAliasOutput,
-					confirmed:       confirmed,
+					txID:            txToPost.Tx.Hash(),
+					nextAliasOutput: nil, // TODO: Get the next Anchor here.
+					confirmed:       err == nil,
 				}
 			}); err != nil {
 				cni.log.Error(err.Error())
@@ -899,14 +899,14 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr cryptolib.Address,
 }
 
 // Cleanup TX'es that are not needed to be posted anymore.
-func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[iotago.TransactionID, *chainmanager.NeedPublishTX]) {
+func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[hashing.HashValue, *chainmanager.NeedPublishTX]) {
 	if neededPostTXes == nil || neededPostTXes.Size() == 0 {
 		// just create a new map
-		cni.publishingTXes = shrinkingmap.New[iotago.TransactionID, context.CancelFunc]()
+		cni.publishingTXes = shrinkingmap.New[hashing.HashValue, context.CancelFunc]()
 		return
 	}
 
-	cni.publishingTXes.ForEach(func(txID iotago.TransactionID, cancelFunc context.CancelFunc) bool {
+	cni.publishingTXes.ForEach(func(txID hashing.HashValue, cancelFunc context.CancelFunc) bool {
 		if !neededPostTXes.Has(txID) { // remove anything that doesn't need a tx to be posted
 			cancelFunc()
 			cni.publishingTXes.Delete(txID)
