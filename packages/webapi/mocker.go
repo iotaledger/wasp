@@ -2,7 +2,6 @@ package webapi
 
 import (
 	"embed"
-	"encoding/json"
 	"log"
 	"reflect"
 	"strings"
@@ -74,16 +73,20 @@ func (m *Mocker) LoadMockFiles() {
 }
 
 func (m *Mocker) Get(i interface{}) interface{} {
-	name := getStructName(i)
 	model := createNewInstance(i)
 	instance := model.Interface()
-
-	if jsonMockData, ok := m.mockData[name]; ok {
-		err := json.Unmarshal(jsonMockData, instance)
-		if err != nil {
-			log.Fatalf("Mocker [%s] %v", name, err)
-		}
-	}
-
+	// For now just return the empty instance
 	return instance
+
+	/*
+		name := getStructName(i)
+
+		if jsonMockData, ok := m.mockData[name]; ok {
+			err := json.Unmarshal(jsonMockData, instance)
+			if err != nil {
+				log.Fatalf("Mocker [%s] %v", name, err)
+			}
+		}
+
+		return instance*/
 }
