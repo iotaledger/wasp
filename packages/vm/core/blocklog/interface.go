@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -16,35 +15,35 @@ var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 var (
 	// Views
 	ViewGetBlockInfo = coreutil.NewViewEP12(Contract, "getBlockInfo",
-		coreutil.FieldWithCodecOptional(codec.Uint32),
-		coreutil.FieldWithCodec(codec.Uint32),
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*BlockInfo]()),
+		coreutil.FieldOptional[uint32](),
+		coreutil.Field[uint32](),
+		coreutil.Field[*BlockInfo](),
 	)
 	ViewGetRequestIDsForBlock = coreutil.NewViewEP12(Contract, "getRequestIDsForBlock",
-		coreutil.FieldWithCodecOptional(codec.Uint32),
-		coreutil.FieldWithCodec(codec.Uint32),
-		coreutil.FieldArrayWithCodec(codec.RequestID),
+		coreutil.FieldOptional[uint32](),
+		coreutil.Field[uint32](),
+		coreutil.Field[[]isc.RequestID](),
 	)
 	ViewGetRequestReceipt = coreutil.NewViewEP11(Contract, "getRequestReceipt",
-		coreutil.FieldWithCodec(codec.RequestID),
+		coreutil.Field[isc.RequestID](),
 		OutputRequestReceipt{},
 	)
 	ViewGetRequestReceiptsForBlock = coreutil.NewViewEP11(Contract, "getRequestReceiptsForBlock",
-		coreutil.FieldWithCodecOptional(codec.Uint32),
+		coreutil.FieldOptional[uint32](),
 		OutputRequestReceipts{},
 	)
 	ViewIsRequestProcessed = coreutil.NewViewEP11(Contract, "isRequestProcessed",
-		coreutil.FieldWithCodec(codec.RequestID),
-		coreutil.FieldWithCodec(codec.Bool),
+		coreutil.Field[isc.RequestID](),
+		coreutil.Field[bool](),
 	)
 	ViewGetEventsForRequest = coreutil.NewViewEP11(Contract, "getEventsForRequest",
-		coreutil.FieldWithCodec(codec.RequestID),
-		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*isc.Event]()),
+		coreutil.Field[isc.RequestID](),
+		coreutil.Field[[]*isc.Event](),
 	)
 	ViewGetEventsForBlock = coreutil.NewViewEP12(Contract, "getEventsForBlock",
-		coreutil.FieldWithCodecOptional(codec.Uint32),
-		coreutil.FieldWithCodec(codec.Uint32),
-		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*isc.Event]()),
+		coreutil.FieldOptional[uint32](),
+		coreutil.Field[uint32](),
+		coreutil.Field[[]*isc.Event](),
 	)
 )
 

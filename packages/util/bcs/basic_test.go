@@ -513,8 +513,22 @@ func TestBytesCoders(t *testing.T) {
 	b := enc.Bytes()
 
 	dec := bcs.NewBytesDecoder(b)
+	require.Equal(t, 6, dec.Len())
+	require.Equal(t, len(b), dec.Size())
+	require.Equal(t, 0, dec.Pos())
+	require.Equal(t, []byte{0x1, 0x0, 0x3, 0x61, 0x62, 0x63}, dec.Leftovers())
+
 	require.Equal(t, int16(1), dec.ReadInt16())
+	require.Equal(t, 4, dec.Len())
+	require.Equal(t, len(b), dec.Size())
+	require.Equal(t, 2, dec.Pos())
+	require.Equal(t, []byte{0x3, 0x61, 0x62, 0x63}, dec.Leftovers())
+
 	require.Equal(t, "abc", dec.ReadString())
+	require.Equal(t, 0, dec.Len())
+	require.Equal(t, len(b), dec.Size())
+	require.Equal(t, len(b), dec.Pos())
+	require.Equal(t, []byte{}, dec.Leftovers())
 }
 
 func TestInfWithCustomCodec(t *testing.T) {

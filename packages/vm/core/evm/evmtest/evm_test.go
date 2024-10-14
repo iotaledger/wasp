@@ -1645,14 +1645,14 @@ func TestERC20CoinWithExternalFoundry(t *testing.T) {
 			accounts.Contract.Hname(),
 			accounts.FuncNativeTokenCreate.Hname(),
 			dict.Dict{
-				accounts.ParamTokenScheme: codec.TokenScheme.Encode(&iotago.SimpleTokenScheme{
+				accounts.ParamTokenScheme: codec.Encode[TokenScheme](&iotago.SimpleTokenScheme{
 					MaximumSupply: supply,
 					MeltedTokens:  big.NewInt(0),
 					MintedTokens:  big.NewInt(0),
 				}),
-				accounts.ParamTokenName:         codec.String.Encode(tokenName),
-				accounts.ParamTokenTickerSymbol: codec.String.Encode(tokenTickerSymbol),
-				accounts.ParamTokenDecimals:     codec.Uint8.Encode(tokenDecimals),
+				accounts.ParamTokenName:         codec.Encode[string](tokenName),
+				accounts.ParamTokenTickerSymbol: codec.Encode[string](tokenTickerSymbol),
+				accounts.ParamTokenDecimals:     codec.Encode[uint8](tokenDecimals),
 			},
 			1*isc.Million, // allowance necessary to cover the foundry creation SD
 		)
@@ -1678,11 +1678,11 @@ func TestERC20CoinWithExternalFoundry(t *testing.T) {
 			evm.Contract.Hname(),
 			evm.FuncRegisterERC20NativeTokenOnRemoteChain.Hname(),
 			dict.Dict{
-				evm.FieldFoundrySN:         codec.Uint32.Encode(foundrySN),
-				evm.FieldTokenName:         codec.String.Encode(tokenName),
-				evm.FieldTokenTickerSymbol: codec.String.Encode(tokenTickerSymbol),
-				evm.FieldTokenDecimals:     codec.Uint8.Encode(tokenDecimals),
-				evm.FieldTargetAddress:     codec.Address.Encode(env.Chain.ChainID.AsAddress()), // the target chain is the test chain
+				evm.FieldFoundrySN:         codec.Encode[uint32](foundrySN),
+				evm.FieldTokenName:         codec.Encode[string](tokenName),
+				evm.FieldTokenTickerSymbol: codec.Encode[string](tokenTickerSymbol),
+				evm.FieldTokenDecimals:     codec.Encode[uint8](tokenDecimals),
+				evm.FieldTargetAddress:     codec.Encode[*cryptolib.Address](env.Chain.ChainID.AsAddress()), // the target chain is the test chain
 			},
 			1*isc.Million, // provide funds for cross-chain request SD
 		)

@@ -41,11 +41,11 @@ func (s *StateWriter) StoreContractRecord(rec *ContractRecord) {
 }
 
 func (s *StateWriter) SetDeployPermissionsEnabled(enabled bool) {
-	s.state.Set(varDeployPermissionsEnabled, codec.Bool.Encode(enabled))
+	s.state.Set(varDeployPermissionsEnabled, codec.Encode[bool](enabled))
 }
 
 func (s *StateReader) GetDeployPermissionsEnabled() bool {
-	return lo.Must(codec.Bool.Decode(s.state.Get(varDeployPermissionsEnabled)))
+	return lo.Must(codec.Decode[bool](s.state.Get(varDeployPermissionsEnabled)))
 }
 
 func (s *StateWriter) GetDeployPermissions() *collections.Map {

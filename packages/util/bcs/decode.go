@@ -42,8 +42,42 @@ func (c *DecoderConfig) InitializeDefaults() {
 	}
 }
 
-func NewBytesDecoder(b []byte) *Decoder {
-	return NewDecoder(bytes.NewReader(b))
+func NewBytesDecoder(b []byte) *BytesDecoder {
+	r := bytes.NewReader(b)
+	return &BytesDecoder{
+		Decoder: *NewDecoder(r),
+		buf:     r,
+		b:       b,
+	}
+}
+
+type BytesDecoder struct {
+	Decoder
+	buf *bytes.Reader
+	b   []byte
+}
+
+// Size returns the original length of the underlying byte slice.
+// The result is unaffected by any method calls.
+func (d *BytesDecoder) Size() int {
+	return int(d.buf.Size())
+}
+
+// Len returns the number of bytes of the unread portion of the
+// slice.
+func (d *BytesDecoder) Len() int {
+	return d.buf.Len()
+}
+
+// Pos returns the current position in the underlying slice.
+// Unread portion of the slice starts at this position.
+func (d *BytesDecoder) Pos() int {
+	return int(d.buf.Size()) - d.Len()
+}
+
+// Leftovers returns the unread portion of the slice.
+func (d *BytesDecoder) Leftovers() []byte {
+	return d.b[d.Pos():len(d.b):len(d.b)]
 }
 
 func NewDecoder(src io.Reader) *Decoder {

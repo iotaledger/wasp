@@ -191,13 +191,13 @@ func testIncRepeatManyIncrement(t *testing.T, env *ChainEnv) {
 	for i := range e.Chain.CommitteeNodes {
 		b, err := e.Chain.GetStateVariable(inccounter.Contract.Hname(), varCounter, i)
 		require.NoError(t, err)
-		counterValue, err := codec.Int64.Decode(b, 0)
+		counterValue, err := codec.Decode[int64](b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, numRepeats+1, counterValue)
 
 		b, err = e.Chain.GetStateVariable(inccounter.Contract.Hname(), varNumRepeats, i)
 		require.NoError(t, err)
-		repeats, err := codec.Int64.Decode(b, 0)
+		repeats, err := codec.Decode[int64](b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, repeats)
 	}

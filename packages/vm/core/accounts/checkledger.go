@@ -32,8 +32,8 @@ func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
 		// add all native tokens owned by each account
 		s.accountCoinBalancesMapR(kv.Key(accountKey)).Iterate(func(coinType []byte, val []byte) bool {
 			ret.Add(
-				codec.CoinType.MustDecode(coinType),
-				codec.CoinValue.MustDecode(val),
+				codec.MustDecode[coin.Type](coinType),
+				codec.MustDecode[coin.Value](val),
 			)
 			return true
 		})
