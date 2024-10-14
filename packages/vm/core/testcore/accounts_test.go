@@ -467,7 +467,7 @@ func TestFoundries(t *testing.T) {
 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
-		sn, err = codec.Uint32.Decode(events[0].Payload)
+		sn, err = codec.Decode[uint32](events[0].Payload)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 	})
@@ -1136,7 +1136,7 @@ func TestUnprocessableWithNoPruning(t *testing.T) {
 
 func TestUnprocessableWithPruning(t *testing.T) {
 	testUnprocessable(t, dict.Dict{
-		origin.ParamBlockKeepAmount: codec.Int32.Encode(1),
+		origin.ParamBlockKeepAmount: codec.Encode[int32](1),
 	}, true)
 }
 

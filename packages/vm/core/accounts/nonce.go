@@ -19,7 +19,7 @@ func (s *StateReader) AccountNonce(callerAgentID isc.AgentID, chainID isc.ChainI
 	if data == nil {
 		return 0
 	}
-	return codec.Uint64.MustDecode(data) + 1
+	return codec.MustDecode[uint64](data) + 1
 }
 
 func (s *StateWriter) IncrementNonce(callerAgentID isc.AgentID, chainID isc.ChainID) {
@@ -28,5 +28,5 @@ func (s *StateWriter) IncrementNonce(callerAgentID isc.AgentID, chainID isc.Chai
 		return
 	}
 	next := s.AccountNonce(callerAgentID, chainID)
-	s.state.Set(nonceKey(callerAgentID, chainID), codec.Uint64.Encode(next))
+	s.state.Set(nonceKey(callerAgentID, chainID), codec.Encode[uint64](next))
 }

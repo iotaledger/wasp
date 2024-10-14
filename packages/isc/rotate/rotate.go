@@ -16,7 +16,7 @@ func IsRotateStateControllerRequest(req isc.Calldata) bool {
 }
 
 func NewRotateRequestOffLedger(chainID isc.ChainID, newStateAddress *cryptolib.Address, keyPair *cryptolib.KeyPair, gasBudget uint64) isc.Request {
-	args := isc.NewCallArguments(codec.Address.Encode(newStateAddress))
+	args := isc.NewCallArguments(codec.Encode[*cryptolib.Address](newStateAddress))
 	nonce := uint64(time.Now().UnixNano())
 
 	ret := isc.NewOffLedgerRequest(chainID, isc.NewMessage(coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args), nonce, gasBudget)

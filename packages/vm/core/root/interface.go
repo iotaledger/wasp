@@ -3,7 +3,7 @@ package root
 import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/samber/lo"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
@@ -11,23 +11,23 @@ var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
 var (
 	// Funcs
 	FuncGrantDeployPermission = coreutil.NewEP1(Contract, "grantDeployPermission",
-		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.Field[isc.AgentID](),
 	)
 	FuncRevokeDeployPermission = coreutil.NewEP1(Contract, "revokeDeployPermission",
-		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.Field[isc.AgentID](),
 	)
 	FuncRequireDeployPermissions = coreutil.NewEP1(Contract, "requireDeployPermissions",
-		coreutil.FieldWithCodec(codec.Bool),
+		coreutil.Field[bool](),
 	)
 
 	// Views
 	ViewFindContract = coreutil.NewViewEP12(Contract, "findContract",
-		coreutil.FieldWithCodec(codec.Hname),
-		coreutil.FieldWithCodec(codec.Bool),
-		coreutil.FieldWithCodecOptional(codec.NewCodecFromBCS[*ContractRecord]()),
+		coreutil.Field[isc.Hname](),
+		coreutil.Field[bool](),
+		coreutil.FieldOptional[*ContractRecord](),
 	)
 	ViewGetContractRecords = coreutil.NewViewEP01(Contract, "getContractRecords",
-		coreutil.FieldArrayWithCodec(codec.NewTupleCodec[*isc.Hname, *ContractRecord]()),
+		coreutil.Field[[]lo.Tuple2[*isc.Hname, *ContractRecord]](),
 	)
 )
 

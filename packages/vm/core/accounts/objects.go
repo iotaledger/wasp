@@ -70,7 +70,7 @@ func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, agentID isc.Agent
 
 	// add to the mapping of agentID => []ObjectIDs
 	objects := s.accountToObjectsMap(agentID)
-	objects.SetAt(objectID[:], codec.Bool.Encode(true))
+	objects.SetAt(objectID[:], codec.Encode[bool](true))
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
@@ -85,7 +85,7 @@ func (s *StateWriter) creditObjectToAccount(agentID isc.AgentID, object *ObjectR
 
 	collectionKey := object.CollectionKey()
 	objectsByCollection := s.objectsByCollectionMap(agentID, collectionKey)
-	objectsByCollection.SetAt(object.ID[:], codec.Bool.Encode(true))
+	objectsByCollection.SetAt(object.ID[:], codec.Encode[bool](true))
 }
 
 // DebitObjectFromAccount removes an Object from an account.

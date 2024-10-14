@@ -127,7 +127,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 	_, d, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
-	errorCode := codec.VMErrorCode.MustDecode(d.Get(errors.ParamErrorCode))
+	errorCode := codec.MustDecode[VMErrorCode](d.Get(errors.ParamErrorCode))
 
 	req = solo.NewCallParams(errors.ViewGetErrorMessageFormat.Message(errorCode)).
 		WithGasBudget(100_000)

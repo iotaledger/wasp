@@ -39,7 +39,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	var chainInitParams isc.CallArguments
 	agentId := isctest.NewRandomAgentID()
 	if len(chainInitParamsOpt) > 0 {
-		chainInitParams = isc.NewCallArguments(agentId.Bytes(), codec.Uint16.Encode(evm.DefaultChainID), codec.Int32.Encode(int32(chainInitParamsOpt[0].BlockKeepAmount)))
+		chainInitParams = isc.NewCallArguments(agentId.Bytes(), codec.Encode[uint16](evm.DefaultChainID), codec.Encode[int32](int32(chainInitParamsOpt[0].BlockKeepAmount)))
 	} else {
 		chainInitParams = isc.NewCallArguments(agentId.Bytes())
 	}
@@ -169,7 +169,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	require.NoError(bfT.t, err)
 	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
 	counterBin := stateDraft.Get(counterKey)
-	counter, err := codec.Uint64.Decode(counterBin, 0)
+	counter, err := codec.Decode[uint64](counterBin, 0)
 	require.NoError(bfT.t, err)
 	var increment uint64
 	if len(incrementOpt) > 0 {
@@ -177,7 +177,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	} else {
 		increment = 1
 	}
-	counterBin = codec.Uint64.Encode(counter + increment)
+	counterBin = codec.Encode[uint64](counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
 	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())

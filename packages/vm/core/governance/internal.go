@@ -32,7 +32,7 @@ func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount in
 // If succeeds, it means this block is fake.
 // If fails, return nil
 func (s *StateReader) GetRotationAddress() *cryptolib.Address {
-	ret, err := codec.Address.Decode(s.state.Get(varRotateToAddress), nil)
+	ret, err := codec.Decode[*cryptolib.Address](s.state.Get(varRotateToAddress), nil)
 	if err != nil {
 		return nil
 	}
@@ -40,7 +40,7 @@ func (s *StateReader) GetRotationAddress() *cryptolib.Address {
 }
 
 func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
-	s.state.Set(varRotateToAddress, codec.Address.Encode(a))
+	s.state.Set(varRotateToAddress, codec.Encode[*cryptolib.Address](a))
 }
 
 // GetChainInfo returns global variables of the chain
@@ -59,38 +59,38 @@ func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 }
 
 func (s *StateReader) GetMinCommonAccountBalance() coin.Value {
-	return lo.Must(codec.CoinValue.Decode(s.state.Get(varMinBaseTokensOnCommonAccount)))
+	return lo.Must(codec.Decode[coin.Value](s.state.Get(varMinBaseTokensOnCommonAccount)))
 }
 
 func (s *StateWriter) SetMinCommonAccountBalance(m coin.Value) {
-	s.state.Set(varMinBaseTokensOnCommonAccount, codec.CoinValue.Encode(m))
+	s.state.Set(varMinBaseTokensOnCommonAccount, codec.Encode[coin.Value](m))
 }
 
 func (s *StateReader) GetChainOwnerID() isc.AgentID {
-	return lo.Must(codec.AgentID.Decode(s.state.Get(varChainOwnerID)))
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainOwnerID)))
 }
 
 func (s *StateWriter) SetChainOwnerID(a isc.AgentID) {
-	s.state.Set(varChainOwnerID, codec.AgentID.Encode(a))
+	s.state.Set(varChainOwnerID, codec.Encode[isc.AgentID](a))
 	if s.GetChainOwnerIDDelegated() != nil {
 		s.state.Del(varChainOwnerIDDelegated)
 	}
 }
 
 func (s *StateReader) GetChainOwnerIDDelegated() isc.AgentID {
-	return lo.Must(codec.AgentID.Decode(s.state.Get(varChainOwnerIDDelegated), nil))
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainOwnerIDDelegated), nil))
 }
 
 func (s *StateWriter) SetChainOwnerIDDelegated(a isc.AgentID) {
-	s.state.Set(varChainOwnerIDDelegated, codec.AgentID.Encode(a))
+	s.state.Set(varChainOwnerIDDelegated, codec.Encode[isc.AgentID](a))
 }
 
 func (s *StateReader) GetPayoutAgentID() isc.AgentID {
-	return lo.Must(codec.AgentID.Decode(s.state.Get(varPayoutAgentID)))
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varPayoutAgentID)))
 }
 
 func (s *StateWriter) SetPayoutAgentID(a isc.AgentID) {
-	s.state.Set(varPayoutAgentID, codec.AgentID.Encode(a))
+	s.state.Set(varPayoutAgentID, codec.Encode[isc.AgentID](a))
 }
 
 func (s *StateReader) GetGasFeePolicy() *gas.FeePolicy {
@@ -118,19 +118,19 @@ func (s *StateWriter) SetGasLimits(gl *gas.Limits) {
 }
 
 func (s *StateReader) GetBlockKeepAmount() int32 {
-	return lo.Must(codec.Int32.Decode(s.state.Get(varBlockKeepAmount), DefaultBlockKeepAmount))
+	return lo.Must(codec.Decode[int32](s.state.Get(varBlockKeepAmount), DefaultBlockKeepAmount))
 }
 
 func (s *StateWriter) SetBlockKeepAmount(n int32) {
-	s.state.Set(varBlockKeepAmount, codec.Int32.Encode(n))
+	s.state.Set(varBlockKeepAmount, codec.Encode[int32](n))
 }
 
 func (s *StateWriter) SetPublicURL(url string) {
-	s.state.Set(varPublicURL, codec.String.Encode(url))
+	s.state.Set(varPublicURL, codec.Encode[string](url))
 }
 
 func (s *StateReader) GetPublicURL() string {
-	return codec.String.MustDecode(s.state.Get(varPublicURL), "")
+	return codec.MustDecode[string](s.state.Get(varPublicURL), "")
 }
 
 func (s *StateWriter) SetMetadata(metadata *isc.PublicChainMetadata) {
@@ -174,11 +174,11 @@ func (s *StateReader) GetMaintenanceStatus() bool {
 	if r == nil {
 		return false // chain is being initialized, governance has not been initialized yet
 	}
-	return lo.Must(codec.Bool.Decode(r))
+	return lo.Must(codec.Decode[bool](r))
 }
 
 func (s *StateWriter) SetMaintenanceStatus(status bool) {
-	s.state.Set(varMaintenanceStatus, codec.Bool.Encode(status))
+	s.state.Set(varMaintenanceStatus, codec.Encode[bool](status))
 }
 
 func (s *StateReader) AccessNodes() []*cryptolib.PublicKey {

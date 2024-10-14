@@ -15,8 +15,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
@@ -147,9 +147,9 @@ func initDeployCmd() *cobra.Command {
 				PackageID:            packageID,
 				InitParams: dict.Dict{
 					origin.ParamChainOwner:      isc.NewAddressAgentID(govController).Bytes(),
-					origin.ParamEVMChainID:      codec.Uint16.Encode(evmChainID),
-					origin.ParamBlockKeepAmount: codec.Int32.Encode(blockKeepAmount),
-					origin.ParamWaspVersion:     codec.String.Encode(app.Version),
+					origin.ParamEVMChainID:      codec.Encode[uint16](evmChainID),
+					origin.ParamBlockKeepAmount: codec.Encode[int32](blockKeepAmount),
+					origin.ParamWaspVersion:     codec.Encode[string](app.Version),
 				},
 			}
 

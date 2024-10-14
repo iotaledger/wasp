@@ -7,8 +7,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -22,28 +20,7 @@ type Codec[T any] interface {
 	MustDecodeStream(r io.Reader) T
 }
 
-type codec[T any] struct {
-	decode func(r io.Reader) (T, error)
-	encode func(w io.Writer, v T)
-}
-
-func NewCodec[T any](decode func(r io.Reader) (T, error), encode func(w io.Writer, v T)) Codec[T] {
-	return &codec[T]{decode: decode, encode: encode}
-}
-
-func NewCodecFromBCS[T any]() Codec[T] {
-	encode := func(w io.Writer, v T) { bcs.MustMarshalStream(&v, w) }
-	decode := bcs.UnmarshalStream[T]
-	return &codec[T]{decode: decode, encode: encode}
-}
-
-func NewTupleCodec[
-	A, B any,
-]() Codec[lo.Tuple2[A, B]] {
-	return NewCodecFromBCS[lo.Tuple2[A, B]]()
-}
-
-func (c *codec[T]) Decode(b []byte, def ...T) (v T, err error) {
+func Decode[T any](b []byte, def ...T) (v T, err error) {
 	if b == nil {
 		if len(def) == 0 {
 			err = fmt.Errorf("%T: cannot decode nil bytes", v)
@@ -53,7 +30,7 @@ func (c *codec[T]) Decode(b []byte, def ...T) (v T, err error) {
 	}
 
 	r := bytes.NewReader(b)
-	v, err = c.decode(r)
+	v, err = bcs.UnmarshalStream[T](r)
 	if err != nil {
 		return v, fmt.Errorf("%T: %w", v, err)
 	}
@@ -65,91 +42,31 @@ func (c *codec[T]) Decode(b []byte, def ...T) (v T, err error) {
 	return v, nil
 }
 
-func (c *codec[T]) MustDecode(b []byte, def ...T) (r T) {
-	return lo.Must(c.Decode(b, def...))
+func MustDecode[T any](b []byte, def ...T) (r T) {
+	return lo.Must(Decode(b, def...))
 }
 
-func (c *codec[T]) Encode(v T) []byte {
-	var buf bytes.Buffer
-	c.encode(&buf, v)
-
-	return buf.Bytes()
-}
-
-func (c *codec[T]) EncodeStream(w io.Writer, v T) {
-	c.encode(w, v)
-}
-
-func (c *codec[T]) DecodeStream(r io.Reader) (T, error) {
-	v, err := c.decode(r)
+func DecodeOptional[T any](b []byte) (v *T, err error) {
+	o, err := bcs.Unmarshal[bcs.Option[*T]](b)
 	if err != nil {
-		return v, fmt.Errorf("%T: %w", v, err)
+		return nil, fmt.Errorf("%T: %w", v, err)
 	}
 
-	return v, nil
+	return o.Some, nil
 }
 
-func (c *codec[T]) MustDecodeStream(r io.Reader) T {
-	return lo.Must(c.DecodeStream(r))
+func Encode[T any](v T) []byte {
+	return bcs.MustMarshal(&v)
 }
 
-func SliceToArray[T any](c Codec[T], slice []T) []byte {
-	e := bcs.NewBytesEncoder()
+func EncodeOptional[T any](v *T) []byte {
+	o := bcs.Option[*T]{}
 
-	e.WriteLen(len(slice))
-
-	for _, v := range slice {
-		c.EncodeStream(e, v)
+	if v != nil {
+		o.Some = v
+	} else {
+		o.None = true
 	}
 
-	if err := e.Err(); err != nil {
-		panic(err)
-	}
-
-	return e.Bytes()
-}
-
-func SliceFromArray[T any](c Codec[T], b []byte) ([]T, error) {
-	if len(b) == 0 {
-		return nil, nil
-	}
-
-	d := bcs.NewBytesDecoder(b)
-	length := d.ReadLen()
-
-	ret := make([]T, length)
-
-	for i := range ret {
-		var err error
-		ret[i], err = c.DecodeStream(d)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if err := d.Err(); err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
-func SliceToDictKeys[T any](c Codec[T], set []T) dict.Dict {
-	ret := dict.Dict{}
-	for _, v := range set {
-		ret[kv.Key(c.Encode(v))] = []byte{0x01}
-	}
-	return ret
-}
-
-func SliceFromDictKeys[T any](c Codec[T], r dict.Dict) ([]T, error) {
-	ret := make([]T, 0, len(r))
-	for k := range r {
-		v, err := c.Decode([]byte(k))
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, v)
-	}
-	return ret, nil
+	return bcs.MustMarshal(&o)
 }

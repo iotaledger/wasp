@@ -73,9 +73,9 @@ func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
 	if b == nil {
 		return new(big.Int)
 	}
-	return codec.BigIntAbs.MustDecode(b)
+	return codec.MustDecode[*big.Int](b)
 }
 
 func (s *StateWriter) setWeiRemainder(accountKey kv.Key, v *big.Int) {
-	s.state.Set(accountWeiRemainderKey(accountKey), codec.BigIntAbs.Encode(v))
+	s.state.Set(accountWeiRemainderKey(accountKey), codec.Encode[*big.Int](v))
 }

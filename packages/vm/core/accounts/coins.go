@@ -22,14 +22,14 @@ func (s *StateWriter) accountCoinBalancesMap(accountKey kv.Key) *collections.Map
 
 func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType coin.Type) coin.Value {
 	b := s.accountCoinBalancesMapR(accountKey).GetAt(coinType.Bytes())
-	return codec.CoinValue.MustDecode(b, 0)
+	return codec.MustDecode[coin.Value](b, 0)
 }
 
 func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n coin.Value) {
 	if n == 0 {
 		s.accountCoinBalancesMap(accountKey).DelAt(coinType.Bytes())
 	} else {
-		s.accountCoinBalancesMap(accountKey).SetAt(coinType.Bytes(), codec.CoinValue.Encode(n))
+		s.accountCoinBalancesMap(accountKey).SetAt(coinType.Bytes(), codec.Encode[coin.Value](n))
 	}
 }
 
@@ -45,8 +45,8 @@ func (s *StateReader) GetCoins(agentID isc.AgentID, chainID isc.ChainID) isc.Coi
 	ret := isc.CoinBalances{}
 	s.accountCoinBalancesMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
-			codec.CoinType.MustDecode(coinType),
-			codec.CoinValue.MustDecode(val),
+			codec.MustDecode[coin.Type](coinType),
+			codec.MustDecode[coin.Value](val),
 		)
 		return true
 	})

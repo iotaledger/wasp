@@ -155,7 +155,7 @@ func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [
 
 	filteredEvents := make([][]byte, 0)
 	for blockNumber := q.BlockRange.From; blockNumber <= adjustedToBlock; blockNumber++ {
-		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Uint32.Encode(blockNumber))
+		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Encode[uint32](blockNumber))
 		s.state.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
 			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
 			if parsedContractID == q.Contract {

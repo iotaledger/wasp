@@ -1,12 +1,6 @@
 package coreutil
 
 import (
-	"fmt"
-	"io"
-	"math"
-
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
@@ -44,122 +38,39 @@ func (RawCallArgsCodec) Encode(d []byte) []byte {
 	return d
 }
 
-// Field is a CallArgsCodec that converts a single value of T
-type Field[T any] struct {
-	Codec codec.Codec[T]
+// field is a CallArgsCodec that converts a single value of T
+type field[T any] struct{}
+
+var _ CallArgsCodec[any] = (*field[any])(nil)
+
+func (f field[T]) Encode(v T) []byte {
+	return codec.Encode(v)
 }
 
-func (f Field[T]) Encode(v T) []byte {
-	b := f.Codec.Encode(v)
-	if b == nil {
-		return []byte{}
-	}
-	return b
+func (f field[T]) Decode(d []byte) (T, error) {
+	return codec.Decode[T](d)
 }
 
-func (f Field[T]) Decode(d []byte) (T, error) {
-	return f.Codec.Decode(d)
-}
-
-func FieldWithCodec[T any](codec codec.Codec[T]) Field[T] {
-	return Field[T]{Codec: codec}
+func Field[T any]() field[T] {
+	return field[T]{}
 }
 
 // OptionalCodec is a Codec that converts to/from an optional value of type T.
-type OptionalCodec[T any] struct {
-	Codec codec.Codec[T]
+
+func (c optionalField[T]) Decode(b []byte) (r *T, err error) {
+	return codec.DecodeOptional[T](b)
 }
 
-var _ codec.Codec[*any] = &OptionalCodec[any]{}
-
-func (c *OptionalCodec[T]) Decode(b []byte, def ...*T) (r *T, err error) {
-	if b[0] == 0 {
-		if len(def) != 0 {
-			err = fmt.Errorf("%T: unexpected default value", r)
-			return
-		}
-		return nil, nil
-	}
-	if b[0] != 1 {
-		return nil, fmt.Errorf("%T: invalid optional flag value '%v'", b[0], r)
-	}
-
-	v, err := c.Codec.Decode(b[1:])
-	if err != nil {
-		return nil, err
-	}
-	return &v, nil
-}
-
-func (c *OptionalCodec[T]) MustDecode(b []byte, def ...*T) *T {
-	return lo.Must(c.Decode(b, def...))
-}
-
-func (c *OptionalCodec[T]) Encode(v *T) []byte {
-	if v == nil {
-		return []byte{0}
-	}
-
-	b := c.Codec.Encode(*v)
-	return append([]byte{1}, b...)
-}
-
-func (c *OptionalCodec[T]) EncodeStream(w io.Writer, v *T) {
-	if v == nil {
-		w.Write([]byte{0})
-		return
-	}
-
-	w.Write([]byte{1})
-	c.Codec.EncodeStream(w, *v)
-}
-
-func (c *OptionalCodec[T]) DecodeStream(r io.Reader) (*T, error) {
-	var flag [1]byte
-	if _, err := r.Read(flag[:]); err != nil {
-		return nil, err
-	}
-
-	if flag[0] == 0 {
-		return nil, nil
-	}
-	if flag[0] != 1 {
-		return nil, fmt.Errorf("%T: invalid optional flag value '%v'", new(T), flag[0])
-	}
-
-	v, err := c.Codec.DecodeStream(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v, nil
-}
-
-func (c *OptionalCodec[T]) MustDecodeStream(r io.Reader) *T {
-	return lo.Must(c.DecodeStream(r))
+func (c optionalField[T]) Encode(v *T) []byte {
+	return codec.EncodeOptional(v)
 }
 
 // FieldWithCodecOptional returns a Field that accepts an optional value
-func FieldWithCodecOptional[T any](c codec.Codec[T]) Field[*T] {
-	return Field[*T]{Codec: &OptionalCodec[T]{Codec: c}}
+func FieldOptional[T any]() optionalField[T] {
+	return optionalField[T]{}
 }
 
-type FieldArrayOf[T any] struct {
-	codec codec.Codec[T]
+type optionalField[T any] struct {
 }
 
-// FieldArrayWithCodec returns a Field that encodes a slice of T
-func FieldArrayWithCodec[T any](codec codec.Codec[T]) FieldArrayOf[T] {
-	return FieldArrayOf[T]{codec: codec}
-}
-
-func (a FieldArrayOf[T]) Encode(slice []T) []byte {
-	if len(slice) > math.MaxUint16 {
-		panic("too many values")
-	}
-	return codec.SliceToArray(a.codec, slice)
-}
-
-func (a FieldArrayOf[T]) Decode(r []byte) ([]T, error) {
-	return codec.SliceFromArray(a.codec, r)
-}
+var _ CallArgsCodec[*any] = (*optionalField[any])(nil)

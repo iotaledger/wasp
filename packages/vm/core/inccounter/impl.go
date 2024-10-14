@@ -21,7 +21,7 @@ var Processor = Contract.Processor(initialize,
 )
 
 func InitParams(initialValue int64) dict.Dict {
-	return dict.Dict{VarCounter: codec.Int64.Encode(initialValue)}
+	return dict.Dict{VarCounter: codec.Encode[int64](initialValue)}
 }
 
 const (
@@ -36,8 +36,8 @@ func initialize(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 
 	params := ctx.Params()
-	val := codec.Int64.MustDecode(params.MustAt(0), 0)
-	ctx.State().Set(VarCounter, codec.Int64.Encode(val))
+	val := codec.MustDecode[int64](params.MustAt(0), 0)
+	ctx.State().Set(VarCounter, codec.Encode[int64](val))
 	eventCounter(ctx, val)
 
 	return isc.CallArguments{}
@@ -47,7 +47,7 @@ func incCounter(ctx isc.Sandbox, incOpt *int64) {
 	inc := coreutil.FromOptional(incOpt, 1)
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
 
-	val := codec.Int64.MustDecode(ctx.State().Get(VarCounter))
+	val := codec.MustDecode[int64](ctx.State().Get(VarCounter))
 	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor version: #%d",
 		val, inc, ctx.StateAnchor().GetObjectRef().Version)
 	tra := "(empty)"
@@ -55,17 +55,17 @@ func incCounter(ctx isc.Sandbox, incOpt *int64) {
 		tra = ctx.AllowanceAvailable().String()
 	}
 	ctx.Log().Infof("incCounter: allowance available: %s", tra)
-	ctx.State().Set(VarCounter, codec.Int64.Encode(val+inc))
+	ctx.State().Set(VarCounter, codec.Encode[int64](val+inc))
 	eventCounter(ctx, val+inc)
 }
 
 func incCounterAndRepeatOnce(ctx isc.Sandbox) {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
-	val := codec.Int64.MustDecode(state.Get(VarCounter), 0)
+	val := codec.MustDecode[int64](state.Get(VarCounter), 0)
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
-	state.Set(VarCounter, codec.Int64.Encode(val+1))
+	state.Set(VarCounter, codec.Encode[int64](val+1))
 	eventCounter(ctx, val+1)
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
@@ -85,12 +85,12 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) {
 
 func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 	val := coreutil.FromOptional(valOpt, 0)
-	numRepeats := coreutil.FromOptional(valOpt, lo.Must(codec.Int64.Decode(ctx.State().Get(VarNumRepeats), 0)))
+	numRepeats := coreutil.FromOptional(valOpt, lo.Must(codec.Decode[int64](ctx.State().Get(VarNumRepeats), 0)))
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
 
-	state.Set(VarCounter, codec.Int64.Encode(val+1))
+	state.Set(VarCounter, codec.Encode[int64](val+1))
 	eventCounter(ctx, val+1)
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
@@ -101,7 +101,7 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 
 	ctx.Log().Debugf("chain of %d requests ahead", numRepeats)
 
-	state.Set(VarNumRepeats, codec.Int64.Encode(numRepeats-1))
+	state.Set(VarNumRepeats, codec.Encode[int64](numRepeats-1))
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: ctx.ChainID().AsAddress(),
@@ -120,5 +120,5 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 }
 
 func getCounter(ctx isc.SandboxView) int64 {
-	return lo.Must(codec.Int64.Decode(ctx.StateR().Get(VarCounter), 0))
+	return lo.Must(codec.Decode[int64](ctx.StateR().Get(VarCounter), 0))
 }
