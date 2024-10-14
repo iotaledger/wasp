@@ -45,7 +45,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -63,7 +63,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -111,7 +111,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
     configuration := openapiclient.NewConfiguration()
@@ -130,7 +130,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
@@ -163,7 +163,7 @@ Name | Type | Description  | Notes
 
 ## CallView
 
-> JSONDict CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+> [][]int32 CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
 
 Call a view function on a contract by Hname
 
@@ -182,8 +182,8 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
-    contractCallViewRequest := *openapiclient.NewContractCallViewRequest(*openapiclient.NewJSONDict(), "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
+    chainID := "chainID_example" // string | ChainID (Hex Address)
+    contractCallViewRequest := *openapiclient.NewContractCallViewRequest([][]int32{[]int32{int32(123)}}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -192,7 +192,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.CallView``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `CallView`: JSONDict
+    // response from `CallView`: [][]int32
     fmt.Fprintf(os.Stdout, "Response from `ChainsApi.CallView`: %v\n", resp)
 }
 ```
@@ -203,7 +203,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -217,7 +217,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**JSONDict**](JSONDict.md)
+[**[][]int32**](array.md)
 
 ### Authorization
 
@@ -252,7 +252,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -270,7 +270,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -318,7 +318,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -336,7 +336,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -367,7 +367,7 @@ Name | Type | Description  | Notes
 
 ## EstimateGasOffledger
 
-> ReceiptResponse EstimateGasOffledger(ctx, chainID).Request(request).Execute()
+> EstimateGasOffledger(ctx, chainID).Request(request).Execute()
 
 Estimates gas for a given off-ledger ISC request
 
@@ -384,7 +384,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     request := *openapiclient.NewEstimateGasRequestOffledger("FromAddress_example", "RequestBytes_example") // EstimateGasRequestOffledger | Request
 
     configuration := openapiclient.NewConfiguration()
@@ -394,8 +394,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOffledger``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `EstimateGasOffledger`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOffledger`: %v\n", resp)
 }
 ```
 
@@ -405,7 +403,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -419,7 +417,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -428,7 +426,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
-- **Accept**: application/json
+- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -437,7 +435,7 @@ No authorization required
 
 ## EstimateGasOnledger
 
-> ReceiptResponse EstimateGasOnledger(ctx, chainID).Request(request).Execute()
+> EstimateGasOnledger(ctx, chainID).Request(request).Execute()
 
 Estimates gas for a given on-ledger ISC request
 
@@ -454,7 +452,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
 
     configuration := openapiclient.NewConfiguration()
@@ -464,8 +462,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOnledger``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `EstimateGasOnledger`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOnledger`: %v\n", resp)
 }
 ```
 
@@ -475,7 +471,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -489,7 +485,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -498,7 +494,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
-- **Accept**: application/json
+- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -524,7 +520,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -545,7 +541,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -653,7 +649,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -674,7 +670,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -723,7 +719,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     block := "block_example" // string | Block index or trie root (optional)
 
     configuration := openapiclient.NewConfiguration()
@@ -744,7 +740,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -793,7 +789,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -813,7 +809,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -844,7 +840,7 @@ Name | Type | Description  | Notes
 
 ## GetReceipt
 
-> ReceiptResponse GetReceipt(ctx, chainID, requestID).Execute()
+> GetReceipt(ctx, chainID, requestID).Execute()
 
 Get a receipt from a request ID
 
@@ -861,7 +857,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     requestID := "requestID_example" // string | RequestID (Hex)
 
     configuration := openapiclient.NewConfiguration()
@@ -871,8 +867,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetReceipt``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetReceipt`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetReceipt`: %v\n", resp)
 }
 ```
 
@@ -882,7 +876,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -897,7 +891,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -906,7 +900,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: application/json
+- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -932,7 +926,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     stateKey := "stateKey_example" // string | State Key (Hex)
 
     configuration := openapiclient.NewConfiguration()
@@ -953,7 +947,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **stateKey** | **string** | State Key (Hex) | 
 
 ### Other Parameters
@@ -1003,7 +997,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
     configuration := openapiclient.NewConfiguration()
@@ -1022,7 +1016,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
@@ -1072,7 +1066,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     chainRecord := *openapiclient.NewChainRecord([]string{"AccessNodes_example"}, false) // ChainRecord | Chain Record
 
     configuration := openapiclient.NewConfiguration()
@@ -1091,7 +1085,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1140,7 +1134,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1158,7 +1152,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1206,7 +1200,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -1224,7 +1218,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1255,7 +1249,7 @@ No authorization required
 
 ## WaitForRequest
 
-> ReceiptResponse WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+> WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
 
 Wait until the given request has been processed by the node
 
@@ -1272,7 +1266,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
     requestID := "requestID_example" // string | RequestID (Hex)
     timeoutSeconds := int32(56) // int32 | The timeout in seconds, maximum 60s (optional)
     waitForL1Confirmation := true // bool | Wait for the block to be confirmed on L1 (optional)
@@ -1284,8 +1278,6 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.WaitForRequest``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `WaitForRequest`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.WaitForRequest`: %v\n", resp)
 }
 ```
 
@@ -1295,7 +1287,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -1312,7 +1304,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ReceiptResponse**](ReceiptResponse.md)
+ (empty response body)
 
 ### Authorization
 
@@ -1321,7 +1313,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: application/json
+- **Accept**: Not defined
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

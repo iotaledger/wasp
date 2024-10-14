@@ -6,7 +6,7 @@ import (
 	"math/rand"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 )
 
@@ -18,9 +18,9 @@ type RandomAnchorOption struct {
 }
 
 func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
-	id := *suitest.RandomAddress()
+	id := *iotatest.RandomAddress()
 	assets := iscmove.AssetsBag{
-		ID:   *suitest.RandomAddress(),
+		ID:   *iotatest.RandomAddress(),
 		Size: uint64(rand.Int63()),
 	}
 	stateMetadata := make([]byte, 128)
@@ -48,7 +48,7 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 
 func RandomAssetsBag() iscmove.AssetsBag {
 	return iscmove.AssetsBag{
-		ID:   *suitest.RandomAddress(),
+		ID:   *iotatest.RandomAddress(),
 		Size: 0,
 	}
 }

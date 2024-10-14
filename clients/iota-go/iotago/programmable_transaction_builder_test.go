@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 
@@ -28,7 +28,7 @@ func TestPTBMoveCall(t *testing.T) {
 				contracts.SDKVerify().Modules,
 				contracts.SDKVerify().Dependencies,
 				iotaclient.DefaultGasBudget,
-				&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowObjectChanges: true, ShowEffects: true},
+				&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowObjectChanges: true, ShowEffects: true},
 			)
 			require.NoError(t, err)
 
@@ -135,7 +135,7 @@ func TestPTBTransferObject(t *testing.T) {
 	require.Equal(t, txBytes, txBytesRemote)
 }
 
-func TestPTBTransferSui(t *testing.T) {
+func TestPTBTransferIota(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
@@ -152,7 +152,7 @@ func TestPTBTransferSui(t *testing.T) {
 
 	// build with BCS
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	err = ptb.TransferSui(recipient.Address(), &amount)
+	err = ptb.TransferIota(recipient.Address(), &amount)
 	require.NoError(t, err)
 	pt := ptb.Finish()
 	tx := iotago.NewProgrammable(
@@ -166,9 +166,9 @@ func TestPTBTransferSui(t *testing.T) {
 	require.NoError(t, err)
 
 	// build with remote rpc
-	txn, err := client.TransferSui(
+	txn, err := client.TransferIota(
 		context.Background(),
-		iotaclient.TransferSuiRequest{
+		iotaclient.TransferIotaRequest{
 			Signer:    sender.Address(),
 			Recipient: recipient.Address(),
 			ObjectID:  coin.CoinObjectID,
@@ -181,7 +181,7 @@ func TestPTBTransferSui(t *testing.T) {
 	require.Equal(t, txBytesBCS, txBytesRemote)
 }
 
-func TestPTBPayAllSui(t *testing.T) {
+func TestPTBPayAllIota(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
@@ -197,7 +197,7 @@ func TestPTBPayAllSui(t *testing.T) {
 
 	// build with BCS
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	err = ptb.PayAllSui(recipient.Address())
+	err = ptb.PayAllIota(recipient.Address())
 	require.NoError(t, err)
 	pt := ptb.Finish()
 	tx := iotago.NewProgrammable(
@@ -211,9 +211,9 @@ func TestPTBPayAllSui(t *testing.T) {
 	require.NoError(t, err)
 
 	// build with remote rpc
-	txn, err := client.PayAllSui(
+	txn, err := client.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllSuiRequest{
+		iotaclient.PayAllIotaRequest{
 			Signer:     sender.Address(),
 			Recipient:  recipient.Address(),
 			InputCoins: coins.ObjectIDs(),
@@ -225,7 +225,7 @@ func TestPTBPayAllSui(t *testing.T) {
 	require.Equal(t, txBytes, txBytesRemote)
 }
 
-func TestPTBPaySui(t *testing.T) {
+func TestPTBPayIota(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
 	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
@@ -241,7 +241,7 @@ func TestPTBPaySui(t *testing.T) {
 	coin := coinPages.Data[0]
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	err = ptb.PaySui(
+	err = ptb.PayIota(
 		[]*iotago.Address{recipient1.Address(), recipient2.Address()},
 		[]uint64{123, 456},
 	)
@@ -266,7 +266,7 @@ func TestPTBPaySui(t *testing.T) {
 	require.True(t, simulate.Effects.Data.IsSuccess())
 	require.Equal(t, coin.CoinObjectID.String(), simulate.Effects.Data.V1.GasObject.Reference.ObjectID.String())
 
-	// 1 for Mutated, 2 created (the 2 transfer in pay_sui pt),
+	// 1 for Mutated, 2 created (the 2 transfer in pay_iota pt),
 	require.Len(t, simulate.ObjectChanges, 3)
 	for _, change := range simulate.ObjectChanges {
 		if change.Data.Mutated != nil {
@@ -281,9 +281,9 @@ func TestPTBPaySui(t *testing.T) {
 	}
 
 	// build with remote rpc
-	txn, err := client.PaySui(
+	txn, err := client.PayIota(
 		context.Background(),
-		iotaclient.PaySuiRequest{
+		iotaclient.PayIotaRequest{
 			Signer:     sender.Address(),
 			InputCoins: []*iotago.ObjectID{coin.CoinObjectID},
 			Recipients: []*iotago.Address{recipient1.Address(), recipient2.Address()},

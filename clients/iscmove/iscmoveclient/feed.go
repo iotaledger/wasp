@@ -51,15 +51,15 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 	for {
 		res, err := f.wsClient.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
 			Address: &f.anchorAddress,
-			Query: &iotajsonrpc.SuiObjectResponseQuery{
-				Filter: &iotajsonrpc.SuiObjectDataFilter{
+			Query: &iotajsonrpc.IotaObjectResponseQuery{
+				Filter: &iotajsonrpc.IotaObjectDataFilter{
 					StructType: &iotago.StructTag{
 						Address: &f.iscPackageID,
 						Module:  iscmove.RequestModuleName,
 						Name:    iscmove.RequestObjectName,
 					},
 				},
-				Options: &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
+				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 			},
 			Cursor: lastSeen,
 		})
@@ -76,14 +76,14 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
 			}
-			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.assetsBag.ID)
+			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.AssetsBag.ID)
 			if ctx.Err() != nil {
 				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", ctx.Err())
 			}
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 			}
-			req.assetsBag.Value = bals
+			req.AssetsBag.Value = bals
 			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
 				ObjectRef: reqData.Data.Ref(),
 				Object:    req.ToRequest(),
@@ -110,7 +110,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
-		events := make(chan *iotajsonrpc.SuiEvent)
+		events := make(chan *iotajsonrpc.IotaEvent)
 		err := f.wsClient.SubscribeEvent(
 			ctx,
 			&iotajsonrpc.EventFilter{
@@ -147,7 +147,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
-	events <-chan *iotajsonrpc.SuiEvent,
+	events <-chan *iotajsonrpc.IotaEvent,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
@@ -179,7 +179,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
-		changes := make(chan *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects])
+		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
 			&iotajsonrpc.TransactionFilter{
@@ -206,7 +206,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects],
+	changes <-chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
@@ -222,7 +222,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
-						Options:  &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
+						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 					})
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)

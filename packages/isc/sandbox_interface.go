@@ -51,7 +51,7 @@ type SandboxBase interface {
 	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
 	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
 	// GetCoinInfo returns information about a coin known by the chain
-	GetCoinInfo(coinType coin.Type) (*SuiCoinInfo, bool)
+	GetCoinInfo(coinType coin.Type) (*IotaCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
 	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)

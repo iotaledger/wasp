@@ -238,7 +238,7 @@ contract ERC721NFTs {
         _clearApproval(tokenId);
 
         ISCAssets memory allowance;
-        allowance.objects = new SuiObjectID[](1);
+        allowance.objects = new IotaObjectID[](1);
         allowance.objects[0] = tokenId.asObjectID();
 
         __iscPrivileged.moveBetweenAccounts(from, to, allowance);

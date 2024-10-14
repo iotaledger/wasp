@@ -17,11 +17,11 @@ import { HttpFile } from '../http/http';
 
 export class ChainInfoResponse {
     /**
-    * ChainID (Bech32-encoded)
+    * ChainID (Hex Address)
     */
     'chainID': string;
     /**
-    * The chain owner address (Bech32-encoded)
+    * The chain owner address (Hex Address)
     */
     'chainOwnerId': string;
     /**

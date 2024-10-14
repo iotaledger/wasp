@@ -9,14 +9,14 @@ import "./ISCPrivileged.sol";
 
 /**
  * @title ERC20Coin
- * @dev The ERC20 contract for a Sui coin.
+ * @dev The ERC20 contract for a Iota coin.
  */
 contract ERC20Coin {
     using ISCTypes for CoinBalance[];
 
     uint256 private constant MAX_UINT64 = type(uint64).max;
 
-    string private _suiCoinType;
+    string private _iotaCoinType;
     string private _name;
     string private _tickerSymbol;
     uint8 private _decimals;
@@ -70,7 +70,7 @@ contract ERC20Coin {
      * @return The total supply of the token.
      */
     function totalSupply() public view virtual returns (uint256) {
-        return __iscSandbox.getCoinInfo(_suiCoinType).totalSupply;
+        return __iscSandbox.getCoinInfo(_iotaCoinType).totalSupply;
     }
 
     /**
@@ -83,7 +83,7 @@ contract ERC20Coin {
             tokenOwner,
             __iscSandbox.getChainID()
         );
-        return __iscAccounts.getL2BalanceCoin(_suiCoinType, ownerAgentID);
+        return __iscAccounts.getL2BalanceCoin(_iotaCoinType, ownerAgentID);
     }
 
     /**
@@ -99,7 +99,7 @@ contract ERC20Coin {
         require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
         assets.coins = new CoinBalance[](1);
-        assets.coins[0].coinType = _suiCoinType;
+        assets.coins[0].coinType = _iotaCoinType;
         assets.coins[0].amount = uint64(numTokens);
         __iscPrivileged.moveBetweenAccounts(msg.sender, receiver, assets);
         emit Transfer(msg.sender, receiver, numTokens);
@@ -120,7 +120,7 @@ contract ERC20Coin {
         __iscPrivileged.setAllowanceCoin(
             msg.sender,
             delegate,
-            _suiCoinType,
+            _iotaCoinType,
             uint64(numTokens)
         );
         emit Approval(msg.sender, delegate, numTokens);
@@ -138,7 +138,7 @@ contract ERC20Coin {
         address delegate
     ) public view returns (uint256) {
         ISCAssets memory assets = __iscSandbox.getAllowance(owner, delegate);
-        return assets.coins.getCoinAmount(_suiCoinType);
+        return assets.coins.getCoinAmount(_iotaCoinType);
     }
 
     /**
@@ -156,7 +156,7 @@ contract ERC20Coin {
         require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAssets memory assets;
         assets.coins = new CoinBalance[](1);
-        assets.coins[0].coinType = _suiCoinType;
+        assets.coins[0].coinType = _iotaCoinType;
         assets.coins[0].amount = uint64(numTokens);
         __iscPrivileged.moveAllowedFunds(owner, msg.sender, assets);
         if (buyer != msg.sender) {

@@ -20,7 +20,7 @@ var testSeed = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116,
 func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seed[0] = seed[0] + byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 	return kp
 }
@@ -38,7 +38,7 @@ func TestKeys(t *testing.T) {
 	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          cryptolibSigner.Address().AsSuiAddress(),
+		Sender:          cryptolibSigner.Address().AsIotaAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
@@ -47,9 +47,9 @@ func TestKeys(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(cryptolibSigner),
+		cryptolib.SignerToIotaSigner(cryptolibSigner),
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

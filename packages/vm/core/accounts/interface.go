@@ -28,7 +28,7 @@ var (
 	)
 	FuncWithdraw    = coreutil.NewEP0(Contract, "withdraw")
 	SetCoinMetadata = coreutil.NewEP1(Contract, "setCoinMetadata",
-		coreutil.Field[*isc.SuiCoinInfo](),
+		coreutil.Field[*isc.IotaCoinInfo](),
 	)
 	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
 		coreutil.Field[coin.Type](),

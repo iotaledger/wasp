@@ -269,7 +269,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
 			governance.DefaultMinBaseTokensOnCommonAccount,
-			&isc.SuiCoinInfo{CoinType: coin.BaseTokenType},
+			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
 		),
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
@@ -838,7 +838,7 @@ func (clu *Cluster) ActiveNodes() []int {
 func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	// get funds controlled by addr
 
-	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsSuiAddress())
+	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsIotaAddress())
 	if err != nil {
 		clu.log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
 		return nil

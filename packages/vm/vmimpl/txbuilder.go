@@ -28,7 +28,7 @@ func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
 func (vmctx *vmContext) BuildTransactionEssence(stateMetadata []byte) iotago.TransactionData {
 	ptb := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
 	return iotago.NewProgrammable(
-		vmctx.stateAnchor().Owner.AsSuiAddress(),
+		vmctx.stateAnchor().Owner.AsIotaAddress(),
 		ptb,
 		[]*iotago.ObjectRef{}, // TODO: handle L1 gas
 		0,

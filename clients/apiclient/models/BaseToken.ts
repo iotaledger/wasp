@@ -13,6 +13,7 @@
 import { HttpFile } from '../http/http';
 
 export class BaseToken {
+    'coinType'?: string;
     /**
     * The token decimals
     */
@@ -41,6 +42,12 @@ export class BaseToken {
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "coinType",
+            "baseName": "coinType",
+            "type": "string",
+            "format": "string"
+        },
         {
             "name": "decimals",
             "baseName": "decimals",

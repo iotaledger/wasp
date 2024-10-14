@@ -46,7 +46,7 @@ interface ISCSandbox {
     // include the transferred `assets`.
     // The specified `allowance` must not be greater than `assets`.
     function send(
-        SuiAddress targetAddress,
+        IotaAddress targetAddress,
         ISCAssets memory assets,
         bool adjustToMinimumStorageDeposit,
         ISCSendMetadata memory metadata,
@@ -73,17 +73,17 @@ interface ISCSandbox {
     function getTimestampUnixSeconds() external view returns (int64);
 
     // Get the properties of the L1 base token
-    function getBaseTokenInfo() external view returns (SuiCoinInfo memory);
+    function getBaseTokenInfo() external view returns (IotaCoinInfo memory);
 
     // Get the properties of a L2-controlled coin
-    function getCoinInfo(string memory coinType) external view returns (SuiCoinInfo memory);
+    function getCoinInfo(string memory coinType) external view returns (IotaCoinInfo memory);
 
     // Get information about an on-chain object
-    function getObjectBCS(SuiObjectID id) external view returns (bytes memory);
+    function getObjectBCS(IotaObjectID id) external view returns (bytes memory);
 
     // Get information about an on-chain IRC27 NFT
     // NOTE: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form
-    function getIRC27NFTData(SuiObjectID id) external view returns (IRC27NFT memory);
+    function getIRC27NFTData(IotaObjectID id) external view returns (IRC27NFT memory);
 
     // Get information about an on-chain IRC27 NFT
     // returns a JSON file encoded with the following format:
@@ -92,13 +92,13 @@ interface ISCSandbox {
     //   "description": NFT.description,
     //   "image": NFT.URI
     // }))
-    function getIRC27TokenURI(SuiObjectID id) external view returns (string memory);
+    function getIRC27TokenURI(IotaObjectID id) external view returns (string memory);
 
     // Get the address of an ERC20Coin contract
     function ERC20CoinAddress(string memory coinType) external view returns (address);
 
     // Get the address of an ERC721NFTCollection contract for the given collection ID
-    function erc721NFTCollectionAddress(SuiObjectID collectionID) external view
+    function erc721NFTCollectionAddress(IotaObjectID collectionID) external view
         returns (address);
 }
 

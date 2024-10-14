@@ -38,7 +38,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	ReceiveRequestAndTransition(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -50,7 +50,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsBagNew(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -59,7 +59,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsBagPlaceCoin(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -71,7 +71,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsDestroyEmpty(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
@@ -81,7 +81,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 		devMode bool,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	GetAssetsBagWithBalances(
 		ctx context.Context,
 		assetsBagID *iotago.ObjectID,

@@ -37,7 +37,7 @@ func (r ApiGetChainMessageMetricsRequest) Execute() (*ChainMessageMetrics, *http
 GetChainMessageMetrics Get chain specific message metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainMessageMetricsRequest
 */
 func (a *MetricsApiService) GetChainMessageMetrics(ctx context.Context, chainID string) ApiGetChainMessageMetricsRequest {
@@ -163,7 +163,7 @@ func (r ApiGetChainPipeMetricsRequest) Execute() (*ConsensusPipeMetrics, *http.R
 GetChainPipeMetrics Get chain pipe event metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainPipeMetricsRequest
 */
 func (a *MetricsApiService) GetChainPipeMetrics(ctx context.Context, chainID string) ApiGetChainPipeMetricsRequest {
@@ -289,7 +289,7 @@ func (r ApiGetChainWorkflowMetricsRequest) Execute() (*ConsensusWorkflowMetrics,
 GetChainWorkflowMetrics Get chain workflow metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainWorkflowMetricsRequest
 */
 func (a *MetricsApiService) GetChainWorkflowMetrics(ctx context.Context, chainID string) ApiGetChainWorkflowMetricsRequest {

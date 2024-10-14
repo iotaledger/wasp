@@ -474,7 +474,7 @@ func TestISCNFTData(t *testing.T) {
 			AddBaseTokens(100000).
 			WithObject(nft.ID).
 			WithMaxAffordableGasBudget().
-			WithSender(cryptolib.NewAddressFromSui(&nft.ID)),
+			WithSender(cryptolib.NewAddressFromIota(&nft.ID)),
 		issuerWallet,
 	)
 	require.NoError(t, err)
@@ -991,7 +991,7 @@ func TestSendNFT(t *testing.T) {
 			iscmagic.ERC721NFTsAddress,
 			ethAddr,
 			iscTest.address,
-			iscmagic.TokenIDFromSuiObjectID(nft.ID),
+			iscmagic.TokenIDFromIotaObjectID(nft.ID),
 		)
 		checkTransferEventERC721(
 			t,
@@ -999,7 +999,7 @@ func TestSendNFT(t *testing.T) {
 			iscmagic.ERC721NFTsAddress,
 			iscTest.address,
 			common.Address{},
-			iscmagic.TokenIDFromSuiObjectID(nft.ID),
+			iscmagic.TokenIDFromIotaObjectID(nft.ID),
 		)
 	}
 }
@@ -1034,7 +1034,7 @@ func TestERC721NFTs(t *testing.T) {
 			iscmagic.ERC721NFTsAddress,
 			common.Address{},
 			ethAddr,
-			iscmagic.TokenIDFromSuiObjectID(nft.ID),
+			iscmagic.TokenIDFromIotaObjectID(nft.ID),
 		)
 	}
 
@@ -1046,7 +1046,7 @@ func TestERC721NFTs(t *testing.T) {
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		require.EqualValues(t, ethAddr, a)
 	}
 
@@ -1056,34 +1056,34 @@ func TestERC721NFTs(t *testing.T) {
 		_, err2 := erc721.CallFn([]ethCallOptions{{
 			sender:   receiverKey,
 			gasLimit: 100_000, // skip estimate gas (which will fail)
-		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromSuiObjectID(nft.ID))
+		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromIotaObjectID(nft.ID))
 		require.Error(t, err2)
 	}
 
-	_, err = erc721.CallFn(nil, "approve", receiverAddr, iscmagic.TokenIDFromSuiObjectID(nft.ID))
+	_, err = erc721.CallFn(nil, "approve", receiverAddr, iscmagic.TokenIDFromIotaObjectID(nft.ID))
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("getApproved", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 
 	_, err = erc721.CallFn([]ethCallOptions{{
 		sender: receiverKey,
-	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromSuiObjectID(nft.ID))
+	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromIotaObjectID(nft.ID))
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("getApproved", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		var zero common.Address
 		require.EqualValues(t, zero, a)
 	}
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 }
@@ -1167,7 +1167,7 @@ func TestERC721NFTCollection(t *testing.T) {
 					iscmagic.ERC721NFTCollectionAddress(collection.ID),
 					common.Address{},
 					ethAddr,
-					iscmagic.TokenIDFromSuiObjectID(nft.ID),
+					iscmagic.TokenIDFromIotaObjectID(nft.ID),
 				)
 			}
 		}
@@ -1193,7 +1193,7 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		require.EqualValues(t, ethAddr, a)
 	}
 
@@ -1203,34 +1203,34 @@ func TestERC721NFTCollection(t *testing.T) {
 		_, err2 := erc721.CallFn([]ethCallOptions{{
 			sender:   receiverKey,
 			gasLimit: 100_000, // skip estimate gas (which will fail)
-		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromSuiObjectID(nft.ID))
+		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromIotaObjectID(nft.ID))
 		require.Error(t, err2)
 	}
 
-	_, err = erc721.CallFn(nil, "approve", receiverAddr, iscmagic.TokenIDFromSuiObjectID(nft.ID))
+	_, err = erc721.CallFn(nil, "approve", receiverAddr, iscmagic.TokenIDFromIotaObjectID(nft.ID))
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("getApproved", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 
 	_, err = erc721.CallFn([]ethCallOptions{{
 		sender: receiverKey,
-	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromSuiObjectID(nft.ID))
+	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.TokenIDFromIotaObjectID(nft.ID))
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("getApproved", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		var zero common.Address
 		require.EqualValues(t, zero, a)
 	}
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 
@@ -1242,7 +1242,7 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	{
 		var uri string
-		erc721.callView("tokenURI", []any{iscmagic.TokenIDFromSuiObjectID(nft.ID)}, &uri)
+		erc721.callView("tokenURI", []any{iscmagic.TokenIDFromIotaObjectID(nft.ID)}, &uri)
 		p, err := evm.DecodePackedNFTURI(uri)
 		require.NoError(t, err)
 		require.EqualValues(t, nftMetadatas[0].URI, p.Image)

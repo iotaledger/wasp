@@ -68,7 +68,7 @@ func NewSignerByIndex(seed []byte, flag KeySchemeFlag, index int) Signer {
 	return NewSigner(seed, flag)
 }
 
-// generate keypair (signer) with mnemonic which is referring the Sui monorepo in the following code
+// generate keypair (signer) with mnemonic which is referring the Iota monorepo in the following code
 //
 // let phrase = "asset pink record dawn hundred sure various crime client enforce carbon blossom";
 // let mut keystore = Keystore::from(InMemKeystore::new_insecure_for_tests(0));

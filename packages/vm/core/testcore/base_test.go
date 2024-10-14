@@ -452,7 +452,7 @@ func TestDeployNativeContract(t *testing.T) {
 
 	// get more base tokens for originator
 	originatorBalance := env.L1BaseTokens(ch.OriginatorAddress)
-	err = iotaclient.RequestFundsFromFaucet(env.Ctx(), ch.OriginatorAddress.AsSuiAddress(), env.SuiFaucetURL())
+	err = iotaclient.RequestFundsFromFaucet(env.Ctx(), ch.OriginatorAddress.AsIotaAddress(), env.IotaFaucetURL())
 	require.NoError(t, err)
 	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+iotaclient.FundsFromFaucetAmount)
 

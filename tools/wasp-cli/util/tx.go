@@ -45,21 +45,23 @@ func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (*iotago.T
 }
 
 func logTx(chainID isc.ChainID, tx *iotago.Transaction) {
-	allReqs, err := isc.RequestsInTransaction(tx)
-	log.Check(err)
-	txid, err := tx.ID()
-	log.Check(err)
-	reqs := allReqs[chainID]
-	if len(reqs) == 0 {
-		log.Printf("Posted on-ledger transaction %s\n", txid.ToHex())
-	} else {
-		plural := ""
-		if len(reqs) != 1 {
-			plural = "s"
-		}
-		log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", txid.ToHex(), len(reqs), plural)
-		for i, req := range reqs {
-			log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], req.ID().String())
-		}
-	}
+	panic("refactor me: logTx")
+	/*
+		allReqs, err := isc.RequestsInTransaction(tx)
+		log.Check(err)
+		txid, err := tx.ID()
+		log.Check(err)
+		reqs := allReqs[chainID]
+		if len(reqs) == 0 {
+			log.Printf("Posted on-ledger transaction %s\n", txid.ToHex())
+		} else {
+			plural := ""
+			if len(reqs) != 1 {
+				plural = "s"
+			}
+			log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", txid.ToHex(), len(reqs), plural)
+			for i, req := range reqs {
+				log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], req.ID().String())
+			}
+		}*/
 }

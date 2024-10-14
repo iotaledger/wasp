@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -30,7 +30,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 	coins := iotajsonrpc.Coins(coinPages.Data)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb.PayAllSui(sender.Address())
+	ptb.PayAllIota(sender.Address())
 	pt := ptb.Finish()
 	tx := iotago.NewProgrammable(
 		sender.Address(),
@@ -65,9 +65,9 @@ func TestDryRunTransaction(t *testing.T) {
 	require.NoError(t, err)
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, big.NewInt(100), iotaclient.DefaultGasBudget, 0, 0)
 	require.NoError(t, err)
-	tx, err := api.PayAllSui(
+	tx, err := api.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllSuiRequest{
+		iotaclient.PayAllIotaRequest{
 			Signer:     signer,
 			Recipient:  signer,
 			InputCoins: pickedCoins.CoinIds(),

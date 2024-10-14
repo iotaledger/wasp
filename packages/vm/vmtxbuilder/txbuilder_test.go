@@ -50,11 +50,11 @@ func TestTxBuilderBasic(t *testing.T) {
 	stateMetadata := []byte("dummy stateMetadata")
 	pt := txb.BuildTransactionEssence(stateMetadata)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsSuiAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	tx := iotago.NewProgrammable(
-		signer.Address().AsSuiAddress(),
+		signer.Address().AsIotaAddress(),
 		pt,
 		[]*iotago.ObjectRef{getCoinsRes.Data[len(getCoinsRes.Data)-2].Ref()},
 		iotaclient.DefaultGasBudget,
@@ -65,14 +65,14 @@ func TestTxBuilderBasic(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.SuiObjectDataOptions{ShowContent: true}})
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Error.Data.Deleted)
 	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Error.Data.Deleted)
@@ -108,11 +108,11 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	stateMetadata1 := []byte("dummy stateMetadata1")
 	ptb1 := txb1.BuildTransactionEssence(stateMetadata1)
 
-	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsSuiAddress(), iotaclient.DefaultGasBudget)
+	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	tx1 := iotago.NewProgrammable(
-		signer.Address().AsSuiAddress(),
+		signer.Address().AsIotaAddress(),
 		ptb1,
 		coins.CoinRefs(),
 		iotaclient.DefaultGasBudget,
@@ -123,14 +123,14 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes1,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.SuiObjectDataOptions{ShowContent: true}})
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Error.Data.Deleted)
 
 	// reset
@@ -139,18 +139,18 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	anchor.ObjectRef = *tmp
 	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, signer.Address())
 
-	txb2.SendAssets(recipient.Address().AsSuiAddress(), isc.NewAssets(1))
+	txb2.SendAssets(recipient.Address().AsIotaAddress(), isc.NewAssets(1))
 
 	req2 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb2.ConsumeRequest(req2)
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2)
 
-	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsSuiAddress(), iotaclient.DefaultGasBudget)
+	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
-		signer.Address().AsSuiAddress(),
+		signer.Address().AsIotaAddress(),
 		pt2,
 		coins.CoinRefs(),
 		iotaclient.DefaultGasBudget,
@@ -161,9 +161,9 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes2,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse2.Effects.Data.IsSuccess())
@@ -210,11 +210,11 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	stateMetadata1 := []byte("dummy stateMetadata1")
 	pt1 := txb1.BuildTransactionEssence(stateMetadata1)
 
-	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsSuiAddress(), iotaclient.DefaultGasBudget)
+	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	tx1 := iotago.NewProgrammable(
-		signer.Address().AsSuiAddress(),
+		signer.Address().AsIotaAddress(),
 		pt1,
 		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
@@ -225,14 +225,14 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes1,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
 
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.SuiObjectDataOptions{ShowContent: true}})
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
 	require.NotNil(t, getObjReq1.Error.Data.Deleted)
 
 	// reset
@@ -250,11 +250,11 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2)
 
-	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsSuiAddress(), iotaclient.DefaultGasBudget)
+	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
-		signer.Address().AsSuiAddress(),
+		signer.Address().AsIotaAddress(),
 		pt2,
 		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
@@ -265,9 +265,9 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes2,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse2.Effects.Data.IsSuccess())
@@ -279,18 +279,18 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), crossChainRequestRef.ObjectID)
 	require.NoError(t, err)
-	req3, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromSui(anchor2.ObjectID))
+	req3, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor2.ObjectID))
 	require.NoError(t, err)
 	txb3.ConsumeRequest(req3)
 
-	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsSuiAddress(), iotaclient.DefaultGasBudget)
+	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	stateMetadata3 := []byte("dummy stateMetadata3")
 	pt3 := txb3.BuildTransactionEssence(stateMetadata3)
 
 	tx3 := iotago.NewProgrammable(
-		signer.Address().AsSuiAddress(),
+		signer.Address().AsIotaAddress(),
 		pt3,
 		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
@@ -302,9 +302,9 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	txnResponse3, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes3,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse3.Effects.Data.IsSuccess())
@@ -315,7 +315,7 @@ var testSeed = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116,
 func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seed[0] = seed[0] + byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 	return kp
 }
@@ -328,11 +328,11 @@ func newLocalnetClient() *iscmoveclient.Client {
 }
 
 func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) iotago.PackageID {
-	suiSigner := cryptolib.SignerToSuiSigner(signer)
+	iotaSigner := cryptolib.SignerToIotaSigner(signer)
 	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          suiSigner.Address(),
+		Sender:          iotaSigner.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
@@ -340,9 +340,9 @@ func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, sign
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		suiSigner,
+		iotaSigner,
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -363,12 +363,12 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsSuiAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 	getCoinsRes, err := client.GetCoins(
 		context.Background(),
 		iotaclient.GetCoinsRequest{
-			Owner: signer.Address().AsSuiAddress(),
+			Owner: signer.Address().AsIotaAddress(),
 		},
 	)
 	require.NoError(t, err)
@@ -423,7 +423,7 @@ func createIscmoveReq(
 	require.NoError(t, err)
 	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
-	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromSui(anchor.ObjectID))
+	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
 	require.NoError(t, err)
 
 	return req

@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Addresses** | Pointer to **[]string** | The allowed state controller addresses (Bech32-encoded) | [optional] 
+**Addresses** | Pointer to **[]string** | The allowed state controller addresses (Hex Address) | [optional] 
 
 ## Methods
 

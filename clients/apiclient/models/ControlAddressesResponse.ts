@@ -14,7 +14,7 @@ import { HttpFile } from '../http/http';
 
 export class ControlAddressesResponse {
     /**
-    * The governing address (Bech32)
+    * The governing address (Hex Address)
     */
     'governingAddress': string;
     /**
@@ -22,7 +22,7 @@ export class ControlAddressesResponse {
     */
     'sinceBlockIndex': number;
     /**
-    * The state address (Bech32)
+    * The state address (Hex Address)
     */
     'stateAddress': string;
 

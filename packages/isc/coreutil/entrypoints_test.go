@@ -208,7 +208,7 @@ func (m MockSandBox) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("implement me")
 }
 
-func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
 	// TODO implement me
 	panic("implement me")
 }

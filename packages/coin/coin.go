@@ -38,7 +38,7 @@ func ValueFromBytes(b []byte) (Value, error) {
 // TODO: maybe it is not ok to consider this constant?
 const BaseTokenType = Type(iotajsonrpc.IotaCoinType)
 
-// Type is the string representation of a Sui coin type, e.g. `0x2::iotago::SUI`
+// Type is the string representation of a Iota coin type, e.g. `0x2::iota::IOTA`
 type Type string
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {

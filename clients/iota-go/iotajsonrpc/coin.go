@@ -29,7 +29,7 @@ func (c *Coin) Ref() *iotago.ObjectRef {
 	}
 }
 
-func (c *Coin) IsSUI() bool {
+func (c *Coin) IsIOTA() bool {
 	return c.CoinType == IotaCoinType
 }
 
@@ -93,11 +93,11 @@ const (
 	PickMethodByOrder        // pick coins by coins order to match amount
 )
 
-// PickSUICoinsWithGas pick coins, which sum >= amount, and pick a gas coin >= gasAmount which not in coins
+// PickIOTACoinsWithGas pick coins, which sum >= amount, and pick a gas coin >= gasAmount which not in coins
 // if not satisfied amount/gasAmount, an ErrCoinsNotMatchRequest/ErrCoinsNeedMoreObject error will return
 // if gasAmount == 0, a nil gasCoin will return
 // pickMethod, see PickMethodSmaller|PickMethodBigger|PickMethodByOrder
-func (cs Coins) PickSUICoinsWithGas(amount *big.Int, gasAmount uint64, pickMethod int) (Coins, *Coin, error) {
+func (cs Coins) PickIOTACoinsWithGas(amount *big.Int, gasAmount uint64, pickMethod int) (Coins, *Coin, error) {
 	if gasAmount == 0 {
 		res, err := cs.PickCoins(amount, pickMethod)
 		return res, nil, err

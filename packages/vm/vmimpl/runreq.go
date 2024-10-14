@@ -86,7 +86,7 @@ func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 }
 
 // consumeRequest Consumes incoming request and updating the sender's L2 Balance according to the current request.
-// In the Sui ver impl, For L1's perspective ISC anchor credits all the assets attached on the
+// In the Iota ver impl, For L1's perspective ISC anchor credits all the assets attached on the
 // requests, when calling txbuilder.BuildTransactionEssence
 func (reqctx *requestContext) consumeRequest() {
 	req, ok := reqctx.req.(isc.OnLedgerRequest)

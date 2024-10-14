@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -19,7 +19,7 @@ func TestIscCodec(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, iscmove.RefWithObject[ExampleObj]{
-		ObjectRef: *suitest.RandomObjectRef(),
+		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &ExampleObj{A: 42},
 	})
 

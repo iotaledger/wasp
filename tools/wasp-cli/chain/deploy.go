@@ -62,7 +62,7 @@ func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer 
 	iscBytecode := contracts.ISC()
 
 	txnBytes, err := client.Publish(ctx, iotaclient.PublishRequest{
-		Sender:          signer.Address().AsSuiAddress(),
+		Sender:          signer.Address().AsIotaAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
@@ -74,9 +74,9 @@ func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer 
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		ctx,
-		cryptolib.SignerToSuiSigner(signer),
+		cryptolib.SignerToIotaSigner(signer),
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},

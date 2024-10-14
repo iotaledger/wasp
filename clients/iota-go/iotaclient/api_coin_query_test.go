@@ -77,7 +77,8 @@ func TestGetAllCoins(t *testing.T) {
 					t.Errorf("GetAllCoins() error: %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				// we have called multiple times RequestFundsFromFaucet() on testnet, so the account have several SUI objects.
+				// we have called multiple times RequestFundsFromFaucet() on testnet,
+				// so the account have several IOTA objects.
 				require.GreaterOrEqual(t, len(got.Data), int(tt.args.limit))
 				require.NotNil(t, got.NextCursor)
 			},
@@ -101,7 +102,7 @@ func TestGetCoinMetadata(t *testing.T) {
 	metadata, err := api.GetCoinMetadata(context.TODO(), iotajsonrpc.IotaCoinType)
 	require.NoError(t, err)
 
-	testSuiMetadata := &iotajsonrpc.SuiCoinMetadata{
+	testIotaMetadata := &iotajsonrpc.IotaCoinMetadata{
 		Decimals:    9,
 		Description: "The main (gas)token of the IOTA Network.",
 		IconUrl:     "https://iota.org/logo.png",
@@ -109,7 +110,7 @@ func TestGetCoinMetadata(t *testing.T) {
 		Name:        "IOTA",
 		Symbol:      "IOTA",
 	}
-	require.Equal(t, testSuiMetadata, metadata)
+	require.Equal(t, testIotaMetadata, metadata)
 }
 
 func TestGetCoins(t *testing.T) {
@@ -145,7 +146,7 @@ func TestGetTotalSupply(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "get Sui supply",
+			name: "get Iota supply",
 			api:  iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL),
 			args: args{
 				context.TODO(),

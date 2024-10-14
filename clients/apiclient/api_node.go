@@ -527,7 +527,7 @@ func (r ApiGetDKSInfoRequest) Execute() (*DKSharesInfo, *http.Response, error) {
 GetDKSInfo Get information about the shared address DKS configuration
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param sharedAddress SharedAddress (Bech32)
+ @param sharedAddress SharedAddress (Hex Address)
  @return ApiGetDKSInfoRequest
 */
 func (a *NodeApiService) GetDKSInfo(ctx context.Context, sharedAddress string) ApiGetDKSInfoRequest {

@@ -236,7 +236,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		ch.Env.ctx,
 		keyPair,
 		ch.Env.ISCPackageID(),
-		ch.ID().AsAddress().AsSuiAddress(),
+		ch.ID().AsAddress().AsIotaAddress(),
 		ch.Env.makeAssetsBag(keyPair, req.assets),
 		uint32(req.msg.Target.Contract),
 		uint32(req.msg.Target.EntryPoint),

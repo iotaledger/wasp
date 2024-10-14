@@ -47,15 +47,15 @@ func (c *Client) DryRunTransaction(
 type ExecuteTransactionBlockRequest struct {
 	TxDataBytes iotago.Base64Data
 	Signatures  []*iotasigner.Signature
-	Options     *iotajsonrpc.SuiTransactionBlockResponseOptions // optional
-	RequestType iotajsonrpc.ExecuteTransactionRequestType       // optional
+	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+	RequestType iotajsonrpc.ExecuteTransactionRequestType        // optional
 }
 
 func (c *Client) ExecuteTransactionBlock(
 	ctx context.Context,
 	req ExecuteTransactionBlockRequest,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
-	resp := iotajsonrpc.SuiTransactionBlockResponse{}
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	resp := iotajsonrpc.IotaTransactionBlockResponse{}
 	return &resp, c.transport.Call(
 		ctx,
 		&resp,

@@ -39,8 +39,8 @@ func (c *Client) GetBalance(ctx context.Context, req GetBalanceRequest) (*iotajs
 	}
 }
 
-func (c *Client) GetCoinMetadata(ctx context.Context, coinType string) (*iotajsonrpc.SuiCoinMetadata, error) {
-	var resp iotajsonrpc.SuiCoinMetadata
+func (c *Client) GetCoinMetadata(ctx context.Context, coinType string) (*iotajsonrpc.IotaCoinMetadata, error) {
+	var resp iotajsonrpc.IotaCoinMetadata
 	return &resp, c.transport.Call(ctx, &resp, getCoinMetadata, coinType)
 }
 

@@ -18,7 +18,7 @@ import "./ERC721NFTs.sol";
 contract ERC721NFTCollection is ERC721NFTs {
     using ISCTypes for ISCNFT;
 
-    SuiObjectID private _collectionId;
+    IotaObjectID private _collectionId;
     string private _collectionName; // extracted from the IRC27 metadata
 
     /**
@@ -47,7 +47,7 @@ contract ERC721NFTCollection is ERC721NFTs {
      * @dev Returns the ID of the collection.
      * @return The ID of the collection.
      */
-    function collectionId() external view virtual returns (SuiObjectID) {
+    function collectionId() external view virtual returns (IotaObjectID) {
         return _collectionId;
     }
 

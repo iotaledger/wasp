@@ -16,9 +16,9 @@ func (c *Client) GetCommitteeInfo(
 	return &resp, c.transport.Call(ctx, &resp, getCommitteeInfo, epoch)
 }
 
-func (c *Client) GetLatestSuiSystemState(ctx context.Context) (*iotajsonrpc.SuiSystemStateSummary, error) {
-	var resp iotajsonrpc.SuiSystemStateSummary
-	return &resp, c.transport.Call(ctx, &resp, getLatestSuiSystemState)
+func (c *Client) GetLatestIotaSystemState(ctx context.Context) (*iotajsonrpc.IotaSystemStateSummary, error) {
+	var resp iotajsonrpc.IotaSystemStateSummary
+	return &resp, c.transport.Call(ctx, &resp, getLatestIotaSystemState)
 }
 
 func (c *Client) GetReferenceGasPrice(ctx context.Context) (*iotajsonrpc.BigInt, error) {
@@ -31,12 +31,12 @@ func (c *Client) GetStakes(ctx context.Context, owner *iotago.Address) ([]*iotaj
 	return resp, c.transport.Call(ctx, &resp, getStakes, owner)
 }
 
-func (c *Client) GetStakesByIds(ctx context.Context, stakedSuiIds []iotago.ObjectID) (
+func (c *Client) GetStakesByIds(ctx context.Context, stakedIotaIds []iotago.ObjectID) (
 	[]*iotajsonrpc.DelegatedStake,
 	error,
 ) {
 	var resp []*iotajsonrpc.DelegatedStake
-	return resp, c.transport.Call(ctx, &resp, getStakesByIds, stakedSuiIds)
+	return resp, c.transport.Call(ctx, &resp, getStakesByIds, stakedIotaIds)
 }
 
 func (c *Client) GetValidatorsApy(ctx context.Context) (*iotajsonrpc.ValidatorsApy, error) {

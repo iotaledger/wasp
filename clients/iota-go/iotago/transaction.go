@@ -5,14 +5,14 @@ import (
 )
 
 var (
-	SuiSystemMut = CallArg{
-		Object: &SuiSystemMutObj,
+	IotaSystemMut = CallArg{
+		Object: &IotaSystemMutObj,
 	}
 
-	SuiSystemMutObj = ObjectArg{
+	IotaSystemMutObj = ObjectArg{
 		SharedObject: &SharedObjectArg{
-			Id:                   SuiObjectIdSystemState,
-			InitialSharedVersion: SuiSystemStateObjectSharedVersion,
+			Id:                   IotaObjectIdSystemState,
+			InitialSharedVersion: IotaSystemStateObjectSharedVersion,
 			Mutable:              true,
 		},
 	}

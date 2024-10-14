@@ -40,7 +40,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		[]iscmove.CoinAllowance{{CoinType: "SUI", Balance: 10}, {CoinType: "SUI", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
+		[]iscmove.CoinAllowance{{CoinType: "IOTA", Balance: 10}, {CoinType: "IOTA", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -81,7 +81,7 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		uint32(isc.Hn("test_isc_contract")),
 		uint32(isc.Hn("test_isc_func")),
 		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		[]iscmove.CoinAllowance{{CoinType: "SUI", Balance: 10}, {CoinType: "SUI", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
+		[]iscmove.CoinAllowance{{CoinType: "IOTA", Balance: 10}, {CoinType: "IOTA", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -96,6 +96,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
 	require.Equal(t, iscmove.CoinAllowance{CoinType: "TEST_A", Balance: 12}, req.Object.Allowance[0])
-	require.Equal(t, iscmove.CoinAllowance{CoinType: "SUI", Balance: 11}, req.Object.Allowance[1])
-	require.Equal(t, iscmove.CoinAllowance{CoinType: "SUI", Balance: 10}, req.Object.Allowance[2])
+	require.Equal(t, iscmove.CoinAllowance{CoinType: "IOTA", Balance: 11}, req.Object.Allowance[1])
+	require.Equal(t, iscmove.CoinAllowance{CoinType: "IOTA", Balance: 10}, req.Object.Allowance[2])
 }

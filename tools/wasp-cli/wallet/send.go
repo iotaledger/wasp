@@ -36,14 +36,14 @@ func initSendFundsCmd() *cobra.Command {
 
 			client := cliclients.L1Client()
 
-			tx, err := client.TransferSui(context.Background(), iotaclient.TransferSuiRequest{
-				Signer:    senderAddress.AsSuiAddress(),
+			tx, err := client.TransferSui(context.Background(), iotaclient.TransferIotaRequest{
+				Signer:    senderAddress.AsIotaAddress(),
 				Amount:    iotajsonrpc.NewBigInt(1337),
-				Recipient: targetAddress.AsSuiAddress(),
+				Recipient: targetAddress.AsIotaAddress(),
 			})
 			log.Check(err)
 
-			res, err := client.SignAndExecuteTransaction(context.Background(), cryptolib.SignerToSuiSigner(myWallet), tx.TxBytes, &iotajsonrpc.SuiTransactionBlockResponseOptions{
+			res, err := client.SignAndExecuteTransaction(context.Background(), cryptolib.SignerToIotaSigner(myWallet), tx.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowObjectChanges: true,
 				ShowEvents:        true,
 			})

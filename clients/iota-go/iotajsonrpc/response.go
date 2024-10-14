@@ -20,8 +20,8 @@ type ParsedTransactionResponse interface{}
 type ExecuteTransactionEffects struct {
 	TransactionEffectsDigest string `json:"transactionEffectsDigest"`
 
-	Effects      serialization.TagJson[SuiTransactionBlockEffects] `json:"effects"`
-	AuthSignInfo *AuthSignInfo                                     `json:"authSignInfo"`
+	Effects      serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
+	AuthSignInfo *AuthSignInfo                                      `json:"authSignInfo"`
 }
 
 type ExecuteTransactionResponse struct {
@@ -35,11 +35,11 @@ func (r *ExecuteTransactionResponse) TransactionDigest() string {
 	return r.Certificate.TransactionDigest
 }
 
-type SuiCoinMetadata struct {
-	Decimals    uint8         `json:"decimals"`
-	Name        string        `json:"name"`
-	Symbol      string        `json:"symbol"`
-	Description string        `json:"description"`
+type IotaCoinMetadata struct {
+	Decimals    uint8            `json:"decimals"`
+	Name        string           `json:"name"`
+	Symbol      string           `json:"symbol"`
+	Description string           `json:"description"`
 	IconUrl     string           `json:"iconUrl,omitempty"`
 	Id          *iotago.ObjectID `json:"id"`
 }
