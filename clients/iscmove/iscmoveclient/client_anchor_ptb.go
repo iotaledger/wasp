@@ -82,7 +82,7 @@ func PTBTakeAndTransferCoinBalance(
 		argTransferCoin := ptb.Command(
 			iotago.Command{
 				MoveCall: &iotago.ProgrammableMoveCall{
-					Package:       iotago.SuiPackageIdSuiFramework,
+					Package:       iotago.IotaPackageIdIotaFramework,
 					Module:        "coin",
 					Function:      "from_balance",
 					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},

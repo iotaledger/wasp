@@ -76,14 +76,14 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
 			}
-			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.assetsBag.ID)
+			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.AssetsBag.ID)
 			if ctx.Err() != nil {
 				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", ctx.Err())
 			}
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 			}
-			req.assetsBag.Value = bals
+			req.AssetsBag.Value = bals
 			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
 				ObjectRef: reqData.Data.Ref(),
 				Object:    req.ToRequest(),

@@ -254,8 +254,8 @@ func BCS_RequestAddStake(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:  iotago.SuiPackageIdSuiSystem,
-				Module:   iotago.SuiSystemModuleName,
+				Package:  iotago.IotaPackageIdIotaSystem,
+				Module:   iotago.IotaSystemModuleName,
 				Function: iotago.AddStakeFunName,
 				Arguments: []iotago.Argument{
 					arg0, arg1, arg2,
@@ -293,8 +293,8 @@ func BCS_RequestWithdrawStake(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:  iotago.SuiPackageIdSuiSystem,
-				Module:   iotago.SuiSystemModuleName,
+				Package:  iotago.IotaPackageIdIotaSystem,
+				Module:   iotago.IotaSystemModuleName,
 				Function: iotago.WithdrawStakeFunName,
 				Arguments: []iotago.Argument{
 					arg0, arg1,

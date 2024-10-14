@@ -11,8 +11,8 @@ var (
 
 	SuiSystemMutObj = ObjectArg{
 		SharedObject: &SharedObjectArg{
-			Id:                   SuiObjectIdSystemState,
-			InitialSharedVersion: SuiSystemStateObjectSharedVersion,
+			Id:                   IotaObjectIdSystemState,
+			InitialSharedVersion: IotaSystemStateObjectSharedVersion,
 			Mutable:              true,
 		},
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/samber/lo"
 )
 
 func init() {
@@ -40,16 +41,16 @@ func provide(c *dig.Container) error {
 	type nodeConnectionDeps struct {
 		dig.In
 
-		WebsocketURL    string
-		PackageID       iotago.Address
 		ShutdownHandler *shutdown.ShutdownHandler
 	}
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
+		address := lo.Must(iotago.AddressFromHex(ParamsWS.PackageID))
+
 		nodeConnection, err := nodeconn.New(
 			Component.Daemon().ContextStopped(),
-			deps.PackageID,
-			deps.WebsocketURL,
+			*address,
+			ParamsWS.WebsocketURL,
 			Component.Logger().Named("nc"),
 			deps.ShutdownHandler,
 		)
