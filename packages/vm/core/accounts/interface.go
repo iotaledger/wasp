@@ -3,6 +3,7 @@ package accounts
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -37,13 +38,13 @@ var (
 	// TODO: implement pagination
 	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",
 		coreutil.FieldOptional[isc.AgentID](),
-		coreutil.Field[[]sui.ObjectID](),
+		coreutil.Field[[]iotago.ObjectID](),
 	)
 	// TODO: implement pagination
 	ViewAccountObjectsInCollection = coreutil.NewViewEP21(Contract, "accountObjectsInCollection",
 		coreutil.FieldOptional[isc.AgentID](),
-		coreutil.Field[sui.ObjectID](),
-		coreutil.Field[[]sui.ObjectID](),
+		coreutil.Field[iotago.ObjectID](),
+		coreutil.Field[[]iotago.ObjectID](),
 	)
 	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
@@ -69,7 +70,7 @@ var (
 		coreutil.Field[uint64](),
 	)
 	ViewObjectBCS = coreutil.NewViewEP11(Contract, "objectBCS",
-		coreutil.Field[sui.ObjectID](),
+		coreutil.Field[iotago.ObjectID](),
 		coreutil.Field[[]byte](),
 	)
 	// TODO: implement pagination
