@@ -111,21 +111,21 @@ Example:
   }
 ```
 
-## <a id="ws"></a> 3. Ws
+## <a id="l1"></a> 3. L1
 
-| Name                  | Description                                                                                        | Type   | Default value                                         |
-| --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------- |
-| websocketURL          | The WS address to which to connect to                                                              | string | "wss://api.iota-rebased-alphanet.iota.cafe/websocket" |
-| packageID             | The identifier of the isc move package                                                             | string | ""                                                    |
-| maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                                                    |
-| targetNetworkName     | The network name on which the node should operate on (optional)                                    | string | ""                                                    |
+| Name                  | Description                                                                                        | Type   | Default value         |
+| --------------------- | -------------------------------------------------------------------------------------------------- | ------ | --------------------- |
+| websocketURL          | The WS address to which to connect to                                                              | string | "ws://localhost:9000" |
+| packageID             | The identifier of the isc move package                                                             | string | ""                    |
+| maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                    |
+| targetNetworkName     | The network name on which the node should operate on (optional)                                    | string | ""                    |
 
 Example:
 
 ```json
   {
-    "ws": {
-      "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe/websocket",
+    "l1": {
+      "websocketURL": "ws://localhost:9000",
       "packageID": "",
       "maxConnectionAttempts": 30,
       "targetNetworkName": ""
