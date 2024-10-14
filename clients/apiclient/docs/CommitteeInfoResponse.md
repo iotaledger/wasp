@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **AccessNodes** | [**[]CommitteeNode**](CommitteeNode.md) | A list of all access nodes and their peering info. | 
 **Active** | **bool** | Whether or not the chain is active. | 
 **CandidateNodes** | [**[]CommitteeNode**](CommitteeNode.md) | A list of all candidate nodes and their peering info. | 
-**ChainId** | **string** | ChainID (Bech32-encoded). | 
+**ChainId** | **string** | ChainID (Hex Address). | 
 **CommitteeNodes** | [**[]CommitteeNode**](CommitteeNode.md) | A list of all committee nodes and their peering info. | 
 **StateAddress** | **string** |  | 
 

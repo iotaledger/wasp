@@ -25,14 +25,14 @@ func (c *Client) StartNewChain(
 	devMode bool,
 ) (*iscmove.AnchorWithRef, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argInitCoin iotago.Argument
 	if initCoinRef != nil {
-		ptb = PTBOptionSomeSuiCoin(ptb, initCoinRef)
+		ptb = PTBOptionSomeIotaCoin(ptb, initCoinRef)
 	} else {
-		ptb = PTBOptionNoneSuiCoin(ptb)
+		ptb = PTBOptionNoneIotaCoin(ptb)
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
@@ -71,7 +71,7 @@ func (c *Client) StartNewChain(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -103,9 +103,9 @@ func (c *Client) ReceiveRequestAndTransition(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	reqAssetsBagsMap := make(map[iotago.ObjectRef]*iscmove.AssetsBagWithBalances)
 	for _, reqRef := range reqs {
@@ -155,7 +155,7 @@ func (c *Client) ReceiveRequestAndTransition(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -172,7 +172,7 @@ func (c *Client) GetAnchorFromObjectID(
 ) (*iscmove.AnchorWithRef, error) {
 	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
-		Options:  &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)

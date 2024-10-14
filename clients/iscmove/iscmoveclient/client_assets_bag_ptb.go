@@ -39,7 +39,7 @@ func PTBAssetsBagNewAndTransfer(ptb *iotago.ProgrammableTransactionBuilder, pack
 		iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{arg1},
-				Address: ptb.MustForceSeparatePure(owner.AsSuiAddress()),
+				Address: ptb.MustForceSeparatePure(owner.AsIotaAddress()),
 			},
 		},
 	)

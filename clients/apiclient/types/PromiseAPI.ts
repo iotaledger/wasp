@@ -6,18 +6,15 @@ import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
-import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobValueResponse } from '../models/BlobValueResponse';
+import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
-import { BurnRecord } from '../models/BurnRecord';
-import { CallTargetJSON } from '../models/CallTargetJSON';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
+import { CoinJSON } from '../models/CoinJSON';
 import { CommitteeInfoResponse } from '../models/CommitteeInfoResponse';
 import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
@@ -43,18 +40,15 @@ import { InOutputMetricItem } from '../models/InOutputMetricItem';
 import { InStateOutput } from '../models/InStateOutput';
 import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
+import { Int } from '../models/Int';
 import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
-import { Item } from '../models/Item';
-import { JSONDict } from '../models/JSONDict';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { MilestoneInfo } from '../models/MilestoneInfo';
 import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
-import { NFTJSON } from '../models/NFTJSON';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
 import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -69,10 +63,8 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
-import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
-import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
@@ -82,7 +74,6 @@ import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
-import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -140,7 +131,7 @@ export class PromiseChainsApi {
 
     /**
      * Activate a chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public activateChain(chainID: string, _options?: Configuration): Promise<void> {
         const result = this.api.activateChain(chainID, _options);
@@ -149,7 +140,7 @@ export class PromiseChainsApi {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
     public addAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<void> {
@@ -160,17 +151,17 @@ export class PromiseChainsApi {
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<JSONDict> {
+    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<Array<Array<number>>> {
         const result = this.api.callView(chainID, contractCallViewRequest, _options);
         return result.toPromise();
     }
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public deactivateChain(chainID: string, _options?: Configuration): Promise<void> {
         const result = this.api.deactivateChain(chainID, _options);
@@ -179,7 +170,7 @@ export class PromiseChainsApi {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public dumpAccounts(chainID: string, _options?: Configuration): Promise<void> {
         const result = this.api.dumpAccounts(chainID, _options);
@@ -188,27 +179,27 @@ export class PromiseChainsApi {
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<ReceiptResponse> {
+    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<void> {
         const result = this.api.estimateGasOffledger(chainID, request, _options);
         return result.toPromise();
     }
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<ReceiptResponse> {
+    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<void> {
         const result = this.api.estimateGasOnledger(chainID, request, _options);
         return result.toPromise();
     }
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public getChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<ChainInfoResponse> {
@@ -226,7 +217,7 @@ export class PromiseChainsApi {
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public getCommitteeInfo(chainID: string, block?: string, _options?: Configuration): Promise<CommitteeInfoResponse> {
@@ -236,7 +227,7 @@ export class PromiseChainsApi {
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public getContracts(chainID: string, block?: string, _options?: Configuration): Promise<Array<ContractInfoResponse>> {
@@ -246,7 +237,7 @@ export class PromiseChainsApi {
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getMempoolContents(chainID: string, _options?: Configuration): Promise<Array<number>> {
         const result = this.api.getMempoolContents(chainID, _options);
@@ -255,17 +246,17 @@ export class PromiseChainsApi {
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<ReceiptResponse> {
+    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<void> {
         const result = this.api.getReceipt(chainID, requestID, _options);
         return result.toPromise();
     }
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
     public getStateValue(chainID: string, stateKey: string, _options?: Configuration): Promise<StateResponse> {
@@ -275,7 +266,7 @@ export class PromiseChainsApi {
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
     public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<void> {
@@ -285,7 +276,7 @@ export class PromiseChainsApi {
 
     /**
      * Sets the chain record.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param chainRecord Chain Record
      */
     public setChainRecord(chainID: string, chainRecord: ChainRecord, _options?: Configuration): Promise<void> {
@@ -295,7 +286,7 @@ export class PromiseChainsApi {
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public v1ChainsChainIDEvmPost(chainID: string, _options?: Configuration): Promise<void> {
         const result = this.api.v1ChainsChainIDEvmPost(chainID, _options);
@@ -304,7 +295,7 @@ export class PromiseChainsApi {
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public v1ChainsChainIDEvmWsGet(chainID: string, _options?: Configuration): Promise<void> {
         const result = this.api.v1ChainsChainIDEvmWsGet(chainID, _options);
@@ -313,12 +304,12 @@ export class PromiseChainsApi {
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param timeoutSeconds The timeout in seconds, maximum 60s
      * @param waitForL1Confirmation Wait for the block to be confirmed on L1
      */
-    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<ReceiptResponse> {
+    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<void> {
         const result = this.api.waitForRequest(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
         return result.toPromise();
     }
@@ -344,8 +335,8 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountBalance(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AssetsResponse> {
@@ -355,8 +346,8 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get all foundries owned by an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountFoundries(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AccountFoundriesResponse> {
@@ -366,8 +357,8 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountNFTIDs(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AccountNFTsResponse> {
@@ -377,8 +368,8 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountNonce(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AccountNonceResponse> {
@@ -388,7 +379,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the foundry output
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param serialNumber Serial Number (uint32)
      * @param block Block index or trie root
      */
@@ -399,18 +390,18 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param block Block index or trie root
      */
-    public accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Promise<NFTJSON> {
+    public accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Promise<void> {
         const result = this.api.accountsGetNFTData(chainID, nftID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public accountsGetNativeTokenIDRegistry(chainID: string, block?: string, _options?: Configuration): Promise<NativeTokenIDRegistryResponse> {
@@ -420,7 +411,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public accountsGetTotalAssets(chainID: string, block?: string, _options?: Configuration): Promise<AssetsResponse> {
@@ -429,31 +420,8 @@ export class PromiseCorecontractsApi {
     }
 
     /**
-     * Get all fields of a blob
-     * @param chainID ChainID (Bech32)
-     * @param blobHash BlobHash (Hex)
-     * @param block Block index or trie root
-     */
-    public blobsGetBlobInfo(chainID: string, blobHash: string, block?: string, _options?: Configuration): Promise<BlobInfoResponse> {
-        const result = this.api.blobsGetBlobInfo(chainID, blobHash, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get the value of the supplied field (key)
-     * @param chainID ChainID (Bech32)
-     * @param blobHash BlobHash (Hex)
-     * @param fieldKey FieldKey (String)
-     * @param block Block index or trie root
-     */
-    public blobsGetBlobValue(chainID: string, blobHash: string, fieldKey: string, block?: string, _options?: Configuration): Promise<BlobValueResponse> {
-        const result = this.api.blobsGetBlobValue(chainID, blobHash, fieldKey, block, _options);
-        return result.toPromise();
-    }
-
-    /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
@@ -464,7 +432,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetControlAddresses(chainID: string, block?: string, _options?: Configuration): Promise<ControlAddressesResponse> {
@@ -474,7 +442,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
@@ -485,7 +453,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetEventsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<EventsResponse> {
@@ -495,7 +463,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
@@ -506,7 +474,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetLatestBlockInfo(chainID: string, block?: string, _options?: Configuration): Promise<BlockInfoResponse> {
@@ -516,7 +484,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
@@ -527,7 +495,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetRequestIDsForLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<RequestIDsResponse> {
@@ -537,7 +505,7 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
@@ -548,39 +516,39 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<ReceiptResponse> {
+    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<void> {
         const result = this.api.blocklogGetRequestReceipt(chainID, requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<void> {
         const result = this.api.blocklogGetRequestReceiptsOfBlock(chainID, blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<void> {
         const result = this.api.blocklogGetRequestReceiptsOfLatestBlock(chainID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the error message format of a specific error id
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param contractHname Contract (Hname as Hex)
      * @param errorID Error Id (uint16)
      * @param block Block index or trie root
@@ -593,7 +561,7 @@ export class PromiseCorecontractsApi {
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public governanceGetAllowedStateControllerAddresses(chainID: string, block?: string, _options?: Configuration): Promise<GovAllowedStateControllerAddressesResponse> {
@@ -604,7 +572,7 @@ export class PromiseCorecontractsApi {
     /**
      * If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public governanceGetChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<GovChainInfoResponse> {
@@ -615,7 +583,7 @@ export class PromiseCorecontractsApi {
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public governanceGetChainOwner(chainID: string, block?: string, _options?: Configuration): Promise<GovChainOwnerResponse> {
@@ -679,7 +647,7 @@ export class PromiseMetricsApi {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getChainMessageMetrics(chainID: string, _options?: Configuration): Promise<ChainMessageMetrics> {
         const result = this.api.getChainMessageMetrics(chainID, _options);
@@ -688,7 +656,7 @@ export class PromiseMetricsApi {
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getChainPipeMetrics(chainID: string, _options?: Configuration): Promise<ConsensusPipeMetrics> {
         const result = this.api.getChainPipeMetrics(chainID, _options);
@@ -697,7 +665,7 @@ export class PromiseMetricsApi {
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getChainWorkflowMetrics(chainID: string, _options?: Configuration): Promise<ConsensusWorkflowMetrics> {
         const result = this.api.getChainWorkflowMetrics(chainID, _options);
@@ -767,7 +735,7 @@ export class PromiseNodeApi {
 
     /**
      * Get information about the shared address DKS configuration
-     * @param sharedAddress SharedAddress (Bech32)
+     * @param sharedAddress SharedAddress (Hex Address)
      */
     public getDKSInfo(sharedAddress: string, _options?: Configuration): Promise<DKSharesInfo> {
         const result = this.api.getDKSInfo(sharedAddress, _options);

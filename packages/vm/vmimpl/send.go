@@ -16,9 +16,9 @@ func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.ObjectID)
 func (reqctx *requestContext) send(params isc.RequestParameters) {
 	if params.Metadata == nil {
 		// simply send assets to a L1 address
-		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsSuiAddress(), params.Assets)
+		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
 	} else {
 		// sending cross chain request to a contract on the other chain
-		reqctx.vm.txbuilder.SendCrossChainRequest(params.TargetAddress.AsSuiAddress(), reqctx.vm.task.Anchor.GetObjectID(), params.Assets, params.Metadata)
+		reqctx.vm.txbuilder.SendCrossChainRequest(params.TargetAddress.AsIotaAddress(), reqctx.vm.task.Anchor.GetObjectID(), params.Assets, params.Metadata)
 	}
 }

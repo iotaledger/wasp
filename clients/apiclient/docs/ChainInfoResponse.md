@@ -4,8 +4,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ChainID** | **string** | ChainID (Bech32-encoded) | 
-**ChainOwnerId** | **string** | The chain owner address (Bech32-encoded) | 
+**ChainID** | **string** | ChainID (Hex Address) | 
+**ChainOwnerId** | **string** | The chain owner address (Hex Address) | 
 **EvmChainId** | **uint32** | The EVM chain ID | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 

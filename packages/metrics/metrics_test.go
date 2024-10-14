@@ -10,7 +10,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -65,7 +65,7 @@ func TestRegister(t *testing.T) {
 func createOnLedgerRequest() isc.OnLedgerRequest {
 	sender := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("sender")))
 
-	requestRef := suitest.RandomObjectRef()
+	requestRef := iotatest.RandomObjectRef()
 	const tokensForGas = 1 * isc.Million
 
 	request := &iscmove.RefWithObject[iscmove.Request]{
@@ -79,7 +79,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 			},
 			AssetsBag: iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmove.AssetsBag{
-					ID:   *suitest.RandomAddress(),
+					ID:   *iotatest.RandomAddress(),
 					Size: 1,
 				},
 				Balances: map[string]*iotajsonrpc.Balance{

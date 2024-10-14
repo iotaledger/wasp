@@ -12,10 +12,10 @@ type BatchTransactionRequest struct {
 	TxnParams []map[string]interface{}
 	Gas       *iotago.ObjectID // optional
 	GasBudget uint64
-	// txnBuilderMode // optional // FIXME SuiTransactionBlockBuilderMode
+	// txnBuilderMode // optional // FIXME IotaTransactionBlockBuilderMode
 }
 
-// TODO: execution_mode : <SuiTransactionBlockBuilderMode>
+// TODO: execution_mode : <IotaTransactionBlockBuilderMode>
 func (c *Client) BatchTransaction(
 	ctx context.Context,
 	req BatchTransactionRequest,
@@ -59,12 +59,12 @@ type MoveCallRequest struct {
 	Arguments []any
 	Gas       *iotago.ObjectID // optional
 	GasBudget *iotajsonrpc.BigInt
-	// txnBuilderMode // optional // FIXME SuiTransactionBlockBuilderMode
+	// txnBuilderMode // optional // FIXME IotaTransactionBlockBuilderMode
 }
 
 // MoveCall Create an unsigned transaction to execute a Move call on the network, by calling the specified function in the module of a given package.
-// TODO: execution_mode : <SuiTransactionBlockBuilderMode>
-// `arguments: []any` *SuiAddress can be arguments here, it will automatically convert to Address in hex string.
+// TODO: execution_mode : <IotaTransactionBlockBuilderMode>
+// `arguments: []any` *IotaAddress can be arguments here, it will automatically convert to Address in hex string.
 // [][]byte can't be passed. User should encode array of hex string.
 func (c *Client) MoveCall(
 	ctx context.Context,
@@ -113,23 +113,23 @@ func (c *Client) Pay(
 	)
 }
 
-type PayAllSuiRequest struct {
+type PayAllIotaRequest struct {
 	Signer     *iotago.Address
 	Recipient  *iotago.Address
 	InputCoins []*iotago.ObjectID
 	GasBudget  *iotajsonrpc.BigInt
 }
 
-// PayAllSui Create an unsigned transaction to send all SUI coins to one recipient.
-func (c *Client) PayAllSui(
+// PayAllIota Create an unsigned transaction to send all IOTA coins to one recipient.
+func (c *Client) PayAllIota(
 	ctx context.Context,
-	req PayAllSuiRequest,
+	req PayAllIotaRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	resp := iotajsonrpc.TransactionBytes{}
-	return &resp, c.transport.Call(ctx, &resp, payAllSui, req.Signer, req.InputCoins, req.Recipient, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, payAllIota, req.Signer, req.InputCoins, req.Recipient, req.GasBudget)
 }
 
-type PaySuiRequest struct {
+type PayIotaRequest struct {
 	Signer     *iotago.Address
 	InputCoins []*iotago.ObjectID
 	Recipients []*iotago.Address
@@ -137,16 +137,16 @@ type PaySuiRequest struct {
 	GasBudget  *iotajsonrpc.BigInt
 }
 
-// see explanation in https://forums.sui.io/t/how-to-use-the-sui-paysui-method/2282
-func (c *Client) PaySui(
+// see explanation in https://forums.iota.io/t/how-to-use-the-iota-payiota-method/2282
+func (c *Client) PayIota(
 	ctx context.Context,
-	req PaySuiRequest,
+	req PayIotaRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	resp := iotajsonrpc.TransactionBytes{}
 	return &resp, c.transport.Call(
 		ctx,
 		&resp,
-		paySui,
+		payIota,
 		req.Signer,
 		req.InputCoins,
 		req.Recipients,
@@ -208,10 +208,10 @@ func (c *Client) RequestAddStake(
 }
 
 type RequestWithdrawStakeRequest struct {
-	Signer      *iotago.Address
-	StakedSuiId *iotago.ObjectID
-	Gas         *iotago.ObjectID // optional
-	GasBudget   *iotajsonrpc.BigInt
+	Signer       *iotago.Address
+	StakedIotaId *iotago.ObjectID
+	Gas          *iotago.ObjectID // optional
+	GasBudget    *iotajsonrpc.BigInt
 }
 
 func (c *Client) RequestWithdrawStake(
@@ -224,7 +224,7 @@ func (c *Client) RequestWithdrawStake(
 		&resp,
 		requestWithdrawStake,
 		req.Signer,
-		req.StakedSuiId,
+		req.StakedIotaId,
 		req.Gas,
 		req.GasBudget,
 	)
@@ -310,7 +310,7 @@ func (c *Client) TransferObject(
 	)
 }
 
-type TransferSuiRequest struct {
+type TransferIotaRequest struct {
 	Signer    *iotago.Address
 	ObjectID  *iotago.ObjectID
 	GasBudget *iotajsonrpc.BigInt
@@ -318,16 +318,17 @@ type TransferSuiRequest struct {
 	Amount    *iotajsonrpc.BigInt // optional
 }
 
-// TransferSui Create an unsigned transaction to send SUI coin object to a Sui address. The SUI object is also used as the gas object.
-func (c *Client) TransferSui(
+// TransferIota Create an unsigned transaction to send IOTA coin object to a Iota address.
+// The IOTA object is also used as the gas object.
+func (c *Client) TransferIota(
 	ctx context.Context,
-	req TransferSuiRequest,
+	req TransferIotaRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	resp := iotajsonrpc.TransactionBytes{}
 	return &resp, c.transport.Call(
 		ctx,
 		&resp,
-		transferSui,
+		transferIota,
 		req.Signer,
 		req.ObjectID,
 		req.GasBudget,

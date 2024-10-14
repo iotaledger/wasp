@@ -16,7 +16,7 @@ type ObjectOwner struct {
 	*string
 }
 
-type Page[T SuiTransactionBlockResponse | SuiEvent | Coin | *Coin | SuiObjectResponse | DynamicFieldInfo | string | *Checkpoint,
+type Page[T IotaTransactionBlockResponse | IotaEvent | Coin | *Coin | IotaObjectResponse | DynamicFieldInfo | string | *Checkpoint,
 	C iotago.TransactionDigest | EventId | iotago.ObjectID | BigInt] struct {
 	Data []T `json:"data"`
 	// 'NextCursor' points to the last item in the page.

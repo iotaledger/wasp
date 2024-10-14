@@ -10,5 +10,5 @@ var (
 	ErrNeedSplitGasCoin = errors.New("missing an extra coin to use as the transaction fee")
 
 	ErrCoinsNotMatchRequest = errors.New("coins not match request")
-	ErrCoinsNeedMoreObject  = errors.New("you should get more SUI coins and try again")
+	ErrCoinsNeedMoreObject  = errors.New("you should get more IOTA coins and try again")
 )

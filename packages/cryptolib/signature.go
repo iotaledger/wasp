@@ -133,7 +133,7 @@ func (s *Signature) Write(w io.Writer) error {
 	return ww.Err
 }
 
-func (s *Signature) AsSuiSignature() *iotasigner.Signature {
+func (s *Signature) AsIotaSignature() *iotasigner.Signature {
 	result := &iotasigner.Signature{
 		Ed25519Signature: iotasigner.NewEd25519Signature(s.publicKey.AsBytes(), s.signature[:]),
 	}

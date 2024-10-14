@@ -58,7 +58,7 @@ const (
 	// Covered in: TestNFTMint
 	keyNonce = "m"
 
-	// keyCoinInfo stores a map of <CoinType> => isc.SuiCoinInfo
+	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
 	keyCoinInfo = "RC"
 	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord

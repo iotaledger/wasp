@@ -38,11 +38,11 @@ func RequestFromBytes(data []byte) (Request, error) {
 
 type RequestID iotago.ObjectID
 
-func (id *RequestID) AsSuiObjectID() iotago.ObjectID {
+func (id *RequestID) AsIotaObjectID() iotago.ObjectID {
 	return iotago.ObjectID(*id)
 }
 
-func (id *RequestID) AsSuiAddress() iotago.Address {
+func (id *RequestID) AsIotaAddress() iotago.Address {
 	return iotago.Address(*id)
 }
 

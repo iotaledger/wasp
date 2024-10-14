@@ -21,7 +21,7 @@ export class MetricsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getChainMessageMetrics(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -58,7 +58,7 @@ export class MetricsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getChainPipeMetrics(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -95,7 +95,7 @@ export class MetricsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getChainWorkflowMetrics(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;

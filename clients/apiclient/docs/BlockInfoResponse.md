@@ -9,7 +9,6 @@ Name | Type | Description | Notes
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
 **NumOffLedgerRequests** | **uint32** |  | 
 **NumSuccessfulRequests** | **uint32** |  | 
-**PreviousAliasOutput** | **string** |  | 
 **Timestamp** | **time.Time** |  | 
 **TotalRequests** | **uint32** |  | 
 
@@ -17,7 +16,7 @@ Name | Type | Description | Notes
 
 ### NewBlockInfoResponse
 
-`func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, previousAliasOutput string, timestamp time.Time, totalRequests uint32, ) *BlockInfoResponse`
+`func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, timestamp time.Time, totalRequests uint32, ) *BlockInfoResponse`
 
 NewBlockInfoResponse instantiates a new BlockInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -130,26 +129,6 @@ and a boolean to check if the value has been set.
 `func (o *BlockInfoResponse) SetNumSuccessfulRequests(v uint32)`
 
 SetNumSuccessfulRequests sets NumSuccessfulRequests field to given value.
-
-
-### GetPreviousAliasOutput
-
-`func (o *BlockInfoResponse) GetPreviousAliasOutput() string`
-
-GetPreviousAliasOutput returns the PreviousAliasOutput field if non-nil, zero value otherwise.
-
-### GetPreviousAliasOutputOk
-
-`func (o *BlockInfoResponse) GetPreviousAliasOutputOk() (*string, bool)`
-
-GetPreviousAliasOutputOk returns a tuple with the PreviousAliasOutput field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetPreviousAliasOutput
-
-`func (o *BlockInfoResponse) SetPreviousAliasOutput(v string)`
-
-SetPreviousAliasOutput sets PreviousAliasOutput field to given value.
 
 
 ### GetTimestamp

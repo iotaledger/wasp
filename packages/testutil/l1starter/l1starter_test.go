@@ -22,7 +22,7 @@ func TestStart(t *testing.T) {
 	defer stv.Stop()
 
 	client := stv.Client()
-	state, err := client.GetLatestSuiSystemState(ctx)
+	state, err := client.GetLatestIotaSystemState(ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, 0, state.PendingActiveValidatorsSize.Uint64())
 

@@ -25,7 +25,7 @@ var (
 	)
 	FuncWithdraw    = coreutil.NewEP0(Contract, "withdraw")
 	SetCoinMetadata = coreutil.NewEP1(Contract, "setCoinMetadata",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.SuiCoinInfo]()),
+		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.IotaCoinInfo]()),
 	)
 	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
 		coreutil.FieldWithCodec(codec.CoinType),

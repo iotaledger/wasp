@@ -37,7 +37,7 @@ func (r ApiActivateChainRequest) Execute() (*http.Response, error) {
 ActivateChain Activate a chain
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiActivateChainRequest
 */
 func (a *ChainsApiService) ActivateChain(ctx context.Context, chainID string) ApiActivateChainRequest {
@@ -152,7 +152,7 @@ func (r ApiAddAccessNodeRequest) Execute() (*http.Response, error) {
 AddAccessNode Configure a trusted node to be an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @param peer Name or PubKey (hex) of the trusted peer
  @return ApiAddAccessNodeRequest
 */
@@ -268,7 +268,7 @@ func (r ApiCallViewRequest) ContractCallViewRequest(contractCallViewRequest Cont
 	return r
 }
 
-func (r ApiCallViewRequest) Execute() (*JSONDict, *http.Response, error) {
+func (r ApiCallViewRequest) Execute() ([][]int32, *http.Response, error) {
 	return r.ApiService.CallViewExecute(r)
 }
 
@@ -278,7 +278,7 @@ CallView Call a view function on a contract by Hname
 Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiCallViewRequest
 */
 func (a *ChainsApiService) CallView(ctx context.Context, chainID string) ApiCallViewRequest {
@@ -290,13 +290,13 @@ func (a *ChainsApiService) CallView(ctx context.Context, chainID string) ApiCall
 }
 
 // Execute executes the request
-//  @return JSONDict
-func (a *ChainsApiService) CallViewExecute(r ApiCallViewRequest) (*JSONDict, *http.Response, error) {
+//  @return [][]int32
+func (a *ChainsApiService) CallViewExecute(r ApiCallViewRequest) ([][]int32, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *JSONDict
+		localVarReturnValue  [][]int32
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.CallView")
@@ -384,7 +384,7 @@ func (r ApiDeactivateChainRequest) Execute() (*http.Response, error) {
 DeactivateChain Deactivate a chain
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiDeactivateChainRequest
 */
 func (a *ChainsApiService) DeactivateChain(ctx context.Context, chainID string) ApiDeactivateChainRequest {
@@ -498,7 +498,7 @@ func (r ApiDumpAccountsRequest) Execute() (*http.Response, error) {
 DumpAccounts dump accounts information into a humanly-readable format
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiDumpAccountsRequest
 */
 func (a *ChainsApiService) DumpAccounts(ctx context.Context, chainID string) ApiDumpAccountsRequest {
@@ -611,7 +611,7 @@ func (r ApiEstimateGasOffledgerRequest) Request(request EstimateGasRequestOffled
 	return r
 }
 
-func (r ApiEstimateGasOffledgerRequest) Execute() (*ReceiptResponse, *http.Response, error) {
+func (r ApiEstimateGasOffledgerRequest) Execute() (*http.Response, error) {
 	return r.ApiService.EstimateGasOffledgerExecute(r)
 }
 
@@ -619,7 +619,7 @@ func (r ApiEstimateGasOffledgerRequest) Execute() (*ReceiptResponse, *http.Respo
 EstimateGasOffledger Estimates gas for a given off-ledger ISC request
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiEstimateGasOffledgerRequest
 */
 func (a *ChainsApiService) EstimateGasOffledger(ctx context.Context, chainID string) ApiEstimateGasOffledgerRequest {
@@ -631,18 +631,16 @@ func (a *ChainsApiService) EstimateGasOffledger(ctx context.Context, chainID str
 }
 
 // Execute executes the request
-//  @return ReceiptResponse
-func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledgerRequest) (*ReceiptResponse, *http.Response, error) {
+func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledgerRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.EstimateGasOffledger")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/estimategas-offledger"
@@ -652,7 +650,7 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 	if r.request == nil {
-		return localVarReturnValue, nil, reportError("request is required and must be specified")
+		return nil, reportError("request is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -665,7 +663,7 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -676,19 +674,19 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 	localVarPostBody = r.request
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -696,19 +694,10 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }
 
 type ApiEstimateGasOnledgerRequest struct {
@@ -724,7 +713,7 @@ func (r ApiEstimateGasOnledgerRequest) Request(request EstimateGasRequestOnledge
 	return r
 }
 
-func (r ApiEstimateGasOnledgerRequest) Execute() (*ReceiptResponse, *http.Response, error) {
+func (r ApiEstimateGasOnledgerRequest) Execute() (*http.Response, error) {
 	return r.ApiService.EstimateGasOnledgerExecute(r)
 }
 
@@ -732,7 +721,7 @@ func (r ApiEstimateGasOnledgerRequest) Execute() (*ReceiptResponse, *http.Respon
 EstimateGasOnledger Estimates gas for a given on-ledger ISC request
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiEstimateGasOnledgerRequest
 */
 func (a *ChainsApiService) EstimateGasOnledger(ctx context.Context, chainID string) ApiEstimateGasOnledgerRequest {
@@ -744,18 +733,16 @@ func (a *ChainsApiService) EstimateGasOnledger(ctx context.Context, chainID stri
 }
 
 // Execute executes the request
-//  @return ReceiptResponse
-func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*ReceiptResponse, *http.Response, error) {
+func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.EstimateGasOnledger")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/estimategas-onledger"
@@ -765,7 +752,7 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 	if r.request == nil {
-		return localVarReturnValue, nil, reportError("request is required and must be specified")
+		return nil, reportError("request is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -778,7 +765,7 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -789,19 +776,19 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 	localVarPostBody = r.request
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -809,19 +796,10 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }
 
 type ApiGetChainInfoRequest struct {
@@ -845,7 +823,7 @@ func (r ApiGetChainInfoRequest) Execute() (*ChainInfoResponse, *http.Response, e
 GetChainInfo Get information about a specific chain
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainInfoRequest
 */
 func (a *ChainsApiService) GetChainInfo(ctx context.Context, chainID string) ApiGetChainInfoRequest {
@@ -1077,7 +1055,7 @@ func (r ApiGetCommitteeInfoRequest) Execute() (*CommitteeInfoResponse, *http.Res
 GetCommitteeInfo Get information about the deployed committee
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetCommitteeInfoRequest
 */
 func (a *ChainsApiService) GetCommitteeInfo(ctx context.Context, chainID string) ApiGetCommitteeInfoRequest {
@@ -1212,7 +1190,7 @@ func (r ApiGetContractsRequest) Execute() ([]ContractInfoResponse, *http.Respons
 GetContracts Get all available chain contracts
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetContractsRequest
 */
 func (a *ChainsApiService) GetContracts(ctx context.Context, chainID string) ApiGetContractsRequest {
@@ -1340,7 +1318,7 @@ func (r ApiGetMempoolContentsRequest) Execute() ([]int32, *http.Response, error)
 GetMempoolContents Get the contents of the mempool.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetMempoolContentsRequest
 */
 func (a *ChainsApiService) GetMempoolContents(ctx context.Context, chainID string) ApiGetMempoolContentsRequest {
@@ -1458,7 +1436,7 @@ type ApiGetReceiptRequest struct {
 	requestID string
 }
 
-func (r ApiGetReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error) {
+func (r ApiGetReceiptRequest) Execute() (*http.Response, error) {
 	return r.ApiService.GetReceiptExecute(r)
 }
 
@@ -1466,7 +1444,7 @@ func (r ApiGetReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error
 GetReceipt Get a receipt from a request ID
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiGetReceiptRequest
 */
@@ -1480,18 +1458,16 @@ func (a *ChainsApiService) GetReceipt(ctx context.Context, chainID string, reque
 }
 
 // Execute executes the request
-//  @return ReceiptResponse
-func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptResponse, *http.Response, error) {
+func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.GetReceipt")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/receipts/{requestID}"
@@ -1512,7 +1488,7 @@ func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptRe
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -1521,19 +1497,19 @@ func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptRe
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -1541,19 +1517,10 @@ func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptRe
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }
 
 type ApiGetStateValueRequest struct {
@@ -1571,7 +1538,7 @@ func (r ApiGetStateValueRequest) Execute() (*StateResponse, *http.Response, erro
 GetStateValue Fetch the raw value associated with the given key in the chain state
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @param stateKey State Key (Hex)
  @return ApiGetStateValueRequest
 */
@@ -1676,7 +1643,7 @@ func (r ApiRemoveAccessNodeRequest) Execute() (*http.Response, error) {
 RemoveAccessNode Remove an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @param peer Name or PubKey (hex) of the trusted peer
  @return ApiRemoveAccessNodeRequest
 */
@@ -1800,7 +1767,7 @@ func (r ApiSetChainRecordRequest) Execute() (*http.Response, error) {
 SetChainRecord Sets the chain record.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiSetChainRecordRequest
 */
 func (a *ChainsApiService) SetChainRecord(ctx context.Context, chainID string) ApiSetChainRecordRequest {
@@ -1919,7 +1886,7 @@ func (r ApiV1ChainsChainIDEvmPostRequest) Execute() (*http.Response, error) {
 V1ChainsChainIDEvmPost Ethereum JSON-RPC
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiV1ChainsChainIDEvmPostRequest
 */
 func (a *ChainsApiService) V1ChainsChainIDEvmPost(ctx context.Context, chainID string) ApiV1ChainsChainIDEvmPostRequest {
@@ -2009,7 +1976,7 @@ func (r ApiV1ChainsChainIDEvmWsGetRequest) Execute() (*http.Response, error) {
 V1ChainsChainIDEvmWsGet Ethereum JSON-RPC (Websocket transport)
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiV1ChainsChainIDEvmWsGetRequest
 */
 func (a *ChainsApiService) V1ChainsChainIDEvmWsGet(ctx context.Context, chainID string) ApiV1ChainsChainIDEvmWsGetRequest {
@@ -2106,7 +2073,7 @@ func (r ApiWaitForRequestRequest) WaitForL1Confirmation(waitForL1Confirmation bo
 	return r
 }
 
-func (r ApiWaitForRequestRequest) Execute() (*ReceiptResponse, *http.Response, error) {
+func (r ApiWaitForRequestRequest) Execute() (*http.Response, error) {
 	return r.ApiService.WaitForRequestExecute(r)
 }
 
@@ -2114,7 +2081,7 @@ func (r ApiWaitForRequestRequest) Execute() (*ReceiptResponse, *http.Response, e
 WaitForRequest Wait until the given request has been processed by the node
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiWaitForRequestRequest
 */
@@ -2128,18 +2095,16 @@ func (a *ChainsApiService) WaitForRequest(ctx context.Context, chainID string, r
 }
 
 // Execute executes the request
-//  @return ReceiptResponse
-func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*ReceiptResponse, *http.Response, error) {
+func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.WaitForRequest")
 	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
+		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/requests/{requestID}/wait"
@@ -2166,7 +2131,7 @@ func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*R
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
+	localVarHTTPHeaderAccepts := []string{}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -2175,19 +2140,19 @@ func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*R
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
+		return localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -2195,17 +2160,8 @@ func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*R
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
+		return localVarHTTPResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
+	return localVarHTTPResponse, nil
 }

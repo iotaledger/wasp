@@ -72,12 +72,12 @@ func (h *magicContractHandler) GetAllowance(from, to common.Address) iscmagic.IS
 }
 
 // handler for ISCSandbox::getBaseTokenInfo
-func (h *magicContractHandler) GetBaseTokenInfo() *isc.SuiCoinInfo {
+func (h *magicContractHandler) GetBaseTokenInfo() *isc.IotaCoinInfo {
 	return h.GetCoinInfo(coin.BaseTokenType)
 }
 
 // handler for ISCSandbox::getCoinInfo
-func (h *magicContractHandler) GetCoinInfo(coinType coin.Type) *isc.SuiCoinInfo {
+func (h *magicContractHandler) GetCoinInfo(coinType coin.Type) *isc.IotaCoinInfo {
 	info, ok := h.ctx.GetCoinInfo(coin.BaseTokenType)
 	h.ctx.Requiref(ok, errUnknownCoin.Error())
 	return info

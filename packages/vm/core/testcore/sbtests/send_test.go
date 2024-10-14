@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -319,7 +319,7 @@ func testNFTMintToChain(t *testing.T) {
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncClaimAllowance.Name).
 		AddFungibleTokens(assetsToSend.Coins).
 		WithObject(nftToBeMinted.ID).
-		AddAllowance(assetsToAllow.AddObject(sui.Address{})). // empty NFTID
+		AddAllowance(assetsToAllow.AddObject(iotago.Address{})). // empty NFTID
 		WithMaxAffordableGasBudget()
 
 	_, err := ch.PostRequestSync(req, wallet)

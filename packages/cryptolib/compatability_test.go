@@ -20,7 +20,7 @@ func TestCompatability(t *testing.T) {
 	subseed := SubSeed(seed, seedIndex)
 	suikp := iotasigner.NewSigner(subseed[:], iotasigner.KeySchemeFlagIotaEd25519)
 
-	require.Equal(t, kp.Address().AsSuiAddress().Data(), suikp.Address().Data())
+	require.Equal(t, kp.Address().AsIotaAddress().Data(), suikp.Address().Data())
 
 	kpSign, err := kp.SignTransactionBlock([]byte{1, 2, 3, 4}, iotasigner.DefaultIntent())
 	require.NoError(t, err)
@@ -28,5 +28,5 @@ func TestCompatability(t *testing.T) {
 	suiSign, err := suikp.SignTransactionBlock([]byte{1, 2, 3, 4}, iotasigner.DefaultIntent())
 	require.NoError(t, err)
 
-	require.Equal(t, kpSign.AsSuiSignature().Bytes(), suiSign.Bytes())
+	require.Equal(t, kpSign.AsIotaSignature().Bytes(), suiSign.Bytes())
 }

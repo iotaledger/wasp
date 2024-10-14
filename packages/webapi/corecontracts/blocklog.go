@@ -15,8 +15,8 @@ func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
 	// }
 	// aliasOutput := aliasOutputID.Object
 	// return &isc.ControlAddresses{
-	// 	StateAddress:     cryptolib.NewAddressFromSui(aliasOutput.StateAddress()),
-	// 	GoverningAddress: cryptolib.NewAddressFromSui(aliasOutput.GovernorAddress()),
+	// 	StateAddress:     cryptolib.NewAddressFromIota(aliasOutput.StateAddress()),
+	// 	GoverningAddress: cryptolib.NewAddressFromIota(aliasOutput.GovernorAddress()),
 	// 	SinceBlockIndex:  aliasOutput.StateIndex,
 	// }, nil
 }

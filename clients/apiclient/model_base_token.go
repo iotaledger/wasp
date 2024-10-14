@@ -19,6 +19,7 @@ var _ MappedNullable = &BaseToken{}
 
 // BaseToken struct for BaseToken
 type BaseToken struct {
+	CoinType *string `json:"coinType,omitempty"`
 	// The token decimals
 	Decimals int32 `json:"decimals"`
 	// The base token name
@@ -54,6 +55,38 @@ func NewBaseToken(decimals int32, name string, subunit string, tickerSymbol stri
 func NewBaseTokenWithDefaults() *BaseToken {
 	this := BaseToken{}
 	return &this
+}
+
+// GetCoinType returns the CoinType field value if set, zero value otherwise.
+func (o *BaseToken) GetCoinType() string {
+	if o == nil || isNil(o.CoinType) {
+		var ret string
+		return ret
+	}
+	return *o.CoinType
+}
+
+// GetCoinTypeOk returns a tuple with the CoinType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *BaseToken) GetCoinTypeOk() (*string, bool) {
+	if o == nil || isNil(o.CoinType) {
+		return nil, false
+	}
+	return o.CoinType, true
+}
+
+// HasCoinType returns a boolean if a field has been set.
+func (o *BaseToken) HasCoinType() bool {
+	if o != nil && !isNil(o.CoinType) {
+		return true
+	}
+
+	return false
+}
+
+// SetCoinType gets a reference to the given string and assigns it to the CoinType field.
+func (o *BaseToken) SetCoinType(v string) {
+	o.CoinType = &v
 }
 
 // GetDecimals returns the Decimals field value
@@ -210,6 +243,9 @@ func (o BaseToken) MarshalJSON() ([]byte, error) {
 
 func (o BaseToken) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	if !isNil(o.CoinType) {
+		toSerialize["coinType"] = o.CoinType
+	}
 	toSerialize["decimals"] = o.Decimals
 	toSerialize["name"] = o.Name
 	toSerialize["subunit"] = o.Subunit

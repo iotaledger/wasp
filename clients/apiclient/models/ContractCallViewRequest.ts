@@ -10,11 +10,13 @@
  * Do not edit the class manually.
  */
 
-import { JSONDict } from '../models/JSONDict';
 import { HttpFile } from '../http/http';
 
 export class ContractCallViewRequest {
-    'arguments': JSONDict;
+    /**
+    * Encoded arguments to be passed to the function
+    */
+    'arguments': Array<Array<number>>;
     'block'?: string;
     /**
     * The contract name as HName (Hex)
@@ -39,8 +41,8 @@ export class ContractCallViewRequest {
         {
             "name": "arguments",
             "baseName": "arguments",
-            "type": "JSONDict",
-            "format": ""
+            "type": "Array<Array<number>>",
+            "format": "int32"
         },
         {
             "name": "block",

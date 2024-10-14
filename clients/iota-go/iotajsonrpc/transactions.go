@@ -36,24 +36,24 @@ type ExecutionStatus struct {
 
 type OwnedObjectRef struct {
 	Owner     serialization.TagJson[iotago.Owner] `json:"owner"`
-	Reference SuiObjectRef                        `json:"reference"`
+	Reference IotaObjectRef                       `json:"reference"`
 }
 
-type SuiTransactionBlockEffectsModifiedAtVersions struct {
+type IotaTransactionBlockEffectsModifiedAtVersions struct {
 	ObjectID       iotago.ObjectID `json:"objectId"`
 	SequenceNumber *BigInt         `json:"sequenceNumber"`
 }
 
-type SuiTransactionBlockEffectsV1 struct {
+type IotaTransactionBlockEffectsV1 struct {
 	/** The status of the execution */
 	Status ExecutionStatus `json:"status"`
 	/** The epoch when this transaction was executed */
 	ExecutedEpoch *BigInt        `json:"executedEpoch"`
 	GasUsed       GasCostSummary `json:"gasUsed"`
 	/** The version that every modified (mutated or deleted) object had before it was modified by this transaction. **/
-	ModifiedAtVersions []SuiTransactionBlockEffectsModifiedAtVersions `json:"modifiedAtVersions,omitempty"`
+	ModifiedAtVersions []IotaTransactionBlockEffectsModifiedAtVersions `json:"modifiedAtVersions,omitempty"`
 	/** The object references of the shared objects used in this transaction. Empty if no shared objects were used. */
-	SharedObjects []SuiObjectRef `json:"sharedObjects,omitempty"`
+	SharedObjects []IotaObjectRef `json:"sharedObjects,omitempty"`
 	/** The transaction digest */
 	TransactionDigest iotago.TransactionDigest `json:"transactionDigest"`
 	/** ObjectRef and owner of new objects created */
@@ -67,11 +67,11 @@ type SuiTransactionBlockEffectsV1 struct {
 	 */
 	Unwrapped []OwnedObjectRef `json:"unwrapped,omitempty"`
 	/** Object Refs of objects now deleted (the old refs) */
-	Deleted []SuiObjectRef `json:"deleted,omitempty"`
+	Deleted []IotaObjectRef `json:"deleted,omitempty"`
 	/** Object Refs of objects now deleted (the old refs) */
-	UnwrappedThenDeleted []SuiObjectRef `json:"unwrapped_then_deleted,omitempty"`
+	UnwrappedThenDeleted []IotaObjectRef `json:"unwrapped_then_deleted,omitempty"`
 	/** Object refs of objects now wrapped in other objects */
-	Wrapped []SuiObjectRef `json:"wrapped,omitempty"`
+	Wrapped []IotaObjectRef `json:"wrapped,omitempty"`
 	/**
 	 * The updated gas object reference. Have a dedicated field for convenient access.
 	 * It's also included in mutated.
@@ -83,19 +83,19 @@ type SuiTransactionBlockEffectsV1 struct {
 	Dependencies []iotago.TransactionDigest `json:"dependencies,omitempty"`
 }
 
-type SuiTransactionBlockEffects struct {
-	V1 *SuiTransactionBlockEffectsV1 `json:"v1"`
+type IotaTransactionBlockEffects struct {
+	V1 *IotaTransactionBlockEffectsV1 `json:"v1"`
 }
 
-func (t SuiTransactionBlockEffects) Tag() string {
+func (t IotaTransactionBlockEffects) Tag() string {
 	return "messageVersion"
 }
 
-func (t SuiTransactionBlockEffects) Content() string {
+func (t IotaTransactionBlockEffects) Content() string {
 	return ""
 }
 
-func (t SuiTransactionBlockEffects) GasFee() int64 {
+func (t IotaTransactionBlockEffects) GasFee() int64 {
 	if t.V1 == nil {
 		return 0
 	}
@@ -105,30 +105,30 @@ func (t SuiTransactionBlockEffects) GasFee() int64 {
 	return fee
 }
 
-func (t SuiTransactionBlockEffects) IsSuccess() bool {
+func (t IotaTransactionBlockEffects) IsSuccess() bool {
 	return t.V1.Status.Status == ExecutionStatusSuccess
 }
 
 const (
-	SuiTransactionBlockKindSuiChangeEpoch             = "ChangeEpoch"
-	SuiTransactionBlockKindSuiConsensusCommitPrologue = "ConsensusCommitPrologue"
-	SuiTransactionBlockKindGenesis                    = "Genesis"
-	SuiTransactionBlockKindProgrammableTransaction    = "ProgrammableTransaction"
+	IotaTransactionBlockKindIotaChangeEpoch             = "ChangeEpoch"
+	IotaTransactionBlockKindIotaConsensusCommitPrologue = "ConsensusCommitPrologue"
+	IotaTransactionBlockKindGenesis                     = "Genesis"
+	IotaTransactionBlockKindProgrammableTransaction     = "ProgrammableTransaction"
 )
 
-type SuiTransactionBlockKind = serialization.TagJson[TransactionBlockKind]
+type IotaTransactionBlockKind = serialization.TagJson[TransactionBlockKind]
 
 type TransactionBlockKind struct {
 	// A system transaction that will update epoch information on-chain.
-	ChangeEpoch *SuiChangeEpoch `json:"ChangeEpoch,omitempty"`
+	ChangeEpoch *IotaChangeEpoch `json:"ChangeEpoch,omitempty"`
 	// A system transaction used for initializing the initial state of the chain.
-	Genesis *SuiGenesisTransaction `json:"Genesis,omitempty"`
+	Genesis *IotaGenesisTransaction `json:"Genesis,omitempty"`
 	// A system transaction marking the start of a series of transactions scheduled as part of a
 	// checkpoint
-	ConsensusCommitPrologue *SuiConsensusCommitPrologue `json:"ConsensusCommitPrologue,omitempty"`
+	ConsensusCommitPrologue *IotaConsensusCommitPrologue `json:"ConsensusCommitPrologue,omitempty"`
 	// A series of transactions where the results of one transaction can be used in future
 	// transactions
-	ProgrammableTransaction *SuiProgrammableTransactionBlock `json:"ProgrammableTransaction,omitempty"`
+	ProgrammableTransaction *IotaProgrammableTransactionBlock `json:"ProgrammableTransaction,omitempty"`
 	// .. more transaction types go here
 }
 
@@ -140,7 +140,7 @@ func (t TransactionBlockKind) Content() string {
 	return ""
 }
 
-type SuiChangeEpoch struct {
+type IotaChangeEpoch struct {
 	Epoch                 *BigInt `json:"epoch"`
 	StorageCharge         uint64  `json:"storage_charge"`
 	ComputationCharge     uint64  `json:"computation_charge"`
@@ -148,44 +148,44 @@ type SuiChangeEpoch struct {
 	EpochStartTimestampMs uint64  `json:"epoch_start_timestamp_ms"`
 }
 
-type SuiGenesisTransaction struct {
+type IotaGenesisTransaction struct {
 	Objects []iotago.ObjectID `json:"objects"`
 }
 
-type SuiConsensusCommitPrologue struct {
+type IotaConsensusCommitPrologue struct {
 	Epoch             uint64 `json:"epoch"`
 	Round             uint64 `json:"round"`
 	CommitTimestampMs uint64 `json:"commit_timestamp_ms"`
 }
 
-type SuiProgrammableTransactionBlock struct {
+type IotaProgrammableTransactionBlock struct {
 	Inputs []interface{} `json:"inputs"`
 	// The transactions to be executed sequentially. A failure in any transaction will
 	// result in the failure of the entire programmable transaction block.
 	Commands []interface{} `json:"transactions"`
 }
 
-type SuiTransactionBlockDataV1 struct {
-	Transaction SuiTransactionBlockKind `json:"transaction"`
-	Sender      iotago.Address          `json:"sender"`
-	GasData     SuiGasData              `json:"gasData"`
+type IotaTransactionBlockDataV1 struct {
+	Transaction IotaTransactionBlockKind `json:"transaction"`
+	Sender      iotago.Address           `json:"sender"`
+	GasData     IotaGasData              `json:"gasData"`
 }
 
-type SuiTransactionBlockData struct {
-	V1 *SuiTransactionBlockDataV1 `json:"v1,omitempty"`
+type IotaTransactionBlockData struct {
+	V1 *IotaTransactionBlockDataV1 `json:"v1,omitempty"`
 }
 
-func (t SuiTransactionBlockData) Tag() string {
+func (t IotaTransactionBlockData) Tag() string {
 	return "messageVersion"
 }
 
-func (t SuiTransactionBlockData) Content() string {
+func (t IotaTransactionBlockData) Content() string {
 	return ""
 }
 
-type SuiTransactionBlock struct {
-	Data         serialization.TagJson[SuiTransactionBlockData] `json:"data"`
-	TxSignatures []string                                       `json:"txSignatures"`
+type IotaTransactionBlock struct {
+	Data         serialization.TagJson[IotaTransactionBlockData] `json:"data"`
+	TxSignatures []string                                        `json:"txSignatures"`
 }
 
 type ObjectChange struct {
@@ -277,26 +277,26 @@ type BalanceChange struct {
 	Amount string `json:"amount"`
 }
 
-type SuiTransactionBlockResponse struct {
-	Digest                  iotago.TransactionDigest                           `json:"digest"`
-	Transaction             *SuiTransactionBlock                               `json:"transaction,omitempty"`
-	RawTransaction          iotago.Base64Data                                  `json:"rawTransaction,omitempty"` // enable by show_raw_input
-	Effects                 *serialization.TagJson[SuiTransactionBlockEffects] `json:"effects,omitempty"`
-	Events                  []*SuiEvent                                        `json:"events,omitempty"`
-	TimestampMs             *BigInt                                            `json:"timestampMs,omitempty"`
-	Checkpoint              *BigInt                                            `json:"checkpoint,omitempty"`
-	ConfirmedLocalExecution *bool                                              `json:"confirmedLocalExecution,omitempty"`
-	ObjectChanges           []serialization.TagJson[ObjectChange]              `json:"objectChanges,omitempty"`
-	BalanceChanges          []BalanceChange                                    `json:"balanceChanges,omitempty"`
-	Errors                  []string                                           `json:"errors,omitempty"` // Errors that occurred in fetching/serializing the transaction.
+type IotaTransactionBlockResponse struct {
+	Digest                  iotago.TransactionDigest                            `json:"digest"`
+	Transaction             *IotaTransactionBlock                               `json:"transaction,omitempty"`
+	RawTransaction          iotago.Base64Data                                   `json:"rawTransaction,omitempty"` // enable by show_raw_input
+	Effects                 *serialization.TagJson[IotaTransactionBlockEffects] `json:"effects,omitempty"`
+	Events                  []*IotaEvent                                        `json:"events,omitempty"`
+	TimestampMs             *BigInt                                             `json:"timestampMs,omitempty"`
+	Checkpoint              *BigInt                                             `json:"checkpoint,omitempty"`
+	ConfirmedLocalExecution *bool                                               `json:"confirmedLocalExecution,omitempty"`
+	ObjectChanges           []serialization.TagJson[ObjectChange]               `json:"objectChanges,omitempty"`
+	BalanceChanges          []BalanceChange                                     `json:"balanceChanges,omitempty"`
+	Errors                  []string                                            `json:"errors,omitempty"` // Errors that occurred in fetching/serializing the transaction.
 	// FIXME datatype may be wrong
 	RawEffects []string `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
-// requires to set 'SuiTransactionBlockResponseOptions.ShowObjectChanges' to true
-func (r *SuiTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageID, error) {
+// requires to set 'IotaTransactionBlockResponseOptions.ShowObjectChanges' to true
+func (r *IotaTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageID, error) {
 	if r.ObjectChanges == nil {
-		return nil, errors.New("no 'SuiTransactionBlockResponse.ObjectChanges' object")
+		return nil, errors.New("no 'IotaTransactionBlockResponse.ObjectChanges' object")
 	}
 	var packageID iotago.PackageID
 	for _, change := range r.ObjectChanges {
@@ -309,7 +309,10 @@ func (r *SuiTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageID
 }
 
 // requires `ShowObjectChanges: true`
-func (r *SuiTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (*iotago.ObjectRef, error) {
+func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (
+	*iotago.ObjectRef,
+	error,
+) {
 	if r.ObjectChanges == nil {
 		return nil, fmt.Errorf("no ObjectChanges")
 	}
@@ -345,10 +348,10 @@ type (
 )
 
 type DevInspectResults struct {
-	Effects serialization.TagJson[SuiTransactionBlockEffects] `json:"effects"`
-	Events  []SuiEvent                                        `json:"events"`
-	Results []ExecutionResultType                             `json:"results,omitempty"`
-	Error   string                                            `json:"error,omitempty"`
+	Effects serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
+	Events  []IotaEvent                                        `json:"events"`
+	Results []ExecutionResultType                              `json:"results,omitempty"`
+	Error   string                                             `json:"error,omitempty"`
 }
 
 type TransactionFilter struct {
@@ -385,7 +388,7 @@ type TransactionFilterFromAndToAddress struct {
 	To   *iotago.Address `json:"to"`
 }
 
-type SuiTransactionBlockResponseOptions struct {
+type IotaTransactionBlockResponseOptions struct {
 	// Whether to show transaction input data. Default to be False
 	ShowInput bool `json:"showInput,omitempty"`
 	// Whether to show bcs-encoded transaction input data
@@ -402,17 +405,17 @@ type SuiTransactionBlockResponseOptions struct {
 	ShowRawEffects bool `json:"showRawEffects,omitempty"`
 }
 
-type SuiTransactionBlockResponseQuery struct {
-	Filter  *TransactionFilter                  `json:"filter,omitempty"`
-	Options *SuiTransactionBlockResponseOptions `json:"options,omitempty"`
+type IotaTransactionBlockResponseQuery struct {
+	Filter  *TransactionFilter                   `json:"filter,omitempty"`
+	Options *IotaTransactionBlockResponseOptions `json:"options,omitempty"`
 }
 
-type TransactionBlocksPage = Page[SuiTransactionBlockResponse, iotago.TransactionDigest]
+type TransactionBlocksPage = Page[IotaTransactionBlockResponse, iotago.TransactionDigest]
 
 type DryRunTransactionBlockResponse struct {
-	Effects        serialization.TagJson[SuiTransactionBlockEffects] `json:"effects"`
-	Events         []SuiEvent                                        `json:"events"`
-	ObjectChanges  []serialization.TagJson[ObjectChange]             `json:"objectChanges"`
-	BalanceChanges []BalanceChange                                   `json:"balanceChanges"`
-	Input          serialization.TagJson[SuiTransactionBlockData]    `json:"input"`
+	Effects        serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
+	Events         []IotaEvent                                        `json:"events"`
+	ObjectChanges  []serialization.TagJson[ObjectChange]              `json:"objectChanges"`
+	BalanceChanges []BalanceChange                                    `json:"balanceChanges"`
+	Input          serialization.TagJson[IotaTransactionBlockData]    `json:"input"`
 }

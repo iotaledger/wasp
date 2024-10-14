@@ -139,7 +139,7 @@ type RequestEvent struct {
 type IRC27MetaData struct {
 	Version           string
 	MediaType         string
-	URI               string // Actually of type "Url" in SUI -> Create proper type?
+	URI               string
 	Name              string
 	CollectionName    *string `bcs:"optional"`
 	Royalties         Table[*cryptolib.Address, uint32]

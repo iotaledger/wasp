@@ -19,9 +19,9 @@ var _ MappedNullable = &GovChainInfoResponse{}
 
 // GovChainInfoResponse struct for GovChainInfoResponse
 type GovChainInfoResponse struct {
-	// ChainID (Bech32-encoded).
+	// ChainID (Hex Address).
 	ChainID string `json:"chainID"`
-	// The chain owner address (Bech32-encoded).
+	// The chain owner address (Hex Address).
 	ChainOwnerId string `json:"chainOwnerId"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
 	GasLimits Limits `json:"gasLimits"`

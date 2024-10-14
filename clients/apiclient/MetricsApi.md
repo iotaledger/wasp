@@ -25,7 +25,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .MetricsApi(configuration);
 
 let body:.MetricsApiGetChainMessageMetricsRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -39,7 +39,7 @@ apiInstance.getChainMessageMetrics(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -80,7 +80,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .MetricsApi(configuration);
 
 let body:.MetricsApiGetChainPipeMetricsRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -94,7 +94,7 @@ apiInstance.getChainPipeMetrics(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -135,7 +135,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .MetricsApi(configuration);
 
 let body:.MetricsApiGetChainWorkflowMetricsRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -149,7 +149,7 @@ apiInstance.getChainWorkflowMetrics(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type

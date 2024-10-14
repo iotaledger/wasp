@@ -50,7 +50,7 @@ func L1Commitment(
 	v isc.SchemaVersion,
 	initParams isc.CallArguments,
 	originDeposit coin.Value,
-	baseTokenCoinInfo *isc.SuiCoinInfo,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) *state.L1Commitment {
 	block, _ := InitChain(
 		v,
@@ -67,7 +67,7 @@ func InitChain(
 	store state.Store,
 	initParams isc.CallArguments,
 	originDeposit coin.Value,
-	baseTokenCoinInfo *isc.SuiCoinInfo,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, *transaction.StateMetadata) {
 	chainOwner, evmChainID, blockKeepAmount, err := DecodeInitParams(initParams)
 	if err != nil {
@@ -110,7 +110,7 @@ func InitChainByAnchor(
 	chainStore state.Store,
 	anchor *isc.StateAnchor,
 	originDeposit coin.Value,
-	baseTokenCoinInfo *isc.SuiCoinInfo,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, error) {
 	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
 	if err != nil {

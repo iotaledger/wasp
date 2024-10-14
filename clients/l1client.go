@@ -22,7 +22,7 @@ type L1Client interface {
 	GetDynamicFieldObject(
 		ctx context.Context,
 		req iotaclient.GetDynamicFieldObjectRequest,
-	) (*iotajsonrpc.SuiObjectResponse, error)
+	) (*iotajsonrpc.IotaObjectResponse, error)
 	GetDynamicFields(
 		ctx context.Context,
 		req iotaclient.GetDynamicFieldsRequest,
@@ -39,11 +39,11 @@ type L1Client interface {
 		ctx context.Context,
 		req iotaclient.QueryTransactionBlocksRequest,
 	) (*iotajsonrpc.TransactionBlocksPage, error)
-	ResolveNameServiceAddress(ctx context.Context, suiName string) (*iotago.Address, error)
+	ResolveNameServiceAddress(ctx context.Context, iotaName string) (*iotago.Address, error)
 	ResolveNameServiceNames(
 		ctx context.Context,
 		req iotaclient.ResolveNameServiceNamesRequest,
-	) (*iotajsonrpc.SuiNamePage, error)
+	) (*iotajsonrpc.IotaNamePage, error)
 	DevInspectTransactionBlock(
 		ctx context.Context,
 		req iotaclient.DevInspectTransactionBlockRequest,
@@ -55,15 +55,15 @@ type L1Client interface {
 	ExecuteTransactionBlock(
 		ctx context.Context,
 		req iotaclient.ExecuteTransactionBlockRequest,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	GetCommitteeInfo(
 		ctx context.Context,
 		epoch *iotajsonrpc.BigInt, // optional
 	) (*iotajsonrpc.CommitteeInfo, error)
-	GetLatestSuiSystemState(ctx context.Context) (*iotajsonrpc.SuiSystemStateSummary, error)
+	GetLatestIotaSystemState(ctx context.Context) (*iotajsonrpc.IotaSystemStateSummary, error)
 	GetReferenceGasPrice(ctx context.Context) (*iotajsonrpc.BigInt, error)
 	GetStakes(ctx context.Context, owner *iotago.Address) ([]*iotajsonrpc.DelegatedStake, error)
-	GetStakesByIds(ctx context.Context, stakedSuiIds []iotago.ObjectID) ([]*iotajsonrpc.DelegatedStake, error)
+	GetStakesByIds(ctx context.Context, stakedIotaIds []iotago.ObjectID) ([]*iotajsonrpc.DelegatedStake, error)
 	GetValidatorsApy(ctx context.Context) (*iotajsonrpc.ValidatorsApy, error)
 	BatchTransaction(
 		ctx context.Context,
@@ -81,13 +81,13 @@ type L1Client interface {
 		ctx context.Context,
 		req iotaclient.PayRequest,
 	) (*iotajsonrpc.TransactionBytes, error)
-	PayAllSui(
+	PayAllIota(
 		ctx context.Context,
-		req iotaclient.PayAllSuiRequest,
+		req iotaclient.PayAllIotaRequest,
 	) (*iotajsonrpc.TransactionBytes, error)
-	PaySui(
+	PayIota(
 		ctx context.Context,
-		req iotaclient.PaySuiRequest,
+		req iotaclient.PayIotaRequest,
 	) (*iotajsonrpc.TransactionBytes, error)
 	Publish(
 		ctx context.Context,
@@ -113,9 +113,9 @@ type L1Client interface {
 		ctx context.Context,
 		req iotaclient.TransferObjectRequest,
 	) (*iotajsonrpc.TransactionBytes, error)
-	TransferSui(
+	TransferIota(
 		ctx context.Context,
-		req iotaclient.TransferSuiRequest,
+		req iotaclient.TransferIotaRequest,
 	) (*iotajsonrpc.TransactionBytes, error)
 	GetCoinObjsForTargetAmount(
 		ctx context.Context,
@@ -126,16 +126,16 @@ type L1Client interface {
 		ctx context.Context,
 		signer iotasigner.Signer,
 		txBytes iotago.Base64Data,
-		options *iotajsonrpc.SuiTransactionBlockResponseOptions,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
+		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	PublishContract(
 		ctx context.Context,
 		signer iotasigner.Signer,
 		modules []*iotago.Base64Data,
 		dependencies []*iotago.Address,
 		gasBudget uint64,
-		options *iotajsonrpc.SuiTransactionBlockResponseOptions,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, *iotago.PackageID, error)
+		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error)
 	MintToken(
 		ctx context.Context,
 		signer iotasigner.Signer,
@@ -143,52 +143,52 @@ type L1Client interface {
 		tokenName string,
 		treasuryCap *iotago.ObjectID,
 		mintAmount uint64,
-		options *iotajsonrpc.SuiTransactionBlockResponseOptions,
-	) (*iotajsonrpc.SuiTransactionBlockResponse, error)
-	GetSuiCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (iotajsonrpc.Coins, error)
+		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	GetIotaCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (iotajsonrpc.Coins, error)
 	BatchGetObjectsOwnedByAddress(
 		ctx context.Context,
 		address *iotago.Address,
-		options *iotajsonrpc.SuiObjectDataOptions,
+		options *iotajsonrpc.IotaObjectDataOptions,
 		filterType string,
-	) ([]iotajsonrpc.SuiObjectResponse, error)
+	) ([]iotajsonrpc.IotaObjectResponse, error)
 	BatchGetFilteredObjectsOwnedByAddress(
 		ctx context.Context,
 		address *iotago.Address,
-		options *iotajsonrpc.SuiObjectDataOptions,
-		filter func(*iotajsonrpc.SuiObjectData) bool,
-	) ([]iotajsonrpc.SuiObjectResponse, error)
+		options *iotajsonrpc.IotaObjectDataOptions,
+		filter func(*iotajsonrpc.IotaObjectData) bool,
+	) ([]iotajsonrpc.IotaObjectResponse, error)
 	GetAllBalances(ctx context.Context, owner *iotago.Address) ([]*iotajsonrpc.Balance, error)
 	GetAllCoins(ctx context.Context, req iotaclient.GetAllCoinsRequest) (*iotajsonrpc.CoinPage, error)
 	GetBalance(ctx context.Context, req iotaclient.GetBalanceRequest) (*iotajsonrpc.Balance, error)
-	GetCoinMetadata(ctx context.Context, coinType string) (*iotajsonrpc.SuiCoinMetadata, error)
+	GetCoinMetadata(ctx context.Context, coinType string) (*iotajsonrpc.IotaCoinMetadata, error)
 	GetCoins(ctx context.Context, req iotaclient.GetCoinsRequest) (*iotajsonrpc.CoinPage, error)
 	GetTotalSupply(ctx context.Context, coinType iotago.ObjectType) (*iotajsonrpc.Supply, error)
 	GetChainIdentifier(ctx context.Context) (string, error)
 	GetCheckpoint(ctx context.Context, checkpointId *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error)
 	GetCheckpoints(ctx context.Context, req iotaclient.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error)
-	GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.SuiEvent, error)
+	GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.IotaEvent, error)
 	GetLatestCheckpointSequenceNumber(ctx context.Context) (string, error)
-	GetObject(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.SuiObjectResponse, error)
+	GetObject(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error)
 	GetProtocolConfig(
 		ctx context.Context,
 		version *iotajsonrpc.BigInt, // optional
 	) (*iotajsonrpc.ProtocolConfig, error)
 	GetTotalTransactionBlocks(ctx context.Context) (string, error)
-	GetTransactionBlock(ctx context.Context, req iotaclient.GetTransactionBlockRequest) (*iotajsonrpc.SuiTransactionBlockResponse, error)
-	MultiGetObjects(ctx context.Context, req iotaclient.MultiGetObjectsRequest) ([]iotajsonrpc.SuiObjectResponse, error)
+	GetTransactionBlock(ctx context.Context, req iotaclient.GetTransactionBlockRequest) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	MultiGetObjects(ctx context.Context, req iotaclient.MultiGetObjectsRequest) ([]iotajsonrpc.IotaObjectResponse, error)
 	MultiGetTransactionBlocks(
 		ctx context.Context,
 		req iotaclient.MultiGetTransactionBlocksRequest,
-	) ([]*iotajsonrpc.SuiTransactionBlockResponse, error)
+	) ([]*iotajsonrpc.IotaTransactionBlockResponse, error)
 	TryGetPastObject(
 		ctx context.Context,
 		req iotaclient.TryGetPastObjectRequest,
-	) (*iotajsonrpc.SuiPastObjectResponse, error)
+	) (*iotajsonrpc.IotaPastObjectResponse, error)
 	TryMultiGetPastObjects(
 		ctx context.Context,
 		req iotaclient.TryMultiGetPastObjectsRequest,
-	) ([]*iotajsonrpc.SuiPastObjectResponse, error)
+	) ([]*iotajsonrpc.IotaPastObjectResponse, error)
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
@@ -207,11 +207,11 @@ func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) 
 	if faucetURL == "" {
 		faucetURL = iotaconn.FaucetURL(c.Config.APIURL)
 	}
-	return iotaclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), faucetURL)
+	return iotaclient.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), faucetURL)
 }
 
 func (c *l1Client) Health(ctx context.Context) error {
-	_, err := c.Client.GetLatestSuiSystemState(ctx)
+	_, err := c.Client.GetLatestIotaSystemState(ctx)
 	return err
 }
 

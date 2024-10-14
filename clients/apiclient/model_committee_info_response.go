@@ -25,7 +25,7 @@ type CommitteeInfoResponse struct {
 	Active bool `json:"active"`
 	// A list of all candidate nodes and their peering info.
 	CandidateNodes []CommitteeNode `json:"candidateNodes"`
-	// ChainID (Bech32-encoded).
+	// ChainID (Hex Address).
 	ChainId string `json:"chainId"`
 	// A list of all committee nodes and their peering info.
 	CommitteeNodes []CommitteeNode `json:"committeeNodes"`

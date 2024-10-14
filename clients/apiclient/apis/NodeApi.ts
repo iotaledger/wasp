@@ -167,7 +167,7 @@ export class NodeApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get information about the shared address DKS configuration
-     * @param sharedAddress SharedAddress (Bech32)
+     * @param sharedAddress SharedAddress (Hex Address)
      */
     public async getDKSInfo(sharedAddress: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;

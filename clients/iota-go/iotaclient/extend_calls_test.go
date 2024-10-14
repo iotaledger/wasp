@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
@@ -30,7 +30,7 @@ func TestMintToken(t *testing.T) {
 		"testcoin",
 		treasuryCap,
 		mintAmount,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -68,7 +68,7 @@ func deployTestcoin(t *testing.T, client *iotaclient.Client, signer iotasigner.S
 	)
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(), signer, txnBytes.TxBytes, &iotajsonrpc.SuiTransactionBlockResponseOptions{
+		context.Background(), signer, txnBytes.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -88,7 +88,7 @@ func deployTestcoin(t *testing.T, client *iotaclient.Client, signer iotasigner.S
 func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 
-	options := iotajsonrpc.SuiObjectDataOptions{
+	options := iotajsonrpc.IotaObjectDataOptions{
 		ShowType:    true,
 		ShowContent: true,
 	}

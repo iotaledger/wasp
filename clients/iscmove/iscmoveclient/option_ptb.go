@@ -25,14 +25,14 @@ func PTBOptionSome(
 	return ptb
 }
 
-func PTBOptionSomeSuiCoin(
+func PTBOptionSomeIotaCoin(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	objRef *iotago.ObjectRef, // must be ImmOrOwnedObject
 ) *iotago.ProgrammableTransactionBuilder {
 	return PTBOptionSome(ptb, *iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iota::IOTA>"), objRef)
 }
 
-func PTBOptionNoneSuiCoin(
+func PTBOptionNoneIotaCoin(
 	ptb *iotago.ProgrammableTransactionBuilder,
 ) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(

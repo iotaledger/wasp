@@ -8,21 +8,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestBCS(t *testing.T) {
 	testBCS(
-		t, iotago.TransferSui{
+		t, iotago.TransferIota{
 			Recipient: *iotago.AddressFromArray([32]byte{1, 2, 3}),
 			Amount:    lo.ToPtr[uint64](123),
 		},
 	)
 
 	// fardream is crashing on this...
-	// testBCS(t, iotago.TransferSui{
+	// testBCS(t, iotago.TransferIota{
 	// 	Recipient: *iotago.AddressFromArray([32]byte{1, 2, 3}),
 	// })
 
@@ -34,7 +34,7 @@ func TestBCS(t *testing.T) {
 					//Pure: &[]byte{1, 2, 3},
 					Object: &iotago.ObjectArg{
 						SharedObject: &iotago.SharedObjectArg{
-							Id:                   suitest.RandomAddress(),
+							Id:                   iotatest.RandomAddress(),
 							InitialSharedVersion: 13,
 							Mutable:              true,
 						},
@@ -44,7 +44,7 @@ func TestBCS(t *testing.T) {
 			Commands: []iotago.Command{
 				{
 					MoveCall: &iotago.ProgrammableMoveCall{
-						Package:  suitest.RandomAddress(),
+						Package:  iotatest.RandomAddress(),
 						Module:   "aaa",
 						Function: "bbb",
 						TypeArguments: []iotago.TypeTag{

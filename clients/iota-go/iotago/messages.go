@@ -90,7 +90,7 @@ type MoveCall struct {
 	Arguments     []*CallArg
 }
 
-type TransferSui struct {
+type TransferIota struct {
 	Recipient Address
 	Amount    *uint64 `bcs:"optional"`
 }
@@ -101,22 +101,22 @@ type Pay struct {
 	Amounts    []*uint64
 }
 
-type PaySui = Pay
+type PayIota = Pay
 
-type PayAllSui struct {
+type PayAllIota struct {
 	Coins     []*ObjectRef
 	Recipient Address
 }
 
 type ChangeEpoch struct {
-	Epoch           EpochId
-	ProtocolVersion ProtocolVersion
-	StorageCharge   uint64
+	Epoch                   EpochId
+	ProtocolVersion         ProtocolVersion
+	StorageCharge           uint64
 	ComputationCharge       uint64
 	StorageRebate           uint64
 	NonRefundableStorageFee uint64
 	EpochStartTimestampMs   uint64
-	SystemPackages  []*struct {
+	SystemPackages          []*struct {
 		SequenceNumber SequenceNumber
 		Bytes          [][]uint8
 		Objects        []*ObjectID

@@ -7,18 +7,15 @@ import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
-import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobValueResponse } from '../models/BlobValueResponse';
+import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
-import { BurnRecord } from '../models/BurnRecord';
-import { CallTargetJSON } from '../models/CallTargetJSON';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
+import { CoinJSON } from '../models/CoinJSON';
 import { CommitteeInfoResponse } from '../models/CommitteeInfoResponse';
 import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
@@ -44,18 +41,15 @@ import { InOutputMetricItem } from '../models/InOutputMetricItem';
 import { InStateOutput } from '../models/InStateOutput';
 import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
+import { Int } from '../models/Int';
 import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
-import { Item } from '../models/Item';
-import { JSONDict } from '../models/JSONDict';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { MilestoneInfo } from '../models/MilestoneInfo';
 import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
-import { NFTJSON } from '../models/NFTJSON';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
 import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -70,10 +64,8 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
-import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
-import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
@@ -83,7 +75,6 @@ import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
-import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -171,7 +162,7 @@ export class ObservableChainsApi {
 
     /**
      * Activate a chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public activateChain(chainID: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.activateChain(chainID, _options);
@@ -194,7 +185,7 @@ export class ObservableChainsApi {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
     public addAccessNode(chainID: string, peer: string, _options?: Configuration): Observable<void> {
@@ -219,10 +210,10 @@ export class ObservableChainsApi {
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<JSONDict> {
+    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<Array<Array<number>>> {
         const requestContextPromise = this.requestFactory.callView(chainID, contractCallViewRequest, _options);
 
         // build promise chain
@@ -243,7 +234,7 @@ export class ObservableChainsApi {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public deactivateChain(chainID: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.deactivateChain(chainID, _options);
@@ -266,7 +257,7 @@ export class ObservableChainsApi {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public dumpAccounts(chainID: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.dumpAccounts(chainID, _options);
@@ -289,10 +280,10 @@ export class ObservableChainsApi {
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Observable<ReceiptResponse> {
+    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.estimateGasOffledger(chainID, request, _options);
 
         // build promise chain
@@ -313,10 +304,10 @@ export class ObservableChainsApi {
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Observable<ReceiptResponse> {
+    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.estimateGasOnledger(chainID, request, _options);
 
         // build promise chain
@@ -337,7 +328,7 @@ export class ObservableChainsApi {
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public getChainInfo(chainID: string, block?: string, _options?: Configuration): Observable<ChainInfoResponse> {
@@ -383,7 +374,7 @@ export class ObservableChainsApi {
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public getCommitteeInfo(chainID: string, block?: string, _options?: Configuration): Observable<CommitteeInfoResponse> {
@@ -407,7 +398,7 @@ export class ObservableChainsApi {
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public getContracts(chainID: string, block?: string, _options?: Configuration): Observable<Array<ContractInfoResponse>> {
@@ -431,7 +422,7 @@ export class ObservableChainsApi {
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getMempoolContents(chainID: string, _options?: Configuration): Observable<Array<number>> {
         const requestContextPromise = this.requestFactory.getMempoolContents(chainID, _options);
@@ -454,10 +445,10 @@ export class ObservableChainsApi {
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Observable<ReceiptResponse> {
+    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.getReceipt(chainID, requestID, _options);
 
         // build promise chain
@@ -478,7 +469,7 @@ export class ObservableChainsApi {
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
     public getStateValue(chainID: string, stateKey: string, _options?: Configuration): Observable<StateResponse> {
@@ -502,7 +493,7 @@ export class ObservableChainsApi {
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
     public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Observable<void> {
@@ -526,7 +517,7 @@ export class ObservableChainsApi {
 
     /**
      * Sets the chain record.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param chainRecord Chain Record
      */
     public setChainRecord(chainID: string, chainRecord: ChainRecord, _options?: Configuration): Observable<void> {
@@ -550,7 +541,7 @@ export class ObservableChainsApi {
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public v1ChainsChainIDEvmPost(chainID: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.v1ChainsChainIDEvmPost(chainID, _options);
@@ -573,7 +564,7 @@ export class ObservableChainsApi {
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public v1ChainsChainIDEvmWsGet(chainID: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.v1ChainsChainIDEvmWsGet(chainID, _options);
@@ -596,12 +587,12 @@ export class ObservableChainsApi {
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param timeoutSeconds The timeout in seconds, maximum 60s
      * @param waitForL1Confirmation Wait for the block to be confirmed on L1
      */
-    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<ReceiptResponse> {
+    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.waitForRequest(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
 
         // build promise chain
@@ -640,8 +631,8 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountBalance(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AssetsResponse> {
@@ -665,8 +656,8 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all foundries owned by an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountFoundries(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AccountFoundriesResponse> {
@@ -690,8 +681,8 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountNFTIDs(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AccountNFTsResponse> {
@@ -715,8 +706,8 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Bech32)
-     * @param agentID AgentID (Bech32 for WasmVM | Hex for EVM)
+     * @param chainID ChainID (Hex Address)
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
     public accountsGetAccountNonce(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AccountNonceResponse> {
@@ -740,7 +731,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the foundry output
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param serialNumber Serial Number (uint32)
      * @param block Block index or trie root
      */
@@ -765,11 +756,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param block Block index or trie root
      */
-    public accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Observable<NFTJSON> {
+    public accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.accountsGetNFTData(chainID, nftID, block, _options);
 
         // build promise chain
@@ -790,7 +781,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public accountsGetNativeTokenIDRegistry(chainID: string, block?: string, _options?: Configuration): Observable<NativeTokenIDRegistryResponse> {
@@ -814,7 +805,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public accountsGetTotalAssets(chainID: string, block?: string, _options?: Configuration): Observable<AssetsResponse> {
@@ -837,59 +828,8 @@ export class ObservableCorecontractsApi {
     }
 
     /**
-     * Get all fields of a blob
-     * @param chainID ChainID (Bech32)
-     * @param blobHash BlobHash (Hex)
-     * @param block Block index or trie root
-     */
-    public blobsGetBlobInfo(chainID: string, blobHash: string, block?: string, _options?: Configuration): Observable<BlobInfoResponse> {
-        const requestContextPromise = this.requestFactory.blobsGetBlobInfo(chainID, blobHash, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (let middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (let middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.blobsGetBlobInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get the value of the supplied field (key)
-     * @param chainID ChainID (Bech32)
-     * @param blobHash BlobHash (Hex)
-     * @param fieldKey FieldKey (String)
-     * @param block Block index or trie root
-     */
-    public blobsGetBlobValue(chainID: string, blobHash: string, fieldKey: string, block?: string, _options?: Configuration): Observable<BlobValueResponse> {
-        const requestContextPromise = this.requestFactory.blobsGetBlobValue(chainID, blobHash, fieldKey, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (let middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (let middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.blobsGetBlobValue(rsp)));
-            }));
-    }
-
-    /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
@@ -914,7 +854,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetControlAddresses(chainID: string, block?: string, _options?: Configuration): Observable<ControlAddressesResponse> {
@@ -938,7 +878,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
@@ -963,7 +903,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetEventsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<EventsResponse> {
@@ -987,7 +927,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
@@ -1012,7 +952,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetLatestBlockInfo(chainID: string, block?: string, _options?: Configuration): Observable<BlockInfoResponse> {
@@ -1036,7 +976,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
@@ -1061,7 +1001,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public blocklogGetRequestIDsForLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<RequestIDsResponse> {
@@ -1085,7 +1025,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
@@ -1110,11 +1050,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<ReceiptResponse> {
+    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.blocklogGetRequestReceipt(chainID, requestID, block, _options);
 
         // build promise chain
@@ -1135,11 +1075,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfBlock(chainID, blockIndex, block, _options);
 
         // build promise chain
@@ -1160,10 +1100,10 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<void> {
         const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfLatestBlock(chainID, block, _options);
 
         // build promise chain
@@ -1184,7 +1124,7 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the error message format of a specific error id
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param contractHname Contract (Hname as Hex)
      * @param errorID Error Id (uint16)
      * @param block Block index or trie root
@@ -1211,7 +1151,7 @@ export class ObservableCorecontractsApi {
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public governanceGetAllowedStateControllerAddresses(chainID: string, block?: string, _options?: Configuration): Observable<GovAllowedStateControllerAddressesResponse> {
@@ -1236,7 +1176,7 @@ export class ObservableCorecontractsApi {
     /**
      * If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public governanceGetChainInfo(chainID: string, block?: string, _options?: Configuration): Observable<GovChainInfoResponse> {
@@ -1261,7 +1201,7 @@ export class ObservableCorecontractsApi {
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public governanceGetChainOwner(chainID: string, block?: string, _options?: Configuration): Observable<GovChainOwnerResponse> {
@@ -1365,7 +1305,7 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getChainMessageMetrics(chainID: string, _options?: Configuration): Observable<ChainMessageMetrics> {
         const requestContextPromise = this.requestFactory.getChainMessageMetrics(chainID, _options);
@@ -1388,7 +1328,7 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getChainPipeMetrics(chainID: string, _options?: Configuration): Observable<ConsensusPipeMetrics> {
         const requestContextPromise = this.requestFactory.getChainPipeMetrics(chainID, _options);
@@ -1411,7 +1351,7 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public getChainWorkflowMetrics(chainID: string, _options?: Configuration): Observable<ConsensusWorkflowMetrics> {
         const requestContextPromise = this.requestFactory.getChainWorkflowMetrics(chainID, _options);
@@ -1564,7 +1504,7 @@ export class ObservableNodeApi {
 
     /**
      * Get information about the shared address DKS configuration
-     * @param sharedAddress SharedAddress (Bech32)
+     * @param sharedAddress SharedAddress (Hex Address)
      */
     public getDKSInfo(sharedAddress: string, _options?: Configuration): Observable<DKSharesInfo> {
         const requestContextPromise = this.requestFactory.getDKSInfo(sharedAddress, _options);

@@ -5,13 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BaseTokens** | **string** | The base tokens (uint64 as string) | 
-**NativeTokens** | [**[]NativeTokenJSON**](NativeTokenJSON.md) |  | 
+**NativeTokens** | [**[]CoinJSON**](CoinJSON.md) |  | 
 
 ## Methods
 
 ### NewAssetsResponse
 
-`func NewAssetsResponse(baseTokens string, nativeTokens []NativeTokenJSON, ) *AssetsResponse`
+`func NewAssetsResponse(baseTokens string, nativeTokens []CoinJSON, ) *AssetsResponse`
 
 NewAssetsResponse instantiates a new AssetsResponse object
 This constructor will assign default values to properties that have it defined,
@@ -48,20 +48,20 @@ SetBaseTokens sets BaseTokens field to given value.
 
 ### GetNativeTokens
 
-`func (o *AssetsResponse) GetNativeTokens() []NativeTokenJSON`
+`func (o *AssetsResponse) GetNativeTokens() []CoinJSON`
 
 GetNativeTokens returns the NativeTokens field if non-nil, zero value otherwise.
 
 ### GetNativeTokensOk
 
-`func (o *AssetsResponse) GetNativeTokensOk() (*[]NativeTokenJSON, bool)`
+`func (o *AssetsResponse) GetNativeTokensOk() (*[]CoinJSON, bool)`
 
 GetNativeTokensOk returns a tuple with the NativeTokens field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNativeTokens
 
-`func (o *AssetsResponse) SetNativeTokens(v []NativeTokenJSON)`
+`func (o *AssetsResponse) SetNativeTokens(v []CoinJSON)`
 
 SetNativeTokens sets NativeTokens field to given value.
 

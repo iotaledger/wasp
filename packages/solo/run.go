@@ -85,11 +85,11 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	txnBytes, err := bcs.Marshal(&res.UnsignedTransaction)
 	require.NoError(ch.Env.T, err)
 
-	txBlockRes, err := ch.Env.SuiClient().SignAndExecuteTransaction(
+	txBlockRes, err := ch.Env.IotaClient().SignAndExecuteTransaction(
 		ch.Env.ctx,
-		cryptolib.SignerToSuiSigner(ch.StateControllerKeyPair),
+		cryptolib.SignerToIotaSigner(ch.StateControllerKeyPair),
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, txBlockRes.Effects.Data.IsSuccess())

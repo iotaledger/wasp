@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -102,7 +102,7 @@ func TestAssetsCodec(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin("0xa1::a::A", 100).
-		AddObject(*suitest.RandomAddress())
+		AddObject(*iotatest.RandomAddress())
 	bcs.TestCodec(t, assets)
 }
 

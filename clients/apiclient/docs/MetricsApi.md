@@ -30,7 +30,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -50,7 +50,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -98,7 +98,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -118,7 +118,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -166,7 +166,7 @@ import (
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Bech32)
+    chainID := "chainID_example" // string | ChainID (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -186,7 +186,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Bech32) | 
+**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 

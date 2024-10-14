@@ -35,7 +35,7 @@ library ISC {
     ERC721NFTs constant nfts = __erc721NFTs;
 
     // Get the ERC721NFTCollection contract for the given collection
-    function erc721NFTCollection(SuiObjectID collectionID) internal view returns (ERC721NFTCollection) {
+    function erc721NFTCollection(IotaObjectID collectionID) internal view returns (ERC721NFTCollection) {
         return ERC721NFTCollection(sandbox.erc721NFTCollectionAddress(collectionID));
     }
 

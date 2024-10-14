@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -47,7 +47,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 			Digest:   &digest,
 		},
 		Object: &anchor,
-	}, cryptolib.NewEmptyAddress(), *suitest.RandomAddress())
+	}, cryptolib.NewEmptyAddress(), *iotatest.RandomAddress())
 
 	batchProposal := NewBatchProposal(10, &stateAnchor, util.NewFixedSizeBitVector(11), time.Now(), isctest.NewRandomAgentID(), reqRefs)
 

@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
+var baseTokenCoinInfo = &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 
 func TestOrigin(t *testing.T) {
 	l1commitment := origin.L1Commitment(0, nil, 0, baseTokenCoinInfo)

@@ -9,9 +9,9 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
@@ -167,8 +167,8 @@ func TestGetEvents(t *testing.T) {
 				{
 					Struct: &iotago.StructTag{
 						Address: iotago.MustAddressFromHex("0x2"),
-						Module:  iotago.Identifier("iotago"),
-						Name:    iotago.Identifier("SUI"),
+						Module:  iotago.Identifier("iota"),
+						Name:    iotago.Identifier("IOTA"),
 					},
 				},
 				{
@@ -244,7 +244,7 @@ func TestGetObject(t *testing.T) {
 				got, err := tt.api.GetObject(
 					tt.args.ctx, iotaclient.GetObjectRequest{
 						ObjectID: tt.args.objID,
-						Options: &iotajsonrpc.SuiObjectDataOptions{
+						Options: &iotajsonrpc.IotaObjectDataOptions{
 							ShowType:                true,
 							ShowOwner:               true,
 							ShowContent:             true,
@@ -287,7 +287,7 @@ func TestGetTransactionBlock(t *testing.T) {
 	resp, err := client.GetTransactionBlock(
 		context.Background(), iotaclient.GetTransactionBlockRequest{
 			Digest: digest,
-			Options: &iotajsonrpc.SuiTransactionBlockResponseOptions{
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowInput:          true,
 				ShowRawInput:       true,
 				ShowEffects:        true,
@@ -337,7 +337,7 @@ func TestMultiGetObjects(t *testing.T) {
 	resp, err := api.MultiGetObjects(
 		context.Background(), iotaclient.MultiGetObjectsRequest{
 			ObjectIDs: objs,
-			Options: &iotajsonrpc.SuiObjectDataOptions{
+			Options: &iotajsonrpc.IotaObjectDataOptions{
 				ShowType:                true,
 				ShowOwner:               true,
 				ShowContent:             true,
@@ -363,7 +363,7 @@ func TestMultiGetTransactionBlocks(t *testing.T) {
 				iotago.MustNewDigest("6A3ckipsEtBSEC5C53AipggQioWzVDbs9NE1SPvqrkJr"),
 				iotago.MustNewDigest("8AL88Qgk7p6ny3MkjzQboTvQg9SEoWZq4rknEPeXQdH5"),
 			},
-			Options: &iotajsonrpc.SuiTransactionBlockResponseOptions{
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowEffects: true,
 			},
 		},
@@ -381,7 +381,7 @@ func TestTryGetPastObject(t *testing.T) {
 		context.Background(), iotaclient.TryGetPastObjectRequest{
 			ObjectID: iotago.MustObjectIDFromHex("0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f"),
 			Version:  187584506,
-			Options: &iotajsonrpc.SuiObjectDataOptions{
+			Options: &iotajsonrpc.IotaObjectDataOptions{
 				ShowType:  true,
 				ShowOwner: true,
 			},
@@ -393,7 +393,7 @@ func TestTryGetPastObject(t *testing.T) {
 
 func TestTryMultiGetPastObjects(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	req := []*iotajsonrpc.SuiGetPastObjectRequest{
+	req := []*iotajsonrpc.IotaGetPastObjectRequest{
 		{
 			ObjectId: iotago.MustObjectIDFromHex("0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f"),
 			Version:  iotajsonrpc.NewBigInt(187584506),
@@ -407,7 +407,7 @@ func TestTryMultiGetPastObjects(t *testing.T) {
 	resp, err := api.TryMultiGetPastObjects(
 		context.Background(), iotaclient.TryMultiGetPastObjectsRequest{
 			PastObjects: req,
-			Options: &iotajsonrpc.SuiObjectDataOptions{
+			Options: &iotajsonrpc.IotaObjectDataOptions{
 				ShowType:  true,
 				ShowOwner: true,
 			},

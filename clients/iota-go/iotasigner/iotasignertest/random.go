@@ -1,7 +1,7 @@
-package suisignertest
+package iotasignertest
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
@@ -9,7 +9,7 @@ import (
 // TEST ONLY functions
 
 func RandomSignedTransaction(signer ...iotasigner.Signer) iotasigner.SignedTransaction {
-	tx := suitest.RandomTransactionData()
+	tx := iotatest.RandomTransactionData()
 	txBytes, err := bcs.Marshal(&tx.V1.Kind)
 	if err != nil {
 		panic(err)

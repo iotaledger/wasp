@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
-func TestCoins_PickSUICoinsWithGas(t *testing.T) {
+func TestCoins_PickIOTACoinsWithGas(t *testing.T) {
 	// coins 1,2,3,4,5
 	testCoins := iotajsonrpc.Coins{
 		{Balance: iotajsonrpc.NewBigInt(3)},
@@ -138,18 +138,18 @@ func TestCoins_PickSUICoinsWithGas(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				got, got1, err := tt.cs.PickSUICoinsWithGas(tt.args.amount, tt.args.gasAmount, tt.args.pickMethod)
+				got, got1, err := tt.cs.PickIOTACoinsWithGas(tt.args.amount, tt.args.gasAmount, tt.args.pickMethod)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("Coins.PickSUICoinsWithGas() error: %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("Coins.PickIOTACoinsWithGas() error: %v, wantErr %v", err, tt.wantErr)
 					return
 				}
 				if len(got) != 0 && len(tt.want) != 0 {
 					if !reflect.DeepEqual(got, tt.want) {
-						t.Errorf("Coins.PickSUICoinsWithGas() got: %v, want %v", got, tt.want)
+						t.Errorf("Coins.PickIOTACoinsWithGas() got: %v, want %v", got, tt.want)
 					}
 				}
 				if !reflect.DeepEqual(got1, tt.want1) {
-					t.Errorf("Coins.PickSUICoinsWithGas() got1: %v, want %v", got1, tt.want1)
+					t.Errorf("Coins.PickIOTACoinsWithGas() got1: %v, want %v", got1, tt.want1)
 				}
 			},
 		)
