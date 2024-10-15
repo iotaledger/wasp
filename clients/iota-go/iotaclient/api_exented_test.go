@@ -118,7 +118,7 @@ func TestGetOwnedObjects(t *testing.T) {
 	signer := iotasigner.NewSignerByIndex(testSeed, iotasigner.KeySchemeFlagEd25519, 0)
 	t.Run(
 		"struct tag", func(t *testing.T) {
-			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iotago::IOTA>")
+			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")
 			require.NoError(t, err)
 			query := iotajsonrpc.IotaObjectResponseQuery{
 				Filter: &iotajsonrpc.IotaObjectDataFilter{
@@ -177,7 +177,7 @@ func TestGetOwnedObjects(t *testing.T) {
 	)
 	// query := iotajsonrpc.IotaObjectResponseQuery{
 	// 	Filter: &iotajsonrpc.IotaObjectDataFilter{
-	// 		StructType: "0x2::coin::Coin<0x2::iotago::IOTA>",
+	// 		StructType: "0x2::coin::Coin<0x2::iota::IOTA>",
 	// 	},
 	// 	Options: &iotajsonrpc.IotaObjectDataOptions{
 	// 		ShowType:    true,

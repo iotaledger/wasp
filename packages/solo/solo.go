@@ -321,7 +321,7 @@ func (env *Solo) pickCoinsForInitChain(
 		SplitAmounts: []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(initBaseTokens.Uint64())},
 		GasBudget:    iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
 	}))
-	env.IotaClient().SignAndExecuteTransaction(
+	_, err = env.IotaClient().SignAndExecuteTransaction(
 		env.ctx,
 		cryptolib.SignerToIotaSigner(chainOriginator),
 		tx.TxBytes,
@@ -330,16 +330,13 @@ func (env *Solo) pickCoinsForInitChain(
 			ShowObjectChanges: true,
 		},
 	)
-	coins, err = env.IotaClient().GetCoinObjsForTargetAmount(
-		env.ctx,
-		originatorAddr.AsIotaAddress(),
-		initBaseTokens.Uint64(),
-	)
+	require.NoError(env.T, err)
+	coins, err = env.IotaClient().GetIotaCoinsOwnedByAddress(env.ctx, originatorAddr.AsIotaAddress())
 	require.NoError(env.T, err)
 	pickedCoin, ok = lo.Find(coins, func(c *iotajsonrpc.Coin) bool {
 		return c.Balance.Uint64() == initBaseTokens.Uint64()
 	})
-	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
+	require.True(env.T, ok, "cannot find coin with balance %d", initBaseTokens)
 	return pickedCoin, lo.Filter(coins, func(c *iotajsonrpc.Coin, _ int) bool {
 		return c != pickedCoin
 	})

@@ -17,7 +17,6 @@ func (v Value) Uint64() uint64 {
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
-	fmt.Printf("!!%d\n", *v)
 	e.WriteCompactUint(uint64(*v))
 	return e.Err()
 }

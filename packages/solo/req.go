@@ -232,6 +232,9 @@ func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on the same address
 func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, error) {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
 	res, err := ch.Env.ISCMoveClient().CreateAndSendRequest(
 		ch.Env.ctx,
 		keyPair,
@@ -479,8 +482,8 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
-func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
-	ch.Env.T.Helper()
+func (env *Solo) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
+	env.T.Helper()
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -492,7 +495,7 @@ func (ch *Chain) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
 			return true
 		}
 		if time.Now().After(deadline) {
-			ch.Env.T.Logf("WaitUntil failed waiting max %v", maxw)
+			env.T.Logf("WaitUntil failed waiting max %v", maxw)
 			return false
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -531,7 +534,7 @@ func (ch *Chain) WaitForRequestsMark() {
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
 	ch.Env.T.Helper()
 	ch.Env.T.Logf("WaitForRequestsThrough: start -- block #%d -- numReq = %d", ch.RequestsBlock, numReq)
-	return ch.WaitUntil(func() bool {
+	return ch.Env.WaitUntil(func() bool {
 		ch.Env.T.Helper()
 		latest := ch.LatestBlockIndex()
 		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {

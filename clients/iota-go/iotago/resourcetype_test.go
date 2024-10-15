@@ -118,19 +118,19 @@ func TestContains(t *testing.T) {
 		},
 		{
 			name:   "successful, dynamic field 1",
-			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iotago::IOTA>>",
+			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iota::IOTA>>",
 			target: &iotago.ResourceType{Module: "ascii", ObjectName: "String"},
 			want:   true,
 		},
 		{
 			name:   "successful, dynamic field 2",
-			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iotago::IOTA>>",
+			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iota::IOTA>>",
 			target: &iotago.ResourceType{Module: "balance", ObjectName: "Balance"},
 			want:   true,
 		},
 		{
 			name:   "successful, dynamic field inner",
-			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iotago::IOTA>>",
+			str:    "0x2::dynamic_field::Field<0x1::ascii::String, 0x2::balance::Balance<0x2::iota::IOTA>>",
 			target: &iotago.ResourceType{Module: "iotago", ObjectName: "IOTA"},
 			want:   true,
 		},

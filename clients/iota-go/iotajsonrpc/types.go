@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	IotaCoinType   = "0x2::iotago::IOTA"
+	IotaCoinType   = "0x2::iota::IOTA"
 	IotaCoinSupply = 5376075227826000000
 )
 

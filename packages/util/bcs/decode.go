@@ -7,9 +7,10 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/constraints"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/samber/lo"
 )
 
 type Decodable interface {
@@ -33,7 +34,7 @@ var initializeableT = reflect.TypeOf((*Initializeable)(nil)).Elem()
 type DecoderConfig struct {
 	TagName                  string
 	InterfaceIsEnumByDefault bool
-	//CustomDecoders map[reflect.Type]CustomDecoder
+	// CustomDecoders map[reflect.Type]CustomDecoder
 }
 
 func (c *DecoderConfig) InitializeDefaults() {
@@ -145,16 +146,16 @@ func (d *Decoder) ReadOptionalFlag() bool {
 
 // Enum index is an index of variant in enum type.
 func (d *Decoder) ReadEnumIdx() int {
-	return int(d.ReadCompactUint())
+	return int(d.r.ReadSize32())
 }
 
 func (d *Decoder) ReadLen() int {
-	return int(d.ReadCompactUint())
+	return int(d.r.ReadSize32())
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
 func (d *Decoder) ReadCompactUint() uint64 {
-	return uint64(d.r.ReadSize32())
+	return d.r.ReadAmount64()
 }
 
 func (d *Decoder) ReadBool() bool {
@@ -906,8 +907,10 @@ func MustUnmarshalInto[V any](b []byte, v *V) *V {
 	return v
 }
 
-type CustomDecoder func(e *Decoder, v reflect.Value) error
-type InitFunc func(v reflect.Value) error
+type (
+	CustomDecoder func(e *Decoder, v reflect.Value) error
+	InitFunc      func(v reflect.Value) error
+)
 
 var CustomDecoders = make(map[reflect.Type]CustomDecoder)
 
