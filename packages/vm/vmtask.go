@@ -46,7 +46,7 @@ type VMTaskResult struct {
 	RotationAddress *cryptolib.Address
 	// PTB is the ProgrammableTransaction to be sent to L1 for the next anchor
 	// transition, or nil if the task does not produce a normal block
-	UnsignedTransaction iotago.TransactionData
+	UnsignedTransaction iotago.ProgrammableTransaction
 	StateMetadata       []byte
 	// RequestResults contains one result for each non-skipped request
 	RequestResults []*RequestResult

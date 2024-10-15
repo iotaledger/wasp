@@ -285,7 +285,7 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositAssetsToL2(isc.NewAssets(DefaultCommonAccountBaseTokens), nil)
+		err := ret.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, nil)
 		require.NoError(env.T, err)
 	}
 	return ret
@@ -361,6 +361,9 @@ func (env *Solo) deployChain(
 		env.GetFundsFromFaucet(originatorAddr)
 	}
 
+	stateControllerKey := env.NewKeyPairFromIndex(-2000 + len(env.chains))
+	env.GetFundsFromFaucet(stateControllerKey.Address())
+
 	initParams := origin.EncodeInitParams(
 		isc.NewAddressAgentID(chainOriginator.Address()),
 		evmChainID,
@@ -408,11 +411,12 @@ func (env *Solo) deployChain(
 	)
 
 	return chainData{
-		Name:                 name,
-		ChainID:              chainID,
-		OriginatorPrivateKey: chainOriginator,
-		ValidatorFeeTarget:   originatorAgentID,
-		db:                   db,
+		Name:                   name,
+		ChainID:                chainID,
+		StateControllerKeyPair: stateControllerKey,
+		OriginatorPrivateKey:   chainOriginator,
+		ValidatorFeeTarget:     originatorAgentID,
+		db:                     db,
 	}, nil
 }
 
@@ -673,13 +677,18 @@ func (env *Solo) MintNFTsL1(
 	*/
 }
 
-func (env *Solo) executePTB(ptb iotago.ProgrammableTransaction, wallet *cryptolib.KeyPair) *iotajsonrpc.IotaTransactionBlockResponse {
+func (env *Solo) executePTB(
+	ptb iotago.ProgrammableTransaction,
+	wallet *cryptolib.KeyPair,
+	gasPaymentCoins []*iotago.ObjectRef,
+	gasBudget, gasPrice uint64,
+) *iotajsonrpc.IotaTransactionBlockResponse {
 	tx := iotago.NewProgrammable(
 		wallet.Address().AsIotaAddress(),
 		ptb,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		gasPaymentCoins,
+		gasBudget,
+		gasPrice,
 	)
 
 	txnBytes, err := bcs.Marshal(&tx)
@@ -697,27 +706,4 @@ func (env *Solo) executePTB(ptb iotago.ProgrammableTransaction, wallet *cryptoli
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes
-}
-
-// SendL1 sends coins to another L1 address
-func (env *Solo) SendL1(targetAddress *cryptolib.Address, coins isc.CoinBalances, wallet *cryptolib.KeyPair) {
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	allCoins := env.L1AllCoins(wallet.Address())
-	coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
-		ptb.Pay(
-			lo.Map(
-				lo.Filter(allCoins, func(c *iotajsonrpc.Coin, _ int) bool {
-					return c.CoinType == string(coinType)
-				}),
-				func(c *iotajsonrpc.Coin, _ int) *iotago.ObjectRef {
-					return c.Ref()
-				},
-			),
-			[]*iotago.Address{targetAddress.AsIotaAddress()},
-			[]uint64{uint64(amount)},
-		)
-		return true
-	})
-
-	env.executePTB(ptb.Finish(), wallet)
 }

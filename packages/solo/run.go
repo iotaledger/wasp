@@ -10,10 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -82,17 +81,18 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 	res := ch.runTaskNoLock(reqs, false)
 
-	txnBytes, err := bcs.Marshal(&res.UnsignedTransaction)
-	require.NoError(ch.Env.T, err)
-
-	txBlockRes, err := ch.Env.IotaClient().SignAndExecuteTransaction(
-		ch.Env.ctx,
-		cryptolib.SignerToIotaSigner(ch.StateControllerKeyPair),
-		txnBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	gasPayment := ch.Env.makeBaseTokenCoinsWithExactly(
+		ch.StateControllerKeyPair,
+		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
 	)
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, txBlockRes.Effects.Data.IsSuccess())
+
+	_ = ch.Env.executePTB(
+		res.UnsignedTransaction,
+		ch.StateControllerKeyPair,
+		gasPayment,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
 
 	if res.RotationAddress == nil {
 		// normal state transition

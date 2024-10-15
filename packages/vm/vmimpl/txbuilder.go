@@ -1,7 +1,6 @@
 package vmimpl
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -23,17 +22,6 @@ func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
 	stateMetadata.GasFeePolicy = govState.GetGasFeePolicy()
 
 	return stateMetadata.Bytes()
-}
-
-func (vmctx *vmContext) BuildTransactionEssence(stateMetadata []byte) iotago.TransactionData {
-	ptb := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
-	return iotago.NewProgrammable(
-		vmctx.stateAnchor().Owner.AsIotaAddress(),
-		ptb,
-		[]*iotago.ObjectRef{}, // TODO: handle L1 gas
-		0,
-		0,
-	)
 }
 
 func (vmctx *vmContext) createTxBuilderSnapshot() vmtxbuilder.TransactionBuilder {

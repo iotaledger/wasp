@@ -15,5 +15,5 @@ type TransactionBuilder interface {
 	SendCrossChainRequest(targetPackage *iotago.Address, targetAnchor *iotago.Address, assets *isc.Assets, metadata *isc.SendMetadata)
 
 	// this will reset txb into nil
-	BuildTransactionEssence(stateMetadata []byte) iotago.ProgrammableTransaction // TODO add stateMetadata?
+	BuildTransactionEssence(stateMetadata []byte) iotago.ProgrammableTransaction
 }

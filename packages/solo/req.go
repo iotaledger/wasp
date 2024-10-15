@@ -9,10 +9,12 @@ import (
 	"math"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -178,7 +180,15 @@ func (ch *Chain) requestFromParams(cp *CallParams, keyPair *cryptolib.KeyPair) (
 	panic("TODO")
 }
 
-func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *iotago.ObjectRef {
+func (env *Solo) makeAssetsBag(
+	keyPair *cryptolib.KeyPair,
+	assets *isc.Assets,
+) *iotago.ObjectRef {
+	gasPayment := env.makeBaseTokenCoinsWithExactly(
+		keyPair,
+		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
+	)
+
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	iscmoveclient.PTBAssetsBagNew(
 		ptb,
@@ -188,9 +198,16 @@ func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *
 	assetsBagArg := ptb.LastCommandResultArg()
 
 	allCoins := env.L1AllCoins(keyPair.Address())
+	usedBaseTokenCoins := make(map[iotago.ObjectID]coin.Value)
 	assets.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
 		for _, ownedCoin := range allCoins {
 			if ownedCoin.CoinType != coinType.String() {
+				continue
+			}
+			if lo.ContainsBy(gasPayment, func(item *iotago.ObjectRef) bool {
+				return *item.ObjectID == *ownedCoin.CoinObjectID
+			}) {
+				// this coin is to be used for gas
 				continue
 			}
 			coinRef := ownedCoin.Ref()
@@ -209,6 +226,9 @@ func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *
 				coinArg,
 				coinType.String(),
 			)
+			if coinType == coin.BaseTokenType {
+				usedBaseTokenCoins[*coinRef.ObjectID] = amountAdded
+			}
 			amount -= amountAdded
 			if amount == 0 {
 				break
@@ -222,10 +242,64 @@ func (env *Solo) makeAssetsBag(keyPair *cryptolib.KeyPair, assets *isc.Assets) *
 	assets.Objects.IterateSorted(func(objectID iotago.ObjectID) bool {
 		panic("TODO")
 	})
-	res := env.executePTB(ptb.Finish(), keyPair)
+	ptb.TransferArg(keyPair.Address().AsIotaAddress(), assetsBagArg)
+
+	res := env.executePTB(
+		ptb.Finish(),
+		keyPair,
+		gasPayment,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
 	assetsBagRef, err := res.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(env.T, err)
 	return assetsBagRef
+}
+
+func (env *Solo) makeBaseTokenCoinsWithExactly(
+	keyPair *cryptolib.KeyPair,
+	values ...coin.Value,
+) []*iotago.ObjectRef {
+	allCoins := env.L1BaseTokenCoins(keyPair.Address())
+	require.NotEmpty(env.T, allCoins)
+	coinToSplit, ok := lo.Find(allCoins, func(item *iotajsonrpc.Coin) bool {
+		return item.Balance.Uint64() >= uint64(lo.Sum(values))
+	})
+	require.True(env.T, ok, "not enough base tokens")
+	tx := lo.Must(env.IotaClient().PayIota(
+		env.ctx,
+		iotaclient.PayIotaRequest{
+			Signer:     keyPair.Address().AsIotaAddress(),
+			InputCoins: []*iotago.ObjectID{coinToSplit.CoinObjectID},
+			Amount: lo.Map(values, func(v coin.Value, _ int) *iotajsonrpc.BigInt {
+				return iotajsonrpc.NewBigInt(uint64(v))
+			}),
+			Recipients: lo.Map(values, func(v coin.Value, _ int) *iotago.Address {
+				return keyPair.Address().AsIotaAddress()
+			}),
+			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+		},
+	))
+	txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
+		env.ctx,
+		cryptolib.SignerToIotaSigner(keyPair),
+		tx.TxBytes,
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	)
+	require.NoError(env.T, err)
+	require.True(env.T, txnResponse.Effects.Data.IsSuccess())
+	allCoins = env.L1BaseTokenCoins(keyPair.Address())
+	return lo.Map(values, func(v coin.Value, _ int) *iotago.ObjectRef {
+		c, i, ok := lo.FindIndexOf(allCoins, func(coin *iotajsonrpc.Coin) bool {
+			return coin.Balance.Uint64() == uint64(v)
+		})
+		require.True(env.T, ok)
+		allCoins = lo.DropByIndex(allCoins, i)
+		return c.Ref()
+	})
 }
 
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
@@ -307,6 +381,9 @@ func (ch *Chain) LastReceipt() *isc.Receipt {
 }
 
 func (ch *Chain) PostRequestSyncExt(callParams *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, *blocklog.RequestReceipt, isc.CallArguments, error) {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
 	defer ch.logRequestLastBlock()
 
 	reqID, err := ch.RequestFromParamsToLedger(callParams, keyPair)
