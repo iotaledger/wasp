@@ -39,7 +39,7 @@ func TestInitLoad(t *testing.T) {
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 	var originAmount coin.Value = 10 * isc.Million
-	ch, _ := env.NewChainExt(user, originAmount, "chain1")
+	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	_ = ch.Log().Sync()
 
 	cassets := ch.L2CommonAccountAssets()
@@ -505,7 +505,7 @@ func TestMessageSize(t *testing.T) {
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	storageDeposit := 1 * isc.Million
+	var storageDeposit coin.Value = 1 * isc.Million
 
 	maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
 
@@ -529,7 +529,7 @@ func TestMessageSize(t *testing.T) {
 	ch.WaitUntilMempoolIsEmpty()
 
 	// request outputs are so large that they have to be processed in two separate blocks
-	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex())
+	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
 
 	for _, req := range reqs {
 		receipt, _ := ch.GetRequestReceipt(req.ID())

@@ -181,7 +181,7 @@ const (
 )
 
 func (fp *NewNativeTokenParams) CreateFoundry() (uint32, coin.Type, error) {
-	panic("Implement solo::'CreateFoundry'")
+	panic("refactor me: 'CreateFoundry'")
 	/*
 
 		var sch *iotago.TokenScheme
@@ -213,7 +213,7 @@ func (fp *NewNativeTokenParams) CreateFoundry() (uint32, coin.Type, error) {
 }
 
 func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
-	panic("Implement solo::'DestroyFoundry'")
+	panic("refactor me: 'DestroyFoundry'")
 	// req := NewCallParams(accounts.FuncNativeTokenDestroy.Message(sn)).
 	// 	WithGasBudget(DestroyFoundryGasBudgetBaseTokens)
 	// _, err := ch.PostRequestSync(req, user)
@@ -221,7 +221,7 @@ func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
 }
 
 func (ch *Chain) MintTokens(sn uint32, amount coin.Value, user *cryptolib.KeyPair) error {
-	panic("Implement solo::'MintTokens'")
+	panic("refactor me: 'MintTokens'")
 	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.MintTokens(sn, amount)).
 	// 	AddBaseTokens(allowanceForModifySupply).
 	// 	WithAllowance(isc.NewAssets(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
@@ -239,7 +239,7 @@ func (ch *Chain) MintTokens(sn uint32, amount coin.Value, user *cryptolib.KeyPai
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
 func (ch *Chain) DestroyTokensOnL2(coinType coin.Type, amount coin.Value, user *cryptolib.KeyPair) error {
-	panic("Implement solo::'DestroyTokensOnL2'")
+	panic("refactor me: 'DestroyTokensOnL2'")
 	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
 	// 	WithAllowance(
 	// 		isc.NewAssets(0, iotago.NativeTokens{&iotago.NativeToken{
@@ -254,7 +254,7 @@ func (ch *Chain) DestroyTokensOnL2(coinType coin.Type, amount coin.Value, user *
 
 // DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
 func (ch *Chain) DestroyTokensOnL1(coinType coin.Type, amount coin.Value, user *cryptolib.KeyPair) error {
-	panic("Implement solo::'DestroyTokensOnL1'")
+	panic("refactor me: 'DestroyTokensOnL1'")
 	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.DestroyTokens(nativeTokenID.FoundrySerialNumber(), amount)).
 	// 	WithMaxAffordableGasBudget().AddBaseTokens(1000)
 	// req.AddNativeTokens(nativeTokenID, amount)
