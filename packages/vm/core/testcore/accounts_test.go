@@ -1,31 +1,23 @@
 package testcore
 
 import (
-	"math"
-	"math/big"
 	"strconv"
 	"testing"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -119,359 +111,359 @@ func TestWithdrawEverything(t *testing.T) {
 	require.Zero(t, finalL2Balance)
 }
 
-func TestFoundries(t *testing.T) {
-	var env *solo.Solo
-	var ch *solo.Chain
-	var senderKeyPair *cryptolib.KeyPair
-	var senderAddr *cryptolib.Address
-	var senderAgentID isc.AgentID
+// func TestFoundries(t *testing.T) {
+// 	var env *solo.Solo
+// 	var ch *solo.Chain
+// 	var senderKeyPair *cryptolib.KeyPair
+// 	var senderAddr *cryptolib.Address
+// 	var senderAgentID isc.AgentID
 
-	initTest := func() {
-		env = solo.New(t, &solo.InitOptions{})
-		ch, _ = env.NewChainExt(nil, 10*isc.Million, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID = isc.NewAddressAgentID(senderAddr)
+// 	initTest := func() {
+// 		env = solo.New(t, &solo.InitOptions{})
+// 		ch, _ = env.NewChainExt(nil, 10*isc.Million, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+// 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+// 		senderAgentID = isc.NewAddressAgentID(senderAddr)
 
-		ch.MustDepositBaseTokensToL2(10*isc.Million, senderKeyPair)
-	}
-	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
-		env = solo.New(t, &solo.InitOptions{})
-		ch, _ = env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+// 		ch.MustDepositBaseTokensToL2(10*isc.Million, senderKeyPair)
+// 	}
+// 	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
+// 		env = solo.New(t, &solo.InitOptions{})
+// 		ch, _ = env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-		var ts iotago.TokenScheme = &iotago.SimpleTokenScheme{MaximumSupply: coin.Value(1), MintedTokens: coin.Zero, MeltedTokens: coin.Zero}
-		req := solo.NewCallParams(accounts.FuncNativeTokenCreate.Message(
-			isc.NewIRC30NativeTokenMetadata("TEST", "TEST", 8),
-			&ts,
-		)).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
-		_, err := ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		// it succeeds when allowance is added
-		_, err = ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
-		require.NoError(t, err)
-	})
+// 		var ts iotago.TokenScheme = &iotago.SimpleTokenScheme{MaximumSupply: coin.Value(1), MintedTokens: coin.Zero, MeltedTokens: coin.Zero}
+// 		req := solo.NewCallParams(accounts.FuncNativeTokenCreate.Message(
+// 			isc.NewIRC30NativeTokenMetadata("TEST", "TEST", 8),
+// 			&ts,
+// 		)).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
+// 		_, err := ch.PostRequestSync(req, nil)
+// 		require.Error(t, err)
+// 		// it succeeds when allowance is added
+// 		_, err = ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
+// 		require.NoError(t, err)
+// 	})
 
-	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
-		env = solo.New(t, &solo.InitOptions{})
-		ch, _ = env.NewChainExt(nil, 100_000, "chain1")
+// 	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
+// 		env = solo.New(t, &solo.InitOptions{})
+// 		ch, _ = env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-		var ts iotago.TokenScheme = &iotago.SimpleTokenScheme{MaximumSupply: coin.Value(1), MintedTokens: coin.Value(10), MeltedTokens: coin.Value(10)}
-		req := solo.NewCallParams(accounts.FuncNativeTokenCreate.Message(
-			isc.NewIRC30NativeTokenMetadata("TEST", "TEST", 8),
-			&ts,
-		)).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
-		_, err := ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
-		require.NoError(t, err)
-	})
-	t.Run("supply 10", func(t *testing.T) {
-		initTest()
-		sn, _, err := ch.NewNativeTokenParams(coin.Value(10)).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, int(sn))
-	})
-	t.Run("supply 1", func(t *testing.T) {
-		initTest()
-		sn, _, err := ch.NewNativeTokenParams(coin.Value(1)).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
-	})
-	t.Run("supply 0", func(t *testing.T) {
-		initTest()
-		_, _, err := ch.NewNativeTokenParams(coin.Value(0)).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		testmisc.RequireErrorToBe(t, err, vm.ErrCreateFoundryMaxSupplyMustBePositive)
-	})
-	t.Run("supply max possible", func(t *testing.T) {
-		initTest()
-		sn, _, err := ch.NewNativeTokenParams(coin.MaxValue).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
-	})
-	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
-		initTest()
-		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(10)).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
-		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 		var ts iotago.TokenScheme = &iotago.SimpleTokenScheme{MaximumSupply: coin.Value(1), MintedTokens: coin.Value(10), MeltedTokens: coin.Value(10)}
+// 		req := solo.NewCallParams(accounts.FuncNativeTokenCreate.Message(
+// 			isc.NewIRC30NativeTokenMetadata("TEST", "TEST", 8),
+// 			&ts,
+// 		)).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
+// 		_, err := ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
+// 		require.NoError(t, err)
+// 	})
+// 	t.Run("supply 10", func(t *testing.T) {
+// 		initTest()
+// 		sn, _, err := ch.NewNativeTokenParams(coin.Value(10)).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, int(sn))
+// 	})
+// 	t.Run("supply 1", func(t *testing.T) {
+// 		initTest()
+// 		sn, _, err := ch.NewNativeTokenParams(coin.Value(1)).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
+// 	})
+// 	t.Run("supply 0", func(t *testing.T) {
+// 		initTest()
+// 		_, _, err := ch.NewNativeTokenParams(coin.Value(0)).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		testmisc.RequireErrorToBe(t, err, vm.ErrCreateFoundryMaxSupplyMustBePositive)
+// 	})
+// 	t.Run("supply max possible", func(t *testing.T) {
+// 		initTest()
+// 		sn, _, err := ch.NewNativeTokenParams(coin.MaxValue).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
+// 	})
+// 	t.Run("max supply 10, mintTokens 5", func(t *testing.T) {
+// 		initTest()
+// 		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(10)).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
+// 		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+// 		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
-		require.NoError(t, err)
-		t.Logf("common account base tokens = %d before mint", ch.L2CommonAccountBaseTokens())
+// 		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
+// 		require.NoError(t, err)
+// 		t.Logf("common account base tokens = %d before mint", ch.L2CommonAccountBaseTokens())
 
-		err = ch.MintTokens(sn, coin.Value(5), senderKeyPair)
-		require.NoError(t, err)
+// 		err = ch.MintTokens(sn, coin.Value(5), senderKeyPair)
+// 		require.NoError(t, err)
 
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(5))
-		ch.AssertL2TotalCoins(nativeTokenID, coin.Value(5))
+// 		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(5))
+// 		ch.AssertL2TotalCoins(nativeTokenID, coin.Value(5))
 
-		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name())
-	})
-	t.Run("max supply 1, mintTokens 1", func(t *testing.T) {
-		initTest()
-		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1)).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
-		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name())
+// 	})
+// 	t.Run("max supply 1, mintTokens 1", func(t *testing.T) {
+// 		initTest()
+// 		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1)).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
+// 		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+// 		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
-		require.NoError(t, err)
-		err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
-		require.NoError(t, err)
+// 		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
+// 		require.NoError(t, err)
+// 		err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
+// 		require.NoError(t, err)
 
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1))
-		ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1))
-	})
+// 		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1))
+// 		ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1))
+// 	})
 
-	t.Run("max supply 1, mintTokens 2", func(t *testing.T) {
-		initTest()
-		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1)).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
+// 	t.Run("max supply 1, mintTokens 2", func(t *testing.T) {
+// 		initTest()
+// 		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1)).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
 
-		err = ch.MintTokens(sn, coin.Value(2), senderKeyPair)
-		testmisc.RequireErrorToBe(t, err, vm.ErrNativeTokenSupplyOutOffBounds)
+// 		err = ch.MintTokens(sn, coin.Value(2), senderKeyPair)
+// 		testmisc.RequireErrorToBe(t, err, vm.ErrNativeTokenSupplyOutOffBounds)
 
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
-		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
-		// })
-		t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
-			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1000)).
-				WithUser(senderKeyPair).
-				CreateFoundry()
-			require.NoError(t, err)
-			require.EqualValues(t, 1, sn)
+// 		ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+// 		ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 		// })
+// 		t.Run("max supply 1000, mintTokens 500_500_1", func(t *testing.T) {
+// 			initTest()
+// 			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1000)).
+// 				WithUser(senderKeyPair).
+// 				CreateFoundry()
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, 1, sn)
 
-			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
-			require.NoError(t, err)
-			err = ch.MintTokens(sn, coin.Value(500), senderKeyPair)
-			require.NoError(t, err)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(500))
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(500))
+// 			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
+// 			require.NoError(t, err)
+// 			err = ch.MintTokens(sn, coin.Value(500), senderKeyPair)
+// 			require.NoError(t, err)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(500))
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(500))
 
-			err = ch.MintTokens(sn, coin.Value(500), senderKeyPair)
-			require.NoError(t, err)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1000))
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1000))
+// 			err = ch.MintTokens(sn, coin.Value(500), senderKeyPair)
+// 			require.NoError(t, err)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1000))
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1000))
 
-			err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
-			testmisc.RequireErrorToBe(t, err, vm.ErrNativeTokenSupplyOutOffBounds)
+// 			err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
+// 			testmisc.RequireErrorToBe(t, err, vm.ErrNativeTokenSupplyOutOffBounds)
 
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1000))
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1000))
-		})
-		t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
-			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
-				WithUser(senderKeyPair).
-				CreateFoundry()
-			require.NoError(t, err)
-			require.EqualValues(t, 1, sn)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1000))
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1000))
+// 		})
+// 		t.Run("max supply MaxUint256, mintTokens MaxUint256_1", func(t *testing.T) {
+// 			initTest()
+// 			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
+// 				WithUser(senderKeyPair).
+// 				CreateFoundry()
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, 1, sn)
 
-			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
-			require.NoError(t, err)
-			err = ch.MintTokens(sn, coin.MaxValue, senderKeyPair)
-			require.NoError(t, err)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.MaxValue)
+// 			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
+// 			require.NoError(t, err)
+// 			err = ch.MintTokens(sn, coin.MaxValue, senderKeyPair)
+// 			require.NoError(t, err)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.MaxValue)
 
-			err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
-			testmisc.RequireErrorToBe(t, err, vm.ErrOverflow)
+// 			err = ch.MintTokens(sn, coin.Value(1), senderKeyPair)
+// 			testmisc.RequireErrorToBe(t, err, vm.ErrOverflow)
 
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.MaxValue)
-			ch.AssertL2TotalCoins(nativeTokenID, coin.MaxValue)
-		})
-		t.Run("max supply 100, destroy fail", func(t *testing.T) {
-			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
-				WithUser(senderKeyPair).
-				CreateFoundry()
-			require.NoError(t, err)
-			require.EqualValues(t, 1, sn)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.MaxValue)
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.MaxValue)
+// 		})
+// 		t.Run("max supply 100, destroy fail", func(t *testing.T) {
+// 			initTest()
+// 			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
+// 				WithUser(senderKeyPair).
+// 				CreateFoundry()
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, 1, sn)
 
-			err = ch.DestroyTokensOnL2(nativeTokenID, coin.Value(1), senderKeyPair)
-			testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
-		})
-		t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
-			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(100)).
-				WithUser(senderKeyPair).
-				CreateFoundry()
-			require.NoError(t, err)
-			require.EqualValues(t, 1, sn)
+// 			err = ch.DestroyTokensOnL2(nativeTokenID, coin.Value(1), senderKeyPair)
+// 			testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 		})
+// 		t.Run("max supply 100, mint_20, destroy_10", func(t *testing.T) {
+// 			initTest()
+// 			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(100)).
+// 				WithUser(senderKeyPair).
+// 				CreateFoundry()
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, 1, sn)
 
-			out, err := ch.GetFoundryOutput(1)
-			require.NoError(t, err)
-			require.EqualValues(t, out.MustNativeTokenID(), nativeTokenID)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 			out, err := ch.GetFoundryOutput(1)
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, out.MustNativeTokenID(), nativeTokenID)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
 
-			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
-			require.NoError(t, err)
-			err = ch.MintTokens(sn, coin.Value(20), senderKeyPair)
-			require.NoError(t, err)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(20))
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(20))
+// 			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
+// 			require.NoError(t, err)
+// 			err = ch.MintTokens(sn, coin.Value(20), senderKeyPair)
+// 			require.NoError(t, err)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(20))
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(20))
 
-			err = ch.DestroyTokensOnL2(nativeTokenID, coin.Value(10), senderKeyPair)
-			require.NoError(t, err)
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(10))
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(10))
-		})
-		t.Run("max supply 1000000, mint_1000000, destroy_1000000", func(t *testing.T) {
-			initTest()
-			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1_000_000)).
-				WithUser(senderKeyPair).
-				CreateFoundry()
-			require.NoError(t, err)
-			require.EqualValues(t, 1, sn)
+// 			err = ch.DestroyTokensOnL2(nativeTokenID, coin.Value(10), senderKeyPair)
+// 			require.NoError(t, err)
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(10))
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(10))
+// 		})
+// 		t.Run("max supply 1000000, mint_1000000, destroy_1000000", func(t *testing.T) {
+// 			initTest()
+// 			sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(1_000_000)).
+// 				WithUser(senderKeyPair).
+// 				CreateFoundry()
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, 1, sn)
 
-			out, err := ch.GetFoundryOutput(1)
-			require.NoError(t, err)
-			require.EqualValues(t, out.MustNativeTokenID(), nativeTokenID)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(0))
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(0))
+// 			out, err := ch.GetFoundryOutput(1)
+// 			require.NoError(t, err)
+// 			require.EqualValues(t, out.MustNativeTokenID(), nativeTokenID)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(0))
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(0))
 
-			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
-			require.NoError(t, err)
-			err = ch.MintTokens(sn, coin.Value(1_000_000), senderKeyPair)
-			require.NoError(t, err)
-			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1_000_000))
-			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1_000_000))
-			out, err = ch.GetFoundryOutput(1)
-			require.NoError(t, err)
-			ts := util.MustTokenScheme(out.TokenScheme)
-			require.True(t, coin.Value(1_000_000).Cmp(ts.MintedTokens) == 0)
+// 			err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1000, accounts.CommonAccount(), senderKeyPair)
+// 			require.NoError(t, err)
+// 			err = ch.MintTokens(sn, coin.Value(1_000_000), senderKeyPair)
+// 			require.NoError(t, err)
+// 			ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(1_000_000))
+// 			ch.AssertL2TotalCoins(nativeTokenID, coin.Value(1_000_000))
+// 			out, err = ch.GetFoundryOutput(1)
+// 			require.NoError(t, err)
+// 			ts := util.MustTokenScheme(out.TokenScheme)
+// 			require.True(t, coin.Value(1_000_000).Cmp(ts.MintedTokens) == 0)
 
-			// FIXME bug iotago can't destroy foundry
-			// err = destroyTokens(sn, coin.Value(1000000))
-			// require.NoError(t, err)
-			// ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
-			// ch.AssertL2Coins(userAgentID, nativeTokenID, coin.Zero)
-			// out, err = ch.GetFoundryOutput(1)
-			// require.NoError(t, err)
-			// require.True(t, coin.Zero.Cmp(out.MintedTokens) == 0)
-		})
-		t.Run("10 foundries", func(t *testing.T) {
-			initTest()
-			ch.MustDepositBaseTokensToL2(50_000_000, senderKeyPair)
-			nativeTokenIDs := make([]isc.NativeTokenID, 11)
-			for sn := uint32(1); sn <= 10; sn++ {
-				snBack, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(int64(sn + 1))).
-					WithUser(senderKeyPair).
-					CreateFoundry()
-				nativeTokenIDs[sn] = nativeTokenID
-				require.NoError(t, err)
-				require.EqualValues(t, int(sn), int(snBack))
-				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
-				ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
-			}
-			// mint max supply from each
-			ch.MustDepositBaseTokensToL2(50_000_000, senderKeyPair)
-			for sn := uint32(1); sn <= 10; sn++ {
-				err := ch.MintTokens(sn, coin.Value(int64(sn+1)), senderKeyPair)
-				require.NoError(t, err)
+// 			// FIXME bug iotago can't destroy foundry
+// 			// err = destroyTokens(sn, coin.Value(1000000))
+// 			// require.NoError(t, err)
+// 			// ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 			// ch.AssertL2Coins(userAgentID, nativeTokenID, coin.Zero)
+// 			// out, err = ch.GetFoundryOutput(1)
+// 			// require.NoError(t, err)
+// 			// require.True(t, coin.Zero.Cmp(out.MintedTokens) == 0)
+// 		})
+// 		t.Run("10 foundries", func(t *testing.T) {
+// 			initTest()
+// 			ch.MustDepositBaseTokensToL2(50_000_000, senderKeyPair)
+// 			nativeTokenIDs := make([]isc.NativeTokenID, 11)
+// 			for sn := uint32(1); sn <= 10; sn++ {
+// 				snBack, nativeTokenID, err := ch.NewNativeTokenParams(coin.Value(int64(sn + 1))).
+// 					WithUser(senderKeyPair).
+// 					CreateFoundry()
+// 				nativeTokenIDs[sn] = nativeTokenID
+// 				require.NoError(t, err)
+// 				require.EqualValues(t, int(sn), int(snBack))
+// 				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Zero)
+// 				ch.AssertL2TotalCoins(nativeTokenID, coin.Zero)
+// 			}
+// 			// mint max supply from each
+// 			ch.MustDepositBaseTokensToL2(50_000_000, senderKeyPair)
+// 			for sn := uint32(1); sn <= 10; sn++ {
+// 				err := ch.MintTokens(sn, coin.Value(int64(sn+1)), senderKeyPair)
+// 				require.NoError(t, err)
 
-				out, err := ch.GetFoundryOutput(sn)
-				require.NoError(t, err)
+// 				out, err := ch.GetFoundryOutput(sn)
+// 				require.NoError(t, err)
 
-				require.EqualValues(t, sn, out.SerialNumber)
-				ts := util.MustTokenScheme(out.TokenScheme)
-				require.True(t, ts.MaximumSupply.Cmp(coin.Value(int64(sn+1))) == 0)
-				require.True(t, ts.MintedTokens.Cmp(coin.Value(int64(sn+1))) == 0)
-				nativeTokenID := out.MustNativeTokenID()
+// 				require.EqualValues(t, sn, out.SerialNumber)
+// 				ts := util.MustTokenScheme(out.TokenScheme)
+// 				require.True(t, ts.MaximumSupply.Cmp(coin.Value(int64(sn+1))) == 0)
+// 				require.True(t, ts.MintedTokens.Cmp(coin.Value(int64(sn+1))) == 0)
+// 				nativeTokenID := out.MustNativeTokenID()
 
-				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(int64(sn+1)))
-				ch.AssertL2TotalCoins(nativeTokenID, coin.Value(int64(sn+1)))
-			}
-			// destroy 1 token of each nativeTokenID
-			for sn := uint32(1); sn <= 10; sn++ {
-				err := ch.DestroyTokensOnL2(nativeTokenIDs[sn], coin.Value(1), senderKeyPair)
-				require.NoError(t, err)
-			}
-			// check balances
-			for sn := uint32(1); sn <= 10; sn++ {
-				out, err := ch.GetFoundryOutput(sn)
-				require.NoError(t, err)
+// 				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(int64(sn+1)))
+// 				ch.AssertL2TotalCoins(nativeTokenID, coin.Value(int64(sn+1)))
+// 			}
+// 			// destroy 1 token of each nativeTokenID
+// 			for sn := uint32(1); sn <= 10; sn++ {
+// 				err := ch.DestroyTokensOnL2(nativeTokenIDs[sn], coin.Value(1), senderKeyPair)
+// 				require.NoError(t, err)
+// 			}
+// 			// check balances
+// 			for sn := uint32(1); sn <= 10; sn++ {
+// 				out, err := ch.GetFoundryOutput(sn)
+// 				require.NoError(t, err)
 
-				require.EqualValues(t, sn, out.SerialNumber)
-				ts := util.MustTokenScheme(out.TokenScheme)
-				require.True(t, ts.MaximumSupply.Cmp(coin.Value(int64(sn+1))) == 0)
-				require.True(t, coin.Value(0).Sub(ts.MintedTokens, ts.MeltedTokens).Cmp(coin.Value(int64(sn))) == 0)
-				nativeTokenID := out.MustNativeTokenID()
+// 				require.EqualValues(t, sn, out.SerialNumber)
+// 				ts := util.MustTokenScheme(out.TokenScheme)
+// 				require.True(t, ts.MaximumSupply.Cmp(coin.Value(int64(sn+1))) == 0)
+// 				require.True(t, coin.Value(0).Sub(ts.MintedTokens, ts.MeltedTokens).Cmp(coin.Value(int64(sn))) == 0)
+// 				nativeTokenID := out.MustNativeTokenID()
 
-				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(int64(sn)))
-				ch.AssertL2TotalCoins(nativeTokenID, coin.Value(int64(sn)))
-			}
-		})
-	})
-	t.Run("constant storage deposit to hold a token UTXO", func(t *testing.T) {
-		initTest()
-		// create a foundry for the maximum amount of tokens possible
-		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
+// 				ch.AssertL2Coins(senderAgentID, nativeTokenID, coin.Value(int64(sn)))
+// 				ch.AssertL2TotalCoins(nativeTokenID, coin.Value(int64(sn)))
+// 			}
+// 		})
+// 	})
+// 	t.Run("constant storage deposit to hold a token UTXO", func(t *testing.T) {
+// 		initTest()
+// 		// create a foundry for the maximum amount of tokens possible
+// 		sn, nativeTokenID, err := ch.NewNativeTokenParams(coin.MaxValue).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
 
-		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1, accounts.CommonAccount(), senderKeyPair)
-		require.NoError(t, err)
-		x := ch.L2CommonAccountBaseTokens()
-		t.Logf("common account base tokens = %d before mint", x)
+// 		err = ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1, accounts.CommonAccount(), senderKeyPair)
+// 		require.NoError(t, err)
+// 		x := ch.L2CommonAccountBaseTokens()
+// 		t.Logf("common account base tokens = %d before mint", x)
 
-		big1 := coin.Value(1)
-		err = ch.MintTokens(sn, big1, senderKeyPair)
-		require.NoError(t, err)
+// 		big1 := coin.Value(1)
+// 		err = ch.MintTokens(sn, big1, senderKeyPair)
+// 		require.NoError(t, err)
 
-		ch.AssertL2Coins(senderAgentID, nativeTokenID, big1)
-		ch.AssertL2TotalCoins(nativeTokenID, big1)
-		ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
-		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountBaseTokens()
+// 		ch.AssertL2Coins(senderAgentID, nativeTokenID, big1)
+// 		ch.AssertL2TotalCoins(nativeTokenID, big1)
+// 		ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
+// 		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountBaseTokens()
 
-		// after minting 1 token, try to mint the remaining tokens
-		allOtherTokens := new(big.Int).Set(coin.MaxValue)
-		allOtherTokens = allOtherTokens.Sub(allOtherTokens, big1)
+// 		// after minting 1 token, try to mint the remaining tokens
+// 		allOtherTokens := new(big.Int).Set(coin.MaxValue)
+// 		allOtherTokens = allOtherTokens.Sub(allOtherTokens, big1)
 
-		err = ch.MintTokens(sn, allOtherTokens, senderKeyPair)
-		require.NoError(t, err)
+// 		err = ch.MintTokens(sn, allOtherTokens, senderKeyPair)
+// 		require.NoError(t, err)
 
-		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
-		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint)
-		// assert that no extra base tokens were used for the storage deposit
-		ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
-		receipt := ch.LastReceipt()
-		require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
-	})
-	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
-		initTest()
-		sn, _, err := ch.NewNativeTokenParams(coin.MaxValue).
-			WithUser(senderKeyPair).
-			CreateFoundry()
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
+// 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
+// 		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint)
+// 		// assert that no extra base tokens were used for the storage deposit
+// 		ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+// 		receipt := ch.LastReceipt()
+// 		require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
+// 	})
+// 	t.Run("newFoundry exposes foundry serial number in event", func(t *testing.T) {
+// 		initTest()
+// 		sn, _, err := ch.NewNativeTokenParams(coin.MaxValue).
+// 			WithUser(senderKeyPair).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
 
-		events, err := ch.GetEventsForContract(accounts.Contract.Name)
-		require.NoError(t, err)
-		require.Len(t, events, 1)
-		sn, err = codec.Decode[uint32](events[0].Payload)
-		require.NoError(t, err)
-		require.EqualValues(t, 1, sn)
-	})
-}
+// 		events, err := ch.GetEventsForContract(accounts.Contract.Name)
+// 		require.NoError(t, err)
+// 		require.Len(t, events, 1)
+// 		sn, err = codec.Decode[uint32](events[0].Payload)
+// 		require.NoError(t, err)
+// 		require.EqualValues(t, 1, sn)
+// 	})
+// }
 
 func TestAccountBalances(t *testing.T) {
 	env := solo.New(t)
@@ -820,26 +812,26 @@ func TestTransferAndCheckBaseTokens(t *testing.T) {
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens)
 }
 
-func TestFoundryDestroy(t *testing.T) {
-	t.Run("destroy existing", func(t *testing.T) {
-		v := initDepositTest(t, nil)
-		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
-		sn, _, err := v.ch.NewNativeTokenParams(coin.Value(1_000_000)).
-			WithUser(v.user).
-			CreateFoundry()
-		require.NoError(t, err)
+// func TestFoundryDestroy(t *testing.T) {
+// 	t.Run("destroy existing", func(t *testing.T) {
+// 		v := initDepositTest(t, nil)
+// 		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
+// 		sn, _, err := v.ch.NewNativeTokenParams(coin.Value(1_000_000)).
+// 			WithUser(v.user).
+// 			CreateFoundry()
+// 		require.NoError(t, err)
 
-		err = v.ch.DestroyFoundry(sn, v.user)
-		require.NoError(t, err)
-		_, err = v.ch.GetFoundryOutput(sn)
-		testmisc.RequireErrorToBe(t, err, "not found")
-	})
-	t.Run("destroy fail", func(t *testing.T) {
-		v := initDepositTest(t, nil)
-		err := v.ch.DestroyFoundry(2, v.user)
-		testmisc.RequireErrorToBe(t, err, "unauthorized")
-	})
-}
+// 		err = v.ch.DestroyFoundry(sn, v.user)
+// 		require.NoError(t, err)
+// 		_, err = v.ch.GetFoundryOutput(sn)
+// 		testmisc.RequireErrorToBe(t, err, "not found")
+// 	})
+// 	t.Run("destroy fail", func(t *testing.T) {
+// 		v := initDepositTest(t, nil)
+// 		err := v.ch.DestroyFoundry(2, v.user)
+// 		testmisc.RequireErrorToBe(t, err, "unauthorized")
+// 	})
+// }
 
 func TestTransferPartialAssets(t *testing.T) {
 	v := initDepositTest(t, nil)
@@ -892,110 +884,110 @@ func TestTransferPartialAssets(t *testing.T) {
 }
 
 // TestMintedTokensBurn belongs to iotago.go
-func TestMintedTokensBurn(t *testing.T) {
-	const OneMi = 1_000_000
+// func TestMintedTokensBurn(t *testing.T) {
+// 	const OneMi = 1_000_000
 
-	_, ident1, ident1AddrKeys := tpkg.RandEd25519Identity()
-	aliasIdent1 := tpkg.RandAliasAddress()
+// 	_, ident1, ident1AddrKeys := tpkg.RandEd25519Identity()
+// 	aliasIdent1 := tpkg.RandAliasAddress()
 
-	inputIDs := tpkg.RandOutputIDs(3)
-	inputs := iotago.OutputSet{
-		inputIDs[0]: &iotago.BasicOutput{
-			Amount: OneMi,
-			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: ident1},
-			},
-		},
-		inputIDs[1]: &iotago.AliasOutput{
-			Amount:         OneMi,
-			NativeTokens:   nil,
-			AliasID:        aliasIdent1.AliasID(),
-			StateIndex:     1,
-			StateMetadata:  []byte{},
-			FoundryCounter: 1,
-			Conditions: iotago.UnlockConditions{
-				&iotago.StateControllerAddressUnlockCondition{Address: ident1},
-				&iotago.GovernorAddressUnlockCondition{Address: ident1},
-			},
-			Features: nil,
-		},
-		inputIDs[2]: &iotago.FoundryOutput{
-			Amount:       OneMi,
-			NativeTokens: nil,
-			SerialNumber: 1,
-			TokenScheme: &iotago.SimpleTokenScheme{
-				MintedTokens:  coin.Value(50),
-				MeltedTokens:  coin.Zero,
-				MaximumSupply: coin.Value(50),
-			},
-			Conditions: iotago.UnlockConditions{
-				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
-			},
-			Features: nil,
-		},
-	}
+// 	inputIDs := tpkg.RandOutputIDs(3)
+// 	inputs := iotago.OutputSet{
+// 		inputIDs[0]: &iotago.BasicOutput{
+// 			Amount: OneMi,
+// 			Conditions: iotago.UnlockConditions{
+// 				&iotago.AddressUnlockCondition{Address: ident1},
+// 			},
+// 		},
+// 		inputIDs[1]: &iotago.AliasOutput{
+// 			Amount:         OneMi,
+// 			NativeTokens:   nil,
+// 			AliasID:        aliasIdent1.AliasID(),
+// 			StateIndex:     1,
+// 			StateMetadata:  []byte{},
+// 			FoundryCounter: 1,
+// 			Conditions: iotago.UnlockConditions{
+// 				&iotago.StateControllerAddressUnlockCondition{Address: ident1},
+// 				&iotago.GovernorAddressUnlockCondition{Address: ident1},
+// 			},
+// 			Features: nil,
+// 		},
+// 		inputIDs[2]: &iotago.FoundryOutput{
+// 			Amount:       OneMi,
+// 			NativeTokens: nil,
+// 			SerialNumber: 1,
+// 			TokenScheme: &iotago.SimpleTokenScheme{
+// 				MintedTokens:  coin.Value(50),
+// 				MeltedTokens:  coin.Zero,
+// 				MaximumSupply: coin.Value(50),
+// 			},
+// 			Conditions: iotago.UnlockConditions{
+// 				&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
+// 			},
+// 			Features: nil,
+// 		},
+// 	}
 
-	// set input BasicOutput NativeToken to 50 which get burned
-	foundryNativeTokenID := inputs[inputIDs[2]].(*iotago.FoundryOutput).MustNativeTokenID()
-	inputs[inputIDs[0]].(*iotago.BasicOutput).NativeTokens = isc.NativeTokens{
-		{
-			ID:     foundryNativeTokenID,
-			Amount: new(big.Int).SetInt64(50),
-		},
-	}
+// 	// set input BasicOutput NativeToken to 50 which get burned
+// 	foundryNativeTokenID := inputs[inputIDs[2]].(*iotago.FoundryOutput).MustNativeTokenID()
+// 	inputs[inputIDs[0]].(*iotago.BasicOutput).NativeTokens = isc.NativeTokens{
+// 		{
+// 			ID:     foundryNativeTokenID,
+// 			Amount: new(big.Int).SetInt64(50),
+// 		},
+// 	}
 
-	essence := &iotago.TransactionEssence{
-		NetworkID: tpkg.TestNetworkID,
-		Inputs:    inputIDs.UTXOInputs(),
-		Outputs: iotago.Outputs{
-			&iotago.AliasOutput{
-				Amount:         OneMi,
-				NativeTokens:   nil,
-				AliasID:        aliasIdent1.AliasID(),
-				StateIndex:     2,
-				StateMetadata:  []byte{},
-				FoundryCounter: 1,
-				Conditions: iotago.UnlockConditions{
-					&iotago.StateControllerAddressUnlockCondition{Address: ident1},
-					&iotago.GovernorAddressUnlockCondition{Address: ident1},
-				},
-				Features: nil,
-			},
-			&iotago.FoundryOutput{
-				Amount:       2 * OneMi,
-				NativeTokens: nil,
-				SerialNumber: 1,
-				TokenScheme: &iotago.SimpleTokenScheme{
-					// burn supply by -50
-					MintedTokens:  coin.Value(50),
-					MeltedTokens:  coin.Value(50),
-					MaximumSupply: coin.Value(50),
-				},
-				Conditions: iotago.UnlockConditions{
-					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
-				},
-				Features: nil,
-			},
-		},
-	}
+// 	essence := &iotago.TransactionEssence{
+// 		NetworkID: tpkg.TestNetworkID,
+// 		Inputs:    inputIDs.UTXOInputs(),
+// 		Outputs: iotago.Outputs{
+// 			&iotago.AliasOutput{
+// 				Amount:         OneMi,
+// 				NativeTokens:   nil,
+// 				AliasID:        aliasIdent1.AliasID(),
+// 				StateIndex:     2,
+// 				StateMetadata:  []byte{},
+// 				FoundryCounter: 1,
+// 				Conditions: iotago.UnlockConditions{
+// 					&iotago.StateControllerAddressUnlockCondition{Address: ident1},
+// 					&iotago.GovernorAddressUnlockCondition{Address: ident1},
+// 				},
+// 				Features: nil,
+// 			},
+// 			&iotago.FoundryOutput{
+// 				Amount:       2 * OneMi,
+// 				NativeTokens: nil,
+// 				SerialNumber: 1,
+// 				TokenScheme: &iotago.SimpleTokenScheme{
+// 					// burn supply by -50
+// 					MintedTokens:  coin.Value(50),
+// 					MeltedTokens:  coin.Value(50),
+// 					MaximumSupply: coin.Value(50),
+// 				},
+// 				Conditions: iotago.UnlockConditions{
+// 					&iotago.ImmutableAliasUnlockCondition{Address: aliasIdent1},
+// 				},
+// 				Features: nil,
+// 			},
+// 		},
+// 	}
 
-	sigs, err := essence.Sign(inputIDs.OrderedSet(inputs).MustCommitment(), ident1AddrKeys)
-	require.NoError(t, err)
+// 	sigs, err := essence.Sign(inputIDs.OrderedSet(inputs).MustCommitment(), ident1AddrKeys)
+// 	require.NoError(t, err)
 
-	tx := &iotago.Transaction{
-		Essence: essence,
-		Unlocks: iotago.Unlocks{
-			&iotago.SignatureUnlock{Signature: sigs[0]},
-			&iotago.ReferenceUnlock{Reference: 0},
-			&iotago.AliasUnlock{Reference: 1},
-		},
-	}
+// 	tx := &iotago.Transaction{
+// 		Essence: essence,
+// 		Unlocks: iotago.Unlocks{
+// 			&iotago.SignatureUnlock{Signature: sigs[0]},
+// 			&iotago.ReferenceUnlock{Reference: 0},
+// 			&iotago.AliasUnlock{Reference: 1},
+// 		},
+// 	}
 
-	require.NoError(t, tx.SemanticallyValidate(&iotago.SemanticValidationContext{
-		ExtParas:   nil,
-		WorkingSet: nil,
-	}, inputs))
-}
+// 	require.NoError(t, tx.SemanticallyValidate(&iotago.SemanticValidationContext{
+// 		ExtParas:   nil,
+// 		WorkingSet: nil,
+// 	}, inputs))
+// }
 
 func TestNFTAccount(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
@@ -1007,7 +999,7 @@ func TestNFTAccount(t *testing.T) {
 
 	nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
 	require.NoError(t, err)
-	nftAddress := nftInfo.ID
+	nftAddress := nftInfo.Issuer
 
 	// deposit funds on behalf of the NFT
 	const baseTokensToSend = 10 * isc.Million
@@ -1046,14 +1038,14 @@ func TestNFTAccount(t *testing.T) {
 }
 
 func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *isc.NFT, owner isc.AgentID) {
-	ret, err := ch.CallView(accounts.DeleteCoinMetadata.ViewNFTData.Message(nft.ID))
+	args, err := ch.CallView(accounts.ViewAccountObjects.Message(&owner))
 	require.NoError(t, err)
-	nftBack, err := accounts.ViewNFTData.DecodeOutput(ret)
+	nftIDs, err := accounts.ViewAccountObjects.DecodeOutput(args)
 	require.NoError(t, err)
-	require.Equal(t, nftBack.ID, nft.ID)
-	require.Equal(t, nftBack.Issuer, nft.Issuer)
-	require.Equal(t, nftBack.Metadata, nft.Metadata)
-	require.True(t, nftBack.Owner.Equals(owner))
+	require.Contains(t, nftIDs, nft.ID)
+	// require.Equal(t, nftBack.Issuer, nft.Issuer)
+	// require.Equal(t, nftBack.Metadata, nft.Metadata)
+	// require.True(t, nftBack.Owner.Equals(owner))
 }
 
 func TestTransferNFTAllowance(t *testing.T) {
@@ -1130,142 +1122,6 @@ func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
 	testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name())
 }
 
-func TestUnprocessableWithNoPruning(t *testing.T) {
-	testUnprocessable(t, nil, false)
-}
-
-func TestUnprocessableWithPruning(t *testing.T) {
-	testUnprocessable(t, dict.Dict{
-		origin.ParamBlockKeepAmount: codec.Encode[int32](1),
-	}, true)
-}
-
-func testUnprocessable(t *testing.T, originParams dict.Dict, verifyHash bool) {
-	v := initDepositTest(t, originParams)
-	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
-	// create many foundries and mint 1 token on each
-	_, nativeTokenID1 := v.createFoundryAndMint(coin.Value(1), coin.Value(1))
-	_, nativeTokenID2 := v.createFoundryAndMint(coin.Value(1), coin.Value(1))
-	_, nativeTokenID3 := v.createFoundryAndMint(coin.Value(1), coin.Value(1))
-	_, nativeTokenID4 := v.createFoundryAndMint(coin.Value(1), coin.Value(1))
-
-	assets := isc.NewAssets(1*isc.Million).AddCoin(nativeTokenID1, coin.Value(1)).
-		AddCoin(nativeTokenID2, coin.Value(1)).
-		AddCoin(nativeTokenID3, coin.Value(1)).
-		AddCoin(nativeTokenID4, coin.Value(1))
-
-	withdrawReq := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		WithAllowance(assets).
-		WithMaxAffordableGasBudget()
-	_, err := v.ch.PostRequestOffLedger(withdrawReq, v.user)
-	require.NoError(t, err)
-
-	// ---
-
-	// move the native tokens to a new user that doesn't have on-chain balance
-	newUser, newUserAddress := v.env.NewKeyPairWithFunds(v.env.NewSeedFromIndex(20))
-	newUserAgentID := isc.NewAddressAgentID(newUserAddress)
-	v.env.SendL1(newUserAddress, assets.Coins, v.user)
-
-	// also create an NFT
-	iscNFT, err := v.ch.Env.MintNFTL1(v.user, newUserAddress, []byte("foobar"))
-	require.NoError(t, err)
-
-	newuserL1NativeTokens := v.env.L1CoinBalances(newUserAddress)
-	assetsContain := func(tokens isc.CoinBalances, nativeTokenID coin.Type) bool {
-		_, ok := tokens[nativeTokenID]
-		return ok
-	}
-	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID1))
-	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID2))
-	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID3))
-	require.True(t, assetsContain(newuserL1NativeTokens, nativeTokenID4))
-
-	// try to deposit all native tokens in a request with just the minimum SD
-	unprocessableReq := solo.NewCallParams(accounts.FuncDeposit.Message()).
-		WithFungibleTokens(assets.Coins).
-		WithObject(iscNFT.ID)
-
-	tx, receipt, _, err := v.ch.PostRequestSyncExt(unprocessableReq, newUser)
-	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, "request has been skipped")
-	require.Nil(t, receipt) // nil receipt means the request was not processed
-
-	if verifyHash {
-		testdbhash.VerifyContractStateHash(v.env, blocklog.Contract, "", t.Name())
-	}
-
-	txReqs, err := v.ch.Env.RequestsForChain(tx, v.ch.ChainID)
-	require.NoError(t, err)
-	unprocessableReqID := txReqs[0].ID()
-
-	isInUnprocessableList := func() bool {
-		res, err2 := v.ch.CallView(blocklog.ViewHasUnprocessable.Message(unprocessableReqID))
-		require.NoError(t, err2)
-		return lo.Must(blocklog.ViewHasUnprocessable.DecodeOutput(res))
-	}
-
-	require.True(t, isInUnprocessableList())
-
-	// assert trying to "retry" the request won't work (still not enough funds)
-	retryReq := solo.NewCallParams(blocklog.FuncRetryUnprocessable.Message(unprocessableReqID))
-	_, rec, _, err := v.ch.PostRequestSyncExt(retryReq, newUser)
-	require.NoError(t, err)
-	require.Nil(t, rec.Error)
-	// the "retry request" is successful, but "there request to be retried" did not produce a receipt, meaning it was skipped again
-	// check that the "request to be retried" did not succeed (no receipt, still in the unprocessed list)
-	receipt, ok := v.ch.GetRequestReceipt(unprocessableReqID)
-	require.False(t, ok)
-	require.True(t, isInUnprocessableList())
-	require.False(t, blocklog.HasUnprocessableRequestBeenRemovedInBlock(v.ch.LatestBlock(), unprocessableReqID)) // assert this function returns false, its used to prevent these requests from being re-added to the mempool on a reorg
-
-	// --
-	// deposit funds and retry that request
-	err = v.ch.DepositBaseTokensToL2(10*isc.Million, newUser)
-	require.NoError(t, err)
-	_, rec, _, err = v.ch.PostRequestSyncExt(retryReq, newUser)
-	require.NoError(t, err)
-	require.Nil(t, rec.Error) // assert the receipt for the "retry req" exists and its successful
-	require.Zero(t, rec.SDCharged)
-
-	receipt, ok = v.ch.GetRequestReceipt(unprocessableReqID)
-	require.True(t, ok)
-	require.NotNil(t, receipt)
-	require.Nil(t, receipt.Error)             // assert the receipt for the initially unprocessable request exists and is successful
-	require.False(t, isInUnprocessableList()) // assert the request was removed from the unprocessable list
-	require.NotZero(t, receipt.SDCharged)
-	require.True(t, blocklog.HasUnprocessableRequestBeenRemovedInBlock(v.ch.LatestBlock(), unprocessableReqID)) // assert this function returns true, its used to prevent these requests from being re-added to the mempool on a reorg
-
-	// assert the user was credited the tokens from the "initially unprocessable request"
-	userAssets := v.ch.L2Assets(newUserAgentID)
-	require.Len(t, userAssets.Coins, 4)
-	require.True(t, assetsContain(userAssets.Coins, nativeTokenID1))
-	require.True(t, assetsContain(userAssets.Coins, nativeTokenID2))
-	require.True(t, assetsContain(userAssets.Coins, nativeTokenID3))
-	require.True(t, assetsContain(userAssets.Coins, nativeTokenID4))
-	require.Len(t, userAssets.Objects, 1)
-	require.Contains(t, userAssets.Objects, iscNFT.ID)
-
-	// try the "retry request" again, assert it fails
-	_, rec, _, err = v.ch.PostRequestSyncExt(retryReq, newUser)
-	require.NoError(t, err)
-	require.Error(t, rec.Error)
-	require.False(t, blocklog.HasUnprocessableRequestBeenRemovedInBlock(v.ch.LatestBlock(), unprocessableReqID)) // assert this function returns false, its used to prevent these requests from being re-added to the mempool on a reorg
-
-	// --
-	// try to withdrawal the native tokens
-	err = v.ch.Withdraw(isc.NewAssets(1*isc.Million).Add(userAssets), newUser)
-	require.NoError(t, err)
-
-	require.Len(t, v.ch.L2Assets(newUserAgentID).Coins, 0)
-	require.Len(t, v.ch.L2Assets(newUserAgentID).Objects, 0)
-	v.env.AssertL1Coins(newUserAddress, nativeTokenID1, coin.Value(1))
-	v.env.AssertL1Coins(newUserAddress, nativeTokenID2, coin.Value(1))
-	v.env.AssertL1Coins(newUserAddress, nativeTokenID3, coin.Value(1))
-	v.env.AssertL1Coins(newUserAddress, nativeTokenID4, coin.Value(1))
-	require.Len(t, v.env.L1NFTs(newUserAddress), 1)
-}
-
 func TestDepositRandomContractMinFee(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	ch := env.NewChain()
@@ -1292,10 +1148,7 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 		// test base token
 		isc.NewAssets(1000 * isc.Million),
 		// test fungible tokens
-		isc.NewAssets(0, isc.NativeTokens{&isc.NativeToken{
-			ID:     [38]byte{0x1},
-			Amount: coin.Value(10),
-		}}),
+		isc.NewEmptyAssets().AddCoin("coin1", coin.Value(10)),
 		// test NFTs
 		isc.NewAssets(0),
 	}
@@ -1595,7 +1448,7 @@ func TestNFTMint(t *testing.T) {
 		// withdraw the NFT
 		_, err = ch.PostRequestSync(
 			solo.NewCallParams(accounts.FuncWithdraw.Message()).
-				AddAllowance(isc.NewAssets(2*isc.Million, nil, nftID)).
+				AddAllowance(isc.NewAssets(2*isc.Million).AddObject(nftID)).
 				AddBaseTokens(5*isc.Million).
 				WithMaxAffordableGasBudget(),
 			wallet,

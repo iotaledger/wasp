@@ -11,6 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -29,7 +31,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 		GasBurnLogEnabled: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
-	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
+	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	err := chain.SendFromL1ToL2AccountBaseTokens(1000, iotaclient.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
