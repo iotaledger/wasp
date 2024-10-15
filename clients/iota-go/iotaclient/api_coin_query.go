@@ -29,7 +29,7 @@ type GetBalanceRequest struct {
 	CoinType iotago.ObjectType // optional
 }
 
-// GetBalance to use default iotago coin(0x2::iotago::IOTA) when coinType is empty
+// GetBalance to use default iotago coin(0x2::iota::IOTA) when coinType is empty
 func (c *Client) GetBalance(ctx context.Context, req GetBalanceRequest) (*iotajsonrpc.Balance, error) {
 	resp := iotajsonrpc.Balance{}
 	if req.CoinType == "" {
@@ -51,7 +51,7 @@ type GetCoinsRequest struct {
 	Limit    uint               // optional
 }
 
-// GetCoins to use default iotago coin(0x2::iotago::IOTA) when coinType is nil
+// GetCoins to use default iotago coin(0x2::iota::IOTA) when coinType is nil
 // start with the first object when cursor is nil
 func (c *Client) GetCoins(ctx context.Context, req GetCoinsRequest) (*iotajsonrpc.CoinPage, error) {
 	var resp iotajsonrpc.CoinPage

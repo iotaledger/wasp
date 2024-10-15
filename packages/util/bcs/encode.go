@@ -8,9 +8,10 @@ import (
 	"sort"
 	"unsafe"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/constraints"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/samber/lo"
 )
 
 type Encodable interface {
@@ -31,7 +32,7 @@ type EncoderConfig struct {
 	// IncludeUnexported bool
 	// IncludeUntaggedUnexported bool
 	// ExcludeUntagged           bool
-	//CustomEncoders map[reflect.Type]CustomEncoder
+	// CustomEncoders map[reflect.Type]CustomEncoder
 }
 
 func (c *EncoderConfig) InitializeDefaults() {
@@ -142,7 +143,8 @@ func (e *Encoder) WriteLen(len int) error {
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
 func (e *Encoder) WriteCompactUint(v uint64) error {
-	return e.WriteLen(int(v))
+	e.w.WriteAmount64(v)
+	return e.w.Err
 }
 
 func (e *Encoder) WriteBool(v bool) error {
