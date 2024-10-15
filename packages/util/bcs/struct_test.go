@@ -359,6 +359,10 @@ type CompactInt struct {
 	A int64 `bcs:"compact"`
 }
 
+type CompactUint struct {
+	A uint64 `bcs:"compact"`
+}
+
 type IntWithLessBytes struct {
 	A int64 `bcs:"type=i16"`
 }
@@ -380,6 +384,12 @@ type IntWithMoreBytesAndOtherUnsigned struct {
 func TestIntTypeConversion(t *testing.T) {
 	bcs.TestCodecAndBytes(t, CompactInt{A: 1}, []byte{0x1})
 	bcs.TestCodecAndBytes(t, CompactInt{A: 70000}, []byte{0xf0, 0xa2, 0x4})
+	bcs.TestCodecAndBytes(t, CompactInt{A: math.MaxInt64}, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f})
+	bcs.TestCodecAndBytes(t, CompactInt{A: math.MinInt64}, []byte{0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x1})
+
+	bcs.TestCodecAndBytes(t, CompactUint{A: 1}, []byte{0x1})
+	bcs.TestCodecAndBytes(t, CompactUint{A: 70000}, []byte{0xf0, 0xa2, 0x4})
+	bcs.TestCodecAndBytes(t, CompactUint{A: math.MaxUint64}, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1})
 
 	bcs.TestCodecAndBytes(t, IntWithLessBytes{A: 42}, []byte{42, 0})
 	bcs.TestCodecAndBytes(t, IntWithMoreBytes{A: 42}, []byte{42, 0, 0, 0})
