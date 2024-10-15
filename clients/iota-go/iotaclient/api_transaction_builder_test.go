@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 )
@@ -76,7 +76,7 @@ func TestMoveCall(t *testing.T) {
 		context.Background(),
 		signer,
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -106,7 +106,7 @@ func TestMoveCall(t *testing.T) {
 		context.Background(),
 		signer,
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,
 			ShowObjectChanges: true,
 		},
@@ -184,7 +184,7 @@ func TestPay(t *testing.T) {
 	}
 }
 
-func TestPayAllSui(t *testing.T) {
+func TestPayAllIota(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
@@ -198,13 +198,13 @@ func TestPayAllSui(t *testing.T) {
 	)
 	require.NoError(t, err)
 	coins := iotajsonrpc.Coins(coinPages.Data)
-	// assume the account holds more than 'limit' amount Sui token objects
+	// assume the account holds more than 'limit' amount Iota token objects
 	require.Len(t, coinPages.Data, 3)
 	totalBal := coins.TotalBalance()
 
-	txn, err := client.PayAllSui(
+	txn, err := client.PayAllIota(
 		context.Background(),
-		iotaclient.PayAllSuiRequest{
+		iotaclient.PayAllIotaRequest{
 			Signer:     signer.Address(),
 			Recipient:  recipient.Address(),
 			InputCoins: coins.ObjectIDs(),
@@ -243,7 +243,7 @@ func TestPayAllSui(t *testing.T) {
 	}
 }
 
-func TestPaySui(t *testing.T) {
+func TestPayIota(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
 	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
@@ -260,9 +260,9 @@ func TestPaySui(t *testing.T) {
 	coins := iotajsonrpc.Coins(coinPages.Data)
 
 	sentAmounts := []uint64{123, 456, 789}
-	txn, err := client.PaySui(
+	txn, err := client.PayIota(
 		context.Background(),
-		iotaclient.PaySuiRequest{
+		iotaclient.PayIotaRequest{
 			Signer:     signer.Address(),
 			InputCoins: coins.ObjectIDs(),
 			Recipients: []*iotago.Address{
@@ -285,7 +285,7 @@ func TestPaySui(t *testing.T) {
 	require.Empty(t, simulate.Effects.Data.V1.Status.Error)
 	require.True(t, simulate.Effects.Data.IsSuccess())
 
-	// 3 stands for the three amounts (3 crated SUI objects) in unsafe_paySui API
+	// 3 stands for the three amounts (3 crated IOTA objects) in unsafe_payIota API
 	amountNum := uint(3)
 	require.Len(t, simulate.ObjectChanges, int(limit)+int(amountNum))
 	delObjNum := uint(0)
@@ -342,7 +342,7 @@ func TestPublish(t *testing.T) {
 		context.Background(),
 		signer,
 		txnBytes.TxBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects: true,
 		},
 	)
@@ -468,7 +468,7 @@ func TestTransferObject(t *testing.T) {
 	require.Len(t, simulate.BalanceChanges, 2)
 }
 
-func TestTransferSui(t *testing.T) {
+func TestTransferIota(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	signer := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
 	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
@@ -483,9 +483,9 @@ func TestTransferSui(t *testing.T) {
 	require.NoError(t, err)
 	transferCoin := coinPages.Data[0]
 
-	txn, err := client.TransferSui(
+	txn, err := client.TransferIota(
 		context.Background(),
-		iotaclient.TransferSuiRequest{
+		iotaclient.TransferIotaRequest{
 			Signer:    signer.Address(),
 			Recipient: recipient.Address(),
 			ObjectID:  transferCoin.CoinObjectID,

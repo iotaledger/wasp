@@ -34,7 +34,7 @@ func PTBStartNewChain(
 		iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{arg1},
-				Address: ptb.MustPure(ownerAddress.AsSuiAddress()),
+				Address: ptb.MustPure(ownerAddress.AsIotaAddress()),
 			},
 		},
 	)
@@ -82,7 +82,7 @@ func PTBTakeAndTransferCoinBalance(
 		argTransferCoin := ptb.Command(
 			iotago.Command{
 				MoveCall: &iotago.ProgrammableMoveCall{
-					Package:       iotago.SuiPackageIdSuiFramework,
+					Package:       iotago.IotaPackageIdIotaFramework,
 					Module:        "coin",
 					Function:      "from_balance",
 					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},

@@ -150,7 +150,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
 		_, eth := newEthereumAccount()
 		// create foundry
-		tokenScheme := codec.TokenScheme.Encode(&iotago.SimpleTokenScheme{
+		tokenScheme := codec.Encode[TokenScheme](&iotago.SimpleTokenScheme{
 			MintedTokens:  big.NewInt(0),
 			MeltedTokens:  big.NewInt(0),
 			MaximumSupply: big.NewInt(1000),
@@ -233,7 +233,7 @@ func TestWaspCLIUnprocessableRequest(t *testing.T) {
 
 	createFoundries := func(nFoundries int) []string {
 		// create N foundries and mints 1 tokens from each foundry
-		tokenScheme := codec.TokenScheme.Encode(&iotago.SimpleTokenScheme{
+		tokenScheme := codec.Encode[TokenScheme](&iotago.SimpleTokenScheme{
 			MintedTokens:  big.NewInt(0),
 			MeltedTokens:  big.NewInt(0),
 			MaximumSupply: big.NewInt(1),

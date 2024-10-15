@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 // ParamCallOption
@@ -22,7 +23,7 @@ func callOnChain(ctx isc.Sandbox) isc.CallArguments {
 	state := ctx.State()
 	decoder := kvdecoder.New(state, ctx.Log())
 	counter := decoder.MustGetUint64(VarCounter, 0)
-	state.Set(VarCounter, codec.Uint64.Encode(counter+1))
+	state.Set(VarCounter, codec.Encode[uint64](counter+1))
 
 	ctx.Log().Infof("param IN = %d, hnameContract = %s, hnameEP = %s, counter = %d",
 		paramIn, hnameContract, hnameEP, counter)
@@ -36,7 +37,7 @@ func incCounter(ctx isc.Sandbox) isc.CallArguments {
 	state := ctx.State()
 	decoder := kvdecoder.New(state, ctx.Log())
 	counter := decoder.MustGetUint64(VarCounter, 0)
-	state.Set(VarCounter, codec.Uint64.Encode(counter+1))
+	state.Set(VarCounter, codec.Encode[uint64](counter+1))
 	return nil
 }
 
@@ -44,7 +45,7 @@ func getCounter(ctx isc.SandboxView) isc.CallArguments {
 	ret := dict.New()
 	decoder := kvdecoder.New(ctx.StateR(), ctx.Log())
 	counter := decoder.MustGetUint64(VarCounter, 0)
-	ret.Set(VarCounter, codec.Uint64.Encode(counter))
+	ret.Set(VarCounter, codec.Encode[uint64](counter))
 	return ret
 }
 
@@ -73,7 +74,7 @@ func getFibonacci(ctx isc.SandboxView) isc.CallArguments {
 	ctx.Log().Infof("fibonacci( %d )", n)
 	result := fibonacci(n)
 	ret := dict.New()
-	ret.Set(ParamN, codec.Uint64.Encode(result))
+	ret.Set(ParamN, codec.Encode[uint64](result))
 	return ret
 }
 
@@ -84,7 +85,7 @@ func getFibonacciIndirect(ctx isc.SandboxView) isc.CallArguments {
 	ctx.Log().Infof("fibonacciIndirect( %d )", n)
 	ret := dict.New()
 	if n <= 1 {
-		ret.Set(ParamN, codec.Uint64.Encode(n))
+		ret.Set(ParamN, codec.Encode[uint64](n))
 		return ret
 	}
 
@@ -102,7 +103,7 @@ func getFibonacciIndirect(ctx isc.SandboxView) isc.CallArguments {
 	decoder = kvdecoder.New(ret2, ctx.Log())
 	n2 := decoder.MustGetUint64(ParamN)
 
-	ret.Set(ParamN, codec.Uint64.Encode(n1+n2))
+	ret.Set(ParamN, codec.Encode[uint64](n1+n2))
 	return ret
 }
 
@@ -128,7 +129,7 @@ func setInt(ctx isc.Sandbox) isc.CallArguments {
 	params := ctx.Params()
 	paramName := params.MustGetString(ParamIntParamName)
 	paramValue := params.MustGetInt64(ParamIntParamValue)
-	ctx.State().Set(kv.Key(paramName), codec.Int64.Encode(paramValue))
+	ctx.State().Set(kv.Key(paramName), codec.Encode[int64](paramValue))
 	return nil
 }
 
@@ -140,7 +141,7 @@ func getInt(ctx isc.SandboxView) isc.CallArguments {
 	decoder := kvdecoder.New(ctx.StateR(), ctx.Log())
 	paramValue := decoder.MustGetInt64(kv.Key(paramName), 0)
 	ret := dict.New()
-	ret.Set(kv.Key(paramName), codec.Int64.Encode(paramValue))
+	ret.Set(kv.Key(paramName), codec.Encode[int64](paramValue))
 	return ret
 }
 

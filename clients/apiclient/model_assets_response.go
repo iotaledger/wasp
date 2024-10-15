@@ -21,14 +21,14 @@ var _ MappedNullable = &AssetsResponse{}
 type AssetsResponse struct {
 	// The base tokens (uint64 as string)
 	BaseTokens string `json:"baseTokens"`
-	NativeTokens []NativeTokenJSON `json:"nativeTokens"`
+	NativeTokens []CoinJSON `json:"nativeTokens"`
 }
 
 // NewAssetsResponse instantiates a new AssetsResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAssetsResponse(baseTokens string, nativeTokens []NativeTokenJSON) *AssetsResponse {
+func NewAssetsResponse(baseTokens string, nativeTokens []CoinJSON) *AssetsResponse {
 	this := AssetsResponse{}
 	this.BaseTokens = baseTokens
 	this.NativeTokens = nativeTokens
@@ -68,9 +68,9 @@ func (o *AssetsResponse) SetBaseTokens(v string) {
 }
 
 // GetNativeTokens returns the NativeTokens field value
-func (o *AssetsResponse) GetNativeTokens() []NativeTokenJSON {
+func (o *AssetsResponse) GetNativeTokens() []CoinJSON {
 	if o == nil {
-		var ret []NativeTokenJSON
+		var ret []CoinJSON
 		return ret
 	}
 
@@ -79,7 +79,7 @@ func (o *AssetsResponse) GetNativeTokens() []NativeTokenJSON {
 
 // GetNativeTokensOk returns a tuple with the NativeTokens field value
 // and a boolean to check if the value has been set.
-func (o *AssetsResponse) GetNativeTokensOk() ([]NativeTokenJSON, bool) {
+func (o *AssetsResponse) GetNativeTokensOk() ([]CoinJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -87,7 +87,7 @@ func (o *AssetsResponse) GetNativeTokensOk() ([]NativeTokenJSON, bool) {
 }
 
 // SetNativeTokens sets field value
-func (o *AssetsResponse) SetNativeTokens(v []NativeTokenJSON) {
+func (o *AssetsResponse) SetNativeTokens(v []CoinJSON) {
 	o.NativeTokens = v
 }
 

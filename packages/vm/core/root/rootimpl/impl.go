@@ -95,7 +95,7 @@ func getContractRecords(ctx isc.SandboxView) []lo.Tuple2[*isc.Hname, *root.Contr
 	var ret []lo.Tuple2[*isc.Hname, *root.ContractRecord]
 	state := root.NewStateReaderFromSandbox(ctx)
 	state.GetContractRegistry().Iterate(func(elemKey []byte, value []byte) bool {
-		hname := codec.Hname.MustDecode(elemKey)
+		hname := codec.MustDecode[isc.Hname](elemKey)
 		rec := lo.Must(root.ContractRecordFromBytes(value))
 		ret = append(ret, lo.T2(&hname, rec))
 		return true

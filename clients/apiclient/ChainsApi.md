@@ -40,7 +40,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiActivateChainRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -54,7 +54,7 @@ apiInstance.activateChain(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -95,7 +95,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiAddAccessNodeRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
@@ -111,7 +111,7 @@ apiInstance.addAccessNode(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **peer** | [**string**] | Name or PubKey (hex) of the trusted peer | defaults to undefined
 
 
@@ -138,7 +138,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **callView**
-> JSONDict callView(contractCallViewRequest)
+> Array<Array<number>> callView(contractCallViewRequest)
 
 Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
 
@@ -153,18 +153,15 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiCallViewRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // ContractCallViewRequest | Parameters
   contractCallViewRequest: {
-    arguments: {
-      items: [
-        {
-          key: "key_example",
-          value: "value_example",
-        },
+    arguments: [
+      [
+        1,
       ],
-    },
+    ],
     block: "block_example",
     contractHName: "contractHName_example",
     contractName: "contractName_example",
@@ -184,12 +181,12 @@ apiInstance.callView(body).then((data:any) => {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **contractCallViewRequest** | **ContractCallViewRequest**| Parameters |
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
 
-**JSONDict**
+**Array<Array<number>>**
 
 ### Authorization
 
@@ -223,7 +220,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiDeactivateChainRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -237,7 +234,7 @@ apiInstance.deactivateChain(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -278,7 +275,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiDumpAccountsRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -292,7 +289,7 @@ apiInstance.dumpAccounts(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -318,7 +315,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **estimateGasOffledger**
-> ReceiptResponse estimateGasOffledger(request)
+> estimateGasOffledger(request)
 
 
 ### Example
@@ -332,7 +329,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiEstimateGasOffledgerRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // EstimateGasRequestOffledger | Request
   request: {
@@ -352,12 +349,12 @@ apiInstance.estimateGasOffledger(body).then((data:any) => {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **request** | **EstimateGasRequestOffledger**| Request |
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
 
-**ReceiptResponse**
+void (empty response body)
 
 ### Authorization
 
@@ -366,18 +363,18 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: application/json
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | ReceiptResponse |  -  |
+**0** | successful operation |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **estimateGasOnledger**
-> ReceiptResponse estimateGasOnledger(request)
+> estimateGasOnledger(request)
 
 
 ### Example
@@ -391,7 +388,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiEstimateGasOnledgerRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // EstimateGasRequestOnledger | Request
   request: {
@@ -410,12 +407,12 @@ apiInstance.estimateGasOnledger(body).then((data:any) => {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **request** | **EstimateGasRequestOnledger**| Request |
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
 
-**ReceiptResponse**
+void (empty response body)
 
 ### Authorization
 
@@ -424,13 +421,13 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: application/json
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | ReceiptResponse |  -  |
+**0** | successful operation |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
@@ -449,7 +446,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiGetChainInfoRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | Block index or trie root (optional)
   block: "block_example",
@@ -465,7 +462,7 @@ apiInstance.getChainInfo(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -553,7 +550,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiGetCommitteeInfoRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | Block index or trie root (optional)
   block: "block_example",
@@ -569,7 +566,7 @@ apiInstance.getCommitteeInfo(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -610,7 +607,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiGetContractsRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | Block index or trie root (optional)
   block: "block_example",
@@ -626,7 +623,7 @@ apiInstance.getContracts(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -667,7 +664,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiGetMempoolContentsRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -681,7 +678,7 @@ apiInstance.getMempoolContents(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -707,7 +704,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **getReceipt**
-> ReceiptResponse getReceipt()
+> getReceipt()
 
 
 ### Example
@@ -721,7 +718,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiGetReceiptRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | RequestID (Hex)
   requestID: "requestID_example",
@@ -737,13 +734,13 @@ apiInstance.getReceipt(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
 
 
 ### Return type
 
-**ReceiptResponse**
+void (empty response body)
 
 ### Authorization
 
@@ -752,13 +749,12 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: application/json
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | ReceiptResponse |  -  |
 **404** | Chain or request id not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
@@ -778,7 +774,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiGetStateValueRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | State Key (Hex)
   stateKey: "stateKey_example",
@@ -794,7 +790,7 @@ apiInstance.getStateValue(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **stateKey** | [**string**] | State Key (Hex) | defaults to undefined
 
 
@@ -834,7 +830,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiRemoveAccessNodeRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
@@ -850,7 +846,7 @@ apiInstance.removeAccessNode(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **peer** | [**string**] | Name or PubKey (hex) of the trusted peer | defaults to undefined
 
 
@@ -891,7 +887,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiSetChainRecordRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // ChainRecord | Chain Record
   chainRecord: {
@@ -913,7 +909,7 @@ apiInstance.setChainRecord(body).then((data:any) => {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **chainRecord** | **ChainRecord**| Chain Record |
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -953,7 +949,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiV1ChainsChainIDEvmPostRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -967,7 +963,7 @@ apiInstance.v1ChainsChainIDEvmPost(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -1006,7 +1002,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiV1ChainsChainIDEvmWsGetRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
@@ -1020,7 +1016,7 @@ apiInstance.v1ChainsChainIDEvmWsGet(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -1045,7 +1041,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **waitForRequest**
-> ReceiptResponse waitForRequest()
+> waitForRequest()
 
 
 ### Example
@@ -1059,7 +1055,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .ChainsApi(configuration);
 
 let body:.ChainsApiWaitForRequestRequest = {
-  // string | ChainID (Bech32)
+  // string | ChainID (Hex Address)
   chainID: "chainID_example",
   // string | RequestID (Hex)
   requestID: "requestID_example",
@@ -1079,7 +1075,7 @@ apiInstance.waitForRequest(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **timeoutSeconds** | [**number**] | The timeout in seconds, maximum 60s | (optional) defaults to undefined
  **waitForL1Confirmation** | [**boolean**] | Wait for the block to be confirmed on L1 | (optional) defaults to undefined
@@ -1087,7 +1083,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**ReceiptResponse**
+void (empty response body)
 
 ### Authorization
 
@@ -1096,13 +1092,12 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: application/json
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | The request receipt |  -  |
 **404** | The chain or request id not found |  -  |
 **408** | The waiting time has reached the defined limit |  -  |
 

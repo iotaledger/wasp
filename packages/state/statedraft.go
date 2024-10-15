@@ -40,8 +40,8 @@ func newEmptyStateDraft(prevL1Commitment *L1Commitment, baseState State) *stateD
 
 func newStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment, baseState State) *stateDraft {
 	d := newEmptyStateDraft(prevL1Commitment, baseState)
-	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Uint32.Encode(baseState.BlockIndex()+1))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Time.Encode(timestamp))
+	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode[uint32](baseState.BlockIndex()+1))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode[time.Time](timestamp))
 	d.Set(kv.Key(coreutil.StatePrefixPrevL1Commitment), prevL1Commitment.Bytes())
 	return d
 }

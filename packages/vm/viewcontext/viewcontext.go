@@ -127,7 +127,7 @@ func (ctx *ViewContext) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("refactor me")
 }
 
-func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
 	return ctx.accountsStateWithGasBurn().GetCoinInfo(coinType)
 }
 

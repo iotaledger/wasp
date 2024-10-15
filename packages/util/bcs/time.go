@@ -1,15 +1,33 @@
 package bcs
 
-import "time"
+import (
+	"time"
+)
 
 func init() {
 	AddCustomEncoder(func(e *Encoder, v time.Time) error {
-		e.w.WriteInt64(v.UnixNano())
+		var ns int64
+		if !v.IsZero() {
+			ns = v.UnixNano()
+		}
+
+		e.w.WriteInt64(ns)
 		return e.w.Err
 	})
 
 	AddCustomDecoder(func(d *Decoder, v *time.Time) error {
-		*v = time.Unix(0, d.r.ReadInt64())
-		return d.r.Err
+		ns := d.r.ReadInt64()
+		if d.r.Err != nil {
+			return d.r.Err
+		}
+
+		if ns == 0 {
+			*v = time.Time{}
+			return nil
+		}
+
+		*v = time.Unix(0, ns)
+
+		return nil
 	})
 }

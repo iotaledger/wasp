@@ -12,7 +12,7 @@ func PTBOptionSome(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.SuiPackageIdMoveStdlib,
+				Package:       iotago.IotaPackageIdMoveStdlib,
 				Module:        "option",
 				Function:      "some",
 				TypeArguments: []iotago.TypeTag{objTypeTag},
@@ -25,23 +25,23 @@ func PTBOptionSome(
 	return ptb
 }
 
-func PTBOptionSomeSuiCoin(
+func PTBOptionSomeIotaCoin(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	objRef *iotago.ObjectRef, // must be ImmOrOwnedObject
 ) *iotago.ProgrammableTransactionBuilder {
-	return PTBOptionSome(ptb, *iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iotago::SUI>"), objRef)
+	return PTBOptionSome(ptb, *iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iota::IOTA>"), objRef)
 }
 
-func PTBOptionNoneSuiCoin(
+func PTBOptionNoneIotaCoin(
 	ptb *iotago.ProgrammableTransactionBuilder,
 ) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.SuiPackageIdMoveStdlib,
+				Package:       iotago.IotaPackageIdMoveStdlib,
 				Module:        "option",
 				Function:      "none",
-				TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iotago::SUI>")},
+				TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")},
 				Arguments:     []iotago.Argument{},
 			},
 		},

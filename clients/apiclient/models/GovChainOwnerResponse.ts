@@ -14,7 +14,7 @@ import { HttpFile } from '../http/http';
 
 export class GovChainOwnerResponse {
     /**
-    * The chain owner (Bech32-encoded)
+    * The chain owner (Hex Address)
     */
     'chainOwner'?: string;
 

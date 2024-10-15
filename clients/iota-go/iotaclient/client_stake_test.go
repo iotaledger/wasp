@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 )
@@ -30,7 +30,7 @@ func TestRequestAddDelegation(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	amount := uint64(iotago.UnitSui)
+	amount := uint64(iotago.UnitIota)
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, new(big.Int).SetUint64(amount), 0, 0, 0)
 	require.NoError(t, err)
 
@@ -76,7 +76,7 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 
 	detail, err := client.GetObject(
 		context.Background(), iotaclient.GetObjectRequest{
-			ObjectID: &stakes[0].Stakes[0].Data.StakedSuiId,
+			ObjectID: &stakes[0].Stakes[0].Data.StakedIotaId,
 		},
 	)
 	require.NoError(t, err)

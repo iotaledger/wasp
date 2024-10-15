@@ -28,8 +28,8 @@ func (c *Client) GetCheckpoints(ctx context.Context, req GetCheckpointsRequest) 
 	return &resp, c.transport.Call(ctx, &resp, getCheckpoints, req.Cursor, req.Limit, req.DescendingOrder)
 }
 
-func (c *Client) GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.SuiEvent, error) {
-	var resp []*iotajsonrpc.SuiEvent
+func (c *Client) GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.IotaEvent, error) {
+	var resp []*iotajsonrpc.IotaEvent
 	return resp, c.transport.Call(ctx, &resp, getEvents, digest)
 }
 
@@ -42,11 +42,11 @@ func (c *Client) GetLatestCheckpointSequenceNumber(ctx context.Context) (string,
 
 type GetObjectRequest struct {
 	ObjectID *iotago.ObjectID
-	Options  *iotajsonrpc.SuiObjectDataOptions // optional
+	Options  *iotajsonrpc.IotaObjectDataOptions // optional
 }
 
-func (c *Client) GetObject(ctx context.Context, req GetObjectRequest) (*iotajsonrpc.SuiObjectResponse, error) {
-	var resp iotajsonrpc.SuiObjectResponse
+func (c *Client) GetObject(ctx context.Context, req GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
+	var resp iotajsonrpc.IotaObjectResponse
 	return &resp, c.transport.Call(ctx, &resp, getObject, req.ObjectID, req.Options)
 }
 
@@ -65,66 +65,66 @@ func (c *Client) GetTotalTransactionBlocks(ctx context.Context) (string, error) 
 
 type GetTransactionBlockRequest struct {
 	Digest  *iotago.TransactionDigest
-	Options *iotajsonrpc.SuiTransactionBlockResponseOptions // optional
+	Options *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
 }
 
 func (c *Client) GetTransactionBlock(
 	ctx context.Context,
 	req GetTransactionBlockRequest,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
-	resp := iotajsonrpc.SuiTransactionBlockResponse{}
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	resp := iotajsonrpc.IotaTransactionBlockResponse{}
 	return &resp, c.transport.Call(ctx, &resp, getTransactionBlock, req.Digest, req.Options)
 }
 
 type MultiGetObjectsRequest struct {
 	ObjectIDs []*iotago.ObjectID
-	Options   *iotajsonrpc.SuiObjectDataOptions // optional
+	Options   *iotajsonrpc.IotaObjectDataOptions // optional
 }
 
 func (c *Client) MultiGetObjects(ctx context.Context, req MultiGetObjectsRequest) (
-	[]iotajsonrpc.SuiObjectResponse,
+	[]iotajsonrpc.IotaObjectResponse,
 	error,
 ) {
-	var resp []iotajsonrpc.SuiObjectResponse
+	var resp []iotajsonrpc.IotaObjectResponse
 	return resp, c.transport.Call(ctx, &resp, multiGetObjects, req.ObjectIDs, req.Options)
 }
 
 type MultiGetTransactionBlocksRequest struct {
 	Digests []*iotago.Digest
-	Options *iotajsonrpc.SuiTransactionBlockResponseOptions // optional
+	Options *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
 }
 
 func (c *Client) MultiGetTransactionBlocks(
 	ctx context.Context,
 	req MultiGetTransactionBlocksRequest,
-) ([]*iotajsonrpc.SuiTransactionBlockResponse, error) {
-	resp := []*iotajsonrpc.SuiTransactionBlockResponse{}
+) ([]*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	resp := []*iotajsonrpc.IotaTransactionBlockResponse{}
 	return resp, c.transport.Call(ctx, &resp, multiGetTransactionBlocks, req.Digests, req.Options)
 }
 
 type TryGetPastObjectRequest struct {
 	ObjectID *iotago.ObjectID
 	Version  uint64
-	Options  *iotajsonrpc.SuiObjectDataOptions // optional
+	Options  *iotajsonrpc.IotaObjectDataOptions // optional
 }
 
 func (c *Client) TryGetPastObject(
 	ctx context.Context,
 	req TryGetPastObjectRequest,
-) (*iotajsonrpc.SuiPastObjectResponse, error) {
-	var resp iotajsonrpc.SuiPastObjectResponse
+) (*iotajsonrpc.IotaPastObjectResponse, error) {
+	var resp iotajsonrpc.IotaPastObjectResponse
 	return &resp, c.transport.Call(ctx, &resp, tryGetPastObject, req.ObjectID, req.Version, req.Options)
 }
 
 type TryMultiGetPastObjectsRequest struct {
-	PastObjects []*iotajsonrpc.SuiGetPastObjectRequest
-	Options     *iotajsonrpc.SuiObjectDataOptions // optional
+	PastObjects []*iotajsonrpc.IotaGetPastObjectRequest
+	Options     *iotajsonrpc.IotaObjectDataOptions // optional
 }
 
 func (c *Client) TryMultiGetPastObjects(
 	ctx context.Context,
 	req TryMultiGetPastObjectsRequest,
-) ([]*iotajsonrpc.SuiPastObjectResponse, error) {
-	var resp []*iotajsonrpc.SuiPastObjectResponse
+) ([]*iotajsonrpc.IotaPastObjectResponse, error) {
+	var resp []*iotajsonrpc.IotaPastObjectResponse
 	return resp, c.transport.Call(ctx, &resp, tryMultiGetPastObjects, req.PastObjects, req.Options)
 }

@@ -122,7 +122,7 @@ func (reqctx *requestContext) GetObjectBCS(objectID iotago.ObjectID) (ret []byte
 	return ret, ret != nil
 }
 
-func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *isc.SuiCoinInfo, ok bool) {
+func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *isc.IotaCoinInfo, ok bool) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		coinInfo, ok = s.GetCoinInfo(coinType)
 	})

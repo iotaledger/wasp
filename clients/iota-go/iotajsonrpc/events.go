@@ -11,14 +11,13 @@ type EventId struct {
 	EventSeq *BigInt                  `json:"eventSeq"`
 }
 
-// refer struct `SuiEvent` in `crates/iotago-json-rpc-types/src/sui_event.rs`
-type SuiEvent struct {
+type IotaEvent struct {
 	Id EventId `json:"id"`
 	// Move package where this event was emitted.
 	PackageId *iotago.ObjectID `json:"packageId"`
 	// Move module where this event was emitted.
 	TransactionModule iotago.Identifier `json:"transactionModule"`
-	// Sender's Sui iotago.address.
+	// Sender's Iota iotago.address.
 	Sender *iotago.Address `json:"sender"`
 	// Move event type.
 	Type *iotago.StructTag `json:"type"`
@@ -29,7 +28,7 @@ type SuiEvent struct {
 	TimestampMs *BigInt       `json:"timestampMs,omitempty"`
 }
 
-type EventPage = Page[SuiEvent, EventId]
+type EventPage = Page[IotaEvent, EventId]
 
 type EventFilter struct {
 	/// Query by sender address

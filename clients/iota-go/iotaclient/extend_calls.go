@@ -38,8 +38,8 @@ func (c *Client) SignAndExecuteTransaction(
 	ctx context.Context,
 	signer iotasigner.Signer,
 	txBytes iotago.Base64Data,
-	options *iotajsonrpc.SuiTransactionBlockResponseOptions,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	// FIXME we need to support other intent
 	signature, err := signer.SignTransactionBlock(txBytes, iotasigner.DefaultIntent())
 	if err != nil {
@@ -69,8 +69,8 @@ func (c *Client) PublishContract(
 	modules []*iotago.Base64Data,
 	dependencies []*iotago.Address,
 	gasBudget uint64,
-	options *iotajsonrpc.SuiTransactionBlockResponseOptions,
-) (*iotajsonrpc.SuiTransactionBlockResponse, *iotago.PackageID, error) {
+	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error) {
 	txnBytes, err := c.Publish(
 		context.Background(),
 		PublishRequest{
@@ -123,8 +123,8 @@ func (c *Client) MintToken(
 	tokenName string,
 	treasuryCap *iotago.ObjectID,
 	mintAmount uint64,
-	options *iotajsonrpc.SuiTransactionBlockResponseOptions,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
+	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	txnBytes, err := c.MoveCall(
 		ctx,
 		MoveCallRequest{
@@ -152,8 +152,8 @@ func (c *Client) MintToken(
 // NOTE: This a copy the query limit from our Rust JSON RPC backend, this needs to be kept in sync!
 const QUERY_MAX_RESULT_LIMIT = 50
 
-// GetSuiCoinsOwnedByAddress This function will retrieve a maximum of 200 coins.
-func (c *Client) GetSuiCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (iotajsonrpc.Coins, error) {
+// GetIotaCoinsOwnedByAddress This function will retrieve a maximum of 200 coins.
+func (c *Client) GetIotaCoinsOwnedByAddress(ctx context.Context, address *iotago.Address) (iotajsonrpc.Coins, error) {
 	page, err := c.GetCoins(
 		ctx, GetCoinsRequest{
 			Owner: address,
@@ -170,12 +170,12 @@ func (c *Client) GetSuiCoinsOwnedByAddress(ctx context.Context, address *iotago.
 func (c *Client) BatchGetObjectsOwnedByAddress(
 	ctx context.Context,
 	address *iotago.Address,
-	options *iotajsonrpc.SuiObjectDataOptions,
+	options *iotajsonrpc.IotaObjectDataOptions,
 	filterType string,
-) ([]iotajsonrpc.SuiObjectResponse, error) {
+) ([]iotajsonrpc.IotaObjectResponse, error) {
 	filterType = strings.TrimSpace(filterType)
 	return c.BatchGetFilteredObjectsOwnedByAddress(
-		ctx, address, options, func(sod *iotajsonrpc.SuiObjectData) bool {
+		ctx, address, options, func(sod *iotajsonrpc.IotaObjectData) bool {
 			return filterType == "" || filterType == *sod.Type
 		},
 	)
@@ -184,14 +184,14 @@ func (c *Client) BatchGetObjectsOwnedByAddress(
 func (c *Client) BatchGetFilteredObjectsOwnedByAddress(
 	ctx context.Context,
 	address *iotago.Address,
-	options *iotajsonrpc.SuiObjectDataOptions,
-	filter func(*iotajsonrpc.SuiObjectData) bool,
-) ([]iotajsonrpc.SuiObjectResponse, error) {
+	options *iotajsonrpc.IotaObjectDataOptions,
+	filter func(*iotajsonrpc.IotaObjectData) bool,
+) ([]iotajsonrpc.IotaObjectResponse, error) {
 	filteringObjs, err := c.GetOwnedObjects(
 		ctx, GetOwnedObjectsRequest{
 			Address: address,
-			Query: &iotajsonrpc.SuiObjectResponseQuery{
-				Options: &iotajsonrpc.SuiObjectDataOptions{
+			Query: &iotajsonrpc.IotaObjectResponseQuery{
+				Options: &iotajsonrpc.IotaObjectDataOptions{
 					ShowType: true,
 				},
 			},
@@ -234,7 +234,7 @@ func BCS_RequestAddStake(
 	if err != nil {
 		return nil, err
 	}
-	arg0, err := ptb.Obj(iotago.SuiSystemMutObj)
+	arg0, err := ptb.Obj(iotago.IotaSystemMutObj)
 	if err != nil {
 		return nil, err
 	}
@@ -254,8 +254,8 @@ func BCS_RequestAddStake(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:  iotago.SuiPackageIdSuiSystem,
-				Module:   iotago.SuiSystemModuleName,
+				Package:  iotago.IotaPackageIdIotaSystem,
+				Module:   iotago.IotaSystemModuleName,
 				Function: iotago.AddStakeFunName,
 				Arguments: []iotago.Argument{
 					arg0, arg1, arg2,
@@ -272,19 +272,19 @@ func BCS_RequestAddStake(
 
 func BCS_RequestWithdrawStake(
 	signer *iotago.Address,
-	stakedSuiRef iotago.ObjectRef,
+	stakedIotaRef iotago.ObjectRef,
 	gas []*iotago.ObjectRef,
 	gasBudget, gasPrice uint64,
 ) ([]byte, error) {
 	// build with BCS
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	arg0, err := ptb.Obj(iotago.SuiSystemMutObj)
+	arg0, err := ptb.Obj(iotago.IotaSystemMutObj)
 	if err != nil {
 		return nil, err
 	}
 	arg1, err := ptb.Obj(
 		iotago.ObjectArg{
-			ImmOrOwnedObject: &stakedSuiRef,
+			ImmOrOwnedObject: &stakedIotaRef,
 		},
 	)
 	if err != nil {
@@ -293,8 +293,8 @@ func BCS_RequestWithdrawStake(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:  iotago.SuiPackageIdSuiSystem,
-				Module:   iotago.SuiSystemModuleName,
+				Package:  iotago.IotaPackageIdIotaSystem,
+				Module:   iotago.IotaSystemModuleName,
 				Function: iotago.WithdrawStakeFunName,
 				Arguments: []iotago.Argument{
 					arg0, arg1,

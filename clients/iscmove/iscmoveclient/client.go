@@ -44,10 +44,10 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) er
 	if c.faucetURL == "" {
 		panic("missing faucetURL")
 	}
-	return iotaclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), c.faucetURL)
+	return iotaclient.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), c.faucetURL)
 }
 
 func (c *Client) Health(ctx context.Context) error {
-	_, err := c.GetLatestSuiSystemState(ctx)
+	_, err := c.GetLatestIotaSystemState(ctx)
 	return err
 }

@@ -106,9 +106,9 @@ func initSolo() (*soloContext, *solo.Chain) {
 	chainOwner, chainOwnerAddr := env.NewKeyPairWithFunds()
 	chain, _ := env.NewChainExt(chainOwner, 1*isc.Million, "evmemulator", dict.Dict{
 		origin.ParamChainOwner:      isc.NewAddressAgentID(chainOwnerAddr).Bytes(),
-		origin.ParamEVMChainID:      codec.Uint16.Encode(1074),
-		origin.ParamBlockKeepAmount: codec.Int32.Encode(emulator.BlockKeepAll),
-		origin.ParamWaspVersion:     codec.String.Encode(app.Version),
+		origin.ParamEVMChainID:      codec.Encode[uint16](1074),
+		origin.ParamBlockKeepAmount: codec.Encode[int32](emulator.BlockKeepAll),
+		origin.ParamWaspVersion:     codec.Encode[string](app.Version),
 	})
 	return ctx, chain
 }

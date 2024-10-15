@@ -111,7 +111,7 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 	})
 }
 
-var baseTokenCoinInfo = &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
+var baseTokenCoinInfo = &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 
 func initializedStore(db kvstore.KVStore) state.Store {
 	st := state.NewStoreWithUniqueWriteMutex(db)

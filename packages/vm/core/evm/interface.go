@@ -5,10 +5,13 @@ package evm
 
 import (
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
@@ -19,29 +22,29 @@ var (
 	// evmOffLedgerTxRequest in order to process an Ethereum tx (e.g.
 	// eth_sendRawTransaction).
 	FuncSendTransaction = coreutil.NewEP1(Contract, evmnames.FuncSendTransaction,
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*types.Transaction]()),
+		coreutil.Field[*types.Transaction](),
 	)
 
 	// FuncCallContract is the entry point called by an evmOffLedgerCallRequest
 	// in order to process a view call or gas estimation (e.g. eth_call, eth_estimateGas).
 	FuncCallContract = coreutil.NewEP11(Contract, evmnames.FuncCallContract,
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[ethereum.CallMsg]()),
-		coreutil.FieldWithCodec(codec.Bytes),
+		coreutil.Field[ethereum.CallMsg](),
+		coreutil.Field[[]byte](),
 	)
 
 	FuncRegisterERC20Coin = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC20Coin,
-		coreutil.FieldWithCodec(codec.CoinType),
+		coreutil.Field[coin.Type](),
 	)
 	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,
-		coreutil.FieldWithCodec(codec.ObjectID),
+		coreutil.Field[iotago.ObjectID](),
 	)
 	FuncNewL1Deposit = coreutil.NewEP3(Contract, evmnames.FuncNewL1Deposit,
-		coreutil.FieldWithCodec(codec.AgentID),
-		coreutil.FieldWithCodec(codec.EthereumAddress),
-		coreutil.FieldWithCodec(codec.Assets),
+		coreutil.Field[isc.AgentID](),
+		coreutil.Field[common.Address](),
+		coreutil.Field[*isc.Assets](),
 	)
 	ViewGetChainID = coreutil.NewViewEP01(Contract, evmnames.ViewGetChainID,
-		coreutil.FieldWithCodec(codec.Uint16),
+		coreutil.Field[uint16](),
 	)
 )
 

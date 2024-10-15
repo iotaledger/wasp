@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/suitest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -63,7 +63,7 @@ var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
 // initChain initializes a new chain state on the given empty store, and returns a fake L1
 // anchor with a random ObjectID and the corresponding StateMetadata.
 func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnchor {
-	baseTokenCoinInfo := &isc.SuiCoinInfo{CoinType: coin.BaseTokenType}
+	baseTokenCoinInfo := &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 	// create the anchor for a new chain
 	initParams := origin.EncodeInitParams(
 		isc.NewAddressAgentID(chainCreator.Address()),
@@ -80,11 +80,11 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
 	anchor := iscmove.Anchor{
-		ID:            *suitest.RandomAddress(),
+		ID:            *iotatest.RandomAddress(),
 		StateMetadata: stateMetadataBytes,
 		StateIndex:    0,
 		Assets: iscmove.AssetsBag{
-			ID:   *suitest.RandomAddress(),
+			ID:   *iotatest.RandomAddress(),
 			Size: 1,
 		},
 	}
@@ -108,8 +108,8 @@ func makeOnLedgerRequest(
 	msg isc.Message,
 	baseTokens uint64,
 ) isc.OnLedgerRequest {
-	requestRef := suitest.RandomObjectRef()
-	requestAssetsBagRef := suitest.RandomObjectRef()
+	requestRef := iotatest.RandomObjectRef()
+	requestAssetsBagRef := iotatest.RandomObjectRef()
 	request := &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *requestRef,
 		Object: &iscmove.Request{

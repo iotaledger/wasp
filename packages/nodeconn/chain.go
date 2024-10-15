@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -50,7 +50,7 @@ func newNCChain(
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
 ) *ncChain {
-	anchorAddress := chainID.AsAddress().AsSuiAddress()
+	anchorAddress := chainID.AsAddress().AsIotaAddress()
 	feed := iscmoveclient.NewChainFeed(
 		ctx,
 		nodeConn.wsClient,
@@ -89,7 +89,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
-			Options: &iotajsonrpc.SuiTransactionBlockResponseOptions{
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowEffects: true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
@@ -124,7 +124,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
 	for _, req := range reqs {
-		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromSui(moveAnchor.ObjectID))
+		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
 		if err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 				anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
 			case req := <-newRequests:
-				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromSui(&anchorID))
+				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
 				if err != nil {
 					panic(err)
 				}

@@ -36,13 +36,13 @@ func initCreateNativeTokenCmd() *cobra.Command {
 				MeltedTokens:  big.NewInt(meltedTokens),
 			}
 
-			tokenSchemeBytes := codec.TokenScheme.Encode(tokenScheme)
+			tokenSchemeBytes := codec.Encode[TokenScheme](tokenScheme)
 
 			return []string{
 				"string", accounts.ParamTokenScheme, "bytes", "0x" + hex.EncodeToString(tokenSchemeBytes),
-				"string", accounts.ParamTokenName, "bytes", "0x" + hex.EncodeToString(codec.String.Encode(tokenName)),
-				"string", accounts.ParamTokenTickerSymbol, "bytes", "0x" + hex.EncodeToString(codec.String.Encode(tokenSymbol)),
-				"string", accounts.ParamTokenDecimals, "bytes", "0x" + hex.EncodeToString(codec.Uint8.Encode(tokenDecimals)),
+				"string", accounts.ParamTokenName, "bytes", "0x" + hex.EncodeToString(codec.Encode[string](tokenName)),
+				"string", accounts.ParamTokenTickerSymbol, "bytes", "0x" + hex.EncodeToString(codec.Encode[string](tokenSymbol)),
+				"string", accounts.ParamTokenDecimals, "bytes", "0x" + hex.EncodeToString(codec.Encode[uint8](tokenDecimals)),
 			}
 		},
 	)

@@ -286,7 +286,7 @@ import (
 )
 
 func main() {
-    sharedAddress := "sharedAddress_example" // string | SharedAddress (Bech32)
+    sharedAddress := "sharedAddress_example" // string | SharedAddress (Hex Address)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -306,7 +306,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**sharedAddress** | **string** | SharedAddress (Bech32) | 
+**sharedAddress** | **string** | SharedAddress (Hex Address) | 
 
 ### Other Parameters
 
@@ -706,7 +706,7 @@ import (
 )
 
 func main() {
-    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("Name_example", "localhost:4000", "0x0000") // PeeringTrustRequest | Info of the peer to trust
+    peeringTrustRequest := *openapiclient.NewPeeringTrustRequest("Name_example", "PeeringURL_example", "PublicKey_example") // PeeringTrustRequest | Info of the peer to trust
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)

@@ -1,14 +1,14 @@
 package iotaclient
 
-type SuiMethod string
+type IotaMethod string
 
-func (s SuiMethod) String() string {
+func (s IotaMethod) String() string {
 	return string(s)
 }
 
-type SuiXMethod string
+type IotaXMethod string
 
-func (s SuiXMethod) String() string {
+func (s IotaXMethod) String() string {
 	return string(s)
 }
 
@@ -20,72 +20,72 @@ func (u UnsafeMethod) String() string {
 
 const (
 	// Coin Query API
-	getAllBalances  SuiXMethod = "iotax_getAllBalances"
-	getAllCoins     SuiXMethod = "iotax_getAllCoins"
-	getBalance      SuiXMethod = "iotax_getBalance"
-	getCoinMetadata SuiXMethod = "iotax_getCoinMetadata"
-	getCoins        SuiXMethod = "iotax_getCoins"
-	getTotalSupply  SuiXMethod = "iotax_getTotalSupply"
+	getAllBalances  IotaXMethod = "iotax_getAllBalances"
+	getAllCoins     IotaXMethod = "iotax_getAllCoins"
+	getBalance      IotaXMethod = "iotax_getBalance"
+	getCoinMetadata IotaXMethod = "iotax_getCoinMetadata"
+	getCoins        IotaXMethod = "iotax_getCoins"
+	getTotalSupply  IotaXMethod = "iotax_getTotalSupply"
 
 	// Extended API
-	getDynamicFieldObject     SuiXMethod = "iotax_getDynamicFieldObject"
-	getDynamicFields          SuiXMethod = "iotax_getDynamicFields"
-	getOwnedObjects           SuiXMethod = "iotax_getOwnedObjects"
-	queryEvents               SuiXMethod = "iotax_queryEvents"
-	queryTransactionBlocks    SuiXMethod = "iotax_queryTransactionBlocks"
-	resolveNameServiceAddress SuiXMethod = "iotax_resolveNameServiceAddress"
-	resolveNameServiceNames   SuiXMethod = "iotax_resolveNameServiceNames"
-	subscribeEvent            SuiXMethod = "iotax_subscribeEvent"
-	subscribeTransaction      SuiXMethod = "iotax_subscribeTransaction"
+	getDynamicFieldObject     IotaXMethod = "iotax_getDynamicFieldObject"
+	getDynamicFields          IotaXMethod = "iotax_getDynamicFields"
+	getOwnedObjects           IotaXMethod = "iotax_getOwnedObjects"
+	queryEvents               IotaXMethod = "iotax_queryEvents"
+	queryTransactionBlocks    IotaXMethod = "iotax_queryTransactionBlocks"
+	resolveNameServiceAddress IotaXMethod = "iotax_resolveNameServiceAddress"
+	resolveNameServiceNames   IotaXMethod = "iotax_resolveNameServiceNames"
+	subscribeEvent            IotaXMethod = "iotax_subscribeEvent"
+	subscribeTransaction      IotaXMethod = "iotax_subscribeTransaction"
 
 	// Governance Read API
-	getCommitteeInfo        SuiXMethod = "iotax_getCommitteeInfo" // TODO
-	getLatestSuiSystemState SuiXMethod = "iotax_getLatestIotaSystemState"
-	getReferenceGasPrice    SuiXMethod = "iotax_getReferenceGasPrice"
-	getStakes               SuiXMethod = "iotax_getStakes"
-	getStakesByIds          SuiXMethod = "iotax_getStakesByIds"
-	getValidatorsApy        SuiXMethod = "iotax_getValidatorsApy"
+	getCommitteeInfo         IotaXMethod = "iotax_getCommitteeInfo" // TODO
+	getLatestIotaSystemState IotaXMethod = "iotax_getLatestIotaSystemState"
+	getReferenceGasPrice     IotaXMethod = "iotax_getReferenceGasPrice"
+	getStakes                IotaXMethod = "iotax_getStakes"
+	getStakesByIds           IotaXMethod = "iotax_getStakesByIds"
+	getValidatorsApy         IotaXMethod = "iotax_getValidatorsApy"
 
 	// Move Utils
-	getMoveFunctionArgTypes           SuiMethod = "iota_getMoveFunctionArgTypes"           // TODO
-	getNormalizedMoveFunction         SuiMethod = "iota_getNormalizedMoveFunction"         // TODO
-	getNormalizedMoveModule           SuiMethod = "iota_getNormalizedMoveModule"           // TODO
-	getNormalizedMoveModulesByPackage SuiMethod = "iota_getNormalizedMoveModulesByPackage" // TODO
-	getNormalizedMoveStruct           SuiMethod = "iota_getNormalizedMoveStruct"           // TODO
+	getMoveFunctionArgTypes           IotaMethod = "iota_getMoveFunctionArgTypes"           // TODO
+	getNormalizedMoveFunction         IotaMethod = "iota_getNormalizedMoveFunction"         // TODO
+	getNormalizedMoveModule           IotaMethod = "iota_getNormalizedMoveModule"           // TODO
+	getNormalizedMoveModulesByPackage IotaMethod = "iota_getNormalizedMoveModulesByPackage" // TODO
+	getNormalizedMoveStruct           IotaMethod = "iota_getNormalizedMoveStruct"           // TODO
 
 	// Read API
-	getChainIdentifier                SuiMethod = "iota_getChainIdentifier"
-	getCheckpoint                     SuiMethod = "iota_getCheckpoint"
-	getCheckpoints                    SuiMethod = "iota_getCheckpoints"
-	getEvents                         SuiMethod = "iota_getEvents"
-	getLatestCheckpointSequenceNumber SuiMethod = "iota_getLatestCheckpointSequenceNumber"
-	getLoadedChildObjects             SuiMethod = "iota_getLoadedChildObjects" // TODO
-	getObject                         SuiMethod = "iota_getObject"
-	getProtocolConfig                 SuiMethod = "iota_getProtocolConfig" // TODO
-	getTotalTransactionBlocks         SuiMethod = "iota_getTotalTransactionBlocks"
-	getTransactionBlock               SuiMethod = "iota_getTransactionBlock"
-	multiGetObjects                   SuiMethod = "iota_multiGetObjects"
-	multiGetTransactionBlocks         SuiMethod = "iota_multiGetTransactionBlocks"
-	tryGetPastObject                  SuiMethod = "iota_tryGetPastObject"
-	tryMultiGetPastObjects            SuiMethod = "iota_tryMultiGetPastObjects"
+	getChainIdentifier                IotaMethod = "iota_getChainIdentifier"
+	getCheckpoint                     IotaMethod = "iota_getCheckpoint"
+	getCheckpoints                    IotaMethod = "iota_getCheckpoints"
+	getEvents                         IotaMethod = "iota_getEvents"
+	getLatestCheckpointSequenceNumber IotaMethod = "iota_getLatestCheckpointSequenceNumber"
+	getLoadedChildObjects             IotaMethod = "iota_getLoadedChildObjects" // TODO
+	getObject                         IotaMethod = "iota_getObject"
+	getProtocolConfig                 IotaMethod = "iota_getProtocolConfig" // TODO
+	getTotalTransactionBlocks         IotaMethod = "iota_getTotalTransactionBlocks"
+	getTransactionBlock               IotaMethod = "iota_getTransactionBlock"
+	multiGetObjects                   IotaMethod = "iota_multiGetObjects"
+	multiGetTransactionBlocks         IotaMethod = "iota_multiGetTransactionBlocks"
+	tryGetPastObject                  IotaMethod = "iota_tryGetPastObject"
+	tryMultiGetPastObjects            IotaMethod = "iota_tryMultiGetPastObjects"
 
 	// Transaction Builder API
 	batchTransaction     UnsafeMethod = "unsafe_batchTransaction"
 	mergeCoins           UnsafeMethod = "unsafe_mergeCoins"
 	moveCall             UnsafeMethod = "unsafe_moveCall"
 	pay                  UnsafeMethod = "unsafe_pay"
-	payAllSui            UnsafeMethod = "unsafe_payAllIota"
-	paySui               UnsafeMethod = "unsafe_payIota"
+	payAllIota           UnsafeMethod = "unsafe_payAllIota"
+	payIota              UnsafeMethod = "unsafe_payIota"
 	publish              UnsafeMethod = "unsafe_publish"
 	requestAddStake      UnsafeMethod = "unsafe_requestAddStake"
 	requestWithdrawStake UnsafeMethod = "unsafe_requestWithdrawStake"
 	splitCoin            UnsafeMethod = "unsafe_splitCoin"
 	splitCoinEqual       UnsafeMethod = "unsafe_splitCoinEqual"
 	transferObject       UnsafeMethod = "unsafe_transferObject"
-	transferSui          UnsafeMethod = "unsafe_transferIota"
+	transferIota         UnsafeMethod = "unsafe_transferIota"
 
 	// Write API
-	devInspectTransactionBlock SuiMethod = "iota_devInspectTransactionBlock"
-	dryRunTransactionBlock     SuiMethod = "iota_dryRunTransactionBlock"
-	executeTransactionBlock    SuiMethod = "iota_executeTransactionBlock"
+	devInspectTransactionBlock IotaMethod = "iota_devInspectTransactionBlock"
+	dryRunTransactionBlock     IotaMethod = "iota_dryRunTransactionBlock"
+	executeTransactionBlock    IotaMethod = "iota_executeTransactionBlock"
 )

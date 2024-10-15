@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -30,7 +30,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *iotajsonrpc.SuiObjectResponse
+		want    *iotajsonrpc.IotaObjectResponse
 		wantErr bool
 	}{
 		{
@@ -120,11 +120,11 @@ func TestGetOwnedObjects(t *testing.T) {
 		"struct tag", func(t *testing.T) {
 			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iotago::IOTA>")
 			require.NoError(t, err)
-			query := iotajsonrpc.SuiObjectResponseQuery{
-				Filter: &iotajsonrpc.SuiObjectDataFilter{
+			query := iotajsonrpc.IotaObjectResponseQuery{
+				Filter: &iotajsonrpc.IotaObjectDataFilter{
 					StructType: structTag,
 				},
-				Options: &iotajsonrpc.SuiObjectDataOptions{
+				Options: &iotajsonrpc.IotaObjectDataOptions{
 					ShowType:    true,
 					ShowContent: true,
 				},
@@ -149,11 +149,11 @@ func TestGetOwnedObjects(t *testing.T) {
 
 	t.Run(
 		"move module", func(t *testing.T) {
-			query := iotajsonrpc.SuiObjectResponseQuery{
-				Filter: &iotajsonrpc.SuiObjectDataFilter{
+			query := iotajsonrpc.IotaObjectResponseQuery{
+				Filter: &iotajsonrpc.IotaObjectDataFilter{
 					AddressOwner: signer.Address(),
 				},
-				Options: &iotajsonrpc.SuiObjectDataOptions{
+				Options: &iotajsonrpc.IotaObjectDataOptions{
 					ShowType:    true,
 					ShowContent: true,
 				},
@@ -175,11 +175,11 @@ func TestGetOwnedObjects(t *testing.T) {
 			require.Equal(t, "1000000000", fields.Balance.String())
 		},
 	)
-	// query := iotajsonrpc.SuiObjectResponseQuery{
-	// 	Filter: &iotajsonrpc.SuiObjectDataFilter{
+	// query := iotajsonrpc.IotaObjectResponseQuery{
+	// 	Filter: &iotajsonrpc.IotaObjectDataFilter{
 	// 		StructType: "0x2::coin::Coin<0x2::iotago::IOTA>",
 	// 	},
-	// 	Options: &iotajsonrpc.SuiObjectDataOptions{
+	// 	Options: &iotajsonrpc.IotaObjectDataOptions{
 	// 		ShowType:    true,
 	// 		ShowContent: true,
 	// 	},
@@ -268,7 +268,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 	limit := uint(10)
 	type args struct {
 		ctx             context.Context
-		query           *iotajsonrpc.SuiTransactionBlockResponseQuery
+		query           *iotajsonrpc.IotaTransactionBlockResponseQuery
 		cursor          *iotago.TransactionDigest
 		limit           *uint
 		descendingOrder bool
@@ -283,11 +283,11 @@ func TestQueryTransactionBlocks(t *testing.T) {
 			name: "test for queryTransactionBlocks",
 			args: args{
 				ctx: context.TODO(),
-				query: &iotajsonrpc.SuiTransactionBlockResponseQuery{
+				query: &iotajsonrpc.IotaTransactionBlockResponseQuery{
 					Filter: &iotajsonrpc.TransactionFilter{
 						FromAddress: testAddress,
 					},
-					Options: &iotajsonrpc.SuiTransactionBlockResponseOptions{
+					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 						ShowInput:   true,
 						ShowEffects: true,
 					},
@@ -326,7 +326,7 @@ func TestResolveNameServiceAddress(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9", addr.String())
 
-	_, err = api.ResolveNameServiceAddress(context.Background(), "2222.suijjzzww")
+	_, err = api.ResolveNameServiceAddress(context.Background(), "2222.iotajjzzww")
 	require.ErrorContains(t, err, "not found")
 }
 
@@ -364,7 +364,7 @@ func TestSubscribeEvent(t *testing.T) {
 	type args struct {
 		ctx      context.Context
 		filter   *iotajsonrpc.EventFilter
-		resultCh chan *iotajsonrpc.SuiEvent
+		resultCh chan *iotajsonrpc.IotaEvent
 	}
 	tests := []struct {
 		name    string
@@ -379,7 +379,7 @@ func TestSubscribeEvent(t *testing.T) {
 				filter: &iotajsonrpc.EventFilter{
 					Package: iotago.MustPackageIDFromHex("0x000000000000000000000000000000000000000000000000000000000000dee9"),
 				},
-				resultCh: make(chan *iotajsonrpc.SuiEvent),
+				resultCh: make(chan *iotajsonrpc.IotaEvent),
 			},
 		},
 	}
@@ -422,12 +422,12 @@ func TestSubscribeTransaction(t *testing.T) {
 	type args struct {
 		ctx      context.Context
 		filter   *iotajsonrpc.TransactionFilter
-		resultCh chan *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects]
+		resultCh chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *iotajsonrpc.SuiTransactionBlockEffects
+		want    *iotajsonrpc.IotaTransactionBlockEffects
 		wantErr bool
 	}{
 		{
@@ -439,7 +439,7 @@ func TestSubscribeTransaction(t *testing.T) {
 						Package: *iotago.MustPackageIDFromHex("0x2c68443db9e8c813b194010c11040a3ce59f47e4eb97a2ec805371505dad7459"),
 					},
 				},
-				resultCh: make(chan *serialization.TagJson[iotajsonrpc.SuiTransactionBlockEffects]),
+				resultCh: make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects]),
 			},
 		},
 	}

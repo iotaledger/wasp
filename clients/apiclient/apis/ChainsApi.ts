@@ -15,8 +15,6 @@ import { ContractCallViewRequest } from '../models/ContractCallViewRequest';
 import { ContractInfoResponse } from '../models/ContractInfoResponse';
 import { EstimateGasRequestOffledger } from '../models/EstimateGasRequestOffledger';
 import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger';
-import { JSONDict } from '../models/JSONDict';
-import { ReceiptResponse } from '../models/ReceiptResponse';
 import { StateResponse } from '../models/StateResponse';
 import { ValidationError } from '../models/ValidationError';
 
@@ -27,7 +25,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Activate a chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async activateChain(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -64,7 +62,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
     public async addAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<RequestContext> {
@@ -110,7 +108,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
     public async callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<RequestContext> {
@@ -159,7 +157,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async deactivateChain(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -196,7 +194,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async dumpAccounts(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -233,7 +231,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
     public async estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<RequestContext> {
@@ -282,7 +280,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
     public async estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<RequestContext> {
@@ -331,7 +329,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public async getChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
@@ -398,7 +396,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public async getCommitteeInfo(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
@@ -442,7 +440,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
     public async getContracts(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
@@ -486,7 +484,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getMempoolContents(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -523,7 +521,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
     public async getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<RequestContext> {
@@ -562,7 +560,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
     public async getStateValue(chainID: string, stateKey: string, _options?: Configuration): Promise<RequestContext> {
@@ -601,7 +599,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
     public async removeAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<RequestContext> {
@@ -646,7 +644,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Sets the chain record.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param chainRecord Chain Record
      */
     public async setChainRecord(chainID: string, chainRecord: ChainRecord, _options?: Configuration): Promise<RequestContext> {
@@ -701,7 +699,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async v1ChainsChainIDEvmPost(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -732,7 +730,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async v1ChainsChainIDEvmWsGet(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -763,7 +761,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param timeoutSeconds The timeout in seconds, maximum 60s
      * @param waitForL1Confirmation Wait for the block to be confirmed on L1
@@ -892,22 +890,22 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to callView
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async callView(response: ResponseContext): Promise<JSONDict > {
+     public async callView(response: ResponseContext): Promise<Array<Array<number>> > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: JSONDict = ObjectSerializer.deserialize(
+            const body: Array<Array<number>> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "JSONDict", ""
-            ) as JSONDict;
+                "Array<Array<number>>", "int32"
+            ) as Array<Array<number>>;
             return body;
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: JSONDict = ObjectSerializer.deserialize(
+            const body: Array<Array<number>> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "JSONDict", ""
-            ) as JSONDict;
+                "Array<Array<number>>", "int32"
+            ) as Array<Array<number>>;
             return body;
         }
 
@@ -988,23 +986,15 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to estimateGasOffledger
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async estimateGasOffledger(response: ResponseContext): Promise<ReceiptResponse > {
+     public async estimateGasOffledger(response: ResponseContext): Promise< void> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
+        if (isCodeInRange("0", response.httpStatusCode)) {
+            throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
+            return;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1017,23 +1007,15 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to estimateGasOnledger
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async estimateGasOnledger(response: ResponseContext): Promise<ReceiptResponse > {
+     public async estimateGasOnledger(response: ResponseContext): Promise< void> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
+        if (isCodeInRange("0", response.httpStatusCode)) {
+            throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
+            return;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1219,26 +1201,15 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to getReceipt
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getReceipt(response: ResponseContext): Promise<ReceiptResponse > {
+     public async getReceipt(response: ResponseContext): Promise< void> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
-        }
         if (isCodeInRange("404", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "Chain or request id not found", undefined, response.headers);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
+            return;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1386,15 +1357,8 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to waitForRequest
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async waitForRequest(response: ResponseContext): Promise<ReceiptResponse > {
+     public async waitForRequest(response: ResponseContext): Promise< void> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
-        }
         if (isCodeInRange("404", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "The chain or request id not found", undefined, response.headers);
         }
@@ -1404,11 +1368,7 @@ export class ChainsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
-            return body;
+            return;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

@@ -6,18 +6,15 @@ import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
-import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobValueResponse } from '../models/BlobValueResponse';
+import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
-import { BurnRecord } from '../models/BurnRecord';
-import { CallTargetJSON } from '../models/CallTargetJSON';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
+import { CoinJSON } from '../models/CoinJSON';
 import { CommitteeInfoResponse } from '../models/CommitteeInfoResponse';
 import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
@@ -43,18 +40,15 @@ import { InOutputMetricItem } from '../models/InOutputMetricItem';
 import { InStateOutput } from '../models/InStateOutput';
 import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
+import { Int } from '../models/Int';
 import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
-import { Item } from '../models/Item';
-import { JSONDict } from '../models/JSONDict';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { MilestoneInfo } from '../models/MilestoneInfo';
 import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
-import { NFTJSON } from '../models/NFTJSON';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
 import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -69,10 +63,8 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
-import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
-import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
@@ -82,7 +74,6 @@ import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
-import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -134,7 +125,7 @@ import { ChainsApiRequestFactory, ChainsApiResponseProcessor} from "../apis/Chai
 
 export interface ChainsApiActivateChainRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiactivateChain
      */
@@ -143,7 +134,7 @@ export interface ChainsApiActivateChainRequest {
 
 export interface ChainsApiAddAccessNodeRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiaddAccessNode
      */
@@ -158,7 +149,7 @@ export interface ChainsApiAddAccessNodeRequest {
 
 export interface ChainsApiCallViewRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApicallView
      */
@@ -173,7 +164,7 @@ export interface ChainsApiCallViewRequest {
 
 export interface ChainsApiDeactivateChainRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApideactivateChain
      */
@@ -182,7 +173,7 @@ export interface ChainsApiDeactivateChainRequest {
 
 export interface ChainsApiDumpAccountsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApidumpAccounts
      */
@@ -191,7 +182,7 @@ export interface ChainsApiDumpAccountsRequest {
 
 export interface ChainsApiEstimateGasOffledgerRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiestimateGasOffledger
      */
@@ -206,7 +197,7 @@ export interface ChainsApiEstimateGasOffledgerRequest {
 
 export interface ChainsApiEstimateGasOnledgerRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiestimateGasOnledger
      */
@@ -221,7 +212,7 @@ export interface ChainsApiEstimateGasOnledgerRequest {
 
 export interface ChainsApiGetChainInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApigetChainInfo
      */
@@ -239,7 +230,7 @@ export interface ChainsApiGetChainsRequest {
 
 export interface ChainsApiGetCommitteeInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApigetCommitteeInfo
      */
@@ -254,7 +245,7 @@ export interface ChainsApiGetCommitteeInfoRequest {
 
 export interface ChainsApiGetContractsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApigetContracts
      */
@@ -269,7 +260,7 @@ export interface ChainsApiGetContractsRequest {
 
 export interface ChainsApiGetMempoolContentsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApigetMempoolContents
      */
@@ -278,7 +269,7 @@ export interface ChainsApiGetMempoolContentsRequest {
 
 export interface ChainsApiGetReceiptRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApigetReceipt
      */
@@ -293,7 +284,7 @@ export interface ChainsApiGetReceiptRequest {
 
 export interface ChainsApiGetStateValueRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApigetStateValue
      */
@@ -308,7 +299,7 @@ export interface ChainsApiGetStateValueRequest {
 
 export interface ChainsApiRemoveAccessNodeRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiremoveAccessNode
      */
@@ -323,7 +314,7 @@ export interface ChainsApiRemoveAccessNodeRequest {
 
 export interface ChainsApiSetChainRecordRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApisetChainRecord
      */
@@ -338,7 +329,7 @@ export interface ChainsApiSetChainRecordRequest {
 
 export interface ChainsApiV1ChainsChainIDEvmPostRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiv1ChainsChainIDEvmPost
      */
@@ -347,7 +338,7 @@ export interface ChainsApiV1ChainsChainIDEvmPostRequest {
 
 export interface ChainsApiV1ChainsChainIDEvmWsGetRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiv1ChainsChainIDEvmWsGet
      */
@@ -356,7 +347,7 @@ export interface ChainsApiV1ChainsChainIDEvmWsGetRequest {
 
 export interface ChainsApiWaitForRequestRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof ChainsApiwaitForRequest
      */
@@ -409,7 +400,7 @@ export class ObjectChainsApi {
      * Call a view function on a contract by Hname
      * @param param the request object
      */
-    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<JSONDict> {
+    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<Array<Array<number>>> {
         return this.api.callView(param.chainID, param.contractCallViewRequest,  options).toPromise();
     }
 
@@ -433,7 +424,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given off-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOffledger(param: ChainsApiEstimateGasOffledgerRequest, options?: Configuration): Promise<ReceiptResponse> {
+    public estimateGasOffledger(param: ChainsApiEstimateGasOffledgerRequest, options?: Configuration): Promise<void> {
         return this.api.estimateGasOffledger(param.chainID, param.request,  options).toPromise();
     }
 
@@ -441,7 +432,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given on-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<ReceiptResponse> {
+    public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<void> {
         return this.api.estimateGasOnledger(param.chainID, param.request,  options).toPromise();
     }
 
@@ -489,7 +480,7 @@ export class ObjectChainsApi {
      * Get a receipt from a request ID
      * @param param the request object
      */
-    public getReceipt(param: ChainsApiGetReceiptRequest, options?: Configuration): Promise<ReceiptResponse> {
+    public getReceipt(param: ChainsApiGetReceiptRequest, options?: Configuration): Promise<void> {
         return this.api.getReceipt(param.chainID, param.requestID,  options).toPromise();
     }
 
@@ -537,7 +528,7 @@ export class ObjectChainsApi {
      * Wait until the given request has been processed by the node
      * @param param the request object
      */
-    public waitForRequest(param: ChainsApiWaitForRequestRequest, options?: Configuration): Promise<ReceiptResponse> {
+    public waitForRequest(param: ChainsApiWaitForRequestRequest, options?: Configuration): Promise<void> {
         return this.api.waitForRequest(param.chainID, param.requestID, param.timeoutSeconds, param.waitForL1Confirmation,  options).toPromise();
     }
 
@@ -548,13 +539,13 @@ import { CorecontractsApiRequestFactory, CorecontractsApiResponseProcessor} from
 
 export interface CorecontractsApiAccountsGetAccountBalanceRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountBalance
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountBalance
      */
@@ -569,13 +560,13 @@ export interface CorecontractsApiAccountsGetAccountBalanceRequest {
 
 export interface CorecontractsApiAccountsGetAccountFoundriesRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountFoundries
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts, Hex for EVM)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountFoundries
      */
@@ -590,13 +581,13 @@ export interface CorecontractsApiAccountsGetAccountFoundriesRequest {
 
 export interface CorecontractsApiAccountsGetAccountNFTIDsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNFTIDs
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNFTIDs
      */
@@ -611,13 +602,13 @@ export interface CorecontractsApiAccountsGetAccountNFTIDsRequest {
 
 export interface CorecontractsApiAccountsGetAccountNonceRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNonce
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNonce
      */
@@ -632,7 +623,7 @@ export interface CorecontractsApiAccountsGetAccountNonceRequest {
 
 export interface CorecontractsApiAccountsGetFoundryOutputRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetFoundryOutput
      */
@@ -653,7 +644,7 @@ export interface CorecontractsApiAccountsGetFoundryOutputRequest {
 
 export interface CorecontractsApiAccountsGetNFTDataRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetNFTData
      */
@@ -674,7 +665,7 @@ export interface CorecontractsApiAccountsGetNFTDataRequest {
 
 export interface CorecontractsApiAccountsGetNativeTokenIDRegistryRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetNativeTokenIDRegistry
      */
@@ -689,7 +680,7 @@ export interface CorecontractsApiAccountsGetNativeTokenIDRegistryRequest {
 
 export interface CorecontractsApiAccountsGetTotalAssetsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiaccountsGetTotalAssets
      */
@@ -698,61 +689,13 @@ export interface CorecontractsApiAccountsGetTotalAssetsRequest {
      * Block index or trie root
      * @type string
      * @memberof CorecontractsApiaccountsGetTotalAssets
-     */
-    block?: string
-}
-
-export interface CorecontractsApiBlobsGetBlobInfoRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobInfo
-     */
-    chainID: string
-    /**
-     * BlobHash (Hex)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobInfo
-     */
-    blobHash: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobInfo
-     */
-    block?: string
-}
-
-export interface CorecontractsApiBlobsGetBlobValueRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
-     */
-    chainID: string
-    /**
-     * BlobHash (Hex)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
-     */
-    blobHash: string
-    /**
-     * FieldKey (String)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
-     */
-    fieldKey: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
      */
     block?: string
 }
 
 export interface CorecontractsApiBlocklogGetBlockInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetBlockInfo
      */
@@ -773,7 +716,7 @@ export interface CorecontractsApiBlocklogGetBlockInfoRequest {
 
 export interface CorecontractsApiBlocklogGetControlAddressesRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetControlAddresses
      */
@@ -788,7 +731,7 @@ export interface CorecontractsApiBlocklogGetControlAddressesRequest {
 
 export interface CorecontractsApiBlocklogGetEventsOfBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfBlock
      */
@@ -809,7 +752,7 @@ export interface CorecontractsApiBlocklogGetEventsOfBlockRequest {
 
 export interface CorecontractsApiBlocklogGetEventsOfLatestBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfLatestBlock
      */
@@ -824,7 +767,7 @@ export interface CorecontractsApiBlocklogGetEventsOfLatestBlockRequest {
 
 export interface CorecontractsApiBlocklogGetEventsOfRequestRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfRequest
      */
@@ -845,7 +788,7 @@ export interface CorecontractsApiBlocklogGetEventsOfRequestRequest {
 
 export interface CorecontractsApiBlocklogGetLatestBlockInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetLatestBlockInfo
      */
@@ -860,7 +803,7 @@ export interface CorecontractsApiBlocklogGetLatestBlockInfoRequest {
 
 export interface CorecontractsApiBlocklogGetRequestIDsForBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIDsForBlock
      */
@@ -881,7 +824,7 @@ export interface CorecontractsApiBlocklogGetRequestIDsForBlockRequest {
 
 export interface CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIDsForLatestBlock
      */
@@ -896,7 +839,7 @@ export interface CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest {
 
 export interface CorecontractsApiBlocklogGetRequestIsProcessedRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIsProcessed
      */
@@ -917,7 +860,7 @@ export interface CorecontractsApiBlocklogGetRequestIsProcessedRequest {
 
 export interface CorecontractsApiBlocklogGetRequestReceiptRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceipt
      */
@@ -938,7 +881,7 @@ export interface CorecontractsApiBlocklogGetRequestReceiptRequest {
 
 export interface CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfBlock
      */
@@ -959,7 +902,7 @@ export interface CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest {
 
 export interface CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfLatestBlock
      */
@@ -974,7 +917,7 @@ export interface CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest 
 
 export interface CorecontractsApiErrorsGetErrorMessageFormatRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApierrorsGetErrorMessageFormat
      */
@@ -1001,7 +944,7 @@ export interface CorecontractsApiErrorsGetErrorMessageFormatRequest {
 
 export interface CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApigovernanceGetAllowedStateControllerAddresses
      */
@@ -1016,7 +959,7 @@ export interface CorecontractsApiGovernanceGetAllowedStateControllerAddressesReq
 
 export interface CorecontractsApiGovernanceGetChainInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApigovernanceGetChainInfo
      */
@@ -1031,7 +974,7 @@ export interface CorecontractsApiGovernanceGetChainInfoRequest {
 
 export interface CorecontractsApiGovernanceGetChainOwnerRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof CorecontractsApigovernanceGetChainOwner
      */
@@ -1095,7 +1038,7 @@ export class ObjectCorecontractsApi {
      * Get the NFT data by an ID
      * @param param the request object
      */
-    public accountsGetNFTData(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<NFTJSON> {
+    public accountsGetNFTData(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<void> {
         return this.api.accountsGetNFTData(param.chainID, param.nftID, param.block,  options).toPromise();
     }
 
@@ -1113,22 +1056,6 @@ export class ObjectCorecontractsApi {
      */
     public accountsGetTotalAssets(param: CorecontractsApiAccountsGetTotalAssetsRequest, options?: Configuration): Promise<AssetsResponse> {
         return this.api.accountsGetTotalAssets(param.chainID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all fields of a blob
-     * @param param the request object
-     */
-    public blobsGetBlobInfo(param: CorecontractsApiBlobsGetBlobInfoRequest, options?: Configuration): Promise<BlobInfoResponse> {
-        return this.api.blobsGetBlobInfo(param.chainID, param.blobHash, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get the value of the supplied field (key)
-     * @param param the request object
-     */
-    public blobsGetBlobValue(param: CorecontractsApiBlobsGetBlobValueRequest, options?: Configuration): Promise<BlobValueResponse> {
-        return this.api.blobsGetBlobValue(param.chainID, param.blobHash, param.fieldKey, param.block,  options).toPromise();
     }
 
     /**
@@ -1207,7 +1134,7 @@ export class ObjectCorecontractsApi {
      * Get the receipt of a certain request id
      * @param param the request object
      */
-    public blocklogGetRequestReceipt(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: Configuration): Promise<ReceiptResponse> {
+    public blocklogGetRequestReceipt(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: Configuration): Promise<void> {
         return this.api.blocklogGetRequestReceipt(param.chainID, param.requestID, param.block,  options).toPromise();
     }
 
@@ -1215,7 +1142,7 @@ export class ObjectCorecontractsApi {
      * Get all receipts of a certain block
      * @param param the request object
      */
-    public blocklogGetRequestReceiptsOfBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: Configuration): Promise<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: Configuration): Promise<void> {
         return this.api.blocklogGetRequestReceiptsOfBlock(param.chainID, param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -1223,7 +1150,7 @@ export class ObjectCorecontractsApi {
      * Get all receipts of the latest block
      * @param param the request object
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest, options?: Configuration): Promise<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfLatestBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest, options?: Configuration): Promise<void> {
         return this.api.blocklogGetRequestReceiptsOfLatestBlock(param.chainID, param.block,  options).toPromise();
     }
 
@@ -1303,7 +1230,7 @@ import { MetricsApiRequestFactory, MetricsApiResponseProcessor} from "../apis/Me
 
 export interface MetricsApiGetChainMessageMetricsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof MetricsApigetChainMessageMetrics
      */
@@ -1312,7 +1239,7 @@ export interface MetricsApiGetChainMessageMetricsRequest {
 
 export interface MetricsApiGetChainPipeMetricsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof MetricsApigetChainPipeMetrics
      */
@@ -1321,7 +1248,7 @@ export interface MetricsApiGetChainPipeMetricsRequest {
 
 export interface MetricsApiGetChainWorkflowMetricsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
      * @type string
      * @memberof MetricsApigetChainWorkflowMetrics
      */
@@ -1401,7 +1328,7 @@ export interface NodeApiGetConfigurationRequest {
 
 export interface NodeApiGetDKSInfoRequest {
     /**
-     * SharedAddress (Bech32)
+     * SharedAddress (Hex Address)
      * @type string
      * @memberof NodeApigetDKSInfo
      */

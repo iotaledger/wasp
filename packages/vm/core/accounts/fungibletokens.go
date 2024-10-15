@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -119,8 +120,8 @@ func (s *StateReader) getFungibleTokens(accountKey kv.Key) isc.CoinBalances {
 	ret := isc.NewCoinBalances()
 	s.accountCoinBalancesMapR(accountKey).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
-			codec.CoinType.MustDecode(coinType),
-			codec.CoinValue.MustDecode(val),
+			codec.MustDecode[coin.Type](coinType),
+			codec.MustDecode[coin.Value](val),
 		)
 		return true
 	})

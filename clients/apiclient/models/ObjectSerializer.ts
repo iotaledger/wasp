@@ -3,18 +3,15 @@ export * from '../models/AccountNFTsResponse';
 export * from '../models/AccountNonceResponse';
 export * from '../models/AddUserRequest';
 export * from '../models/AliasOutputMetricItem';
-export * from '../models/AssetsJSON';
 export * from '../models/AssetsResponse';
 export * from '../models/AuthInfoModel';
 export * from '../models/BaseToken';
-export * from '../models/BlobInfoResponse';
-export * from '../models/BlobValueResponse';
+export * from '../models/BigInt';
 export * from '../models/BlockInfoResponse';
-export * from '../models/BurnRecord';
-export * from '../models/CallTargetJSON';
 export * from '../models/ChainInfoResponse';
 export * from '../models/ChainMessageMetrics';
 export * from '../models/ChainRecord';
+export * from '../models/CoinJSON';
 export * from '../models/CommitteeInfoResponse';
 export * from '../models/CommitteeNode';
 export * from '../models/ConsensusPipeMetrics';
@@ -40,18 +37,15 @@ export * from '../models/InOutputMetricItem';
 export * from '../models/InStateOutput';
 export * from '../models/InStateOutputMetricItem';
 export * from '../models/InfoResponse';
+export * from '../models/Int';
 export * from '../models/InterfaceMetricItem';
-export * from '../models/Item';
-export * from '../models/JSONDict';
 export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
 export * from '../models/LoginResponse';
 export * from '../models/MilestoneInfo';
 export * from '../models/MilestoneMetricItem';
-export * from '../models/NFTJSON';
 export * from '../models/NativeTokenIDRegistryResponse';
-export * from '../models/NativeTokenJSON';
 export * from '../models/NodeMessageMetrics';
 export * from '../models/NodeOwnerCertificateResponse';
 export * from '../models/OffLedgerRequest';
@@ -66,10 +60,8 @@ export * from '../models/ProtocolParameters';
 export * from '../models/PublicChainMetadata';
 export * from '../models/PublisherStateTransactionItem';
 export * from '../models/Ratio32';
-export * from '../models/ReceiptResponse';
 export * from '../models/RentStructure';
 export * from '../models/RequestIDsResponse';
-export * from '../models/RequestJSON';
 export * from '../models/RequestProcessedResponse';
 export * from '../models/StateResponse';
 export * from '../models/StateTransaction';
@@ -79,7 +71,6 @@ export * from '../models/TransactionMetricItem';
 export * from '../models/TxInclusionStateMsg';
 export * from '../models/TxInclusionStateMsgMetricItem';
 export * from '../models/UTXOInputMetricItem';
-export * from '../models/UnresolvedVMErrorJSON';
 export * from '../models/UpdateUserPasswordRequest';
 export * from '../models/UpdateUserPermissionsRequest';
 export * from '../models/User';
@@ -91,18 +82,15 @@ import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
-import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobValueResponse } from '../models/BlobValueResponse';
+import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
-import { BurnRecord } from '../models/BurnRecord';
-import { CallTargetJSON } from '../models/CallTargetJSON';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
+import { CoinJSON } from '../models/CoinJSON';
 import { CommitteeInfoResponse } from '../models/CommitteeInfoResponse';
 import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
@@ -128,18 +116,15 @@ import { InOutputMetricItem } from '../models/InOutputMetricItem';
 import { InStateOutput } from '../models/InStateOutput';
 import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
+import { Int } from '../models/Int';
 import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
-import { Item } from '../models/Item';
-import { JSONDict } from '../models/JSONDict';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { MilestoneInfo } from '../models/MilestoneInfo';
 import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
-import { NFTJSON } from '../models/NFTJSON';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
 import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -154,10 +139,8 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
-import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
-import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
@@ -167,7 +150,6 @@ import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
-import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -202,18 +184,15 @@ let typeMap: {[index: string]: any} = {
     "AccountNonceResponse": AccountNonceResponse,
     "AddUserRequest": AddUserRequest,
     "AliasOutputMetricItem": AliasOutputMetricItem,
-    "AssetsJSON": AssetsJSON,
     "AssetsResponse": AssetsResponse,
     "AuthInfoModel": AuthInfoModel,
     "BaseToken": BaseToken,
-    "BlobInfoResponse": BlobInfoResponse,
-    "BlobValueResponse": BlobValueResponse,
+    "BigInt": BigInt,
     "BlockInfoResponse": BlockInfoResponse,
-    "BurnRecord": BurnRecord,
-    "CallTargetJSON": CallTargetJSON,
     "ChainInfoResponse": ChainInfoResponse,
     "ChainMessageMetrics": ChainMessageMetrics,
     "ChainRecord": ChainRecord,
+    "CoinJSON": CoinJSON,
     "CommitteeInfoResponse": CommitteeInfoResponse,
     "CommitteeNode": CommitteeNode,
     "ConsensusPipeMetrics": ConsensusPipeMetrics,
@@ -239,18 +218,15 @@ let typeMap: {[index: string]: any} = {
     "InStateOutput": InStateOutput,
     "InStateOutputMetricItem": InStateOutputMetricItem,
     "InfoResponse": InfoResponse,
+    "Int": Int,
     "InterfaceMetricItem": InterfaceMetricItem,
-    "Item": Item,
-    "JSONDict": JSONDict,
     "L1Params": L1Params,
     "Limits": Limits,
     "LoginRequest": LoginRequest,
     "LoginResponse": LoginResponse,
     "MilestoneInfo": MilestoneInfo,
     "MilestoneMetricItem": MilestoneMetricItem,
-    "NFTJSON": NFTJSON,
     "NativeTokenIDRegistryResponse": NativeTokenIDRegistryResponse,
-    "NativeTokenJSON": NativeTokenJSON,
     "NodeMessageMetrics": NodeMessageMetrics,
     "NodeOwnerCertificateResponse": NodeOwnerCertificateResponse,
     "OffLedgerRequest": OffLedgerRequest,
@@ -265,10 +241,8 @@ let typeMap: {[index: string]: any} = {
     "PublicChainMetadata": PublicChainMetadata,
     "PublisherStateTransactionItem": PublisherStateTransactionItem,
     "Ratio32": Ratio32,
-    "ReceiptResponse": ReceiptResponse,
     "RentStructure": RentStructure,
     "RequestIDsResponse": RequestIDsResponse,
-    "RequestJSON": RequestJSON,
     "RequestProcessedResponse": RequestProcessedResponse,
     "StateResponse": StateResponse,
     "StateTransaction": StateTransaction,
@@ -278,7 +252,6 @@ let typeMap: {[index: string]: any} = {
     "TxInclusionStateMsg": TxInclusionStateMsg,
     "TxInclusionStateMsgMetricItem": TxInclusionStateMsgMetricItem,
     "UTXOInputMetricItem": UTXOInputMetricItem,
-    "UnresolvedVMErrorJSON": UnresolvedVMErrorJSON,
     "UpdateUserPasswordRequest": UpdateUserPasswordRequest,
     "UpdateUserPermissionsRequest": UpdateUserPermissionsRequest,
     "User": User,

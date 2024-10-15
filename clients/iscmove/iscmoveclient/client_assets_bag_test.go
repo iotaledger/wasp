@@ -73,7 +73,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		context.Background(),
 		iotaclient.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
-			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
@@ -118,7 +118,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		context.Background(),
 		iotaclient.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
-			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
@@ -165,7 +165,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		context.Background(),
 		iotaclient.GetObjectRequest{
 			ObjectID: coinInfo.Ref.ObjectID,
-			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
@@ -208,7 +208,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 		context.Background(),
 		iotaclient.GetObjectRequest{
 			ObjectID: testcoinInfo.Ref.ObjectID,
-			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)
@@ -235,7 +235,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 	anchorRef *iotago.ObjectRef,
 	testcoinInfo *iotago.ObjectInfo,
 ) {
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	packageID := l1starter.ISCPackageID()
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -300,7 +300,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
-	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &iotajsonrpc.SuiTransactionBlockResponseOptions{
+	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
 		ShowEffects:       true,
 		ShowObjectChanges: true,
 	})
@@ -319,7 +319,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		context.Background(),
 		iotaclient.GetObjectRequest{
 			ObjectID: testcoinInfo.Ref.ObjectID,
-			Options:  &iotajsonrpc.SuiObjectDataOptions{ShowType: true},
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
 	require.NoError(t, err)

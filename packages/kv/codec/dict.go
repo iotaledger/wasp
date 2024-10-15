@@ -13,8 +13,6 @@ func MakeDict(vars map[string]interface{}) dict.Dict {
 	return ret
 }
 
-var Dict = NewCodecFromBCS[dict.Dict]()
-
 func DictFromSlice(params []any) dict.Dict {
 	if len(params)%2 != 0 {
 		panic("DictFromSlice: len(params) % 2 != 0")

@@ -244,7 +244,7 @@ const configuration = .createConfiguration();
 const apiInstance = new .NodeApi(configuration);
 
 let body:.NodeApiGetDKSInfoRequest = {
-  // string | SharedAddress (Bech32)
+  // string | SharedAddress (Hex Address)
   sharedAddress: "sharedAddress_example",
 };
 
@@ -258,7 +258,7 @@ apiInstance.getDKSInfo(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **sharedAddress** | [**string**] | SharedAddress (Bech32) | defaults to undefined
+ **sharedAddress** | [**string**] | SharedAddress (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -589,8 +589,8 @@ let body:.NodeApiTrustPeerRequest = {
   // PeeringTrustRequest | Info of the peer to trust
   peeringTrustRequest: {
     name: "name_example",
-    peeringURL: "localhost:4000",
-    publicKey: "0x0000",
+    peeringURL: "peeringURL_example",
+    publicKey: "publicKey_example",
   },
 };
 

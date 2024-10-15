@@ -43,7 +43,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	reqctx.uncommittedState.Set(
 		kv.Key(coreutil.StatePrefixTimestamp),
-		codec.Time.Encode(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)),
+		codec.Encode[time.Time](vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)),
 	)
 
 	if err = reqctx.earlyCheckReasonToSkip(maintenanceMode); err != nil {
@@ -76,7 +76,7 @@ func (vmctx *vmContext) newRequestContext(req isc.Request, requestIndex uint16) 
 		vm:               vmctx,
 		req:              req,
 		requestIndex:     requestIndex,
-		entropy:          hashing.HashData(append(codec.Uint16.Encode(requestIndex), vmctx.task.Entropy[:]...)),
+		entropy:          hashing.HashData(append(codec.Encode[uint16](requestIndex), vmctx.task.Entropy[:]...)),
 		uncommittedState: buffered.NewBufferedKVStore(vmctx.stateDraft),
 	}
 }
@@ -86,7 +86,7 @@ func (vmctx *vmContext) payoutAgentID() isc.AgentID {
 }
 
 // consumeRequest Consumes incoming request and updating the sender's L2 Balance according to the current request.
-// In the Sui ver impl, For L1's perspective ISC anchor credits all the assets attached on the
+// In the Iota ver impl, For L1's perspective ISC anchor credits all the assets attached on the
 // requests, when calling txbuilder.BuildTransactionEssence
 func (reqctx *requestContext) consumeRequest() {
 	req, ok := reqctx.req.(isc.OnLedgerRequest)

@@ -28,9 +28,9 @@ func EncodeInitParams(
 	blockKeepAmount int32,
 ) isc.CallArguments {
 	return isc.CallArguments{
-		codec.AgentID.Encode(chainOwner),
-		codec.Uint16.Encode(evmChainID),
-		codec.Int32.Encode(blockKeepAmount),
+		codec.Encode[isc.AgentID](chainOwner),
+		codec.Encode[uint16](evmChainID),
+		codec.Encode[int32](blockKeepAmount),
 	}
 }
 
@@ -38,9 +38,9 @@ func DecodeInitParams(initParams isc.CallArguments) (isc.AgentID, uint16, int32,
 	if len(initParams) > 3 {
 		return nil, 0, 0, fmt.Errorf("invalid init params")
 	}
-	chainOwner := codec.AgentID.MustDecode(initParams.MustAt(0))
-	evmChainID := codec.Uint16.MustDecode(initParams.OrNil(1), evm.DefaultChainID)
-	blockKeepAmount := codec.Int32.MustDecode(initParams.OrNil(2), governance.DefaultBlockKeepAmount)
+	chainOwner := codec.MustDecode[isc.AgentID](initParams.MustAt(0))
+	evmChainID := codec.MustDecode[uint16](initParams.OrNil(1), evm.DefaultChainID)
+	blockKeepAmount := codec.MustDecode[int32](initParams.OrNil(2), governance.DefaultBlockKeepAmount)
 	return chainOwner, evmChainID, blockKeepAmount, nil
 }
 
@@ -50,7 +50,7 @@ func L1Commitment(
 	v isc.SchemaVersion,
 	initParams isc.CallArguments,
 	originDeposit coin.Value,
-	baseTokenCoinInfo *isc.SuiCoinInfo,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) *state.L1Commitment {
 	block, _ := InitChain(
 		v,
@@ -67,7 +67,7 @@ func InitChain(
 	store state.Store,
 	initParams isc.CallArguments,
 	originDeposit coin.Value,
-	baseTokenCoinInfo *isc.SuiCoinInfo,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, *transaction.StateMetadata) {
 	chainOwner, evmChainID, blockKeepAmount, err := DecodeInitParams(initParams)
 	if err != nil {
@@ -76,7 +76,7 @@ func InitChain(
 
 	d := store.NewOriginStateDraft()
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Time.Encode(time.Unix(0, 0)))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode[time.Time](time.Unix(0, 0)))
 
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, []*coreutil.ContractInfo{
@@ -110,7 +110,7 @@ func InitChainByAnchor(
 	chainStore state.Store,
 	anchor *isc.StateAnchor,
 	originDeposit coin.Value,
-	baseTokenCoinInfo *isc.SuiCoinInfo,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, error) {
 	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
 	if err != nil {

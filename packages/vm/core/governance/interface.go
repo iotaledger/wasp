@@ -6,12 +6,13 @@
 package governance
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/samber/lo"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
@@ -19,100 +20,100 @@ var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
 var (
 	// state controller (entity that owns the state output via AliasAddress)
 	FuncRotateStateController = coreutil.NewEP1(Contract, coreutil.CoreEPRotateStateController,
-		coreutil.FieldWithCodec(codec.Address),
+		coreutil.Field[*cryptolib.Address](),
 	)
 	FuncAddAllowedStateControllerAddress = coreutil.NewEP1(Contract, "addAllowedStateControllerAddress",
-		coreutil.FieldWithCodec(codec.Address),
+		coreutil.Field[*cryptolib.Address](),
 	)
 	FuncRemoveAllowedStateControllerAddress = coreutil.NewEP1(Contract, "removeAllowedStateControllerAddress",
-		coreutil.FieldWithCodec(codec.Address),
+		coreutil.Field[*cryptolib.Address](),
 	)
 	ViewGetAllowedStateControllerAddresses = coreutil.NewViewEP01(Contract, "getAllowedStateControllerAddresses",
-		coreutil.FieldArrayWithCodec(codec.Address),
+		coreutil.Field[[]*cryptolib.Address](),
 	)
 
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.NewEP0(Contract, "claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.NewEP1(Contract, "delegateChainOwnership",
-		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.Field[isc.AgentID](),
 	)
 	FuncSetPayoutAgentID = coreutil.NewEP1(Contract, "setPayoutAgentID",
-		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.Field[isc.AgentID](),
 	)
 	FuncSetMinCommonAccountBalance = coreutil.NewEP1(Contract, "setMinCommonAccountBalance",
-		coreutil.FieldWithCodec(codec.CoinValue),
+		coreutil.Field[coin.Value](),
 	)
 	ViewGetPayoutAgentID = coreutil.NewViewEP01(Contract, "getPayoutAgentID",
-		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.Field[isc.AgentID](),
 	)
 	ViewGetMinCommonAccountBalance = coreutil.NewViewEP01(Contract, "getMinCommonAccountBalance",
-		coreutil.FieldWithCodec(codec.CoinValue),
+		coreutil.Field[coin.Value](),
 	)
 	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
-		coreutil.FieldWithCodec(codec.AgentID),
+		coreutil.Field[isc.AgentID](),
 	)
 
 	// gas
 	FuncSetFeePolicy = coreutil.NewEP1(Contract, "setFeePolicy",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.FeePolicy]()),
+		coreutil.Field[*gas.FeePolicy](),
 	)
 	FuncSetGasLimits = coreutil.NewEP1(Contract, "setGasLimits",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.Limits]()),
+		coreutil.Field[*gas.Limits](),
 	)
 	ViewGetFeePolicy = coreutil.NewViewEP01(Contract, "getFeePolicy",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.FeePolicy]()),
+		coreutil.Field[*gas.FeePolicy](),
 	)
 	ViewGetGasLimits = coreutil.NewViewEP01(Contract, "getGasLimits",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*gas.Limits]()),
+		coreutil.Field[*gas.Limits](),
 	)
 
 	// evm fees
 	FuncSetEVMGasRatio = coreutil.NewEP1(Contract, "setEVMGasRatio",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[util.Ratio32]()),
+		coreutil.Field[util.Ratio32](),
 	)
 	ViewGetEVMGasRatio = coreutil.NewViewEP01(Contract, "getEVMGasRatio",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[util.Ratio32]()),
+		coreutil.Field[util.Ratio32](),
 	)
 
 	// chain info
 	ViewGetChainInfo = coreutil.NewViewEP01(Contract, "getChainInfo",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.ChainInfo]()),
+		coreutil.Field[*isc.ChainInfo](),
 	)
 
 	// access nodes
 	FuncAddCandidateNode = coreutil.NewEP4(Contract, "addCandidateNode",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*cryptolib.PublicKey]()), // NodePubKey
-		coreutil.FieldWithCodec(codec.Bytes),                                   // Certificate
-		coreutil.FieldWithCodec(codec.String),                                  // AccessAPI
-		coreutil.FieldWithCodec(codec.Bool),                                    // ForCommittee
+		coreutil.Field[*cryptolib.PublicKey](), // NodePubKey
+		coreutil.Field[[]byte](),               // Certificate
+		coreutil.Field[string](),               // AccessAPI
+		coreutil.Field[bool](),                 // ForCommittee
 	)
 	FuncRevokeAccessNode = coreutil.NewEP2(Contract, "revokeAccessNode",
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*cryptolib.PublicKey]()), // NodePubKey
-		coreutil.FieldWithCodec(codec.Bytes),                                   // Certificate
+		coreutil.Field[*cryptolib.PublicKey](), // NodePubKey
+		coreutil.Field[[]byte](),               // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
-		coreutil.FieldArrayWithCodec(codec.NewTupleCodec[*cryptolib.PublicKey, *ChangeAccessNodeAction]()),
+		coreutil.Field[[]lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction]](),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
-		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*AccessNodeInfo]()),
-		coreutil.FieldArrayWithCodec(codec.NewCodecFromBCS[*cryptolib.PublicKey]()),
+		coreutil.Field[[]*AccessNodeInfo](),
+		coreutil.Field[[]*cryptolib.PublicKey](),
 	)
 
 	// maintenance
 	FuncStartMaintenance     = coreutil.NewEP0(Contract, "startMaintenance")
 	FuncStopMaintenance      = coreutil.NewEP0(Contract, "stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.NewViewEP01(Contract, "getMaintenanceStatus",
-		coreutil.FieldWithCodec(codec.Bool),
+		coreutil.Field[bool](),
 	)
 
 	// public chain metadata
 	FuncSetMetadata = coreutil.NewEP2(Contract, "setMetadata",
-		coreutil.FieldWithCodecOptional(codec.String),
-		coreutil.FieldWithCodecOptional(codec.NewCodecFromBCS[*isc.PublicChainMetadata]()),
+		coreutil.FieldOptional[string](),
+		coreutil.FieldOptional[*isc.PublicChainMetadata](),
 	)
 	ViewGetMetadata = coreutil.NewViewEP02(Contract, "getMetadata",
-		coreutil.FieldWithCodec(codec.String),
-		coreutil.FieldWithCodec(codec.NewCodecFromBCS[*isc.PublicChainMetadata]()),
+		coreutil.Field[string](),
+		coreutil.Field[*isc.PublicChainMetadata](),
 	)
 )
 

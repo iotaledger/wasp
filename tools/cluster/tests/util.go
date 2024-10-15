@@ -120,7 +120,7 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	hname := isc.Hn(name)
 
 	args := dict.Dict{
-		root.ParamHname: codec.Hname.Encode(hname),
+		root.ParamHname: codec.Encode[isc.Hname](hname),
 	}
 
 	// TODO: Validate with develop

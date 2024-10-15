@@ -58,7 +58,7 @@ const (
 	// Covered in: TestNFTMint
 	keyNonce = "m"
 
-	// keyCoinInfo stores a map of <CoinType> => isc.SuiCoinInfo
+	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
 	keyCoinInfo = "RC"
 	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
@@ -101,7 +101,7 @@ func (s *StateReader) AllAccountsAsDict() dict.Dict {
 
 // touchAccount ensures the account is in the list of all accounts
 func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
-	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Bool.Encode(true))
+	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Encode[bool](true))
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance

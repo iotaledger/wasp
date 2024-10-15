@@ -19,7 +19,7 @@ func initialize(ctx isc.Sandbox) isc.CallArguments {
 // testEventLogGenericData is called several times in log_test.go
 func testEventLogGenericData(ctx isc.Sandbox) isc.CallArguments {
 	params := ctx.Params()
-	inc := codec.Uint64.MustDecode(params.Get(VarCounter), 1)
+	inc := codec.MustDecode[uint64](params.Get(VarCounter), 1)
 	eventCounter(ctx, inc)
 	return nil
 }

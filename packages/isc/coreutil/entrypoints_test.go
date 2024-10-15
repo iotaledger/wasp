@@ -208,7 +208,7 @@ func (m MockSandBox) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("implement me")
 }
 
-func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.SuiCoinInfo, bool) {
+func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -235,7 +235,7 @@ func (m MockSandBox) AllowanceAvailable() *isc.Assets {
 var Contract = NewContract(CoreContractAccounts)
 
 func TestEntryPointViewFunc(t *testing.T) {
-	testViewFunc := NewViewEP11(Contract, "", FieldWithCodec(codec.AgentID), FieldWithCodec(codec.AgentID))
+	testViewFunc := NewViewEP11(Contract, "", Field[isc.AgentID](), Field[isc.AgentID]())
 	testViewFuncHandler := testViewFunc.WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
 		return id
 	})
@@ -243,13 +243,13 @@ func TestEntryPointViewFunc(t *testing.T) {
 
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.AgentID.Encode(testAgentIDInput)),
+			codec.Encode(testAgentIDInput)),
 	}
 
 	result := testViewFuncHandler.Call(mock)
 	require.Len(t, result, 1)
 
-	agentID, err := codec.AgentID.Decode(result[0])
+	agentID, err := codec.Decode[isc.AgentID](result[0])
 	require.NoError(t, err)
 	require.EqualValues(t, testAgentIDInput, agentID)
 
@@ -260,7 +260,7 @@ func TestEntryPointViewFunc(t *testing.T) {
 }
 
 func TestEntryPointMutFunc11(t *testing.T) {
-	testMutFunc := NewEP11(Contract, "", FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32))
+	testMutFunc := NewEP11(Contract, "", Field[uint32](), Field[uint32]())
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) uint32 {
 		return u * 2
 	})
@@ -268,13 +268,13 @@ func TestEntryPointMutFunc11(t *testing.T) {
 	testNumber := uint32(1024)
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.Uint32.Encode(testNumber)),
+			codec.Encode[uint32](testNumber)),
 	}
 
 	result := testMutFuncHandler.Call(mock)
 	require.Len(t, result, 1)
 
-	testNumberResult, err := codec.Uint32.Decode(result[0])
+	testNumberResult, err := codec.Decode[uint32](result[0])
 	require.NoError(t, err)
 	require.EqualValues(t, testNumberResult, testNumber*2)
 
@@ -285,7 +285,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 }
 
 func TestEntryPointMutFunc12(t *testing.T) {
-	testMutFunc := NewEP12(Contract, "", FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32), FieldWithCodec(codec.Uint32))
+	testMutFunc := NewEP12(Contract, "", Field[uint32](), Field[uint32](), Field[uint32]())
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
 		return u * 2, u * 3
 	})
@@ -293,17 +293,17 @@ func TestEntryPointMutFunc12(t *testing.T) {
 	testNumber := uint32(1024)
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.Uint32.Encode(testNumber)),
+			codec.Encode[uint32](testNumber)),
 	}
 
 	result := testMutFuncHandler.Call(mock)
 	require.Len(t, result, 2)
 
-	testNumberResult1, err := codec.Uint32.Decode(result[0])
+	testNumberResult1, err := codec.Decode[uint32](result[0])
 	require.NoError(t, err)
 	require.EqualValues(t, testNumberResult1, testNumber*2)
 
-	testNumberResult2, err := codec.Uint32.Decode(result[1])
+	testNumberResult2, err := codec.Decode[uint32](result[1])
 	require.NoError(t, err)
 	require.EqualValues(t, testNumberResult2, testNumber*3)
 

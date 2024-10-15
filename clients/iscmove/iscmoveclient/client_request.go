@@ -29,8 +29,8 @@ func (c *Client) CreateAndSendRequest(
 	gasPrice uint64,
 	gasBudget uint64,
 	devMode bool,
-) (*iotajsonrpc.SuiTransactionBlockResponse, error) {
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
@@ -85,7 +85,7 @@ func (c *Client) CreateAndSendRequest(
 		ctx,
 		signer,
 		txnBytes,
-		&iotajsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
@@ -102,7 +102,7 @@ func (c *Client) GetRequestFromObjectID(
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
 	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: reqID,
-		Options:  &iotajsonrpc.SuiObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
@@ -113,11 +113,11 @@ func (c *Client) GetRequestFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.assetsBag.ID)
+	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
-	req.assetsBag.Value = bals
+	req.AssetsBag.Value = bals
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: getObjectResponse.Data.Ref(),
 		Object:    req.ToRequest(),

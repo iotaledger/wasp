@@ -63,13 +63,13 @@ func NewAddressFromKey(key AddressKey) *Address {
 	return &result
 }
 
-func NewAddressFromSui(addr *iotago.Address) *Address {
+func NewAddressFromIota(addr *iotago.Address) *Address {
 	a := Address(addr[:])
 	return &a
 }
 
 // TODO: remove when not needed
-func (a *Address) AsSuiAddress() *iotago.Address {
+func (a *Address) AsIotaAddress() *iotago.Address {
 	result := iotago.Address(a[:])
 	return &result
 }

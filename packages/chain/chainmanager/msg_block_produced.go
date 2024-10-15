@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/samber/lo"
 )
 
 // This message is used to inform access nodes on new blocks
@@ -34,7 +35,7 @@ func (msg *msgBlockProduced) MsgType() gpa.MessageType {
 func (msg *msgBlockProduced) String() string {
 	return fmt.Sprintf(
 		"{chainMgr.msgBlockProduced, stateIndex=%v, l1Commitment=%v, txHash=%v}",
-		msg.block.StateIndex(), msg.block.L1Commitment(), msg.tx.Hash().Hex(),
+		msg.block.StateIndex(), msg.block.L1Commitment(), lo.Must(msg.tx.Hash()).Hex(),
 	)
 }
 

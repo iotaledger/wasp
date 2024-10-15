@@ -11,14 +11,14 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
-func (env *Solo) SuiClient() *iotaclient.Client {
-	return iotaclient.NewHTTP(env.l1Config.SuiRPCURL)
+func (env *Solo) IotaClient() *iotaclient.Client {
+	return iotaclient.NewHTTP(env.l1Config.IotaRPCURL)
 }
 
 func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
 	return iscmoveclient.NewHTTPClient(
-		env.l1Config.SuiRPCURL,
-		env.l1Config.SuiFaucetURL,
+		env.l1Config.IotaRPCURL,
+		env.l1Config.IotaFaucetURL,
 	)
 }
 
@@ -47,7 +47,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 }
 
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
-	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsSuiAddress(), env.l1Config.SuiFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
 	require.NoError(env.T, err)
 	env.AssertL1BaseTokens(target, iotaclient.FundsFromFaucetAmount)
 }

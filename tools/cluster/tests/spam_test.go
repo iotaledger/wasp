@@ -106,7 +106,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
-	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
+	lastEventCounterValue := codec.MustDecode[int64](eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 }
 
@@ -191,7 +191,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
-	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
+	lastEventCounterValue := codec.MustDecode[int64](eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)

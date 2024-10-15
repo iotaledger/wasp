@@ -9,16 +9,16 @@ import (
 
 func BuildPackage(contractPath string) (*PackageBytecode, error) {
 	var err error
-	cmd := exec.Command("iotago", "move", "build", "--dump-bytecode-as-base64")
+	cmd := exec.Command("iota", "move", "build", "--dump-bytecode-as-base64")
 	// TODO skip to fetch latest deps if there is no internet
-	// cmd := exec.Command("iotago", "move", "build", "--dump-bytecode-as-base64", "--skip-fetch-latest-git-deps")
+	// cmd := exec.Command("iota", "move", "build", "--dump-bytecode-as-base64", "--skip-fetch-latest-git-deps")
 	cmd.Dir = contractPath
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to execute iotago cli: %w, stderr: '%s'", err, stderr.String())
+		return nil, fmt.Errorf("failed to execute iota cli: %w, stderr: '%s'", err, stderr.String())
 	}
 
 	var modules PackageBytecode
