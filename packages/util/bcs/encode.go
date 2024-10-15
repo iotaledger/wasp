@@ -273,13 +273,13 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if typeOptions.IsCompactInt {
-			e.w.WriteSize32(int(v.Int()))
+			e.WriteCompactUint(uint64(v.Int()))
 		} else {
 			err = e.encodeInt(v, typeOptions.UnderlayingType)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if typeOptions.IsCompactInt {
-			e.w.WriteSize32(int(v.Uint()))
+			e.WriteCompactUint(v.Uint())
 		} else {
 			err = e.encodeUint(v, typeOptions.UnderlayingType)
 		}
