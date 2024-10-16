@@ -38,7 +38,7 @@ var (
 // ERC20CoinAddress returns the Ethereum address of the ERC20 contract for
 // the given coin.
 func ERC20CoinAddress(coinType coin.Type) common.Address {
-	hash := hashing.HashKeccak([]byte(coinType))
+	hash := hashing.HashKeccak([]byte(coinType.String()))
 	return packMagicAddress(addressKindERC20Coin, hash[:maxPayloadLength])
 }
 
