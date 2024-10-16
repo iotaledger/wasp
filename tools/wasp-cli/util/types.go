@@ -187,10 +187,10 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.Decode[int64](v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	// case "nftid":
-	// 	nid, err := codec.Decode[NFTID](v)
-	// 	log.Check(err)
-	// 	return nid.String()
+	case "nftid":
+		nid, err := codec.Decode[NFTID](v)
+		log.Check(err)
+		return nid.String()
 	case "requestid":
 		rid, err := codec.Decode[isc.RequestID](v)
 		log.Check(err)
