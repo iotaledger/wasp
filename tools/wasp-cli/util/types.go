@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -28,42 +27,43 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 		addr, err := cryptolib.NewAddressFromHexString(s)
 		log.Check(err)
 
-		return addr.Bytes()
+		return codec.Encode(addr)
 	case "agentid":
-		return AgentIDFromString(s, chainID).Bytes()
+		return codec.Encode(AgentIDFromString(s, chainID))
 	case "bigint":
 		n, ok := new(big.Int).SetString(s, 10)
 		if !ok {
 			log.Fatal("error converting to bigint")
 		}
-		return n.Bytes()
+
+		return codec.Encode(n)
 	case "bool":
 		b, err := strconv.ParseBool(s)
 		log.Check(err)
-		return codec.Encode[bool](b)
+		return codec.Encode(b)
 	case "bytes", "hex":
 		b, err := cryptolib.DecodeHex(s)
 		log.Check(err)
-		return b
+		return codec.Encode(b)
 	case "chainid":
 		chainid, err := isc.ChainIDFromString(s)
 		log.Check(err)
-		return chainid.Bytes()
+		return codec.Encode(chainid)
 	case "dict":
 		d := dict.Dict{}
 		err := d.UnmarshalJSON([]byte(s))
 		log.Check(err)
-		return codec.Encode[dict.Dict](d)
+		return codec.Encode(d)
 	case "file":
 		return ReadFile(s)
 	case "hash":
 		hash, err := hashing.HashValueFromHex(s)
 		log.Check(err)
-		return hash.Bytes()
+		return codec.Encode(hash)
 	case "hname":
 		hn, err := isc.HnameFromString(s)
 		log.Check(err)
-		return hn.Bytes()
+		return codec.Encode(hn)
 	case "int8":
 		n, err := strconv.ParseInt(s, 10, 8)
 		log.Check(err)
@@ -81,25 +81,31 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 		log.Check(err)
 		return codec.Encode[int64](n)
 	case "nftid":
-		nid, err := cryptolib.DecodeHex(s)
+		nidBytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
-		if len(nid) != iotago.NFTIDLength {
+		if len(nidBytes) != iotago.NFTIDLength {
 			log.Fatal("invalid nftid length")
 		}
-		return nid
+
+		var nid = [iotago.NFTIDLength]byte(nidBytes)
+
+		return codec.Encode(nid)
 	case "requestid":
 		rid, err := isc.RequestIDFromString(s)
 		log.Check(err)
-		return rid.Bytes()
+		return codec.Encode(rid)
 	case "string":
-		return []byte(s)
+		return codec.Encode(s)
 	case "tokenid":
-		tid, err := cryptolib.DecodeHex(s)
+		tidBytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
-		if len(tid) != iotago.FoundryIDLength {
+		if len(tidBytes) != iotago.FoundryIDLength {
 			log.Fatal("invalid tokenid length")
 		}
-		return tid
+
+		var tid = [iotago.FoundryIDLength]byte(tidBytes)
+
+		return codec.Encode(tid)
 	case "uint8":
 		n, err := strconv.ParseUint(s, 10, 8)
 		log.Check(err)
@@ -133,7 +139,8 @@ func ValueToString(vtype string, v []byte) string {
 		log.Check(err)
 		return aid.String()
 	case "bigint":
-		n := new(big.Int).SetBytes(v)
+		n, err := codec.Decode[*big.Int](v)
+		log.Check(err)
 		return n.String()
 	case "bool":
 		b, err := codec.Decode[bool](v)
@@ -143,7 +150,9 @@ func ValueToString(vtype string, v []byte) string {
 		}
 		return "false"
 	case "bytes", "hex":
-		return iotago.EncodeHex(v)
+		b, err := codec.Decode[[]byte](v)
+		log.Check(err)
+		return iotago.EncodeHex(b)
 	case "chainid":
 		cid, err := codec.Decode[isc.ChainID](v)
 		log.Check(err)
@@ -178,10 +187,10 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.Decode[int64](v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	case "nftid":
-		nid, err := codec.Decode[NFTID](v)
-		log.Check(err)
-		return nid.String()
+	// case "nftid":
+	// 	nid, err := codec.Decode[NFTID](v)
+	// 	log.Check(err)
+	// 	return nid.String()
 	case "requestid":
 		rid, err := codec.Decode[isc.RequestID](v)
 		log.Check(err)
@@ -214,32 +223,32 @@ func ValueToString(vtype string, v []byte) string {
 	return ""
 }
 
-func EncodeParams(params []string, chainID isc.ChainID) dict.Dict {
-	d := dict.New()
-	if len(params)%4 != 0 {
-		log.Fatal("Params format: <type> <key> <type> <value> ...")
+func EncodeParams(params []string, chainID isc.ChainID) isc.CallArguments {
+	if len(params)%2 != 0 {
+		log.Fatal("Params format: <type> <value> ...")
 	}
-	for i := 0; i < len(params)/4; i++ {
-		ktype := params[i*4]
-		k := params[i*4+1]
-		vtype := params[i*4+2]
-		v := params[i*4+3]
 
-		key := kv.Key(ValueFromString(ktype, k, chainID))
+	encodedParams := make(isc.CallArguments, 0, len(params)/2)
+
+	for i := 0; i < len(params)/2; i++ {
+		vtype := params[i*2]
+		v := params[i*2+1]
+
 		val := ValueFromString(vtype, v, chainID)
-		d.Set(key, val)
+		encodedParams = append(encodedParams, val)
 	}
-	return d
+
+	return encodedParams
 }
 
-func PrintDictAsJSON(d dict.Dict) {
-	log.Check(json.NewEncoder(os.Stdout).Encode(d))
+func PrintCallResultsAsJSON(res isc.CallResults) {
+	log.Check(json.NewEncoder(os.Stdout).Encode(res))
 }
 
-func UnmarshalDict() dict.Dict {
-	var d dict.Dict
-	log.Check(json.NewDecoder(os.Stdin).Decode(&d))
-	return d
+func ReadCallResultsAsJSON() isc.CallArguments {
+	var args isc.CallArguments
+	log.Check(json.NewDecoder(os.Stdin).Decode(&args))
+	return args
 }
 
 func AgentIDFromArgs(args []string, chainID isc.ChainID) isc.AgentID {

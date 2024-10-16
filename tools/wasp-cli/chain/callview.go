@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -34,18 +34,16 @@ func initCallViewCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			params := util.EncodeParams(args[2:], chainID)
 
+			msg := isc.NewMessage(isc.Hn(contractName), isc.Hn(funcName), params)
+
 			result, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
-				ContractCallViewRequest(apiclient.ContractCallViewRequest{
-					ContractName: contractName,
-					FunctionName: funcName,
-					Arguments:    apiextensions.JSONDictToAPIJSONDict(params.JSONDict()),
-				}).Execute() //nolint:bodyclose // false positive
+				ContractCallViewRequest(apiextensions.CallViewReq(msg)).Execute()
 			log.Check(err)
 
-			decodedResult, err := apiextensions.APIJsonDictToDict(*result)
+			decodedResult, err := apiextensions.APIResultToCallArgs(result)
 			log.Check(err)
 
-			util.PrintDictAsJSON(decodedResult)
+			util.PrintCallResultsAsJSON(decodedResult)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

@@ -11,8 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -142,23 +140,27 @@ func (c *Client) post1RequestWithOutputs(
 }
 
 func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
+	var agentID isc.AgentID = isc.NewAddressAgentID(c.KeyPair.Address())
+
+	msg := accounts.ViewGetAccountNonce.Message(&agentID)
+	msg.Target.Contract.String()
 	result, _, err := c.WaspClient.ChainsApi.CallView(ctx, c.ChainID.String()).
-		ContractCallViewRequest(apiclient.ContractCallViewRequest{
-			ContractHName: accounts.Contract.Hname().String(),
-			FunctionHName: accounts.ViewGetAccountNonce.Hname().String(),
-			Arguments:     apiextensions.JSONDictToAPIJSONDict(dict.Dict{
-				// TODO: Fix all msg conversions here..
-				// accounts.ParamAgentID: isc.NewAddressAgentID(c.KeyPair.Address()).Bytes(),
-			}.JSONDict()),
-		}).Execute()
+		ContractCallViewRequest(apiextensions.CallViewReq(accounts.ViewGetAccountNonce.Message(&agentID))).
+		Execute()
 	if err != nil {
 		return 0, err
 	}
-	resultDict, err := apiextensions.APIJsonDictToDict(*result)
+	resultDict, err := apiextensions.APIResultToCallArgs(result)
 	if err != nil {
 		return 0, err
 	}
-	return codec.Decode[uint64](resultDict.Get("nonce"))
+
+	nonce, err := accounts.ViewGetAccountNonce.DecodeOutput(resultDict)
+	if err != nil {
+		return 0, err
+	}
+
+	return nonce, nil
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api

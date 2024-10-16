@@ -221,55 +221,29 @@ func (d Dict) Equals(d1 Dict) bool {
 }
 
 // JSONDict is the JSON-compatible representation of a Dict
-type JSONDict struct {
-	Items []Item
+type jsonDict struct {
+	Items []item
 }
 
 // Item is a JSON-compatible representation of a single key-value pair
-type Item struct {
-	Key   string `json:"key" swagger:"desc(key (hex-encoded)),required"`
-	Value string `json:"value" swagger:"desc(value (hex-encoded)),required"`
+type item struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
-// JSONDict returns a JSON-compatible representation of the Dict
-func (d Dict) JSONDict() JSONDict {
-	j := JSONDict{Items: make([]Item, len(d))}
+func (d Dict) MarshalJSON() ([]byte, error) {
+	j := jsonDict{Items: make([]item, len(d))}
+
 	for i, k := range d.KeysSorted() {
 		j.Items[i].Key = iotago.EncodeHex([]byte(k))
 		j.Items[i].Value = iotago.EncodeHex(d[k])
 	}
-	return j
-}
 
-// FromJSONDict returns a dict based off an JSONDict
-func FromJSONDict(jsonDict JSONDict) (Dict, error) {
-	j := Dict{}
-
-	if jsonDict.Items != nil {
-		for _, k := range jsonDict.Items {
-			key, err := cryptolib.DecodeHex(k.Key)
-			if err != nil {
-				return nil, err
-			}
-
-			value, err := cryptolib.DecodeHex(k.Value)
-			if err != nil {
-				return nil, err
-			}
-
-			j.Set(kv.Key(key), value)
-		}
-	}
-
-	return j, nil
-}
-
-func (d Dict) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.JSONDict())
+	return json.Marshal(j)
 }
 
 func (d *Dict) UnmarshalJSON(b []byte) error {
-	var j JSONDict
+	var j jsonDict
 	if err := json.Unmarshal(b, &j); err != nil {
 		return err
 	}
