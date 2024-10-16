@@ -176,7 +176,7 @@ func registerERC20Coin(ctx isc.Sandbox, coinType coin.Type) {
 	if !ok {
 		panic(errUnknownCoin)
 	}
-	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(string(coinType)))
+	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(coinType.String()))
 	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(info.Name))
 	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeShortString(info.Symbol))
 	evmState.SetState(addr, solidity.StorageSlot(3), solidity.StorageEncodeUint8(info.Decimals))

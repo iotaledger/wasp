@@ -198,10 +198,9 @@ func (env *Solo) makeAssetsBag(
 	assetsBagArg := ptb.LastCommandResultArg()
 
 	allCoins := env.L1AllCoins(keyPair.Address())
-	usedBaseTokenCoins := make(map[iotago.ObjectID]coin.Value)
 	assets.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
 		for _, ownedCoin := range allCoins {
-			if ownedCoin.CoinType != coinType.String() {
+			if !coinType.MatchesStringType(ownedCoin.CoinType) {
 				continue
 			}
 			if lo.ContainsBy(gasPayment, func(item *iotago.ObjectRef) bool {
@@ -226,16 +225,13 @@ func (env *Solo) makeAssetsBag(
 				coinArg,
 				coinType.String(),
 			)
-			if coinType == coin.BaseTokenType {
-				usedBaseTokenCoins[*coinRef.ObjectID] = amountAdded
-			}
 			amount -= amountAdded
 			if amount == 0 {
 				break
 			}
 		}
 		if amount > 0 {
-			panic(fmt.Sprintf("makeAssetsBag: not enough L1 balance for coin %s", coinType))
+			panic(fmt.Sprintf("makeAssetsBag: not enough L1 balance for coin %s", coinType.ShortString()))
 		}
 		return true
 	})

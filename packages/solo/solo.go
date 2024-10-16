@@ -72,10 +72,6 @@ type chainData struct {
 	// Name is the name of the chain
 	Name string
 
-	// StateControllerKeyPair signature scheme of the chain address, the one used to control funds owned by the chain.
-	// In Solo it is Ed25519 signature scheme (in full Wasp environment is is a BLS address)
-	StateControllerKeyPair *cryptolib.KeyPair
-
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID isc.ChainID
 
@@ -295,53 +291,6 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
-func (env *Solo) pickCoinsForInitChain(
-	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
-) (initBaseTokensCoin *iotajsonrpc.Coin, gasCoins iotajsonrpc.Coins) {
-	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-	coins, err := env.IotaClient().GetCoinObjsForTargetAmount(
-		env.ctx,
-		originatorAddr.AsIotaAddress(),
-		initBaseTokens.Uint64(),
-	)
-	require.NoError(env.T, err)
-	pickedCoin, ok := lo.Find(coins, func(c *iotajsonrpc.Coin) bool {
-		return c.Balance.Uint64() >= initBaseTokens.Uint64()
-	})
-	require.True(env.T, ok, "cannot find coin with balance >= %d", initBaseTokens)
-	if pickedCoin.Balance.Uint64() == initBaseTokens.Uint64() {
-		return pickedCoin, lo.Filter(coins, func(c *iotajsonrpc.Coin, _ int) bool {
-			return c != pickedCoin
-		})
-	}
-	tx := lo.Must(env.IotaClient().SplitCoin(env.ctx, iotaclient.SplitCoinRequest{
-		Signer:       originatorAddr.AsIotaAddress(),
-		Coin:         pickedCoin.CoinObjectID,
-		SplitAmounts: []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(initBaseTokens.Uint64())},
-		GasBudget:    iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-	}))
-	_, err = env.IotaClient().SignAndExecuteTransaction(
-		env.ctx,
-		cryptolib.SignerToIotaSigner(chainOriginator),
-		tx.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(env.T, err)
-	coins, err = env.IotaClient().GetIotaCoinsOwnedByAddress(env.ctx, originatorAddr.AsIotaAddress())
-	require.NoError(env.T, err)
-	pickedCoin, ok = lo.Find(coins, func(c *iotajsonrpc.Coin) bool {
-		return c.Balance.Uint64() == initBaseTokens.Uint64()
-	})
-	require.True(env.T, ok, "cannot find coin with balance %d", initBaseTokens)
-	return pickedCoin, lo.Filter(coins, func(c *iotajsonrpc.Coin, _ int) bool {
-		return c != pickedCoin
-	})
-}
-
 func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
 	initBaseTokens coin.Value,
@@ -360,9 +309,6 @@ func (env *Solo) deployChain(
 		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 		env.GetFundsFromFaucet(originatorAddr)
 	}
-
-	stateControllerKey := env.NewKeyPairFromIndex(-2000 + len(env.chains))
-	env.GetFundsFromFaucet(stateControllerKey.Address())
 
 	initParams := origin.EncodeInitParams(
 		isc.NewAddressAgentID(chainOriginator.Address()),
@@ -386,15 +332,20 @@ func (env *Solo) deployChain(
 		baseTokenCoinInfo,
 	)
 
-	initCoin, gasPayments := env.pickCoinsForInitChain(chainOriginator, initBaseTokens)
+	coins := env.makeBaseTokenCoinsWithExactly(
+		chainOriginator,
+		initBaseTokens,
+		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
+	)
+	initCoinRef, gasPayment := coins[0], coins[1:]
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		chainOriginator,
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
-		initCoin.Ref(),
-		gasPayments.CoinRefs(),
+		initCoinRef,
+		gasPayment,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 		false,
@@ -411,12 +362,11 @@ func (env *Solo) deployChain(
 	)
 
 	return chainData{
-		Name:                   name,
-		ChainID:                chainID,
-		StateControllerKeyPair: stateControllerKey,
-		OriginatorPrivateKey:   chainOriginator,
-		ValidatorFeeTarget:     originatorAgentID,
-		db:                     db,
+		Name:                 name,
+		ChainID:              chainID,
+		OriginatorPrivateKey: chainOriginator,
+		ValidatorFeeTarget:   originatorAgentID,
+		db:                   db,
 	}, nil
 }
 
@@ -556,9 +506,9 @@ func (ch *Chain) Processors() *processors.Cache {
 // ---------------------------------------------
 
 func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.IotaCoinInfo {
-	md, err := env.IotaClient().GetCoinMetadata(env.ctx, string(coinType))
+	md, err := env.IotaClient().GetCoinMetadata(env.ctx, coinType.String())
 	require.NoError(env.T, err)
-	ts, err := env.IotaClient().GetTotalSupply(env.ctx, string(coinType))
+	ts, err := env.IotaClient().GetTotalSupply(env.ctx, coinType.String())
 	require.NoError(env.T, err)
 	return isc.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
@@ -577,9 +527,10 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 }
 
 func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajsonrpc.Coin {
+	coinTypeStr := coinType.String()
 	r, err := env.IotaClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
-		CoinType: (*string)(&coinType),
+		CoinType: &coinTypeStr,
 		Limit:    math.MaxUint,
 	})
 	require.NoError(env.T, err)
@@ -593,7 +544,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
 	r, err := env.IotaClient().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
 		Owner:    addr.AsIotaAddress(),
-		CoinType: string(coinType),
+		CoinType: coinType.String(),
 	})
 	require.NoError(env.T, err)
 	return coin.Value(r.TotalBalance.Uint64())
@@ -609,7 +560,7 @@ func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
-		cb.Add(coin.Type(b.CoinType), coin.Value(b.TotalBalance.Uint64()))
+		cb.Add(lo.Must(coin.TypeFromString(b.CoinType)), coin.Value(b.TotalBalance.Uint64()))
 	}
 	return cb
 }

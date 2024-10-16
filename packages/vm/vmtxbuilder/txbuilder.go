@@ -140,8 +140,8 @@ func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[iotago.ObjectRef]*
 		}
 		assets := req.Assets()
 		for k, v := range assets.Coins {
-			assetsBagWithBalances.Balances[iotajsonrpc.CoinType(k)] = &iotajsonrpc.Balance{
-				CoinType:     iotajsonrpc.CoinType(k),
+			assetsBagWithBalances.Balances[iotajsonrpc.CoinType(k.String())] = &iotajsonrpc.Balance{
+				CoinType:     iotajsonrpc.CoinType(k.String()),
 				TotalBalance: iotajsonrpc.NewBigInt(v.Uint64()),
 			}
 		}
