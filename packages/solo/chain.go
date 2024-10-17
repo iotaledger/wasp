@@ -311,13 +311,14 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []*cryptolib.Address {
 // We assume self-governed chain here.
 // Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
 func (ch *Chain) RotateStateController(newStateAddr *cryptolib.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(governance.FuncRotateStateController.Message(newStateAddr)).
-		WithMaxAffordableGasBudget()
-	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
-	if result.Receipt.Error == nil {
-		ch.StateControllerKeyPair = newStateKeyPair
-	}
-	return ch.ResolveVMError(result.Receipt.Error).AsGoError()
+	panic("TODO")
+	// req := NewCallParams(governance.FuncRotateStateController.Message(newStateAddr)).
+	// 	WithMaxAffordableGasBudget()
+	// result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
+	// if result.Receipt.Error == nil {
+	// 	ch.StateControllerKeyPair = newStateKeyPair
+	// }
+	// return ch.ResolveVMError(result.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {

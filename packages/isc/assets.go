@@ -11,9 +11,9 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -52,7 +52,7 @@ func CoinBalancesFromDict(d dict.Dict) (CoinBalances, error) {
 
 func (c CoinBalances) IterateSorted(f func(coin.Type, coin.Value) bool) {
 	types := lo.Keys(c)
-	slices.Sort(types)
+	slices.SortFunc(types, coin.CompareTypes)
 	for _, coinType := range types {
 		if !f(coinType, c[coinType]) {
 			return
@@ -266,12 +266,16 @@ func NewAssets(baseTokens coin.Value) *Assets {
 	return NewEmptyAssets().AddCoin(coin.BaseTokenType, baseTokens)
 }
 
-func AssetsFromAssetsBagWithBalances(assetsBag iscmove.AssetsBagWithBalances) *Assets {
+func AssetsFromAssetsBagWithBalances(assetsBag iscmove.AssetsBagWithBalances) (*Assets, error) {
 	assets := NewEmptyAssets()
 	for k, v := range assetsBag.Balances {
-		assets.Coins.Add(coin.Type(k), coin.Value(v.TotalBalance.Uint64()))
+		ct, err := coin.TypeFromString(k)
+		if err != nil {
+			return nil, err
+		}
+		assets.Coins.Add(ct, coin.Value(v.TotalBalance.Uint64()))
 	}
-	return assets
+	return assets, nil
 }
 
 func AssetsFromBytes(b []byte) (*Assets, error) {
