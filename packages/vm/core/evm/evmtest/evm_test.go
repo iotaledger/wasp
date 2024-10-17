@@ -893,7 +893,7 @@ func TestSendBaseTokensAnotherChain(t *testing.T) {
 	require.LessOrEqual(t, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress)), senderInitialBalance-transfer)
 
 	// wait until foreign chain processes the deposit
-	foreignChain.WaitUntil(func() bool {
+	env.solo.WaitUntil(func() bool {
 		return foreignChain.GetLatestBlockInfo().BlockIndex > bi.BlockIndex
 	})
 
@@ -1358,7 +1358,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	require.Nil(t, ret.ISCReceipt.Error)
 
 	// wait a bit for the request going out of EVM to be processed by ISC
-	env.Chain.WaitUntil(func() bool {
+	env.solo.WaitUntil(func() bool {
 		return env.Chain.LatestBlockIndex() == blockIndex+2
 	})
 
@@ -1689,7 +1689,7 @@ func TestERC20CoinWithExternalFoundry(t *testing.T) {
 
 		// wait until the test chain handles the request, get the erc20 contract address on the test chain
 		var erc20addr common.Address
-		if !env.Chain.WaitUntil(func() bool {
+		if !env.solo.WaitUntil(func() bool {
 			res, err2 := env.Chain.CallView(evm.ViewGetERC20ExternalNativeTokenAddress.Message(nativeTokenID))
 			require.NoError(t, err2)
 			addrOptional := lo.Must(evm.ViewGetERC20ExternalNativeTokenAddress.Output.Decode(res))
@@ -1761,7 +1761,7 @@ func TestERC20CoinWithExternalFoundry(t *testing.T) {
 		}
 
 		// wait until chainB handles the request, assert it was processed successfully
-		env.Chain.WaitUntil(func() bool {
+		env.solo.WaitUntil(func() bool {
 			return env.Chain.GetLatestBlockInfo().BlockIndex > blockIndex
 		})
 		lastBlockReceipts := env.Chain.GetRequestReceiptsForBlock()

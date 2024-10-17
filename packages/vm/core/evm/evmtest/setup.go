@@ -1,6 +1,7 @@
 package evmtest
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"math/big"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
@@ -48,6 +50,8 @@ type ethCallOptions struct {
 }
 
 func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
+	l1starter.Start(context.Background(), l1starter.DefaultConfig)
+
 	env := solo.New(t, &solo.InitOptions{
 		Debug:             true,
 		PrintStackTrace:   true,
@@ -61,6 +65,7 @@ func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *Solo
 
 func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
 	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+
 	return &SoloChainEnv{
 		t:          t,
 		solo:       env,
