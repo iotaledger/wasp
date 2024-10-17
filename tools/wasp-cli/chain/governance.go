@@ -12,10 +12,9 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -85,21 +84,22 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 			client := cliclients.WaspClient(node)
 
-			callGovView := func(viewName string) dict.Dict {
-				result, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
+			callGovView := func(viewName string) isc.CallResults {
+				apiResult, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,
 					}).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 
-				resultDict, err := apiextensions.APIJsonDictToDict(*result)
+				result, err := apiextensions.APIResultToCallArgs(apiResult)
 				log.Check(err)
-				return resultDict
+				return result
 			}
 
-			feePolicyBytes := callGovView(governance.ViewGetFeePolicy.Name).Get(governance.ParamFeePolicyBytes)
-			feePolicy := gas.MustFeePolicyFromBytes(feePolicyBytes)
+			r := callGovView(governance.ViewGetFeePolicy.Name)
+			feePolicy, err := governance.ViewGetFeePolicy.DecodeOutput(r)
+			log.Check(err)
 			feePolicy.GasPerToken = util.Ratio32{}
 
 			postRequest(

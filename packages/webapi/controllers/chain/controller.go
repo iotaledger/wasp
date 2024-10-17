@@ -8,7 +8,6 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -90,12 +89,10 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
 
-	dictExample := isc.NewCallArguments([]byte{1, 0, 7, 4})
-
 	publicAPI.POST("chains/:chainID/callview", c.executeCallView).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", true).
-		AddResponse(http.StatusOK, "Result", dictExample, nil).
+		AddResponse(http.StatusOK, "Result", []string{"0xab", "0xef"}, nil).
 		SetSummary("Call a view function on a contract by Hname").
 		SetDescription("Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.").
 		SetOperationId("callView")

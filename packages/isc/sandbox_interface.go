@@ -240,6 +240,8 @@ func (c *CallArguments) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type CallResults = CallArguments
+
 type Message struct {
 	Target CallTarget    `json:"target"`
 	Params CallArguments `json:"params"`

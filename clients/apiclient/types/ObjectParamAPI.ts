@@ -73,6 +73,7 @@ import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
 import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
+import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -400,7 +401,7 @@ export class ObjectChainsApi {
      * Call a view function on a contract by Hname
      * @param param the request object
      */
-    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<Array<Array<number>>> {
+    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<Array<string>> {
         return this.api.callView(param.chainID, param.contractCallViewRequest,  options).toPromise();
     }
 

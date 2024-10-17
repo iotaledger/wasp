@@ -83,8 +83,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					Size: 1,
 				},
 				Balances: map[string]*iotajsonrpc.Balance{
-					string(coin.BaseTokenType): {
-						CoinType:        string(coin.BaseTokenType),
+					coin.BaseTokenType.String(): {
+						CoinType:        coin.BaseTokenType.String(),
 						CoinObjectCount: iotajsonrpc.NewBigInt(1),
 						TotalBalance:    iotajsonrpc.NewBigInt(tokensForGas),
 					},
@@ -92,7 +92,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 			},
 			Allowance: []iscmove.CoinAllowance{
 				{
-					CoinType: string(coin.BaseTokenType),
+					CoinType: coin.BaseTokenType.String(),
 					Balance:  1,
 				},
 			},

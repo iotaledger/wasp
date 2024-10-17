@@ -74,6 +74,7 @@ import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
 import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
+import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -213,7 +214,7 @@ export class ObservableChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<Array<Array<number>>> {
+    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<Array<string>> {
         const requestContextPromise = this.requestFactory.callView(chainID, contractCallViewRequest, _options);
 
         // build promise chain
