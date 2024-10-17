@@ -8,13 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -47,19 +45,13 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		context.Background(),
 		e.Chain.Cluster.WaspClient(),
 		e.Chain.ChainID.String(),
-		apiclient.ContractCallViewRequest{
-			ContractHName: root.Contract.Hname().String(),
-			FunctionHName: root.ViewFindContract.Hname().String(),
-			Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
-				root.ParamHname: inccounter.Contract.Hname().Bytes(),
-			}),
-		})
+		apiextensions.CallViewReq(root.ViewFindContract.Message(inccounter.Contract.Hname())),
+	)
 	require.NoError(e.t, err)
 
-	recb := result.Get(root.ParamContractRecData)
-
-	_, err = root.ContractRecordFromBytes(recb)
+	found, _, err := root.ViewFindContract.DecodeOutput(result)
 	require.NoError(e.t, err)
+	require.True(e.t, found)
 
 	e.expectCounter(42)
 	return isc.NewContractAgentID(e.Chain.ChainID, inccounter.Contract.Hname())

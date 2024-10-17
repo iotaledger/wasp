@@ -6,10 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -43,16 +41,10 @@ func testIncCounterIsDeployed(t *testing.T, env *ChainEnv) {
 		context.Background(),
 		env.Chain.Cluster.WaspClient(),
 		env.Chain.ChainID.String(),
-		apiclient.ContractCallViewRequest{
-			ContractHName: root.Contract.Hname().String(),
-			FunctionHName: root.ViewFindContract.Hname().String(),
-			Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
-				root.ParamHname: inccounter.Contract.Hname().Bytes(),
-			}),
-		})
+		apiextensions.CallViewReq(root.ViewFindContract.Message(inccounter.Contract.Hname())))
 
 	require.NoError(t, err)
-	recb := ret.Get(root.ParamContractRecData)
-	_, err = root.ContractRecordFromBytes(recb)
+	found, _, err := root.ViewFindContract.DecodeOutput(ret)
 	require.NoError(t, err)
+	require.True(t, found)
 }

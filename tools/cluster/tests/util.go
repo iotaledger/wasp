@@ -13,8 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
@@ -119,26 +117,24 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 
 	hname := isc.Hn(name)
 
-	args := dict.Dict{
-		root.ParamHname: codec.Encode[isc.Hname](hname),
-	}
-
 	// TODO: Validate with develop
 	ret, err := apiextensions.CallView(
 		context.Background(),
 		e.Chain.Cluster.WaspClient(i),
 		e.Chain.ChainID.String(),
-		apiclient.ContractCallViewRequest{
-			ContractHName: root.Contract.Hname().String(),
-			FunctionHName: root.ViewFindContract.Hname().String(),
-			Arguments:     apiextensions.JSONDictToAPIJSONDict(args.JSONDict()),
-		})
+		apiextensions.CallViewReq(root.ViewFindContract.Message(hname)),
+	)
 
 	require.NoError(e.t, err)
 
-	recBin := ret.Get(root.ParamContractRecData)
+	found, recBin, err := root.ViewFindContract.DecodeOutput(ret)
+	require.NoError(e.t, err)
 
-	return root.ContractRecordFromBytes(recBin)
+	if !found {
+		return nil, nil
+	}
+
+	return *recBin, nil
 }
 
 // region waitUntilProcessed ///////////////////////////////////////////////////

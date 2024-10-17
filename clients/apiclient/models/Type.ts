@@ -10,32 +10,23 @@
  * Do not edit the class manually.
  */
 
-import { BigInt } from '../models/BigInt';
-import { Type } from '../models/Type';
 import { HttpFile } from '../http/http';
 
-export class CoinJSON {
-    'balance': BigInt;
-    'coinType': Type;
+export class Type {
+    's'?: string;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "balance",
-            "baseName": "balance",
-            "type": "BigInt",
-            "format": ""
-        },
-        {
-            "name": "coinType",
-            "baseName": "coinType",
-            "type": "Type",
-            "format": ""
+            "name": "s",
+            "baseName": "s",
+            "type": "string",
+            "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
-        return CoinJSON.attributeTypeMap;
+        return Type.attributeTypeMap;
     }
 
     public constructor() {

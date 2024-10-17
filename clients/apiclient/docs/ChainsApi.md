@@ -163,7 +163,7 @@ Name | Type | Description  | Notes
 
 ## CallView
 
-> [][]int32 CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+> []string CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
 
 Call a view function on a contract by Hname
 
@@ -192,7 +192,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.CallView``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `CallView`: [][]int32
+    // response from `CallView`: []string
     fmt.Fprintf(os.Stdout, "Response from `ChainsApi.CallView`: %v\n", resp)
 }
 ```
@@ -217,7 +217,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**[][]int32**](array.md)
+**[]string**
 
 ### Authorization
 

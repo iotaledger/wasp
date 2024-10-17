@@ -138,7 +138,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **callView**
-> Array<Array<number>> callView(contractCallViewRequest)
+> Array<string> callView(contractCallViewRequest)
 
 Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
 
@@ -186,7 +186,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**Array<Array<number>>**
+**Array<string>**
 
 ### Authorization
 

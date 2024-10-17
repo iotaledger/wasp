@@ -268,7 +268,7 @@ func (r ApiCallViewRequest) ContractCallViewRequest(contractCallViewRequest Cont
 	return r
 }
 
-func (r ApiCallViewRequest) Execute() ([][]int32, *http.Response, error) {
+func (r ApiCallViewRequest) Execute() ([]string, *http.Response, error) {
 	return r.ApiService.CallViewExecute(r)
 }
 
@@ -290,13 +290,13 @@ func (a *ChainsApiService) CallView(ctx context.Context, chainID string) ApiCall
 }
 
 // Execute executes the request
-//  @return [][]int32
-func (a *ChainsApiService) CallViewExecute(r ApiCallViewRequest) ([][]int32, *http.Response, error) {
+//  @return []string
+func (a *ChainsApiService) CallViewExecute(r ApiCallViewRequest) ([]string, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  [][]int32
+		localVarReturnValue  []string
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.CallView")

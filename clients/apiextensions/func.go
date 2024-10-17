@@ -1,51 +1,49 @@
 package apiextensions
 
 import (
+	"fmt"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func JSONDictToAPIJSONDict(jsonDict dict.JSONDict) apiclient.JSONDict {
-	apiJSONDict := apiclient.NewJSONDict()
-	apiJSONDict.Items = make([]apiclient.Item, len(jsonDict.Items))
+func CallArgsToAPIArgs(args isc.CallArguments) []string {
+	converted := make([]string, 0, len(args))
 
-	for k, v := range jsonDict.Items {
-		apiJSONDict.Items[k] = apiclient.Item{
-			Key:   v.Key,
-			Value: v.Value,
+	for _, entry := range args {
+		converted = append(converted, iotago.EncodeHex(entry))
+	}
+
+	return converted
+}
+
+func CallViewReq(msg isc.Message) apiclient.ContractCallViewRequest {
+	return apiclient.ContractCallViewRequest{
+		ContractHName: msg.Target.Contract.String(),
+		FunctionHName: msg.Target.EntryPoint.String(),
+		Arguments:     CallArgsToAPIArgs(msg.Params),
+	}
+}
+
+func APIArgsToCallArgs(res []string) (isc.CallArguments, error) {
+	converted := make([][]byte, 0, len(res))
+
+	for i, entry := range res {
+		convertedEntry, err := iotago.DecodeHex(entry)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding hex string of entry %d: %w", i, err)
 		}
+
+		converted = append(converted, convertedEntry)
 	}
 
-	return *apiJSONDict
+	return isc.CallArguments(converted), nil
 }
 
-func DictToAPIJsonDict(dict dict.Dict) apiclient.JSONDict {
-	return JSONDictToAPIJSONDict(dict.JSONDict())
-}
-
-func APIJsonDictToJSONDict(apiJSONDict apiclient.JSONDict) dict.JSONDict {
-	jsonDict := dict.JSONDict{
-		Items: make([]dict.Item, len(apiJSONDict.Items)),
-	}
-
-	for k, v := range apiJSONDict.Items {
-		jsonDict.Items[k] = dict.Item{
-			Key:   v.Key,
-			Value: v.Value,
-		}
-	}
-
-	return jsonDict
-}
-
-func APIJsonDictToDict(apiJSONDict apiclient.JSONDict) (dict.Dict, error) {
-	jsonDict := APIJsonDictToJSONDict(apiJSONDict)
-
-	return dict.FromJSONDict(jsonDict)
+func APIResultToCallArgs(res []string) (isc.CallResults, error) {
+	return APIArgsToCallArgs(res)
 }
 
 func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {

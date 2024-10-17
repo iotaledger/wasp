@@ -70,6 +70,7 @@ export * from '../models/TransactionIDMetricItem';
 export * from '../models/TransactionMetricItem';
 export * from '../models/TxInclusionStateMsg';
 export * from '../models/TxInclusionStateMsgMetricItem';
+export * from '../models/Type';
 export * from '../models/UTXOInputMetricItem';
 export * from '../models/UpdateUserPasswordRequest';
 export * from '../models/UpdateUserPermissionsRequest';
@@ -149,6 +150,7 @@ import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
 import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
+import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -251,6 +253,7 @@ let typeMap: {[index: string]: any} = {
     "TransactionMetricItem": TransactionMetricItem,
     "TxInclusionStateMsg": TxInclusionStateMsg,
     "TxInclusionStateMsgMetricItem": TxInclusionStateMsgMetricItem,
+    "Type": Type,
     "UTXOInputMetricItem": UTXOInputMetricItem,
     "UpdateUserPasswordRequest": UpdateUserPasswordRequest,
     "UpdateUserPermissionsRequest": UpdateUserPermissionsRequest,
