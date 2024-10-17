@@ -91,7 +91,7 @@ func NewDecoderWithOpts(src io.Reader, cfg DecoderConfig) *Decoder {
 	return &Decoder{
 		cfg:           cfg,
 		r:             rwutil.NewReader(src),
-		typeInfoCache: decoderTypeInfoCache.Get(),
+		typeInfoCache: decoderGlobalTypeInfoCache.Get(),
 	}
 }
 
@@ -101,7 +101,7 @@ type Decoder struct {
 	typeInfoCache localTypeInfoCache
 }
 
-var decoderTypeInfoCache = newSharedTypeInfoCache()
+var decoderGlobalTypeInfoCache = newSharedTypeInfoCache()
 
 func (d *Decoder) Err() error {
 	return d.r.Err

@@ -3,6 +3,8 @@ package bcs
 import (
 	"reflect"
 	"sync/atomic"
+
+	"github.com/samber/lo"
 )
 
 // Upon serialization the types are checked for the presense of customizations. This make take significant time.
@@ -65,20 +67,21 @@ func (c *localTypeInfoCache) Save() {
 		return
 	}
 
-	// Loading shared version of cache again in case it was extended by somebody else while we were working on our local copy.
-	// This is not mandatory, but may be useful in cases e.g. when two codes are used in parallel on two independant sets of types.
+	// Refreshing shared version of cache in case it was extended by somebody else while we were working on our local copy.
+	// This is not mandatory, but may be useful in cases e.g. when two coders are used in parallel on two independant sets of types.
 	// In that case without this line they would overwrite each others cache entries on every save.
-	// Of course, even with this line there is a teeny-tiny chance of that happening, but on a long run its not a problem.
+	// Still, even with this line there is a teeny-tiny chance of that happening, but on a long run its not a problem.
 	c.prevCacheEntries = *c.sharedCache.entries.Load()
 
 	for k, v := range c.prevCacheEntries {
 		c.newCacheEntries[k] = v
 	}
 
-	c.sharedCache.entries.Store(&c.newCacheEntries)
+	c.sharedCache.entries.Store(lo.ToPtr(c.newCacheEntries)) // NOTE: This is SUPER imporatant to use lo.ToPtr instead of &. Otherwise the pointer to field will be taken, which will cause data races.
 
-	// We cannot continue writing to c.newCacheEntries, because it is now shared with other coders, so others may read from it.
-	// But we can continue using it for reading.
+	// This local cache may be reused (e.g. multiple calls to Encode for one Encoder). But we cannot continue
+	// writing to c.newCacheEntries, because it is now shared with other coders, others may read from it.
+	// But we can safely continue using it for reading.
 	c.prevCacheEntries = c.newCacheEntries
 	c.newCacheEntries = make(map[reflect.Type]typeInfo)
 }

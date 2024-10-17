@@ -65,7 +65,7 @@ func NewEncoderWithOpts(dest io.Writer, cfg EncoderConfig) *Encoder {
 	return &Encoder{
 		cfg:           cfg,
 		w:             rwutil.NewWriter(dest),
-		typeInfoCache: encoderTypeInfoCache.Get(),
+		typeInfoCache: encoderGlobalTypeInfoCache.Get(),
 	}
 }
 
@@ -75,7 +75,7 @@ type Encoder struct {
 	typeInfoCache localTypeInfoCache
 }
 
-var encoderTypeInfoCache = newSharedTypeInfoCache()
+var encoderGlobalTypeInfoCache = newSharedTypeInfoCache()
 
 func (e *Encoder) Err() error {
 	return e.w.Err
