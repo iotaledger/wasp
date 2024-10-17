@@ -16,36 +16,40 @@ import (
 // * Multiple coders may update cache, thus overwritting modifications of each other. But it is not a problem, because
 //   the info is only extended by them, so eventually cache will have information about all types.
 
-func newGlobalTypeInfoCache() *globalTypeInfoCache {
-	var c globalTypeInfoCache
-	c.cache.Store(&map[reflect.Type]typeInfo{})
+func newSharedTypeInfoCache() *sharedTypeInfoCache {
+	var c sharedTypeInfoCache
+	c.entries.Store(&map[reflect.Type]typeInfo{})
 
 	return &c
 }
 
-type globalTypeInfoCache struct {
-	cache atomic.Pointer[map[reflect.Type]typeInfo]
+type sharedTypeInfoCache struct {
+	entries atomic.Pointer[map[reflect.Type]typeInfo]
 }
 
-func (c *globalTypeInfoCache) Get() localTypeInfoCache {
+func (c *sharedTypeInfoCache) Get() localTypeInfoCache {
+	return newLocalTypeInfoCache(c)
+}
+
+func newLocalTypeInfoCache(shared *sharedTypeInfoCache) localTypeInfoCache {
 	return localTypeInfoCache{
-		global:                c,
-		existingTypeInfoCache: *c.cache.Load(),
-		newTypeInfoCache:      make(map[reflect.Type]typeInfo),
+		sharedCache:      shared,
+		prevCacheEntries: *shared.entries.Load(),
+		newCacheEntries:  make(map[reflect.Type]typeInfo),
 	}
 }
 
 type localTypeInfoCache struct {
-	global                *globalTypeInfoCache
-	existingTypeInfoCache map[reflect.Type]typeInfo
-	newTypeInfoCache      map[reflect.Type]typeInfo
+	sharedCache      *sharedTypeInfoCache
+	prevCacheEntries map[reflect.Type]typeInfo
+	newCacheEntries  map[reflect.Type]typeInfo
 }
 
 func (c *localTypeInfoCache) Get(t reflect.Type) (typeInfo, bool) {
-	if cached, isCached := c.existingTypeInfoCache[t]; isCached {
+	if cached, isCached := c.prevCacheEntries[t]; isCached {
 		return cached, true
 	}
-	if cached, isCached := c.newTypeInfoCache[t]; isCached {
+	if cached, isCached := c.newCacheEntries[t]; isCached {
 		return cached, true
 	}
 
@@ -53,17 +57,28 @@ func (c *localTypeInfoCache) Get(t reflect.Type) (typeInfo, bool) {
 }
 
 func (c *localTypeInfoCache) Add(t reflect.Type, ti typeInfo) {
-	c.newTypeInfoCache[t] = ti
+	c.newCacheEntries[t] = ti
 }
 
 func (c *localTypeInfoCache) Save() {
-	if len(c.newTypeInfoCache) == 0 {
+	if len(c.newCacheEntries) == 0 {
 		return
 	}
 
-	for k, v := range c.existingTypeInfoCache {
-		c.newTypeInfoCache[k] = v
+	// Loading shared version of cache again in case it was extended by somebody else while we were working on our local copy.
+	// This is not mandatory, but may be useful in cases e.g. when two codes are used in parallel on two independant sets of types.
+	// In that case without this line they would overwrite each others cache entries on every save.
+	// Of course, even with this line there is a teeny-tiny chance of that happening, but on a long run its not a problem.
+	c.prevCacheEntries = *c.sharedCache.entries.Load()
+
+	for k, v := range c.prevCacheEntries {
+		c.newCacheEntries[k] = v
 	}
 
-	c.global.cache.Store(&c.newTypeInfoCache)
+	c.sharedCache.entries.Store(&c.newCacheEntries)
+
+	// We cannot continue writing to c.newCacheEntries, because it is now shared with other coders, so others may read from it.
+	// But we can continue using it for reading.
+	c.prevCacheEntries = c.newCacheEntries
+	c.newCacheEntries = make(map[reflect.Type]typeInfo)
 }

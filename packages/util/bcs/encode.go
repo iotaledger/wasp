@@ -75,7 +75,7 @@ type Encoder struct {
 	typeInfoCache localTypeInfoCache
 }
 
-var encoderTypeInfoCache = newGlobalTypeInfoCache()
+var encoderTypeInfoCache = newSharedTypeInfoCache()
 
 func (e *Encoder) Err() error {
 	return e.w.Err

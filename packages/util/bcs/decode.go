@@ -101,7 +101,7 @@ type Decoder struct {
 	typeInfoCache localTypeInfoCache
 }
 
-var decoderTypeInfoCache = newGlobalTypeInfoCache()
+var decoderTypeInfoCache = newSharedTypeInfoCache()
 
 func (d *Decoder) Err() error {
 	return d.r.Err
