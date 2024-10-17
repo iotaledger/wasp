@@ -54,6 +54,14 @@ func TypeFromString(s string) (Type, error) {
 	return Type{s: rt.String()}, nil
 }
 
+func MustTypeFromString(s string) Type {
+	t, err := TypeFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
 	rt := t.ResourceType()
 	e.Encode(rt)
