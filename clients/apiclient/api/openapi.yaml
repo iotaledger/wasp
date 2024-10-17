@@ -235,11 +235,9 @@ paths:
             application/json:
               schema:
                 items:
-                  items:
-                    example: 1
-                    format: int32
-                    type: integer
-                  type: array
+                  example: 0xab
+                  format: string
+                  type: string
                 type: array
           description: Result
       summary: Call a view function on a contract by Hname
@@ -1627,7 +1625,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: info
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -2234,14 +2232,16 @@ components:
       example:
         baseTokens: baseTokens
         nativeTokens:
-        - coinType: coinType
+        - coinType:
+            s: s
           balance:
             Int:
               neg: true
               abs:
               - 0
               - 0
-        - coinType: coinType
+        - coinType:
+            s: s
           balance:
             Int:
               neg: true
@@ -2630,7 +2630,8 @@ components:
         name: ChainRecord
     CoinJSON:
       example:
-        coinType: coinType
+        coinType:
+          s: s
         balance:
           Int:
             neg: true
@@ -2641,10 +2642,7 @@ components:
         balance:
           $ref: '#/components/schemas/BigInt'
         coinType:
-          format: string
-          type: string
-          xml:
-            name: CoinType
+          $ref: '#/components/schemas/Type'
       required:
       - balance
       - coinType
@@ -3366,14 +3364,16 @@ components:
         assets:
           baseTokens: baseTokens
           nativeTokens:
-          - coinType: coinType
+          - coinType:
+              s: s
             balance:
               Int:
                 neg: true
                 abs:
                 - 0
                 - 0
-          - coinType: coinType
+          - coinType:
+              s: s
             balance:
               Int:
                 neg: true
@@ -4714,6 +4714,18 @@ components:
       type: object
       xml:
         name: TxInclusionStateMsgMetricItem
+    Type:
+      example:
+        s: s
+      properties:
+        s:
+          format: string
+          type: string
+          xml:
+            name: s
+      type: object
+      xml:
+        name: Type
     UTXOInputMetricItem:
       example:
         lastMessage:

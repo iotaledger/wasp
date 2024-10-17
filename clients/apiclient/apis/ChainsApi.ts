@@ -890,22 +890,22 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to callView
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async callView(response: ResponseContext): Promise<Array<Array<number>> > {
+     public async callView(response: ResponseContext): Promise<Array<string> > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: Array<Array<number>> = ObjectSerializer.deserialize(
+            const body: Array<string> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "Array<Array<number>>", "int32"
-            ) as Array<Array<number>>;
+                "Array<string>", "string"
+            ) as Array<string>;
             return body;
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: Array<Array<number>> = ObjectSerializer.deserialize(
+            const body: Array<string> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "Array<Array<number>>", "int32"
-            ) as Array<Array<number>>;
+                "Array<string>", "string"
+            ) as Array<string>;
             return body;
         }
 

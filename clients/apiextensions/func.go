@@ -2,7 +2,6 @@ package apiextensions
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -10,17 +9,11 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func CallArgsToAPIArgs(args isc.CallArguments) [][]int32 {
-	converted := make([][]int32, 0, len(args))
+func CallArgsToAPIArgs(args isc.CallArguments) []string {
+	converted := make([]string, 0, len(args))
 
 	for _, entry := range args {
-		convertedEntry := make([]int32, 0, len(entry))
-
-		for _, b := range entry {
-			convertedEntry = append(convertedEntry, int32(b))
-		}
-
-		converted = append(converted, convertedEntry)
+		converted = append(converted, iotago.EncodeHex(entry))
 	}
 
 	return converted
@@ -34,18 +27,13 @@ func CallViewReq(msg isc.Message) apiclient.ContractCallViewRequest {
 	}
 }
 
-func APIArgsToCallArgs(res [][]int32) (isc.CallArguments, error) {
+func APIArgsToCallArgs(res []string) (isc.CallArguments, error) {
 	converted := make([][]byte, 0, len(res))
 
 	for i, entry := range res {
-		convertedEntry := make([]byte, 0, len(entry))
-
-		for j, b := range entry {
-			if b < 0 || b > math.MaxUint8 {
-				return nil, fmt.Errorf("invalid value of byte %v of API call data entry %v: %d", j, i, b)
-			}
-
-			convertedEntry = append(convertedEntry, byte(b))
+		convertedEntry, err := iotago.DecodeHex(entry)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding hex string of entry %d: %w", i, err)
 		}
 
 		converted = append(converted, convertedEntry)
@@ -54,7 +42,7 @@ func APIArgsToCallArgs(res [][]int32) (isc.CallArguments, error) {
 	return isc.CallArguments(converted), nil
 }
 
-func APIResultToCallArgs(res [][]int32) (isc.CallResults, error) {
+func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 	return APIArgsToCallArgs(res)
 }
 

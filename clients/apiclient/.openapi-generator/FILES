@@ -90,6 +90,7 @@ docs/TransactionIDMetricItem.md
 docs/TransactionMetricItem.md
 docs/TxInclusionStateMsg.md
 docs/TxInclusionStateMsgMetricItem.md
+docs/Type.md
 docs/UTXOInputMetricItem.md
 docs/UpdateUserPasswordRequest.md
 docs/UpdateUserPermissionsRequest.md
@@ -171,6 +172,7 @@ model_transaction_id_metric_item.go
 model_transaction_metric_item.go
 model_tx_inclusion_state_msg.go
 model_tx_inclusion_state_msg_metric_item.go
+model_type.go
 model_update_user_password_request.go
 model_update_user_permissions_request.go
 model_user.go
