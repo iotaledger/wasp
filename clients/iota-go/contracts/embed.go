@@ -7,7 +7,7 @@ import (
 )
 
 // If you change any of the move contracts, you must recompile.  You will need
-// the `iotago` binary installed in your system. Then, simply run `go generate`
+// the `iota` binary installed in your system. Then, simply run `go generate`
 // in this directory.
 
 //go:generate sh -c "cd ./isc && iota move build --dump-bytecode-as-base64 > bytecode.json"
