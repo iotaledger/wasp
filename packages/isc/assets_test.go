@@ -27,16 +27,17 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			"0xa2::b::B":             &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(22)},
 		},
 	}
-	assets := isc.AssetsFromAssetsBagWithBalances(assetsBag)
+	assets, err := isc.AssetsFromAssetsBagWithBalances(assetsBag)
+	require.NoError(t, err)
 	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType].TotalBalance, uint64(assets.BaseTokens()))
-	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance("0xa1::a::A")))
-	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance, uint64(assets.CoinBalance("0xa2::b::B")))
+	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
+	require.Equal(t, assetsBag.Balances["0xa2::b::B"].TotalBalance, uint64(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
 }
 
 func TestAssetsSerialization(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
-		AddCoin("0xa1::a::A", 100).
+		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
 		AddObject(iotago.ObjectID{})
 	bcs.TestCodec(t, assets)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
@@ -67,8 +68,8 @@ func TestAssetsSpendBudget(t *testing.T) {
 	require.False(t, budget.Spend(toSpend))
 	require.True(t, budget.Equals(isc.NewAssets(1)))
 
-	coinType1 := coin.Type("0xa1::a::A")
-	coinType2 := coin.Type("0xa2::b::B")
+	coinType1 := coin.MustTypeFromString("0xa1::a::A")
+	coinType2 := coin.MustTypeFromString("0xa2::b::B")
 
 	budget = isc.NewAssets(1).AddCoin(coinType1, 5)
 	toSpend = budget.Clone()
@@ -101,15 +102,15 @@ func TestAssetsSpendBudget(t *testing.T) {
 func TestAssetsCodec(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
-		AddCoin("0xa1::a::A", 100).
+		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
 		AddObject(*iotatest.RandomAddress())
 	bcs.TestCodec(t, assets)
 }
 
 func TestCoinBalancesCodec(t *testing.T) {
 	coinBalance := isc.CoinBalances{
-		"0xa1::a::A": 100,
-		"0xa2::b::B": 200,
+		coin.MustTypeFromString("0xa1::a::A"): 100,
+		coin.MustTypeFromString("0xa2::b::B"): 200,
 	}
 	bcs.TestCodec(t, coinBalance)
 }
