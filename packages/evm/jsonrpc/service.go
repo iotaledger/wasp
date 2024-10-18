@@ -453,9 +453,15 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 
 func (e *EthService) GetBlockReceipts(blockNumber int64) ([]*types.Receipt, error) {
 	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]*types.Receipt, error) {
-		receipts, err := e.evmChain.GetBlockReceipts(rpc.BlockNumber(blockNumber))
+		receipts, txs, err := e.evmChain.GetBlockReceipts(rpc.BlockNumber(blockNumber))
 		if err != nil {
 			return nil, e.resolveError(err)
+		}
+
+		result := make([]map[string]interface{}, len(receipts))
+		for i, receipt := range receipts {
+			effectiveGasPrice := txs[i].GasPrice()
+			result[i] = RPCMarshalReceipt(receipt, txs[i], effectiveGasPrice)
 		}
 
 		return receipts, nil

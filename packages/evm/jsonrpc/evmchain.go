@@ -745,16 +745,17 @@ func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceC
 	return e.Trace(config, nil, common.Hash{}, blockNumber, block.Hash())
 }
 
-func (e *EVMChain) GetBlockReceipts(blockNumber rpc.BlockNumber) ([]*types.Receipt, error) {
+func (e *EVMChain) GetBlockReceipts(blockNumber rpc.BlockNumber) ([]*types.Receipt, []*types.Transaction, error) {
 	e.log.Debugf("GetBlockReceipts(blockNumber=%v)", blockNumber)
 	bn := parseBlockNumber(blockNumber)
 	chainState, err := e.iscStateFromEVMBlockNumber(bn)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	db := blockchainDB(chainState)
-	return db.GetReceiptsByBlockNumber(bn.Uint64()), nil
+
+	return db.GetReceiptsByBlockNumber(bn.Uint64()), db.GetTransactionsByBlockNumber(bn.Uint64()), nil
 }
 
 var maxUint32 = big.NewInt(math.MaxUint32)
