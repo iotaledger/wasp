@@ -1,0 +1,128 @@
+=== FAIL: clients/iota-go/iotaclient TestGetTotalSupply/get_Iota_supply (0.18s)
+fixed. new supply
+
+=== FAIL: clients/iota-go/iotaclient TestGetDynamicFields/a_deepbook_shared_object (0.17s)
+Error:          "[]" should have 5 item(s), but has 0
+How to get new address of "deepbook_shared_object"
+
+=== FAIL: clients/iota-go/iotaclient TestGetOwnedObjects/move_module (0.04s)
+Error: Indexer failed to read PostgresDB with error: `Invalid argument with error: `Invalid filter type. Only struct, MatchAny and MatchNone of struct filters are supported.``
+How to fix? Just remove Address filter?
+
+=== FAIL: clients/iota-go/iotaclient TestQueryEvents/event_in_deepbook.batch_cancel_order() (0.16s)
+Error:          "[]" should have 10 item(s), but has 0
+New Address?
+
+=== FAIL: clients/iota-go/iotaclient TestQueryTransactionBlocks/test_for_queryTransactionBlocks (0.17s)
+error: json: cannot unmarshal number into Go struct field IotaTransactionBlockResponse.data.rawEffects of type string, wantErr false
+fixed. DTO marshalling error
+
+=== FAIL: clients/iota-go/iotaclient TestResolveNameServiceAddress (0.19s)
+Error:          Not equal: 
+                                expected: "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9"
+                                actual  : "0x0000000000000000000000000000000000000000000000000000000000000000"
+skip? dns
+
+
+=== FAIL: clients/iota-go/iotaclient TestResolveNameServiceNames (2.20s)
+Error:  Method not found
+skip? dns
+
+=== FAIL: clients/iota-go/iotaclient TestGetStakesByIds (0.24s)
+Error: expected: 1 actual  : 0
+    api_governance_read_test.go:64: This test most likely must fail as no validator in the committee seems to stake anything. For now.
+skipped
+
+=== FAIL: clients/iota-go/iotaclient TestGetCheckpoints (0.19s)
+Error:        Hashes  Not equal: 
+fixed                                
+
+=== FAIL: clients/iota-go/iotaclient TestGetEvents (0.15s)
+    api_read_test.go:147: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:147
+                Error:          Received unexpected error:
+                                Indexer failed to read PostgresDB with error: `Record not found`
+                Test:           TestGetEvents
+
+=== FAIL: clients/iota-go/iotaclient TestGetLatestCheckpointSequenceNumber (0.16s)
+    api_read_test.go:206: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:206
+                Error:          "8497622" is not greater than "34317507"
+                Test:           TestGetLatestCheckpointSequenceNumber
+
+=== FAIL: clients/iota-go/iotaclient TestGetProtocolConfig (0.19s)
+    api_read_test.go:272: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:272
+                Error:          Received unexpected error:
+                                Unsupported protocol version requested. Min supported: 1, max supported: 1
+                Test:           TestGetProtocolConfig
+
+=== FAIL: clients/iota-go/iotaclient TestGetTransactionBlock (0.17s)
+    api_read_test.go:301: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:301
+                Error:          Received unexpected error:
+                                Invalid argument with error: `Transaction D1TM8Esaj3G9xFEDirqMWt9S7HjJXFrAGYBah1zixWTL not found`
+                Test:           TestGetTransactionBlock
+
+=== FAIL: clients/iota-go/iotaclient TestMultiGetTransactionBlocks (0.17s)
+    api_read_test.go:372: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:372
+                Error:          "[]" should have 2 item(s), but has 0
+                Test:           TestMultiGetTransactionBlocks
+
+=== FAIL: clients/iota-go/iotaclient TestTryGetPastObject (0.38s)
+    api_read_test.go:390: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:390
+                Error:          Received unexpected error:
+                                Method not found
+                Test:           TestTryGetPastObject
+
+=== FAIL: clients/iota-go/iotaclient TestTryMultiGetPastObjects (0.21s)
+    api_read_test.go:416: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_read_test.go:416
+                Error:          Received unexpected error:
+                                Method not found
+                Test:           TestTryMultiGetPastObjects
+
+=== FAIL: clients/iota-go/iotaclient TestMoveCall (3.69s)
+    api_transaction_builder_test.go:84: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_transaction_builder_test.go:84
+                Error:          Received unexpected error:
+                                failed to execute transaction: Invalid user signature: Required Signature from 0xe54d993cf56be93ba0764c7ee2c817085b70f0e6d3ad1a71c3335ee3529b4a48 is absent ["0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50"].
+                Test:           TestMoveCall
+
+=== FAIL: clients/iota-go/iotaclient TestPublish (0.49s)
+    api_transaction_builder_test.go:349: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/api_transaction_builder_test.go:349
+                Error:          Received unexpected error:
+                                failed to execute transaction: Invalid user signature: Required Signature from 0x2dd94bb6942b3837a4a061837bcd300865b9ac72f3afad7daa24400b5f12bfc8 is absent ["0x4d06cf8b0fc880e43f1e4e0ca0a0bfff5a674b9b9e21176313d804340be068b4"].
+                Test:           TestPublish
+
+=== FAIL: clients/iota-go/iotaclient TestRequestAddDelegation (0.86s)
+    client_stake_test.go:53: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/client_stake_test.go:53
+                Error:          Not equal: 
+                                expected: ""
+                                actual  : "MoveAbort(MoveLocation { module: ModuleId { address: 0000000000000000000000000000000000000000000000000000000000000003, name: Identifier(\"validator_set\") }, function: 30, instruction: 12, function_name: Some(\"get_validator_mut\") }, 4) in command 1"
+                            
+                                Diff:
+                                --- Expected
+                                +++ Actual
+                                @@ -1 +1 @@
+                                -
+                                +MoveAbort(MoveLocation { module: ModuleId { address: 0000000000000000000000000000000000000000000000000000000000000003, name: Identifier("validator_set") }, function: 30, instruction: 12, function_name: Some("get_validator_mut") }, 4) in command 1
+                Test:           TestRequestAddDelegation
+
+=== FAIL: clients/iota-go/iotaclient TestRequestWithdrawDelegation (0.15s)
+    client_stake_test.go:64: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/client_stake_test.go:64
+                Error:          Should be true
+                Test:           TestRequestWithdrawDelegation
+
+=== FAIL: clients/iota-go/iotaclient TestMintToken (0.82s)
+    extend_calls_test.go:76: 
+                Error Trace:    /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/extend_calls_test.go:76
+                                                        /Users/ideasoft/src/isc-private-local/isc-private/clients/iota-go/iotaclient/extend_calls_test.go:24
+                Error:          Received unexpected error:
+                                failed to execute transaction: Invalid user signature: Required Signature from 0xf6b435b207ca085cc96e9d8941133ff79ee945b3618dd742818d562df4e95a9b is absent ["0x0403e46e2f1ed1b3eb88bf8db75d01818a23fe219f82c6584a32972a6bf41ab4"].
+                Test:           TestMintToken

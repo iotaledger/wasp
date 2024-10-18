@@ -101,39 +101,41 @@ func TestGetCheckpoints(t *testing.T) {
 		{
 			Epoch:                    iotajsonrpc.NewBigInt(0),
 			SequenceNumber:           iotajsonrpc.NewBigInt(1000),
-			Digest:                   *iotago.MustNewDigest("BE4JixC94sDtCgHJZruyk7QffZnWDFvM2oFjC8XtChET"),
-			NetworkTotalTransactions: iotajsonrpc.NewBigInt(1001),
-			PreviousDigest:           iotago.MustNewDigest("41nPNZWHvvajmBQjX3GbppsgGZDEB6DhN4UxPkjSYRRj"),
+			Digest:                   *iotago.MustNewDigest("Eu7yhUZ1oma3fk8KhHW86usFvSmjZ7QPEhPsX7ZYfRg3"),
+			NetworkTotalTransactions: iotajsonrpc.NewBigInt(1004),
+			PreviousDigest:           iotago.MustNewDigest("AcrgtLsNQxZQRU1JK395vanZzSR6nTun6huJAxEJuk14"),
 			EpochRollingGasCostSummary: iotajsonrpc.GasCostSummary{
 				ComputationCost:         iotajsonrpc.NewBigInt(0),
 				StorageCost:             iotajsonrpc.NewBigInt(0),
 				StorageRebate:           iotajsonrpc.NewBigInt(0),
 				NonRefundableStorageFee: iotajsonrpc.NewBigInt(0),
 			},
-			TimestampMs:           iotajsonrpc.NewBigInt(1681393657483),
-			Transactions:          []*iotago.Digest{iotago.MustNewDigest("9NnjyPG8V2TPCSbNE391KDyge42AwV3vUD7aNtQQ9eqS")},
+			TimestampMs:           iotajsonrpc.NewBigInt(1725548499477),
+			Transactions:          []*iotago.Digest{iotago.MustNewDigest("8iu72fMHEFHiJMfjrPDTKBPufQgMSRKfeh2idG5CoHvE")},
 			CheckpointCommitments: []iotago.CheckpointCommitment{},
-			ValidatorSignature:    *iotago.MustNewBase64Data("r8/5+Rm7niIlndcnvjSJ/vZLPrH3xY/ePGYTvrVbTascoQSpS+wsGlC+bQBpzIwA"),
+			ValidatorSignature:    *iotago.MustNewBase64Data("k0u7tZR87vS8glhPgmCzgKFm1UU1ikmPmO9nVzFXn9XY20kpftc6zxdBe0lmSAzs"),
 		},
 		{
 			Epoch:                    iotajsonrpc.NewBigInt(0),
 			SequenceNumber:           iotajsonrpc.NewBigInt(1001),
-			Digest:                   *iotago.MustNewDigest("8umKe5Ae2TAH5ySw2zeEua8cTeeTFZV8F3GfFViZ5cq3"),
-			NetworkTotalTransactions: iotajsonrpc.NewBigInt(1002),
-			PreviousDigest:           iotago.MustNewDigest("BE4JixC94sDtCgHJZruyk7QffZnWDFvM2oFjC8XtChET"),
+			Digest:                   *iotago.MustNewDigest("EJtUUwsKXJR9C9JcJ31e3VZ5rPEsjRu4cSMUaGiTARyo"),
+			NetworkTotalTransactions: iotajsonrpc.NewBigInt(1005),
+			PreviousDigest:           iotago.MustNewDigest("Eu7yhUZ1oma3fk8KhHW86usFvSmjZ7QPEhPsX7ZYfRg3"),
 			EpochRollingGasCostSummary: iotajsonrpc.GasCostSummary{
 				ComputationCost:         iotajsonrpc.NewBigInt(0),
 				StorageCost:             iotajsonrpc.NewBigInt(0),
 				StorageRebate:           iotajsonrpc.NewBigInt(0),
 				NonRefundableStorageFee: iotajsonrpc.NewBigInt(0),
 			},
-			TimestampMs:           iotajsonrpc.NewBigInt(1681393661034),
-			Transactions:          []*iotago.Digest{iotago.MustNewDigest("9muLz7ZTocpBTdSo5Ak7ZxzEpfzywr6Y12Hj3AdT8dvV")},
+			TimestampMs:           iotajsonrpc.NewBigInt(1725548500033),
+			Transactions:          []*iotago.Digest{iotago.MustNewDigest("X3QFYvZm5yAgg3nPVPox6jWskpd2cw57Xg8uXNtCTW5")},
 			CheckpointCommitments: []iotago.CheckpointCommitment{},
-			ValidatorSignature:    *iotago.MustNewBase64Data("jG5ViKThziBpnJnOw9dVdjIrv2IHhCrn8ZhvI1gUS2X1t90aRqhnLF6+WbS1S2WT"),
+			ValidatorSignature:    *iotago.MustNewBase64Data("jHdu/+su0PZ+93y7du1LH48p1+WAqVm2+5EpvMaFrRBnT0Y63EOTl6fMJFwHEizu"),
 		},
 	}
 	require.Len(t, checkpointPage.Data, 2)
+	t.Log(checkpointPage.Data[0].Transactions[0].String())
+	t.Log(checkpointPage.Data[1].Transactions[0].String())
 	require.Equal(t, checkpointPage.Data, targetCheckpoints)
 	require.Equal(t, true, checkpointPage.HasNextPage)
 	require.Equal(t, iotajsonrpc.NewBigInt(1001), checkpointPage.NextCursor)

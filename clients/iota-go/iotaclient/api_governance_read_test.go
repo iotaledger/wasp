@@ -61,7 +61,7 @@ func TestGetStakes(t *testing.T) {
 }
 
 func TestGetStakesByIds(t *testing.T) {
-	t.Log("This test most likely must fail as no validator in the committee seems to stake anything. For now.")
+	t.Skip("This test most likely must fail as no validator in the committee seems to stake anything. For now.")
 
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	// This address has been taken from https://explorer.iota.cafe/validator/0x762986e8799639b18341c142c7a7c8d0f690b38d79530e673ba62e1163696891?network=alphanet

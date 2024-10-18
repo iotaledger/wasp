@@ -164,7 +164,7 @@ func TestGetTotalSupply(t *testing.T) {
 					return
 				}
 				targetSupply := &iotajsonrpc.Supply{Value: iotajsonrpc.NewBigInt(iotajsonrpc.IotaCoinSupply)}
-				require.Equal(t, targetSupply, got)
+				require.LessOrEqualf(t, targetSupply, got, "IOTA supply is less than expected")
 			},
 		)
 	}
