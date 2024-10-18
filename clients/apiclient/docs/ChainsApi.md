@@ -183,7 +183,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Hex Address)
-    contractCallViewRequest := *openapiclient.NewContractCallViewRequest([][]int32{[]int32{int32(123)}}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
+    contractCallViewRequest := *openapiclient.NewContractCallViewRequest([]string{"Arguments_example"}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
