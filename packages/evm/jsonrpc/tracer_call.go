@@ -60,8 +60,8 @@ type CallFrame struct {
 	Gas          hexutil.Uint64  `json:"gas"`
 	GasUsed      hexutil.Uint64  `json:"gasUsed"`
 	To           *common.Address `json:"to,omitempty" rlp:"optional"`
-	Input        []byte          `json:"input" rlp:"optional"`
-	Output       []byte          `json:"output,omitempty" rlp:"optional"`
+	Input        hexutil.Bytes   `json:"input" rlp:"optional"`
+	Output       hexutil.Bytes   `json:"output,omitempty" rlp:"optional"`
 	Error        string          `json:"error,omitempty" rlp:"optional"`
 	RevertReason string          `json:"revertReason,omitempty"`
 	Calls        []CallFrame     `json:"calls,omitempty" rlp:"optional"`
