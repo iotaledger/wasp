@@ -76,42 +76,6 @@ func (v *NullableBool) UnmarshalJSON(src []byte) error {
 	return json.Unmarshal(src, &v.value)
 }
 
-// type NullableInt struct {
-// 	value *int
-// 	isSet bool
-// }
-
-// func (v NullableInt) Get() *int {
-// 	return v.value
-// }
-
-// func (v *NullableInt) Set(val *int) {
-// 	v.value = val
-// 	v.isSet = true
-// }
-
-// func (v NullableInt) IsSet() bool {
-// 	return v.isSet
-// }
-
-// func (v *NullableInt) Unset() {
-// 	v.value = nil
-// 	v.isSet = false
-// }
-
-// func NewNullableInt(val *int) *NullableInt {
-// 	return &NullableInt{value: val, isSet: true}
-// }
-
-// func (v NullableInt) MarshalJSON() ([]byte, error) {
-// 	return json.Marshal(v.value)
-// }
-
-// func (v *NullableInt) UnmarshalJSON(src []byte) error {
-// 	v.isSet = true
-// 	return json.Unmarshal(src, &v.value)
-// }
-
 type NullableInt32 struct {
 	value *int32
 	isSet bool
