@@ -15,6 +15,7 @@ import { ContractCallViewRequest } from '../models/ContractCallViewRequest';
 import { ContractInfoResponse } from '../models/ContractInfoResponse';
 import { EstimateGasRequestOffledger } from '../models/EstimateGasRequestOffledger';
 import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger';
+import { ReceiptResponse } from '../models/ReceiptResponse';
 import { StateResponse } from '../models/StateResponse';
 import { ValidationError } from '../models/ValidationError';
 
@@ -986,15 +987,23 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to estimateGasOffledger
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async estimateGasOffledger(response: ResponseContext): Promise< void> {
+     public async estimateGasOffledger(response: ResponseContext): Promise<ReceiptResponse > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("0", response.httpStatusCode)) {
-            throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1007,15 +1016,23 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to estimateGasOnledger
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async estimateGasOnledger(response: ResponseContext): Promise< void> {
+     public async estimateGasOnledger(response: ResponseContext): Promise<ReceiptResponse > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("0", response.httpStatusCode)) {
-            throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1201,15 +1218,26 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to getReceipt
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getReceipt(response: ResponseContext): Promise< void> {
+     public async getReceipt(response: ResponseContext): Promise<ReceiptResponse > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
+        }
         if (isCodeInRange("404", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "Chain or request id not found", undefined, response.headers);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1357,8 +1385,15 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to waitForRequest
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async waitForRequest(response: ResponseContext): Promise< void> {
+     public async waitForRequest(response: ResponseContext): Promise<ReceiptResponse > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
+        }
         if (isCodeInRange("404", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "The chain or request id not found", undefined, response.headers);
         }
@@ -1368,7 +1403,11 @@ export class ChainsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

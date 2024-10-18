@@ -12,6 +12,7 @@ import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
 import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
+import { BurnRecord } from '../models/BurnRecord';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
@@ -64,6 +65,7 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
+import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
@@ -76,6 +78,7 @@ import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
 import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
+import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -284,7 +287,7 @@ export class ObservableChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Observable<void> {
+    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Observable<ReceiptResponse> {
         const requestContextPromise = this.requestFactory.estimateGasOffledger(chainID, request, _options);
 
         // build promise chain
@@ -308,7 +311,7 @@ export class ObservableChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Observable<void> {
+    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Observable<ReceiptResponse> {
         const requestContextPromise = this.requestFactory.estimateGasOnledger(chainID, request, _options);
 
         // build promise chain
@@ -449,7 +452,7 @@ export class ObservableChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Observable<void> {
+    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Observable<ReceiptResponse> {
         const requestContextPromise = this.requestFactory.getReceipt(chainID, requestID, _options);
 
         // build promise chain
@@ -593,7 +596,7 @@ export class ObservableChainsApi {
      * @param timeoutSeconds The timeout in seconds, maximum 60s
      * @param waitForL1Confirmation Wait for the block to be confirmed on L1
      */
-    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<void> {
+    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<ReceiptResponse> {
         const requestContextPromise = this.requestFactory.waitForRequest(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
 
         // build promise chain
@@ -1055,7 +1058,7 @@ export class ObservableCorecontractsApi {
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<void> {
+    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<ReceiptResponse> {
         const requestContextPromise = this.requestFactory.blocklogGetRequestReceipt(chainID, requestID, block, _options);
 
         // build promise chain
@@ -1080,7 +1083,7 @@ export class ObservableCorecontractsApi {
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<void> {
+    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
         const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfBlock(chainID, blockIndex, block, _options);
 
         // build promise chain
@@ -1104,7 +1107,7 @@ export class ObservableCorecontractsApi {
      * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<void> {
+    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
         const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfLatestBlock(chainID, block, _options);
 
         // build promise chain

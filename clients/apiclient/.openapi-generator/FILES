@@ -22,6 +22,7 @@ docs/AuthInfoModel.md
 docs/BaseToken.md
 docs/BigInt.md
 docs/BlockInfoResponse.md
+docs/BurnRecord.md
 docs/ChainInfoResponse.md
 docs/ChainMessageMetrics.md
 docs/ChainRecord.md
@@ -79,6 +80,7 @@ docs/ProtocolParameters.md
 docs/PublicChainMetadata.md
 docs/PublisherStateTransactionItem.md
 docs/Ratio32.md
+docs/ReceiptResponse.md
 docs/RentStructure.md
 docs/RequestIDsResponse.md
 docs/RequestProcessedResponse.md
@@ -92,6 +94,7 @@ docs/TxInclusionStateMsg.md
 docs/TxInclusionStateMsgMetricItem.md
 docs/Type.md
 docs/UTXOInputMetricItem.md
+docs/UnresolvedVMErrorJSON.md
 docs/UpdateUserPasswordRequest.md
 docs/UpdateUserPermissionsRequest.md
 docs/User.md
@@ -110,6 +113,7 @@ model_auth_info_model.go
 model_base_token.go
 model_big_int.go
 model_block_info_response.go
+model_burn_record.go
 model_chain_info_response.go
 model_chain_message_metrics.go
 model_chain_record.go
@@ -162,6 +166,7 @@ model_protocol_parameters.go
 model_public_chain_metadata.go
 model_publisher_state_transaction_item.go
 model_ratio32.go
+model_receipt_response.go
 model_rent_structure.go
 model_request_ids_response.go
 model_request_processed_response.go
@@ -173,6 +178,7 @@ model_transaction_metric_item.go
 model_tx_inclusion_state_msg.go
 model_tx_inclusion_state_msg_metric_item.go
 model_type.go
+model_unresolved_vm_error_json.go
 model_update_user_password_request.go
 model_update_user_permissions_request.go
 model_user.go
