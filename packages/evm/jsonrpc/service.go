@@ -453,6 +453,11 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 
 func (e *EthService) GetBlockReceipts(blockNumber hexutil.Uint64) ([]map[string]interface{}, error) {
 	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]map[string]interface{}, error) {
+		feePolicy, err := e.evmChain.backend.FeePolicy(uint32(blockNumber))
+		if err != nil {
+			return nil, err
+		}
+
 		receipts, txs, err := e.evmChain.GetBlockReceipts(rpc.BlockNumber(blockNumber))
 		if err != nil {
 			return []map[string]interface{}{}, e.resolveError(err)
@@ -465,6 +470,11 @@ func (e *EthService) GetBlockReceipts(blockNumber hexutil.Uint64) ([]map[string]
 		result := make([]map[string]interface{}, len(receipts))
 		for i, receipt := range receipts {
 			effectiveGasPrice := txs[i].GasPrice()
+			if effectiveGasPrice.Sign() == 0 && !feePolicy.GasPerToken.IsEmpty() {
+				// tx sent before gasPrice was mandatory
+				effectiveGasPrice = feePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+			}
+
 			result[i] = RPCMarshalReceipt(receipt, txs[i], effectiveGasPrice)
 		}
 

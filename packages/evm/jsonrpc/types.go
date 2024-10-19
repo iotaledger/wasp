@@ -195,6 +195,7 @@ func rpcMarshalLogs(r *types.Receipt) []interface{} {
 			"address":          log.Address,
 			"data":             hexutil.Bytes(log.Data),
 			"topics":           log.Topics,
+			"removed":          log.Removed,
 		}
 	}
 	return ret
