@@ -589,7 +589,7 @@ func TestRPCTraceTx(t *testing.T) {
 	require.Equal(t, "0x7b", trace1.Value.String())
 	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))
 	require.NoError(t, err)
-	require.Equal(t, expectedInput, trace1.Input)
+	require.Equal(t, expectedInput, []byte(trace1.Input))
 	require.Empty(t, trace1.Error)
 	require.Empty(t, trace1.RevertReason)
 	require.Equal(t, "0x0", trace1.Gas.String())
@@ -725,7 +725,7 @@ func TestRPCTraceBlock(t *testing.T) {
 	require.Equal(t, "0x7b", trace1.Value.String())
 	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))
 	require.NoError(t, err)
-	require.Equal(t, expectedInput, trace1.Input)
+	require.Equal(t, expectedInput, []byte(trace1.Input))
 	require.Empty(t, trace1.Error)
 	require.Empty(t, trace1.RevertReason)
 	require.Equal(t, "0x0", trace1.Gas.String())
@@ -747,7 +747,7 @@ func TestRPCTraceBlock(t *testing.T) {
 	require.Equal(t, "0x141", trace2.Value.String())
 	expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
 	require.NoError(t, err)
-	require.Equal(t, expectedInput, trace2.Input)
+	require.Equal(t, expectedInput, []byte(trace2.Input))
 	require.Empty(t, trace2.Error)
 	require.Empty(t, trace2.RevertReason)
 	require.Equal(t, "0x0", trace2.Gas.String())
@@ -807,7 +807,7 @@ func TestRPCBlockReceipt(t *testing.T) {
 		context.Background(),
 		&resceipts,
 		"eth_getBlockReceipts",
-		env.BlockNumber())
+		hexutil.EncodeUint64(env.BlockNumber()))
 	require.NoError(t, err)
 
 	require.Len(t, resceipts, 2)
