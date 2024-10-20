@@ -787,7 +787,6 @@ func (e *EVMChain) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Byt
 		block = e.BlockByHash(h)
 	} else if n, ok := blockNrOrHash.Number(); ok {
 		block, err = e.BlockByNumber(big.NewInt(n.Int64()))
-
 		if err != nil {
 			return nil, err
 		}
@@ -808,7 +807,6 @@ func (e *EVMChain) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]*typ
 		block = e.BlockByHash(h)
 	} else if n, ok := blockNrOrHash.Number(); ok {
 		block, err = e.BlockByNumber(parseBlockNumber(n))
-
 		if err != nil {
 			return nil, nil, err
 		}
