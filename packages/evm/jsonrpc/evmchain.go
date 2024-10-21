@@ -704,6 +704,9 @@ func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockI
 		&blockNumber,
 		tracer,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	result, err := tracer.GetResult()
 	if err != nil {
