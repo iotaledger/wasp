@@ -21,6 +21,7 @@ import { GovAllowedStateControllerAddressesResponse } from '../models/GovAllowed
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
+import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
 import { ValidationError } from '../models/ValidationError';
@@ -1677,8 +1678,15 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestReceipt
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestReceipt(response: ResponseContext): Promise< void> {
+     public async blocklogGetRequestReceipt(response: ResponseContext): Promise<ReceiptResponse > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
+        }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
@@ -1689,7 +1697,11 @@ export class CorecontractsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: ReceiptResponse = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ReceiptResponse", ""
+            ) as ReceiptResponse;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1702,8 +1714,15 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestReceiptsOfBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestReceiptsOfBlock(response: ResponseContext): Promise< void> {
+     public async blocklogGetRequestReceiptsOfBlock(response: ResponseContext): Promise<Array<ReceiptResponse> > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: Array<ReceiptResponse> = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "Array<ReceiptResponse>", ""
+            ) as Array<ReceiptResponse>;
+            return body;
+        }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
@@ -1714,7 +1733,11 @@ export class CorecontractsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: Array<ReceiptResponse> = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "Array<ReceiptResponse>", ""
+            ) as Array<ReceiptResponse>;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1727,8 +1750,15 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestReceiptsOfLatestBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestReceiptsOfLatestBlock(response: ResponseContext): Promise< void> {
+     public async blocklogGetRequestReceiptsOfLatestBlock(response: ResponseContext): Promise<Array<ReceiptResponse> > {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            const body: Array<ReceiptResponse> = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "Array<ReceiptResponse>", ""
+            ) as Array<ReceiptResponse>;
+            return body;
+        }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
@@ -1739,7 +1769,11 @@ export class CorecontractsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            const body: Array<ReceiptResponse> = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "Array<ReceiptResponse>", ""
+            ) as Array<ReceiptResponse>;
+            return body;
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

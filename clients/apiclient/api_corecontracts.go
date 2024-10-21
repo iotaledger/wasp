@@ -2139,7 +2139,7 @@ func (r ApiBlocklogGetRequestReceiptRequest) Block(block string) ApiBlocklogGetR
 	return r
 }
 
-func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*http.Response, error) {
+func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error) {
 	return r.ApiService.BlocklogGetRequestReceiptExecute(r)
 }
 
@@ -2161,16 +2161,18 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceipt(ctx context.Context,
 }
 
 // Execute executes the request
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*http.Response, error) {
+//  @return ReceiptResponse
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceipt")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/requests/{requestID}"
@@ -2203,19 +2205,19 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -2228,15 +2230,24 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarHTTPResponse, newErr
+				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
@@ -2253,7 +2264,7 @@ func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Block(block string) ApiBloc
 	return r
 }
 
-func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() (*http.Response, error) {
+func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() ([]ReceiptResponse, *http.Response, error) {
 	return r.ApiService.BlocklogGetRequestReceiptsOfBlockExecute(r)
 }
 
@@ -2275,16 +2286,18 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlock(ctx context.
 }
 
 // Execute executes the request
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) (*http.Response, error) {
+//  @return []ReceiptResponse
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  []ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceiptsOfBlock")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts"
@@ -2295,7 +2308,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 	if r.blockIndex < 1 {
-		return nil, reportError("blockIndex must be greater than 1")
+		return localVarReturnValue, nil, reportError("blockIndex must be greater than 1")
 	}
 
 	if r.block != nil {
@@ -2320,19 +2333,19 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -2345,15 +2358,24 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarHTTPResponse, newErr
+				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiBlocklogGetRequestReceiptsOfLatestBlockRequest struct {
@@ -2369,7 +2391,7 @@ func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Block(block string) A
 	return r
 }
 
-func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() (*http.Response, error) {
+func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() ([]ReceiptResponse, *http.Response, error) {
 	return r.ApiService.BlocklogGetRequestReceiptsOfLatestBlockExecute(r)
 }
 
@@ -2389,16 +2411,18 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlock(ctx co
 }
 
 // Execute executes the request
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) (*http.Response, error) {
+//  @return []ReceiptResponse
+func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  []ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceiptsOfLatestBlock")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/latest/receipts"
@@ -2430,19 +2454,19 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -2455,15 +2479,24 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarHTTPResponse, newErr
+				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
 					newErr.model = v
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiErrorsGetErrorMessageFormatRequest struct {
