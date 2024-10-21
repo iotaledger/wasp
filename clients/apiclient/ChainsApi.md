@@ -158,9 +158,7 @@ let body:.ChainsApiCallViewRequest = {
   // ContractCallViewRequest | Parameters
   contractCallViewRequest: {
     arguments: [
-      [
-        1,
-      ],
+      "arguments_example",
     ],
     block: "block_example",
     contractHName: "contractHName_example",

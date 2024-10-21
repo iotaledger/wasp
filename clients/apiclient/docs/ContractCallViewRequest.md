@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Arguments** | **[][]int32** | Encoded arguments to be passed to the function | 
+**Arguments** | **[]string** | Encoded arguments to be passed to the function | 
 **Block** | Pointer to **string** |  | [optional] 
 **ContractHName** | **string** | The contract name as HName (Hex) | 
 **ContractName** | **string** | The contract name | 
@@ -15,7 +15,7 @@ Name | Type | Description | Notes
 
 ### NewContractCallViewRequest
 
-`func NewContractCallViewRequest(arguments [][]int32, contractHName string, contractName string, functionHName string, functionName string, ) *ContractCallViewRequest`
+`func NewContractCallViewRequest(arguments []string, contractHName string, contractName string, functionHName string, functionName string, ) *ContractCallViewRequest`
 
 NewContractCallViewRequest instantiates a new ContractCallViewRequest object
 This constructor will assign default values to properties that have it defined,
@@ -32,20 +32,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetArguments
 
-`func (o *ContractCallViewRequest) GetArguments() [][]int32`
+`func (o *ContractCallViewRequest) GetArguments() []string`
 
 GetArguments returns the Arguments field if non-nil, zero value otherwise.
 
 ### GetArgumentsOk
 
-`func (o *ContractCallViewRequest) GetArgumentsOk() (*[][]int32, bool)`
+`func (o *ContractCallViewRequest) GetArgumentsOk() (*[]string, bool)`
 
 GetArgumentsOk returns a tuple with the Arguments field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetArguments
 
-`func (o *ContractCallViewRequest) SetArguments(v [][]int32)`
+`func (o *ContractCallViewRequest) SetArguments(v []string)`
 
 SetArguments sets Arguments field to given value.
 
