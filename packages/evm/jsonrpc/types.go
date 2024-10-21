@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -156,6 +157,18 @@ func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
 		return nil
 	}
 	return big.NewInt(n)
+}
+
+func RPCMarshalTransactionForFakeTX(tx *types.Transaction, effectiveGasPrice *big.Int) map[string]interface{} {
+	return map[string]interface{}{
+		"from":    evmutil.MustGetSenderIfTxSigned(tx),
+		"gas":     hexutil.Uint64(tx.Gas()),
+		"gasUsed": hexutil.Uint64(tx.Gas()),
+		"to":      tx.To(),
+		"input":   hexutil.Bytes(tx.Data()),
+		"type":    vm.OpCode(tx.Type()).String(),
+		"value":   hexutil.Big(*tx.Value()),
+	}
 }
 
 func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPrice *big.Int) map[string]interface{} {

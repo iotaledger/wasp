@@ -6,6 +6,7 @@ package jsonrpctest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"slices"
 	"strings"
@@ -605,6 +606,49 @@ func TestRPCTraceTx(t *testing.T) {
 	require.Empty(t, trace2.RevertReason)
 	require.Contains(t, trace2.Gas.String(), "0x")
 	require.Contains(t, trace2.GasUsed.String(), "0x")
+}
+
+// Transfer calls produce "fake" Transactions to simulate EVM behavior.
+// They are not real in the sense of being persisted to the blockchain, therefore requires additional checks.
+func TestRPCTraceEvmDeposit(t *testing.T) {
+	env := newSoloTestEnv(t)
+	wallet, _ := env.solo.NewKeyPairWithFunds()
+	_, evmAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	err := env.soloChain.TransferAllowanceTo(
+		isc.NewAssetsBaseTokens(1000),
+		isc.NewEthereumAddressAgentID(env.soloChain.ChainID, evmAddr),
+		wallet)
+
+	block := env.BlockByNumber(nil)
+	require.NoError(t, err)
+	txs := block.Transactions()
+	tx := txs[0]
+
+	require.Equal(t, evmAddr, *tx.To())
+
+	rc, err := env.TxReceipt(txs[0].Hash())
+	require.NoError(t, err)
+	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
+
+	var res1 json.RawMessage
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"debug_traceTransaction",
+		tx.Hash().Hex(),
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	require.NoError(t, err)
+
+	var trace1 jsonrpc.SendTxArgs
+	err = json.Unmarshal(res1, &trace1)
+	require.NoError(t, err)
+
+	fmt.Print(hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens))
+
+	require.Equal(t, evmAddr.String(), trace1.To.String())
+	require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace1.Value.String())
 }
 
 func TestRPCTraceBlock(t *testing.T) {

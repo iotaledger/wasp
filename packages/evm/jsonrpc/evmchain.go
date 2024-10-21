@@ -10,6 +10,7 @@ import (
 	"math"
 	"math/big"
 	"path"
+	"slices"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -665,11 +666,25 @@ func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInf
 	return blocklog.GetRequestsInBlock(blocklogStatePartition, iscBlockIndex)
 }
 
-func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockInfo, requestsInBlock []isc.Request, txIndex uint64, txHash common.Hash, blockNumber uint64, blockHash common.Hash) (json.RawMessage, error) {
+func (e *EVMChain) isFakeTransaction(tx *types.Transaction) bool {
+	sender, err := evmutil.GetSender(tx)
+
+	// the error will fire when the transaction is invalid. This is most of the time a fake evm tx we use for internal calls, therefore it's fine to assume both.
+	if slices.Equal(sender.Bytes(), common.Address{}.Bytes()) || err != nil {
+		return true
+	}
+
+	return false
+}
+
+// Trace allows the tracing of EVM transactions and considers "fake" evm transactions that are emitted when ISC internal requests are being made. (Transfer of funds from L1->L2EVM for example)
+func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockInfo, requestsInBlock []isc.Request, evmTxs types.Transactions, txIndex uint64, txHash common.Hash, blockHash common.Hash) (json.RawMessage, error) {
 	tracerType := "callTracer"
 	if config.Tracer != nil {
 		tracerType = *config.Tracer
 	}
+
+	blockNumber := uint64(blockInfo.BlockIndex())
 
 	tracer, err := newTracer(tracerType, &tracers.Context{
 		BlockHash:   blockHash,
@@ -689,28 +704,27 @@ func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockI
 		&blockNumber,
 		tracer,
 	)
-	if err != nil {
-		return nil, err
-	}
 
-	return tracer.GetResult()
-}
-
-func (e *EVMChain) traceTransaction(config *tracers.TraceConfig, txIndex uint64, txHash common.Hash, blockNumber uint64, blockHash common.Hash) (any, error) {
-	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
+	result, err := tracer.GetResult()
 	if err != nil {
-		return nil, err
-	}
+		if err != nil && !errors.Is(err, ErrIncorrectTopLevelCalls) {
+			return nil, err
+		}
 
-	result, err := e.trace(config, iscBlock, iscRequestsInBlock, txIndex, txHash, blockNumber, blockHash)
-	if err != nil {
-		return nil, err
+		tx, ok := lo.Find(evmTxs, func(tx *types.Transaction) bool { return slices.Equal(txHash.Bytes(), tx.Hash().Bytes()) })
+		if !ok {
+			return nil, fmt.Errorf("can not find transaction: %v", txHash.String())
+		}
+
+		if e.isFakeTransaction(tx) {
+			return json.Marshal(RPCMarshalTransactionForFakeTX(tx, tx.GasPrice()))
+		}
 	}
 
 	return result, nil
 }
 
-func (e *EVMChain) traceBlock(config *tracers.TraceConfig, blockNumber uint64, blockHash common.Hash) (any, error) {
+func (e *EVMChain) traceTransaction(config *tracers.TraceConfig, txIndex uint64, txHash common.Hash, blockNumber uint64, blockHash common.Hash) (any, error) {
 	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
 	if err != nil {
 		return nil, err
@@ -721,23 +735,31 @@ func (e *EVMChain) traceBlock(config *tracers.TraceConfig, blockNumber uint64, b
 		return nil, err
 	}
 
+	return e.trace(config, iscBlock, iscRequestsInBlock, blockTxs, txIndex, txHash, blockHash)
+}
+
+func (e *EVMChain) traceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
+	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(block.NumberU64())
+	if err != nil {
+		return nil, err
+	}
+
+	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
+	if err != nil {
+		return nil, err
+	}
+
 	results := make([]TxTraceResult, 0)
-
 	for i, tx := range blockTxs {
-		result, err := e.trace(config, iscBlock, iscRequestsInBlock, uint64(i), tx.Hash(), blockNumber, blockHash)
+		result, err := e.trace(config, iscBlock, iscRequestsInBlock, blockTxs, uint64(i), tx.Hash(), block.Hash())
 
+		// Transactions which failed tracing will be omitted, so the rest of the block can be returned
 		if err == nil {
 			results = append(results, TxTraceResult{
 				TxHash: tx.Hash(),
 				Result: result,
 			})
 		}
-
-		if err != nil && !errors.Is(err, ErrIncorrectTopLevelCalls) {
-			return nil, err
-		}
-
-		// Continue the loop for next TXs
 	}
 
 	return results, nil
@@ -765,7 +787,7 @@ func (e *EVMChain) TraceBlockByHash(blockHash common.Hash, config *tracers.Trace
 		return nil, fmt.Errorf("block not found: %s", blockHash.String())
 	}
 
-	return e.traceBlock(config, block.Number().Uint64(), blockHash)
+	return e.traceBlock(config, block)
 }
 
 func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceConfig) (any, error) {
@@ -776,7 +798,7 @@ func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceC
 		return nil, fmt.Errorf("block not found: %d", blockNumber)
 	}
 
-	return e.traceBlock(config, blockNumber, block.Hash())
+	return e.traceBlock(config, block)
 }
 
 func (e *EVMChain) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
