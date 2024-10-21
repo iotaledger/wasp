@@ -593,12 +593,6 @@ func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (interfa
 	})
 }
 
-func (d *DebugService) TraceBlock(blockNrOrHash rpc.BlockNumberOrHash) (interface{}, error) {
-	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (interface{}, error) {
-		return d.evmChain.GetRawBlock(blockNrOrHash)
-	})
-}
-
 type EVMService struct {
 	evmChain *EVMChain
 }
