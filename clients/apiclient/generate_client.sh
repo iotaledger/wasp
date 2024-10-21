@@ -65,3 +65,10 @@ echo "Patching blob info response int=>uint"
 
 sed -i "/uint32/! s/int32/uint32/g" "$SCRIPTPATH/model_blob_info_response.go"
 sed -i "/uint32/! s/int32/uint32/g" "$SCRIPTPATH/docs/BlobInfoResponse.md"
+
+## For some reason NullableInt is generated both in model_int.go and utils.go
+## This is a temporary fix to remove the duplicate definition until we find its cause.
+sed -i "/uint32/! s/NullableInt(/nullableIntUnused(/g" "$SCRIPTPATH/utils.go"
+sed -i "/uint32/! s/NullableInt)/nullableIntUnused)/g" "$SCRIPTPATH/utils.go"
+sed -i "/uint32/! s/NullableInt{/nullableIntUnused{/g" "$SCRIPTPATH/utils.go"
+sed -i "/uint32/! s/NullableInt /nullableIntUnused /g" "$SCRIPTPATH/utils.go"
