@@ -3,7 +3,6 @@ package tests
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -20,8 +19,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -51,8 +48,8 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("wallet-provider", "unsafe_inmemory_testing_seed")
 	w.MustRun("init")
 
-	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)
-	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
+	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIURL)
+	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetURL)
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}
@@ -232,17 +229,7 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 }
 
 func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
-	tokenSchemeBytes := codec.Encode[TokenScheme](tokenScheme)
-	out := w.PostRequestGetReceipt(
-		"accounts", accounts.FuncNativeTokenCreate.Name,
-		"string", accounts.ParamTokenScheme, "bytes", "0x"+hex.EncodeToString(tokenSchemeBytes),
-		"string", accounts.ParamTokenName, "bytes", "0x"+hex.EncodeToString(codec.Encode[string](tokenName)),
-		"string", accounts.ParamTokenTickerSymbol, "bytes", "0x"+hex.EncodeToString(codec.Encode[string](tokenSymbol)),
-		"string", accounts.ParamTokenDecimals, "bytes", "0x"+hex.EncodeToString(codec.Encode[uint8](tokenDecimals)),
-
-		"--allowance", "base:1000000", "--node=0",
-	)
-	require.Regexp(w.T, `.*Error: \(empty\).*`, strings.Join(out, "\n"))
+	panic("refactor me: support native token creation")
 }
 
 func (w *WaspCLITest) ChainID(idx int) string {

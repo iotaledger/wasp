@@ -39,8 +39,8 @@ func (e *ChainEnv) checkCoreContracts() {
 			cr := contractRegistry[rec.Hname()]
 			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
 
-			require.EqualValues(e.t, rec.ProgramHash, cr.ProgramHash)
-			require.EqualValues(e.t, rec.Name, cr.Name)
+			require.EqualValues(e.t, rec.ProgramHash, cr.B.ProgramHash)
+			require.EqualValues(e.t, rec.Name, cr.B.Name)
 		}
 	}
 }
