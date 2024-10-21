@@ -35,7 +35,7 @@ func LogReceipt(receipt apiclient.ReceiptResponse, index ...int) {
 		kind = "off-ledger"
 	}
 
-	args, err := apiextensions.APIJsonDictToDict(req.Params)
+	args, err := apiextensions.APIResultToCallArgs(req.Params)
 	log.Check(err)
 
 	var argsTree interface{} = "(empty)"

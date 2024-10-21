@@ -3,6 +3,9 @@ package coin
 import (
 	"fmt"
 	"math"
+	"strings"
+
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -35,16 +38,32 @@ func ValueFromBytes(b []byte) (Value, error) {
 }
 
 // TODO: maybe it is not ok to consider this constant?
-const BaseTokenType = Type(iotajsonrpc.IotaCoinType)
+var BaseTokenType = lo.Must(TypeFromString(iotajsonrpc.IotaCoinType))
 
-// Type is the string representation of a Iota coin type, e.g. `0x2::iota::IOTA`
-type Type string
+// Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
+// Two instances of Type are equal iif they represent the same coin type.
+type Type struct { // struct to enforce using the constructor functions
+	s string
+}
+
+func TypeFromString(s string) (Type, error) {
+	rt, err := iotago.NewResourceType(s)
+	if err != nil {
+		return Type{}, fmt.Errorf("invalid Type %q: %w", s, err)
+	}
+	return Type{s: rt.String()}, nil
+}
+
+func MustTypeFromString(s string) Type {
+	t, err := TypeFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
-	rt, err := iotago.NewResourceType(string(*t))
-	if err != nil {
-		return fmt.Errorf("invalid Type %q: %w", t, err)
-	}
+	rt := t.ResourceType()
 	e.Encode(rt)
 	return e.Err()
 }
@@ -55,12 +74,30 @@ func (t *Type) UnmarshalBCS(d *bcs.Decoder) error {
 	if d.Err() != nil {
 		return d.Err()
 	}
-	*t = Type(rt.ShortString())
+	*t = Type{s: rt.String()}
 	return nil
 }
 
+// MatchesStringType returns true if the given string represents the same coin
+// type, even if abbreviated (e.g. ""0x2::iota::IOTA"")
+func (t Type) MatchesStringType(s string) bool {
+	rt, err := TypeFromString(s)
+	if err != nil {
+		return false
+	}
+	return rt.String() == t.s
+}
+
 func (t Type) String() string {
-	return string(t)
+	return t.s
+}
+
+func (t Type) ShortString() string {
+	return t.ResourceType().ShortString()
+}
+
+func (t Type) ResourceType() *iotago.ResourceType {
+	return lo.Must(iotago.NewResourceType(string(t.s)))
 }
 
 func (t Type) TypeTag() iotago.TypeTag {
@@ -79,6 +116,10 @@ func TypeFromBytes(b []byte) (Type, error) {
 	var r Type
 	r, err := bcs.Unmarshal[Type](b)
 	return r, err
+}
+
+func CompareTypes(a, b Type) int {
+	return strings.Compare(a.s, b.s)
 }
 
 var (

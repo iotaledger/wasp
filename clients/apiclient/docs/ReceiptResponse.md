@@ -11,7 +11,6 @@ Name | Type | Description | Notes
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
 **RawError** | Pointer to [**UnresolvedVMErrorJSON**](UnresolvedVMErrorJSON.md) |  | [optional] 
-**Request** | [**RequestJSON**](RequestJSON.md) |  | 
 **RequestIndex** | **uint32** |  | 
 **StorageDepositCharged** | **string** | Storage deposit charged (uint64 as string) | 
 
@@ -19,7 +18,7 @@ Name | Type | Description | Notes
 
 ### NewReceiptResponse
 
-`func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex uint32, storageDepositCharged string, ) *ReceiptResponse`
+`func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, requestIndex uint32, storageDepositCharged string, ) *ReceiptResponse`
 
 NewReceiptResponse instantiates a new ReceiptResponse object
 This constructor will assign default values to properties that have it defined,
@@ -183,26 +182,6 @@ SetRawError sets RawError field to given value.
 `func (o *ReceiptResponse) HasRawError() bool`
 
 HasRawError returns a boolean if a field has been set.
-
-### GetRequest
-
-`func (o *ReceiptResponse) GetRequest() RequestJSON`
-
-GetRequest returns the Request field if non-nil, zero value otherwise.
-
-### GetRequestOk
-
-`func (o *ReceiptResponse) GetRequestOk() (*RequestJSON, bool)`
-
-GetRequestOk returns a tuple with the Request field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetRequest
-
-`func (o *ReceiptResponse) SetRequest(v RequestJSON)`
-
-SetRequest sets Request field to given value.
-
 
 ### GetRequestIndex
 

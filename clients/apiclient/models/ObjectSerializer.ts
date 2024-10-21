@@ -8,6 +8,7 @@ export * from '../models/AuthInfoModel';
 export * from '../models/BaseToken';
 export * from '../models/BigInt';
 export * from '../models/BlockInfoResponse';
+export * from '../models/BurnRecord';
 export * from '../models/ChainInfoResponse';
 export * from '../models/ChainMessageMetrics';
 export * from '../models/ChainRecord';
@@ -60,6 +61,7 @@ export * from '../models/ProtocolParameters';
 export * from '../models/PublicChainMetadata';
 export * from '../models/PublisherStateTransactionItem';
 export * from '../models/Ratio32';
+export * from '../models/ReceiptResponse';
 export * from '../models/RentStructure';
 export * from '../models/RequestIDsResponse';
 export * from '../models/RequestProcessedResponse';
@@ -70,7 +72,9 @@ export * from '../models/TransactionIDMetricItem';
 export * from '../models/TransactionMetricItem';
 export * from '../models/TxInclusionStateMsg';
 export * from '../models/TxInclusionStateMsgMetricItem';
+export * from '../models/Type';
 export * from '../models/UTXOInputMetricItem';
+export * from '../models/UnresolvedVMErrorJSON';
 export * from '../models/UpdateUserPasswordRequest';
 export * from '../models/UpdateUserPermissionsRequest';
 export * from '../models/User';
@@ -87,6 +91,7 @@ import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
 import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
+import { BurnRecord } from '../models/BurnRecord';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
@@ -139,6 +144,7 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
+import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
@@ -149,7 +155,9 @@ import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
 import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
+import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
+import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -189,6 +197,7 @@ let typeMap: {[index: string]: any} = {
     "BaseToken": BaseToken,
     "BigInt": BigInt,
     "BlockInfoResponse": BlockInfoResponse,
+    "BurnRecord": BurnRecord,
     "ChainInfoResponse": ChainInfoResponse,
     "ChainMessageMetrics": ChainMessageMetrics,
     "ChainRecord": ChainRecord,
@@ -241,6 +250,7 @@ let typeMap: {[index: string]: any} = {
     "PublicChainMetadata": PublicChainMetadata,
     "PublisherStateTransactionItem": PublisherStateTransactionItem,
     "Ratio32": Ratio32,
+    "ReceiptResponse": ReceiptResponse,
     "RentStructure": RentStructure,
     "RequestIDsResponse": RequestIDsResponse,
     "RequestProcessedResponse": RequestProcessedResponse,
@@ -251,7 +261,9 @@ let typeMap: {[index: string]: any} = {
     "TransactionMetricItem": TransactionMetricItem,
     "TxInclusionStateMsg": TxInclusionStateMsg,
     "TxInclusionStateMsgMetricItem": TxInclusionStateMsgMetricItem,
+    "Type": Type,
     "UTXOInputMetricItem": UTXOInputMetricItem,
+    "UnresolvedVMErrorJSON": UnresolvedVMErrorJSON,
     "UpdateUserPasswordRequest": UpdateUserPasswordRequest,
     "UpdateUserPermissionsRequest": UpdateUserPermissionsRequest,
     "User": User,

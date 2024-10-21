@@ -268,7 +268,7 @@ func (r ApiCallViewRequest) ContractCallViewRequest(contractCallViewRequest Cont
 	return r
 }
 
-func (r ApiCallViewRequest) Execute() ([][]int32, *http.Response, error) {
+func (r ApiCallViewRequest) Execute() ([]string, *http.Response, error) {
 	return r.ApiService.CallViewExecute(r)
 }
 
@@ -290,13 +290,13 @@ func (a *ChainsApiService) CallView(ctx context.Context, chainID string) ApiCall
 }
 
 // Execute executes the request
-//  @return [][]int32
-func (a *ChainsApiService) CallViewExecute(r ApiCallViewRequest) ([][]int32, *http.Response, error) {
+//  @return []string
+func (a *ChainsApiService) CallViewExecute(r ApiCallViewRequest) ([]string, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  [][]int32
+		localVarReturnValue  []string
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.CallView")
@@ -611,7 +611,7 @@ func (r ApiEstimateGasOffledgerRequest) Request(request EstimateGasRequestOffled
 	return r
 }
 
-func (r ApiEstimateGasOffledgerRequest) Execute() (*http.Response, error) {
+func (r ApiEstimateGasOffledgerRequest) Execute() (*ReceiptResponse, *http.Response, error) {
 	return r.ApiService.EstimateGasOffledgerExecute(r)
 }
 
@@ -631,16 +631,18 @@ func (a *ChainsApiService) EstimateGasOffledger(ctx context.Context, chainID str
 }
 
 // Execute executes the request
-func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledgerRequest) (*http.Response, error) {
+//  @return ReceiptResponse
+func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledgerRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.EstimateGasOffledger")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/estimategas-offledger"
@@ -650,7 +652,7 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 	if r.request == nil {
-		return nil, reportError("request is required and must be specified")
+		return localVarReturnValue, nil, reportError("request is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -663,7 +665,7 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{}
+	localVarHTTPHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -674,19 +676,19 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 	localVarPostBody = r.request
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -694,10 +696,19 @@ func (a *ChainsApiService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiEstimateGasOnledgerRequest struct {
@@ -713,7 +724,7 @@ func (r ApiEstimateGasOnledgerRequest) Request(request EstimateGasRequestOnledge
 	return r
 }
 
-func (r ApiEstimateGasOnledgerRequest) Execute() (*http.Response, error) {
+func (r ApiEstimateGasOnledgerRequest) Execute() (*ReceiptResponse, *http.Response, error) {
 	return r.ApiService.EstimateGasOnledgerExecute(r)
 }
 
@@ -733,16 +744,18 @@ func (a *ChainsApiService) EstimateGasOnledger(ctx context.Context, chainID stri
 }
 
 // Execute executes the request
-func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*http.Response, error) {
+//  @return ReceiptResponse
+func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.EstimateGasOnledger")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/estimategas-onledger"
@@ -752,7 +765,7 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 	if r.request == nil {
-		return nil, reportError("request is required and must be specified")
+		return localVarReturnValue, nil, reportError("request is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -765,7 +778,7 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{}
+	localVarHTTPHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -776,19 +789,19 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 	localVarPostBody = r.request
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -796,10 +809,19 @@ func (a *ChainsApiService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiGetChainInfoRequest struct {
@@ -1436,7 +1458,7 @@ type ApiGetReceiptRequest struct {
 	requestID string
 }
 
-func (r ApiGetReceiptRequest) Execute() (*http.Response, error) {
+func (r ApiGetReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error) {
 	return r.ApiService.GetReceiptExecute(r)
 }
 
@@ -1458,16 +1480,18 @@ func (a *ChainsApiService) GetReceipt(ctx context.Context, chainID string, reque
 }
 
 // Execute executes the request
-func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*http.Response, error) {
+//  @return ReceiptResponse
+func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.GetReceipt")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/receipts/{requestID}"
@@ -1488,7 +1512,7 @@ func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*http.Resp
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{}
+	localVarHTTPHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -1497,19 +1521,19 @@ func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*http.Resp
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -1517,10 +1541,19 @@ func (a *ChainsApiService) GetReceiptExecute(r ApiGetReceiptRequest) (*http.Resp
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
 type ApiGetStateValueRequest struct {
@@ -2073,7 +2106,7 @@ func (r ApiWaitForRequestRequest) WaitForL1Confirmation(waitForL1Confirmation bo
 	return r
 }
 
-func (r ApiWaitForRequestRequest) Execute() (*http.Response, error) {
+func (r ApiWaitForRequestRequest) Execute() (*ReceiptResponse, *http.Response, error) {
 	return r.ApiService.WaitForRequestExecute(r)
 }
 
@@ -2095,16 +2128,18 @@ func (a *ChainsApiService) WaitForRequest(ctx context.Context, chainID string, r
 }
 
 // Execute executes the request
-func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*http.Response, error) {
+//  @return ReceiptResponse
+func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsApiService.WaitForRequest")
 	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
+		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
 	localVarPath := localBasePath + "/v1/chains/{chainID}/requests/{requestID}/wait"
@@ -2131,7 +2166,7 @@ func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*h
 	}
 
 	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{}
+	localVarHTTPHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
@@ -2140,19 +2175,19 @@ func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*h
 	}
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
 	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
-		return localVarHTTPResponse, err
+		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
 	if localVarHTTPResponse.StatusCode >= 300 {
@@ -2160,8 +2195,17 @@ func (a *ChainsApiService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*h
 			body:  localVarBody,
 			error: localVarHTTPResponse.Status,
 		}
-		return localVarHTTPResponse, newErr
+		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
 
-	return localVarHTTPResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
 }

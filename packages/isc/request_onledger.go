@@ -5,15 +5,15 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type OnLedgerRequestData struct {
-	requestRef    iotago.ObjectRef   `bcs:"export"`
-	senderAddress *cryptolib.Address `bcs:"export"`
+	requestRef      iotago.ObjectRef   `bcs:"export"`
+	senderAddress   *cryptolib.Address `bcs:"export"`
 	targetAddress   *cryptolib.Address `bcs:"export"`
 	assets          *Assets            `bcs:"export"`
 	assetsBag       *iscmove.AssetsBag `bcs:"export"`
@@ -27,10 +27,15 @@ var (
 )
 
 func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
+	assets, err := AssetsFromAssetsBagWithBalances(request.Object.AssetsBag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse assets from AssetsBag: %w", err)
+	}
 	r := &OnLedgerRequestData{
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
+		assets:        assets,
 		assetsBag:     &request.Object.AssetsBag.AssetsBag,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
@@ -44,9 +49,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 			Allowance: NewEmptyAssets(),
 			GasBudget: 0,
 		},
-		assets: AssetsFromAssetsBagWithBalances(request.Object.AssetsBag),
 	}
-
 	return r, nil
 }
 

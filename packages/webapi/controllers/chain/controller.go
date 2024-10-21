@@ -8,7 +8,6 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -86,16 +85,14 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
 		AddResponse(http.StatusNotFound, "Chain or request id not found", nil, nil).
-		//AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
-
-	dictExample := isc.NewCallArguments([]byte{1, 0, 7, 4})
 
 	publicAPI.POST("chains/:chainID/callview", c.executeCallView).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", true).
-		AddResponse(http.StatusOK, "Result", dictExample, nil).
+		AddResponse(http.StatusOK, "Result", []string{"0xab", "0xef"}, nil).
 		SetSummary("Call a view function on a contract by Hname").
 		SetDescription("Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.").
 		SetOperationId("callView")
@@ -103,14 +100,14 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.POST("chains/:chainID/estimategas-onledger", c.estimateGasOnLedger).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.EstimateGasRequestOnledger{}), "Request", "Request", true).
-		//		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Estimates gas for a given on-ledger ISC request").
 		SetOperationId("estimateGasOnledger")
 
 	publicAPI.POST("chains/:chainID/estimategas-offledger", c.estimateGasOffLedger).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.EstimateGasRequestOffledger{}), "Request", "Request", true).
-		//	AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Estimates gas for a given off-ledger ISC request").
 		SetOperationId("estimateGasOffledger")
 
@@ -122,8 +119,8 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamQuery(0, "timeoutSeconds", "The timeout in seconds, maximum 60s", false).
 		AddParamQuery(false, "waitForL1Confirmation", "Wait for the block to be confirmed on L1", false).
 		AddResponse(http.StatusNotFound, "The chain or request id not found", nil, nil).
-		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil)
-	//		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
+		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
+		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

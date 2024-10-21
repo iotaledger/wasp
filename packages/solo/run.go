@@ -82,13 +82,13 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	res := ch.runTaskNoLock(reqs, false)
 
 	gasPayment := ch.Env.makeBaseTokenCoinsWithExactly(
-		ch.StateControllerKeyPair,
+		ch.OriginatorPrivateKey,
 		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
 	)
 
 	_ = ch.Env.executePTB(
 		res.UnsignedTransaction,
-		ch.StateControllerKeyPair,
+		ch.OriginatorPrivateKey,
 		gasPayment,
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,

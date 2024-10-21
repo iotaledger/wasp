@@ -31,6 +31,8 @@ GENERATE_ARGS_GO="\
 
 (cd "$SCRIPTPATH/$APIGEN_FOLDER"; sh -c "./$APIGEN_SCRIPT >| $SCRIPTPATH/wasp_swagger_schema.json")
 
+cp $SCRIPTPATH/.openapi-generator/FILES /tmp/prev_openapi_generator_files
+
 if [ $GENERATE_MODE = "docker" ]; then
   echo "Generating client with Docker"
 
@@ -65,3 +67,24 @@ echo "Patching blob info response int=>uint"
 
 sed -i "/uint32/! s/int32/uint32/g" "$SCRIPTPATH/model_blob_info_response.go"
 sed -i "/uint32/! s/int32/uint32/g" "$SCRIPTPATH/docs/BlobInfoResponse.md"
+
+## For some reason NullableInt is generated both in model_int.go and utils.go
+## This is a temporary fix to remove the duplicate definition until we find its cause.
+sed -i "/uint32/! s/NullableInt(/nullableIntUnused(/g" "$SCRIPTPATH/utils.go"
+sed -i "/uint32/! s/NullableInt)/nullableIntUnused)/g" "$SCRIPTPATH/utils.go"
+sed -i "/uint32/! s/NullableInt{/nullableIntUnused{/g" "$SCRIPTPATH/utils.go"
+sed -i "/uint32/! s/NullableInt /nullableIntUnused /g" "$SCRIPTPATH/utils.go"
+
+## Deleting obsolete files
+OBSOLETE_FILES=$(sort /tmp/prev_openapi_generator_files $SCRIPTPATH/.openapi-generator/FILES | uniq -u)
+if [ ! -z "$OBSOLETE_FILES" ]; then
+  DELETED_FILES_DIR=/tmp/openapi_generator_deleted_files_$(date +%F_%H-%M-%S)
+  
+  echo "Deleting obsolete files - moving them to $DELETED_FILES_DIR:"
+  echo $OBSOLETE_FILES
+  (
+    mkdir -p $DELETED_FILES_DIR &&
+    cd $SCRIPTPATH &&
+    echo $OBSOLETE_FILES | xargs -I{} mv {} $DELETED_FILES_DIR/
+  )
+fi

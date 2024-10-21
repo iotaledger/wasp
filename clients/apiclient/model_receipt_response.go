@@ -29,7 +29,6 @@ type ReceiptResponse struct {
 	// The charged gas fee (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
 	RawError *UnresolvedVMErrorJSON `json:"rawError,omitempty"`
-	Request RequestJSON `json:"request"`
 	RequestIndex uint32 `json:"requestIndex"`
 	// Storage deposit charged (uint64 as string)
 	StorageDepositCharged string `json:"storageDepositCharged"`
@@ -39,14 +38,13 @@ type ReceiptResponse struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex uint32, storageDepositCharged string) *ReceiptResponse {
+func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, requestIndex uint32, storageDepositCharged string) *ReceiptResponse {
 	this := ReceiptResponse{}
 	this.BlockIndex = blockIndex
 	this.GasBudget = gasBudget
 	this.GasBurnLog = gasBurnLog
 	this.GasBurned = gasBurned
 	this.GasFeeCharged = gasFeeCharged
-	this.Request = request
 	this.RequestIndex = requestIndex
 	this.StorageDepositCharged = storageDepositCharged
 	return &this
@@ -244,30 +242,6 @@ func (o *ReceiptResponse) SetRawError(v UnresolvedVMErrorJSON) {
 	o.RawError = &v
 }
 
-// GetRequest returns the Request field value
-func (o *ReceiptResponse) GetRequest() RequestJSON {
-	if o == nil {
-		var ret RequestJSON
-		return ret
-	}
-
-	return o.Request
-}
-
-// GetRequestOk returns a tuple with the Request field value
-// and a boolean to check if the value has been set.
-func (o *ReceiptResponse) GetRequestOk() (*RequestJSON, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Request, true
-}
-
-// SetRequest sets field value
-func (o *ReceiptResponse) SetRequest(v RequestJSON) {
-	o.Request = v
-}
-
 // GetRequestIndex returns the RequestIndex field value
 func (o *ReceiptResponse) GetRequestIndex() uint32 {
 	if o == nil {
@@ -337,7 +311,6 @@ func (o ReceiptResponse) ToMap() (map[string]interface{}, error) {
 	if !isNil(o.RawError) {
 		toSerialize["rawError"] = o.RawError
 	}
-	toSerialize["request"] = o.Request
 	toSerialize["requestIndex"] = o.RequestIndex
 	toSerialize["storageDepositCharged"] = o.StorageDepositCharged
 	return toSerialize, nil

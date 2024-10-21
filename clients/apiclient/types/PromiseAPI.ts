@@ -11,6 +11,7 @@ import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
 import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
+import { BurnRecord } from '../models/BurnRecord';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
@@ -63,6 +64,7 @@ import { ProtocolParameters } from '../models/ProtocolParameters';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
+import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
@@ -73,7 +75,9 @@ import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
 import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
+import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
+import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
 import { User } from '../models/User';
@@ -154,7 +158,7 @@ export class PromiseChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<Array<Array<number>>> {
+    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<Array<string>> {
         const result = this.api.callView(chainID, contractCallViewRequest, _options);
         return result.toPromise();
     }
@@ -182,7 +186,7 @@ export class PromiseChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<void> {
+    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<ReceiptResponse> {
         const result = this.api.estimateGasOffledger(chainID, request, _options);
         return result.toPromise();
     }
@@ -192,7 +196,7 @@ export class PromiseChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<void> {
+    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<ReceiptResponse> {
         const result = this.api.estimateGasOnledger(chainID, request, _options);
         return result.toPromise();
     }
@@ -249,7 +253,7 @@ export class PromiseChainsApi {
      * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<void> {
+    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<ReceiptResponse> {
         const result = this.api.getReceipt(chainID, requestID, _options);
         return result.toPromise();
     }
@@ -309,7 +313,7 @@ export class PromiseChainsApi {
      * @param timeoutSeconds The timeout in seconds, maximum 60s
      * @param waitForL1Confirmation Wait for the block to be confirmed on L1
      */
-    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<void> {
+    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<ReceiptResponse> {
         const result = this.api.waitForRequest(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
         return result.toPromise();
     }
@@ -520,7 +524,7 @@ export class PromiseCorecontractsApi {
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<void> {
+    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<ReceiptResponse> {
         const result = this.api.blocklogGetRequestReceipt(chainID, requestID, block, _options);
         return result.toPromise();
     }
@@ -531,7 +535,7 @@ export class PromiseCorecontractsApi {
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<void> {
+    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
         const result = this.api.blocklogGetRequestReceiptsOfBlock(chainID, blockIndex, block, _options);
         return result.toPromise();
     }
@@ -541,7 +545,7 @@ export class PromiseCorecontractsApi {
      * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<void> {
+    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
         const result = this.api.blocklogGetRequestReceiptsOfLatestBlock(chainID, block, _options);
         return result.toPromise();
     }

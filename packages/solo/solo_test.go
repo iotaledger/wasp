@@ -22,8 +22,7 @@ func TestSoloBasic1(t *testing.T) {
 	ch := env.NewChain(false)
 	require.EqualValues(env.T, DefaultCommonAccountBaseTokens, ch.L2CommonAccountAssets().Coins.BaseTokens())
 
-	// FIXME
-	// err := ch.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, nil)
-	// require.NoError(env.T, err)
-	// require.EqualValues(env.T, DefaultChainOriginatorBaseTokens, ch.L2BaseTokens(ch.OriginatorAgentID))
+	err := ch.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, nil)
+	require.NoError(env.T, err)
+	require.EqualValues(env.T, DefaultChainOriginatorBaseTokens, ch.L2BaseTokens(ch.OriginatorAgentID))
 }

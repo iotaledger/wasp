@@ -1,49 +1,54 @@
-# BurnLog
+# Type
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Records** | [**[]BurnRecord**](BurnRecord.md) |  | 
+**S** | Pointer to **string** |  | [optional] 
 
 ## Methods
 
-### NewBurnLog
+### NewType
 
-`func NewBurnLog(records []BurnRecord, ) *BurnLog`
+`func NewType() *Type`
 
-NewBurnLog instantiates a new BurnLog object
+NewType instantiates a new Type object
 This constructor will assign default values to properties that have it defined,
 and makes sure properties required by API are set, but the set of arguments
 will change when the set of required properties is changed
 
-### NewBurnLogWithDefaults
+### NewTypeWithDefaults
 
-`func NewBurnLogWithDefaults() *BurnLog`
+`func NewTypeWithDefaults() *Type`
 
-NewBurnLogWithDefaults instantiates a new BurnLog object
+NewTypeWithDefaults instantiates a new Type object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetRecords
+### GetS
 
-`func (o *BurnLog) GetRecords() []BurnRecord`
+`func (o *Type) GetS() string`
 
-GetRecords returns the Records field if non-nil, zero value otherwise.
+GetS returns the S field if non-nil, zero value otherwise.
 
-### GetRecordsOk
+### GetSOk
 
-`func (o *BurnLog) GetRecordsOk() (*[]BurnRecord, bool)`
+`func (o *Type) GetSOk() (*string, bool)`
 
-GetRecordsOk returns a tuple with the Records field if it's non-nil, zero value otherwise
+GetSOk returns a tuple with the S field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetRecords
+### SetS
 
-`func (o *BurnLog) SetRecords(v []BurnRecord)`
+`func (o *Type) SetS(v string)`
 
-SetRecords sets Records field to given value.
+SetS sets S field to given value.
 
+### HasS
+
+`func (o *Type) HasS() bool`
+
+HasS returns a boolean if a field has been set.
 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

@@ -163,7 +163,7 @@ Name | Type | Description  | Notes
 
 ## CallView
 
-> [][]int32 CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+> []string CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
 
 Call a view function on a contract by Hname
 
@@ -183,7 +183,7 @@ import (
 
 func main() {
     chainID := "chainID_example" // string | ChainID (Hex Address)
-    contractCallViewRequest := *openapiclient.NewContractCallViewRequest([][]int32{[]int32{int32(123)}}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
+    contractCallViewRequest := *openapiclient.NewContractCallViewRequest([]string{"Arguments_example"}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -192,7 +192,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.CallView``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `CallView`: [][]int32
+    // response from `CallView`: []string
     fmt.Fprintf(os.Stdout, "Response from `ChainsApi.CallView`: %v\n", resp)
 }
 ```
@@ -217,7 +217,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**[][]int32**](array.md)
+**[]string**
 
 ### Authorization
 
@@ -367,7 +367,7 @@ Name | Type | Description  | Notes
 
 ## EstimateGasOffledger
 
-> EstimateGasOffledger(ctx, chainID).Request(request).Execute()
+> ReceiptResponse EstimateGasOffledger(ctx, chainID).Request(request).Execute()
 
 Estimates gas for a given off-ledger ISC request
 
@@ -394,6 +394,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOffledger``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `EstimateGasOffledger`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOffledger`: %v\n", resp)
 }
 ```
 
@@ -417,7 +419,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 
@@ -426,7 +428,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
-- **Accept**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -435,7 +437,7 @@ No authorization required
 
 ## EstimateGasOnledger
 
-> EstimateGasOnledger(ctx, chainID).Request(request).Execute()
+> ReceiptResponse EstimateGasOnledger(ctx, chainID).Request(request).Execute()
 
 Estimates gas for a given on-ledger ISC request
 
@@ -462,6 +464,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOnledger``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `EstimateGasOnledger`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOnledger`: %v\n", resp)
 }
 ```
 
@@ -485,7 +489,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 
@@ -494,7 +498,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
-- **Accept**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -840,7 +844,7 @@ Name | Type | Description  | Notes
 
 ## GetReceipt
 
-> GetReceipt(ctx, chainID, requestID).Execute()
+> ReceiptResponse GetReceipt(ctx, chainID, requestID).Execute()
 
 Get a receipt from a request ID
 
@@ -867,6 +871,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetReceipt``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `GetReceipt`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetReceipt`: %v\n", resp)
 }
 ```
 
@@ -891,7 +897,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 
@@ -900,7 +906,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)
@@ -1249,7 +1255,7 @@ No authorization required
 
 ## WaitForRequest
 
-> WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+> ReceiptResponse WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
 
 Wait until the given request has been processed by the node
 
@@ -1278,6 +1284,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.WaitForRequest``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `WaitForRequest`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.WaitForRequest`: %v\n", resp)
 }
 ```
 
@@ -1304,7 +1312,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 
@@ -1313,7 +1321,7 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

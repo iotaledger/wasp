@@ -138,7 +138,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **callView**
-> Array<Array<number>> callView(contractCallViewRequest)
+> Array<string> callView(contractCallViewRequest)
 
 Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
 
@@ -158,9 +158,7 @@ let body:.ChainsApiCallViewRequest = {
   // ContractCallViewRequest | Parameters
   contractCallViewRequest: {
     arguments: [
-      [
-        1,
-      ],
+      "arguments_example",
     ],
     block: "block_example",
     contractHName: "contractHName_example",
@@ -186,7 +184,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**Array<Array<number>>**
+**Array<string>**
 
 ### Authorization
 
@@ -315,7 +313,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **estimateGasOffledger**
-> estimateGasOffledger(request)
+> ReceiptResponse estimateGasOffledger(request)
 
 
 ### Example
@@ -354,7 +352,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**ReceiptResponse**
 
 ### Authorization
 
@@ -363,18 +361,18 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**0** | successful operation |  -  |
+**200** | ReceiptResponse |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **estimateGasOnledger**
-> estimateGasOnledger(request)
+> ReceiptResponse estimateGasOnledger(request)
 
 
 ### Example
@@ -412,7 +410,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**ReceiptResponse**
 
 ### Authorization
 
@@ -421,13 +419,13 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**0** | successful operation |  -  |
+**200** | ReceiptResponse |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
@@ -704,7 +702,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **getReceipt**
-> getReceipt()
+> ReceiptResponse getReceipt()
 
 
 ### Example
@@ -740,7 +738,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**ReceiptResponse**
 
 ### Authorization
 
@@ -749,12 +747,13 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+**200** | ReceiptResponse |  -  |
 **404** | Chain or request id not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
@@ -1041,7 +1040,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **waitForRequest**
-> waitForRequest()
+> ReceiptResponse waitForRequest()
 
 
 ### Example
@@ -1083,7 +1082,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**ReceiptResponse**
 
 ### Authorization
 
@@ -1092,12 +1091,13 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+**200** | The request receipt |  -  |
 **404** | The chain or request id not found |  -  |
 **408** | The waiting time has reached the defined limit |  -  |
 
