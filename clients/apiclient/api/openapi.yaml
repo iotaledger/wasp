@@ -2993,20 +2993,16 @@ components:
         functionName: functionName
         functionHName: functionHName
         arguments:
-        - - 0
-          - 0
-        - - 0
-          - 0
+        - arguments
+        - arguments
         block: block
         contractName: contractName
       properties:
         arguments:
           description: Encoded arguments to be passed to the function
           items:
-            items:
-              format: int32
-              type: integer
-            type: array
+            format: string
+            type: string
           type: array
           xml:
             name: Arguments
