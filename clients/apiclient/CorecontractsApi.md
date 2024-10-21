@@ -1032,7 +1032,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **blocklogGetRequestReceipt**
-> blocklogGetRequestReceipt()
+> ReceiptResponse blocklogGetRequestReceipt()
 
 
 ### Example
@@ -1071,7 +1071,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**ReceiptResponse**
 
 ### Authorization
 
@@ -1086,12 +1086,13 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+**200** | The receipt |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **blocklogGetRequestReceiptsOfBlock**
-> blocklogGetRequestReceiptsOfBlock()
+> Array<ReceiptResponse> blocklogGetRequestReceiptsOfBlock()
 
 
 ### Example
@@ -1130,7 +1131,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**Array<ReceiptResponse>**
 
 ### Authorization
 
@@ -1145,12 +1146,13 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+**200** | The receipts |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **blocklogGetRequestReceiptsOfLatestBlock**
-> blocklogGetRequestReceiptsOfLatestBlock()
+> Array<ReceiptResponse> blocklogGetRequestReceiptsOfLatestBlock()
 
 
 ### Example
@@ -1186,7 +1188,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-void (empty response body)
+**Array<ReceiptResponse>**
 
 ### Authorization
 
@@ -1201,6 +1203,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+**200** | The receipts |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)

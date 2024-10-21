@@ -16,7 +16,7 @@ export class ContractCallViewRequest {
     /**
     * Encoded arguments to be passed to the function
     */
-    'arguments': Array<Array<number>>;
+    'arguments': Array<string>;
     'block'?: string;
     /**
     * The contract name as HName (Hex)
@@ -41,8 +41,8 @@ export class ContractCallViewRequest {
         {
             "name": "arguments",
             "baseName": "arguments",
-            "type": "Array<Array<number>>",
-            "format": "int32"
+            "type": "Array<string>",
+            "format": "string"
         },
         {
             "name": "block",

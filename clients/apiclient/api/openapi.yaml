@@ -702,6 +702,14 @@ paths:
           format: string
           type: string
       responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ReceiptResponse'
+                type: array
+          description: The receipts
         "401":
           content:
             application/json:
@@ -811,6 +819,14 @@ paths:
           format: string
           type: string
       responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ReceiptResponse'
+                type: array
+          description: The receipts
         "401":
           content:
             application/json:
@@ -1033,6 +1049,12 @@ paths:
           format: string
           type: string
       responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: The receipt
         "401":
           content:
             application/json:
@@ -1307,9 +1329,12 @@ paths:
         description: Request
         required: true
       responses:
-        default:
-          content: {}
-          description: successful operation
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
       summary: Estimates gas for a given off-ledger ISC request
       tags:
       - chains
@@ -1333,9 +1358,12 @@ paths:
         description: Request
         required: true
       responses:
-        default:
-          content: {}
-          description: successful operation
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
       summary: Estimates gas for a given on-ledger ISC request
       tags:
       - chains
@@ -1425,6 +1453,12 @@ paths:
           format: string
           type: string
       responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: ReceiptResponse
         "404":
           content: {}
           description: Chain or request id not found
@@ -1462,6 +1496,12 @@ paths:
           format: boolean
           type: boolean
       responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptResponse'
+          description: The request receipt
         "404":
           content: {}
           description: The chain or request id not found
@@ -1625,7 +1665,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object
@@ -2426,6 +2466,27 @@ components:
       type: object
       xml:
         name: BlockInfoResponse
+    BurnRecord:
+      example:
+        code: 6
+        gasBurned: 1
+      properties:
+        code:
+          format: int32
+          type: integer
+          xml:
+            name: Code
+        gasBurned:
+          format: int64
+          type: integer
+          xml:
+            name: GasBurned
+      required:
+      - code
+      - gasBurned
+      type: object
+      xml:
+        name: BurnRecord
     ChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
@@ -2993,20 +3054,16 @@ components:
         functionName: functionName
         functionHName: functionHName
         arguments:
-        - - 0
-          - 0
-        - - 0
-          - 0
+        - arguments
+        - arguments
         block: block
         contractName: contractName
       properties:
         arguments:
           description: Encoded arguments to be passed to the function
           items:
-            items:
-              format: int32
-              type: integer
-            type: array
+            format: string
+            type: string
           type: array
           xml:
             name: Arguments
@@ -4476,6 +4533,87 @@ components:
       type: object
       xml:
         name: Ratio32
+    ReceiptResponse:
+      example:
+        gasBurnLog:
+        - code: 6
+          gasBurned: 1
+        - code: 6
+          gasBurned: 1
+        blockIndex: 1
+        rawError:
+          code: code
+          params:
+          - params
+          - params
+        requestIndex: 1
+        storageDepositCharged: storageDepositCharged
+        gasFeeCharged: gasFeeCharged
+        errorMessage: errorMessage
+        gasBudget: gasBudget
+        gasBurned: gasBurned
+      properties:
+        blockIndex:
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: BlockIndex
+        errorMessage:
+          format: string
+          type: string
+          xml:
+            name: ErrorMessage
+        gasBudget:
+          description: The gas budget (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: GasBudget
+        gasBurnLog:
+          items:
+            $ref: '#/components/schemas/BurnRecord'
+          type: array
+          xml:
+            name: GasBurnLog
+            wrapped: true
+        gasBurned:
+          description: The burned gas (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: GasBurned
+        gasFeeCharged:
+          description: The charged gas fee (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: GasFeeCharged
+        rawError:
+          $ref: '#/components/schemas/UnresolvedVMErrorJSON'
+        requestIndex:
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: RequestIndex
+        storageDepositCharged:
+          description: Storage deposit charged (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: SDCharged
+      required:
+      - blockIndex
+      - gasBudget
+      - gasBurnLog
+      - gasBurned
+      - gasFeeCharged
+      - requestIndex
+      - storageDepositCharged
+      type: object
+      xml:
+        name: ReceiptResponse
     RentStructure:
       example:
         vByteFactorData: 2
@@ -4753,6 +4891,29 @@ components:
       type: object
       xml:
         name: UTXOInputMetricItem
+    UnresolvedVMErrorJSON:
+      example:
+        code: code
+        params:
+        - params
+        - params
+      properties:
+        code:
+          format: string
+          type: string
+          xml:
+            name: ErrorCode
+        params:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: Params
+            wrapped: true
+      type: object
+      xml:
+        name: UnresolvedVMErrorJSON
     UpdateUserPasswordRequest:
       example:
         password: password

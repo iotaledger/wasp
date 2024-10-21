@@ -1254,7 +1254,7 @@ No authorization required
 
 ## BlocklogGetRequestReceipt
 
-> BlocklogGetRequestReceipt(ctx, chainID, requestID).Block(block).Execute()
+> ReceiptResponse BlocklogGetRequestReceipt(ctx, chainID, requestID).Block(block).Execute()
 
 Get the receipt of a certain request id
 
@@ -1282,6 +1282,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceipt``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `BlocklogGetRequestReceipt`: ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceipt`: %v\n", resp)
 }
 ```
 
@@ -1307,7 +1309,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 
@@ -1325,7 +1327,7 @@ No authorization required
 
 ## BlocklogGetRequestReceiptsOfBlock
 
-> BlocklogGetRequestReceiptsOfBlock(ctx, chainID, blockIndex).Block(block).Execute()
+> []ReceiptResponse BlocklogGetRequestReceiptsOfBlock(ctx, chainID, blockIndex).Block(block).Execute()
 
 Get all receipts of a certain block
 
@@ -1353,6 +1355,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceiptsOfBlock``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `BlocklogGetRequestReceiptsOfBlock`: []ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceiptsOfBlock`: %v\n", resp)
 }
 ```
 
@@ -1378,7 +1382,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**[]ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 
@@ -1396,7 +1400,7 @@ No authorization required
 
 ## BlocklogGetRequestReceiptsOfLatestBlock
 
-> BlocklogGetRequestReceiptsOfLatestBlock(ctx, chainID).Block(block).Execute()
+> []ReceiptResponse BlocklogGetRequestReceiptsOfLatestBlock(ctx, chainID).Block(block).Execute()
 
 Get all receipts of the latest block
 
@@ -1423,6 +1427,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
+    // response from `BlocklogGetRequestReceiptsOfLatestBlock`: []ReceiptResponse
+    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock`: %v\n", resp)
 }
 ```
 
@@ -1446,7 +1452,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
+[**[]ReceiptResponse**](ReceiptResponse.md)
 
 ### Authorization
 

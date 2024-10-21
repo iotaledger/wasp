@@ -85,7 +85,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamPath("", params.ParamRequestID, params.DescriptionRequestID).
 		AddResponse(http.StatusNotFound, "Chain or request id not found", nil, nil).
-		//AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
 
@@ -100,14 +100,14 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.POST("chains/:chainID/estimategas-onledger", c.estimateGasOnLedger).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.EstimateGasRequestOnledger{}), "Request", "Request", true).
-		//		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Estimates gas for a given on-ledger ISC request").
 		SetOperationId("estimateGasOnledger")
 
 	publicAPI.POST("chains/:chainID/estimategas-offledger", c.estimateGasOffLedger).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.EstimateGasRequestOffledger{}), "Request", "Request", true).
-		//	AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Estimates gas for a given off-ledger ISC request").
 		SetOperationId("estimateGasOffledger")
 
@@ -119,8 +119,8 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamQuery(0, "timeoutSeconds", "The timeout in seconds, maximum 60s", false).
 		AddParamQuery(false, "waitForL1Confirmation", "Wait for the block to be confirmed on L1", false).
 		AddResponse(http.StatusNotFound, "The chain or request id not found", nil, nil).
-		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil)
-	//		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
+		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
+		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
