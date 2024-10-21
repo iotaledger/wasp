@@ -710,7 +710,7 @@ func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockI
 
 	result, err := tracer.GetResult()
 	if err != nil {
-		if err != nil && !errors.Is(err, ErrIncorrectTopLevelCalls) {
+		if !errors.Is(err, ErrIncorrectTopLevelCalls) {
 			return nil, err
 		}
 
@@ -720,7 +720,7 @@ func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockI
 		}
 
 		if e.isFakeTransaction(tx) {
-			return json.Marshal(RPCMarshalTransactionForFakeTX(tx, tx.GasPrice()))
+			return json.Marshal(RPCMarshalTransactionTraceForFakeTX(tx, tx.GasPrice()))
 		}
 	}
 
