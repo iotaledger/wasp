@@ -166,7 +166,6 @@ func RPCMarshalTransactionTraceForFakeTX(tx *types.Transaction, effectiveGasPric
 		"gas":     hexutil.Uint64(tx.Gas()),
 		"gasUsed": hexutil.Uint64(tx.Gas()),
 		"to":      tx.To(),
-		"input":   hexutil.Bytes(tx.Data()),
 		"type":    FakeTxOpcode,
 		"value":   hexutil.Big(*tx.Value()),
 	}
