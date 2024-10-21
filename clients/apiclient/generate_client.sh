@@ -31,6 +31,8 @@ GENERATE_ARGS_GO="\
 
 (cd "$SCRIPTPATH/$APIGEN_FOLDER"; sh -c "./$APIGEN_SCRIPT >| $SCRIPTPATH/wasp_swagger_schema.json")
 
+cp $SCRIPTPATH/.openapi-generator/FILES /tmp/prev_openapi_generator_files
+
 if [ $GENERATE_MODE = "docker" ]; then
   echo "Generating client with Docker"
 
@@ -72,3 +74,17 @@ sed -i "/uint32/! s/NullableInt(/nullableIntUnused(/g" "$SCRIPTPATH/utils.go"
 sed -i "/uint32/! s/NullableInt)/nullableIntUnused)/g" "$SCRIPTPATH/utils.go"
 sed -i "/uint32/! s/NullableInt{/nullableIntUnused{/g" "$SCRIPTPATH/utils.go"
 sed -i "/uint32/! s/NullableInt /nullableIntUnused /g" "$SCRIPTPATH/utils.go"
+
+## Deleting obsolete files
+OBSOLETE_FILES=$(sort /tmp/prev_openapi_generator_files $SCRIPTPATH/.openapi-generator/FILES | uniq -u)
+if [ ! -z "$OBSOLETE_FILES" ]; then
+  DELETED_FILES_DIR=/tmp/openapi_generator_deleted_files_$(date +%F_%H-%M-%S)
+  
+  echo "Deleting obsolete files - moving them to $DELETED_FILES_DIR:"
+  echo $OBSOLETE_FILES
+  (
+    mkdir -p $DELETED_FILES_DIR &&
+    cd $SCRIPTPATH &&
+    echo $OBSOLETE_FILES | xargs -I{} mv {} $DELETED_FILES_DIR/
+  )
+fi
