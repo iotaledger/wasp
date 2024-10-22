@@ -6,6 +6,7 @@ package jsonrpctest
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"math"
 	"math/big"
@@ -18,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
@@ -286,6 +288,25 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	logs, err := e.Client.FilterLogs(context.Background(), q)
 	require.NoError(e.T, err)
 	return logs
+}
+
+func (e *Env) traceTransactionWithCallTracer(txHash common.Hash) (jsonrpc.CallFrame, error) {
+	var res json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err := e.RawClient.CallContext(
+		context.Background(),
+		&res,
+		"debug_traceTransaction",
+		txHash,
+		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+	)
+	if err != nil {
+		return jsonrpc.CallFrame{}, err
+	}
+	trace := jsonrpc.CallFrame{}
+	err = json.Unmarshal(res, &trace)
+	require.NoError(e.T, err)
+	return trace, nil
 }
 
 func (e *Env) TestRPCGetLogs() {

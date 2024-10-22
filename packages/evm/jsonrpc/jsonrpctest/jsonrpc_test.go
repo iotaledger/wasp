@@ -557,32 +557,10 @@ func TestRPCTraceTx(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
 
-	// assert each tx only has internal txs that belong to their execution
-	var res1 json.RawMessage
-	// we have to use the raw client, because the normal client does not support debug methods
-	err = env.RawClient.CallContext(
-		context.Background(),
-		&res1,
-		"debug_traceTransaction",
-		tx1.Hash().Hex(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
-	)
+	// assert each tx can be individually traced
+	trace1, err := env.traceTransactionWithCallTracer(tx1.Hash())
 	require.NoError(t, err)
-
-	// assert each tx only has internal txs that belong to their execution
-	var res2 json.RawMessage
-	// we have to use the raw client, because the normal client does not support debug methods
-	err = env.RawClient.CallContext(
-		context.Background(),
-		&res2,
-		"debug_traceTransaction",
-		tx2.Hash().Hex(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
-	)
-	require.NoError(t, err)
-
-	trace1 := jsonrpc.CallFrame{}
-	err = json.Unmarshal(res1, &trace1)
+	_, err = env.traceTransactionWithCallTracer(tx2.Hash())
 	require.NoError(t, err)
 
 	require.Equal(t, creatorAddress, trace1.From)
@@ -610,7 +588,7 @@ func TestRPCTraceTx(t *testing.T) {
 
 // Transfer calls produce "fake" Transactions to simulate EVM behavior.
 // They are not real in the sense of being persisted to the blockchain, therefore requires additional checks.
-func TestRPCTraceEvmDeposit(t *testing.T) {
+func TestRPCTraceEVMDeposit(t *testing.T) {
 	env := newSoloTestEnv(t)
 	wallet, _ := env.solo.NewKeyPairWithFunds()
 	_, evmAddr := env.soloChain.NewEthereumAccountWithL2Funds()
@@ -631,24 +609,13 @@ func TestRPCTraceEvmDeposit(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
 
-	var res1 json.RawMessage
-	err = env.RawClient.CallContext(
-		context.Background(),
-		&res1,
-		"debug_traceTransaction",
-		tx.Hash().Hex(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
-	)
-	require.NoError(t, err)
-
-	var trace1 jsonrpc.SendTxArgs
-	err = json.Unmarshal(res1, &trace1)
+	trace, err := env.traceTransactionWithCallTracer(tx.Hash())
 	require.NoError(t, err)
 
 	fmt.Print(hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens))
 
-	require.Equal(t, evmAddr.String(), trace1.To.String())
-	require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace1.Value.String())
+	require.Equal(t, evmAddr.String(), trace.To.String())
+	require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
 }
 
 func TestRPCTraceBlock(t *testing.T) {
@@ -898,14 +865,10 @@ func TestRPCBlockReceipt(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
 
-	var receipts []*types.Receipt
-	err = env.RawClient.CallContext(
+	receipts, err := env.Client.BlockReceipts(
 		context.Background(),
-		&receipts,
-		"eth_getBlockReceipts",
-		hexutil.EncodeUint64(env.BlockNumber()))
-	require.NoError(t, err)
-
+		rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(env.BlockNumber())),
+	)
 	require.Len(t, receipts, 2)
 
 	r1 := receipts[slices.IndexFunc(receipts, func(v *types.Receipt) bool {
@@ -923,11 +886,10 @@ func TestRPCBlockReceipt(t *testing.T) {
 
 	// Test the same block with its hash.
 	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
-	err = env.RawClient.CallContext(
+	receipts, err = env.Client.BlockReceipts(
 		context.Background(),
-		&receipts,
-		"eth_getBlockReceipts",
-		block.Hash().String())
+		rpc.BlockNumberOrHashWithHash(block.Hash(), false),
+	)
 	require.NoError(t, err)
 
 	require.Len(t, receipts, 2)
