@@ -586,14 +586,15 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		rotationTX, err := vmtxbuilder.NewRotationTransaction(vmResult.RotationAddress.AsIotaAddress())
+		decidedAnchorRef := vmResult.Task.Anchor.Anchor.ObjectRef
+		rotationTX, err := vmtxbuilder.NewRotationTransaction(&decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
 			c.term.haveOutputProduced()
 			return nil
 		}
-		vmResult.UnsignedTransaction = rotationTX
+		vmResult.UnsignedTransaction = *rotationTX
 		vmResult.StateDraft = nil
 	}
 

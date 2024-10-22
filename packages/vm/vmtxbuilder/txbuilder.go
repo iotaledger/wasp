@@ -151,6 +151,11 @@ func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[iotago.ObjectRef]*
 	return m
 }
 
-func NewRotationTransaction(rotationAddress *iotago.Address) (iotago.ProgrammableTransaction, error) {
-	panic("txbuilder.NewRotationTransaction -- implement") // TODO: Implement.
+func NewRotationTransaction(anchorRef *iotago.ObjectRef, rotationAddress *iotago.Address) (*iotago.ProgrammableTransaction, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	if err := ptb.TransferObject(rotationAddress, anchorRef); err != nil {
+		return nil, err
+	}
+	pt := ptb.Finish()
+	return &pt, nil
 }
