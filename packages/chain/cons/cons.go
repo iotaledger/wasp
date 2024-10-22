@@ -554,7 +554,6 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
 	// The decided base alias output can be different from that we have proposed!
-	panic("refactor me: uponVMInputsReceived (Replaced AnchorOutput -> Anchor, Timestamp")
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
 		Processors: c.processorCache,
@@ -587,7 +586,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		rotationTX, err := vmtxbuilder.NewRotationTransaction(vmResult.RotationAddress.AsIotaAddress())
+		decidedAnchorRef := vmResult.Task.Anchor.Anchor.ObjectRef
+		rotationTX, err := vmtxbuilder.NewRotationTransaction(&decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
@@ -606,12 +606,16 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 	}
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.UnsignedTXReceived(&unsignedTX)).
+		AddAll(c.subTX.UnsignedTXReceived(c.makeTransactionData(&unsignedTX))).
 		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // TX
+
+func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction) *iotago.TransactionData {
+	panic("Implement: makeTransactionData") // TODO: ...
+}
 
 // Everything is ready for the output TX, produce it.
 func (c *consImpl) uponTXInputsReady(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
