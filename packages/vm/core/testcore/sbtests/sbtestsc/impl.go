@@ -17,10 +17,8 @@ func initialize(ctx isc.Sandbox) isc.CallArguments {
 
 // testEventLogGenericData is called several times in log_test.go
 func testEventLogGenericData(ctx isc.Sandbox, inc *uint64) {
-	if inc == nil {
-		inc = lo.ToPtr[uint64](1)
-	}
-	eventCounter(ctx, *inc)
+	incV := lo.FromPtrOr(inc, 1)
+	eventCounter(ctx, incV)
 }
 
 func testEventLogEventData(ctx isc.Sandbox) {
