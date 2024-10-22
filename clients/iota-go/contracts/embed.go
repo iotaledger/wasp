@@ -33,3 +33,8 @@ var testcoinBytecodeJSON []byte
 func Testcoin() move.PackageBytecode {
 	return move.DecodePackageBytecode(testcoinBytecodeJSON)
 }
+
+const (
+	TestcoinModuleName = "testcoin"
+	TestcoinTypeTag    = "TESTCOIN"
+)

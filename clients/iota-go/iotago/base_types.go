@@ -50,20 +50,6 @@ func (id ObjectID) Key() ObjectIDKey {
 	return result
 }
 
-type ObjectInfo struct {
-	Ref  *ObjectRef
-	Type *ResourceType
-}
-
-func NewObjectInfo(ref *ObjectRef, objType *ResourceType) *ObjectInfo {
-	var info ObjectInfo
-	info.Ref = ref
-	info.Type = objType
-	return &info
-}
-
-type ObjectRefKey [AddressLen + 8]byte
-
 // ObjectRef for BCS, need to keep this order
 type ObjectRef struct {
 	ObjectID *ObjectID      `json:"objectId"`
@@ -100,12 +86,6 @@ func (or *ObjectRef) Bytes() []byte {
 	result := or.ObjectID[:]
 	result = append(result, version...)
 	// TODO maybe we should add digest here too
-	return result
-}
-
-func (or *ObjectRef) Key() ObjectRefKey {
-	var result ObjectRefKey
-	copy(result[:], or.Bytes())
 	return result
 }
 
