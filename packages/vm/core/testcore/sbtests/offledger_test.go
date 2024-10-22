@@ -26,9 +26,8 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		chain.AssertL2BaseTokens(cAID, 0)
 
 		msg := sbtestsc.FuncSetInt.Message("ppp", 314)
-		msg.Target.Contract = isc.Hn(ScName)
 
-		_, err := chain.PostRequestOffLedger(solo.NewCallParams(msg), user)
+		_, err := chain.PostRequestOffLedger(solo.NewCallParams(msg, ScName), user)
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, "unverified account")
 
@@ -54,7 +53,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		ch.AssertL2BaseTokens(userAgentID, expectedUser)
 		require.NoError(t, err)
 
-		req := solo.NewCallParamsFromValues(ScName, sbtestsc.FuncSetInt.Name, "ppp", 314).
+		req := solo.NewCallParams(sbtestsc.FuncSetInt.Message("ppp", 314), ScName).
 			WithGasBudget(100_000)
 		_, err = ch.PostRequestOffLedger(req, user)
 		require.NoError(t, err)
@@ -62,11 +61,9 @@ func TestOffLedgerSuccess(t *testing.T) {
 		require.NoError(t, rec.Error.AsGoError())
 		t.Logf("receipt: %s", rec)
 
-		msg := sbtestsc.FuncGetInt.Message("ppp")
-		msg.Target.Contract = isc.Hn(ScName)
-		res, err := ch.CallView(msg)
-		require.NoError(t, err)
-		r, err := sbtestsc.FuncGetInt.DecodeOutput(res)
+		r, err := sbtestsc.FuncGetInt.Call("ppp", func(msg isc.Message) (isc.CallArguments, error) {
+			return ch.CallViewWithContract(ScName, msg)
+		})
 		require.NoError(t, err)
 		require.EqualValues(t, 314, r)
 		ch.AssertL2BaseTokens(userAgentID, expectedUser-rec.GasFeeCharged)

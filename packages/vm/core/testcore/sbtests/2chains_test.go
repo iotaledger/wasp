@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -117,13 +116,10 @@ func test2Chains(t *testing.T) {
 	// also cover gas fee for `FuncWithdrawFromChain` on chain2
 	withdrawBaseTokensToSend := withdrawReqAllowance + coin.Value(withdrawFeeGas)
 
+	msg := sbtestsc.FuncWithdrawFromChain.Message(chain1.ChainID, baseTokensToWithdrawFromChain1, &gasReserve, &gasFeeTransferAccountToChain)
+
 	_, err = chain2.PostRequestSync(
-		solo.NewCallParams(isc.NewMessageFromNames(ScName, sbtestsc.FuncWithdrawFromChain.Name, codec.MakeDict(map[string]any{
-			sbtestsc.ParamChainID:                          chain1.ChainID,
-			sbtestsc.ParamBaseTokens:                       baseTokensToWithdrawFromChain1,
-			sbtestsc.ParamGasReserve:                       gasReserve,
-			sbtestsc.ParamGasReserveTransferAccountToChain: gasFeeTransferAccountToChain,
-		}))).
+		solo.NewCallParams(msg, ScName).
 			AddBaseTokens(withdrawBaseTokensToSend).
 			WithAllowance(isc.NewAssets(withdrawReqAllowance)).
 			WithMaxAffordableGasBudget(),

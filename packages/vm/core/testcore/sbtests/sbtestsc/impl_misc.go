@@ -51,8 +51,8 @@ func runRecursion(ctx isc.Sandbox) isc.CallArguments {
 		FuncCallOnChain.Hname(),
 		isc.NewCallArguments(
 			codec.Encode(depth-1),
-			codec.EncodeOptionalNone(),
-			codec.EncodeOptionalSome(FuncRunRecursion.Hname()),
+			codec.EncodeNone(),
+			codec.EncodeSome(FuncRunRecursion.Hname()),
 		),
 	), nil)
 }
@@ -75,25 +75,16 @@ func getFibonacciIndirect(ctx isc.SandboxView, n uint64) uint64 {
 		return n
 	}
 
-	msg := FuncGetFibonacciIndirect.Message(n - 1)
-	msg.Target.Contract = ctx.Contract()
-	ret1 := ctx.CallView(msg)
-	n1 := lo.Must(FuncGetFibonacciIndirect.DecodeOutput(ret1))
-
-	msg = FuncGetFibonacciIndirect.Message(n - 2)
-	msg.Target.Contract = ctx.Contract()
-	ret2 := ctx.CallView(msg)
-	n2 := lo.Must(FuncGetFibonacciIndirect.DecodeOutput(ret2))
+	n1 := lo.Must(FuncGetFibonacciIndirect.Call(n-1, callViewFunc(ctx)))
+	n2 := lo.Must(FuncGetFibonacciIndirect.Call(n-2, callViewFunc(ctx)))
 
 	return n1 + n2
 }
 
 // calls the "fib indirect" view and stores the result in the state
 func calcFibonacciIndirectStoreValue(ctx isc.Sandbox, n uint64) {
-	msg := FuncGetFibonacciIndirect.Message(n - 1)
-	msg.Target.Contract = ctx.Contract()
-	ret := ctx.CallView(msg)
-	retN := lo.Must(FuncGetFibonacciIndirect.DecodeOutput(ret))
+	retN := lo.Must(FuncGetFibonacciIndirect.Call(n-1, callViewFunc(ctx)))
+
 	codec.StateSet(ctx.State(), VarN, retN)
 }
 

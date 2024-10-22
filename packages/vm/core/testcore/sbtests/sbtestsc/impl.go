@@ -79,3 +79,10 @@ func testCallPanicViewEPFromView(ctx isc.SandboxView) isc.CallArguments {
 func doNothing(ctx isc.Sandbox) {
 	ctx.Log().Infof(MsgDoNothing)
 }
+
+func callViewFunc(ctx isc.SandboxView) func(isc.Message) (isc.CallArguments, error) {
+	return func(m isc.Message) (isc.CallArguments, error) {
+		m.Target.Contract = ctx.Contract()
+		return ctx.CallView(m), nil
+	}
+}

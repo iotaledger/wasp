@@ -2,6 +2,7 @@
 package sbtestsc
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -98,7 +99,7 @@ var (
 
 	FuncWithdrawFromChain = coreutil.NewEP4(Contract, "withdrawFromChain",
 		coreutil.Field[isc.ChainID](),
-		coreutil.Field[uint64](),
+		coreutil.Field[coin.Value](),
 		coreutil.FieldOptional[uint64](),
 		coreutil.FieldOptional[uint64](),
 	)

@@ -67,4 +67,18 @@ func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{r
 
     return {{range $i := until .Outputs}}o{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}, nil
 }
+
+func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Call(
+    send func(msg isc.Message) (isc.CallArguments, error),
+) ({{range $i := until .Outputs}}T{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}, error) {
+    {{range $i := until .Outputs}}var o{{add $i 1}} T{{add $i 1}}
+    {{end}}
+    msg := e.Message()
+    res, err := send(msg)
+    if err != nil {
+        return {{range $j := until $.Outputs}}o{{add $j 1}}{{if not (last $j $.Outputs)}}, {{end}}{{end}}, err
+    }
+
+    return e.DecodeOutput(res)
+}
 {{end}}

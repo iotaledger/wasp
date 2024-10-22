@@ -9,7 +9,7 @@ import (
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain
-func withdrawFromChain(ctx isc.Sandbox, targetChain isc.ChainID, withdrawal uint64, gasReserve *uint64, gasReserveTransferAccountToChain *uint64) {
+func withdrawFromChain(ctx isc.Sandbox, targetChain isc.ChainID, withdrawal coin.Value, gasReserve *uint64, gasReserveTransferAccountToChain *uint64) {
 	ctx.Log().Infof(FuncWithdrawFromChain.Name)
 
 	// if it is not already present in the SC's account the caller should have
@@ -31,7 +31,7 @@ func withdrawFromChain(ctx isc.Sandbox, targetChain isc.ChainID, withdrawal uint
 		Metadata: &isc.SendMetadata{
 			Message:   accounts.FuncTransferAccountToChain.Message(gasReserve),
 			GasBudget: *gasReserve,
-			Allowance: isc.NewAssets(coin.Value(withdrawal + storageDeposit + *gasReserve)),
+			Allowance: isc.NewAssets(withdrawal + coin.Value(storageDeposit+*gasReserve)),
 		},
 	})
 
