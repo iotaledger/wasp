@@ -944,6 +944,29 @@ func TestRPCBlockReceipt(t *testing.T) {
 	require.Equal(t, big.NewInt(4), r1.BlockNumber)
 	require.Equal(t, uint64(1), r2.Status)
 	require.Equal(t, big.NewInt(4), r2.BlockNumber)
+
+	// Test "latest" block
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&receipts,
+		"eth_getBlockReceipts",
+		"latest")
+	require.NoError(t, err)
+
+	require.Len(t, receipts, 2)
+
+	r1 = receipts[slices.IndexFunc(receipts, func(v *types.Receipt) bool {
+		return v.TxHash == tx1.Hash()
+	})]
+
+	r2 = receipts[slices.IndexFunc(receipts, func(v *types.Receipt) bool {
+		return v.TxHash == tx2.Hash()
+	})]
+
+	require.Equal(t, uint64(1), r1.Status)
+	require.Equal(t, big.NewInt(4), r1.BlockNumber)
+	require.Equal(t, uint64(1), r2.Status)
+	require.Equal(t, big.NewInt(4), r2.BlockNumber)
 }
 
 func BenchmarkRPCEstimateGas(b *testing.B) {

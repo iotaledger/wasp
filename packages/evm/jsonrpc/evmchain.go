@@ -804,19 +804,29 @@ func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceC
 	return e.traceBlock(config, block)
 }
 
-func (e *EVMChain) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
-	var block *types.Block
-	var err error
-
+func (e *EVMChain) getBlockByNumberOrHash(blockNrOrHash rpc.BlockNumberOrHash) (*types.Block, error) {
 	if h, ok := blockNrOrHash.Hash(); ok {
-		block = e.BlockByHash(h)
+		return e.BlockByHash(h), nil
 	} else if n, ok := blockNrOrHash.Number(); ok {
-		block, err = e.BlockByNumber(big.NewInt(n.Int64()))
-		if err != nil {
-			return nil, err
+		switch n {
+		case rpc.LatestBlockNumber:
+			return e.BlockByNumber(nil)
+		default:
+			if n < 0 {
+				return nil, fmt.Errorf("%v is unsupported", blockNrOrHash.String())
+			}
+
+			return e.BlockByNumber(big.NewInt(n.Int64()))
 		}
-	} else {
-		return nil, fmt.Errorf("block not found: %v", blockNrOrHash.String())
+	}
+
+	return nil, fmt.Errorf("block not found: %v", blockNrOrHash.String())
+}
+
+func (e *EVMChain) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
+	block, err := e.getBlockByNumberOrHash(blockNrOrHash)
+	if err != nil {
+		return nil, err
 	}
 
 	return rlp.EncodeToBytes(block)
@@ -825,21 +835,12 @@ func (e *EVMChain) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (hexutil.Byt
 func (e *EVMChain) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]*types.Receipt, []*types.Transaction, error) {
 	e.log.Debugf("GetBlockReceipts(blockNumber=%v)", blockNrOrHash.String())
 
-	var block *types.Block
-	var err error
-
-	if h, ok := blockNrOrHash.Hash(); ok {
-		block = e.BlockByHash(h)
-	} else if n, ok := blockNrOrHash.Number(); ok {
-		block, err = e.BlockByNumber(parseBlockNumber(n))
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		return nil, nil, fmt.Errorf("block not found: %v", blockNrOrHash.String())
+	block, err := e.getBlockByNumberOrHash(blockNrOrHash)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	chainState, err := e.iscStateFromEVMBlockNumberOrHash(&blockNrOrHash)
+	chainState, err := e.iscStateFromEVMBlockNumber(block.Number())
 	if err != nil {
 		return nil, nil, err
 	}
