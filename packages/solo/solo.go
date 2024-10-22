@@ -19,7 +19,9 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -455,6 +457,13 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 	}
 }
 
+func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
+	anchor := ch.GetLatestAnchor()
+	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.Anchor.Object.Assets.ID)
+	require.NoError(ch.Env.T, err)
+	return anchor, lo.Must(isc.AssetsFromAssetsBagWithBalances(bals))
+}
+
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
 func (ch *Chain) collateBatch() []isc.Request {
@@ -657,4 +666,36 @@ func (env *Solo) executePTB(
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes
+}
+
+func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
+	packageID *iotago.PackageID,
+	treasuryCap *iotago.ObjectRef,
+) {
+	return iotaclienttest.DeployCoinPackage(
+		env.T,
+		env.IotaClient(),
+		cryptolib.SignerToIotaSigner(keyPair),
+		contracts.Testcoin(),
+	)
+}
+
+func (env *Solo) L1MintCoin(
+	keyPair *cryptolib.KeyPair,
+	packageID *iotago.PackageID,
+	moduleName iotago.Identifier,
+	typeTag iotago.Identifier,
+	treasuryCapObjectID *iotago.ObjectID,
+	mintAmount uint64,
+) (coinRef *iotago.ObjectRef) {
+	return iotaclienttest.MintCoins(
+		env.T,
+		env.IotaClient(),
+		cryptolib.SignerToIotaSigner(keyPair),
+		packageID,
+		moduleName,
+		typeTag,
+		treasuryCapObjectID,
+		mintAmount,
+	)
 }

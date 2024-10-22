@@ -68,11 +68,11 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
 		iotaclient.GetObjectRequest{
-			ObjectID: coinInfo.Ref.ObjectID,
+			ObjectID: coinRef.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
@@ -86,7 +86,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		assetsBagMainRef,
-		coinInfo.Ref,
+		coinRef,
 		testCointype,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -113,11 +113,11 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
 		iotaclient.GetObjectRequest{
-			ObjectID: coinInfo.Ref.ObjectID,
+			ObjectID: coinRef.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
@@ -132,7 +132,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		assetsBagMainRef,
-		coinInfo.Ref,
+		coinRef,
 		testCointype,
 		10,
 		nil,
@@ -160,11 +160,11 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo("assets_bag", "AssetsBag")
 	require.NoError(t, err)
 
-	_, coinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
 		iotaclient.GetObjectRequest{
-			ObjectID: coinInfo.Ref.ObjectID,
+			ObjectID: coinRef.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
@@ -178,7 +178,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		assetsBagMainRef,
-		coinInfo.Ref,
+		coinRef,
 		testCointype,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -203,11 +203,11 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
-	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	coinRef, coinType := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
 		iotaclient.GetObjectRequest{
-			ObjectID: testcoinInfo.Ref.ObjectID,
+			ObjectID: coinRef.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
@@ -217,7 +217,15 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.NoError(t, err)
 	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 
-	borrowAnchorAssetsAndPlaceCoin(t, context.Background(), client, cryptolibSigner, &anchor.ObjectRef, testcoinInfo)
+	borrowAnchorAssetsAndPlaceCoin(
+		t,
+		context.Background(),
+		client,
+		cryptolibSigner,
+		&anchor.ObjectRef,
+		coinRef,
+		coinType,
+	)
 
 	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.ID)
 	require.NoError(t, err)
@@ -233,13 +241,14 @@ func borrowAnchorAssetsAndPlaceCoin(
 	client *iscmoveclient.Client,
 	cryptolibSigner cryptolib.Signer,
 	anchorRef *iotago.ObjectRef,
-	testcoinInfo *iotago.ObjectInfo,
+	coinRef *iotago.ObjectRef,
+	coinType *iotago.ResourceType,
 ) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	packageID := l1starter.ISCPackageID()
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	typeTag, err := iotago.TypeTagFromString(testcoinInfo.Type.String())
+	typeTag, err := iotago.TypeTagFromString(coinType.String())
 	require.NoError(t, err)
 	ptb.Command(
 		iotago.Command{
@@ -265,7 +274,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 				TypeArguments: []iotago.TypeTag{*typeTag},
 				Arguments: []iotago.Argument{
 					argAssetsBag,
-					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: testcoinInfo.Ref}),
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
 				},
 			},
 		},
@@ -314,11 +323,11 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
-	_, testcoinInfo := buildDeployMintTestcoin(t, client, cryptolibSigner)
+	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
 		context.Background(),
 		iotaclient.GetObjectRequest{
-			ObjectID: testcoinInfo.Ref.ObjectID,
+			ObjectID: coinRef.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 		},
 	)
@@ -346,7 +355,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		cryptolibSigner,
 		l1starter.ISCPackageID(),
 		assetsBagRef,
-		testcoinInfo.Ref,
+		coinRef,
 		testCointype,
 		nil,
 		iotaclient.DefaultGasPrice,

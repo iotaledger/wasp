@@ -27,7 +27,7 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			"0xa2::b::B":             &iotajsonrpc.Balance{TotalBalance: iotajsonrpc.NewBigInt(22)},
 		},
 	}
-	assets, err := isc.AssetsFromAssetsBagWithBalances(assetsBag)
+	assets, err := isc.AssetsFromAssetsBagWithBalances(&assetsBag)
 	require.NoError(t, err)
 	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType].TotalBalance, uint64(assets.BaseTokens()))
 	require.Equal(t, assetsBag.Balances["0xa1::a::A"].TotalBalance, uint64(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))

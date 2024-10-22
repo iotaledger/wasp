@@ -27,7 +27,7 @@ var (
 )
 
 func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
-	assets, err := AssetsFromAssetsBagWithBalances(request.Object.AssetsBag)
+	assets, err := AssetsFromAssetsBagWithBalances(&request.Object.AssetsBag)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse assets from AssetsBag: %w", err)
 	}
