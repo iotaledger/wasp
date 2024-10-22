@@ -6,11 +6,11 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller
-func testSplitFunds(ctx isc.Sandbox) isc.CallArguments {
+func testSplitFunds(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claim 1Mi base tokens from allowance at a time
@@ -26,11 +26,10 @@ func testSplitFunds(ctx isc.Sandbox) isc.CallArguments {
 			},
 		)
 	}
-	return nil
 }
 
 // testSplitFundsNativeTokens calls Send for each Native token
-func testSplitFundsNativeTokens(ctx isc.Sandbox) isc.CallArguments {
+func testSplitFundsNativeTokens(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claims all base tokens from allowance
@@ -52,10 +51,9 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) isc.CallArguments {
 			)
 		}
 	}
-	return nil
 }
 
-func pingAllowanceBack(ctx isc.Sandbox) isc.CallArguments {
+func pingAllowanceBack(ctx isc.Sandbox) {
 	caller := ctx.Caller()
 	addr, ok := isc.AddressFromAgentID(caller)
 	// assert caller is L1 address, not a SC
@@ -65,7 +63,7 @@ func pingAllowanceBack(ctx isc.Sandbox) isc.CallArguments {
 	toSend := ctx.AllowanceAvailable()
 	if toSend.IsEmpty() {
 		// nothing to send back, NOP
-		return nil
+		return
 	}
 	// claim all transfer to the current account
 	left := ctx.TransferAllowedFunds(ctx.AccountID())
@@ -79,11 +77,10 @@ func pingAllowanceBack(ctx isc.Sandbox) isc.CallArguments {
 			Assets:        toSend,
 		},
 	)
-	return nil
 }
 
 // testEstimateMinimumStorageDeposit returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
-func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) isc.CallArguments {
+func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
@@ -96,13 +93,14 @@ func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) isc.CallArguments {
 		},
 	}
 
-	required := ctx.EstimateRequiredStorageDeposit(requestParams)
-	ctx.Requiref(provided >= required, "not enough funds")
-	return nil
+	panic("TODO: fix EstimateRequiredStorageDeposit")
+	_, _ = requestParams, provided
+	//required := ctx.EstimateRequiredStorageDeposit(requestParams)
+	//ctx.Requiref(provided >= required, "not enough funds")
 }
 
 // tries to sendback whaever NFTs are specified in allowance
-func sendNFTsBack(ctx isc.Sandbox) isc.CallArguments {
+func sendNFTsBack(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
@@ -117,46 +115,48 @@ func sendNFTsBack(ctx isc.Sandbox) isc.CallArguments {
 			Options:  isc.SendOptions{},
 		})
 	}
-	return nil
 }
 
 // just claims everything from allowance and does nothing with it
 // tests the "getData" sandbox call for every NFT sent in allowance
-func claimAllowance(ctx isc.Sandbox) isc.CallArguments {
+func claimAllowance(ctx isc.Sandbox) {
 	initialNFTset := ctx.OwnedObjects()
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Requiref(len(ctx.OwnedObjects())-len(initialNFTset) == len(allowance.Objects), "must get all NFTs from allowance")
 	for _, id := range allowance.Objects {
-		nftData := ctx.GetNFTData(id)
-		ctx.Requiref(!nftData.ID.Empty(), "must have NFTID")
-		ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
-		ctx.Requiref(nftData.Issuer != nil, "must have issuer")
+		panic("TODO: fix GetNFTData")
+		_ = id
+		// nftData := ctx.GetNFTData(id)
+		// ctx.Requiref(!nftData.ID.Empty(), "must have NFTID")
+		// ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
+		// ctx.Requiref(nftData.Issuer != nil, "must have issuer")
 	}
-
-	return nil
 }
 
-func sendLargeRequest(ctx isc.Sandbox) isc.CallArguments {
+func sendLargeRequest(ctx isc.Sandbox, x int32) {
 	req := isc.RequestParameters{
 		TargetAddress: cryptolib.NewRandomAddress(),
 		Metadata: &isc.SendMetadata{
 			Message: isc.NewMessage(
 				isc.Hn("foo"),
 				isc.Hn("bar"),
-				dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
+				isc.NewCallArguments(codec.Encode(x)),
 			),
 		},
 
 		Assets: ctx.AllowanceAvailable(),
 	}
-	storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
-	provided := ctx.AllowanceAvailable().BaseTokens
+
+	panic("TODO: fix EstimateRequiredStorageDeposit")
+	storageDeposit := coin.Value(0)
+	//storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
+
+	provided := ctx.AllowanceAvailable().BaseTokens()
 	if provided < storageDeposit {
 		panic("not enough funds for storage deposit")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(storageDeposit))
 	req.Assets.Coins[coin.BaseTokenType] = storageDeposit
 	ctx.Send(req)
-	return nil
 }

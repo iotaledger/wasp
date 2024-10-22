@@ -63,7 +63,7 @@ var Processor = Contract.Processor(initialize,
 var (
 	// function eventlog test
 	FuncEventLogGenericData = coreutil.NewEP1(Contract, "testEventLogGenericData",
-		coreutil.Field[uint64](),
+		coreutil.FieldOptional[uint64](),
 	)
 	FuncEventLogEventData = coreutil.NewEP0(Contract, "testEventLogEventData")
 	FuncEventLogDeploy    = coreutil.NewEP0(Contract, "testEventLogDeploy")
@@ -76,9 +76,7 @@ var (
 		coreutil.Field[isc.AgentID](),
 	)
 
-	FuncSandboxCall = coreutil.NewViewEP01(Contract, "testSandboxCall",
-		coreutil.Field[*isc.ChainInfo](),
-	)
+	FuncSandboxCall            = Contract.ViewFunc("testSandboxCall")
 	FuncCheckContextFromFullEP = coreutil.NewEP4(Contract, "checkContextFromFullEP",
 		coreutil.Field[isc.ChainID](),
 		coreutil.Field[isc.AgentID](),
@@ -94,9 +92,9 @@ var (
 	FuncTestCustomError         = coreutil.NewEP0(Contract, "testCustomError")
 	FuncPanicFullEP             = coreutil.NewEP0(Contract, "testPanicFullEP")
 	FuncPanicViewEP             = coreutil.NewViewEP0(Contract, "testPanicViewEP")
-	FuncCallPanicFullEP         = coreutil.NewEP0(Contract, "testCallPanicFullEP")
-	FuncCallPanicViewEPFromFull = coreutil.NewEP0(Contract, "testCallPanicViewEPFromFull")
-	FuncCallPanicViewEPFromView = coreutil.NewViewEP0(Contract, "testCallPanicViewEPFromView")
+	FuncCallPanicFullEP         = Contract.Func("testCallPanicFullEP")
+	FuncCallPanicViewEPFromFull = Contract.Func("testCallPanicViewEPFromFull")
+	FuncCallPanicViewEPFromView = Contract.ViewFunc("testCallPanicViewEPFromView")
 
 	FuncWithdrawFromChain = coreutil.NewEP4(Contract, "withdrawFromChain",
 		coreutil.Field[isc.ChainID](),
@@ -112,11 +110,11 @@ var (
 	FuncCallOnChain = Contract.Func("callOnChain")
 	FuncSetInt      = coreutil.NewEP2(Contract, "setInt",
 		coreutil.Field[string](),
-		coreutil.Field[int](),
+		coreutil.Field[int64](),
 	)
-	FuncGetInt = coreutil.NewEP11(Contract, "getInt",
+	FuncGetInt = coreutil.NewViewEP11(Contract, "getInt",
 		coreutil.Field[string](),
-		coreutil.Field[int](),
+		coreutil.Field[int64](),
 	)
 	FuncGetFibonacci = coreutil.NewViewEP11(Contract, "fibonacci",
 		coreutil.Field[uint64](),
@@ -133,13 +131,10 @@ var (
 		coreutil.Field[uint64](),
 	)
 	FuncGetCounter = coreutil.NewViewEP01(Contract, "getCounter",
-		coreutil.Field[int](),
+		coreutil.Field[uint64](),
 	)
 	FuncIncCounter   = coreutil.NewEP0(Contract, "incCounter")
-	FuncRunRecursion = coreutil.NewEP11(Contract, "runRecursion",
-		coreutil.Field[uint64](),
-		coreutil.Field[uint64](),
-	)
+	FuncRunRecursion = Contract.Func("runRecursion")
 
 	FuncPassTypesFull = Contract.Func("passTypesFull")
 	FuncPassTypesView = Contract.ViewFunc("passTypesView")
@@ -165,25 +160,7 @@ const (
 	// State variables
 	VarCounter              = "counter"
 	VarContractNameDeployed = "exampleDeployTR"
-
-	// parameters
-	ParamAddress                          = "address"
-	ParamAgentID                          = "agentID"
-	ParamCaller                           = "caller"
-	ParamChainID                          = "chainID"
-	ParamChainOwnerID                     = "chainOwnerID"
-	ParamGasReserve                       = "gasReserve"
-	ParamGasReserveTransferAccountToChain = "gasReserveTransferAccountToChain"
-	ParamContractID                       = "contractID"
-	ParamFail                             = "initFailParam"
-	ParamHnameContract                    = "hnameContract"
-	ParamHnameEP                          = "hnameEP"
-	ParamIntParamName                     = "intParamName"
-	ParamIntParamValue                    = "intParamValue"
-	ParamBaseTokens                       = "baseTokens"
-	ParamN                                = "n"
-	ParamProgHash                         = "progHash"
-	ParamSize                             = "size"
+	VarN                    = "n"
 
 	// error fragments for testing
 	MsgDoNothing = "========== doing nothing =========="

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -240,7 +242,52 @@ func (c *CallArguments) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func ArgAt[T any](results CallResults, index int) (r T, _ error) {
+	b, err := results.At(index)
+	if err != nil {
+		return r, err
+	}
+
+	return codec.Decode[T](b)
+}
+
+func MustArgAt[T any](results CallResults, index int) T {
+	return lo.Must(ResAt[T](results, index))
+}
+
+func OptionalArgAt[T any](results CallResults, index int, def T) (T, error) {
+	r, err := ArgAt[*T](results, index)
+	if err != nil {
+		return def, nil
+	}
+	if r == nil {
+		return def, nil
+	}
+
+	return *r, nil
+}
+
+func MustOptionalArgAt[T any](results CallResults, index int, def T) T {
+	return lo.Must(OptionalResAt[T](results, index, def))
+}
+
 type CallResults = CallArguments
+
+func ResAt[T any](results CallResults, index int) (T, error) {
+	return ArgAt[T](results, index)
+}
+
+func MustResAt[T any](results CallResults, index int) T {
+	return MustArgAt[T](results, index)
+}
+
+func OptionalResAt[T any](results CallResults, index int, def T) (T, error) {
+	return OptionalArgAt(results, index, def)
+}
+
+func MustOptionalResAt[T any](results CallResults, index int, def T) T {
+	return MustOptionalArgAt(results, index, def)
+}
 
 type Message struct {
 	Target CallTarget    `json:"target"`

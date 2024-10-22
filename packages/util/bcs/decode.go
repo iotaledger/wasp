@@ -133,7 +133,8 @@ func (d *Decoder) Decode(v any) error {
 }
 
 func (d *Decoder) DecodeOptional(v any) (bool, error) {
-	if hasValue := d.r.ReadByte() != 0; !hasValue {
+	hasValue := d.ReadOptionalFlag()
+	if d.r.Err != nil || !hasValue {
 		return false, d.r.Err
 	}
 
@@ -141,7 +142,16 @@ func (d *Decoder) DecodeOptional(v any) (bool, error) {
 }
 
 func (d *Decoder) ReadOptionalFlag() bool {
-	return d.r.ReadByte() != 0
+	f := d.r.ReadByte()
+	switch f {
+	case 0:
+		return false
+	case 1:
+		return true
+	default:
+		d.r.Err = fmt.Errorf("invalid optional flag value: %v", f)
+		return false
+	}
 }
 
 // Enum index is an index of variant in enum type.
@@ -705,9 +715,12 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
 			if fieldOpts.Optional {
-				present := d.r.ReadByte()
+				hasValue := d.ReadOptionalFlag()
+				if d.r.Err != nil {
+					return fmt.Errorf("%v: %w", fieldType.Name, d.r.Err)
+				}
 
-				if present == 0 {
+				if !hasValue {
 					// TODO: should we "clean" the field?
 					// I'm not doing it to allow presetting it and keeping even if it was missing.
 					continue

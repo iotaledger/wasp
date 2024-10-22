@@ -2,70 +2,63 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/samber/lo"
 )
 
 var testError *isc.VMErrorTemplate
 
 func initialize(ctx isc.Sandbox) isc.CallArguments {
-	p := ctx.Params().Get(ParamFail)
-	ctx.Requiref(p == nil, "failing on purpose")
+	failOnPurpose := isc.MustArgAt[bool](ctx.Params(), 0)
+	ctx.Requiref(!failOnPurpose, "failing on purpose")
 	testError = ctx.RegisterError("ERROR_TEST")
 	return nil
 }
 
 // testEventLogGenericData is called several times in log_test.go
-func testEventLogGenericData(ctx isc.Sandbox) isc.CallArguments {
-	params := ctx.Params()
-	inc := codec.MustDecode[uint64](params.Get(VarCounter), 1)
-	eventCounter(ctx, inc)
-	return nil
+func testEventLogGenericData(ctx isc.Sandbox, inc *uint64) {
+	if inc == nil {
+		inc = lo.ToPtr[uint64](1)
+	}
+	eventCounter(ctx, *inc)
 }
 
-func testEventLogEventData(ctx isc.Sandbox) isc.CallArguments {
+func testEventLogEventData(ctx isc.Sandbox) {
 	eventTest(ctx)
-	return nil
 }
 
-func testChainOwnerIDView(ctx isc.SandboxView) isc.CallArguments {
-	cOwnerID := ctx.ChainOwnerID()
-	return dict.Dict{ParamChainOwnerID: cOwnerID.Bytes()}
+func testChainOwnerIDView(ctx isc.SandboxView) isc.AgentID {
+	return ctx.ChainOwnerID()
 }
 
-func testChainOwnerIDFull(ctx isc.Sandbox) isc.CallArguments {
-	cOwnerID := ctx.ChainOwnerID()
-	return dict.Dict{ParamChainOwnerID: cOwnerID.Bytes()}
+func testChainOwnerIDFull(ctx isc.Sandbox) isc.AgentID {
+	return ctx.ChainOwnerID()
 }
 
 func testSandboxCall(ctx isc.SandboxView) isc.CallArguments {
 	return ctx.CallView(governance.ViewGetChainInfo.Message())
 }
 
-func testEventLogDeploy(ctx isc.Sandbox) isc.CallArguments {
+func testEventLogDeploy(ctx isc.Sandbox) {
 	// Deploy the same contract with another name
-	ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
-	return nil
+	panic("TODO: contract deployment")
+	//ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
 }
 
-func testPanicFullEP(ctx isc.Sandbox) isc.CallArguments {
+func testPanicFullEP(ctx isc.Sandbox) {
 	ctx.Log().Panicf(MsgFullPanic)
-	return nil
 }
 
-func testCustomError(_ isc.Sandbox) dict.Dict {
+func testCustomError(_ isc.Sandbox) {
 	panic(testError.Create("CUSTOM_ERROR"))
 }
 
-func testPanicViewEP(ctx isc.SandboxView) isc.CallArguments {
+func testPanicViewEP(ctx isc.SandboxView) {
 	ctx.Log().Panicf(MsgViewPanic)
-	return nil
 }
 
-func testJustView(ctx isc.SandboxView) isc.CallArguments {
+func testJustView(ctx isc.SandboxView) {
 	ctx.Log().Infof("calling empty view entry point")
-	return nil
 }
 
 func testCallPanicFullEP(ctx isc.Sandbox) isc.CallArguments {
@@ -83,7 +76,6 @@ func testCallPanicViewEPFromView(ctx isc.SandboxView) isc.CallArguments {
 	return ctx.CallView(isc.NewMessage(Contract.Hname(), FuncPanicViewEP.Hname(), nil))
 }
 
-func doNothing(ctx isc.Sandbox) isc.CallArguments {
+func doNothing(ctx isc.Sandbox) {
 	ctx.Log().Infof(MsgDoNothing)
-	return nil
 }
