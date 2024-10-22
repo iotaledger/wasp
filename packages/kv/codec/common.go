@@ -70,3 +70,11 @@ func EncodeOptional[T any](v *T) []byte {
 
 	return bcs.MustMarshal(&o)
 }
+
+func EncodeNone() []byte {
+	return EncodeOptional[int](nil)
+}
+
+func EncodeSome[T any](v T) []byte {
+	return EncodeOptional(&v)
+}

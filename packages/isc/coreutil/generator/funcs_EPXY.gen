@@ -78,5 +78,37 @@ func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{
 
     return {{range $i := until .Outputs}}o{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}, nil
 }
+
+func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, R{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Call(
+    {{range $i := until .Inputs}}p{{add $i 1}} T{{add $i 1}}{{if not (last $i $.Inputs)}}, {{end}}{{end}},
+    send func(msg isc.Message) (isc.CallArguments, error),
+) ({{range $i := until .Outputs}}R{{add $i 1}}{{if not (last $i $.Outputs)}}, {{end}}{{end}}, error) {
+    {{range $i := until .Outputs}}var o{{add $i 1}} R{{add $i 1}}
+    {{end}}
+    msg := e.Message({{range $i := until .Inputs}}p{{add $i 1}}{{if not (last $i $.Inputs)}}, {{end}}{{end}})
+    res, err := send(msg)
+    if err != nil {
+        return {{range $j := until $.Outputs}}o{{add $j 1}}{{if not (last $j $.Outputs)}}, {{end}}{{end}}, err
+    }
+
+    return e.DecodeOutput(res)
+}
+{{else}}
+func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, R{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Call(
+    {{range $i := until .Inputs}}p{{add $i 1}} T{{add $i 1}}{{if not (last $i $.Inputs)}}, {{end}}{{end}},
+    send func(msg isc.Message) (isc.CallArguments, error),
+) error {
+    msg := e.Message({{range $i := until .Inputs}}p{{add $i 1}}{{if not (last $i $.Inputs)}}, {{end}}{{end}})
+    res, err := send(msg)
+    if err != nil {
+        return err
+    }
+    if len(res) != 0 {
+        return fmt.Errorf("unexpected number of results: expected 0, got %v", len(res))
+    }
+
+    return nil
+}
+
 {{end}}
 {{end}}

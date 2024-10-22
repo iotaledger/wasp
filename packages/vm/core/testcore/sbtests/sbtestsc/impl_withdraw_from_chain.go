@@ -1,17 +1,16 @@
 package sbtestsc
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/samber/lo"
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain
-func withdrawFromChain(ctx isc.Sandbox) isc.CallArguments {
+func withdrawFromChain(ctx isc.Sandbox, targetChain isc.ChainID, withdrawal coin.Value, gasReserve *uint64, gasReserveTransferAccountToChain *uint64) {
 	ctx.Log().Infof(FuncWithdrawFromChain.Name)
-	params := ctx.Params()
-	targetChain := params.MustGetChainID(ParamChainID)
-	withdrawal := params.MustGetUint64(ParamBaseTokens)
 
 	// if it is not already present in the SC's account the caller should have
 	// provided enough base tokens to cover the gas fees for the current call
@@ -20,22 +19,21 @@ func withdrawFromChain(ctx isc.Sandbox) isc.CallArguments {
 	ctx.TransferAllowedFunds(ctx.AccountID())
 
 	// gasReserve is the gas fee for the 'TransferAllowanceTo' function call ub 'TransferAccountToChain'
-	gasReserve := params.MustGetUint64(ParamGasReserve, gas.LimitsDefault.MinGasPerRequest)
-	gasReserveTransferAccountToChain := params.MustGetUint64(ParamGasReserveTransferAccountToChain, gas.LimitsDefault.MinGasPerRequest)
+	gasReserve = lo.CoalesceOrEmpty(gasReserve, &gas.LimitsDefault.MinGasPerRequest)
+	gasReserveTransferAccountToChain = lo.CoalesceOrEmpty(gasReserveTransferAccountToChain, &gas.LimitsDefault.MinGasPerRequest)
 	const storageDeposit = 20_000
 
 	// make sure to send enough to cover the storage deposit and gas fees
 	// the storage deposit will be returned along with the withdrawal
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: targetChain.AsAddress(),
-		Assets:        isc.NewAssets(storageDeposit + gasReserveTransferAccountToChain + gasReserve),
+		Assets:        isc.NewAssets(coin.Value(storageDeposit + *gasReserveTransferAccountToChain + *gasReserve)),
 		Metadata: &isc.SendMetadata{
-			Message:   accounts.FuncTransferAccountToChain.Message(&gasReserve),
-			GasBudget: gasReserve,
-			Allowance: isc.NewAssets(withdrawal + storageDeposit + gasReserve),
+			Message:   accounts.FuncTransferAccountToChain.Message(gasReserve),
+			GasBudget: *gasReserve,
+			Allowance: isc.NewAssets(withdrawal + coin.Value(storageDeposit+*gasReserve)),
 		},
 	})
 
 	ctx.Log().Infof("%s: success", FuncWithdrawFromChain.Name)
-	return nil
 }

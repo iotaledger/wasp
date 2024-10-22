@@ -39,13 +39,32 @@ type CallParams struct {
 
 // NewCallParams creates a structure that wraps in one object call parameters,
 // used in PostRequestSync and CallView
-func NewCallParams(msg isc.Message) *CallParams {
-	return &CallParams{msg: msg}
+func NewCallParams(msg isc.Message, contract ...any) *CallParams {
+	p := &CallParams{msg: msg}
+
+	if len(contract) > 0 {
+		p = p.WithTargetContract(contract[0])
+	}
+
+	return p
 }
 
 // NewCallParamsEx is a shortcut for NewCallParams
 func NewCallParamsEx(c, ep string, params ...isc.CallArguments) *CallParams {
 	return NewCallParams(isc.NewMessageFromNames(c, ep, params...))
+}
+
+func (r *CallParams) WithTargetContract(contract any) *CallParams {
+	switch contract := contract.(type) {
+	case string:
+		r.msg.Target.Contract = isc.Hn(contract)
+	case isc.Hname:
+		r.msg.Target.Contract = contract
+	default:
+		panic(fmt.Sprintf("unsupported contract type %T", contract))
+	}
+
+	return r
 }
 
 func (r *CallParams) WithAllowance(allowance *isc.Assets) *CallParams {
@@ -433,6 +452,19 @@ func (ch *Chain) CallView(msg isc.Message) (isc.CallArguments, error) {
 		return nil, err
 	}
 	return ch.CallViewAtState(latestState, msg)
+}
+
+func (ch *Chain) CallViewWithContract(contract any, msg isc.Message) (isc.CallArguments, error) {
+	switch contract := contract.(type) {
+	case string:
+		msg.Target.Contract = isc.Hn(contract)
+	case isc.Hname:
+		msg.Target.Contract = contract
+	default:
+		panic(fmt.Sprintf("unsupported contract type %T", contract))
+	}
+
+	return ch.CallView(msg)
 }
 
 // CallViewEx is a shortcut for CallView
