@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -27,11 +28,10 @@ func testCounter(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
+	res, err := sbtestsc.FuncGetCounter.Call(func(msg isc.Message) (isc.CallArguments, error) {
+		return chain.CallViewWithContract(ScName, msg)
+	})
 	require.NoError(t, err)
-
-	deco := kvdecoder.New(ret, chain.Log())
-	res := deco.MustGetInt64(sbtestsc.VarCounter)
 	require.EqualValues(t, 33, res)
 }
 

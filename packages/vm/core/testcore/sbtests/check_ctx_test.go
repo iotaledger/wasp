@@ -19,12 +19,12 @@ func testMainCallsFromFullEP(t *testing.T) {
 
 	setupTestSandboxSC(t, chain, user)
 
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCheckContextFromFullEP.Name,
-		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, isc.NewContractAgentID(chain.ChainID, HScName),
-		sbtestsc.ParamCaller, userAgentID,
-		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
-	).
+	req := solo.NewCallParams(sbtestsc.FuncCheckContextFromFullEP.Message(
+		chain.ChainID,
+		chain.OriginatorAgentID,
+		userAgentID,
+		isc.NewContractAgentID(chain.ChainID, HScName),
+	), ScName).
 		WithGasBudget(10 * gas.LimitsDefault.MinGasPerRequest)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
@@ -38,12 +38,13 @@ func testMainCallsFromViewEP(t *testing.T) {
 
 	setupTestSandboxSC(t, chain, user)
 
-	_, err := chain.CallViewEx(ScName, sbtestsc.FuncCheckContextFromViewEP.Name,
-		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, isc.NewContractAgentID(chain.ChainID, HScName),
-		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
+	err := sbtestsc.FuncCheckContextFromViewEP.Call(
+		chain.ChainID,
+		chain.OriginatorAgentID,
+		isc.NewContractAgentID(chain.ChainID, HScName),
+		func(msg isc.Message) (isc.CallArguments, error) {
+			return chain.CallViewWithContract(ScName, msg)
+		},
 	)
-
-	sbtestsc.FuncCheckContextFromViewEP.
-		require.NoError(t, err)
+	require.NoError(t, err)
 }

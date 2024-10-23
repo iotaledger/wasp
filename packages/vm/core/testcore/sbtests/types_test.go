@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
@@ -18,19 +19,18 @@ func testTypesFull(t *testing.T) {
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPassTypesFull.Name,
-		"address", ch.ChainID.AsAddress(),
-		"agentID", ch.OriginatorAgentID,
-		"chainID", ch.ChainID,
-		"contractID", cID,
-		"Hash", hashing.HashStrings("Hash"),
-		"Hname", isc.Hn("Hname"),
-		"Hname-0", isc.Hname(0),
-		"int64", 42,
-		"int64-0", 0,
-		"string", "string",
-		"string-0", "",
-	).WithGasBudget(150_000)
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncPassTypesFull.Name, isc.NewCallArguments(
+		codec.Encode("string"),
+		codec.Encode(42),
+		codec.Encode(0),
+		codec.Encode(hashing.HashStrings("Hash")),
+		codec.Encode(isc.Hn("Hname")),
+		codec.Encode(isc.Hname(0)),
+		codec.Encode(cID),
+		codec.Encode(ch.ChainID),
+		codec.Encode(ch.ChainID.AsAddress()),
+		codec.Encode(ch.OriginatorAgentID),
+	)).WithGasBudget(150_000)
 	_, err := ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
@@ -40,18 +40,18 @@ func testTypesView(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	cID := setupTestSandboxSC(t, chain, nil)
 
-	_, err := chain.CallViewEx(ScName, sbtestsc.FuncPassTypesView.Name,
-		"string", "string",
-		"string-0", "",
-		"int64", 42,
-		"int64-0", 0,
-		"Hash", hashing.HashStrings("Hash"),
-		"Hname", isc.Hn("Hname"),
-		"Hname-0", isc.Hname(0),
-		"contractID", cID,
-		"chainID", chain.ChainID,
-		"address", chain.ChainID.AsAddress(),
-		"agentID", chain.OriginatorAgentID,
-	)
+	_, err := chain.CallViewEx(ScName, sbtestsc.FuncPassTypesView.Name, isc.NewCallArguments(
+		codec.Encode("string"),
+		codec.Encode(42),
+		codec.Encode(0),
+		codec.Encode(hashing.HashStrings("Hash")),
+		codec.Encode(isc.Hn("Hname")),
+		codec.Encode(isc.Hname(0)),
+		codec.Encode(cID),
+		codec.Encode(chain.ChainID),
+		codec.Encode(chain.ChainID.AsAddress()),
+		codec.Encode(chain.OriginatorAgentID),
+	))
+
 	require.NoError(t, err)
 }

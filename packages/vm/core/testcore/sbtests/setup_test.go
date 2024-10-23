@@ -58,7 +58,8 @@ func run2(t *testing.T, test func(*testing.T)) {
 }
 
 func deployContract(chain *solo.Chain, user *cryptolib.KeyPair) error {
-	return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
+	panic("TODO: fix contract deployment")
+	//return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 }
 
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair) isc.AgentID {
