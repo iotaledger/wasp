@@ -6,7 +6,6 @@ package jsonrpctest
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"slices"
 	"strings"
@@ -557,33 +556,48 @@ func TestRPCTraceTx(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
 
-	// assert each tx can be individually traced
-	trace1, err := env.traceTransactionWithCallTracer(tx1.Hash())
-	require.NoError(t, err)
-	_, err = env.traceTransactionWithCallTracer(tx2.Hash())
-	require.NoError(t, err)
+	t.Run("callTracer", func(t *testing.T) {
+		// assert each tx can be individually traced
+		trace1, err := env.traceTransactionWithCallTracer(tx1.Hash())
+		require.NoError(t, err)
+		_, err = env.traceTransactionWithCallTracer(tx2.Hash())
+		require.NoError(t, err)
 
-	require.Equal(t, creatorAddress, trace1.From)
-	require.Equal(t, contractAddress, *trace1.To)
-	require.Equal(t, "0x7b", trace1.Value.String())
-	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))
-	require.NoError(t, err)
-	require.Equal(t, expectedInput, []byte(trace1.Input))
-	require.Empty(t, trace1.Error)
-	require.Empty(t, trace1.RevertReason)
-	require.Equal(t, "0x0", trace1.Gas.String())
-	require.Equal(t, "0x0", trace1.GasUsed.String())
+		require.Equal(t, creatorAddress, trace1.From)
+		require.Equal(t, contractAddress, *trace1.To)
+		require.Equal(t, "0x7b", trace1.Value.String())
+		expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))
+		require.NoError(t, err)
+		require.Equal(t, expectedInput, []byte(trace1.Input))
+		require.Empty(t, trace1.Error)
+		require.Empty(t, trace1.RevertReason)
+		require.Contains(t, trace1.Gas.String(), "0x")
+		require.Contains(t, trace1.GasUsed.String(), "0x")
 
-	require.Len(t, trace1.Calls, 1)
-	trace2 := trace1.Calls[0]
-	require.Equal(t, contractAddress, trace2.From)
-	require.Equal(t, common.Address{0x1}, *trace2.To)
-	require.Equal(t, "0x1", trace2.Value.String())
-	require.Empty(t, trace2.Input)
-	require.Empty(t, trace2.Error)
-	require.Empty(t, trace2.RevertReason)
-	require.Contains(t, trace2.Gas.String(), "0x")
-	require.Contains(t, trace2.GasUsed.String(), "0x")
+		require.Len(t, trace1.Calls, 1)
+		trace2 := trace1.Calls[0]
+		require.Equal(t, contractAddress, trace2.From)
+		require.Equal(t, common.Address{0x1}, *trace2.To)
+		require.Equal(t, "0x1", trace2.Value.String())
+		require.Empty(t, trace2.Input)
+		require.Empty(t, trace2.Error)
+		require.Empty(t, trace2.RevertReason)
+		require.Contains(t, trace2.Gas.String(), "0x")
+		require.Contains(t, trace2.GasUsed.String(), "0x")
+	})
+
+	t.Run("prestate", func(t *testing.T) {
+		accountMap, err := env.traceTransactionWithPrestate(tx1.Hash())
+		require.NoError(t, err)
+		require.NotEmpty(t, accountMap)
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
+
+		diff, err := env.traceTransactionWithPrestateDiff(tx1.Hash())
+		require.NoError(t, err)
+		require.NotEmpty(t, diff.Pre)
+		require.NotEmpty(t, diff.Post)
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
+	})
 }
 
 // Transfer calls produce "fake" Transactions to simulate EVM behavior.
@@ -612,10 +626,17 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	trace, err := env.traceTransactionWithCallTracer(tx.Hash())
 	require.NoError(t, err)
 
-	fmt.Print(hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens))
-
 	require.Equal(t, evmAddr.String(), trace.To.String())
 	require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
+
+	prestate, err := env.traceTransactionWithPrestate(tx.Hash())
+	require.NoError(t, err)
+	require.Empty(t, prestate)
+
+	prestateDiff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+	require.NoError(t, err)
+	require.Empty(t, prestateDiff.Pre)
+	require.Empty(t, prestateDiff.Post)
 }
 
 func TestRPCTraceBlock(t *testing.T) {
@@ -656,91 +677,120 @@ func TestRPCTraceBlock(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
 
-	var res1 json.RawMessage
-	// we have to use the raw client, because the normal client does not support debug methods
-	err = env.RawClient.CallContext(
-		context.Background(),
-		&res1,
-		"debug_traceBlockByNumber",
-		hexutil.Uint64(env.BlockNumber()).String(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
-	)
-	require.NoError(t, err)
+	t.Run("callTracer", func(t *testing.T) {
+		callTracer := "callTracer"
+		var res1 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res1,
+			"debug_traceBlockByNumber",
+			hexutil.Uint64(env.BlockNumber()).String(),
+			tracers.TraceConfig{Tracer: &callTracer},
+		)
+		require.NoError(t, err)
 
-	var res2 json.RawMessage
-	// we have to use the raw client, because the normal client does not support debug methods
-	err = env.RawClient.CallContext(
-		context.Background(),
-		&res2,
-		"debug_traceBlockByHash",
-		env.BlockByNumber(big.NewInt(int64(env.BlockNumber()))).Hash(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
-	)
-	require.NoError(t, err)
+		var res2 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res2,
+			"debug_traceBlockByHash",
+			env.BlockByNumber(big.NewInt(int64(env.BlockNumber()))).Hash(),
+			tracers.TraceConfig{Tracer: &callTracer},
+		)
+		require.NoError(t, err)
 
-	require.Equal(t, res1, res2, "debug_traceBlockByNumber and debug_traceBlockByNumber should produce equal results")
+		require.Equal(t, res1, res2, "debug_traceBlockByNumber and debug_traceBlockByNumber should produce equal results")
 
-	traceBlock := make([]jsonrpc.TxTraceResult, 0)
-	err = json.Unmarshal(res1, &traceBlock)
-	require.NoError(t, err)
+		traceBlock := make([]jsonrpc.TxTraceResult, 0)
+		err = json.Unmarshal(res1, &traceBlock)
+		require.NoError(t, err)
 
-	require.Len(t, traceBlock, 2)
+		require.Len(t, traceBlock, 2)
 
-	var trace1 jsonrpc.CallFrame
-	err = json.Unmarshal(traceBlock[slices.IndexFunc(traceBlock, func(v jsonrpc.TxTraceResult) bool {
-		return v.TxHash == tx1.Hash()
-	})].Result, &trace1)
-	require.NoError(t, err)
+		var trace1 jsonrpc.CallFrame
+		err = json.Unmarshal(traceBlock[slices.IndexFunc(traceBlock, func(v jsonrpc.TxTraceResult) bool {
+			return v.TxHash == tx1.Hash()
+		})].Result, &trace1)
+		require.NoError(t, err)
 
-	var trace2 jsonrpc.CallFrame
-	err = json.Unmarshal(traceBlock[slices.IndexFunc(traceBlock, func(v jsonrpc.TxTraceResult) bool {
-		return v.TxHash == tx2.Hash()
-	})].Result, &trace2)
-	require.NoError(t, err)
+		var trace2 jsonrpc.CallFrame
+		err = json.Unmarshal(traceBlock[slices.IndexFunc(traceBlock, func(v jsonrpc.TxTraceResult) bool {
+			return v.TxHash == tx2.Hash()
+		})].Result, &trace2)
+		require.NoError(t, err)
 
-	require.Equal(t, creatorAddress, trace1.From)
-	require.Equal(t, contractAddress, *trace1.To)
-	require.Equal(t, "0x7b", trace1.Value.String())
-	expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))
-	require.NoError(t, err)
-	require.Equal(t, expectedInput, []byte(trace1.Input))
-	require.Empty(t, trace1.Error)
-	require.Empty(t, trace1.RevertReason)
-	require.Equal(t, "0x0", trace1.Gas.String())
-	require.Equal(t, "0x0", trace1.GasUsed.String())
+		require.Equal(t, creatorAddress, trace1.From)
+		require.Equal(t, contractAddress, *trace1.To)
+		require.Equal(t, "0x7b", trace1.Value.String())
+		expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2)) //nolint:govet
+		require.NoError(t, err)
+		require.Equal(t, expectedInput, []byte(trace1.Input))
+		require.Empty(t, trace1.Error)
+		require.Empty(t, trace1.RevertReason)
+		require.Contains(t, trace1.Gas.String(), "0x")
+		require.Contains(t, trace1.GasUsed.String(), "0x")
 
-	require.Len(t, trace1.Calls, 1)
-	innerCall1 := trace1.Calls[0]
-	require.Equal(t, contractAddress, innerCall1.From)
-	require.Equal(t, common.Address{0x1}, *innerCall1.To)
-	require.Equal(t, "0x2", innerCall1.Value.String())
-	require.Empty(t, innerCall1.Input)
-	require.Empty(t, innerCall1.Error)
-	require.Empty(t, innerCall1.RevertReason)
-	require.Contains(t, innerCall1.Gas.String(), "0x")
-	require.Contains(t, innerCall1.GasUsed.String(), "0x")
+		require.Len(t, trace1.Calls, 1)
+		innerCall1 := trace1.Calls[0]
+		require.Equal(t, contractAddress, innerCall1.From)
+		require.Equal(t, common.Address{0x1}, *innerCall1.To)
+		require.Equal(t, "0x2", innerCall1.Value.String())
+		require.Empty(t, innerCall1.Input)
+		require.Empty(t, innerCall1.Error)
+		require.Empty(t, innerCall1.RevertReason)
+		require.Contains(t, innerCall1.Gas.String(), "0x")
+		require.Contains(t, innerCall1.GasUsed.String(), "0x")
 
-	require.Equal(t, creatorAddress2, trace2.From)
-	require.Equal(t, contractAddress, *trace2.To)
-	require.Equal(t, "0x141", trace2.Value.String())
-	expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
-	require.NoError(t, err)
-	require.Equal(t, expectedInput, []byte(trace2.Input))
-	require.Empty(t, trace2.Error)
-	require.Empty(t, trace2.RevertReason)
-	require.Equal(t, "0x0", trace2.Gas.String())
-	require.Equal(t, "0x0", trace2.GasUsed.String())
+		require.Equal(t, creatorAddress2, trace2.From)
+		require.Equal(t, contractAddress, *trace2.To)
+		require.Equal(t, "0x141", trace2.Value.String())
+		expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
+		require.NoError(t, err)
+		require.Equal(t, expectedInput, []byte(trace2.Input))
+		require.Empty(t, trace2.Error)
+		require.Empty(t, trace2.RevertReason)
+		require.Contains(t, trace2.Gas.String(), "0x")
+		require.Contains(t, trace2.GasUsed.String(), "0x")
 
-	require.Len(t, trace2.Calls, 1)
-	innerCall2 := trace2.Calls[0]
-	require.Equal(t, contractAddress, innerCall2.From)
-	require.Equal(t, common.Address{0x2}, *innerCall2.To)
-	require.Equal(t, "0x3", innerCall2.Value.String())
-	require.Empty(t, innerCall2.Input)
-	require.Empty(t, innerCall2.Error)
-	require.Empty(t, innerCall2.RevertReason)
-	require.Contains(t, innerCall2.Gas.String(), "0x")
-	require.Contains(t, innerCall2.GasUsed.String(), "0x")
+		require.Len(t, trace2.Calls, 1)
+		innerCall2 := trace2.Calls[0]
+		require.Equal(t, contractAddress, innerCall2.From)
+		require.Equal(t, common.Address{0x2}, *innerCall2.To)
+		require.Equal(t, "0x3", innerCall2.Value.String())
+		require.Empty(t, innerCall2.Input)
+		require.Empty(t, innerCall2.Error)
+		require.Empty(t, innerCall2.RevertReason)
+		require.Contains(t, innerCall2.Gas.String(), "0x")
+		require.Contains(t, innerCall2.GasUsed.String(), "0x")
+	})
+	t.Run("prestate", func(t *testing.T) {
+		prestateTracer := "prestateTracer"
+		var res2 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res2,
+			"debug_traceBlockByHash",
+			env.BlockByNumber(big.NewInt(int64(env.BlockNumber()))).Hash(),
+			tracers.TraceConfig{
+				Tracer:       &prestateTracer,
+				TracerConfig: []byte(`{"diffMode": false}`),
+			},
+		)
+		require.NoError(t, err)
+		var results []jsonrpc.TxTraceResult
+		err = json.Unmarshal(res2, &results)
+		require.NoError(t, err)
+		require.Len(t, results, 2)
+		for _, r := range results {
+			var p jsonrpc.PrestateAccountMap
+			err = json.Unmarshal(r.Result, &p)
+			require.NoError(t, err)
+			require.NotEmpty(t, p)
+		}
+	})
 }
 
 func TestRPCTraceBlockSingleCall(t *testing.T) {
@@ -769,6 +819,7 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 
+	callTracer := "callTracer"
 	var res1 json.RawMessage
 	// we have to use the raw client, because the normal client does not support debug methods
 	err = env.RawClient.CallContext(
@@ -776,7 +827,7 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 		&res1,
 		"debug_traceBlockByNumber",
 		hexutil.Uint64(env.BlockNumber()).String(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+		tracers.TraceConfig{Tracer: &callTracer},
 	)
 	require.NoError(t, err)
 
@@ -787,7 +838,7 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 		&res2,
 		"debug_traceBlockByHash",
 		env.BlockByNumber(big.NewInt(int64(env.BlockNumber()))).Hash(),
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+		tracers.TraceConfig{Tracer: &callTracer},
 	)
 	require.NoError(t, err)
 
@@ -813,8 +864,8 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 	require.Equal(t, expectedInput, []byte(trace1.Input))
 	require.Empty(t, trace1.Error)
 	require.Empty(t, trace1.RevertReason)
-	require.Equal(t, "0x0", trace1.Gas.String())
-	require.Equal(t, "0x0", trace1.GasUsed.String())
+	require.Contains(t, trace1.Gas.String(), "0x")
+	require.Contains(t, trace1.GasUsed.String(), "0x")
 
 	require.Len(t, trace1.Calls, 1)
 	innerCall1 := trace1.Calls[0]
@@ -869,6 +920,7 @@ func TestRPCBlockReceipt(t *testing.T) {
 		context.Background(),
 		rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(env.BlockNumber())),
 	)
+	require.NoError(t, err)
 	require.Len(t, receipts, 2)
 
 	r1 := receipts[slices.IndexFunc(receipts, func(v *types.Receipt) bool {

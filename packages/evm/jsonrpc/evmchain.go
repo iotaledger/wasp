@@ -677,8 +677,16 @@ func (e *EVMChain) isFakeTransaction(tx *types.Transaction) bool {
 	return false
 }
 
-// Trace allows the tracing of EVM transactions and considers "fake" evm transactions that are emitted when ISC internal requests are being made. (Transfer of funds from L1->L2EVM for example)
-func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockInfo, requestsInBlock []isc.Request, evmTxs types.Transactions, txIndex uint64, txHash common.Hash, blockHash common.Hash) (json.RawMessage, error) {
+// traceTransaction allows the tracing of a single EVM transaction.
+// "Fake" transactions that are emitted e.g. for L1 deposits return some mocked trace.
+func (e *EVMChain) traceTransaction(
+	config *tracers.TraceConfig,
+	blockInfo *blocklog.BlockInfo,
+	requestsInBlock []isc.Request,
+	tx *types.Transaction,
+	txIndex uint64,
+	blockHash common.Hash,
+) (json.RawMessage, error) {
 	tracerType := "callTracer"
 	if config.Tracer != nil {
 		tracerType = *config.Tracer
@@ -690,10 +698,14 @@ func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockI
 		BlockHash:   blockHash,
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
 		TxIndex:     int(txIndex),
-		TxHash:      txHash,
+		TxHash:      tx.Hash(),
 	}, config.TracerConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	if e.isFakeTransaction(tx) {
+		return tracer.TraceFakeTx(tx)
 	}
 
 	err = e.backend.EVMTrace(
@@ -702,43 +714,13 @@ func (e *EVMChain) trace(config *tracers.TraceConfig, blockInfo *blocklog.BlockI
 		requestsInBlock,
 		&txIndex,
 		&blockNumber,
-		tracer,
+		tracer.Tracer,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := tracer.GetResult()
-	if err != nil {
-		if !errors.Is(err, ErrIncorrectTopLevelCalls) {
-			return nil, err
-		}
-
-		tx, ok := lo.Find(evmTxs, func(tx *types.Transaction) bool { return slices.Equal(txHash.Bytes(), tx.Hash().Bytes()) })
-		if !ok {
-			return nil, fmt.Errorf("can not find transaction: %v", txHash.String())
-		}
-
-		if e.isFakeTransaction(tx) {
-			return json.Marshal(RPCMarshalTransactionTraceForFakeTX(tx, tx.GasPrice()))
-		}
-	}
-
-	return result, nil
-}
-
-func (e *EVMChain) traceTransaction(config *tracers.TraceConfig, txIndex uint64, txHash common.Hash, blockNumber uint64, blockHash common.Hash) (any, error) {
-	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(blockNumber))
-	if err != nil {
-		return nil, err
-	}
-
-	return e.trace(config, iscBlock, iscRequestsInBlock, blockTxs, txIndex, txHash, blockHash)
+	return tracer.GetResult()
 }
 
 func (e *EVMChain) traceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
@@ -754,7 +736,14 @@ func (e *EVMChain) traceBlock(config *tracers.TraceConfig, block *types.Block) (
 
 	results := make([]TxTraceResult, 0)
 	for i, tx := range blockTxs {
-		result, err := e.trace(config, iscBlock, iscRequestsInBlock, blockTxs, uint64(i), tx.Hash(), block.Hash())
+		result, err := e.traceTransaction(
+			config,
+			iscBlock,
+			iscRequestsInBlock,
+			tx,
+			uint64(i),
+			block.Hash(),
+		)
 
 		// Transactions which failed tracing will be omitted, so the rest of the block can be returned
 		if err == nil {
@@ -771,7 +760,7 @@ func (e *EVMChain) traceBlock(config *tracers.TraceConfig, block *types.Block) (
 func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {
 	e.log.Debugf("TraceTransaction(txHash=%v, config=?)", txHash)
 
-	_, blockHash, blockNumber, txIndex, err := e.TransactionByHash(txHash)
+	tx, blockHash, blockNumber, txIndex, err := e.TransactionByHash(txHash)
 	if err != nil {
 		return nil, err
 	}
@@ -779,7 +768,19 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 		return nil, errors.New("transaction not found")
 	}
 
-	return e.traceTransaction(config, txIndex, txHash, blockNumber, blockHash)
+	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	return e.traceTransaction(
+		config,
+		iscBlock,
+		iscRequestsInBlock,
+		tx,
+		txIndex,
+		blockHash,
+	)
 }
 
 func (e *EVMChain) TraceBlockByHash(blockHash common.Hash, config *tracers.TraceConfig) (any, error) {

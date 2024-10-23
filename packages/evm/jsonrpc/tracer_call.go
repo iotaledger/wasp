@@ -1,3 +1,6 @@
+// Code on this file adapted from
+// https://github.com/ethereum/go-ethereum/blob/master/eth/tracers/native/call.go
+
 package jsonrpc
 
 import (
@@ -14,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 )
 
 func init() {
@@ -23,7 +28,7 @@ func init() {
 // CallFrame contains the result of a trace with "callTracer".
 // Code is 100% copied from go-ethereum (since the type is unexported there)
 
-type callLog struct {
+type CallLog struct {
 	Address common.Address `json:"address"`
 	Topics  []common.Hash  `json:"topics"`
 	Data    hexutil.Bytes  `json:"data"`
@@ -64,7 +69,7 @@ type CallFrame struct {
 	Error        string          `json:"error,omitempty" rlp:"optional"`
 	RevertReason string          `json:"revertReason,omitempty"`
 	Calls        []CallFrame     `json:"calls,omitempty" rlp:"optional"`
-	Logs         []callLog       `json:"logs,omitempty" rlp:"optional"`
+	Logs         []CallLog       `json:"logs,omitempty" rlp:"optional"`
 	// Placed at end on purpose. The RLP will be decoded to 0 instead of
 	// nil if there are non-empty elements after in the struct.
 	Value            hexutil.Big `json:"value,omitempty" rlp:"optional"`
@@ -129,21 +134,24 @@ type callTracerConfig struct {
 
 // newCallTracer returns a native go tracer which tracks
 // call frames of a tx, and implements vm.EVMLogger.
-func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*tracers.Tracer, error) {
+func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
 	t, err := newCallTracerObject(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &tracers.Tracer{
-		Hooks: &tracing.Hooks{
-			OnTxStart: t.OnTxStart,
-			OnTxEnd:   t.OnTxEnd,
-			OnEnter:   t.OnEnter,
-			OnExit:    t.OnExit,
-			OnLog:     t.OnLog,
+	return &Tracer{
+		Tracer: &tracers.Tracer{
+			Hooks: &tracing.Hooks{
+				OnTxStart: t.OnTxStart,
+				OnTxEnd:   t.OnTxEnd,
+				OnEnter:   t.OnEnter,
+				OnExit:    t.OnExit,
+				OnLog:     t.OnLog,
+			},
+			GetResult: t.GetResult,
+			Stop:      t.Stop,
 		},
-		GetResult: t.GetResult,
-		Stop:      t.Stop,
+		TraceFakeTx: t.TraceFakeTx,
 	}, nil
 }
 
@@ -249,7 +257,7 @@ func (t *callTracer) OnLog(log *types.Log) {
 	if t.interrupt.Load() {
 		return
 	}
-	l := callLog{
+	l := CallLog{
 		Address:  log.Address,
 		Topics:   log.Topics,
 		Data:     log.Data,
@@ -292,4 +300,17 @@ func clearFailedLogs(cf *CallFrame, parentFailed bool) {
 	for i := range cf.Calls {
 		clearFailedLogs(&cf.Calls[i], failed)
 	}
+}
+
+func (t *callTracer) TraceFakeTx(tx *types.Transaction) (json.RawMessage, error) {
+	return json.Marshal(CallFrame{
+		Type:    NewOpCodeJSON(vm.CALL),
+		From:    evmutil.MustGetSenderIfTxSigned(tx),
+		Gas:     hexutil.Uint64(tx.Gas()),
+		GasUsed: hexutil.Uint64(tx.Gas()),
+		To:      tx.To(),
+		Input:   []byte{},
+		Output:  []byte{},
+		Value:   hexutil.Big(*tx.Value()),
+	})
 }

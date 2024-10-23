@@ -159,20 +159,6 @@ func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
 	return big.NewInt(n)
 }
 
-const FakeTxOpcode = "CALL"
-
-func RPCMarshalTransactionTraceForFakeTX(tx *types.Transaction, effectiveGasPrice *big.Int) map[string]interface{} {
-	return map[string]interface{}{
-		"from":    evmutil.MustGetSenderIfTxSigned(tx),
-		"gas":     hexutil.Uint64(tx.Gas()),
-		"gasUsed": hexutil.Uint64(tx.Gas()),
-		"to":      tx.To(),
-		"type":    FakeTxOpcode,
-		"input":   "0x",
-		"value":   hexutil.Big(*tx.Value()),
-	}
-}
-
 func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPrice *big.Int) map[string]interface{} {
 	// fix for an already fixed bug where some old failed receipts contain non-empty logs
 	if r.Status != types.ReceiptStatusSuccessful {

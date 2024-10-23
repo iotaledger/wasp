@@ -293,12 +293,13 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 func (e *Env) traceTransactionWithCallTracer(txHash common.Hash) (jsonrpc.CallFrame, error) {
 	var res json.RawMessage
 	// we have to use the raw client, because the normal client does not support debug methods
+	tracer := "callTracer"
 	err := e.RawClient.CallContext(
 		context.Background(),
 		&res,
 		"debug_traceTransaction",
 		txHash,
-		tracers.TraceConfig{TracerConfig: []byte(`{"tracer": "callTracer"}`)},
+		tracers.TraceConfig{Tracer: &tracer},
 	)
 	if err != nil {
 		return jsonrpc.CallFrame{}, err
@@ -307,6 +308,52 @@ func (e *Env) traceTransactionWithCallTracer(txHash common.Hash) (jsonrpc.CallFr
 	err = json.Unmarshal(res, &trace)
 	require.NoError(e.T, err)
 	return trace, nil
+}
+
+func (e *Env) traceTransactionWithPrestate(txHash common.Hash) (jsonrpc.PrestateAccountMap, error) {
+	var res json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	tracer := "prestateTracer"
+	err := e.RawClient.CallContext(
+		context.Background(),
+		&res,
+		"debug_traceTransaction",
+		txHash,
+		tracers.TraceConfig{
+			Tracer:       &tracer,
+			TracerConfig: []byte(`{"diffMode": false}`),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	var ret jsonrpc.PrestateAccountMap
+	err = json.Unmarshal(res, &ret)
+	require.NoError(e.T, err)
+	return ret, nil
+}
+
+func (e *Env) traceTransactionWithPrestateDiff(txHash common.Hash) (jsonrpc.PrestateDiffResult, error) {
+	var res json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	tracer := "prestateTracer"
+	err := e.RawClient.CallContext(
+		context.Background(),
+		&res,
+		"debug_traceTransaction",
+		txHash,
+		tracers.TraceConfig{
+			Tracer:       &tracer,
+			TracerConfig: []byte(`{"diffMode": true}`),
+		},
+	)
+	if err != nil {
+		return jsonrpc.PrestateDiffResult{}, err
+	}
+	var ret jsonrpc.PrestateDiffResult
+	err = json.Unmarshal(res, &ret)
+	require.NoError(e.T, err)
+	return ret, nil
 }
 
 func (e *Env) TestRPCGetLogs() {
