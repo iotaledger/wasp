@@ -57,7 +57,7 @@ func TestRequestAddDelegation(t *testing.T) {
 func TestRequestWithdrawDelegation(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 
-	signer, err := iotago.AddressFromHex("0xd77955e670f42c1bc5e94b9e68e5fe9bdbed9134d784f2a14dfe5fc1b24b5d9f")
+	signer, err := iotago.AddressFromHex("0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754")
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), signer)
 	require.NoError(t, err)

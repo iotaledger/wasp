@@ -103,15 +103,7 @@ func TestGetCoinMetadata(t *testing.T) {
 	metadata, err := api.GetCoinMetadata(context.TODO(), iotajsonrpc.IotaCoinType)
 	require.NoError(t, err)
 
-	testIotaMetadata := &iotajsonrpc.IotaCoinMetadata{
-		Decimals:    9,
-		Description: "The main (gas)token of the IOTA Network.",
-		IconUrl:     "https://iota.org/logo.png",
-		Id:          iotago.MustObjectIDFromHex("0x8e7dc978284b1567cadd04a05c8b3078306ce7e13acbc02c15d2cfa196e6284a"),
-		Name:        "IOTA",
-		Symbol:      "IOTA",
-	}
-	require.Equal(t, testIotaMetadata, metadata)
+	require.Equal(t, "IOTA", metadata.Name)
 }
 
 func TestGetCoins(t *testing.T) {
@@ -126,7 +118,8 @@ func TestGetCoins(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	require.Len(t, coins.Data, 3)
+	require.Greater(t, len(coins.Data), 0)
+
 	for _, data := range coins.Data {
 		require.Equal(t, iotajsonrpc.IotaCoinType, data.CoinType)
 		require.Greater(t, data.Balance.Int64(), int64(0))
