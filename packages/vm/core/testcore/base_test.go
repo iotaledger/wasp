@@ -513,9 +513,7 @@ func TestMessageSize(t *testing.T) {
 	for i := 0; i < len(reqs); i++ {
 		req, err := solo.ISCRequestFromCallParams(
 			ch,
-			solo.NewCallParamsEx(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
-				sbtestsc.ParamSize, uint32(reqSize),
-			).
+			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize)), sbtestsc.Contract.Name).
 				AddBaseTokens(storageDeposit).
 				AddAllowanceBaseTokens(storageDeposit).
 				WithMaxAffordableGasBudget(),

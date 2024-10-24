@@ -15,12 +15,11 @@ func testChainOwnerIDView(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncChainOwnerIDView.Name)
+	chainOwnderID, err := sbtestsc.FuncChainOwnerIDView.Call(func(msg isc.Message) (isc.CallArguments, error) {
+		return chain.CallViewWithContract(ScName, msg)
+	})
 	require.NoError(t, err)
-
-	c := ret.Get(sbtestsc.ParamChainOwnerID)
-
-	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), c)
+	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), chainOwnderID.Bytes())
 }
 
 func TestChainOwnerIDFull(t *testing.T) { run2(t, testChainOwnerIDFull) }
@@ -28,13 +27,13 @@ func testChainOwnerIDFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncChainOwnerIDFull.Name).
-		WithGasBudget(100_000)
-	ret, err := chain.PostRequestSync(req, nil)
+	chainOwnderID, err := sbtestsc.FuncChainOwnerIDFull.Call(func(msg isc.Message) (isc.CallArguments, error) {
+		req := solo.NewCallParams(msg, ScName).
+			WithGasBudget(100_000)
+		return chain.PostRequestSync(req, nil)
+	})
 	require.NoError(t, err)
-
-	c := ret.Get(sbtestsc.ParamChainOwnerID)
-	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), c)
+	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), chainOwnderID)
 }
 
 func TestSandboxCall(t *testing.T) { run2(t, testSandboxCall) }

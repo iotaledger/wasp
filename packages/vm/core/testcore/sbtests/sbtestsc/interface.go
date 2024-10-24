@@ -148,7 +148,7 @@ var (
 	FuncSplitFundsNativeTokens = coreutil.NewEP0(Contract, "splitFundsNativeTokens")
 	FuncPingAllowanceBack      = coreutil.NewEP0(Contract, "pingAllowanceBack")
 	FuncSendLargeRequest       = coreutil.NewEP1(Contract, "sendLargeRequest",
-		coreutil.Field[int32](),
+		coreutil.Field[uint64](),
 	)
 	FuncEstimateMinStorageDeposit = coreutil.NewEP0(Contract, "estimateMinStorageDeposit")
 	FuncInfiniteLoop              = coreutil.NewEP0(Contract, "infiniteLoop")
