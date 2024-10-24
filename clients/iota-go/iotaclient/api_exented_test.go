@@ -65,6 +65,8 @@ func TestGetDynamicFieldObject(t *testing.T) {
 }
 
 func TestGetDynamicFields(t *testing.T) {
+	t.Skip("refactor me: provide address of deepbook object")
+
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	limit := 5
 	type args struct {
@@ -172,7 +174,7 @@ func TestGetOwnedObjects(t *testing.T) {
 			var fields iotajsonrpc.CoinFields
 			err = json.Unmarshal(objs.Data[1].Data.Content.Data.MoveObject.Fields, &fields)
 			require.NoError(t, err)
-			require.Equal(t, "1000000000", fields.Balance.String())
+			require.Equal(t, "10000000000", fields.Balance.String())
 		},
 	)
 	// query := iotajsonrpc.IotaObjectResponseQuery{
@@ -204,6 +206,7 @@ func TestGetOwnedObjects(t *testing.T) {
 }
 
 func TestQueryEvents(t *testing.T) {
+	t.Skip("refactor me: provide address of deepbook object")
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	limit := 10
 

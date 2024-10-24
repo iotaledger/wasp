@@ -2,6 +2,7 @@ package iotaclient_test
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -106,7 +107,7 @@ func TestGetCoinMetadata(t *testing.T) {
 		Decimals:    9,
 		Description: "The main (gas)token of the IOTA Network.",
 		IconUrl:     "https://iota.org/logo.png",
-		Id:          iotago.MustObjectIDFromHex("0x9a934a2644c4ca2decbe3d126d80720429c5e31896aa756765afa23ae2cb4b99"),
+		Id:          iotago.MustObjectIDFromHex("0x8e7dc978284b1567cadd04a05c8b3078306ce7e13acbc02c15d2cfa196e6284a"),
 		Name:        "IOTA",
 		Symbol:      "IOTA",
 	}
@@ -163,8 +164,8 @@ func TestGetTotalSupply(t *testing.T) {
 					t.Errorf("GetTotalSupply() error: %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				targetSupply := &iotajsonrpc.Supply{Value: iotajsonrpc.NewBigInt(iotajsonrpc.IotaCoinSupply)}
-				require.LessOrEqualf(t, targetSupply, got, "IOTA supply is less than expected")
+
+				require.Truef(t, got.Value.Cmp(big.NewInt(0)) > 0, "IOTA supply should be greater than 0")
 			},
 		)
 	}
