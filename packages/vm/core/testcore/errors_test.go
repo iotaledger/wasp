@@ -4,12 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -121,19 +119,23 @@ func TestSuccessfulRegisterError(t *testing.T) {
 func TestRetrievalOfErrorMessage(t *testing.T) {
 	chain := setupErrorsTest(t)
 
-	req := solo.NewCallParams(errors.FuncRegisterError.Message(errorMessageToTest)).
-		WithGasBudget(100_000)
+	errorCode, err := errors.FuncRegisterError.Call(errorMessageToTest, func(msg isc.Message) (isc.CallArguments, error) {
+		req := solo.NewCallParams(msg).
+			WithGasBudget(100_000)
 
-	_, d, err := chain.PostRequestSyncTx(req, nil)
+		_, d, err := chain.PostRequestSyncTx(req, nil)
+		return d, err
+	})
 	require.NoError(t, err)
 
-	errorCode := codec.MustDecode[VMErrorCode](d.Get(errors.ParamErrorCode))
+	message, err := errors.ViewGetErrorMessageFormat.Call(errorCode, func(msg isc.Message) (isc.CallArguments, error) {
+		req := solo.NewCallParams(msg).
+			WithGasBudget(100_000)
 
-	req = solo.NewCallParams(errors.ViewGetErrorMessageFormat.Message(errorCode)).
-		WithGasBudget(100_000)
-	_, d, err = chain.PostRequestSyncTx(req, nil)
+		_, d, err := chain.PostRequestSyncTx(req, nil)
+		return d, err
+	})
 	require.NoError(t, err)
-	message := lo.Must(errors.ViewGetErrorMessageFormat.DecodeOutput(d))
 	require.Equal(t, message, errorMessageToTest)
 }
 

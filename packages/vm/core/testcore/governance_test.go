@@ -455,7 +455,7 @@ func TestMetadata(t *testing.T) {
 
 	res, err := ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata := lo.Must(governance.ViewGetMetadata.DecodeOutput(res))
+	_, resMetadata := lo.Must2(governance.ViewGetMetadata.DecodeOutput(res))
 
 	// Chain name should be equal to the configured one.
 	require.Equal(t, testMetadata.Bytes(), resMetadata.Bytes())
@@ -470,7 +470,7 @@ func TestMetadata(t *testing.T) {
 
 	res, err = ch.CallView(governance.ViewGetMetadata.Message())
 	require.NoError(t, err)
-	resMetadata = lo.Must(governance.ViewGetMetadata.DecodeOutput(res))
+	_, resMetadata = lo.Must2(governance.ViewGetMetadata.DecodeOutput(res))
 
 	// Chain name should be equal to the configured one.
 	require.Equal(t, testMetadata.Bytes(), resMetadata.Bytes())

@@ -134,7 +134,7 @@ func claimAllowance(ctx isc.Sandbox) {
 	}
 }
 
-func sendLargeRequest(ctx isc.Sandbox, x int32) {
+func sendLargeRequest(ctx isc.Sandbox, x uint64) {
 	req := isc.RequestParameters{
 		TargetAddress: cryptolib.NewRandomAddress(),
 		Metadata: &isc.SendMetadata{
