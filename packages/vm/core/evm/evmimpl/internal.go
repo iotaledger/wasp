@@ -35,10 +35,18 @@ func getTracer(ctx isc.Sandbox) *tracing.Hooks {
 	if tracer == nil {
 		return nil
 	}
-	if tracer.TxIndex != uint64(ctx.RequestIndex()) {
-		return nil // trace only the transaction we're interested in
+
+	// if block number is set and the tx is null, we're tracing the whole block
+	if tracer.TxIndex == nil && tracer.BlockNumber != nil {
+		return tracer.Tracer.Hooks
 	}
-	return tracer.Tracer.Hooks
+
+	// if tx index is set, we're tracing a specific transaction
+	if tracer.TxIndex != nil && *tracer.TxIndex == uint64(ctx.RequestIndex()) {
+		return tracer.Tracer.Hooks
+	}
+
+	return nil
 }
 
 func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {

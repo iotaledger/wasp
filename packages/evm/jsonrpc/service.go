@@ -451,6 +451,38 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 	return rpcSub, nil
 }
 
+func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
+	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]map[string]interface{}, error) {
+		receipts, txs, err := e.evmChain.GetBlockReceipts(blockNumber)
+		if err != nil {
+			return []map[string]interface{}{}, e.resolveError(err)
+		}
+
+		if len(receipts) != len(txs) {
+			return nil, fmt.Errorf("receipts length mismatch: %d vs %d", len(receipts), len(txs))
+		}
+
+		result := make([]map[string]interface{}, len(receipts))
+		for i, receipt := range receipts {
+			// This is pretty ugly, maybe we should shift to uint64 for internals too.
+			feePolicy, err := e.evmChain.backend.FeePolicy(uint32(receipt.BlockNumber.Uint64()))
+			if err != nil {
+				return nil, err
+			}
+
+			effectiveGasPrice := txs[i].GasPrice()
+			if effectiveGasPrice.Sign() == 0 && !feePolicy.GasPerToken.IsEmpty() {
+				// tx sent before gasPrice was mandatory
+				effectiveGasPrice = feePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+			}
+
+			result[i] = RPCMarshalReceipt(receipt, txs[i], effectiveGasPrice)
+		}
+
+		return result, nil
+	})
+}
+
 /*
 Not implemented:
 func (e *EthService) NewFilter()
@@ -540,6 +572,24 @@ func NewDebugService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *D
 func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
 	return withMetrics(d.metrics, "debug_traceTransaction", func() (interface{}, error) {
 		return d.evmChain.TraceTransaction(txHash, config)
+	})
+}
+
+func (d *DebugService) TraceBlockByNumber(blockNumber hexutil.Uint64, config *tracers.TraceConfig) (interface{}, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByNumber", func() (interface{}, error) {
+		return d.evmChain.TraceBlockByNumber(uint64(blockNumber), config)
+	})
+}
+
+func (d *DebugService) TraceBlockByHash(blockHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (interface{}, error) {
+		return d.evmChain.TraceBlockByHash(blockHash, config)
+	})
+}
+
+func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (interface{}, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (interface{}, error) {
+		return d.evmChain.GetRawBlock(blockNrOrHash)
 	})
 }
 

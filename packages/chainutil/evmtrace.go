@@ -18,7 +18,8 @@ func EVMTraceTransaction(
 	log *logger.Logger,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex uint64,
+	txIndex *uint64,
+	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
 	_, err := runISCTask(
@@ -30,8 +31,9 @@ func EVMTraceTransaction(
 		iscRequestsInBlock,
 		false,
 		&isc.EVMTracer{
-			Tracer:  tracer,
-			TxIndex: txIndex,
+			Tracer:      tracer,
+			TxIndex:     txIndex,
+			BlockNumber: blockNumber,
 		},
 	)
 	return err

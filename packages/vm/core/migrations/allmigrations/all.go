@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	SchemaVersionIotaRebased = 3 + iota // versions prior to 3 correspond to stardust
+	SchemaVersionIotaRebased = 4 + iota // versions prior to 4 correspond to stardust
 
 	LatestSchemaVersion = SchemaVersionIotaRebased
 )

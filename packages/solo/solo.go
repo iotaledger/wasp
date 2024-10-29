@@ -447,8 +447,25 @@ func (env *Solo) EnqueueRequests(requests map[isc.ChainID][]isc.Request) {
 	}
 }
 
+func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
+	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
+		ch.Env.ctx,
+		ch.ChainID.AsAddress().AsIotaAddress(),
+		uint64(stateIndex),
+	)
+	require.NoError(ch.Env.T, err)
+	return &isc.StateAnchor{
+		Anchor:     anchor,
+		Owner:      ch.OriginatorAddress,
+		ISCPackage: ch.Env.ISCPackageID(),
+	}
+}
+
 func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
-	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(ch.Env.ctx, ch.ChainID.AsAddress().AsIotaAddress())
+	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
+		ch.Env.ctx,
+		ch.ChainID.AsAddress().AsIotaAddress(),
+	)
 	require.NoError(ch.Env.T, err)
 	return &isc.StateAnchor{
 		Anchor:     anchor,

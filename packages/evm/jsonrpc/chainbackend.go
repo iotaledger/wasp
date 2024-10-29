@@ -22,10 +22,18 @@ type ChainBackend interface {
 	EVMSendTransaction(tx *types.Transaction) error
 	EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error)
 	EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error)
-	EVMTraceTransaction(anchor *isc.StateAnchor, blockTime time.Time, iscRequestsInBlock []isc.Request, txIndex uint64, tracer *tracers.Tracer) error
+	EVMTraceTransaction(
+		anchor *isc.StateAnchor,
+		blockTime time.Time,
+		iscRequestsInBlock []isc.Request,
+		txIndex *uint64,
+		blockNumber *uint64,
+		tracer *tracers.Tracer,
+	) error
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID
 	ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error)
+	ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error)
 	ISCLatestAnchor() (*isc.StateAnchor, error)
 	ISCLatestState() (state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)

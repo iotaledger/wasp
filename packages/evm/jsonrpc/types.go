@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"slices"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -165,7 +166,7 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPric
 		r.Bloom = types.CreateBloom(types.Receipts{r})
 	}
 
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"transactionHash":   r.TxHash,
 		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
 		"blockHash":         r.BlockHash,
@@ -175,12 +176,20 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPric
 		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
 		"gasUsed":           hexutil.Uint64(r.GasUsed),
 		"effectiveGasPrice": hexutil.EncodeBig(effectiveGasPrice),
-		"contractAddress":   r.ContractAddress,
 		"logs":              rpcMarshalLogs(r),
 		"logsBloom":         r.Bloom,
 		"status":            hexutil.Uint64(r.Status),
 		"type":              hexutil.Uint64(types.LegacyTxType),
 	}
+
+	// Eth compatibility. Return "null" instead of "0x00000000000000000000000..."
+	if slices.Equal(r.ContractAddress.Bytes(), common.Address{}.Bytes()) {
+		result["contractAddress"] = nil
+	} else {
+		result["contractAddress"] = r.ContractAddress
+	}
+
+	return result
 }
 
 func rpcMarshalLogs(r *types.Receipt) []interface{} {
@@ -195,6 +204,7 @@ func rpcMarshalLogs(r *types.Receipt) []interface{} {
 			"address":          log.Address,
 			"data":             hexutil.Bytes(log.Data),
 			"topics":           log.Topics,
+			"removed":          log.Removed,
 		}
 	}
 	return ret

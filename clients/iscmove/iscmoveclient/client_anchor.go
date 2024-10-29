@@ -177,14 +177,42 @@ func (c *Client) GetAnchorFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
+	return decodeAnchorBCS(
+		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,
+		getObjectResponse.Data.Ref(),
+	)
+}
 
+func (c *Client) GetPastAnchorFromObjectID(
+	ctx context.Context,
+	anchorObjectID *iotago.ObjectID,
+	version uint64,
+) (*iscmove.AnchorWithRef, error) {
+	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+		ObjectID: anchorObjectID,
+		Version:  version,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor content: %w", err)
+	}
+	if getObjectResponse.Data.VersionFound == nil {
+		return nil, fmt.Errorf("failed to get anchor content")
+	}
+	return decodeAnchorBCS(
+		getObjectResponse.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes,
+		getObjectResponse.Data.VersionFound.Ref(),
+	)
+}
+
+func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef) (*iscmove.AnchorWithRef, error) {
 	var moveAnchor moveAnchor
-	err = iotaclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &moveAnchor)
+	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
 	return &iscmove.AnchorWithRef{
-		ObjectRef: getObjectResponse.Data.Ref(),
+		ObjectRef: ref,
 		Object:    moveAnchor.ToAnchor(),
 	}, nil
 }

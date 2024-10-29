@@ -17,7 +17,6 @@ import (
 // L2Accounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) L2Accounts() []isc.AgentID {
 	d := accounts.NewStateReader(ch.migrationScheme.LatestSchemaVersion(), lo.Must(ch.Store().LatestState())).AllAccountsAsDict()
-	// d := accounts.NewStateAccess(lo.Must(ch.Store().LatestState())).AllAccounts()
 	keys := d.KeysSorted()
 	ret := make([]isc.AgentID, 0, len(keys)-1)
 	for _, key := range keys {
@@ -125,7 +124,7 @@ func (ch *Chain) L2TotalBaseTokens() coin.Value {
 type NewNativeTokenParams struct {
 	ch   *Chain
 	user *cryptolib.KeyPair
-	//sch           iotago.TokenScheme
+	// sch           iotago.TokenScheme
 	tokenName     string
 	tokenSymbol   string
 	tokenDecimals uint8
@@ -182,59 +181,14 @@ const (
 
 func (fp *NewNativeTokenParams) CreateFoundry() (uint32, coin.Type, error) {
 	panic("refactor me: 'CreateFoundry'")
-	/*
-
-		var sch *iotago.TokenScheme
-		if fp.sch != nil {
-			sch = &fp.sch
-		}
-
-		metadata := isc.NewIRC30NativeTokenMetadata(fp.tokenName, fp.tokenSymbol, fp.tokenDecimals)
-		req := NewCallParams(accounts.Func.Message(metadata, sch)).
-			WithAllowance(isc.NewAssets(allowanceForFoundryStorageDeposit)).
-			AddBaseTokens(allowanceForFoundryStorageDeposit).
-			WithMaxAffordableGasBudget()
-
-		_, estimate, err := fp.ch.EstimateGasOnLedger(req, fp.user)
-		if err != nil {
-			return 0, iotago.NativeTokenID{}, err
-		}
-		req.WithGasBudget(estimate.GasBurned)
-		res, err := fp.ch.PostRequestSync(req, fp.user)
-		if err != nil {
-			return 0, iotago.NativeTokenID{}, err
-		}
-		resDeco := kvdecoder.New(res)
-		retSN := resDeco.MustGetUint32(accounts.ParamFoundrySN)
-		nativeTokenID, err := fp.ch.GetNativeTokenIDByFoundrySN(retSN)
-		return retSN, nativeTokenID, err
-
-	*/
 }
 
 func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
 	panic("refactor me: 'DestroyFoundry'")
-	// req := NewCallParams(accounts.FuncNativeTokenDestroy.Message(sn)).
-	// 	WithGasBudget(DestroyFoundryGasBudgetBaseTokens)
-	// _, err := ch.PostRequestSync(req, user)
-	// return err
 }
 
 func (ch *Chain) MintTokens(sn uint32, amount coin.Value, user *cryptolib.KeyPair) error {
 	panic("refactor me: 'MintTokens'")
-	// req := NewCallParams(accounts.FuncNativeTokenModifySupply.MintTokens(sn, amount)).
-	// 	AddBaseTokens(allowanceForModifySupply).
-	// 	WithAllowance(isc.NewAssets(allowanceForModifySupply)). // enough allowance is needed for the storage deposit when token is minted first on the chain
-	// 	WithMaxAffordableGasBudget()
-
-	// _, rec, err := ch.EstimateGasOnLedger(req, user)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// req.WithGasBudget(rec.GasBurned)
-	// _, err = ch.PostRequestSync(req, user)
-	// return err
 }
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account

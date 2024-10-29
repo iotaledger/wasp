@@ -319,7 +319,7 @@ func (m Message) Clone() Message {
 	}
 }
 
-type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
+type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64, vmError *VMError)
 
 // RequestParameters represents parameters of the on-ledger request. The request is build from these parameters
 type RequestParameters struct {
@@ -437,6 +437,7 @@ type BLS interface {
 }
 
 type EVMTracer struct {
-	Tracer  *tracers.Tracer
-	TxIndex uint64
+	Tracer      *tracers.Tracer
+	TxIndex     *uint64
+	BlockNumber *uint64
 }

@@ -77,7 +77,8 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex uint64,
+	txIndex *uint64,
+	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
 	return chainutil.EVMTraceTransaction(
@@ -88,6 +89,7 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
+		blockNumber,
 		tracer,
 	)
 }
@@ -98,6 +100,11 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 
 func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
 	anchor := b.Chain.GetLatestAnchor()
+	return anchor, nil
+}
+
+func (b *jsonRPCSoloBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
+	anchor := b.Chain.GetAnchor(stateIndex)
 	return anchor, nil
 }
 
