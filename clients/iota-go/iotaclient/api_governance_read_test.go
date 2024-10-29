@@ -14,7 +14,7 @@ import (
 
 func TestGetCommitteeInfo(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	epochId := iotajsonrpc.NewBigInt(20)
+	epochId := iotajsonrpc.NewBigInt(0)
 	committeeInfo, err := client.GetCommitteeInfo(context.Background(), epochId)
 	require.NoError(t, err)
 	require.Equal(t, epochId, committeeInfo.EpochId)
@@ -40,8 +40,8 @@ func TestGetStakes(t *testing.T) {
 	// FIXME change the valid staking iotago address
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 
-	// This address has been taken from https://explorer.iota.cafe/validator/0x762986e8799639b18341c142c7a7c8d0f690b38d79530e673ba62e1163696891?network=alphanet
-	address, err := iotago.AddressFromHex("0x762986e8799639b18341c142c7a7c8d0f690b38d79530e673ba62e1163696891")
+	// This address has been taken from https://explorer.iota.cafe/validator/0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754
+	address, err := iotago.AddressFromHex("0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754")
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), address)
 	require.NoError(t, err)
@@ -61,11 +61,9 @@ func TestGetStakes(t *testing.T) {
 }
 
 func TestGetStakesByIds(t *testing.T) {
-	t.Log("This test most likely must fail as no validator in the committee seems to stake anything. For now.")
-
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	// This address has been taken from https://explorer.iota.cafe/validator/0x762986e8799639b18341c142c7a7c8d0f690b38d79530e673ba62e1163696891?network=alphanet
-	owner, err := iotago.AddressFromHex("0x762986e8799639b18341c142c7a7c8d0f690b38d79530e673ba62e1163696891")
+	// This address has been taken from https://explorer.iota.cafe/validator/0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754
+	owner, err := iotago.AddressFromHex("0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754")
 	require.NoError(t, err)
 	stakes, err := api.GetStakes(context.Background(), owner)
 	require.NoError(t, err)
@@ -75,12 +73,11 @@ func TestGetStakesByIds(t *testing.T) {
 	stakeId := stake1.StakedIotaId
 	stakesFromId, err := api.GetStakesByIds(context.Background(), []iotago.ObjectID{stakeId})
 	require.NoError(t, err)
-	require.Equal(t, len(stakesFromId), 0)
+	require.Equal(t, len(stakesFromId), 1)
 
-	/*	queriedStake := stakesFromId[0].Stakes[0].Data
-		require.Equal(t, stake1, queriedStake)
-		t.Log(stakesFromId)
-	*/
+	queriedStake := stakesFromId[0].Stakes[0].Data
+	require.Equal(t, stake1, queriedStake)
+	t.Log(stakesFromId)
 }
 
 func TestGetValidatorsApy(t *testing.T) {

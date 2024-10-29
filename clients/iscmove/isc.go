@@ -115,9 +115,27 @@ type Message struct {
 	Args     [][]byte
 }
 
+type Assets struct {
+	Coins CoinBalances
+}
+
 type CoinAllowance struct {
 	CoinType iotajsonrpc.CoinType
-	Balance  uint64
+	Balance  iotajsonrpc.CoinValue
+}
+
+type CoinBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
+
+func NewAssets(baseTokens iotajsonrpc.CoinValue) *Assets {
+	a := &Assets{
+		Coins: make(CoinBalances),
+	}
+	return a.AddCoin(iotajsonrpc.IotaCoinType, baseTokens)
+}
+
+func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
+	a.Coins[coinType] = iotajsonrpc.CoinValue(amount)
+	return a
 }
 
 type Request struct {
@@ -126,7 +144,7 @@ type Request struct {
 	// XXX balances are empty if we don't fetch the dynamic fields
 	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
-	Allowance []CoinAllowance
+	Allowance Assets
 	GasBudget uint64
 }
 

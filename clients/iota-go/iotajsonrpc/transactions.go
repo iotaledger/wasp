@@ -290,7 +290,7 @@ type IotaTransactionBlockResponse struct {
 	BalanceChanges          []BalanceChange                                     `json:"balanceChanges,omitempty"`
 	Errors                  []string                                            `json:"errors,omitempty"` // Errors that occurred in fetching/serializing the transaction.
 	// FIXME datatype may be wrong
-	RawEffects []string `json:"rawEffects,omitempty"` // enable by show_raw_effects
+	RawEffects []int `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
 // requires to set 'IotaTransactionBlockResponseOptions.ShowObjectChanges' to true

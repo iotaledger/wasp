@@ -40,7 +40,7 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 	return isc.NewContractAgentID(chainID, isc.Hname(h))
 }
 
-var dummyAssetID = coin.Type("0x1::foo::bar")
+var dummyAssetID = coin.MustTypeFromString("0x1::foo::bar")
 
 func checkLedgerT(t *testing.T, v isc.SchemaVersion, state dict.Dict) isc.CoinBalances {
 	require.NoError(t, accounts.NewStateReader(v, state).CheckLedgerConsistency())

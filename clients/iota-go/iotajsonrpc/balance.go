@@ -29,6 +29,10 @@ func (t *CoinValue) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (t CoinValue) Uint64() uint64 {
+	return uint64(t)
+}
+
 type Balance struct {
 	CoinType        CoinType            `json:"coinType"`
 	CoinObjectCount *BigInt             `json:"coinObjectCount"`

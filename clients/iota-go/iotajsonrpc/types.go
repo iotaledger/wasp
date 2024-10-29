@@ -11,7 +11,7 @@ import (
 
 const (
 	IotaCoinType   = "0x2::iota::IOTA"
-	IotaCoinSupply = 5376075227826000000
+	IotaCoinSupply = 5380677226936000000
 )
 
 // ShortString Returns the address with leading zeros trimmed, e.g. 0x2

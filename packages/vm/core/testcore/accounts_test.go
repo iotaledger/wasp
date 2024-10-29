@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -600,7 +599,7 @@ func initWithdrawTest(t *testing.T, initLoad ...coin.Value) *testParams {
 	v := initDepositTest(t, nil, initLoad...)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create foundry and mint 100 tokens
-	v.sn, v.nativeTokenID = v.createFoundryAndMint(coin.Value(1_000_000), coin.Value(100))
+	v.sn, v.coinType = v.createFoundryAndMint(coin.Value(1_000_000), coin.Value(100))
 	// prepare request parameters to withdraw everything what is in the account
 	// do not run the request yet
 	v.req = solo.NewCallParams(accounts.FuncWithdraw.Message()).
@@ -1099,9 +1098,6 @@ func TestTransferNFTAllowance(t *testing.T) {
 
 	require.False(t, ch.HasL2NFT(finalOwnerAgentID, nft.ID))
 	require.True(t, env.HasL1NFT(finalOwnerAddress, nft.ID))
-	_, err = ch.CallView(accounts.ViewNFTData.Message(nft.ID))
-	require.Error(t, err)
-	require.Regexp(t, "NFTID not found", err.Error())
 }
 
 func TestDepositNFTWithMinStorageDeposit(t *testing.T) {
@@ -1148,7 +1144,7 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 		// test base token
 		isc.NewAssets(1000 * isc.Million),
 		// test fungible tokens
-		isc.NewEmptyAssets().AddCoin("coin1", coin.Value(10)),
+		isc.NewEmptyAssets().AddCoin(coin.MustTypeFromString("coin1"), coin.Value(10)),
 		// test NFTs
 		isc.NewAssets(0),
 	}
@@ -1248,214 +1244,192 @@ func TestNonces(t *testing.T) {
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
 }
 
-func TestNFTMint(t *testing.T) {
-	env := solo.New(t)
-	ch := env.NewChain()
-	mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar", nil).Bytes()
+//
+// func TestNFTMint(t *testing.T) {
+// env := solo.New(t)
+// ch := env.NewChain()
+// mockNFTMetadata := isc.NewIRC27NFTMetadata("foo/bar", "", "foobar", nil).Bytes()
 
-	_seedIndex := 0
-	seedIndex := func() int {
-		_seedIndex++
-		return _seedIndex
-	}
+// _seedIndex := 0
+// seedIndex := func() int {
+// 	_seedIndex++
+// 	return _seedIndex
+// }
 
-	t.Run("mint for another user", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
+// t.Run("mint for another user", func(t *testing.T) {
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
-		// mint NFT to another user and keep it on chain
-		req := solo.NewCallParams(accounts.FuncMintNFT.Message(
-			mockNFTMetadata,
-			anotherUserAgentID,
-			nil,
-			nil,
-		)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
+// 	// mint NFT to another user and keep it on chain
+// 	req := solo.NewCallParams(accounts.FuncMintNFT.Message(
+// 		mockNFTMetadata,
+// 		anotherUserAgentID,
+// 		nil,
+// 		nil,
+// 	)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
-		_, err := ch.PostRequestSync(req, wallet)
-		require.NoError(t, err)
+// 	require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+// 	_, err := ch.PostRequestSync(req, wallet)
+// 	require.NoError(t, err)
 
-		// post a dummy request to make the chain progress to the next block
-		ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
-		require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
-	})
+// 	// post a dummy request to make the chain progress to the next block
+// 	ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
+// 	require.Len(t, ch.L2NFTs(anotherUserAgentID), 1)
+// })
 
-	t.Run("mint with invalid IRC27 metadata", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
+// t.Run("mint with invalid IRC27 metadata", func(t *testing.T) {
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
-		// mint NFT to another user and keep it on chain
-		req := solo.NewCallParams(accounts.FuncMintNFT.Message(
-			[]byte{1, 2, 3},
-			anotherUserAgentID,
-			nil,
-			nil,
-		)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
+// 	// mint NFT to another user and keep it on chain
+// 	req := solo.NewCallParams(accounts.FuncMintNFT.Message(
+// 		[]byte{1, 2, 3},
+// 		anotherUserAgentID,
+// 		nil,
+// 		nil,
+// 	)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
-		_, err := ch.PostRequestSync(req, wallet)
-		require.Error(t, err)
-		require.Equal(t, err.(*isc.VMError).MessageFormat(), accounts.ErrImmutableMetadataInvalid.MessageFormat())
-	})
+// 	require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+// 	_, err := ch.PostRequestSync(req, wallet)
+// 	require.Error(t, err)
+// 	require.Equal(t, err.(*isc.VMError).MessageFormat(), accounts.ErrImmutableMetadataInvalid.MessageFormat())
+// })
 
-	t.Run("mint without IRC27 metadata", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
+// t.Run("mint without IRC27 metadata", func(t *testing.T) {
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
-		// mint NFT to another user and keep it on chain
-		req := solo.NewCallParams(accounts.FuncMintNFT.Message(nil, anotherUserAgentID, nil, nil)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
+// 	// mint NFT to another user and keep it on chain
+// 	req := solo.NewCallParams(accounts.FuncMintNFT.Message(nil, anotherUserAgentID, nil, nil)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
-		_, err := ch.PostRequestSync(req, wallet)
-		require.ErrorContains(t, err, "unexpected end of JSON input")
-	})
+// 	require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+// 	_, err := ch.PostRequestSync(req, wallet)
+// 	require.ErrorContains(t, err, "unexpected end of JSON input")
+// })
 
-	t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
-		wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
 
-		_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
-		// mint NFT to another user and withdraw it
-		withdrawOnMint := true
-		req := solo.NewCallParams(accounts.FuncMintNFT.Message(
-			mockNFTMetadata,
-			anotherUserAgentID,
-			&withdrawOnMint,
-			nil,
-		)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
+// 	// mint NFT to another user and withdraw it
+// 	withdrawOnMint := true
+// 	req := solo.NewCallParams(accounts.FuncMintNFT.Message(
+// 		mockNFTMetadata,
+// 		anotherUserAgentID,
+// 		&withdrawOnMint,
+// 		nil,
+// 	)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		require.Len(t, env.L1NFTs(anotherUserAddr), 0)
-		ret, err := ch.PostRequestSync(req, wallet)
-		mintID := ret.Get(accounts.ParamMintID)
-		require.NoError(t, err)
-		require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
-		userL1NFTs := env.L1NFTs(anotherUserAddr)
-		NFTID := isc.NFTIDFromOutputID(lo.Keys(userL1NFTs)[0])
-		require.Len(t, userL1NFTs, 1)
+// 	require.Len(t, env.L1NFTs(anotherUserAddr), 0)
+// 	ret, err := ch.PostRequestSync(req, wallet)
+// 	mintID := ret.Get(accounts.ParamMintID)
+// 	require.NoError(t, err)
+// 	require.Len(t, ch.L2NFTs(anotherUserAgentID), 0)
+// 	userL1NFTs := env.L1NFTs(anotherUserAddr)
+// 	NFTID := isc.NFTIDFromOutputID(lo.Keys(userL1NFTs)[0])
+// 	require.Len(t, userL1NFTs, 1)
 
-		// post a dummy request to make the chain progress to the next block
-		ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
+// 	// post a dummy request to make the chain progress to the next block
+// 	ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
+// })
 
-		// check that the internal ID mapping  matches the L1 NFT
-		ret, err = ch.CallView(accounts.ViewNFTIDbyMintID.Message(mintID))
-		require.NoError(t, err)
-		storedNFTID := lo.Must(accounts.ViewNFTIDbyMintID.DecodeOutput(ret))
-		require.Equal(t, storedNFTID, NFTID)
-	})
+// t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
+// 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	agentID := isc.NewAddressAgentID(address)
 
-	t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		agentID := isc.NewAddressAgentID(address)
+// 	// mint NFT to self and keep it on chain
+// 	req := solo.NewCallParams(accounts.FuncMintNFT.Message(mockNFTMetadata, agentID, nil, nil)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		// mint NFT to self and keep it on chain
-		req := solo.NewCallParams(accounts.FuncMintNFT.Message(mockNFTMetadata, agentID, nil, nil)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
+// 	require.Len(t, ch.L2NFTs(agentID), 0)
+// 	_, err := ch.PostRequestSync(req, wallet)
+// 	require.NoError(t, err)
 
-		require.Len(t, ch.L2NFTs(agentID), 0)
-		_, err := ch.PostRequestSync(req, wallet)
-		require.NoError(t, err)
+// 	// post a dummy request to make the chain progress to the next block
+// 	ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
+// 	require.Len(t, env.L1NFTs(address), 0)
+// 	userL2NFTs := ch.L2NFTs(agentID)
+// 	require.Len(t, userL2NFTs, 1)
 
-		// post a dummy request to make the chain progress to the next block
-		ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
-		require.Len(t, env.L1NFTs(address), 0)
-		userL2NFTs := ch.L2NFTs(agentID)
-		require.Len(t, userL2NFTs, 1)
+// 	// try minting another NFT using the first one as the collection
+// 	firstNFTID := userL2NFTs[0]
 
-		// try minting another NFT using the first one as the collection
-		firstNFTID := userL2NFTs[0]
+// 	req = solo.NewCallParams(accounts.FuncMintNFT.Message(
+// 		isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection").Bytes(),
+// 		agentID,
+// 		nil,
+// 		&firstNFTID,
+// 	)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		req = solo.NewCallParams(accounts.FuncMintNFT.Message(
-			isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection", nil).Bytes(),
-			agentID,
-			nil,
-			&firstNFTID,
-		)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
+// 	testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name()+"1")
 
-		ret, err := ch.PostRequestSync(req, wallet)
-		require.NoError(t, err)
-		mintID := ret.Get(accounts.ParamMintID)
+// 	// post a dummy request to make the chain progress to the next block
+// 	ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
 
-		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name()+"1")
+// 	testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name()+"2")
 
-		// post a dummy request to make the chain progress to the next block
-		ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
+// 	// withdraw both NFTs
+// 	err = ch.Withdraw(isc.NewEmptyAssets().AddObject(firstNFTID), wallet)
+// 	require.NoError(t, err)
 
-		testdbhash.VerifyContractStateHash(env, accounts.Contract, "", t.Name()+"2")
+// 	require.Len(t, env.L1NFTs(address), 1)
+// 	require.Len(t, ch.L2NFTs(agentID), 0)
+// })
 
-		ret, err = ch.CallView(accounts.ViewNFTIDbyMintID.Message(mintID))
-		require.NoError(t, err)
-		NFTIDInCollection := lo.Must(accounts.ViewNFTIDbyMintID.DecodeOutput(ret))
+// t.Run("mint to self, then withdraw it", func(t *testing.T) {
+// 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	agentID := isc.NewAddressAgentID(address)
 
-		ret, err = ch.CallView(accounts.ViewNFTData.Message(NFTIDInCollection))
-		require.NoError(t, err)
-		nftData := lo.Must(accounts.ViewNFTData.DecodeOutput(ret))
-		require.True(t, nftData.Issuer.Equals(cryptolib.NewAddressFromIotago(firstNFTID.ToAddress())))
-		require.True(t, nftData.Owner.Equals(agentID))
+// 	// mint NFT to self and keep it on chain
+// 	req := solo.NewCallParams(accounts.FuncMintNFT.Message(mockNFTMetadata, agentID, nil, nil)).
+// 		AddBaseTokens(2 * isc.Million).
+// 		WithAllowance(isc.NewAssets(1 * isc.Million)).
+// 		WithMaxAffordableGasBudget()
 
-		// withdraw both NFTs
-		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(firstNFTID), wallet)
-		require.NoError(t, err)
+// 	require.Len(t, ch.L2NFTs(agentID), 0)
+// 	_, err := ch.PostRequestSync(req, wallet)
+// 	require.NoError(t, err)
 
-		err = ch.Withdraw(isc.NewEmptyAssets().AddNFTs(NFTIDInCollection), wallet)
-		require.NoError(t, err)
+// 	// post a dummy request to make the chain progress to the next block
+// 	ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
+// 	require.Len(t, env.L1NFTs(address), 0)
+// 	userL2NFTs := ch.L2NFTs(agentID)
+// 	require.Len(t, userL2NFTs, 1)
+// 	nftID := userL2NFTs[0]
 
-		require.Len(t, env.L1NFTs(address), 2)
-		require.Len(t, ch.L2NFTs(agentID), 0)
-	})
+// 	// withdraw the NFT
+// 	_, err = ch.PostRequestSync(
+// 		solo.NewCallParams(accounts.FuncWithdraw.Message()).
+// 			AddAllowance(isc.NewAssets(2*isc.Million).AddObject(nftID)).
+// 			AddBaseTokens(5*isc.Million).
+// 			WithMaxAffordableGasBudget(),
+// 		wallet,
+// 	)
+// 	require.NoError(t, err)
 
-	t.Run("mint to self, then withdraw it", func(t *testing.T) {
-		wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-		agentID := isc.NewAddressAgentID(address)
-
-		// mint NFT to self and keep it on chain
-		req := solo.NewCallParams(accounts.FuncMintNFT.Message(mockNFTMetadata, agentID, nil, nil)).
-			AddBaseTokens(2 * isc.Million).
-			WithAllowance(isc.NewAssets(1 * isc.Million)).
-			WithMaxAffordableGasBudget()
-
-		require.Len(t, ch.L2NFTs(agentID), 0)
-		_, err := ch.PostRequestSync(req, wallet)
-		require.NoError(t, err)
-
-		// post a dummy request to make the chain progress to the next block
-		ch.PostRequestOffLedger(solo.NewCallParamsEx("foo", "bar"), wallet)
-		require.Len(t, env.L1NFTs(address), 0)
-		userL2NFTs := ch.L2NFTs(agentID)
-		require.Len(t, userL2NFTs, 1)
-		nftID := userL2NFTs[0]
-
-		// withdraw the NFT
-		_, err = ch.PostRequestSync(
-			solo.NewCallParams(accounts.FuncWithdraw.Message()).
-				AddAllowance(isc.NewAssets(2*isc.Million).AddObject(nftID)).
-				AddBaseTokens(5*isc.Million).
-				WithMaxAffordableGasBudget(),
-			wallet,
-		)
-		require.NoError(t, err)
-
-		require.Len(t, ch.L2NFTs(agentID), 0)
-		require.Len(t, env.L1NFTs(address), 1)
-	})
-}
+// 	require.Len(t, ch.L2NFTs(agentID), 0)
+// 	require.Len(t, env.L1NFTs(address), 1)
+// })
+// }

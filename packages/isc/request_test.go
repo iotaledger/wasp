@@ -45,10 +45,9 @@ func TestRequestDataSerialization(t *testing.T) {
 					Contract: uint32(isc.Hn("target_contract")),
 					Function: uint32(isc.Hn("entrypoint")),
 				},
-				Allowance: []iscmove.CoinAllowance{{
-					CoinType: coin.BaseTokenType.String(),
-					Balance:  100,
-				}},
+				Allowance: iscmove.Assets{
+					Coins: iscmove.CoinBalances{coin.BaseTokenType.String(): 100},
+				},
 				GasBudget: 1000,
 			},
 		}

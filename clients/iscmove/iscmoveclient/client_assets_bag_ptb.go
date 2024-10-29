@@ -96,7 +96,14 @@ func PTBAssetsBagPlaceCoinBalance(ptb *iotago.ProgrammableTransactionBuilder, pa
 	return ptb
 }
 
-func PTBAssetsBagPlaceCoinWithAmount(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, assetsBagRef *iotago.ObjectRef, coin *iotago.ObjectRef, amount uint64, coinType string) *iotago.ProgrammableTransactionBuilder {
+func PTBAssetsBagPlaceCoinWithAmount(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAssetsBag iotago.Argument,
+	argCoin iotago.Argument,
+	amount uint64,
+	coinType string,
+) *iotago.ProgrammableTransactionBuilder {
 	typeTag, err := iotago.TypeTagFromString(coinType)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
@@ -104,7 +111,7 @@ func PTBAssetsBagPlaceCoinWithAmount(ptb *iotago.ProgrammableTransactionBuilder,
 	splitCoinArg := ptb.Command(
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
-				Coin:    ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coin}),
+				Coin:    argCoin,
 				Amounts: []iotago.Argument{ptb.MustForceSeparatePure(amount)},
 			},
 		},
@@ -117,7 +124,7 @@ func PTBAssetsBagPlaceCoinWithAmount(ptb *iotago.ProgrammableTransactionBuilder,
 				Function:      "place_coin",
 				TypeArguments: []iotago.TypeTag{*typeTag},
 				Arguments: []iotago.Argument{
-					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+					argAssetsBag,
 					splitCoinArg,
 				},
 			},
