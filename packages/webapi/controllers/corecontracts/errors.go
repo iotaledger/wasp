@@ -15,9 +15,9 @@ type ErrorMessageFormatResponse struct {
 }
 
 func (c *Controller) getErrorMessageFormat(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	contractHname, err := params.DecodeHNameFromHNameHexString(e, "contractHname")
 	if err != nil {
@@ -31,7 +31,7 @@ func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 
 	messageFormat, err := corecontracts.ErrorMessageFormat(ch, contractHname, uint16(errorID), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	errorMessageFormatResponse := &ErrorMessageFormatResponse{

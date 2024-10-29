@@ -100,7 +100,8 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex uint64,
+	txIndex *uint64,
+	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
 	return chainutil.EVMTraceTransaction(
@@ -111,6 +112,7 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
+		blockNumber,
 		tracer,
 	)
 }

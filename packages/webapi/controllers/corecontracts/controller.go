@@ -26,9 +26,9 @@ func (c *Controller) Name() string {
 	return "corecontracts"
 }
 
-func (c *Controller) handleViewCallError(err error, chainID isc.ChainID) error {
+func (c *Controller) handleViewCallError(err error) error {
 	if errors.Is(err, interfaces.ErrChainNotFound) {
-		return apierrors.ChainNotFoundError(chainID.String())
+		return apierrors.ChainNotFoundError()
 	}
 	return apierrors.ContractExecutionError(err)
 }

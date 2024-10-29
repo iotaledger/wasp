@@ -1,9 +1,13 @@
+// Code on this file adapted from
+// https://github.com/ethereum/go-ethereum/blob/master/eth/tracers/native/call.go
+
 package jsonrpc
 
 import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"strings"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -13,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 )
 
 func init() {
@@ -22,7 +28,7 @@ func init() {
 // CallFrame contains the result of a trace with "callTracer".
 // Code is 100% copied from go-ethereum (since the type is unexported there)
 
-type callLog struct {
+type CallLog struct {
 	Address common.Address `json:"address"`
 	Topics  []common.Hash  `json:"topics"`
 	Data    hexutil.Bytes  `json:"data"`
@@ -31,21 +37,42 @@ type callLog struct {
 	Position hexutil.Uint `json:"position"`
 }
 
+type OpCodeJSON struct {
+	vm.OpCode
+}
+
+func NewOpCodeJSON(code vm.OpCode) OpCodeJSON {
+	return OpCodeJSON{OpCode: code}
+}
+
+func (o OpCodeJSON) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToUpper(o.String()))
+}
+
+func (o *OpCodeJSON) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	o.OpCode = vm.StringToOp(strings.ToUpper(s))
+	return nil
+}
+
 type CallFrame struct {
-	Type         vm.OpCode       `json:"-"`
+	Type         OpCodeJSON      `json:"type"`
 	From         common.Address  `json:"from"`
-	Gas          uint64          `json:"gas"`
-	GasUsed      uint64          `json:"gasUsed"`
+	Gas          hexutil.Uint64  `json:"gas"`
+	GasUsed      hexutil.Uint64  `json:"gasUsed"`
 	To           *common.Address `json:"to,omitempty" rlp:"optional"`
-	Input        []byte          `json:"input" rlp:"optional"`
-	Output       []byte          `json:"output,omitempty" rlp:"optional"`
+	Input        hexutil.Bytes   `json:"input" rlp:"optional"`
+	Output       hexutil.Bytes   `json:"output,omitempty" rlp:"optional"`
 	Error        string          `json:"error,omitempty" rlp:"optional"`
 	RevertReason string          `json:"revertReason,omitempty"`
 	Calls        []CallFrame     `json:"calls,omitempty" rlp:"optional"`
-	Logs         []callLog       `json:"logs,omitempty" rlp:"optional"`
+	Logs         []CallLog       `json:"logs,omitempty" rlp:"optional"`
 	// Placed at end on purpose. The RLP will be decoded to 0 instead of
 	// nil if there are non-empty elements after in the struct.
-	Value            *big.Int `json:"value,omitempty" rlp:"optional"`
+	Value            hexutil.Big `json:"value,omitempty" rlp:"optional"`
 	revertedSnapshot bool
 }
 
@@ -70,7 +97,7 @@ func (f *CallFrame) processOutput(output []byte, err error, reverted bool) {
 	}
 	f.Error = err.Error()
 	f.revertedSnapshot = reverted
-	if f.Type == vm.CREATE || f.Type == vm.CREATE2 {
+	if f.Type.OpCode == vm.CREATE || f.Type.OpCode == vm.CREATE2 {
 		f.To = nil
 	}
 	if !errors.Is(err, vm.ErrExecutionReverted) || len(output) == 0 {
@@ -83,6 +110,12 @@ func (f *CallFrame) processOutput(output []byte, err error, reverted bool) {
 	if unpacked, err := abi.UnpackRevert(output); err == nil {
 		f.RevertReason = unpacked
 	}
+}
+
+type TxTraceResult struct {
+	TxHash common.Hash     `json:"txHash"`           // transaction hash
+	Result json.RawMessage `json:"result,omitempty"` // Trace results produced by the tracer
+	Error  string          `json:"error,omitempty"`  // Trace failure produced by the tracer
 }
 
 type callTracer struct {
@@ -101,21 +134,24 @@ type callTracerConfig struct {
 
 // newCallTracer returns a native go tracer which tracks
 // call frames of a tx, and implements vm.EVMLogger.
-func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*tracers.Tracer, error) {
+func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
 	t, err := newCallTracerObject(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &tracers.Tracer{
-		Hooks: &tracing.Hooks{
-			OnTxStart: t.OnTxStart,
-			OnTxEnd:   t.OnTxEnd,
-			OnEnter:   t.OnEnter,
-			OnExit:    t.OnExit,
-			OnLog:     t.OnLog,
+	return &Tracer{
+		Tracer: &tracers.Tracer{
+			Hooks: &tracing.Hooks{
+				OnTxStart: t.OnTxStart,
+				OnTxEnd:   t.OnTxEnd,
+				OnEnter:   t.OnEnter,
+				OnExit:    t.OnExit,
+				OnLog:     t.OnLog,
+			},
+			GetResult: t.GetResult,
+			Stop:      t.Stop,
 		},
-		GetResult: t.GetResult,
-		Stop:      t.Stop,
+		TraceFakeTx: t.TraceFakeTx,
 	}, nil
 }
 
@@ -144,15 +180,15 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 
 	toCopy := to
 	call := CallFrame{
-		Type:  vm.OpCode(typ),
+		Type:  NewOpCodeJSON(vm.OpCode(typ)),
 		From:  from,
 		To:    &toCopy,
 		Input: common.CopyBytes(input),
-		Gas:   gas,
-		Value: value,
+		Gas:   hexutil.Uint64(gas),
+		Value: hexutil.Big(*value),
 	}
 	if depth == 0 {
-		call.Gas = t.gasLimit
+		call.Gas = hexutil.Uint64(t.gasLimit)
 	}
 	t.callstack = append(t.callstack, call)
 }
@@ -179,7 +215,7 @@ func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error,
 	t.callstack = t.callstack[:size-1]
 	size--
 
-	call.GasUsed = gasUsed
+	call.GasUsed = hexutil.Uint64(gasUsed)
 	call.processOutput(output, err, reverted)
 	// Nest call into parent.
 	t.callstack[size-1].Calls = append(t.callstack[size-1].Calls, call)
@@ -201,7 +237,7 @@ func (t *callTracer) OnTxEnd(receipt *types.Receipt, err error) {
 	if err != nil {
 		return
 	}
-	t.callstack[0].GasUsed = receipt.GasUsed
+	t.callstack[0].GasUsed = hexutil.Uint64(receipt.GasUsed)
 	if t.config.WithLog {
 		// Logs are not emitted when the call fails
 		clearFailedLogs(&t.callstack[0], false)
@@ -221,7 +257,7 @@ func (t *callTracer) OnLog(log *types.Log) {
 	if t.interrupt.Load() {
 		return
 	}
-	l := callLog{
+	l := CallLog{
 		Address:  log.Address,
 		Topics:   log.Topics,
 		Data:     log.Data,
@@ -230,17 +266,20 @@ func (t *callTracer) OnLog(log *types.Log) {
 	t.callstack[len(t.callstack)-1].Logs = append(t.callstack[len(t.callstack)-1].Logs, l)
 }
 
+var ErrIncorrectTopLevelCalls = errors.New("incorrect number of top-level calls")
+
 // GetResult returns the json-encoded nested list of call traces, and any
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *callTracer) GetResult() (json.RawMessage, error) {
 	if len(t.callstack) != 1 {
-		return nil, errors.New("incorrect number of top-level calls")
+		return nil, ErrIncorrectTopLevelCalls
 	}
 
 	res, err := json.Marshal(t.callstack[0])
 	if err != nil {
 		return nil, err
 	}
+
 	return res, t.reason
 }
 
@@ -261,4 +300,17 @@ func clearFailedLogs(cf *CallFrame, parentFailed bool) {
 	for i := range cf.Calls {
 		clearFailedLogs(&cf.Calls[i], failed)
 	}
+}
+
+func (t *callTracer) TraceFakeTx(tx *types.Transaction) (json.RawMessage, error) {
+	return json.Marshal(CallFrame{
+		Type:    NewOpCodeJSON(vm.CALL),
+		From:    evmutil.MustGetSenderIfTxSigned(tx),
+		Gas:     hexutil.Uint64(tx.Gas()),
+		GasUsed: hexutil.Uint64(tx.Gas()),
+		To:      tx.To(),
+		Input:   []byte{},
+		Output:  []byte{},
+		Value:   hexutil.Big(*tx.Value()),
+	})
 }

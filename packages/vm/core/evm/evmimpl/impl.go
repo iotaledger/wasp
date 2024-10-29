@@ -146,7 +146,7 @@ func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {
 
 	// make sure we always store the EVM tx/receipt in the BlockchainDB, even
 	// if the ISC request is reverted
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64) {
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, _ uint64, _ *isc.VMError) {
 		saveExecutedTx(evmPartition, chainInfo, tx, receipt)
 	})
 
@@ -332,7 +332,10 @@ func AddDummyTxWithTransferEvents(
 		return
 	}
 
-	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64) {
+	ctx.Privileged().OnWriteReceipt(func(evmPartition kv.KVStore, gasBurned uint64, vmError *isc.VMError) {
+		if vmError != nil {
+			return // do not issue deposit event if execution failed
+		}
 		receipt.GasUsed = gas.ISCGasBurnedToEVM(gasBurned, &chainInfo.GasFeePolicy.EVMGasRatio)
 		blockchainDB := createBlockchainDB(evmPartition, chainInfo)
 		receipt.CumulativeGasUsed = blockchainDB.GetPendingCumulativeGasUsed() + receipt.GasUsed

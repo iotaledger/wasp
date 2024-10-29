@@ -18,6 +18,7 @@ func setFeePolicy(ctx isc.Sandbox, fp *gas.FeePolicy) {
 	state.SetGasFeePolicy(fp)
 }
 
+// getFeePolicy returns fee policy in serialized form
 func getFeePolicy(ctx isc.SandboxView) *gas.FeePolicy {
 	state := governance.NewStateReaderFromSandbox(ctx)
 	return state.GetGasFeePolicy()

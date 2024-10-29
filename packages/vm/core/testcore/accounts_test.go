@@ -1383,7 +1383,7 @@ func TestNFTMint(t *testing.T) {
 		firstNFTID := userL2NFTs[0]
 
 		req = solo.NewCallParams(accounts.FuncMintNFT.Message(
-			isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection").Bytes(),
+			isc.NewIRC27NFTMetadata("foo/bar/collection", "", "foobar_collection", nil).Bytes(),
 			agentID,
 			nil,
 			&firstNFTID,

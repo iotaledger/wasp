@@ -115,6 +115,12 @@ struct CoinBalance {
 }
 
 library ISCTypes {
+    /**
+     * @dev Create a new Ethereum AgentID.
+     * @param addr The Ethereum address.
+     * @param iscChainID The ISC chain ID.
+     * @return The new ISCAgentID.
+     */
     function newEthereumAgentID(
         address addr,
         ISCChainID iscChainID
@@ -159,6 +165,11 @@ library ISCTypes {
         return uint8(a.data[0]) == ISCAgentIDKindEthereumAddress;
     }
 
+    /**
+     * @dev Get the Ethereum address from an ISCAgentID.
+     * @param a The ISCAgentID.
+     * @return The Ethereum address.
+     */
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
         require(isEthereum(a));
         bytes memory b = new bytes(20);
@@ -167,6 +178,11 @@ library ISCTypes {
         return address(uint160(bytes20(b)));
     }
 
+    /**
+     * @dev Get the chain ID from an ISCAgentID.
+     * @param a The ISCAgentID.
+     * @return The ISCChainID.
+     */
     function chainID(ISCAgentID memory a) internal pure returns (ISCChainID) {
         require(isEthereum(a));
         bytes32 out;
@@ -181,6 +197,12 @@ library ISCTypes {
         return IotaObjectID.wrap(bytes32(tokenID));
     }
 
+    /**
+     * @dev Check if an NFT is part of a given collection.
+     * @param nft The NFT to check.
+     * @param collectionId The collection ID to check against.
+     * @return True if the NFT is part of the collection, false otherwise.
+     */
     function isInCollection(
         ISCNFT memory,
         IotaObjectID

@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-func ChainNotFoundError(chainID string) *HTTPError {
-	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("Chain ID: %v not found", chainID), nil)
+func ChainNotFoundError() *HTTPError {
+	return NewHTTPError(http.StatusNotFound, "Chain ID not found", nil)
 }
 
 func UserNotFoundError(username string) *HTTPError {

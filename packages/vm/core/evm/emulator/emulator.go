@@ -223,7 +223,13 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasEstimateMode bool) 
 	i := statedb.Snapshot()
 	defer statedb.RevertToSnapshot(i)
 
-	return e.applyMessage(coreMsgFromCallMsg(call, gasEstimateMode, statedb), statedb, pendingHeader, nil)
+	return e.applyMessage(
+		coreMsgFromCallMsg(call, gasEstimateMode, statedb),
+		statedb,
+		pendingHeader,
+		nil,
+		nil,
+	)
 }
 
 func (e *EVMEmulator) applyMessage(
@@ -231,6 +237,7 @@ func (e *EVMEmulator) applyMessage(
 	statedb vm.StateDB,
 	header *types.Header,
 	tracer *tracing.Hooks,
+	onTxStart func(vmEnv *vm.EVM),
 ) (res *core.ExecutionResult, err error) {
 	// Set msg gas price to 0
 	msg.GasPrice = big.NewInt(0)
@@ -253,6 +260,9 @@ func (e *EVMEmulator) applyMessage(
 	gasPool := core.GasPool(msg.GasLimit)
 	vmEnv.Reset(txContext, statedb)
 
+	if onTxStart != nil {
+		onTxStart(vmEnv)
+	}
 	// catch any exceptions during the execution, so that an EVM receipt is always produced
 	caughtErr := panicutil.CatchAllExcept(func() {
 		res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
@@ -307,11 +317,18 @@ func (e *EVMEmulator) SendTransaction(
 		return nil, nil, err
 	}
 
+	onTxStart := func(vmEnv *vm.EVM) {
+		if tracer != nil && tracer.OnTxStart != nil {
+			tracer.OnTxStart(vmEnv.GetVMContext(), tx, msg.From)
+		}
+	}
+
 	result, err = e.applyMessage(
 		msg,
 		statedb,
 		pendingHeader,
 		tracer,
+		onTxStart,
 	)
 
 	gasUsed := uint64(0)
@@ -336,6 +353,10 @@ func (e *EVMEmulator) SendTransaction(
 
 	if msg.To == nil {
 		receipt.ContractAddress = crypto.CreateAddress(msg.From, tx.Nonce())
+	}
+
+	if tracer != nil && tracer.OnTxEnd != nil {
+		tracer.OnTxEnd(receipt, err)
 	}
 
 	// add the tx and receipt to the blockchain unless addToBlockchain == false
