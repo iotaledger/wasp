@@ -29,10 +29,8 @@ type L2Client interface {
 		packageID iotago.PackageID,
 		anchorAddress *iotago.ObjectID,
 		assetsBagRef *iotago.ObjectRef,
-		iscContractName uint32,
-		iscFunctionName uint32,
-		args [][]byte,
-		allowanceArray []iscmove.CoinAllowance,
+		msg *iscmove.Message,
+		allowance *iscmove.Assets,
 		onchainGasBudget uint64,
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
@@ -86,6 +84,20 @@ type L2Client interface {
 		ctx context.Context,
 		assetsBagID *iotago.ObjectID,
 	) (*iscmove.AssetsBagWithBalances, error)
+	CreateAndSendRequestWithAssets(
+		ctx context.Context,
+		cryptolibSigner cryptolib.Signer,
+		packageID iotago.PackageID,
+		anchorAddress *iotago.ObjectID,
+		assets *iscmove.Assets,
+		msg *iscmove.Message,
+		allowance *iscmove.Assets,
+		onchainGasBudget uint64,
+		gasPayments []*iotago.ObjectRef, // optional
+		gasPrice uint64,
+		gasBudget uint64,
+		devMode bool,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}

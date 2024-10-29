@@ -37,10 +37,54 @@ func TestCreateAndSendRequest(t *testing.T) {
 		l1starter.ISCPackageID(),
 		anchor.ObjectID,
 		assetsBagRef,
-		uint32(isc.Hn("test_isc_contract")),
-		uint32(isc.Hn("test_isc_func")),
-		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		[]iscmove.CoinAllowance{{CoinType: "IOTA", Balance: 10}, {CoinType: "IOTA", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
+		&iscmove.Message{
+			Contract: uint32(isc.Hn("test_isc_contract")),
+			Function: uint32(isc.Hn("test_isc_func")),
+			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		},
+		&iscmove.Assets{
+			Coins: iscmove.CoinBalances{
+				"0x1::iota::IOTA":    11,
+				"0xa::testa::TEST_A": 12,
+			},
+		},
+		0,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+		false,
+	)
+	require.NoError(t, err)
+
+	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	require.NoError(t, err)
+}
+
+func TestCreateAndSendRequestWithAssets(t *testing.T) {
+	client := newLocalnetClient()
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+
+	anchor := startNewChain(t, client, cryptolibSigner)
+
+	assets := iscmove.NewAssets(100)
+
+	createAndSendRequestRes, err := client.CreateAndSendRequestWithAssets(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		anchor.ObjectID,
+		assets,
+		&iscmove.Message{
+			Contract: uint32(isc.Hn("test_isc_contract")),
+			Function: uint32(isc.Hn("test_isc_func")),
+			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		},
+		&iscmove.Assets{
+			Coins: iscmove.CoinBalances{
+				"0x1::iota::IOTA":    11,
+				"0xa::testa::TEST_A": 12,
+			},
+		},
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -78,10 +122,17 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		l1starter.ISCPackageID(),
 		anchor.ObjectID,
 		assetsBagRef,
-		uint32(isc.Hn("test_isc_contract")),
-		uint32(isc.Hn("test_isc_func")),
-		[][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		[]iscmove.CoinAllowance{{CoinType: "IOTA", Balance: 10}, {CoinType: "IOTA", Balance: 11}, {CoinType: "TEST_A", Balance: 12}},
+		&iscmove.Message{
+			Contract: uint32(isc.Hn("test_isc_contract")),
+			Function: uint32(isc.Hn("test_isc_func")),
+			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		},
+		&iscmove.Assets{
+			Coins: iscmove.CoinBalances{
+				"0x1::iota::IOTA":    11,
+				"0xa::testa::TEST_A": 12,
+			},
+		},
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -95,7 +146,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, iscmove.CoinAllowance{CoinType: "TEST_A", Balance: 12}, req.Object.Allowance[0])
-	require.Equal(t, iscmove.CoinAllowance{CoinType: "IOTA", Balance: 11}, req.Object.Allowance[1])
-	require.Equal(t, iscmove.CoinAllowance{CoinType: "IOTA", Balance: 10}, req.Object.Allowance[2])
+	require.Equal(t, 12, req.Object.Allowance.Coins["TEST_A"])
+	require.Equal(t, 21, req.Object.Allowance.Coins["IOTA"])
 }

@@ -121,8 +121,8 @@ func makeOnLedgerRequest(
 					Size: 1,
 				},
 				Balances: map[string]*iotajsonrpc.Balance{
-					string(coin.BaseTokenType): {
-						CoinType:        string(coin.BaseTokenType),
+					coin.BaseTokenType.String(): {
+						CoinType:        coin.BaseTokenType.String(),
 						CoinObjectCount: iotajsonrpc.NewBigInt(1),
 						TotalBalance:    iotajsonrpc.NewBigInt(baseTokens),
 					},
@@ -133,7 +133,7 @@ func makeOnLedgerRequest(
 				Function: uint32(msg.Target.EntryPoint),
 				Args:     msg.Params,
 			},
-			Allowance: []iscmove.CoinAllowance{},
+			Allowance: iscmove.Assets{},
 			GasBudget: 1000,
 		},
 	}

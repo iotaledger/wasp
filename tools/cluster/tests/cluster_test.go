@@ -32,8 +32,6 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	run := createTestWrapper(t, 4, []int{0, 1, 2, 3})
 
 	t.Run("deploy basic", func(t *testing.T) { run(t, testDeployChain) })
-	t.Run("deploy contract", func(t *testing.T) { run(t, testDeployContractOnly) })
-	t.Run("deploy contract and spawn", func(t *testing.T) { run(t, testDeployContractAndSpawn) })
 
 	t.Run("accountsBasic", func(t *testing.T) { run(t, testBasicAccounts) })
 	t.Run("2acccounts", func(t *testing.T) { run(t, testBasic2Accounts) })

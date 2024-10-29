@@ -158,7 +158,7 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = PTBAssetsBagPlaceCoinWithAmount(ptb, packageID, assetsBagRef, coin, amount, string(coinType))
+	ptb = PTBAssetsBagPlaceCoinWithAmount(ptb, packageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}), ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coin}), amount, string(coinType))
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {

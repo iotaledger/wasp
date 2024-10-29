@@ -11,18 +11,17 @@ func PTBCreateAndSendRequest(
 	packageID iotago.PackageID,
 	anchorID iotago.ObjectID,
 	argAssetsBag iotago.Argument,
-	iscContractHname uint32,
-	iscFunctionHname uint32,
-	args [][]byte,
-	// the order of the allowance will be reversed after processed by
-	allowanceArray []iscmove.CoinAllowance,
+	msg *iscmove.Message,
+	// the order of the allowance will be reversed after processed by move
+	allowance *iscmove.Assets,
 	onchainGasBudget uint64,
 ) *iotago.ProgrammableTransactionBuilder {
-	allowanceCoinTypes := make([]iotajsonrpc.CoinType, len(allowanceArray))
-	allowanceBalances := make([]uint64, len(allowanceArray))
-	for i, val := range allowanceArray {
-		allowanceCoinTypes[i] = val.CoinType
-		allowanceBalances[i] = val.Balance
+	allowanceCoinTypes := make([]iotajsonrpc.CoinType, len(allowance.Coins))
+	allowanceBalances := make([]uint64, len(allowance.Coins))
+	i := 0
+	for k, v := range allowance.Coins {
+		allowanceCoinTypes[i] = k
+		allowanceBalances[i] = v.Uint64()
 	}
 	ptb.Command(
 		iotago.Command{
@@ -34,9 +33,9 @@ func PTBCreateAndSendRequest(
 				Arguments: []iotago.Argument{
 					ptb.MustForceSeparatePure(anchorID),
 					argAssetsBag,
-					ptb.MustForceSeparatePure(iscContractHname),
-					ptb.MustForceSeparatePure(iscFunctionHname),
-					ptb.MustForceSeparatePure(args),
+					ptb.MustForceSeparatePure(msg.Contract),
+					ptb.MustForceSeparatePure(msg.Function),
+					ptb.MustForceSeparatePure(msg.Args),
 					ptb.MustForceSeparatePure(allowanceCoinTypes),
 					ptb.MustForceSeparatePure(allowanceBalances),
 					ptb.MustForceSeparatePure(onchainGasBudget),

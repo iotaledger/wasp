@@ -73,6 +73,15 @@ func (p ProgrammableTransaction) PrintMoveCommand(cmdIdx int) {
 	}
 }
 
+func (p ProgrammableTransaction) IsInInputObjects(targetID *ObjectID) bool {
+	for _, input := range p.Inputs {
+		if input.Object != nil && input.Object.ID().Equals(*targetID) {
+			return true
+		}
+	}
+	return false
+}
+
 type TransferObject struct {
 	Recipient Address
 	ObjectRef ObjectRef
@@ -154,19 +163,6 @@ type SharedObjectArg struct {
 }
 
 func (o ObjectArg) IsBcsEnum() {}
-
-func (o ObjectArg) id() *ObjectID {
-	switch {
-	case o.ImmOrOwnedObject != nil:
-		return o.ImmOrOwnedObject.ObjectID
-	case o.SharedObject != nil:
-		return o.SharedObject.Id
-	case o.Receiving != nil:
-		return o.Receiving.ObjectID
-	default:
-		return &ObjectID{}
-	}
-}
 
 func (o ObjectArg) ID() *ObjectID {
 	switch {
