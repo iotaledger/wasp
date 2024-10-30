@@ -2,6 +2,7 @@ package apiextensions
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -46,7 +47,7 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 	return APIArgsToCallArgs(res)
 }
 
-func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	panic("refactor me: APIWaitUntilAllRequestsProcessed")
 	/*reqs, err := isc.Requests(tx)
 	if err != nil {

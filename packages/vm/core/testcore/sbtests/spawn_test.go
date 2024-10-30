@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -28,9 +27,10 @@ func TestSpawn(t *testing.T) {
 
 	ret, err := ch.CallViewEx(ScName+"_spawned", sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
-	res := kvdecoder.New(ret, ch.Log())
-	counter := res.MustGetUint64(sbtestsc.VarCounter)
-	require.EqualValues(t, 5, counter)
+	counterResult, err := sbtestsc.FuncGetCounter.DecodeOutput(ret)
+	require.NoError(t, err)
+
+	require.EqualValues(t, 5, counterResult)
 
 	_, _, recs := ch.GetInfo()
 	require.EqualValues(t, len(corecontracts.All)+2, len(recs))

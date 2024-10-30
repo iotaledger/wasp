@@ -2,7 +2,6 @@ package cliclients
 
 import (
 	"context"
-
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -63,10 +62,13 @@ func L1Client() clients.L1Client {
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
+	iscPackageID := config.GetPackageID()
+
 	return chainclient.New(
-		L1Client(),
+		L2Client(),
 		waspClient,
 		chainID,
+		iscPackageID,
 		wallet.Load(),
 	)
 }

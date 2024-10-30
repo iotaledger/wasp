@@ -92,7 +92,7 @@ var (
 		coreutil.Field[[]byte](),               // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
-		coreutil.Field[[]lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction]](),
+		coreutil.Field[[]lo.Tuple2[*cryptolib.PublicKey, ChangeAccessNodeAction]](),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
 		coreutil.Field[[]*AccessNodeInfo](),

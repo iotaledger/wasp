@@ -36,7 +36,7 @@ func initSendFundsCmd() *cobra.Command {
 
 			client := cliclients.L1Client()
 
-			tx, err := client.TransferSui(context.Background(), iotaclient.TransferIotaRequest{
+			tx, err := client.TransferIota(context.Background(), iotaclient.TransferIotaRequest{
 				Signer:    senderAddress.AsIotaAddress(),
 				Amount:    iotajsonrpc.NewBigInt(1337),
 				Recipient: targetAddress.AsIotaAddress(),

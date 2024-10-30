@@ -3,12 +3,12 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"math/big"
 	"os"
 	"strconv"
 	"strings"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -83,11 +83,11 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "nftid":
 		nidBytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
-		if len(nidBytes) != iotago.NFTIDLength {
+		if len(nidBytes) != iotago.AddressLen {
 			log.Fatal("invalid nftid length")
 		}
 
-		var nid = [iotago.NFTIDLength]byte(nidBytes)
+		var nid = [iotago.AddressLen]byte(nidBytes)
 
 		return codec.Encode(nid)
 	case "requestid":
@@ -99,11 +99,11 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 	case "tokenid":
 		tidBytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
-		if len(tidBytes) != iotago.FoundryIDLength {
+		if len(tidBytes) != iotago.AddressLen {
 			log.Fatal("invalid tokenid length")
 		}
 
-		var tid = [iotago.FoundryIDLength]byte(tidBytes)
+		var tid = [iotago.AddressLen]byte(tidBytes)
 
 		return codec.Encode(tid)
 	case "uint8":
@@ -152,7 +152,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "bytes", "hex":
 		b, err := codec.Decode[[]byte](v)
 		log.Check(err)
-		return iotago.EncodeHex(b)
+		return cryptolib.EncodeHex(b)
 	case "chainid":
 		cid, err := codec.Decode[isc.ChainID](v)
 		log.Check(err)
@@ -188,7 +188,7 @@ func ValueToString(vtype string, v []byte) string {
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "nftid":
-		nid, err := codec.Decode[NFTID](v)
+		nid, err := codec.Decode[iotago.ObjectID](v)
 		log.Check(err)
 		return nid.String()
 	case "requestid":

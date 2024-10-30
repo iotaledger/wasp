@@ -35,7 +35,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 
 	chain, err := c.chainService.GetChainInfoByChainID(chainID, "")
 	if err != nil {
-		return apierrors.ChainNotFoundError(chainID.String())
+		return apierrors.ChainNotFoundError()
 	}
 
 	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chainID)

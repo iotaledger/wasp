@@ -1,3 +1,6 @@
+// Excluded for now as we right now don't support minting new coins
+//go:build exclude
+
 package chain
 
 import (

@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"github.com/samber/lo"
 
 	"github.com/spf13/cobra"
 
@@ -37,19 +38,27 @@ func initChangeAccessNodesCmd() *cobra.Command {
 			if len(args)%2 != 0 {
 				log.Fatal("wrong number of arguments")
 			}
-			pars := governance.NewChangeAccessNodesRequest()
+			pars := make([]lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction], 0)
+
 			for i := 1; i < len(args); i += 2 {
-				action := args[i-1]
 				pubkey, err := cryptolib.PublicKeyFromString(args[i])
+				action := args[i-1]
 				log.Check(err)
+
+				var actionResult governance.ChangeAccessNodeAction
+
 				switch action {
 				case "accept":
-					pars.Accept(pubkey)
+					actionResult = governance.ChangeAccessNodeActionAccept
 				case "remove":
-					pars.Remove(pubkey)
+					actionResult = governance.ChangeAccessNodeActionRemove
 				case "drop":
-					pars.Drop(pubkey)
+					actionResult = governance.ChangeAccessNodeActionDrop
+				default:
+					log.Fatal("invalid action")
 				}
+
+				pars = append(pars, lo.T2(pubkey, actionResult))
 			}
 			postRequest(
 				node,

@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/samber/lo"
 	"io/fs"
 	"os"
 	"path"
@@ -191,6 +193,17 @@ func GetChain(name string) isc.ChainID {
 	chainID, err := isc.ChainIDFromString(configChainID)
 	log.Check(err)
 	return chainID
+}
+
+func GetPackageID() iotago.PackageID {
+	configPackageID := viper.GetString("packageid")
+	if configPackageID == "" {
+		// TODO: We should probably decide how to handle this. Do we want to depend on a constant packageID or deploy a new ISCMove contract for each chain?
+		log.Fatal(fmt.Sprintf("package id '%s' doesn't exist in config file", configPackageID))
+	}
+
+	packageIDParsed := lo.Must(iotago.PackageIDFromHex(configPackageID))
+	return *packageIDParsed
 }
 
 func GetUseLegacyDerivation() bool {

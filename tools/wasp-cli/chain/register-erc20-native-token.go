@@ -20,7 +20,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 		"register-erc20-native-token",
 		"Call evm core contract registerERC20NativeToken entry point",
 		evm.Contract.Name,
-		evm.FuncRegisterERC20NativeToken.Name,
+		evm.FuncRegisterERC20Coin.Name,
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
 		},
@@ -29,13 +29,14 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 }
 
 func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
+	panic("refactor me: initRegisterERC20NativeTokenOnRemoteChainCmd")
 	var targetChain string
 
 	return buildPostRequestCmd(
 		"register-erc20-native-token-on-remote-chain",
 		"Call evm core contract registerERC20NativeTokenOnRemoteChain entry point",
 		evm.Contract.Name,
-		evm.FuncRegisterERC20NativeTokenOnRemoteChain.Name,
+		"", //evm.FuncRegisterERC20CoinOnRemoteChain.Name,
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
 			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")

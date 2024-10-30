@@ -7,7 +7,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"

@@ -25,7 +25,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initDeployCmd())
 	chainCmd.AddCommand(initInfoCmd())
 	chainCmd.AddCommand(initListContractsCmd())
-	chainCmd.AddCommand(initDeployContractCmd())
+	//chainCmd.AddCommand(initDeployContractCmd())
 	chainCmd.AddCommand(initBalanceCmd())
 	chainCmd.AddCommand(initAccountNFTsCmd())
 	chainCmd.AddCommand(initDepositCmd())
@@ -45,6 +45,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initAddChainCmd())
 	chainCmd.AddCommand(initRegisterERC20NativeTokenCmd())
 	chainCmd.AddCommand(initRegisterERC20NativeTokenOnRemoteChainCmd())
-	chainCmd.AddCommand(initCreateNativeTokenCmd())
+	//chainCmd.AddCommand(initCreateNativeTokenCmd())
 	chainCmd.AddCommand(initMetadataCmd())
 }
