@@ -18,7 +18,7 @@ import (
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	Processors         *processors.Cache
+	Processors         *processors.Config
 	Anchor             *isc.StateAnchor
 	Store              state.Store
 	Requests           []isc.Request

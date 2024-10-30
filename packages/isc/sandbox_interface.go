@@ -139,7 +139,6 @@ type Sandbox interface {
 
 // Privileged is a sub-interface for core contracts. Should not be called by VM plugins
 type Privileged interface {
-	TryLoadContract(programHash hashing.HashValue) error
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
 	OnWriteReceipt(CoreCallbackFunc)

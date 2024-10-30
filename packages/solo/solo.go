@@ -104,7 +104,7 @@ type Chain struct {
 	// Log is the named logger of the chain
 	log *logger.Logger
 	// global processor cache
-	proc *processors.Cache
+	proc *processors.Config
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
@@ -258,12 +258,6 @@ func (env *Solo) GetChainByName(name string) *Chain {
 	panic("chain not found")
 }
 
-// WithVMProcessor registers a VM processor for binary contracts
-func (env *Solo) WithVMProcessor(vmType string, constructor processors.VMConstructor) *Solo {
-	_ = env.processorConfig.RegisterVMType(vmType, constructor)
-	return env
-}
-
 const (
 	DefaultCommonAccountBaseTokens   = 5 * isc.Million
 	DefaultChainOriginatorBaseTokens = 5 * isc.Million
@@ -402,7 +396,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		OriginatorAgentID: isc.NewAddressAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
 		Env:               env,
 		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
-		proc:              processors.MustNew(env.processorConfig),
+		proc:              env.processorConfig,
 		log:               env.logger.Named(chData.Name),
 		mempool:           newMempool(env.GlobalTime, chData.ChainID),
 		migrationScheme:   chData.migrationScheme,
@@ -517,7 +511,7 @@ func (ch *Chain) Log() *logger.Logger {
 	return ch.log
 }
 
-func (ch *Chain) Processors() *processors.Cache {
+func (ch *Chain) Processors() *processors.Config {
 	return ch.proc
 }
 

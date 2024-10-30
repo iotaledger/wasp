@@ -26,8 +26,7 @@ func (reqctx *requestContext) callProgram(msg isc.Message, allowance *isc.Assets
 	// don't charge gas for finding the contract (otherwise EVM requests may not produce EVM receipt)
 	var ep isc.VMProcessorEntryPoint
 	reqctx.withoutGasBurn(func() {
-		contractRecord := reqctx.GetContractRecord(msg.Target.Contract)
-		ep = execution.GetEntryPointByProgHash(reqctx, msg.Target.Contract, msg.Target.EntryPoint, contractRecord.ProgramHash)
+		ep = execution.GetEntryPoint(reqctx, msg.Target.Contract, msg.Target.EntryPoint)
 	})
 
 	reqctx.pushCallContext(msg.Target.Contract, msg.Params, allowance, caller)

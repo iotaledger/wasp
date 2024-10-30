@@ -48,7 +48,6 @@ func (ch *Chain) CheckChain() {
 		recFromState, err := ch.FindContract(c.Name)
 		require.NoError(ch.Env.T, err)
 		require.EqualValues(ch.Env.T, c.Name, recFromState.Name)
-		require.EqualValues(ch.Env.T, c.ProgramHash, recFromState.ProgramHash)
 	}
 	ch.CheckAccountLedger()
 }

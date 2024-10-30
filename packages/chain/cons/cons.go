@@ -146,7 +146,7 @@ type consImpl struct {
 	edSuite          suites.Suite // For signatures.
 	blsSuite         suites.Suite // For randomness only.
 	dkShare          tcrypto.DKShare
-	processorCache   *processors.Cache
+	processorCache   *processors.Config
 	nodeIDs          []gpa.NodeID
 	me               gpa.NodeID
 	f                int
@@ -183,7 +183,7 @@ func New(
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,
 	dkShare tcrypto.DKShare,
-	processorCache *processors.Cache,
+	processorCache *processors.Config,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	validatorAgentID isc.AgentID,

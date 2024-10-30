@@ -90,7 +90,7 @@ type ChainCore interface {
 	LatestState(freshness StateFreshness) (state.State, error)
 	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
 	Store() indexedstore.IndexedStore // Use LatestState whenever possible. That will work faster.
-	Processors() *processors.Cache
+	Processors() *processors.Config
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger

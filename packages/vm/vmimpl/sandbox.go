@@ -122,10 +122,6 @@ func (s *contractSandbox) Privileged() isc.Privileged {
 
 // privileged methods:
 
-func (s *contractSandbox) TryLoadContract(programHash hashing.HashValue) error {
-	return s.reqctx.TryLoadContract(programHash)
-}
-
 func (s *contractSandbox) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
 	return s.reqctx.CreateNewFoundry(scheme, metadata)
 }

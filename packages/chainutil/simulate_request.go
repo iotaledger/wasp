@@ -13,7 +13,7 @@ import (
 func SimulateRequest(
 	anchor *isc.StateAnchor,
 	store indexedstore.IndexedStore,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	req isc.Request,
 	estimateGas bool,

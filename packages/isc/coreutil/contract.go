@@ -8,7 +8,6 @@ package coreutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -20,19 +19,13 @@ type Handler[S isc.SandboxBase] func(ctx S) isc.CallArguments
 
 // ContractInfo holds basic information about a native smart contract
 type ContractInfo struct {
-	Name        string
-	ProgramHash hashing.HashValue
+	Name string
 }
 
 func NewContract(name string) *ContractInfo {
 	return &ContractInfo{
-		Name:        name,
-		ProgramHash: CoreContractProgramHash(name),
+		Name: name,
 	}
-}
-
-func CoreContractProgramHash(name string) hashing.HashValue {
-	return hashing.HashStrings(name)
 }
 
 func defaultInitFunc(ctx isc.Sandbox) isc.CallArguments {

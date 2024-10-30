@@ -14,7 +14,7 @@ import (
 func EVMTraceTransaction(
 	anchor *isc.StateAnchor,
 	store indexedstore.IndexedStore,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,

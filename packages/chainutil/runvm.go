@@ -24,7 +24,7 @@ import (
 func runISCTask(
 	anchor *isc.StateAnchor,
 	store indexedstore.IndexedStore,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
@@ -79,7 +79,7 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnc
 func runISCRequest(
 	anchor *isc.StateAnchor,
 	store indexedstore.IndexedStore,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	blockTime time.Time,
 	req isc.Request,
