@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -13,7 +14,7 @@ func CallArgsToAPIArgs(args isc.CallArguments) []string {
 	converted := make([]string, 0, len(args))
 
 	for _, entry := range args {
-		converted = append(converted, iotago.EncodeHex(entry))
+		converted = append(converted, cryptolib.EncodeHex(entry))
 	}
 
 	return converted
@@ -31,7 +32,7 @@ func APIArgsToCallArgs(res []string) (isc.CallArguments, error) {
 	converted := make([][]byte, 0, len(res))
 
 	for i, entry := range res {
-		convertedEntry, err := iotago.DecodeHex(entry)
+		convertedEntry, err := cryptolib.DecodeHex(entry)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding hex string of entry %d: %w", i, err)
 		}
@@ -46,7 +47,7 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 	return APIArgsToCallArgs(res)
 }
 
-func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	panic("refactor me: APIWaitUntilAllRequestsProcessed")
 	/*reqs, err := isc.Requests(tx)
 	if err != nil {

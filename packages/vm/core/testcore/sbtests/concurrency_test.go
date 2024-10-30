@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -65,10 +64,9 @@ func testConcurrency(t *testing.T) {
 
 	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
-
-	deco := kvdecoder.New(ret, chain.Log())
-	res := deco.MustGetInt64(sbtestsc.VarCounter)
-	require.EqualValues(t, sum, res)
+	counterResult, err := sbtestsc.FuncGetCounter.DecodeOutput(ret)
+	require.NoError(t, err)
+	require.EqualValues(t, sum, counterResult)
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
@@ -114,10 +112,9 @@ func testConcurrency2(t *testing.T) {
 
 	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
-
-	deco := kvdecoder.New(ret, chain.Log())
-	res := deco.MustGetInt64(sbtestsc.VarCounter)
-	require.EqualValues(t, sum, res)
+	counterResult, err := sbtestsc.FuncGetCounter.DecodeOutput(ret)
+	require.NoError(t, err)
+	require.EqualValues(t, sum, counterResult)
 
 	for i := range users {
 		expectedBalance := coin.Value(repeats[i]) * (baseTokensSentPerRequest - estimate.GasFeeCharged)

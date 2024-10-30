@@ -2,10 +2,10 @@ package util
 
 import (
 	"context"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"os"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -29,7 +29,7 @@ func WithOffLedgerRequest(chainID isc.ChainID, nodeName string, f func() (isc.Of
 	}
 }
 
-func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
+func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (iotajsonrpc.ParsedTransactionResponse, error), forceWait ...bool) iotajsonrpc.ParsedTransactionResponse {
 	tx, err := f()
 	log.Check(err)
 	logTx(chainID, tx)
@@ -44,7 +44,7 @@ func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (*iotago.T
 	return tx
 }
 
-func logTx(chainID isc.ChainID, tx *iotago.Transaction) {
+func logTx(chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse) {
 	panic("refactor me: logTx")
 	/*
 		allReqs, err := isc.RequestsInTransaction(tx)

@@ -32,6 +32,10 @@ type WaspEVMBackend struct {
 	baseToken  *parameters.BaseToken
 }
 
+func (b *WaspEVMBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
+	panic("refactor me: ISCAnchor (get state by state index, return anchor)")
+}
+
 var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
 
 func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *WaspEVMBackend {

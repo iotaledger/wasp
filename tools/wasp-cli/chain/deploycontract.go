@@ -1,3 +1,6 @@
+//go:build exclude
+
+// Excluded for now as we right now don't deploying new contracts
 package chain
 
 import (
@@ -8,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -59,7 +61,7 @@ func initDeployContractCmd() *cobra.Command {
 	return cmd
 }
 
-func deployContract(client *apiclient.APIClient, chainID isc.ChainID, node, name string, progHash hashing.HashValue, initParams dict.Dict) {
+func deployContract(client *apiclient.APIClient, chainID isc.ChainID, node, name string, progHash hashing.HashValue, initParams isc.CallArguments) {
 	util.WithOffLedgerRequest(chainID, node, func() (isc.OffLedgerRequest, error) {
 		return cliclients.ChainClient(client, chainID).PostOffLedgerRequest(context.Background(),
 			root.FuncDeployContract.Message(name, progHash, initParams),

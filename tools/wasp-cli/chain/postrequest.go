@@ -2,11 +2,13 @@ package chain
 
 import (
 	"context"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -34,8 +36,11 @@ func postRequest(nodeName, chain string, msg isc.Message, params chainclient.Pos
 		util.SDAdjustmentPrompt(output)
 	}
 
-	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotago.Transaction, error) {
-		return chainClient.PostRequest(msg, params)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (iotajsonrpc.ParsedTransactionResponse, error) {
+		return chainClient.PostRequest(ctx, msg, params)
 	})
 }
 

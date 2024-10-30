@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
-
+ 
 /*
 Used to distinguish between an empty flag value or an unset flag.
 

@@ -18,16 +18,15 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -135,6 +134,8 @@ func initDeployCmd() *cobra.Command {
 			// stateController := doDKG(ctx, node, peers, quorum)
 
 			stateController := cryptolib.NewRandomAddress()
+			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(govController), evmChainID, blockKeepAmount)
+			stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(0), nil, gas.DefaultFeePolicy(), initParams, "")
 
 			par := apilib.CreateChainParams{
 				Layer1Client:         l1Client,
@@ -145,12 +146,7 @@ func initDeployCmd() *cobra.Command {
 				Textout:              os.Stdout,
 				GovernanceController: govController,
 				PackageID:            packageID,
-				InitParams: dict.Dict{
-					origin.ParamChainOwner:      isc.NewAddressAgentID(govController).Bytes(),
-					origin.ParamEVMChainID:      codec.Encode[uint16](evmChainID),
-					origin.ParamBlockKeepAmount: codec.Encode[int32](blockKeepAmount),
-					origin.ParamWaspVersion:     codec.Encode[string](app.Version),
-				},
+				StateMetadata:        *stateMetadata,
 			}
 
 			chainID, err := apilib.DeployChain(ctx, par, stateController, govController)

@@ -19,7 +19,8 @@ var _ MappedNullable = &CoinJSON{}
 
 // CoinJSON struct for CoinJSON
 type CoinJSON struct {
-	Balance BigInt `json:"balance"`
+	// The balance (uint64 as string)
+	Balance string `json:"balance"`
 	CoinType Type `json:"coinType"`
 }
 
@@ -27,7 +28,7 @@ type CoinJSON struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCoinJSON(balance BigInt, coinType Type) *CoinJSON {
+func NewCoinJSON(balance string, coinType Type) *CoinJSON {
 	this := CoinJSON{}
 	this.Balance = balance
 	this.CoinType = coinType
@@ -43,9 +44,9 @@ func NewCoinJSONWithDefaults() *CoinJSON {
 }
 
 // GetBalance returns the Balance field value
-func (o *CoinJSON) GetBalance() BigInt {
+func (o *CoinJSON) GetBalance() string {
 	if o == nil {
-		var ret BigInt
+		var ret string
 		return ret
 	}
 
@@ -54,7 +55,7 @@ func (o *CoinJSON) GetBalance() BigInt {
 
 // GetBalanceOk returns a tuple with the Balance field value
 // and a boolean to check if the value has been set.
-func (o *CoinJSON) GetBalanceOk() (*BigInt, bool) {
+func (o *CoinJSON) GetBalanceOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -62,7 +63,7 @@ func (o *CoinJSON) GetBalanceOk() (*BigInt, bool) {
 }
 
 // SetBalance sets field value
-func (o *CoinJSON) SetBalance(v BigInt) {
+func (o *CoinJSON) SetBalance(v string) {
 	o.Balance = v
 }
 

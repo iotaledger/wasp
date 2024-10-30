@@ -4,13 +4,14 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -46,7 +47,7 @@ func initBalanceCmd() *cobra.Command {
 
 			rows[0] = []string{"base", balance.BaseTokens}
 			for k, v := range balance.NativeTokens {
-				rows[k+1] = []string{v.Id, v.Amount}
+				rows[k+1] = []string{v.CoinType.GetS(), v.Balance}
 			}
 
 			log.PrintTable(header, rows)
@@ -133,13 +134,16 @@ func initDepositCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 
 			chainID := config.GetChain(chain)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			defer cancel()
+
 			if strings.Contains(args[0], ":") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
 
-				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
+				util.WithSCTransaction(config.GetChain(chain), node, func() (iotajsonrpc.ParsedTransactionResponse, error) {
 					client := cliclients.WaspClient(node)
-					return cliclients.ChainClient(client, chainID).PostRequest(
+					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
 							Transfer: tokens,
@@ -168,9 +172,10 @@ func initDepositCmd() *cobra.Command {
 					}
 				}
 
-				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotago.Transaction, error) {
+				util.WithSCTransaction(config.GetChain(chain), node, func() (iotajsonrpc.ParsedTransactionResponse, error) {
 					client := cliclients.WaspClient(node)
 					return cliclients.ChainClient(client, chainID).PostRequest(
+						ctx,
 						accounts.FuncTransferAllowanceTo.Message(agentID),
 						chainclient.PostRequestParams{
 							Transfer:  tokens,

@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
-	"math/big"
 	"slices"
 	"strings"
 
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -122,8 +120,8 @@ func (c CoinBalances) IsEmpty() bool {
 }
 
 type CoinJSON struct {
-	CoinType coin.Type           `json:"coinType" swagger:"required"`
-	Balance  *iotajsonrpc.BigInt `json:"balance" swagger:"required"`
+	CoinType coin.Type `json:"coinType" swagger:"required"`
+	Balance  string    `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
 }
 
 func (c *CoinBalances) UnmarshalJSON(b []byte) error {
@@ -134,7 +132,8 @@ func (c *CoinBalances) UnmarshalJSON(b []byte) error {
 	}
 	*c = NewCoinBalances()
 	for _, cc := range coins {
-		c.Add(cc.CoinType, coin.Value(cc.Balance.Int.Uint64()))
+		value := lo.Must(coin.ValueFromString(cc.Balance))
+		c.Add(cc.CoinType, value)
 	}
 	return nil
 }
@@ -144,7 +143,7 @@ func (c CoinBalances) MarshalJSON() ([]byte, error) {
 	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		coins = append(coins, CoinJSON{
 			CoinType: t,
-			Balance:  &iotajsonrpc.BigInt{Int: new(big.Int).SetUint64(uint64(v))},
+			Balance:  v.String(),
 		})
 		return true
 	})

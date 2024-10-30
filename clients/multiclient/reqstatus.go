@@ -3,11 +3,11 @@ package multiclient
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -64,7 +64,7 @@ func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(chainID isc.Chain
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -82,7 +82,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iot
 
 // WaitUntilAllRequestsProcessedSuccessfully is similar to WaitUntilAllRequestsProcessed
 // but also checks the receipts and return an error if any of the requests was processed with an error
-func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.ChainID, tx *iotago.Transaction, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	receipts, err := m.WaitUntilAllRequestsProcessed(chainID, tx, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipts, err

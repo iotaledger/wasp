@@ -10,12 +10,14 @@
  * Do not edit the class manually.
  */
 
-import { BigInt } from '../models/BigInt';
 import { Type } from '../models/Type';
 import { HttpFile } from '../http/http';
 
 export class CoinJSON {
-    'balance': BigInt;
+    /**
+    * The balance (uint64 as string)
+    */
+    'balance': string;
     'coinType': Type;
 
     static readonly discriminator: string | undefined = undefined;
@@ -24,8 +26,8 @@ export class CoinJSON {
         {
             "name": "balance",
             "baseName": "balance",
-            "type": "BigInt",
-            "format": ""
+            "type": "string",
+            "format": "string"
         },
         {
             "name": "coinType",
