@@ -27,7 +27,7 @@ var evmErrOutOfGasRegex = regexp.MustCompile("out of gas|intrinsic gas too low")
 func EVMEstimateGas(
 	anchor *isc.StateAnchor,
 	store indexedstore.IndexedStore,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	call ethereum.CallMsg,
 ) (uint64, error) { //nolint:gocyclo,funlen

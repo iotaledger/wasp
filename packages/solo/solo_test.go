@@ -12,8 +12,8 @@ import (
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	stv := l1starter.Start(context.Background(), l1starter.DefaultConfig)
-	defer stv.Stop()
+	iotaNode := l1starter.Start(context.Background(), l1starter.DefaultConfig)
+	defer iotaNode.Stop()
 	m.Run()
 }
 

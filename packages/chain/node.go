@@ -132,7 +132,7 @@ type chainNodeImpl struct {
 	consOutputPipe      pipe.Pipe[*consOutput]
 	consRecoverPipe     pipe.Pipe[*consRecover]
 	publishingTXes      *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
-	procCache           *processors.Cache                                                 // Cache for the SC processors.
+	procCache           *processors.Config                                                // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
 	serversUpdatedPipe  pipe.Pipe[*serversUpdate]
 	awaitReceiptActCh   chan *awaitReceiptReq
@@ -279,7 +279,7 @@ func New(
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
 		publishingTXes:         shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
-		procCache:              processors.MustNew(processorConfig),
+		procCache:              processorConfig,
 		configUpdatedCh:        make(chan *configUpdate, 1),
 		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
 		awaitReceiptActCh:      make(chan *awaitReceiptReq, 1),
@@ -745,7 +745,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 					committeeAddr: txToPost.CommitteeAddr,
 					logIndex:      txToPost.LogIndex,
 					txID:          txHash,
-					//nextAliasOutput: txToPost,
+					// nextAliasOutput: txToPost,
 					confirmed: err == nil,
 				}
 			}); err != nil {
@@ -1023,7 +1023,7 @@ func (cni *chainNodeImpl) Store() indexedstore.IndexedStore {
 	return cni.chainStore
 }
 
-func (cni *chainNodeImpl) Processors() *processors.Cache {
+func (cni *chainNodeImpl) Processors() *processors.Config {
 	return cni.procCache
 }
 

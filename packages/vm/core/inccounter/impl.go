@@ -9,11 +9,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	FuncIncCounter.WithHandler(incCounter),
 	FuncIncAndRepeatOnceAfter2s.WithHandler(incCounterAndRepeatOnce),
 	FuncIncAndRepeatMany.WithHandler(incCounterAndRepeatMany),
@@ -21,7 +22,7 @@ var Processor = Contract.Processor(initialize,
 )
 
 func InitParams(initialValue int64) dict.Dict {
-	return dict.Dict{VarCounter: codec.Encode[int64](initialValue)}
+	return dict.Dict{VarCounter: codec.Encode(initialValue)}
 }
 
 const (
@@ -32,15 +33,8 @@ const (
 	VarName       = "name"
 )
 
-func initialize(ctx isc.Sandbox) isc.CallArguments {
-	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
-
-	params := ctx.Params()
-	val := codec.MustDecode[int64](params.MustAt(0), 0)
-	ctx.State().Set(VarCounter, codec.Encode[int64](val))
-	eventCounter(ctx, val)
-
-	return isc.CallArguments{}
+func SetInitialState(contractPartition kv.KVStore) {
+	contractPartition.Set(VarCounter, codec.Encode[int64](0))
 }
 
 func incCounter(ctx isc.Sandbox, incOpt *int64) {
@@ -55,7 +49,7 @@ func incCounter(ctx isc.Sandbox, incOpt *int64) {
 		tra = ctx.AllowanceAvailable().String()
 	}
 	ctx.Log().Infof("incCounter: allowance available: %s", tra)
-	ctx.State().Set(VarCounter, codec.Encode[int64](val+inc))
+	ctx.State().Set(VarCounter, codec.Encode(val+inc))
 	eventCounter(ctx, val+inc)
 }
 
@@ -65,7 +59,7 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) {
 	val := codec.MustDecode[int64](state.Get(VarCounter), 0)
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
-	state.Set(VarCounter, codec.Encode[int64](val+1))
+	state.Set(VarCounter, codec.Encode(val+1))
 	eventCounter(ctx, val+1)
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
@@ -90,7 +84,7 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 
 	state := ctx.State()
 
-	state.Set(VarCounter, codec.Encode[int64](val+1))
+	state.Set(VarCounter, codec.Encode(val+1))
 	eventCounter(ctx, val+1)
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
 
@@ -101,7 +95,7 @@ func incCounterAndRepeatMany(ctx isc.Sandbox, valOpt, numRepeatsOpt *int64) {
 
 	ctx.Log().Debugf("chain of %d requests ahead", numRepeats)
 
-	state.Set(VarNumRepeats, codec.Encode[int64](numRepeats-1))
+	state.Set(VarNumRepeats, codec.Encode(numRepeats-1))
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
 		TargetAddress: ctx.ChainID().AsAddress(),

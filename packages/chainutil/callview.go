@@ -12,7 +12,7 @@ import (
 func CallView(
 	anchor *isc.StateAnchor,
 	chainState state.State,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	msg isc.Message,
 ) (isc.CallArguments, error) {

@@ -18,7 +18,7 @@ import (
 func EVMCall(
 	anchor *isc.StateAnchor,
 	store indexedstore.IndexedStore,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	call ethereum.CallMsg,
 ) ([]byte, error) {

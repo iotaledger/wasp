@@ -1,38 +1,27 @@
 package execution
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // this file holds functions common to both context implementation (viewcontext and vmcontext)
 
-func GetProgramBinary(ctx WaspContext, programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-	vmtype, ok := ctx.Processors().Config.GetNativeProcessorType(programHash)
-	if ok {
-		return vmtype, nil, nil
-	}
-	return "", nil, coreerrors.ErrProcessorNotFound
-}
-
-func GetEntryPointByProgHash(ctx WaspContext, targetContract, epCode isc.Hname, progHash hashing.HashValue) isc.VMProcessorEntryPoint {
-	getBinary := func(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
-		return GetProgramBinary(ctx, programHash)
-	}
-
-	proc, err := ctx.Processors().GetOrCreateProcessorByProgramHash(progHash, getBinary)
-	if err != nil {
-		panic(err)
+func GetEntryPoint(ctx WaspContext, targetContract, epCode isc.Hname) isc.VMProcessorEntryPoint {
+	proc, ok := ctx.Processors().GetCoreProcessor(targetContract)
+	if !ok {
+		if gasctx, ok2 := ctx.(GasContext); ok2 {
+			gasctx.GasBurn(gas.BurnCodeCallTargetNotFound)
+		}
+		panic(vm.ErrContractNotFound.Create(int32(targetContract)))
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
 		if gasctx, ok2 := ctx.(GasContext); ok2 {
 			gasctx.GasBurn(gas.BurnCodeCallTargetNotFound)
-			panic(vm.ErrTargetEntryPointNotFound)
 		}
+		panic(vm.ErrTargetEntryPointNotFound)
 	}
 	return ep
 }

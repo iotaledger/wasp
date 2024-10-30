@@ -19,14 +19,6 @@ type Hname uint32
 
 const HnameLength = 4
 
-// FuncInit is a name of the init function for any smart contract
-const FuncInit = "init"
-
-// well known hnames
-var (
-	EntryPointInit = Hn(FuncInit)
-)
-
 // HnameNil is the value used to represent a non-existent Hname.
 const HnameNil = Hname(0)
 
