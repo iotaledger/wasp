@@ -41,7 +41,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -84,8 +83,6 @@ func TestMempoolBasic(t *testing.T) {
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
-//
-
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
@@ -178,60 +175,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		require.Len(t, prop, 1)
 		require.Contains(t, prop, offLedgerRef2)
 	}
-}
-
-func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTime time.Time) *isc.StateAnchor {
-	// sort reqs by nonce
-	slices.SortFunc(reqs, func(a, b isc.Request) int {
-		return int(a.(isc.OffLedgerRequest).Nonce() - b.(isc.OffLedgerRequest).Nonce())
-	})
-
-	store := te.stores[0]
-	vmTask := &vm.VMTask{
-		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
-		Anchor:               anchor,
-		Store:                store,
-		Requests:             reqs,
-		Timestamp:            tangleTime,
-		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
-		ValidatorFeeTarget:   accounts.CommonAccount(),
-		EstimateGasMode:      false,
-		EnableGasBurnLogging: false,
-		Log:                  te.log.Named("VM"),
-		Migrations:           allmigrations.DefaultScheme,
-	}
-	vmResult, err := vmimpl.Run(vmTask)
-	require.NoError(te.t, err)
-	block := store.Commit(vmResult.StateDraft)
-	chainState, err := store.StateByTrieRoot(block.TrieRoot())
-	require.NoError(te.t, err)
-	anchor, err = te.tcl.RunOnChainStateTransition(anchor, vmResult.UnsignedTransaction)
-	require.NoError(te.t, err)
-
-	// Check if block has both requests as consumed.
-	receipts, err := blocklog.RequestReceiptsFromBlock(block)
-	require.NoError(te.t, err)
-	require.Len(te.t, receipts, len(reqs))
-
-	// FIXME directly compare two object with their pointer may cause a false negative result, so using byte slice would be easier
-	// blockReqs := []isc.Request{}
-	blockReqBytes := [][]byte{}
-	for i := range receipts {
-		blockReqBytes = append(blockReqBytes, receipts[i].Request.Bytes())
-	}
-	for _, req := range reqs {
-		require.Contains(te.t, blockReqBytes, req.Bytes())
-	}
-
-	// sync mempools with new state
-	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
-	for i := range te.mempools {
-		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, anchor, []state.Block{block}, []state.Block{})
-	}
-	for i := range te.mempools {
-		<-awaitTrackHeadChannels[i]
-	}
-	return anchor
 }
 
 func TestMempoolsNonceGaps(t *testing.T) {
@@ -496,8 +439,61 @@ func TestTTL(t *testing.T) {
 	require.Len(t, reqs2, 1) // only the last request is returned
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// testEnv
+func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTime time.Time) *isc.StateAnchor {
+	// sort reqs by nonce
+	slices.SortFunc(reqs, func(a, b isc.Request) int {
+		return int(a.(isc.OffLedgerRequest).Nonce() - b.(isc.OffLedgerRequest).Nonce())
+	})
+
+	store := te.stores[0]
+	vmTask := &vm.VMTask{
+		Processors:           coreprocessors.NewConfigWithCoreContracts(),
+		Anchor:               anchor,
+		Store:                store,
+		Requests:             reqs,
+		Timestamp:            tangleTime,
+		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
+		ValidatorFeeTarget:   accounts.CommonAccount(),
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Log:                  te.log.Named("VM"),
+		Migrations:           allmigrations.DefaultScheme,
+	}
+	vmResult, err := vmimpl.Run(vmTask)
+	require.NoError(te.t, err)
+	block := store.Commit(vmResult.StateDraft)
+	chainState, err := store.StateByTrieRoot(block.TrieRoot())
+	require.NoError(te.t, err)
+	anchor, err = te.tcl.RunOnChainStateTransition(anchor, vmResult.UnsignedTransaction)
+	require.NoError(te.t, err)
+
+	// Check if block has both requests as consumed.
+	receipts, err := blocklog.RequestReceiptsFromBlock(block)
+	require.NoError(te.t, err)
+	require.Len(te.t, receipts, len(reqs))
+
+	// FIXME directly compare two object with their pointer may cause a false negative result, so using byte slice would be easier
+	// blockReqs := []isc.Request{}
+	blockReqBytes := [][]byte{}
+	for i := range receipts {
+		blockReqBytes = append(blockReqBytes, receipts[i].Request.Bytes())
+	}
+	for _, req := range reqs {
+		require.Contains(te.t, blockReqBytes, req.Bytes())
+	}
+
+	// sync mempools with new state
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
+	for i := range te.mempools {
+		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, anchor, []state.Block{block}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChannels[i]
+	}
+	return anchor
+}
+
+/////////////////////////////////////testEnv/////////////////////////////////////
 
 // Setups testing environment and holds all the relevant info.
 type testEnv struct {

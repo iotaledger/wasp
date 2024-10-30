@@ -90,7 +90,7 @@ type ChainListener interface {
 
 type Mempool interface {
 	consGR.Mempool
-	// Invoked by the chain, when new alias output is considered as a tip/head
+	// Invoked by the chain, when new anchor is considered as a tip/head
 	// of the chain. Mempool can reorganize its state by removing/rejecting
 	// or re-adding some requests, depending on how the head has changed.
 	// It can mean simple advance of the chain, or a rollback or a reorg.
@@ -189,7 +189,7 @@ type reqConsensusInstancesUpdated struct {
 
 type reqConsensusProposal struct {
 	ctx         context.Context
-	aliasOutput *isc.StateAnchor
+	anchor      *isc.StateAnchor
 	consensusID consGR.ConsensusID
 	responseCh  chan<- []*isc.RequestRef
 }
@@ -334,11 +334,11 @@ func (mpi *mempoolImpl) ConsensusInstancesUpdated(activeConsensusInstances []con
 	}
 }
 
-func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.StateAnchor, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
+func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposal{
 		ctx:         ctx,
-		aliasOutput: aliasOutput,
+		anchor:      anchor,
 		consensusID: consensusID,
 		responseCh:  res,
 	}
@@ -588,12 +588,12 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 // This implementation only tracks a single branch. So, we will only respond
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
-	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
-		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.aliasOutput)
+	if mpi.chainHeadAO == nil || !recv.anchor.Equals(mpi.chainHeadAO) {
+		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.anchor)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
 	}
-	mpi.log.Debugf("handleConsensusProposal, already have the chain head %v", recv.aliasOutput)
+	mpi.log.Debugf("handleConsensusProposal, already have the chain head %v", recv.anchor)
 	mpi.handleConsensusProposalForChainHead(recv)
 }
 
@@ -861,7 +861,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			if waiting.ctx.Err() != nil {
 				continue // Drop it.
 			}
-			if waiting.aliasOutput.Equals(mpi.chainHeadAO) {
+			if waiting.anchor.Equals(mpi.chainHeadAO) {
 				mpi.handleConsensusProposalForChainHead(waiting)
 				continue // Drop it from wait queue.
 			}
