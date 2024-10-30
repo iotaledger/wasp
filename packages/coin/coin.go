@@ -3,6 +3,7 @@ package coin
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/samber/lo"
@@ -33,8 +34,20 @@ func (v Value) Bytes() []byte {
 	return bcs.MustMarshal(&v)
 }
 
+func (v Value) String() string {
+	return strconv.FormatUint(uint64(v), 10)
+}
+
 func ValueFromBytes(b []byte) (Value, error) {
 	return bcs.Unmarshal[Value](b)
+}
+func ValueFromString(s string) (Value, error) {
+	value, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return Value(0), err
+	}
+
+	return Value(value), nil
 }
 
 // TODO: maybe it is not ok to consider this constant?
