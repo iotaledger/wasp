@@ -2,13 +2,13 @@ package chain
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"

@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+
 	"github.com/samber/lo"
 
 	"github.com/spf13/cobra"
@@ -21,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
-
+ 
 func initChangeAccessNodesCmd() *cobra.Command {
 	var offLedger bool
 	var node string

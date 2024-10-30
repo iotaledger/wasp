@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -47,7 +47,7 @@ func initBalanceCmd() *cobra.Command {
 
 			rows[0] = []string{"base", balance.BaseTokens}
 			for k, v := range balance.NativeTokens {
-				rows[k+1] = []string{v.CoinType.GetS(), ""} // Place balance here, (requires fix on the webapi to return a bigint as string)
+				rows[k+1] = []string{v.CoinType.GetS(), v.Balance}
 			}
 
 			log.PrintTable(header, rows)

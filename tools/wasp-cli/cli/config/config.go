@@ -3,12 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/samber/lo"
 	"io/fs"
 	"os"
 	"path"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/samber/lo"
 
 	"github.com/spf13/viper"
 

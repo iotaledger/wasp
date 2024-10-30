@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 )
-
+ 
 // TODO: Discuss API structures once we have time for it.
 /**
 	Should we also just return a map of coins similar to isc.Assets, or should we make it "simpler" and keep the current structure of

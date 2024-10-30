@@ -4,22 +4,20 @@
 package chain
 
 import (
+	"context"
+
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
-	"github.com/spf13/cobra"
-)
-
-import (
-	"context"
-
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func initDeployContractCmd() *cobra.Command {
