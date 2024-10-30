@@ -73,7 +73,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Chain identifiers.
 	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
-	_, originAO, chainID := tcl.MakeTxChainOrigin(cmtAddrA)
+	anchor := tcl.MakeTxChainOrigin(cmtAddrA)
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -81,7 +81,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAnchor(stores[nid], originAO, 0, isc.BaseTokenCoinInfo)
+		_, err := origin.InitChainByAnchor(stores[nid], anchor, 0, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
@@ -109,7 +109,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Provide initial AO.
 	initAOInputs := map[gpa.NodeID]gpa.Input{}
 	for nid := range nodes {
-		initAOInputs[nid] = chainmanager.NewInputAliasOutputConfirmed(originAO)
+		initAOInputs[nid] = chainmanager.NewInputAliasOutputConfirmed(anchor)
 	}
 	tc.WithInputs(initAOInputs)
 	tc.RunAll()
@@ -118,13 +118,13 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
-		require.Equal(t, originAO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, anchor, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
 	}
 	//
 	// Provide consensus output.
-	step2AO, step2TX := tcl.FakeRotationTX(originAO, cmtAddrA)
+	step2AO, step2TX := tcl.FakeRotationTX(anchor, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
@@ -150,7 +150,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, 1, out.NeedPublishTX().Size(), "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
-		require.Equal(t, originAO.OutputID(), func() iotago.ObjectID {
+		require.Equal(t, anchor.OutputID(), func() iotago.ObjectID {
 			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
 			return tx.BaseAliasOutputID
 		}())

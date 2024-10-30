@@ -20,6 +20,7 @@ type MockedLedgers struct {
 	mutex                sync.Mutex
 }
 
+// TODO maybe remove the whole file
 func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	result := &MockedLedgers{
 		ledgers:    make(map[isc.ChainIDKey]*MockedLedger),
@@ -32,12 +33,12 @@ func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	return result
 }
 
-func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) isc.ChainID {
-	ledger, chainID := NewMockedLedger(stateAddress, mlT.log)
-	mlT.ledgers[chainID.Key()] = ledger
-	mlT.log.Debugf("New ledger for chain address %s ID %s created", stateAddress, chainID)
-	return chainID
-}
+// func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) isc.ChainID {
+// 	ledger, chainID := NewMockedLedger(stateAddress, mlT.log)
+// 	mlT.ledgers[chainID.Key()] = ledger
+// 	mlT.log.Debugf("New ledger for chain address %s ID %s created", stateAddress, chainID)
+// 	return chainID
+// }
 
 func (mlT *MockedLedgers) GetLedger(chainID isc.ChainID) *MockedLedger {
 	mlT.mutex.Lock()
