@@ -6,7 +6,6 @@ export * from '../models/AliasOutputMetricItem';
 export * from '../models/AssetsResponse';
 export * from '../models/AuthInfoModel';
 export * from '../models/BaseToken';
-export * from '../models/BigInt';
 export * from '../models/BlockInfoResponse';
 export * from '../models/BurnRecord';
 export * from '../models/ChainInfoResponse';
@@ -38,7 +37,6 @@ export * from '../models/InOutputMetricItem';
 export * from '../models/InStateOutput';
 export * from '../models/InStateOutputMetricItem';
 export * from '../models/InfoResponse';
-export * from '../models/Int';
 export * from '../models/InterfaceMetricItem';
 export * from '../models/L1Params';
 export * from '../models/Limits';
@@ -89,7 +87,6 @@ import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
@@ -121,7 +118,6 @@ import { InOutputMetricItem } from '../models/InOutputMetricItem';
 import { InStateOutput } from '../models/InStateOutput';
 import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
-import { Int } from '../models/Int';
 import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
@@ -195,7 +191,6 @@ let typeMap: {[index: string]: any} = {
     "AssetsResponse": AssetsResponse,
     "AuthInfoModel": AuthInfoModel,
     "BaseToken": BaseToken,
-    "BigInt": BigInt,
     "BlockInfoResponse": BlockInfoResponse,
     "BurnRecord": BurnRecord,
     "ChainInfoResponse": ChainInfoResponse,
@@ -227,7 +222,6 @@ let typeMap: {[index: string]: any} = {
     "InStateOutput": InStateOutput,
     "InStateOutputMetricItem": InStateOutputMetricItem,
     "InfoResponse": InfoResponse,
-    "Int": Int,
     "InterfaceMetricItem": InterfaceMetricItem,
     "L1Params": L1Params,
     "Limits": Limits,

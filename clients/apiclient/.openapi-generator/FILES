@@ -20,7 +20,6 @@ docs/AssetsResponse.md
 docs/AuthApi.md
 docs/AuthInfoModel.md
 docs/BaseToken.md
-docs/BigInt.md
 docs/BlockInfoResponse.md
 docs/BurnRecord.md
 docs/ChainInfoResponse.md
@@ -55,7 +54,6 @@ docs/InOutputMetricItem.md
 docs/InStateOutput.md
 docs/InStateOutputMetricItem.md
 docs/InfoResponse.md
-docs/Int.md
 docs/InterfaceMetricItem.md
 docs/L1Params.md
 docs/Limits.md
@@ -111,7 +109,6 @@ model_alias_output_metric_item.go
 model_assets_response.go
 model_auth_info_model.go
 model_base_token.go
-model_big_int.go
 model_block_info_response.go
 model_burn_record.go
 model_chain_info_response.go
@@ -143,7 +140,6 @@ model_in_output_metric_item.go
 model_in_state_output.go
 model_in_state_output_metric_item.go
 model_info_response.go
-model_int.go
 model_interface_metric_item.go
 model_l1_params.go
 model_limits.go

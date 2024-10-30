@@ -2274,20 +2274,10 @@ components:
         nativeTokens:
         - coinType:
             s: s
-          balance:
-            Int:
-              neg: true
-              abs:
-              - 0
-              - 0
+          balance: balance
         - coinType:
             s: s
-          balance:
-            Int:
-              neg: true
-              abs:
-              - 0
-              - 0
+          balance: balance
       properties:
         baseTokens:
           description: The base tokens (uint64 as string)
@@ -2391,19 +2381,6 @@ components:
       type: object
       xml:
         name: BaseToken
-    BigInt:
-      example:
-        Int:
-          neg: true
-          abs:
-          - 0
-          - 0
-      properties:
-        Int:
-          $ref: '#/components/schemas/Int'
-      type: object
-      xml:
-        name: BigInt
     BlockInfoResponse:
       example:
         blockIndex: 1
@@ -2693,15 +2670,14 @@ components:
       example:
         coinType:
           s: s
-        balance:
-          Int:
-            neg: true
-            abs:
-            - 0
-            - 0
+        balance: balance
       properties:
         balance:
-          $ref: '#/components/schemas/BigInt'
+          description: The base tokens (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: Balance
         coinType:
           $ref: '#/components/schemas/Type'
       required:
@@ -3423,20 +3399,10 @@ components:
           nativeTokens:
           - coinType:
               s: s
-            balance:
-              Int:
-                neg: true
-                abs:
-                - 0
-                - 0
+            balance: balance
           - coinType:
               s: s
-            balance:
-              Int:
-                neg: true
-                abs:
-                - 0
-                - 0
+            balance: balance
         foundryId: foundryId
       properties:
         assets:
@@ -3745,29 +3711,6 @@ components:
       type: object
       xml:
         name: InfoResponse
-    Int:
-      example:
-        neg: true
-        abs:
-        - 0
-        - 0
-      properties:
-        abs:
-          items:
-            format: int32
-            type: integer
-          type: array
-          xml:
-            name: abs
-            wrapped: true
-        neg:
-          format: boolean
-          type: boolean
-          xml:
-            name: neg
-      type: object
-      xml:
-        name: Int
     InterfaceMetricItem:
       example:
         lastMessage: lastMessage
