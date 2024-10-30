@@ -111,34 +111,21 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	panic("refactor me: Checking if address is an alias address")
-	_ = address
-	/*
-		if address.Type() != iotago.AddressAlias {
-			return errors.New("chainID is not an alias address")
+	accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
+	for i, accessNodePubKeyHex := range j.AccessNodes {
+		accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePubKeyHex)
+		if err != nil {
+			return err
 		}
 
-		aliasAddress, ok := address.(*iotago.AliasAddress)
-		if !ok {
-			return errors.New("chainID is not an alias address")
-		}
+		accessNodesPubKeys[i] = accessNodePubKey
+	}
 
-		accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
-		for i, accessNodePubKeyHex := range j.AccessNodes {
-			accessNodePubKey, err := cryptolib.PublicKeyFromString(accessNodePubKeyHex)
-			if err != nil {
-				return err
-			}
-
-			accessNodesPubKeys[i] = accessNodePubKey
-		}
-
-		*r = ChainRecord{
-			id:          isc.ChainID(aliasAddress.AliasID()),
-			Active:      j.Active,
-			AccessNodes: accessNodesPubKeys,
-		}
-	*/
+	*r = ChainRecord{
+		id:          isc.ChainIDFromAddress(address),
+		Active:      j.Active,
+		AccessNodes: accessNodesPubKeys,
+	}
 	return nil
 }
 

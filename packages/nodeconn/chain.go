@@ -120,7 +120,6 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	panic("FIXME the owner should not be empty")
 	anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
 	for _, req := range reqs {
@@ -147,7 +146,6 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 			case <-ctx.Done():
 				return
 			case moveAnchor := <-anchorUpdates:
-				panic("FIXME the owner should not be empty")
 				anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
 			case req := <-newRequests:
@@ -155,6 +153,7 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 				if err != nil {
 					panic(err)
 				}
+				ncc.LogInfo("Incoming request ", req.ObjectID.String(), " ", onledgerReq.String(), " ", onledgerReq.ID().String())
 				ncc.requestHandler(onledgerReq)
 			}
 		}

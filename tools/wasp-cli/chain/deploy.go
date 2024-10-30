@@ -22,10 +22,12 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -123,19 +125,16 @@ func initDeployCmd() *cobra.Command {
 			}
 
 			l1Client := cliclients.L1Client()
-			kp := wallet.Load()
 
-			packageID, err := deployISCMoveContract(ctx, l1Client, kp)
-			log.Check(err)
+			//packageID, err := deployISCMoveContract(ctx, l1Client, kp)
+			packageID := config.GetPackageID()
 
-			govController := controllerAddrDefaultFallback(govControllerStr)
+			log.Printf("PackageID: %v", packageID.String())
 
-			// TODO: Fixme: doDKG requires a somewhat runnable wasp node :D
-			// stateController := doDKG(ctx, node, peers, quorum)
-
-			stateController := cryptolib.NewRandomAddress()
-			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(govController), evmChainID, blockKeepAmount)
-			stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(0), nil, gas.DefaultFeePolicy(), initParams, "")
+			chainOwnerAddress := controllerAddrDefaultFallback(govControllerStr)
+			stateController := doDKG(ctx, node, peers, quorum)
+			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(stateController), evmChainID, blockKeepAmount)
+			stateMetadata := transaction.NewStateMetadata(allmigrations.DefaultScheme.LatestSchemaVersion(), &state.L1Commitment{}, gas.DefaultFeePolicy(), initParams, "")
 
 			par := apilib.CreateChainParams{
 				Layer1Client:         l1Client,
@@ -144,18 +143,17 @@ func initDeployCmd() *cobra.Command {
 				T:                    uint16(quorum),
 				OriginatorKeyPair:    wallet.Load(),
 				Textout:              os.Stdout,
-				GovernanceController: govController,
+				GovernanceController: chainOwnerAddress,
 				PackageID:            packageID,
 				StateMetadata:        *stateMetadata,
 			}
 
-			chainID, err := apilib.DeployChain(ctx, par, stateController, govController)
+			chainID, err := apilib.DeployChain(ctx, par, stateController)
 			log.Check(err)
 
 			config.AddChain(chainName, chainID.String())
 
-			// TODO: Fixme: This requires a runnable node as well.
-			// activateChain(node, chainName, chainID)
+			activateChain(node, chainName, chainID)
 		},
 	}
 

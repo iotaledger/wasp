@@ -2,11 +2,11 @@ package util
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"os"
 	"time"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -29,10 +29,10 @@ func WithOffLedgerRequest(chainID isc.ChainID, nodeName string, f func() (isc.Of
 	}
 }
 
-func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (iotajsonrpc.ParsedTransactionResponse, error), forceWait ...bool) iotajsonrpc.ParsedTransactionResponse {
+func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...bool) *iotajsonrpc.IotaTransactionBlockResponse {
 	tx, err := f()
 	log.Check(err)
-	logTx(chainID, tx)
+	log.Printf("Posted on-ledger transaction %s\n", tx.Digest)
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
@@ -42,26 +42,4 @@ func WithSCTransaction(chainID isc.ChainID, nodeName string, f func() (iotajsonr
 	}
 
 	return tx
-}
-
-func logTx(chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse) {
-	panic("refactor me: logTx")
-	/*
-		allReqs, err := isc.RequestsInTransaction(tx)
-		log.Check(err)
-		txid, err := tx.ID()
-		log.Check(err)
-		reqs := allReqs[chainID]
-		if len(reqs) == 0 {
-			log.Printf("Posted on-ledger transaction %s\n", txid.ToHex())
-		} else {
-			plural := ""
-			if len(reqs) != 1 {
-				plural = "s"
-			}
-			log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", txid.ToHex(), len(reqs), plural)
-			for i, req := range reqs {
-				log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], req.ID().String())
-			}
-		}*/
 }

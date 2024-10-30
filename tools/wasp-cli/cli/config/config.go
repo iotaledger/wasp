@@ -8,8 +8,10 @@ import (
 	"path"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/spf13/viper"
 
@@ -111,7 +113,7 @@ func L1APIAddress() string {
 	if host != "" {
 		return host
 	}
-	return "localhost:5678"
+	return iotaconn.AlphanetEndpointURL
 }
 
 func L1FaucetAddress() string {
@@ -119,7 +121,7 @@ func L1FaucetAddress() string {
 	if address != "" {
 		return address
 	}
-	return "localhost:5679"
+	return iotaconn.AlphanetFaucetURL
 
 }
 
