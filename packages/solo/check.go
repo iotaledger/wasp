@@ -63,7 +63,7 @@ func (ch *Chain) CheckAccountLedger() {
 		acc := accs[i]
 		sum.Add(ch.L2Assets(acc))
 	}
-	require.True(ch.Env.T, total.Equals(sum))
+	require.True(ch.Env.T, total.Equals(sum), "should be equal: %s %s", total, sum)
 	coreacc := isc.NewContractAgentID(ch.ChainID, root.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	coreacc = isc.NewContractAgentID(ch.ChainID, accounts.Contract.Hname())

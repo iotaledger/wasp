@@ -4,35 +4,43 @@
 package testcore
 
 import (
+	"context"
+	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+func TestMain(m *testing.M) {
+	flag.Parse()
+	iotaNode := l1starter.Start(context.Background(), l1starter.DefaultConfig)
+	defer iotaNode.Stop()
+	m.Run()
+}
+
 func TestRootBasic(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain()
-
 	chain.CheckChain()
-	chain.Log().Infof("\n%s\n", chain.String())
 }
 
-func TestRootRepeatInit(t *testing.T) {
+func TestEntryPointNotFound(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain()
 
 	chain.CheckChain()
 
-	req := solo.NewCallParamsEx(root.Contract.Name, "init")
-	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	req := solo.NewCallParamsEx(root.Contract.Name, "foo")
+	_, err := chain.PostRequestOffLedger(req, nil)
+	require.ErrorContains(t, err, "entry point not found")
 }
 
 func TestGetInfo(t *testing.T) {

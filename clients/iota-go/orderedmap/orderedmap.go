@@ -1,6 +1,9 @@
 package orderedmap
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/mitchellh/hashstructure/v2"
 )
 
@@ -13,6 +16,13 @@ func New[K comparable, V any]() *OrderedMap[K, V] {
 	return &OrderedMap[K, V]{
 		m:           make(map[uint64]V),
 		insertOrder: []K{},
+	}
+}
+
+func (m *OrderedMap[K, V]) Clone() *OrderedMap[K, V] {
+	return &OrderedMap[K, V]{
+		m:           maps.Clone(m.m),
+		insertOrder: slices.Clone(m.insertOrder),
 	}
 }
 

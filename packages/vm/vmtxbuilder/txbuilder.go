@@ -1,6 +1,8 @@
 package vmtxbuilder
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -43,14 +45,12 @@ func NewAnchorTransactionBuilder(
 }
 
 func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
-	a := *txb.anchor
-	newConsumed := make([]isc.OnLedgerRequest, len(txb.consumed))
-	for i, v := range txb.consumed {
-		newConsumed[i] = v.Clone()
-	}
 	return &AnchorTransactionBuilder{
-		anchor:   &a,
-		consumed: newConsumed,
+		anchor:     txb.anchor,
+		iscPackage: txb.iscPackage,
+		consumed:   lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) isc.OnLedgerRequest { return r.Clone() }),
+		ptb:        txb.ptb.Clone(),
+		ownerAddr:  txb.ownerAddr,
 	}
 }
 

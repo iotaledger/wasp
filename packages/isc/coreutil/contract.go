@@ -42,14 +42,10 @@ func defaultInitFunc(ctx isc.Sandbox) isc.CallArguments {
 
 // Processor creates a ContractProcessor with the provided handlers
 func (i *ContractInfo) Processor(init Handler[isc.Sandbox], eps ...isc.ProcessorEntryPoint) *ContractProcessor {
-	if init == nil {
-		init = defaultInitFunc
+	if init != nil {
+		panic("init function no longer supported")
 	}
-	funcInit := i.Func(isc.FuncInit)
-	handlers := map[isc.Hname]isc.ProcessorEntryPoint{
-		// constructor:
-		isc.EntryPointInit: funcInit.WithHandler(init),
-	}
+	handlers := map[isc.Hname]isc.ProcessorEntryPoint{}
 	for _, ep := range eps {
 		hname := ep.Hname()
 		if _, ok := handlers[hname]; ok {

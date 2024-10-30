@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -121,7 +120,6 @@ type InitOptions struct {
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
-	Seed              cryptolib.Seed
 	Log               *logger.Logger
 }
 
@@ -135,7 +133,6 @@ func DefaultInitOptions() *InitOptions {
 	return &InitOptions{
 		Debug:             false,
 		PrintStackTrace:   false,
-		Seed:              cryptolib.Seed{},
 		GasBurnLogEnabled: true, // is ON by default
 	}
 }
@@ -174,7 +171,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		chains:               make(map[isc.ChainID]*Chain),
 		processorConfig:      coreprocessors.NewConfigWithCoreContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
-		seed:                 opt.Seed,
+		seed:                 cryptolib.SeedFromBytes([]byte(t.Name())),
 		publisher:            publisher.New(opt.Log.Named("publisher")),
 		ctx:                  ctx,
 	}
@@ -259,12 +256,6 @@ func (env *Solo) GetChainByName(name string) *Chain {
 		}
 	}
 	panic("chain not found")
-}
-
-// WithNativeContract registers a native contract so that it may be deployed
-func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
-	env.processorConfig.RegisterNativeContract(c)
-	return env
 }
 
 // WithVMProcessor registers a VM processor for binary contracts
@@ -369,6 +360,7 @@ func (env *Solo) deployChain(
 		OriginatorPrivateKey: chainOriginator,
 		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
+		migrationScheme:      allmigrations.DefaultScheme,
 	}, nil
 }
 

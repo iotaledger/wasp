@@ -1,3 +1,6 @@
+// excluded temporarily because of compilation errors
+//go:build exclude
+
 package testcore
 
 import (

@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -381,4 +382,15 @@ func (a *Assets) SetBaseTokens(amount coin.Value) *Assets {
 
 func (a *Assets) BaseTokens() coin.Value {
 	return a.Coins.Get(coin.BaseTokenType)
+}
+
+func (a *Assets) AsISCMove() *iscmove.Assets {
+	r := iscmove.NewAssets(0)
+	for coinType, amount := range a.Coins {
+		r.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(amount))
+	}
+	if len(a.Objects) > 0 {
+		panic("TODO")
+	}
+	return r
 }

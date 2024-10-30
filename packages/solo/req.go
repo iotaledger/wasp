@@ -40,7 +40,11 @@ type CallParams struct {
 // NewCallParams creates a structure that wraps in one object call parameters,
 // used in PostRequestSync and CallView
 func NewCallParams(msg isc.Message, contract ...any) *CallParams {
-	p := &CallParams{msg: msg}
+	p := &CallParams{
+		msg:       msg,
+		assets:    isc.NewEmptyAssets(),
+		allowance: isc.NewEmptyAssets(),
+	}
 
 	if len(contract) > 0 {
 		p = p.WithTargetContract(contract[0])
@@ -175,6 +179,9 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAddressAgentID(keyPair.Address()))
 	}
@@ -330,12 +337,12 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		ch.Env.ISCPackageID(),
 		ch.ID().AsAddress().AsIotaAddress(),
 		ch.Env.makeAssetsBag(keyPair, req.assets),
-		iscmove.Message{
+		&iscmove.Message{
 			Contract: uint32(req.msg.Target.Contract),
 			Function: uint32(req.msg.Target.EntryPoint),
 			Args:     req.msg.Params,
 		},
-		nil, // Add allowance here
+		req.allowance.AsISCMove(),
 		req.gasBudget,
 		nil,
 		iotaclient.DefaultGasPrice,
