@@ -15,7 +15,7 @@ import { HttpFile } from '../http/http';
 
 export class CoinJSON {
     /**
-    * The base tokens (uint64 as string)
+    * The balance (uint64 as string)
     */
     'balance': string;
     'coinType': Type;

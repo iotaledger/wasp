@@ -2673,7 +2673,7 @@ components:
         balance: balance
       properties:
         balance:
-          description: The base tokens (uint64 as string)
+          description: The balance (uint64 as string)
           format: string
           type: string
           xml:

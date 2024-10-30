@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Balance** | **string** | The base tokens (uint64 as string) | 
+**Balance** | **string** | The balance (uint64 as string) | 
 **CoinType** | [**Type**](Type.md) |  | 
 
 ## Methods

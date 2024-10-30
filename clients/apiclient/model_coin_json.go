@@ -19,7 +19,7 @@ var _ MappedNullable = &CoinJSON{}
 
 // CoinJSON struct for CoinJSON
 type CoinJSON struct {
-	// The base tokens (uint64 as string)
+	// The balance (uint64 as string)
 	Balance string `json:"balance"`
 	CoinType Type `json:"coinType"`
 }
