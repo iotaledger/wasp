@@ -22,7 +22,6 @@ func (c *Client) StartNewChain(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iscmove.AnchorWithRef, error) {
 	var err error
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
@@ -55,17 +54,9 @@ func (c *Client) StartNewChain(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
@@ -102,12 +93,11 @@ func (c *Client) ReceiveRequestAndTransition(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
-	reqAssetsBagsMap := make(map[iotago.ObjectRef]*iscmove.AssetsBagWithBalances)
+	var reqAssetsBags []*iscmove.AssetsBagWithBalances
 	for _, reqRef := range reqs {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
@@ -117,11 +107,18 @@ func (c *Client) ReceiveRequestAndTransition(
 		if err != nil {
 			return nil, err
 		}
-		reqAssetsBagsMap[reqRef] = assetsBag
+		reqAssetsBags = append(reqAssetsBags, assetsBag)
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = PTBReceiveRequestAndTransition(ptb, packageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}), reqs, reqAssetsBagsMap, stateMetadata)
+	ptb = PTBReceiveRequestAndTransition(
+		ptb,
+		packageID,
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}),
+		reqs,
+		reqAssetsBags,
+		stateMetadata,
+	)
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
@@ -139,17 +136,9 @@ func (c *Client) ReceiveRequestAndTransition(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,

@@ -34,7 +34,6 @@ func TestTxBuilderBasic(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -93,7 +92,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -186,7 +184,6 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	anchor2, err := client.StartNewChain(
@@ -198,7 +195,6 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage1)
@@ -380,7 +376,6 @@ func createIscmoveReq(
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagRef, err := assetsBagNewRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -396,7 +391,6 @@ func createIscmoveReq(
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagRef, err = client.UpdateObjectRef(context.Background(), assetsBagRef)
@@ -408,7 +402,7 @@ func createIscmoveReq(
 		iscPackage,
 		anchor.ObjectID,
 		assetsBagRef,
-		iscmove.Message{
+		&iscmove.Message{
 			Contract: uint32(isc.Hn("test_isc_contract")),
 			Function: uint32(isc.Hn("test_isc_func")),
 			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
@@ -418,7 +412,6 @@ func createIscmoveReq(
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)

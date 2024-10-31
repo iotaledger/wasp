@@ -9,9 +9,9 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/multiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -56,7 +56,6 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		nil, // Add gasPayments here (or not)
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	if err != nil {
 		return isc.ChainID{}, err

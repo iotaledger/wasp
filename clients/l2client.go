@@ -21,7 +21,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iscmove.AnchorWithRef, error)
 	CreateAndSendRequest(
 		ctx context.Context,
@@ -35,7 +34,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	ReceiveRequestAndTransition(
 		ctx context.Context,
@@ -47,7 +45,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsBagNew(
 		ctx context.Context,
@@ -56,7 +53,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsBagPlaceCoin(
 		ctx context.Context,
@@ -68,7 +64,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsDestroyEmpty(
 		ctx context.Context,
@@ -78,7 +73,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	GetAssetsBagWithBalances(
 		ctx context.Context,
@@ -96,7 +90,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 }
 

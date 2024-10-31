@@ -122,15 +122,12 @@ func (c *Client) postSingleRequest(
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 }
 
 func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 	var agentID isc.AgentID = isc.NewAddressAgentID(c.KeyPair.Address())
 
-	msg := accounts.ViewGetAccountNonce.Message(&agentID)
-	msg.Target.Contract.String()
 	result, _, err := c.WaspClient.ChainsApi.CallView(ctx, c.ChainID.String()).
 		ContractCallViewRequest(apiextensions.CallViewReq(accounts.ViewGetAccountNonce.Message(&agentID))).
 		Execute()

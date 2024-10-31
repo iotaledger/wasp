@@ -9,13 +9,12 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
-
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
@@ -29,7 +28,6 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -43,7 +41,6 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -62,7 +59,6 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -91,7 +87,6 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 }
@@ -107,7 +102,6 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -138,7 +132,6 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 }
@@ -154,7 +147,6 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo("assets_bag", "AssetsBag")
@@ -183,7 +175,6 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -344,7 +335,6 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -360,7 +350,6 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -384,7 +373,6 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
