@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -104,9 +103,10 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq := isctest.RandomOnLedgerDepositRequest(te.governor.Address())
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	require.NoError(t, err)
 	for _, node := range te.mempools {
-		node.ReceiveOnLedgerRequest(onLedgerReq)
+		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
 	}
 	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 

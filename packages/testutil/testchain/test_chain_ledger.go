@@ -62,7 +62,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.governor.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 	originDeposit := resGetCoins.Data[2]
-	schemaVersion := isc.SchemaVersion(3)
+	schemaVersion := isc.SchemaVersion(4)
 	initParams := isc.NewCallArguments([]byte{1, 2, 3})
 
 	// FIXME failed to add origin deposit
