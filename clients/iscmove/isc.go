@@ -126,11 +126,12 @@ type CoinAllowance struct {
 
 type CoinBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
 
+func NewEmptyAssets() *Assets {
+	return &Assets{Coins: make(CoinBalances)}
+}
+
 func NewAssets(baseTokens iotajsonrpc.CoinValue) *Assets {
-	a := &Assets{
-		Coins: make(CoinBalances),
-	}
-	return a.AddCoin(iotajsonrpc.IotaCoinType, baseTokens)
+	return NewEmptyAssets().AddCoin(iotajsonrpc.IotaCoinType, baseTokens)
 }
 
 func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {

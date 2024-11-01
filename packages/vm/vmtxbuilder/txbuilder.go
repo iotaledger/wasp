@@ -1,10 +1,11 @@
 package vmtxbuilder
 
 import (
+	"slices"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -48,7 +49,7 @@ func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
 	return &AnchorTransactionBuilder{
 		anchor:     txb.anchor,
 		iscPackage: txb.iscPackage,
-		consumed:   lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) isc.OnLedgerRequest { return r.Clone() }),
+		consumed:   slices.Clone(txb.consumed),
 		ptb:        txb.ptb.Clone(),
 		ownerAddr:  txb.ownerAddr,
 	}
@@ -116,39 +117,11 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb,
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		onRequestsToRequestRefs(txb.consumed),
-		onRequestsToAssetsBagMap(txb.consumed),
+		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
+		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
 		stateMetadata,
 	)
 	return ptb.Finish()
-}
-
-func onRequestsToRequestRefs(reqs []isc.OnLedgerRequest) []iotago.ObjectRef {
-	refs := make([]iotago.ObjectRef, len(reqs))
-	for i, req := range reqs {
-		refs[i] = req.RequestRef()
-	}
-	return refs
-}
-
-func onRequestsToAssetsBagMap(reqs []isc.OnLedgerRequest) map[iotago.ObjectRef]*iscmove.AssetsBagWithBalances {
-	m := make(map[iotago.ObjectRef]*iscmove.AssetsBagWithBalances)
-	for _, req := range reqs {
-		assetsBagWithBalances := &iscmove.AssetsBagWithBalances{
-			AssetsBag: *req.AssetsBag(),
-			Balances:  make(iscmove.AssetsBagBalances),
-		}
-		assets := req.Assets()
-		for k, v := range assets.Coins {
-			assetsBagWithBalances.Balances[iotajsonrpc.CoinType(k.String())] = &iotajsonrpc.Balance{
-				CoinType:     iotajsonrpc.CoinType(k.String()),
-				TotalBalance: iotajsonrpc.NewBigInt(v.Uint64()),
-			}
-		}
-		m[req.RequestRef()] = assetsBagWithBalances
-
-	}
-	return m
 }
 
 func NewRotationTransaction(anchorRef *iotago.ObjectRef, rotationAddress *iotago.Address) (*iotago.ProgrammableTransaction, error) {

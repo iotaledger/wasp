@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -206,78 +205,6 @@ func (ch *Chain) requestFromParams(cp *CallParams, keyPair *cryptolib.KeyPair) (
 	panic("TODO")
 }
 
-func (env *Solo) makeAssetsBag(
-	keyPair *cryptolib.KeyPair,
-	assets *isc.Assets,
-) *iotago.ObjectRef {
-	gasPayment := env.makeBaseTokenCoinsWithExactly(
-		keyPair,
-		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
-	)
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	iscmoveclient.PTBAssetsBagNew(
-		ptb,
-		env.l1Config.ISCPackageID,
-		keyPair.Address(),
-	)
-	assetsBagArg := ptb.LastCommandResultArg()
-
-	allCoins := env.L1AllCoins(keyPair.Address())
-	assets.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
-		for _, ownedCoin := range allCoins {
-			if !coinType.MatchesStringType(ownedCoin.CoinType) {
-				continue
-			}
-			if lo.ContainsBy(gasPayment, func(item *iotago.ObjectRef) bool {
-				return *item.ObjectID == *ownedCoin.CoinObjectID
-			}) {
-				// this coin is to be used for gas
-				continue
-			}
-			coinRef := ownedCoin.Ref()
-			coinArg := ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef})
-			amountAdded := coin.Value(ownedCoin.Balance.Uint64())
-			if amountAdded > amount {
-				err := ptb.SplitCoin(coinRef, []uint64{uint64(amount)})
-				require.NoError(env.T, err)
-				coinArg = ptb.LastCommandResultArg()
-				amountAdded = amount
-			}
-			iscmoveclient.PTBAssetsBagPlaceCoin(
-				ptb,
-				env.l1Config.ISCPackageID,
-				assetsBagArg,
-				coinArg,
-				coinType.String(),
-			)
-			amount -= amountAdded
-			if amount == 0 {
-				break
-			}
-		}
-		if amount > 0 {
-			panic(fmt.Sprintf("makeAssetsBag: not enough L1 balance for coin %s", coinType.ShortString()))
-		}
-		return true
-	})
-	assets.Objects.IterateSorted(func(objectID iotago.ObjectID) bool {
-		panic("TODO")
-	})
-	ptb.TransferArg(keyPair.Address().AsIotaAddress(), assetsBagArg)
-
-	res := env.executePTB(
-		ptb.Finish(),
-		keyPair,
-		gasPayment,
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
-	)
-	assetsBagRef, err := res.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
-	require.NoError(env.T, err)
-	return assetsBagRef
-}
-
 func (env *Solo) makeBaseTokenCoinsWithExactly(
 	keyPair *cryptolib.KeyPair,
 	values ...coin.Value,
@@ -331,12 +258,12 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	res, err := ch.Env.ISCMoveClient().CreateAndSendRequest(
+	res, err := ch.Env.ISCMoveClient().CreateAndSendRequestWithAssets(
 		ch.Env.ctx,
 		keyPair,
 		ch.Env.ISCPackageID(),
 		ch.ID().AsAddress().AsIotaAddress(),
-		ch.Env.makeAssetsBag(keyPair, req.assets),
+		req.assets.AsISCMove(),
 		&iscmove.Message{
 			Contract: uint32(req.msg.Target.Contract),
 			Function: uint32(req.msg.Target.EntryPoint),
@@ -347,7 +274,6 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	if err != nil {
 		return isc.RequestID{}, err

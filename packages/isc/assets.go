@@ -68,11 +68,7 @@ func CoinBalancesFromBytes(b []byte) (CoinBalances, error) {
 }
 
 func (c CoinBalances) Add(coinType coin.Type, amount coin.Value) CoinBalances {
-	if amount == 0 {
-		return c
-	}
-	c[coinType] = c.Get(coinType) + amount
-	return c
+	return c.Set(coinType, c.Get(coinType)+amount)
 }
 
 func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
@@ -90,15 +86,10 @@ func (c CoinBalances) AddBaseTokens(amount coin.Value) CoinBalances {
 
 func (c CoinBalances) Sub(coinType coin.Type, amount coin.Value) CoinBalances {
 	v := c.Get(coinType)
-	switch {
-	case v < amount:
+	if v < amount {
 		panic("negative coin balance")
-	case v == amount:
-		delete(c, coinType)
-	default:
-		c[coinType] = v - amount
 	}
-	return c
+	return c.Set(coinType, v-amount)
 }
 
 func (c CoinBalances) ToAssets() *Assets {
@@ -385,7 +376,7 @@ func (a *Assets) BaseTokens() coin.Value {
 }
 
 func (a *Assets) AsISCMove() *iscmove.Assets {
-	r := iscmove.NewAssets(0)
+	r := iscmove.NewEmptyAssets()
 	for coinType, amount := range a.Coins {
 		r.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(amount))
 	}
@@ -393,4 +384,18 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 		panic("TODO")
 	}
 	return r
+}
+
+func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBagWithBalances {
+	ret := &iscmove.AssetsBagWithBalances{
+		AssetsBag: *b,
+		Balances:  make(iscmove.AssetsBagBalances),
+	}
+	for k, v := range a.Coins {
+		ret.Balances[iotajsonrpc.CoinType(k.String())] = &iotajsonrpc.Balance{
+			CoinType:     iotajsonrpc.CoinType(k.String()),
+			TotalBalance: iotajsonrpc.NewBigInt(v.Uint64()),
+		}
+	}
+	return ret
 }

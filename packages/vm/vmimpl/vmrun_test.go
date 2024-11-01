@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // TODO
@@ -196,7 +195,7 @@ func runRequestsAndTransitionAnchor(
 	*isc.StateAnchor,
 ) {
 	task := &vm.VMTask{
-		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
+		Processors:           coreprocessors.NewConfigWithCoreContracts(),
 		Anchor:               anchor,
 		Store:                store,
 		Requests:             reqs,

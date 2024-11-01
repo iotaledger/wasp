@@ -32,7 +32,6 @@ func TestStartNewChain(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	t.Log("anchor: ", anchor)
@@ -51,7 +50,6 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	t.Log("anchor1: ", anchor1)
@@ -75,7 +73,6 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -95,7 +92,6 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -118,7 +114,6 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 
 	require.NoError(t, err)
@@ -136,7 +131,6 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 }
@@ -151,7 +145,6 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	return anchor
