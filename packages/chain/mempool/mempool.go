@@ -134,9 +134,9 @@ type mempoolImpl struct {
 	chainID                        isc.ChainID
 	tangleTime                     time.Time
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
-	offLedgerPool                  *OffLedgerPool
+	offLedgerPool                  *OffLedgerPool                   // TODO maybe use `RequestPool` too?
 	distSync                       gpa.GPA
-	chainHeadAO                    *isc.StateAnchor
+	chainHeadAnchor                *isc.StateAnchor
 	chainHeadState                 state.State
 	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
 	serverNodes                    []*cryptolib.PublicKey
@@ -233,7 +233,7 @@ func New(
 		tangleTime:                     time.Time{},
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
 		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
-		chainHeadAO:                    nil,
+		chainHeadAnchor:                nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
 		accessNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqAccessNodesUpdated](),
@@ -588,7 +588,7 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 // This implementation only tracks a single branch. So, we will only respond
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
-	if mpi.chainHeadAO == nil || !recv.anchor.Equals(mpi.chainHeadAO) {
+	if mpi.chainHeadAnchor == nil || !recv.anchor.Equals(mpi.chainHeadAnchor) {
 		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.anchor)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
@@ -600,7 +600,7 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 //nolint:gocyclo
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
-	// The case for matching ChainHeadAO and request BaseAO
+	// The case for matching ChainHeadAnchor and request BaseAO
 	reqRefs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
 		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
@@ -810,7 +810,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 //nolint:gocyclo
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	defer close(req.responseCh)
-	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.from, req.from, mpi.chainHeadAO)
+	mpi.log.Debugf("handleTrackNewChainHead, from %v, current=%v", req.from, mpi.chainHeadAnchor)
 
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
@@ -852,7 +852,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	//
 	// Record the head state.
 	mpi.chainHeadState = req.st
-	mpi.chainHeadAO = req.from
+	mpi.chainHeadAnchor = req.from
 	//
 	// Process the pending consensus proposal requests if any.
 	if len(mpi.waitChainHead) != 0 {
@@ -861,7 +861,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			if waiting.ctx.Err() != nil {
 				continue // Drop it.
 			}
-			if waiting.anchor.Equals(mpi.chainHeadAO) {
+			if waiting.anchor.Equals(mpi.chainHeadAnchor) {
 				mpi.handleConsensusProposalForChainHead(waiting)
 				continue // Drop it from wait queue.
 			}
