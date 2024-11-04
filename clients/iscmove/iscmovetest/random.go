@@ -26,17 +26,19 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 	stateMetadata := make([]byte, 128)
 	rand.Read(stateMetadata)
 	stateIndex := uint32(rand.Int31())
-	if opt[0].ID != nil {
-		id = *opt[0].ID
-	}
-	if opt[0].Assets != nil {
-		assets = *opt[0].Assets
-	}
-	if opt[0].StateMetadata != nil {
-		stateMetadata = *opt[0].StateMetadata
-	}
-	if opt[0].StateIndex != nil {
-		stateIndex = *opt[0].StateIndex
+	if len(opt) > 0 {
+		if opt[0].ID != nil {
+			id = *opt[0].ID
+		}
+		if opt[0].Assets != nil {
+			assets = *opt[0].Assets
+		}
+		if opt[0].StateMetadata != nil {
+			stateMetadata = *opt[0].StateMetadata
+		}
+		if opt[0].StateIndex != nil {
+			stateIndex = *opt[0].StateIndex
+		}
 	}
 	return iscmove.Anchor{
 		ID:            id,
