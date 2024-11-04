@@ -27,7 +27,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	//
 	// Produce an alias output.
 	chainID := isc.ChainIDFromObjectID(*iotatest.RandomObjectRef().ObjectID)
-	ao0 := iotatest.RandomStateAnchor()
+	ao0 := isctest.RandomStateAnchor()
 
 	// Create some requests.
 	senderKP := cryptolib.NewKeyPair()

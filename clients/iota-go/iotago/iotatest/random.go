@@ -4,9 +4,6 @@ import (
 	"math/rand"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func RandomObjectRef() *iotago.ObjectRef {
@@ -53,30 +50,4 @@ func RandomTransactionData() *iotago.TransactionData {
 		100,
 	)
 	return &tx
-}
-
-func RandomAnchor() *iscmove.Anchor {
-	assetsBag := iscmove.AssetsBag{
-		ID:   *RandomAddress(),
-		Size: 0,
-	}
-	return &iscmove.Anchor{
-		ID:            *RandomAddress(),
-		Assets:        assetsBag,
-		StateMetadata: nil,
-		StateIndex:    0,
-	}
-}
-
-func RandomStateAnchor() isc.StateAnchor {
-	anchor := RandomAnchor()
-	anchorRef := RandomObjectRef()
-	return isc.NewStateAnchor(
-		&iscmove.RefWithObject[iscmove.Anchor]{
-			ObjectRef: *anchorRef,
-			Object:    anchor,
-		},
-		cryptolib.NewRandomAddress(),
-		*RandomAddress(),
-	)
 }
