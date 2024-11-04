@@ -58,14 +58,6 @@ func NewAddressFromHexString(addr string) (*Address, error) {
 	return NewAddressFromBytes(addrBytes)
 }
 
-func MustNewAddressFromHexString(addr string) *Address {
-	ret, err := NewAddressFromHexString(addr)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
 func NewAddressFromKey(key AddressKey) *Address {
 	result := Address(key)
 	return &result
