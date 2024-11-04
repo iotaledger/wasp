@@ -5,14 +5,11 @@ package distsync
 
 import (
 	"math"
-	"math/big"
 	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -32,30 +29,8 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		sender := tpkg.RandAliasAddress()
-		requestMetadata := &isc.RequestMetadata{
-			SenderContract: isc.ContractIdentityFromHname(isc.Hn("sender_contract")),
-			Message:        isc.NewMessage(isc.Hn("target_contract"), isc.Hn("entrypoint")),
-			Allowance:      isc.NewAssets(1),
-			GasBudget:      1000,
-		}
-		basicOutput := &iotago.BasicOutput{
-			Amount: 123,
-			NativeTokens: iotago.NativeTokens{
-				&iotago.NativeToken{
-					ID:     [iotago.NativeTokenIDLength]byte{1},
-					Amount: big.NewInt(100),
-				},
-			},
-			Features: iotago.Features{
-				&iotago.SenderFeature{Address: sender},
-				&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
-			},
-			Conditions: iotago.UnlockConditions{
-				&iotago.AddressUnlockCondition{Address: sender},
-			},
-		}
-		req, err := isc.OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
+		sender := cryptolib.NewRandomAddress()
+		req, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), sender)
 		require.NoError(t, err)
 
 		msg := &msgShareRequest{
