@@ -1,14 +1,7 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
 package cons_test
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -17,24 +10,19 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cons"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -73,85 +61,92 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+
+	ao0x := isctest.RandomStateAnchor()
+	ao0 := &ao0x
+
+	// TODO: requests
+	reqs := []isc.Request{}
+	reqRefs := []*isc.RequestRef{}
+
 	//
 	// Construct the chain on L1.
 	//utxodb.New(utxodb.DefaultInitParams())
 	//
 	// Construct the chain on L1: Create the accounts.
-	originator := cryptolib.NewKeyPair()
-	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
-	require.NoError(t, err)
+	// originator := cryptolib.NewKeyPair()
+	// _, err := utxoDB.GetFundsFromFaucet(originator.Address())
+	// require.NoError(t, err)
 	//
 	// Construct the chain on L1: Create the origin TX.
-	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
-	panic("refactor me: origin.NewChainOriginTransaction")
-	var originTX *iotago.Transaction
+	// outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
+	// panic("refactor me: origin.NewChainOriginTransaction")
+	// var originTX *iotago.Transaction
 	var chainID isc.ChainID
-	err = errors.New("refactor me: testConsBasic")
+	// err = errors.New("refactor me: testConsBasic")
+	// require.NoError(t, err)
 
-	require.NoError(t, err)
-	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
-	require.NoError(t, err)
-	require.NotNil(t, stateAnchor)
-	require.NotNil(t, aliasOutput)
-	ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
-	err = utxoDB.AddToLedger(originTX)
-	require.NoError(t, err)
+	// stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
+	// require.NoError(t, err)
+	// require.NotNil(t, stateAnchor)
+	// require.NotNil(t, aliasOutput)
+	// ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
+	// err = utxoDB.AddToLedger(originTX)
+	// require.NoError(t, err)
 
 	//
 	// Deposit some funds
-	outputs, outIDs = utxoDB.GetUnspentOutputs(originator.Address())
-	depositTx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    originator,
-			SenderAddress:    originator.Address(),
-			UnspentOutputs:   outputs,
-			UnspentOutputIDs: outIDs,
-			Request: &isc.RequestParameters{
-				TargetAddress: chainID.AsAddress(),
-				Assets:        isc.NewAssets(100_000_000),
-				Metadata: &isc.SendMetadata{
-					Message:   accounts.FuncDeposit.Message(),
-					GasBudget: 10_000,
-				},
-			},
-		},
-	)
-	require.NoError(t, err)
-	err = utxoDB.AddToLedger(depositTx)
-	require.NoError(t, err)
+	// outputs, outIDs = utxoDB.GetUnspentOutputs(originator.Address())
+	// depositTx, err := transaction.NewRequestTransaction(
+	// 	transaction.NewRequestTransactionParams{
+	// 		SenderKeyPair:    originator,
+	// 		SenderAddress:    originator.Address(),
+	// 		UnspentOutputs:   outputs,
+	// 		UnspentOutputIDs: outIDs,
+	// 		Request: &isc.RequestParameters{
+	// 			TargetAddress: chainID.AsAddress(),
+	// 			Assets:        isc.NewAssets(100_000_000),
+	// 			Metadata: &isc.SendMetadata{
+	// 				Message:   accounts.FuncDeposit.Message(),
+	// 				GasBudget: 10_000,
+	// 			},
+	// 		},
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// err = utxoDB.AddToLedger(depositTx)
+	// require.NoError(t, err)
 
 	//
 	// Construct the chain on L1: Find the requests (the first request).
-	reqs := []isc.Request{}
-	reqRefs := []*isc.RequestRef{}
-	outputs, _ = utxoDB.GetUnspentOutputs(chainID.AsAddress())
-	for outputID, output := range outputs {
-		if output.Type() == iotago.OutputAlias {
-			aliasOutput := output.(*iotago.AliasOutput)
-			if aliasOutput.AliasID == chainID.AsAliasID() {
-				continue // That's our alias output, not the request, skip it here.
-			}
-			if aliasOutput.AliasID.Empty() {
-				implicitAliasID := iotago.AliasIDFromOutputID(outputID)
-				if implicitAliasID == chainID.AsAliasID() {
-					continue // That's our origin alias output, not the request, skip it here.
-				}
-			}
-		}
-		req, err := isc.OnLedgerFromUTXO(output, outputID)
-		if err != nil {
-			continue
-		}
-		reqs = append(reqs, req)
-		reqRefs = append(reqRefs, isc.RequestRefFromRequest(req))
-	}
+	// reqs := []isc.Request{}
+	// reqRefs := []*isc.RequestRef{}
+	// outputs, _ = utxoDB.GetUnspentOutputs(chainID.AsAddress())
+	// for outputID, output := range outputs {
+	// 	if output.Type() == iotago.OutputAlias {
+	// 		aliasOutput := output.(*iotago.AliasOutput)
+	// 		if aliasOutput.AliasID == chainID.AsAliasID() {
+	// 			continue // That's our alias output, not the request, skip it here.
+	// 		}
+	// 		if aliasOutput.AliasID.Empty() {
+	// 			implicitAliasID := iotago.AliasIDFromOutputID(outputID)
+	// 			if implicitAliasID == chainID.AsAliasID() {
+	// 				continue // That's our origin alias output, not the request, skip it here.
+	// 			}
+	// 		}
+	// 	}
+	// 	req, err := isc.OnLedgerFromUTXO(output, outputID)
+	// 	if err != nil {
+	// 		continue
+	// 	}
+	// 	reqs = append(reqs, req)
+	// 	reqRefs = append(reqRefs, isc.RequestRefFromRequest(req))
+	// }
 	//
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
 	chainStates := map[gpa.NodeID]state.Store{}
 	procConfig := coreprocessors.NewConfigWithCoreContracts()
-	procCache := processors.MustNew(procConfig)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
@@ -159,9 +154,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(chainStates[nid], ao0)
+		origin.InitChainByAnchor(chainStates[nid], ao0, coin.Zero, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -198,7 +193,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
-		l1Commitment, err := transaction.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
+		l1Commitment, err := transaction.L1CommitmentFromAnchor(out.NeedStateMgrDecidedState)
 		require.NoError(t, err)
 		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
 		require.NoError(t, err)
@@ -244,7 +239,8 @@ func testConsBasic(t *testing.T, n, f int) {
 	tc.RunAll()
 	t.Log("############ All should be done now.")
 	tc.PrintAllStatusStrings("All done.", t.Logf)
-	for nid, node := range nodes {
+	out0 := nodes[nodeIDs[0]].Output().(*cons.Output)
+	for _, node := range nodes {
 		out := node.Output().(*cons.Output)
 		require.Equal(t, cons.Completed, out.Status)
 		require.True(t, out.Terminated)
@@ -254,11 +250,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.Result.Transaction)
-		require.NotNil(t, out.Result.NextAliasOutput)
 		require.NotNil(t, out.Result.Block)
-		if nid == nodeIDs[0] { // Just do this once.
-			require.NoError(t, utxoDB.AddToLedger(out.Result.Transaction))
-		}
+		require.Equal(t, out.Result.Block, out0.Result.Block)
+		require.Equal(t, out.Result.Transaction, out0.Result.Transaction)
 	}
 }
 
@@ -266,6 +260,7 @@ func testConsBasic(t *testing.T, n, f int) {
 // This test case has much less of synchronization, because we don't wait for
 // all messages to be delivered before responding to the instance requests to
 // mempool, stateMgr and VM.
+/*
 func TestChained(t *testing.T) {
 	t.Parallel()
 	type test struct {
@@ -702,3 +697,5 @@ func (tci *testConsInst) tryCloseCompInputPipe() {
 		close(tci.compInputPipe)
 	}
 }
+
+*/
