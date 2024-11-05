@@ -4,8 +4,6 @@
 package testcore
 
 import (
-	"context"
-	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,10 +18,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	flag.Parse()
-	iotaNode := l1starter.Start(context.Background(), l1starter.DefaultConfig)
-	defer iotaNode.Stop()
-	m.Run()
+	l1starter.TestMain(m)
 }
 
 func TestRootBasic(t *testing.T) {
@@ -51,7 +46,7 @@ func TestGetInfo(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(corecontracts.All), len(contracts))
+	require.GreaterOrEqual(t, len(contracts), len(corecontracts.All))
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)

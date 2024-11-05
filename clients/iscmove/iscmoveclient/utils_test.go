@@ -1,8 +1,6 @@
 package iscmoveclient_test
 
 import (
-	"context"
-	"flag"
 	"fmt"
 	"testing"
 
@@ -17,10 +15,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	flag.Parse()
-	iotaNode := l1starter.Start(context.Background(), l1starter.DefaultConfig)
-	defer iotaNode.Stop()
-	m.Run()
+	l1starter.TestMain(m)
 }
 
 func buildDeployMintTestcoin(

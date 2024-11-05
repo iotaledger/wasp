@@ -150,7 +150,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
 	chainStates := map[gpa.NodeID]state.Store{}
-	procConfig := coreprocessors.NewConfigWithCoreContracts()
+	procConfig := coreprocessors.NewConfigWithTestContracts()
 	procCache := processors.MustNew(procConfig)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -346,7 +346,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	//
 	// Construct the nodes for each instance.
-	procConfig := coreprocessors.NewConfigWithCoreContracts()
+	procConfig := coreprocessors.NewConfigWithTestContracts()
 	procCache := processors.MustNew(procConfig)
 	doneCHs := map[gpa.NodeID]chan *testInstInput{}
 	for _, nid := range nodeIDs {

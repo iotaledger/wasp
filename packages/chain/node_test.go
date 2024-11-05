@@ -343,7 +343,7 @@ type testEnv struct {
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	log       *logger.Logger
-	//utxoDB           *utxodb.UtxoDB
+	// utxoDB           *utxodb.UtxoDB // TODO:replace with l1starter?
 	governor         *cryptolib.KeyPair
 	originator       *cryptolib.KeyPair
 	peeringURLs      []string
@@ -414,7 +414,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())),
 			te.nodeConns[i],
 			te.peerIdentities[i],
-			coreprocessors.NewConfigWithCoreContracts(),
+			coreprocessors.NewConfigWithTestContracts(),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			false,

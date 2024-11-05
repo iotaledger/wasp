@@ -8,9 +8,14 @@ import (
 
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
 
 func checkCounter(e *solo.Chain, expected int64) {
 	ret, err := e.CallView(inccounter.ViewGetCounter.Message())
@@ -25,16 +30,14 @@ func initSolo(t *testing.T) *solo.Solo {
 	return solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
-	}).WithNativeContract(inccounter.Processor)
+	})
 }
 
 func TestDeployIncInitParams(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	// err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(17))
-	// require.NoError(t, err)
-	checkCounter(chain, 17)
+	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }
 
@@ -42,16 +45,14 @@ func TestIncDefaultParam(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	// err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(17))
-	// require.NoError(t, err)
-	checkCounter(chain, 17)
+	checkCounter(chain, 0)
 
 	req := solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).
 		AddBaseTokens(1).
 		WithMaxAffordableGasBudget()
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	checkCounter(chain, 18)
+	checkCounter(chain, 1)
 	chain.CheckAccountLedger()
 }
 
@@ -59,9 +60,7 @@ func TestIncParam(t *testing.T) {
 	env := initSolo(t)
 	chain := env.NewChain()
 
-	// err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(17))
-	// require.NoError(t, err)
-	checkCounter(chain, 17)
+	checkCounter(chain, 0)
 
 	n := int64(3)
 	req := solo.NewCallParams(inccounter.FuncIncCounter.Message(&n)).
@@ -69,7 +68,7 @@ func TestIncParam(t *testing.T) {
 		WithMaxAffordableGasBudget()
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	checkCounter(chain, 20)
+	checkCounter(chain, 3)
 
 	chain.CheckAccountLedger()
 }
@@ -78,9 +77,7 @@ func TestIncParam(t *testing.T) {
 // 	env := initSolo(t)
 // 	chain := env.NewChain()
 
-// 	// err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(17))
-// 	// require.NoError(t, err)
-// 	checkCounter(chain, 17)
+// 	checkCounter(chain, 0)
 
 // 	chain.WaitForRequestsMark()
 
@@ -95,7 +92,7 @@ func TestIncParam(t *testing.T) {
 // 	env.AdvanceClockBy(6 * time.Second)
 // 	require.True(t, chain.WaitForRequestsThrough(2))
 
-// 	checkCounter(chain, 19)
+// 	checkCounter(chain, 2)
 // 	chain.CheckAccountLedger()
 // }
 
@@ -104,11 +101,8 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	opts := solo.DefaultInitOptions()
 	opts.Log = log
-	env := solo.New(b, opts).WithNativeContract(inccounter.Processor)
+	env := solo.New(b, opts)
 	chain := env.NewChain()
-
-	// err := chain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.InitParams(0))
-	// require.NoError(b, err)
 
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
