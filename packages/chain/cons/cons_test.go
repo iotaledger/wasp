@@ -10,8 +10,12 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
@@ -61,13 +65,27 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	var chainID isc.ChainID
 
 	ao0x := isctest.RandomStateAnchor()
 	ao0 := &ao0x
 
-	// TODO: requests
-	reqs := []isc.Request{}
-	reqRefs := []*isc.RequestRef{}
+	// callMsg := ethereum.CallMsg{
+	// 	From:  common.Address{1, 2, 3},
+	// 	To:    &common.Address{4, 5, 6},
+	// 	Gas:   100,
+	// 	Data:  []byte{1, 2, 3, 4},
+	// 	Value: big.NewInt(100),
+	// }
+	reqs := []isc.Request{
+		RandomOnLedgerDepositRequest(ao0.Owner),
+		RandomOnLedgerDepositRequest(ao0.Owner),
+		RandomOnLedgerDepositRequest(ao0.Owner),
+		// isc.NewEVMOffLedgerCallRequest(chainID, callMsg),
+		// isc.NewEVMOffLedgerCallRequest(chainID, callMsg),
+		// isc.NewEVMOffLedgerCallRequest(chainID, callMsg),
+	}
+	reqRefs := isc.RequestRefsFromRequests(reqs)
 
 	//
 	// Construct the chain on L1.
@@ -82,7 +100,6 @@ func testConsBasic(t *testing.T, n, f int) {
 	// outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
 	// panic("refactor me: origin.NewChainOriginTransaction")
 	// var originTX *iotago.Transaction
-	var chainID isc.ChainID
 	// err = errors.New("refactor me: testConsBasic")
 	// require.NoError(t, err)
 
@@ -699,3 +716,35 @@ func (tci *testConsInst) tryCloseCompInputPipe() {
 }
 
 */
+
+func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerRequest {
+	sender := cryptolib.NewRandomAddress()
+	if len(senders) != 0 {
+		sender = senders[0]
+	}
+	ref := iotatest.RandomObjectRef()
+	a := iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
+		Balances:  make(iscmove.AssetsBagBalances),
+	}
+	a.Balances[iotajsonrpc.IotaCoinType] = &iotajsonrpc.Balance{CoinType: iotajsonrpc.IotaCoinType, TotalBalance: iotajsonrpc.NewBigInt(1000)}
+	req := iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: *ref,
+		Object: &iscmove.Request{
+			ID:        *ref.ObjectID,
+			Sender:    sender,
+			AssetsBag: a,
+			Message: iscmove.Message{
+				Contract: uint32(isc.Hn("accounts")),
+				Function: uint32(isc.Hn("deposit")),
+			},
+			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000}},
+			GasBudget: 100000,
+		},
+	}
+	onReq, err := isc.OnLedgerFromRequest(&req, sender)
+	if err != nil {
+		panic(err)
+	}
+	return onReq
+}
