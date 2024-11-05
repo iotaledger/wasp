@@ -91,6 +91,14 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	GetAnchorFromObjectID(
+		ctx context.Context,
+		anchorObjectID *iotago.ObjectID,
+	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+	GetRequestFromObjectID(
+		ctx context.Context,
+		reqID *iotago.ObjectID,
+	) (*iscmove.RefWithObject[iscmove.Request], error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}

@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
@@ -102,44 +103,11 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 		}
 	}()
 
-	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.originTx)
-	require.NoError(t, err)
-	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
-	for _, tnc := range te.nodeConns {
-		tnc.recvAliasOutput(
-			isc.NewOutputInfo(deployBaseAO.OutputID(), deployBaseAO.GetAliasOutput(), iotago.TransactionID{}),
-		)
-	}
-
-	sendAndAwait := func(reqs []isc.Request, expectedBlockIndex int, desc string) {
-		for _, tnc := range te.nodeConns {
-			for _, req := range reqs {
-				onLedgerRequest := req.(isc.OnLedgerRequest)
-				tnc.recvRequestCB(
-					isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
-				)
-			}
-		}
-		awaitRequestsProcessed(ctxTimeout, te, reqs, desc)
-		awaitPredicate(te, ctxTimeout, fmt.Sprintf("len(tnc.published) >= %d", expectedBlockIndex), func() bool {
-			for _, tnc := range te.nodeConns {
-				if len(tnc.published) < expectedBlockIndex {
-					return false
-				}
-			}
-			return true
-		})
-	}
-
-	//
 	// Create SC Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	_, err = te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), scClient.Address().AsIotaAddress(), te.faucetURL)
 	require.NoError(t, err)
-	depositReqs := te.tcl.MakeTxAccountsDeposit(scClient)
-	sendAndAwait(depositReqs, 1, "depositReqs")
 
-	//
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
 	incCount := 10
@@ -198,9 +166,9 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 		}
 		// Check if LastAliasOutput() works as expected.
 		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
-			confirmedAO, err := node.LatestAliasOutput(chain.ConfirmedState)
+			confirmedAO, err := node.LatestAnchor(chain.ConfirmedState)
 			require.NoError(t, err)
-			activeAO, err := node.LatestAliasOutput(chain.ActiveState)
+			activeAO, err := node.LatestAnchor(chain.ActiveState)
 			require.NoError(t, err)
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 			lastPublishedAO, err := isc.AliasOutputWithIDFromTx(lastPublishedTX, te.chainID.AsAddress())
@@ -383,10 +351,11 @@ type testEnv struct {
 	peerPubKeys      []*cryptolib.PublicKey
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
+	faucetURL        string // FIXME maybe not the proper way
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
-	originAO         *isc.StateAnchor
+	anchor           *isc.StateAnchor
 	originTx         *iotago.Transaction
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain
@@ -428,7 +397,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	var dkShareProviders []registry.DKShareRegistryProvider
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.originator)
-	te.originTx, te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.anchor = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))
