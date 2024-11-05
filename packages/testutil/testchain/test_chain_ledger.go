@@ -96,7 +96,6 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		[]*iotago.ObjectRef{resGetCoins.Data[0].Ref()},
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(tcl.t, err)
 	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
@@ -122,7 +121,6 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	if err != nil {
 		return nil, err
@@ -190,30 +188,47 @@ func (tcl *TestChainLedger) UpdateAnchor(anchor *isc.StateAnchor) (*isc.StateAnc
 	return anchor, nil
 }
 
-func (tcl *TestChainLedger) FakeRotationTX(anchor *iscmove.AnchorWithRef, nextCommitteeAddr *cryptolib.Address) (*iscmove.AnchorWithRef, *iotago.TransactionData) {
-	panic("TODO")
-	// tx, err := transaction.NewRotateChainStateControllerTx(
-	// 	tcl.chainID.AsAliasID(),
-	// 	nextCommitteeAddr,
-	// 	anchor.OutputID(),
-	// 	anchor.GetAliasOutput(),
-	// 	tcl.governor,
-	// )
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// outputs, err := tx.OutputsSet()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// for outputID, output := range outputs {
-	// 	if output.Type() == iotago.OutputAlias {
-	// 		ao := output.(*iotago.AliasOutput)
-	// 		ao.StateIndex = anchor.GetStateIndex() + 1 // Fake next state index, just for tests.
-	// 		return isc.NewAliasOutputWithID(ao, outputID), tx
-	// 	}
-	// }
-	// panic("alias output not found")
+func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitteeAddr *cryptolib.Address) *isc.StateAnchor {
+	// FIXME a temp impl before the decision of Rotation
+	signer := cryptolib.SignerToIotaSigner(tcl.governor)
+	ptb := iotago.NewProgrammableTransactionBuilder()
+
+	ptb.Command(iotago.Command{
+		TransferObjects: &iotago.ProgrammableTransferObjects{
+			Objects: []iotago.Argument{ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchor.GetObjectRef()})},
+			Address: ptb.MustPure(nextCommitteeAddr),
+		},
+	},
+	)
+
+	pt := ptb.Finish()
+	coins, err := tcl.l1client.GetCoinObjsForTargetAmount(context.Background(), signer.Address(), iotaclient.DefaultGasBudget)
+	require.NoError(tcl.t, err)
+	gasPayments := coins.CoinRefs()
+
+	tx := iotago.NewProgrammable(
+		signer.Address(),
+		pt,
+		gasPayments,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+
+	txnBytes, err := bcs.Marshal(&tx)
+	require.NoError(tcl.t, err)
+	txnResponse, err := tcl.l1client.SignAndExecuteTransaction(
+		context.Background(),
+		signer,
+		txnBytes,
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	)
+	require.NoError(tcl.t, err)
+	require.True(tcl.t, txnResponse.Effects.Data.IsSuccess())
+
+	anchorRef, err := tcl.l1client.L2().GetAnchorFromObjectID(context.Background(), anchor.GetObjectID())
+	require.NoError(tcl.t, err)
+	tmp := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
+	return &tmp
 }
 
 func BuildAndDeployISCContracts(t *testing.T, client clients.L1Client, signer cryptolib.Signer) iotago.PackageID {
