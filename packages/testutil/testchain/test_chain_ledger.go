@@ -63,8 +63,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	require.NoError(tcl.t, err)
 	originDeposit := resGetCoins.Data[2]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	initParams := isc.NewCallArguments([]byte{1, 2, 3})
-
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	// FIXME failed to add origin deposit
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, 0, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(

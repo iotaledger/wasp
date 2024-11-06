@@ -238,14 +238,14 @@ func scanLog(reader io.Reader, out *os.File) {
 func DeployISCContracts(client clients.L1Client, signer iotasigner.Signer) iotago.PackageID {
 	iscBytecode := contracts.ISC()
 	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          ISCPackageOwner.Address(),
+		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	}))
 	txnResponse := lo.Must(client.SignAndExecuteTransaction(
 		context.Background(),
-		ISCPackageOwner,
+		signer,
 		txnBytes.TxBytes,
 		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,

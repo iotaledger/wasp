@@ -378,7 +378,7 @@ func createIscmoveReq(
 			Function: uint32(isc.Hn("test_isc_func")),
 			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		},
-		nil,
+		iscmove.NewAssets(0),
 		10,
 		nil,
 		iotaclient.DefaultGasPrice,
