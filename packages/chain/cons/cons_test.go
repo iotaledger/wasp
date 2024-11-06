@@ -159,6 +159,12 @@ func testConsBasic(t *testing.T, n, f int) {
 	// 	reqs = append(reqs, req)
 	// 	reqRefs = append(reqRefs, isc.RequestRefFromRequest(req))
 	// }
+	originDeposit := coin.Zero
+	baseTokenCoinInfo := isc.BaseTokenCoinInfo
+	ao0l1c, err := origin.L1CommitmentFromAnchorStateMetadata(ao0.GetStateMetadata(), originDeposit, baseTokenCoinInfo)
+	require.NoError(t, err)
+	fmt.Printf("XXXXXXXX: ao0l1c=%v", ao0l1c)
+
 	//
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
@@ -170,8 +176,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		require.NoError(t, err)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAnchor(chainStates[nid], ao0, coin.Zero, isc.BaseTokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStates[nid], ao0, originDeposit, baseTokenCoinInfo)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}

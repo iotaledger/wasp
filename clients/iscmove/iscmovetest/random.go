@@ -8,6 +8,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type RandomAnchorOption struct {
@@ -23,8 +28,15 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 		ID:   *iotatest.RandomAddress(),
 		Size: uint64(rand.Int63()),
 	}
-	stateMetadata := make([]byte, 128)
-	rand.Read(stateMetadata)
+	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
+	initParams := isc.NewCallArguments([]byte{1, 2, 3})
+	stateMetadata := transaction.NewStateMetadata(
+		schemaVersion,
+		&state.L1Commitment{}, // FIXME properly set trieRoot, blockHash
+		gas.DefaultFeePolicy(),
+		initParams,
+		"http://url",
+	).Bytes()
 	stateIndex := uint32(rand.Int31())
 	if len(opt) > 0 {
 		if opt[0].ID != nil {
@@ -47,7 +59,6 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 		StateIndex:    stateIndex,
 	}
 }
-
 func RandomAssetsBag() iscmove.AssetsBag {
 	return iscmove.AssetsBag{
 		ID:   *iotatest.RandomAddress(),
