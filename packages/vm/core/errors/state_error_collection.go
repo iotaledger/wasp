@@ -62,7 +62,7 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErro
 
 	newError := isc.NewVMErrorTemplate(isc.NewVMErrorCode(e.hname, errorID), messageFormat)
 
-	errorMap.SetAt(codec.Encode[uint16](errorID), newError.Bytes())
+	errorMap.SetAt(codec.Encode(errorID), newError.Bytes())
 
 	return newError, nil
 }

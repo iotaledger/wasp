@@ -33,7 +33,6 @@ func funcGetErrorMessageFormat(ctx isc.SandboxView, code isc.VMErrorCode) string
 	if !ok {
 		panic(coreerrors.ErrErrorNotFound)
 	}
-
 	return template.MessageFormat()
 }
 

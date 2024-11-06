@@ -54,7 +54,7 @@ type VMErrorBase interface {
 
 type VMErrorTemplate struct {
 	code          VMErrorCode `bcs:"export"`
-	messageFormat string
+	messageFormat string      `bcs:"export"`
 }
 
 var _ VMErrorBase = &VMErrorTemplate{}

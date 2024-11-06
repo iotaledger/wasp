@@ -40,7 +40,8 @@ func (req *evmOffLedgerCallRequest) Assets() *Assets {
 }
 
 func (req *evmOffLedgerCallRequest) Bytes() []byte {
-	return bcs.MustMarshal(req)
+	var r Request = req
+	return bcs.MustMarshal(&r)
 }
 
 func (req *evmOffLedgerCallRequest) Message() Message {

@@ -56,7 +56,8 @@ func (req *evmOffLedgerTxRequest) Assets() *Assets {
 }
 
 func (req *evmOffLedgerTxRequest) Bytes() []byte {
-	return bcs.MustMarshal(req)
+	var r Request = req
+	return bcs.MustMarshal(&r)
 }
 
 func (req *evmOffLedgerTxRequest) Message() Message {
