@@ -8,7 +8,19 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
+
+func RandomStateAnchorWithStateMetadata(metadata *transaction.StateMetadata) isc.StateAnchor {
+	anchor := iscmovetest.RandomAnchor()
+	anchor.StateMetadata = metadata.Bytes()
+
+	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
+		ObjectRef: *iotatest.RandomObjectRef(),
+		Object:    &anchor,
+	}
+	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
+}
 
 func RandomStateAnchor() isc.StateAnchor {
 	anchor := iscmovetest.RandomAnchor()

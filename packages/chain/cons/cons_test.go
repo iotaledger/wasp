@@ -2,8 +2,10 @@ package cons_test
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/samber/lo"
 	"testing"
 	"time"
 
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -69,17 +70,22 @@ func testConsBasic(t *testing.T, n, f int) {
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
-	initParams := origin.EncodeInitParams(
-		isc.NewAddressAgentID(committeeAddress),
-		1337,
-		-1,
-	)
+	tokenCoinInfo := isc.IotaCoinInfo{
+		CoinType:    lo.Must(coin.TypeFromString("0x0000000000000000000000000000000000000000000000000000000000000002::iota::IOTA")),
+		Name:        "IOTA",
+		Decimals:    9,
+		Symbol:      "IOTA",
+		Description: "Foo",
+		IconURL:     "Foo",
+		TotalSupply: 3126000000000000000,
+	}
 
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	test, err := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, &tokenCoinInfo)
 
-	ao0x := isctest.RandomStateAnchor()
+	ao0x := isctest.RandomStateAnchorWithStateMetadata(stateMetadata)
 	ao0 := &ao0x
 
 	// callMsg := ethereum.CallMsg{
@@ -152,7 +158,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
 	chainStates := map[gpa.NodeID]state.Store{}
-	procConfig := coreprocessors.NewConfigWithCoreContracts()
+	procConfig := coreprocessors.NewConfig()
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
@@ -161,7 +167,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStates[nid], ao0, originDeposit, baseTokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStates[nid], ao0, 0, &tokenCoinInfo)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
