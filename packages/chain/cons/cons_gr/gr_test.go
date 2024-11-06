@@ -101,7 +101,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	nodes := make([]*consGR.ConsGr, len(peerIdentities))
 	mempools := make([]*testMempool, len(peerIdentities))
 	stateMgrs := make([]*testStateMgr, len(peerIdentities))
-	procConfig := coreprocessors.NewConfigWithCoreContracts()
+	procConfig := coreprocessors.NewConfigWithTestContracts()
 	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
 	anchor := tcl.MakeTxChainOrigin(cmtAddress)
 	ctx, ctxCancel := context.WithCancel(context.Background())

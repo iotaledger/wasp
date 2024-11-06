@@ -12,51 +12,71 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func EncodeInitParams(
+type InitParams struct {
+	ChainOwner          isc.AgentID
+	EVMChainID          uint16
+	BlockKeepAmount     int32
+	DeployTestContracts bool
+}
+
+func NewInitParams(
 	chainOwner isc.AgentID,
 	evmChainID uint16,
 	blockKeepAmount int32,
-) isc.CallArguments {
-	return isc.CallArguments{
-		codec.Encode[isc.AgentID](chainOwner),
-		codec.Encode[uint16](evmChainID),
-		codec.Encode[int32](blockKeepAmount),
+	deployTestContracts bool,
+) *InitParams {
+	return &InitParams{
+		ChainOwner:          chainOwner,
+		EVMChainID:          evmChainID,
+		BlockKeepAmount:     blockKeepAmount,
+		DeployTestContracts: deployTestContracts,
 	}
 }
 
-func DecodeInitParams(initParams isc.CallArguments) (isc.AgentID, uint16, int32, error) {
-	if len(initParams) > 3 {
-		return nil, 0, 0, fmt.Errorf("invalid init params")
+func DefaultInitParams(chainOwner isc.AgentID) *InitParams {
+	return &InitParams{
+		ChainOwner:          chainOwner,
+		EVMChainID:          evm.DefaultChainID,
+		BlockKeepAmount:     governance.DefaultBlockKeepAmount,
+		DeployTestContracts: false,
 	}
-	chainOwner := codec.MustDecode[isc.AgentID](initParams.MustAt(0))
-	evmChainID := codec.MustDecode[uint16](initParams.OrNil(1), evm.DefaultChainID)
-	blockKeepAmount := codec.MustDecode[int32](initParams.OrNil(2), governance.DefaultBlockKeepAmount)
-	return chainOwner, evmChainID, blockKeepAmount, nil
+}
+
+func (p *InitParams) Encode() isc.CallArguments {
+	return isc.CallArguments{bcs.MustMarshal(p)}
+}
+
+func DecodeInitParams(args isc.CallArguments) (*InitParams, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("invalid init params")
+	}
+	return bcs.Unmarshal[*InitParams](args[0])
 }
 
 // L1Commitment calculates the L1 commitment for the origin state
 // originDeposit must exclude the minSD for the AliasOutput
 func L1Commitment(
 	v isc.SchemaVersion,
-	initParams isc.CallArguments,
+	args isc.CallArguments,
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) *state.L1Commitment {
 	block, _ := InitChain(
 		v,
 		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
-		initParams,
+		args,
 		originDeposit,
 		baseTokenCoinInfo,
 	)
@@ -66,35 +86,41 @@ func L1Commitment(
 func InitChain(
 	v isc.SchemaVersion,
 	store state.Store,
-	initParams isc.CallArguments,
+	args isc.CallArguments,
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, *transaction.StateMetadata) {
-	chainOwner, evmChainID, blockKeepAmount, err := DecodeInitParams(initParams)
+	initParams, err := DecodeInitParams(args)
 	if err != nil {
 		panic(err)
 	}
 
 	d := store.NewOriginStateDraft()
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode[time.Time](time.Unix(0, 0)))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
 
-	// init the state of each core contract
-	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, []*coreutil.ContractInfo{
+	contracts := []*coreutil.ContractInfo{
 		root.Contract,
 		accounts.Contract,
 		blocklog.Contract,
 		errors.Contract,
 		governance.Contract,
 		evm.Contract,
-		inccounter.Contract, // TODO: disable inccounter contract by default
-	})
+	}
+	if initParams.DeployTestContracts {
+		contracts = append(contracts, inccounter.Contract)
+	}
+
+	// init the state of each core contract
+	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, baseTokenCoinInfo)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(chainOwner, blockKeepAmount)
-	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), evmChainID)
-	inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
+	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, initParams.BlockKeepAmount)
+	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
+	if initParams.DeployTestContracts {
+		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
+	}
 
 	block := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
@@ -104,7 +130,7 @@ func InitChain(
 		v,
 		block.L1Commitment(),
 		gas.DefaultFeePolicy(),
-		initParams,
+		args,
 		"",
 	)
 }

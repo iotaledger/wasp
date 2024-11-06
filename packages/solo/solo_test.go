@@ -1,8 +1,6 @@
 package solo
 
 import (
-	"context"
-	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,10 +9,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	flag.Parse()
-	iotaNode := l1starter.Start(context.Background(), l1starter.DefaultConfig)
-	defer iotaNode.Stop()
-	m.Run()
+	l1starter.TestMain(m)
 }
 
 func TestSoloBasic1(t *testing.T) {

@@ -66,7 +66,6 @@ func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer 
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
-
 	if err != nil {
 		return iotago.PackageID{}, err
 	}
@@ -85,7 +84,6 @@ func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer 
 	}
 
 	packageId, err := txnResponse.GetPublishedPackageID()
-
 	if err != nil {
 		return iotago.PackageID{}, err
 	}
@@ -134,7 +132,12 @@ func initDeployCmd() *cobra.Command {
 			// stateController := doDKG(ctx, node, peers, quorum)
 
 			stateController := cryptolib.NewRandomAddress()
-			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(govController), evmChainID, blockKeepAmount)
+			initParams := origin.NewInitParams(
+				isc.NewAddressAgentID(govController),
+				evmChainID,
+				blockKeepAmount,
+				false,
+			).Encode()
 			stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(0), nil, gas.DefaultFeePolicy(), initParams, "")
 
 			par := apilib.CreateChainParams{

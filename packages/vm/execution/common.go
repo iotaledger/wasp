@@ -14,7 +14,7 @@ func GetEntryPoint(ctx WaspContext, targetContract, epCode isc.Hname) isc.VMProc
 		if gasctx, ok2 := ctx.(GasContext); ok2 {
 			gasctx.GasBurn(gas.BurnCodeCallTargetNotFound)
 		}
-		panic(vm.ErrContractNotFound.Create(int32(targetContract)))
+		panic(vm.ErrContractNotFound.Create(uint32(targetContract)))
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {

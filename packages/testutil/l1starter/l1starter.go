@@ -10,6 +10,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"testing"
 	"time"
 
 	"github.com/samber/lo"
@@ -48,6 +50,13 @@ func Instance() *IotaNode {
 		panic("IotaNode not started; call Start() first")
 	}
 	return in
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	iotaNode := Start(context.Background(), DefaultConfig)
+	defer iotaNode.Stop()
+	m.Run()
 }
 
 func ISCPackageID() iotago.PackageID {

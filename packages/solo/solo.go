@@ -169,7 +169,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		logger:               opt.Log,
 		l1Config:             *opt.L1Config,
 		chains:               make(map[isc.ChainID]*Chain),
-		processorConfig:      coreprocessors.NewConfigWithCoreContracts(),
+		processorConfig:      coreprocessors.NewConfigWithTestContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
 		seed:                 cryptolib.SeedFromBytes([]byte(t.Name())),
 		publisher:            publisher.New(opt.Log.Named("publisher")),
@@ -297,10 +297,11 @@ func (env *Solo) deployChain(
 		env.GetFundsFromFaucet(originatorAddr)
 	}
 
-	initParams := origin.EncodeInitParams(
+	initParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chainOriginator.Address()),
 		evmChainID,
 		blockKeepAmount,
+		true,
 	)
 
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
@@ -314,7 +315,7 @@ func (env *Solo) deployChain(
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
-		initParams,
+		initParams.Encode(),
 		initBaseTokens,
 		baseTokenCoinInfo,
 	)

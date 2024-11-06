@@ -447,7 +447,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 
 	store := te.stores[0]
 	vmTask := &vm.VMTask{
-		Processors:           coreprocessors.NewConfigWithCoreContracts(),
+		Processors:           coreprocessors.NewConfigWithTestContracts(),
 		Anchor:               anchor,
 		Store:                store,
 		Requests:             reqs,
