@@ -84,7 +84,8 @@ func (req *OffLedgerRequestData) Assets() *Assets {
 }
 
 func (req *OffLedgerRequestData) Bytes() []byte {
-	return bcs.MustMarshal(req)
+	var r Request = req
+	return bcs.MustMarshal(&r)
 }
 
 func (req *OffLedgerRequestData) Message() Message {

@@ -212,7 +212,7 @@ func (env *Solo) makeBaseTokenCoinsWithExactly(
 	allCoins := env.L1BaseTokenCoins(keyPair.Address())
 	require.NotEmpty(env.T, allCoins)
 	coinToSplit, ok := lo.Find(allCoins, func(item *iotajsonrpc.Coin) bool {
-		return item.Balance.Uint64() >= uint64(lo.Sum(values))
+		return item.Balance.Uint64() >= uint64(lo.Sum(values))+iotaclient.DefaultGasBudget
 	})
 	require.True(env.T, ok, "not enough base tokens")
 	tx := lo.Must(env.IotaClient().PayIota(
