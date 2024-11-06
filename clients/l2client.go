@@ -65,6 +65,18 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	AssetsBagPlaceCoinAmount(
+		ctx context.Context,
+		cryptolibSigner cryptolib.Signer,
+		packageID iotago.PackageID,
+		assetsBagRef *iotago.ObjectRef,
+		coin *iotago.ObjectRef,
+		coinType iotajsonrpc.CoinType,
+		amount uint64,
+		gasPayments []*iotago.ObjectRef, // optional
+		gasPrice uint64,
+		gasBudget uint64,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsDestroyEmpty(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
