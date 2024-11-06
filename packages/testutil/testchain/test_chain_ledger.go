@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -64,8 +63,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	require.NoError(tcl.t, err)
 	originDeposit := resGetCoins.Data[2]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	initParams := isc.NewCallArguments([]byte{1, 2, 3})
-
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	// FIXME failed to add origin deposit
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, 0, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(
@@ -96,7 +94,6 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		[]*iotago.ObjectRef{resGetCoins.Data[0].Ref()},
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(tcl.t, err)
 	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
@@ -122,7 +119,6 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	if err != nil {
 		return nil, err
@@ -214,33 +210,4 @@ func (tcl *TestChainLedger) FakeRotationTX(anchor *iscmove.AnchorWithRef, nextCo
 	// 	}
 	// }
 	// panic("alias output not found")
-}
-
-func BuildAndDeployISCContracts(t *testing.T, client clients.L1Client, signer cryptolib.Signer) iotago.PackageID {
-	iotaSigner := cryptolib.SignerToIotaSigner(signer)
-	iscBytecode := contracts.ISC()
-
-	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          iotaSigner.Address(),
-		CompiledModules: iscBytecode.Modules,
-		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
-	})
-	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		iotaSigner,
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
-
-	return *packageID
 }
