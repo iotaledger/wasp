@@ -122,7 +122,7 @@ func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
 
 func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
 	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
-	args := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), nil)
+	args := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), isc.NewEmptyAssets())
 
 	errorCode := lo.Must(errors.FuncRegisterError.DecodeOutput(args))
 	reqctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)

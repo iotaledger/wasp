@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/manyevents"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/testerrors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -111,6 +112,7 @@ func InitChain(
 	if initParams.DeployTestContracts {
 		contracts = append(contracts, inccounter.Contract)
 		contracts = append(contracts, manyevents.Contract)
+		contracts = append(contracts, testerrors.Contract)
 	}
 
 	// init the state of each core contract

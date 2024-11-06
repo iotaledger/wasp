@@ -1,5 +1,4 @@
 // excluded temporarily because of compilation errors
-//go:build exclude
 
 package testcore
 
@@ -10,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -18,44 +16,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-)
-
-var errorMessageToTest = "Test error message %v"
-
-var (
-	errorContractName = "ErrorContract"
-	errorContract     = coreutil.NewContract(errorContractName)
-)
-
-var (
-	funcRegisterErrors        = errorContract.Func("register_errors")
-	funcThrowErrorWithoutArgs = errorContract.Func("throw_error_without_args")
-	funcThrowErrorWithArgs    = errorContract.Func("throw_error_with_args")
-)
-
-var testError *isc.VMErrorTemplate
-
-var errorContractProcessor = errorContract.Processor(nil,
-	funcRegisterErrors.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-		testError = ctx.RegisterError(errorMessageToTest)
-
-		return nil
-	}),
-	funcThrowErrorWithoutArgs.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-		panic(testError.Create())
-	}),
-	funcThrowErrorWithArgs.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-		panic(testError.Create(42))
-	}),
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/testerrors"
 )
 
 func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{Debug: true}).WithNativeContract(errorContractProcessor)
+	env := solo.New(t, &solo.InitOptions{Debug: true})
 	chain, _ := env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	err := chain.DeployContract(nil, errorContract.Name, errorContract.ProgramHash)
-
-	require.NoError(t, err)
 
 	chain.MustDepositBaseTokensToL2(10_000_000, nil)
 	defer chain.Log().Sync()
@@ -65,28 +32,21 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 	return chain
 }
 
-func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
-	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{Debug: true})
-	chain, _ := env.NewChainExt(nil, 1, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-
-	chain.MustDepositBaseTokensToL2(1, nil)
-	defer chain.Log().Sync()
-	chain.CheckChain()
-
-	return env, chain
-}
-
 // Panics and returned errors will eventually land into the error handling hook.
 // Typical xerror/error types will be wrapped into an UnresolvedVMError type (Err ErrUntypedError)
 // Panicked vmerrors will be stored as is.
-// The first test validates a typed vmerror UnresolvedVMError (Not enough Gas)
-// The second test validates the wrapped generic ErrUntypedError
-func TestErrorWithCustomError(t *testing.T) {
-	_, chain := setupErrorsTestWithoutFunds(t)
-	_, _, err := chain.PostRequestSyncTx(solo.NewCallParams(errors.FuncRegisterError.Message("")), nil)
+
+func TestUntypedError(t *testing.T) {
+	chain := setupErrorsTest(t)
+
+	_, _, err := chain.PostRequestSyncTx(
+		solo.NewCallParams(testerrors.FuncThrowUntypedError.Message(nil)),
+		nil,
+	)
+
 	testError := &isc.VMError{}
 	require.ErrorAs(t, err, &testError)
+	require.ErrorContains(t, err, "untyped error")
 }
 
 // This test does not supply the required kv pair 'ParamErrorMessageFormat' which makes the kvdecoder fail with an xerror
@@ -104,7 +64,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 	typedError := err.(*isc.VMError)
 	require.Equal(t, typedError.AsTemplate(), coreerrors.ErrUntypedError)
 
-	require.ErrorContains(t, err, "cannot decode")
+	require.ErrorContains(t, err, "index out of range")
 }
 
 func TestSuccessfulRegisterError(t *testing.T) {
@@ -122,7 +82,7 @@ func TestSuccessfulRegisterError(t *testing.T) {
 func TestRetrievalOfErrorMessage(t *testing.T) {
 	chain := setupErrorsTest(t)
 
-	errorCode, err := errors.FuncRegisterError.Call(errorMessageToTest, func(msg isc.Message) (isc.CallArguments, error) {
+	errorCode, err := errors.FuncRegisterError.Call(testerrors.MessageToTest, func(msg isc.Message) (isc.CallArguments, error) {
 		req := solo.NewCallParams(msg).
 			WithGasBudget(100_000)
 
@@ -139,57 +99,54 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 		return d, err
 	})
 	require.NoError(t, err)
-	require.Equal(t, message, errorMessageToTest)
+	require.Equal(t, testerrors.MessageToTest, message)
 }
 
 func TestErrorRegistrationWithCustomContract(t *testing.T) {
 	chain := setupErrorsTest(t)
 
-	req := solo.NewCallParams(funcRegisterErrors.Message(nil)).
+	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError.Code().ID, isc.GetErrorIDFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testerrors.Error.Code().ID, isc.GetErrorIDFromMessageFormat(testerrors.MessageToTest))
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {
 	chain := setupErrorsTest(t)
 
 	// Register error
-	req := solo.NewCallParams(funcRegisterErrors.Message(nil)).
+	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
-
 	require.NoError(t, err)
 
 	// Throw error
-	req = solo.NewCallParams(funcThrowErrorWithArgs.Message(nil)).
+	req = solo.NewCallParams(testerrors.FuncThrowErrorWithArgs.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
+	require.Error(t, err)
+	require.True(t, strings.HasSuffix(err.Error(), "42"))
 
 	errorTestType := &isc.VMError{}
 	require.ErrorAs(t, err, &errorTestType)
 
 	typedError := err.(*isc.VMError)
 
-	require.Error(t, err)
-	require.Equal(t, testError.Code().ID, isc.GetErrorIDFromMessageFormat(errorMessageToTest))
-	require.Equal(t, testError.Code().ContractID, typedError.Code().ContractID)
-
-	// Further, this error will add the arg '42'
-	require.True(t, strings.HasSuffix(err.Error(), "42"))
+	require.Equal(t, testerrors.Error.Code().ID, isc.GetErrorIDFromMessageFormat(testerrors.MessageToTest))
+	require.Equal(t, testerrors.Error.Code().ContractID, typedError.Code().ContractID)
 }
 
 func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	chain := setupErrorsTest(t)
 
 	// Register error
-	req := solo.NewCallParams(funcRegisterErrors.Message(nil)).
+	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
@@ -197,7 +154,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Throw error
-	req = solo.NewCallParams(funcThrowErrorWithoutArgs.Message(nil)).
+	req = solo.NewCallParams(testerrors.FuncThrowErrorWithoutArgs.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
@@ -208,20 +165,20 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	typedError := err.(*isc.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Code().ID, isc.GetErrorIDFromMessageFormat(errorMessageToTest))
-	require.Equal(t, testError.Code().ContractID, typedError.Code().ContractID)
+	require.Equal(t, testerrors.Error.Code().ID, isc.GetErrorIDFromMessageFormat(testerrors.MessageToTest))
+	require.Equal(t, testerrors.Error.Code().ContractID, typedError.Code().ContractID)
 
 	t.Log(err.Error())
 
 	// This error throws without an expected arg. Therefore, the output will end with '%!v(MISSING)'
-	require.True(t, strings.HasSuffix(err.Error(), "%!v(MISSING)"))
+	require.True(t, strings.HasSuffix(err.Error(), "%!d(MISSING)"))
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testing.T) { //nolint:dupl
 	chain := setupErrorsTest(t)
 
 	// Register error
-	req := solo.NewCallParams(funcRegisterErrors.Message(nil)).
+	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
@@ -229,7 +186,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.NoError(t, err)
 
 	// Throw error
-	req = solo.NewCallParams(funcThrowErrorWithoutArgs.Message(nil)).
+	req = solo.NewCallParams(testerrors.FuncThrowErrorWithoutArgs.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
@@ -253,7 +210,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	chain := setupErrorsTest(t)
 
 	// Register error
-	req := solo.NewCallParams(funcRegisterErrors.Message(nil)).
+	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
@@ -261,7 +218,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	require.NoError(t, err)
 
 	// Throw error
-	req = solo.NewCallParams(funcThrowErrorWithArgs.Message(nil)).
+	req = solo.NewCallParams(testerrors.FuncThrowErrorWithArgs.Message(nil)).
 		WithGasBudget(100_000)
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
