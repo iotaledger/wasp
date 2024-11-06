@@ -66,7 +66,6 @@ func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer 
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
-
 	if err != nil {
 		return iotago.PackageID{}, err
 	}
@@ -85,7 +84,6 @@ func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer 
 	}
 
 	packageId, err := txnResponse.GetPublishedPackageID()
-
 	if err != nil {
 		return iotago.PackageID{}, err
 	}

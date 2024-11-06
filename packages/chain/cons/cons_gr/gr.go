@@ -49,7 +49,7 @@ func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) Cons
 }
 
 type Mempool interface {
-	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.StateAnchor, consensusID ConsensusID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID ConsensusID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 

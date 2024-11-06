@@ -15,15 +15,16 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -32,7 +33,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -40,7 +40,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -83,8 +82,6 @@ func TestMempoolBasic(t *testing.T) {
 //   - Get proposals -- all waiting.
 //   - Send a request.
 //   - Get proposals -- all received 1 request.
-//
-
 func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
@@ -100,25 +97,21 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), te.anchor, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	panic("refactor me: transaction.BasicOutputFromPostData")
-	var output iotago.Output
-
-	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
-		node.ReceiveOnLedgerRequest(onLedgerReq)
+		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
 	}
-	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
+	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 
-	//
 	offLedgerReq := isc.NewOffLedgerRequest(
-		isctest.RandomChainID(),
+		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -131,7 +124,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	t.Log("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i, node := range te.mempools {
-		proposals[i] = node.ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
+		proposals[i] = node.ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{})
 	}
 	t.Log("Wait for proposals and ask for decided requests")
 	decided := make([]<-chan []isc.Request, len(te.mempools))
@@ -145,17 +138,16 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		nodeDecidedReqs := <-decided[i]
 		require.Len(t, nodeDecidedReqs, 1)
 	}
-	//
-	// Make a block consuming those 2 requests.
-	currentAO = blockFn(te, []isc.Request{offLedgerReq}, currentAO, tangleTime)
 
-	//
+	// Make a block consuming those 2 requests.
+	te.anchor = blockFn(te, []isc.Request{offLedgerReq}, te.anchor, tangleTime)
+
 	// Ask proposals for the next
 	proposals = make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i := range te.mempools {
-		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
+		proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
 	}
-	//
+
 	// We should not get any requests, because old requests are consumed
 	// and the new ones are not arrived yet.
 	for i := range te.mempools {
@@ -169,7 +161,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Add a message, we should get it now.
 	offLedgerReq2 := isc.NewOffLedgerRequest(
-		isctest.RandomChainID(),
+		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		1,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -182,254 +174,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		prop := <-proposals[i]
 		require.Len(t, prop, 1)
 		require.Contains(t, prop, offLedgerRef2)
-	}
-}
-
-func blockFn(te *testEnv, reqs []isc.Request, ao *isc.StateAnchor, tangleTime time.Time) *isc.StateAnchor {
-	// sort reqs by nonce
-	slices.SortFunc(reqs, func(a, b isc.Request) int {
-		return int(a.(isc.OffLedgerRequest).Nonce() - b.(isc.OffLedgerRequest).Nonce())
-	})
-
-	store := te.stores[0]
-	vmTask := &vm.VMTask{
-		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
-		Anchor:               ao,
-		Store:                store,
-		Requests:             reqs,
-		Timestamp:            tangleTime,
-		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
-		ValidatorFeeTarget:   accounts.CommonAccount(),
-		EstimateGasMode:      false,
-		EnableGasBurnLogging: false,
-		Log:                  te.log.Named("VM"),
-		Migrations:           allmigrations.DefaultScheme,
-	}
-	vmResult, err := vmimpl.Run(vmTask)
-	require.NoError(te.t, err)
-	block := store.Commit(vmResult.StateDraft)
-	chainState, err := store.StateByTrieRoot(block.TrieRoot())
-	require.NoError(te.t, err)
-	//
-	// Check if block has both requests as consumed.
-	receipts, err := blocklog.RequestReceiptsFromBlock(block)
-	require.NoError(te.t, err)
-	require.Len(te.t, receipts, len(reqs))
-	blockReqs := []isc.Request{}
-	for i := range receipts {
-		blockReqs = append(blockReqs, receipts[i].Request)
-	}
-	for _, req := range reqs {
-		require.Contains(te.t, blockReqs, req)
-	}
-	nextAO := te.tcl.FakeStateTransition(ao, block.L1Commitment())
-
-	// sync mempools with new state
-	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
-	for i := range te.mempools {
-		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, ao, nextAO, []state.Block{block}, []state.Block{})
-	}
-	for i := range te.mempools {
-		<-awaitTrackHeadChannels[i]
-	}
-	return nextAO
-}
-
-func TestTimeLock(t *testing.T) {
-	t.Parallel()
-	tests := []tc{
-		{n: 1, f: 0, reliable: true},  // Low N
-		{n: 2, f: 0, reliable: true},  // Low N
-		{n: 3, f: 0, reliable: true},  // Low N
-		{n: 4, f: 1, reliable: true},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true}, // Typical config.
-	}
-	for _, tst := range tests {
-		t.Run(
-			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testTimeLock(tt, tst.n, tst.f, tst.reliable) },
-		)
-	}
-}
-
-func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint:gocyclo
-	t.Parallel()
-	te := newEnv(t, n, f, reliable)
-	defer te.close()
-	start := time.Now()
-	requests := getRequestsOnLedger(t, te.chainID.AsAddress(), 6, func(i int, p *isc.RequestParameters) {
-		switch i {
-		case 0: // + No time lock
-		case 1: // + Time lock before start
-			p.Options.Timelock = start.Add(-2 * time.Hour)
-		case 2: // + Time lock slightly before start due to time.Now() in ReadyNow being called later than in this test
-			p.Options.Timelock = start
-		case 3: // - Time lock 5s after start
-			p.Options.Timelock = start.Add(5 * time.Second)
-		case 4: // - Time lock 2h after start
-			p.Options.Timelock = start.Add(2 * time.Hour)
-		case 5: // - Time lock after expiration
-			p.Options.Timelock = start.Add(3 * time.Second)
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(2 * time.Second),
-				ReturnAddress: te.chainID.AsAddress(),
-			}
-		}
-	})
-	reqRefs := []*isc.RequestRef{
-		isc.RequestRefFromRequest(requests[0]),
-		isc.RequestRefFromRequest(requests[1]),
-		isc.RequestRefFromRequest(requests[2]),
-		isc.RequestRefFromRequest(requests[3]),
-		isc.RequestRefFromRequest(requests[4]),
-		isc.RequestRefFromRequest(requests[5]),
-	}
-	//
-	// Add the requests.
-	for _, mp := range te.mempools {
-		for _, r := range requests {
-			mp.ReceiveOnLedgerRequest(r)
-		}
-	}
-	for i, mp := range te.mempools {
-		mp.TangleTimeUpdated(start)
-		mp.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
-		mp.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
-	}
-	//
-	// Check, if requests are proposed.
-	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
-	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
-		require.Len(t, reqs, 3)
-		require.Contains(t, reqs, reqRefs[0])
-		require.Contains(t, reqs, reqRefs[1])
-		require.Contains(t, reqs, reqRefs[2])
-	}
-	//
-	// Add the requests twice should keep things the same.
-	for _, mp := range te.mempools {
-		for _, r := range requests {
-			mp.ReceiveOnLedgerRequest(r)
-		}
-	}
-	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
-	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
-		require.Len(t, reqs, 3)
-		require.Contains(t, reqs, reqRefs[0])
-		require.Contains(t, reqs, reqRefs[1])
-		require.Contains(t, reqs, reqRefs[2])
-	}
-	//
-	// More requests are proposed after 5s
-	for _, mp := range te.mempools {
-		mp.TangleTimeUpdated(start.Add(10 * time.Second))
-	}
-	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
-	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
-		require.Len(t, reqs, 4)
-		require.Contains(t, reqs, reqRefs[0])
-		require.Contains(t, reqs, reqRefs[1])
-		require.Contains(t, reqs, reqRefs[2])
-		require.Contains(t, reqs, reqRefs[3])
-	}
-	//
-	// Even more requests are proposed after 10h.
-	for _, mp := range te.mempools {
-		mp.TangleTimeUpdated(start.Add(10 * time.Hour))
-	}
-	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
-	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
-		require.Len(t, reqs, 5)
-		require.Contains(t, reqs, reqRefs[0])
-		require.Contains(t, reqs, reqRefs[1])
-		require.Contains(t, reqs, reqRefs[2])
-		require.Contains(t, reqs, reqRefs[3])
-		require.Contains(t, reqs, reqRefs[4])
-	}
-}
-
-func TestExpiration(t *testing.T) {
-	t.Parallel()
-	tests := []tc{
-		{n: 1, f: 0, reliable: true},  // Low N
-		{n: 2, f: 0, reliable: true},  // Low N
-		{n: 3, f: 0, reliable: true},  // Low N
-		{n: 4, f: 1, reliable: true},  // Minimal robust config.
-		{n: 10, f: 3, reliable: true}, // Typical config.
-	}
-	for _, tst := range tests {
-		t.Run(
-			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testExpiration(tt, tst.n, tst.f, tst.reliable) },
-		)
-	}
-}
-
-func testExpiration(t *testing.T, n, f int, reliable bool) {
-	t.Parallel()
-	te := newEnv(t, n, f, reliable)
-	defer te.close()
-	start := time.Now()
-	requests := getRequestsOnLedger(t, te.chainID.AsAddress(), 4, func(i int, p *isc.RequestParameters) {
-		switch i {
-		case 1: // expired
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(-isc.RequestConsideredExpiredWindow),
-				ReturnAddress: te.chainID.AsAddress(),
-			}
-		case 2: // will expire soon
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(isc.RequestConsideredExpiredWindow / 2),
-				ReturnAddress: te.chainID.AsAddress(),
-			}
-		case 3: // not expired yet
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(isc.RequestConsideredExpiredWindow * 2),
-				ReturnAddress: te.chainID.AsAddress(),
-			}
-		}
-	})
-	reqRefs := []*isc.RequestRef{
-		isc.RequestRefFromRequest(requests[0]),
-		isc.RequestRefFromRequest(requests[1]),
-		isc.RequestRefFromRequest(requests[2]),
-		isc.RequestRefFromRequest(requests[3]),
-	}
-	//
-	// Add the requests.
-	for _, mp := range te.mempools {
-		for _, r := range requests {
-			mp.ReceiveOnLedgerRequest(r)
-		}
-	}
-	for i, mp := range te.mempools {
-		mp.TangleTimeUpdated(start)
-		mp.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
-		mp.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
-	}
-	//
-	// Check, if requests are proposed.
-	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
-	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
-		require.Len(t, reqs, 2)
-		require.Contains(t, reqs, reqRefs[0])
-		require.Contains(t, reqs, reqRefs[3])
-	}
-	//
-	// The remaining request with an expiry expires some time after.
-	for _, mp := range te.mempools {
-		mp.TangleTimeUpdated(start.Add(10 * isc.RequestConsideredExpiredWindow))
-	}
-	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
-	for _, mp := range te.mempools {
-		reqs := <-mp.ConsensusProposalAsync(te.ctx, te.originAO, consGR.ConsensusID{})
-		require.Len(t, reqs, 1)
-		require.Contains(t, reqs, reqRefs[0])
 	}
 }
 
@@ -456,26 +200,23 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	panic("refactor me: transaction.BasicOutputFromPostData")
-	var output iotago.Output
-
-	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
-		node.ReceiveOnLedgerRequest(onLedgerReq)
+		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
 	}
-	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
+	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 
 	// send nonces 0,1,3,6,10
 	createReqWithNonce := func(nonce uint64) isc.OffLedgerRequest {
 		return isc.NewOffLedgerRequest(
-			isctest.RandomChainID(),
+			te.chainID,
 			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 			nonce,
 			gas.LimitsDefault.MaxGasPerRequest,
@@ -496,11 +237,11 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	}
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
-	askProposalExpectReqs := func(ao *isc.StateAnchor, reqs ...isc.Request) *isc.StateAnchor {
+	askProposalExpectReqs := func(anchor *isc.StateAnchor, reqs ...isc.Request) *isc.StateAnchor {
 		t.Log("Ask for proposals")
 		proposalCh := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i, node := range te.mempools {
-			proposalCh[i] = node.ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{})
+			proposalCh[i] = node.ConsensusProposalAsync(te.ctx, anchor, consGR.ConsensusID{})
 		}
 		t.Log("Wait for proposals and ask for decided requests")
 		decided := make([]<-chan []isc.Request, len(te.mempools))
@@ -521,16 +262,16 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		}
 		//
 		// Make a block consuming those 2 requests.
-		return blockFn(te, nodeDecidedReqs, ao, tangleTime)
+		return blockFn(te, nodeDecidedReqs, anchor, tangleTime)
 	}
 
-	emptyProposalFn := func(ao *isc.StateAnchor) {
+	emptyProposalFn := func(anchor *isc.StateAnchor) {
 		// ask again, nothing to be proposed
 		//
 		// Ask proposals for the next
 		proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 		for i := range te.mempools {
-			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, ao, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
+			proposals[i] = te.mempools[i].ConsensusProposalAsync(te.ctx, anchor, consGR.ConsensusID{}) // Intentionally invalid order (vs TrackNewChainHead).
 		}
 		//
 		// We should not get any requests, there is a gap in the nonces
@@ -544,10 +285,10 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		}
 	}
 	// ask for proposal, assert 0,1 are proposed
-	currentAO = askProposalExpectReqs(currentAO, offLedgerReqs[0], offLedgerReqs[1])
+	te.anchor = askProposalExpectReqs(te.anchor, offLedgerReqs[0], offLedgerReqs[1])
 
 	// next proposal is empty
-	emptyProposalFn(currentAO)
+	emptyProposalFn(te.anchor)
 
 	// send nonce 2
 	reqNonce2 := createReqWithNonce(2)
@@ -556,10 +297,10 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	// ask for proposal, assert 2,3 are proposed
-	currentAO = askProposalExpectReqs(currentAO, reqNonce2, offLedgerReqs[2])
+	te.anchor = askProposalExpectReqs(te.anchor, reqNonce2, offLedgerReqs[2])
 
 	// next proposal is empty
-	emptyProposalFn(currentAO)
+	emptyProposalFn(te.anchor)
 
 	// send nonce 5, assert proposal is still empty (there is still a gap with the state)
 	reqNonce5 := createReqWithNonce(5)
@@ -567,7 +308,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce5))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
-	emptyProposalFn(currentAO)
+	emptyProposalFn(te.anchor)
 
 	// send nonce 4
 	reqNonce4 := createReqWithNonce(4)
@@ -576,7 +317,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	// ask for proposal, assert 4,5,6 are proposed
-	askProposalExpectReqs(currentAO, reqNonce4, reqNonce5, offLedgerReqs[3])
+	askProposalExpectReqs(te.anchor, reqNonce4, reqNonce5, offLedgerReqs[3])
 	// nonce 10 was never proposed
 }
 
@@ -597,42 +338,39 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	panic("refactor me: transaction.BasicOutputFromPostData")
-	var output iotago.Output
-
-	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
-		node.ReceiveOnLedgerRequest(onLedgerReq)
+		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
 	}
-	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, tangleTime)
+	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 
 	initialReq := isc.NewOffLedgerRequest(
-		isctest.RandomChainID(),
+		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
-
+	time.Sleep(400 * time.Millisecond) // give some time for the requests to reach the pool
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(initialReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	overwritingReq := isc.NewOffLedgerRequest(
-		isctest.RandomChainID(),
-		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
+		te.chainID,
+		isc.NewMessage(isc.Hn("baz"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
 	).Sign(te.governor)
 
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(overwritingReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
-	reqRefs := <-te.mempools[0].ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
+	reqRefs := <-te.mempools[0].ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{})
 	proposedReqs := <-te.mempools[0].ConsensusRequestsAsync(te.ctx, reqRefs)
 	require.Len(t, proposedReqs, 1)
 	require.Equal(t, overwritingReq, proposedReqs[0])
@@ -669,21 +407,18 @@ func TestTTL(t *testing.T) {
 	mp.TangleTimeUpdated(start)
 
 	// deposit some funds so off-ledger requests can go through
-	<-mp.TrackNewChainHead(te.stateForAO(0, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
+	<-mp.TrackNewChainHead(te.stateForAnchor(0, te.anchor), nil, []state.Block{}, []state.Block{})
 
-	panic("refactor me: transaction.BasicOutputFromPostData")
-	var output iotago.Output
-
-	onLedgerReq, err := isc.OnLedgerFromUTXO(output, tpkg.RandOutputID(uint16(0)))
+	onLedgerReq1, err := te.tcl.MakeTxAccountsDeposit(te.governor)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
-		node.ReceiveOnLedgerRequest(onLedgerReq)
+		node.ReceiveOnLedgerRequest(onLedgerReq1.(isc.OnLedgerRequest))
 	}
-	currentAO := blockFn(te, []isc.Request{onLedgerReq}, te.originAO, start)
+	te.anchor = blockFn(te, []isc.Request{onLedgerReq1}, te.anchor, start)
 
 	// send offledger request, assert it is returned, make 201ms pass, assert it is not returned anymore
 	offLedgerReq := isc.NewOffLedgerRequest(
-		isctest.RandomChainID(),
+		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -691,28 +426,81 @@ func TestTTL(t *testing.T) {
 	t.Log("Sending off-ledger request")
 	require.Nil(t, mp.ReceiveOffLedgerRequest(offLedgerReq))
 
-	reqs := <-mp.ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
+	reqs := <-mp.ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{})
 	require.Len(t, reqs, 1)
 	time.Sleep(201 * time.Millisecond)
 
 	// we need to add some request because ConsensusProposalAsync will not return an empty list.
-	requests := getRequestsOnLedger(t, te.chainID.AsAddress(), 1, func(i int, p *isc.RequestParameters) {})
-	mp.ReceiveOnLedgerRequest(requests[0])
+	onLedgerReq2, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	require.NoError(t, err)
+	mp.ReceiveOnLedgerRequest(onLedgerReq2.(isc.OnLedgerRequest))
 
-	reqs2 := <-mp.ConsensusProposalAsync(te.ctx, currentAO, consGR.ConsensusID{})
+	reqs2 := <-mp.ConsensusProposalAsync(te.ctx, te.anchor, consGR.ConsensusID{})
 	require.Len(t, reqs2, 1) // only the last request is returned
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// testEnv
+func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTime time.Time) *isc.StateAnchor {
+	// sort reqs by nonce
+	slices.SortFunc(reqs, func(a, b isc.Request) int {
+		return int(a.(isc.OffLedgerRequest).Nonce() - b.(isc.OffLedgerRequest).Nonce())
+	})
+
+	store := te.stores[0]
+	vmTask := &vm.VMTask{
+		Processors:           coreprocessors.NewConfigWithTestContracts(),
+		Anchor:               anchor,
+		Store:                store,
+		Requests:             reqs,
+		Timestamp:            tangleTime,
+		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
+		ValidatorFeeTarget:   accounts.CommonAccount(),
+		EstimateGasMode:      false,
+		EnableGasBurnLogging: false,
+		Log:                  te.log.Named("VM"),
+		Migrations:           allmigrations.DefaultScheme,
+	}
+	vmResult, err := vmimpl.Run(vmTask)
+	require.NoError(te.t, err)
+	block := store.Commit(vmResult.StateDraft)
+	chainState, err := store.StateByTrieRoot(block.TrieRoot())
+	require.NoError(te.t, err)
+	anchor, err = te.tcl.RunOnChainStateTransition(anchor, vmResult.UnsignedTransaction)
+	require.NoError(te.t, err)
+
+	// Check if block has both requests as consumed.
+	receipts, err := blocklog.RequestReceiptsFromBlock(block)
+	require.NoError(te.t, err)
+	require.Len(te.t, receipts, len(reqs))
+
+	// FIXME directly compare two object with their pointer may cause a false negative result, so using byte slice would be easier
+	// blockReqs := []isc.Request{}
+	blockReqBytes := [][]byte{}
+	for i := range receipts {
+		blockReqBytes = append(blockReqBytes, receipts[i].Request.Bytes())
+	}
+	for _, req := range reqs {
+		require.Contains(te.t, blockReqBytes, req.Bytes())
+	}
+
+	// sync mempools with new state
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
+	for i := range te.mempools {
+		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, anchor, []state.Block{block}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChannels[i]
+	}
+	return anchor
+}
+
+/////////////////////////////////////testEnv/////////////////////////////////////
 
 // Setups testing environment and holds all the relevant info.
 type testEnv struct {
-	t         *testing.T
-	ctx       context.Context
-	ctxCancel context.CancelFunc
-	log       *logger.Logger
-	// utxoDB           *utxodb.UtxoDB
+	t                *testing.T
+	ctx              context.Context
+	ctxCancel        context.CancelFunc
+	log              *logger.Logger
 	governor         *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
@@ -722,7 +510,7 @@ type testEnv struct {
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
-	originAO         *isc.StateAnchor
+	anchor           *isc.StateAnchor
 	mempools         []mempool.Mempool
 	stores           []state.Store
 }
@@ -731,13 +519,12 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t)
-	//
+
 	// Create ledger accounts.
-	//te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
 	te.governor = cryptolib.NewKeyPair()
-	_, err := te.utxoDB.GetFundsFromFaucet(te.governor.Address())
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
-	//
+
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
 	te.peerPubKeys = make([]*cryptolib.PublicKey, len(te.peerIdentities))
@@ -758,15 +545,21 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.governor)
-	_, te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
-	//
+
+	l1client := clients.NewL1Client(clients.L1Config{
+		APIURL:    iotaconn.LocalnetEndpointURL,
+		FaucetURL: iotaconn.LocalnetFaucetURL,
+	})
+	iscPackage := testchain.BuildAndDeployISCContracts(t, l1client, te.governor)
+	te.tcl = testchain.NewTestChainLedger(t, te.governor, &iscPackage, l1client)
+	te.anchor = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAliasOutput(te.stores[i], te.originAO)
+		origin.InitChainByAnchor(te.stores[i], te.anchor, 0, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(
@@ -793,8 +586,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	return te
 }
 
-func (te *testEnv) stateForAO(i int, ao *isc.StateAnchor) state.State {
-	l1Commitment, err := transaction.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+func (te *testEnv) stateForAnchor(i int, anchor *isc.StateAnchor) state.State {
+	l1Commitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	require.NoError(te.t, err)
 	st, err := te.stores[i].StateByTrieRoot(l1Commitment.TrieRoot())
 	require.NoError(te.t, err)
@@ -805,37 +598,4 @@ func (te *testEnv) close() {
 	te.ctxCancel()
 	te.peeringNetwork.Close()
 	te.log.Sync()
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-func getRequestsOnLedger(t *testing.T, chainAddress *cryptolib.Address, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
-	result := make([]isc.OnLedgerRequest, amount)
-	for i := range result {
-		requestParams := isc.RequestParameters{
-			TargetAddress: chainAddress,
-			Assets:        nil,
-			Metadata: &isc.SendMetadata{
-				Message: isc.NewMessage(
-					isc.Hn("dummyTargetContract"),
-					isc.Hn("dummyEP"),
-					isc.NewCallArguments(),
-				),
-				Allowance: nil,
-				GasBudget: 1000,
-			},
-		}
-		if len(f) == 1 {
-			f[0](i, &requestParams)
-		}
-
-		panic("refactor me: transaction.BasicOutputFromPostData")
-		var output iotago.Output
-
-		outputID := tpkg.RandOutputID(uint16(i))
-		var err error
-		result[i], err = isc.OnLedgerFromUTXO(output, outputID)
-		require.NoError(t, err)
-	}
-	return result
 }

@@ -7,10 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/testutil"
 )
 
 type MockedLedger struct {
@@ -29,42 +26,43 @@ type MockedLedger struct {
 	log                            *logger.Logger
 }
 
-func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, isc.ChainID) {
-	originOutput := &iotago.AliasOutput{
-		Amount:        tpkg.TestTokenSupply,
-		StateMetadata: testutil.DummyStateMetadata(origin.L1Commitment(0, nil, 0, isc.BaseTokenCoinInfo)).Bytes(),
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
-			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
-		},
-		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: stateAddress,
-			},
-		},
-	}
-	outputID := getOriginOutputID()
-	chainID := isc.ChainIDFromObjectID(iotago.AliasIDFromOutputID(outputID))
-	originOutput.AliasID = chainID.AsAliasID() // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
-	outputs := make(map[iotago.OutputID]*iotago.AliasOutput)
-	outputs[outputID] = originOutput
-	ret := &MockedLedger{
-		latestOutputID:         outputID,
-		outputs:                outputs,
-		txIDs:                  make(map[iotago.TransactionID]bool),
-		stateOutputHandlerFuns: make(map[string]func(iotago.OutputID, iotago.Output)),
-		outputHandlerFuns:      make(map[string]func(iotago.OutputID, iotago.Output)),
-		inclusionStateEvents:   make(map[string]*event.Event2[iotago.TransactionID, string]),
-		log:                    log.Named("ml-" + chainID.String()[2:8]),
-	}
-	ret.SetPublishStateTransactionAllowed(true)
-	ret.SetPublishGovernanceTransactionAllowed(true)
-	ret.SetPullLatestOutputAllowed(true)
-	ret.SetPullTxInclusionStateAllowed(true)
-	ret.SetPullOutputByIDAllowed(true)
-	ret.SetPushOutputToNodesNeeded(true)
-	return ret, chainID
-}
+// TODO maybe remove the whole file
+// func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, isc.ChainID) {
+// 	originOutput := &iotago.AliasOutput{
+// 		Amount:        tpkg.TestTokenSupply,
+// 		StateMetadata: testutil.DummyStateMetadata(origin.L1Commitment(0, nil, 0, isc.BaseTokenCoinInfo)).Bytes(),
+// 		Conditions: iotago.UnlockConditions{
+// 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
+// 			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
+// 		},
+// 		Features: iotago.Features{
+// 			&iotago.SenderFeature{
+// 				Address: stateAddress,
+// 			},
+// 		},
+// 	}
+// 	outputID := getOriginOutputID()
+// 	chainID := isc.ChainIDFromObjectID(iotago.AliasIDFromOutputID(outputID))
+// 	originOutput.AliasID = chainID.AsAliasID() // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
+// 	outputs := make(map[iotago.OutputID]*iotago.AliasOutput)
+// 	outputs[outputID] = originOutput
+// 	ret := &MockedLedger{
+// 		latestOutputID:         outputID,
+// 		outputs:                outputs,
+// 		txIDs:                  make(map[iotago.TransactionID]bool),
+// 		stateOutputHandlerFuns: make(map[string]func(iotago.OutputID, iotago.Output)),
+// 		outputHandlerFuns:      make(map[string]func(iotago.OutputID, iotago.Output)),
+// 		inclusionStateEvents:   make(map[string]*event.Event2[iotago.TransactionID, string]),
+// 		log:                    log.Named("ml-" + chainID.String()[2:8]),
+// 	}
+// 	ret.SetPublishStateTransactionAllowed(true)
+// 	ret.SetPublishGovernanceTransactionAllowed(true)
+// 	ret.SetPullLatestOutputAllowed(true)
+// 	ret.SetPullTxInclusionStateAllowed(true)
+// 	ret.SetPullOutputByIDAllowed(true)
+// 	ret.SetPushOutputToNodesNeeded(true)
+// 	return ret, chainID
+// }
 
 func (mlT *MockedLedger) Register(nodeID string, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
 	mlT.mutex.Lock()
@@ -200,12 +198,13 @@ func (mlT *MockedLedger) PullStateOutputByID(nodeID string, outputID iotago.Outp
 	}
 }
 
-func (mlT *MockedLedger) GetLatestOutput() *isc.StateAnchor {
-	mlT.mutex.RLock()
-	defer mlT.mutex.RUnlock()
+func (mlT *MockedLedger) GetLatestAnchor() *isc.StateAnchor {
+	panic("TODO")
+	// mlT.mutex.RLock()
+	// defer mlT.mutex.RUnlock()
 
-	mlT.log.Debugf("Getting latest output")
-	return isc.NewAliasOutputWithID(mlT.getLatestOutput(), mlT.latestOutputID)
+	// mlT.log.Debugf("Getting latest output")
+	// return isc.NewAliasOutputWithID(mlT.getLatestOutput(), mlT.latestOutputID)
 }
 
 func (mlT *MockedLedger) getLatestOutput() *iotago.AliasOutput {
@@ -296,16 +295,4 @@ func (mlT *MockedLedger) SetPushOutputToNodesNeededFun(fun func(tx *iotago.Trans
 
 func getOriginOutputID() iotago.OutputID {
 	return iotago.OutputID{}
-}
-
-func (mlT *MockedLedger) GetOriginOutput() *isc.StateAnchor {
-	mlT.mutex.RLock()
-	defer mlT.mutex.RUnlock()
-
-	outputID := getOriginOutputID()
-	aliasOutput := mlT.getAliasOutput(outputID)
-	if aliasOutput == nil {
-		return nil
-	}
-	return isc.NewAliasOutputWithID(aliasOutput, outputID)
 }

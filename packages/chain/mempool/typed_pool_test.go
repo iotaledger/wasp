@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestTypedMempoolPoolLimit(t *testing.T) {
@@ -21,13 +21,14 @@ func TestTypedMempoolPoolLimit(t *testing.T) {
 	size := 0
 	pool := NewTypedPool[isc.OnLedgerRequest](poolSizeLimit, waitReq, func(newSize int) { size = newSize }, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
 
-	r0, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(0))
+	anchorAddr := cryptolib.NewRandomAddress()
+	r0, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
-	r1, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(1))
+	r1, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
-	r2, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(2))
+	r2, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
-	r3, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{}, tpkg.RandOutputID(3))
+	r3, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
 
 	pool.Add(r0)

@@ -26,7 +26,7 @@ func provide(c *dig.Container) error {
 
 	if err := c.Provide(func() processorsConfigResult {
 		return processorsConfigResult{
-			ProcessorsConfig: coreprocessors.NewConfigWithCoreContracts(),
+			ProcessorsConfig: coreprocessors.NewConfig(),
 		}
 	}); err != nil {
 		Component.LogPanic(err)
