@@ -2,6 +2,8 @@ package cons_test
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"testing"
 	"time"
 
@@ -66,6 +68,16 @@ func testConsBasic(t *testing.T, n, f int) {
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
+
+	initParams := origin.EncodeInitParams(
+		isc.NewAddressAgentID(committeeAddress),
+		1337,
+		-1,
+	)
+
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	test, err := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0)
 
 	ao0x := isctest.RandomStateAnchor()
 	ao0 := &ao0x

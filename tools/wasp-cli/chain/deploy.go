@@ -135,6 +135,7 @@ func initDeployCmd() *cobra.Command {
 
 			stateController := cryptolib.NewRandomAddress()
 			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(govController), evmChainID, blockKeepAmount)
+
 			stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(0), nil, gas.DefaultFeePolicy(), initParams, "")
 
 			par := apilib.CreateChainParams{
