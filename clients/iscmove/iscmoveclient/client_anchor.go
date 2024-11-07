@@ -16,6 +16,7 @@ import (
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
+	chainOwnerAddress *cryptolib.Address,
 	packageID iotago.PackageID,
 	stateMetadata []byte,
 	initCoinRef *iotago.ObjectRef,
@@ -36,7 +37,7 @@ func (c *Client) StartNewChain(
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, cryptolibSigner.Address())
+	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, chainOwnerAddress)
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {

@@ -28,6 +28,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
+		signer.Address(),
 		iscPackage,
 		[]byte{1, 2, 3, 4},
 		nil,
@@ -87,6 +88,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
+		signer.Address(),
 		iscPackage,
 		[]byte{1, 2, 3, 4},
 		nil,
@@ -180,6 +182,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	anchor1, err := client.StartNewChain(
 		context.Background(),
 		signer,
+		signer.Address(),
 		iscPackage1,
 		[]byte{1, 2, 3, 4},
 		nil,
@@ -192,6 +195,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	anchor2, err := client.StartNewChain(
 		context.Background(),
 		signer,
+		signer.Address(),
 		iscPackage1,
 		[]byte{1, 2, 3, 4},
 		nil,

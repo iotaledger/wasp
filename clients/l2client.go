@@ -15,6 +15,7 @@ type L2Client interface {
 	StartNewChain(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
+		chainOwnerAddress *cryptolib.Address,
 		packageID iotago.PackageID,
 		stateMetadata []byte,
 		initCoinRef *iotago.ObjectRef,

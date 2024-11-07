@@ -50,6 +50,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 	anchor, err := par.Layer1Client.L2().StartNewChain(
 		ctx,
 		par.OriginatorKeyPair,
+		stateControllerAddr,
 		par.PackageID,
 		par.StateMetadata.Bytes(),
 		nil,

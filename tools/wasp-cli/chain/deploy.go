@@ -131,21 +131,19 @@ func initDeployCmd() *cobra.Command {
 
 			log.Printf("PackageID: %v", packageID.String())
 
-			chainOwnerAddress := controllerAddrDefaultFallback(govControllerStr)
 			stateController := doDKG(ctx, node, peers, quorum)
 			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(stateController), evmChainID, blockKeepAmount)
 			stateMetadata := transaction.NewStateMetadata(allmigrations.DefaultScheme.LatestSchemaVersion(), &state.L1Commitment{}, gas.DefaultFeePolicy(), initParams, "")
 
 			par := apilib.CreateChainParams{
-				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.NodeAPIURLs([]string{node}),
-				N:                    uint16(len(node)),
-				T:                    uint16(quorum),
-				OriginatorKeyPair:    wallet.Load(),
-				Textout:              os.Stdout,
-				GovernanceController: chainOwnerAddress,
-				PackageID:            packageID,
-				StateMetadata:        *stateMetadata,
+				Layer1Client:      l1Client,
+				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
+				N:                 uint16(len(node)),
+				T:                 uint16(quorum),
+				OriginatorKeyPair: wallet.Load(),
+				Textout:           os.Stdout,
+				PackageID:         packageID,
+				StateMetadata:     *stateMetadata,
 			}
 
 			chainID, err := apilib.DeployChain(ctx, par, stateController)
