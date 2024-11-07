@@ -12,6 +12,8 @@ import (
 
 	"go.uber.org/atomic"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -28,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/samber/lo"
 )
 
 const (
@@ -48,7 +49,7 @@ func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) Cons
 }
 
 type Mempool interface {
-	ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.StateAnchor, consensusID ConsensusID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID ConsensusID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
@@ -142,7 +143,7 @@ func New(
 	dkShare tcrypto.DKShare,
 	logIndex *cmt_log.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
-	procCache *processors.Cache,
+	procCache *processors.Config,
 	mempool Mempool,
 	stateMgr StateMgr,
 	net peering.NetworkProvider,

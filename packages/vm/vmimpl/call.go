@@ -1,14 +1,10 @@
 package vmimpl
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
 )
@@ -30,8 +26,7 @@ func (reqctx *requestContext) callProgram(msg isc.Message, allowance *isc.Assets
 	// don't charge gas for finding the contract (otherwise EVM requests may not produce EVM receipt)
 	var ep isc.VMProcessorEntryPoint
 	reqctx.withoutGasBurn(func() {
-		contractRecord := reqctx.GetContractRecord(msg.Target.Contract)
-		ep = execution.GetEntryPointByProgHash(reqctx, msg.Target.Contract, msg.Target.EntryPoint, contractRecord.ProgramHash)
+		ep = execution.GetEntryPoint(reqctx, msg.Target.Contract, msg.Target.EntryPoint)
 	})
 
 	reqctx.pushCallContext(msg.Target.Contract, msg.Params, allowance, caller)
@@ -40,10 +35,6 @@ func (reqctx *requestContext) callProgram(msg isc.Message, allowance *isc.Assets
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
 		return ep.Call(sandbox.NewSandboxView(reqctx))
-	}
-	// prevent calling 'init' not from root contract
-	if msg.Target.EntryPoint == isc.EntryPointInit && !caller.Equals(isc.NewContractAgentID(reqctx.vm.ChainID(), root.Contract.Hname())) {
-		panic(fmt.Errorf("%v: target=(%s, %s)", vm.ErrRepeatingInitCall, msg.Target.Contract, msg.Target.EntryPoint))
 	}
 	return ep.Call(NewSandbox(reqctx))
 }

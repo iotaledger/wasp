@@ -9,15 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -57,46 +51,6 @@ func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
 		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
 	}*/
 	return govControllerAddr
-}
-
-func deployISCMoveContract(ctx context.Context, client clients.L1Client, signer cryptolib.Signer) (iotago.PackageID, error) {
-	iscBytecode := contracts.ISC()
-
-	txnBytes, err := client.Publish(ctx, iotaclient.PublishRequest{
-		Sender:          signer.Address().AsIotaAddress(),
-		CompiledModules: iscBytecode.Modules,
-		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
-	})
-
-	if err != nil {
-		return iotago.PackageID{}, err
-	}
-
-	txnResponse, err := client.SignAndExecuteTransaction(
-		ctx,
-		cryptolib.SignerToIotaSigner(signer),
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	if err != nil {
-		return iotago.PackageID{}, err
-	}
-
-	packageId, err := txnResponse.GetPublishedPackageID()
-
-	if err != nil {
-		return iotago.PackageID{}, err
-	}
-
-	if packageId == nil {
-		return iotago.PackageID{}, errors.Errorf("no published package ID in response")
-	}
-
-	return *packageId, err
 }
 
 func initDeployCmd() *cobra.Command {

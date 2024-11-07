@@ -150,7 +150,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
 	chainStates := map[gpa.NodeID]state.Store{}
-	procConfig := coreprocessors.NewConfigWithCoreContracts()
+	procConfig := coreprocessors.NewConfigWithTestContracts()
 	procCache := processors.MustNew(procConfig)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -321,7 +321,7 @@ func testChained(t *testing.T, n, f, b int) {
 	//
 	// Construct the chain on L1 and prepare requests.
 	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
-	_, originAO, chainID := tcl.MakeTxChainOrigin(committeeAddress)
+	anchor := tcl.MakeTxChainOrigin(committeeAddress)
 	allRequests := map[int][]isc.Request{}
 	if b > 0 {
 		_, err = utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
@@ -346,7 +346,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	//
 	// Construct the nodes for each instance.
-	procConfig := coreprocessors.NewConfigWithCoreContracts()
+	procConfig := coreprocessors.NewConfigWithTestContracts()
 	procCache := processors.MustNew(procConfig)
 	doneCHs := map[gpa.NodeID]chan *testInstInput{}
 	for _, nid := range nodeIDs {
@@ -355,7 +355,7 @@ func testChained(t *testing.T, n, f, b int) {
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
 		testNodeStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAnchor(testNodeStates[nid], originAO)
+		origin.InitChainByAnchor(testNodeStates[nid], anchor)
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {
@@ -380,13 +380,13 @@ func testChained(t *testing.T, n, f, b int) {
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
 		t.Log("Going to provide inputs.")
-		originL1Commitment, err := transaction.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
+		originL1Commitment, err := transaction.L1CommitmentFromAliasOutput(anchor.GetAliasOutput())
 		require.NoError(t, err)
 		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
 		require.NoError(t, err)
 		testChainInsts[0].input(&testInstInput{
 			nodeID:          nid,
-			baseAliasOutput: originAO,
+			baseAliasOutput: anchor,
 			baseState:       originState,
 		})
 	}

@@ -4,6 +4,7 @@
 package isc
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -139,7 +140,6 @@ type Sandbox interface {
 
 // Privileged is a sub-interface for core contracts. Should not be called by VM plugins
 type Privileged interface {
-	TryLoadContract(programHash hashing.HashValue) error
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
 	OnWriteReceipt(CoreCallbackFunc)
@@ -161,6 +161,18 @@ func NewCallArguments(args ...[]byte) CallArguments {
 		copy(callArguments[i], v)
 	}
 	return callArguments
+}
+
+func (c CallArguments) Equals(other CallArguments) bool {
+	if len(c) != len(other) {
+		return false
+	}
+	for i, v := range c {
+		if !bytes.Equal(v, other[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func (c CallArguments) Length() int {
@@ -302,6 +314,10 @@ func NewMessage(contract Hname, ep Hname, params ...CallArguments) Message {
 		msg.Params = params[0]
 	}
 	return msg
+}
+
+func (m Message) Equals(other Message) bool {
+	return m.Target.Equals(other.Target) && m.Params.Equals(other.Params)
 }
 
 func (m Message) String() string {

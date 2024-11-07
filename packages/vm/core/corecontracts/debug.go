@@ -25,7 +25,6 @@ func PrintWellKnownHnames() {
 		rec := All[h]
 		fmt.Printf("    %10d, %10s: '%s'\n", rec.Hname(), rec.Hname(), rec.Name)
 	}
-	fmt.Printf("    %10d, %10s: '%s'\n", isc.EntryPointInit, isc.EntryPointInit, isc.FuncInit)
 	fmt.Printf("    %10d, %10s: '%s'\n", isc.Hn("testcore"), isc.Hn("testcore"), "testcore")
 	fmt.Printf("--------------- well known hnames ------------------\n")
 }

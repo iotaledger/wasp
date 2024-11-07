@@ -17,7 +17,7 @@ import (
 
 type WaspContext interface {
 	GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord)
-	Processors() *processors.Cache
+	Processors() *processors.Config
 }
 
 type GasContext interface {

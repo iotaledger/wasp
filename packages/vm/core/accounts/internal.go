@@ -101,7 +101,7 @@ func (s *StateReader) AllAccountsAsDict() dict.Dict {
 
 // touchAccount ensures the account is in the list of all accounts
 func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
-	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Encode[bool](true))
+	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Encode(true))
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance

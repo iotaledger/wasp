@@ -456,7 +456,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	}
 }
 
-func (reqctx *requestContext) Processors() *processors.Cache {
+func (reqctx *requestContext) Processors() *processors.Config {
 	return reqctx.vm.task.Processors
 }
 

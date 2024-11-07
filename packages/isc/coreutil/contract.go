@@ -8,7 +8,6 @@ package coreutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -20,19 +19,13 @@ type Handler[S isc.SandboxBase] func(ctx S) isc.CallArguments
 
 // ContractInfo holds basic information about a native smart contract
 type ContractInfo struct {
-	Name        string
-	ProgramHash hashing.HashValue
+	Name string
 }
 
 func NewContract(name string) *ContractInfo {
 	return &ContractInfo{
-		Name:        name,
-		ProgramHash: CoreContractProgramHash(name),
+		Name: name,
 	}
-}
-
-func CoreContractProgramHash(name string) hashing.HashValue {
-	return hashing.HashStrings(name)
 }
 
 func defaultInitFunc(ctx isc.Sandbox) isc.CallArguments {
@@ -42,14 +35,10 @@ func defaultInitFunc(ctx isc.Sandbox) isc.CallArguments {
 
 // Processor creates a ContractProcessor with the provided handlers
 func (i *ContractInfo) Processor(init Handler[isc.Sandbox], eps ...isc.ProcessorEntryPoint) *ContractProcessor {
-	if init == nil {
-		init = defaultInitFunc
+	if init != nil {
+		panic("init function no longer supported")
 	}
-	funcInit := i.Func(isc.FuncInit)
-	handlers := map[isc.Hname]isc.ProcessorEntryPoint{
-		// constructor:
-		isc.EntryPointInit: funcInit.WithHandler(init),
-	}
+	handlers := map[isc.Hname]isc.ProcessorEntryPoint{}
 	for _, ep := range eps {
 		hname := ep.Hname()
 		if _, ok := handlers[hname]; ok {

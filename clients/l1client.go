@@ -13,8 +13,8 @@ import (
 )
 
 type L1Config struct {
-	FaucetURL string
 	APIURL    string
+	FaucetURL string
 	GraphURL  string
 }
 
@@ -136,6 +136,10 @@ type L1Client interface {
 		gasBudget uint64,
 		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error)
+	UpdateObjectRef(
+		ctx context.Context,
+		ref *iotago.ObjectRef,
+	) (*iotago.ObjectRef, error)
 	MintToken(
 		ctx context.Context,
 		signer iotasigner.Signer,

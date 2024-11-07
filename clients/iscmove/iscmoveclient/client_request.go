@@ -28,7 +28,6 @@ func (c *Client) CreateAndSendRequest(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
@@ -66,19 +65,10 @@ func (c *Client) CreateAndSendRequest(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
 		signer,
@@ -106,7 +96,6 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 
@@ -123,6 +112,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	placedCoins := []lo.Tuple2[*iotajsonrpc.Coin, uint64]{}
 	// assume we can find it in the first page
 	for cointype, bal := range assets.Coins {
+		found := false
 		for _, coin := range getAllCoinsRes.Data {
 			assetsResource, err := iotago.NewResourceType(coin.CoinType)
 			if err != nil {
@@ -134,8 +124,12 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			}
 			if assetsResource.String() == getAllCoinsResource.String() && coin.Balance.Uint64() > bal.Uint64() {
 				placedCoins = append(placedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: coin, B: bal.Uint64()})
+				found = true
 				break
 			}
+		}
+		if !found {
+			return nil, fmt.Errorf("cannot find coin for %s", cointype)
 		}
 	}
 
@@ -171,6 +165,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		for _, coin := range coinPage.Data {
 			if !pt.IsInInputObjects(coin.CoinObjectID) {
 				gasPayments = []*iotago.ObjectRef{coin.Ref()}
+				break
 			}
 		}
 	}
@@ -183,19 +178,10 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
 		signer,

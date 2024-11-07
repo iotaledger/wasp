@@ -197,7 +197,7 @@ func PTBReceiveRequestAndTransition(
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
 	requestRefs []iotago.ObjectRef,
-	reqAssetsBagsMap map[iotago.ObjectRef]*iscmove.AssetsBagWithBalances,
+	requestAssets []*iscmove.AssetsBagWithBalances,
 	stateMetadata []byte,
 ) *iotago.ProgrammableTransactionBuilder {
 	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
@@ -219,7 +219,7 @@ func PTBReceiveRequestAndTransition(
 	)
 	argAnchorAssets := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
 	argAnchorBorrow := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
-	for _, reqObject := range requestRefs {
+	for i, reqObject := range requestRefs {
 		reqObject := reqObject
 		argReqObject := ptb.MustObj(iotago.ObjectArg{Receiving: &reqObject})
 		argReceiveRequest := ptb.Command(
@@ -235,7 +235,7 @@ func PTBReceiveRequestAndTransition(
 		)
 		argReceiveRequests = append(argReceiveRequests, argReceiveRequest)
 
-		assetsBag := reqAssetsBagsMap[reqObject]
+		assetsBag := requestAssets[i]
 		argAssetsBag := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
 		for _, bal := range assetsBag.Balances {
 			typeTag, err := iotago.TypeTagFromString(bal.CoinType)

@@ -53,7 +53,7 @@ func NewAddressFromBytes(addr []byte) (*Address, error) {
 func NewAddressFromHexString(addr string) (*Address, error) {
 	addrBytes, err := DecodeHex(addr)
 	if err != nil {
-		return nil, fmt.Errorf("Error decoding hex: %w", err)
+		return nil, fmt.Errorf("error decoding hex: %w", err)
 	}
 	return NewAddressFromBytes(addrBytes)
 }

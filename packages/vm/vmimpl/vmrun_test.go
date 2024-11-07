@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // TODO
@@ -65,11 +64,12 @@ var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
 func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnchor {
 	baseTokenCoinInfo := &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 	// create the anchor for a new chain
-	initParams := origin.EncodeInitParams(
+	initParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chainCreator.Address()),
 		evm.DefaultChainID,
 		governance.DefaultBlockKeepAmount,
-	)
+		false,
+	).Encode()
 	const originDeposit = 1 * isc.Million
 	_, stateMetadata := origin.InitChain(
 		schemaVersion,
@@ -196,7 +196,7 @@ func runRequestsAndTransitionAnchor(
 	*isc.StateAnchor,
 ) {
 	task := &vm.VMTask{
-		Processors:           processors.MustNew(coreprocessors.NewConfigWithCoreContracts()),
+		Processors:           coreprocessors.NewConfigWithTestContracts(),
 		Anchor:               anchor,
 		Store:                store,
 		Requests:             reqs,

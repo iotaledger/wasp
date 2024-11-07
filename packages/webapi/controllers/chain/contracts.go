@@ -28,9 +28,8 @@ func (c *Controller) getContracts(e echo.Context) error {
 		hName, contract := contract.Unpack()
 
 		contractInfo := models.ContractInfoResponse{
-			HName:       hName.String(),
-			Name:        contract.Name,
-			ProgramHash: contract.ProgramHash.String(),
+			HName: hName.String(),
+			Name:  contract.Name,
 		}
 
 		contractList = append(contractList, contractInfo)

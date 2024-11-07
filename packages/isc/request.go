@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -75,9 +75,8 @@ type OffLedgerRequest interface {
 
 type OnLedgerRequest interface {
 	Request
-	Clone() OnLedgerRequest
 	RequestRef() iotago.ObjectRef
-	AssetsBag() *iscmove.AssetsBag
+	AssetsBag() *iscmove.AssetsBagWithBalances
 }
 
 func init() {

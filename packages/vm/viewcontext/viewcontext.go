@@ -28,7 +28,7 @@ import (
 
 // ViewContext implements the needed infrastructure to run external view calls, its more lightweight than vmcontext
 type ViewContext struct {
-	processors            *processors.Cache
+	processors            *processors.Config
 	stateReader           state.State
 	chainID               isc.ChainID
 	log                   *logger.Logger
@@ -46,7 +46,7 @@ var _ execution.WaspCallContext = &ViewContext{}
 func New(
 	anchor *isc.StateAnchor,
 	stateReader state.State,
-	processors *processors.Cache,
+	processors *processors.Config,
 	log *logger.Logger,
 	gasBurnLoggingEnabled bool,
 ) (*ViewContext, error) {
@@ -107,7 +107,7 @@ func (ctx *ViewContext) Caller() isc.AgentID {
 	}
 }
 
-func (ctx *ViewContext) Processors() *processors.Cache {
+func (ctx *ViewContext) Processors() *processors.Config {
 	return ctx.processors
 }
 
@@ -211,7 +211,7 @@ func (ctx *ViewContext) callView(msg isc.Message) (ret isc.CallArguments) {
 	if contractRecord == nil {
 		panic(vm.ErrContractNotFound.Create(uint32(msg.Target.Contract)))
 	}
-	ep := execution.GetEntryPointByProgHash(ctx, msg.Target.Contract, msg.Target.EntryPoint, contractRecord.ProgramHash)
+	ep := execution.GetEntryPoint(ctx, msg.Target.Contract, msg.Target.EntryPoint)
 
 	if !ep.IsView() {
 		panic("target entrypoint is not a view")

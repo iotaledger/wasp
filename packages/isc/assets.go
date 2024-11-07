@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -67,11 +68,7 @@ func CoinBalancesFromBytes(b []byte) (CoinBalances, error) {
 }
 
 func (c CoinBalances) Add(coinType coin.Type, amount coin.Value) CoinBalances {
-	if amount == 0 {
-		return c
-	}
-	c[coinType] = c.Get(coinType) + amount
-	return c
+	return c.Set(coinType, c.Get(coinType)+amount)
 }
 
 func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
@@ -89,15 +86,10 @@ func (c CoinBalances) AddBaseTokens(amount coin.Value) CoinBalances {
 
 func (c CoinBalances) Sub(coinType coin.Type, amount coin.Value) CoinBalances {
 	v := c.Get(coinType)
-	switch {
-	case v < amount:
+	if v < amount {
 		panic("negative coin balance")
-	case v == amount:
-		delete(c, coinType)
-	default:
-		c[coinType] = v - amount
 	}
-	return c
+	return c.Set(coinType, v-amount)
 }
 
 func (c CoinBalances) ToAssets() *Assets {
@@ -381,4 +373,29 @@ func (a *Assets) SetBaseTokens(amount coin.Value) *Assets {
 
 func (a *Assets) BaseTokens() coin.Value {
 	return a.Coins.Get(coin.BaseTokenType)
+}
+
+func (a *Assets) AsISCMove() *iscmove.Assets {
+	r := iscmove.NewEmptyAssets()
+	for coinType, amount := range a.Coins {
+		r.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(amount))
+	}
+	if len(a.Objects) > 0 {
+		panic("TODO")
+	}
+	return r
+}
+
+func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBagWithBalances {
+	ret := &iscmove.AssetsBagWithBalances{
+		AssetsBag: *b,
+		Balances:  make(iscmove.AssetsBagBalances),
+	}
+	for k, v := range a.Coins {
+		ret.Balances[iotajsonrpc.CoinType(k.String())] = &iotajsonrpc.Balance{
+			CoinType:     iotajsonrpc.CoinType(k.String()),
+			TotalBalance: iotajsonrpc.NewBigInt(v.Uint64()),
+		}
+	}
+	return ret
 }

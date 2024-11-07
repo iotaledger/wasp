@@ -16,9 +16,12 @@ import (
 
 // L2Accounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) L2Accounts() []isc.AgentID {
-	d := accounts.NewStateReader(ch.migrationScheme.LatestSchemaVersion(), lo.Must(ch.Store().LatestState())).AllAccountsAsDict()
+	d := accounts.NewStateReaderFromChainState(
+		ch.migrationScheme.LatestSchemaVersion(),
+		lo.Must(ch.Store().LatestState()),
+	).AllAccountsAsDict()
 	keys := d.KeysSorted()
-	ret := make([]isc.AgentID, 0, len(keys)-1)
+	ret := make([]isc.AgentID, 0, len(keys))
 	for _, key := range keys {
 		aid, err := accounts.AgentIDFromKey(key, ch.ChainID)
 		require.NoError(ch.Env.T, err)

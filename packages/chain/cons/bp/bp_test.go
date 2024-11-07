@@ -1,14 +1,13 @@
 package bp_test
 
 import (
-	"errors"
 	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -17,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -28,26 +26,9 @@ func TestOffLedgerOrdering(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	//
 	// Produce an alias output.
-	cmtKP := cryptolib.NewKeyPair()
-	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
-	originator := cryptolib.NewKeyPair()
-	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
-	require.NoError(t, err)
-	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
+	chainID := isc.ChainIDFromObjectID(*iotatest.RandomObjectRef().ObjectID)
+	ao0 := isctest.RandomStateAnchor()
 
-	panic("refactor me: origin.NewChainOriginTransaction")
-	var originTX *iotago.Transaction
-	var chainID isc.ChainID
-	err = errors.New("refactor me: testConsBasic")
-	_ = cmtKP
-	_ = outputs
-	_ = outIDs
-
-	require.NoError(t, err)
-	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
-	require.NoError(t, err)
-	ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
-	//
 	// Create some requests.
 	senderKP := cryptolib.NewKeyPair()
 	contract := governance.Contract.Hname()
@@ -62,7 +43,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	// Construct the batch proposal, and aggregate it.
 	bp0 := bp.NewBatchProposal(
 		0,
-		ao0,
+		&ao0,
 		util.NewFixedSizeBitVector(1).SetBits([]int{0}),
 		time.Now(),
 		isctest.NewRandomAgentID(),

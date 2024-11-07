@@ -21,7 +21,6 @@ var (
 	ErrContractNotFound          = coreerrors.Register("contract with hname %08x not found")
 	ErrTargetEntryPointNotFound  = coreerrors.Register("entry point not found").Create()
 	ErrEntryPointCantBeAView     = coreerrors.Register("'init' entry point can't be a view").Create()
-	ErrRepeatingInitCall         = coreerrors.Register("repeating init call").Create()
 	ErrTooManyEvents             = coreerrors.Register("too many events issued for contract").Create()
 	ErrPrivilegedCallFailed      = coreerrors.Register("privileged call failed").Create()
 	ErrExceededPostedOutputLimit = coreerrors.Register("exceeded maximum number of %d posted outputs in one request").Create(42)

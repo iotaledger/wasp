@@ -22,7 +22,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iscmove.AnchorWithRef, error)
 	CreateAndSendRequest(
 		ctx context.Context,
@@ -36,7 +35,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	ReceiveRequestAndTransition(
 		ctx context.Context,
@@ -48,7 +46,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsBagNew(
 		ctx context.Context,
@@ -57,7 +54,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsBagPlaceCoin(
 		ctx context.Context,
@@ -69,7 +65,18 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	AssetsBagPlaceCoinAmount(
+		ctx context.Context,
+		cryptolibSigner cryptolib.Signer,
+		packageID iotago.PackageID,
+		assetsBagRef *iotago.ObjectRef,
+		coin *iotago.ObjectRef,
+		coinType iotajsonrpc.CoinType,
+		amount uint64,
+		gasPayments []*iotago.ObjectRef, // optional
+		gasPrice uint64,
+		gasBudget uint64,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	AssetsDestroyEmpty(
 		ctx context.Context,
@@ -79,7 +86,6 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	GetAssetsBagWithBalances(
 		ctx context.Context,
@@ -97,8 +103,15 @@ type L2Client interface {
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
-		devMode bool,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	GetAnchorFromObjectID(
+		ctx context.Context,
+		anchorObjectID *iotago.ObjectID,
+	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+	GetRequestFromObjectID(
+		ctx context.Context,
+		reqID *iotago.ObjectID,
+	) (*iscmove.RefWithObject[iscmove.Request], error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}

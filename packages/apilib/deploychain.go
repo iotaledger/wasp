@@ -57,7 +57,6 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		nil, // Add gasPayments here (or not)
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	if err != nil {
 		return isc.ChainID{}, err

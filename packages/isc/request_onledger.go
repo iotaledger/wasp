@@ -44,10 +44,10 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 					Contract:   Hname(request.Object.Message.Contract),
 					EntryPoint: Hname(request.Object.Message.Function),
 				},
-				Params: nil,
+				Params: request.Object.Message.Args,
 			},
 			Allowance: NewEmptyAssets(),
-			GasBudget: 0,
+			GasBudget: request.Object.GasBudget,
 		},
 	}
 	return r, nil
@@ -65,7 +65,8 @@ func (req *OnLedgerRequestData) Assets() *Assets {
 }
 
 func (req *OnLedgerRequestData) Bytes() []byte {
-	return bcs.MustMarshal(req)
+	var r Request = req
+	return bcs.MustMarshal(&r)
 }
 
 func (req *OnLedgerRequestData) Message() Message {
@@ -73,22 +74,6 @@ func (req *OnLedgerRequestData) Message() Message {
 		return Message{}
 	}
 	return req.requestMetadata.Message
-}
-
-func (req *OnLedgerRequestData) Clone() OnLedgerRequest {
-	outputRef := iotago.ObjectRefFromBytes(req.requestRef.Bytes())
-
-	ret := &OnLedgerRequestData{
-		requestRef:    *outputRef,
-		senderAddress: req.senderAddress.Clone(),
-		targetAddress: req.targetAddress.Clone(),
-	}
-
-	if req.requestMetadata != nil {
-		ret.requestMetadata = req.requestMetadata.Clone()
-	}
-
-	return ret
 }
 
 func (req *OnLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
@@ -146,8 +131,8 @@ func (req *OnLedgerRequestData) RequestRef() iotago.ObjectRef {
 	return req.requestRef
 }
 
-func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBag {
-	return req.assetsBag
+func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBagWithBalances {
+	return req.assets.AsAssetsBagWithBalances(req.assetsBag)
 }
 
 func (req *OnLedgerRequestData) TargetAddress() *cryptolib.Address {

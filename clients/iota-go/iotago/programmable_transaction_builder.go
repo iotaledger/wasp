@@ -3,6 +3,7 @@ package iotago
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/samber/lo"
 
@@ -25,6 +26,13 @@ type ProgrammableTransactionBuilder struct {
 func NewProgrammableTransactionBuilder() *ProgrammableTransactionBuilder {
 	return &ProgrammableTransactionBuilder{
 		Inputs: orderedmap.New[BuilderArg, CallArg](),
+	}
+}
+
+func (p *ProgrammableTransactionBuilder) Clone() *ProgrammableTransactionBuilder {
+	return &ProgrammableTransactionBuilder{
+		Inputs:   p.Inputs.Clone(),
+		Commands: slices.Clone(p.Commands),
 	}
 }
 

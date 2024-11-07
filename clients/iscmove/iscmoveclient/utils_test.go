@@ -1,8 +1,6 @@
 package iscmoveclient_test
 
 import (
-	"context"
-	"flag"
 	"fmt"
 	"testing"
 
@@ -17,10 +15,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	flag.Parse()
-	stv := l1starter.Start(context.Background(), l1starter.DefaultConfig)
-	defer stv.Stop()
-	m.Run()
+	l1starter.TestMain(m)
 }
 
 func buildDeployMintTestcoin(

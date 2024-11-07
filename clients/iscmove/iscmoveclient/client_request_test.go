@@ -25,7 +25,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -52,7 +51,6 @@ func TestCreateAndSendRequest(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -89,7 +87,6 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 
@@ -110,7 +107,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
@@ -137,7 +133,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(t, err)
 

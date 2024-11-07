@@ -61,7 +61,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
@@ -76,6 +75,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -146,7 +146,7 @@ type consImpl struct {
 	edSuite          suites.Suite // For signatures.
 	blsSuite         suites.Suite // For randomness only.
 	dkShare          tcrypto.DKShare
-	processorCache   *processors.Cache
+	processorCache   *processors.Config
 	nodeIDs          []gpa.NodeID
 	me               gpa.NodeID
 	f                int
@@ -183,7 +183,7 @@ func New(
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,
 	dkShare tcrypto.DKShare,
-	processorCache *processors.Cache,
+	processorCache *processors.Config,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	validatorAgentID isc.AgentID,
@@ -598,6 +598,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 		vmResult.StateDraft = nil
 	}
 
+	panic("FIXME")
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
 	signingMsg, err := bcs.Marshal(&unsignedTX)

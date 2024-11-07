@@ -21,7 +21,6 @@ func (c *Client) AssetsBagNew(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
@@ -46,17 +45,9 @@ func (c *Client) AssetsBagNew(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
@@ -83,7 +74,6 @@ func (c *Client) AssetsBagPlaceCoin(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
@@ -114,17 +104,9 @@ func (c *Client) AssetsBagPlaceCoin(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
@@ -152,7 +134,6 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
@@ -177,17 +158,9 @@ func (c *Client) AssetsBagPlaceCoinAmount(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
@@ -212,7 +185,6 @@ func (c *Client) AssetsDestroyEmpty(
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
-	devMode bool,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
@@ -237,17 +209,9 @@ func (c *Client) AssetsDestroyEmpty(
 		gasPrice,
 	)
 
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(&tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(&tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,

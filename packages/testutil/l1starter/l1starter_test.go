@@ -18,10 +18,10 @@ func TestStart(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	stv := l1starter.Start(ctx, l1starter.DefaultConfig)
-	defer stv.Stop()
+	iotaNode := l1starter.Start(ctx, l1starter.DefaultConfig)
+	defer iotaNode.Stop()
 
-	client := stv.Client()
+	client := iotaNode.Client()
 	state, err := client.GetLatestIotaSystemState(ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, 0, state.PendingActiveValidatorsSize.Uint64())

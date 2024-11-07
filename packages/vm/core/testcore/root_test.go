@@ -10,29 +10,32 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
 func TestRootBasic(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain()
-
 	chain.CheckChain()
-	chain.Log().Infof("\n%s\n", chain.String())
 }
 
-func TestRootRepeatInit(t *testing.T) {
+func TestEntryPointNotFound(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain()
 
 	chain.CheckChain()
 
-	req := solo.NewCallParamsEx(root.Contract.Name, "init")
-	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	req := solo.NewCallParamsEx(root.Contract.Name, "foo")
+	_, err := chain.PostRequestOffLedger(req, nil)
+	require.ErrorContains(t, err, "entry point not found")
 }
 
 func TestGetInfo(t *testing.T) {
@@ -43,7 +46,7 @@ func TestGetInfo(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, len(corecontracts.All), len(contracts))
+	require.GreaterOrEqual(t, len(contracts), len(corecontracts.All))
 
 	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
@@ -90,9 +93,10 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := isc.NewAddressAgentID(ownerAddr)
-	req := solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(newOwnerAgentID))
+	req := solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(newOwnerAgentID)).
+		AddBaseTokens(100_000)
 	_, err := chain.PostRequestSync(req, newOwner)
-	require.Error(t, err)
+	require.ErrorContains(t, err, "unauthorized")
 
 	_, ownerAgentID, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)

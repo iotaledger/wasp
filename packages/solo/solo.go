@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -105,7 +104,7 @@ type Chain struct {
 	// Log is the named logger of the chain
 	log *logger.Logger
 	// global processor cache
-	proc *processors.Cache
+	proc *processors.Config
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
@@ -121,7 +120,6 @@ type InitOptions struct {
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
-	Seed              cryptolib.Seed
 	Log               *logger.Logger
 }
 
@@ -135,7 +133,6 @@ func DefaultInitOptions() *InitOptions {
 	return &InitOptions{
 		Debug:             false,
 		PrintStackTrace:   false,
-		Seed:              cryptolib.Seed{},
 		GasBurnLogEnabled: true, // is ON by default
 	}
 }
@@ -172,9 +169,9 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		logger:               opt.Log,
 		l1Config:             *opt.L1Config,
 		chains:               make(map[isc.ChainID]*Chain),
-		processorConfig:      coreprocessors.NewConfigWithCoreContracts(),
+		processorConfig:      coreprocessors.NewConfigWithTestContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
-		seed:                 opt.Seed,
+		seed:                 cryptolib.SeedFromBytes([]byte(t.Name())),
 		publisher:            publisher.New(opt.Log.Named("publisher")),
 		ctx:                  ctx,
 	}
@@ -261,18 +258,6 @@ func (env *Solo) GetChainByName(name string) *Chain {
 	panic("chain not found")
 }
 
-// WithNativeContract registers a native contract so that it may be deployed
-func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
-	env.processorConfig.RegisterNativeContract(c)
-	return env
-}
-
-// WithVMProcessor registers a VM processor for binary contracts
-func (env *Solo) WithVMProcessor(vmType string, constructor processors.VMConstructor) *Solo {
-	_ = env.processorConfig.RegisterVMType(vmType, constructor)
-	return env
-}
-
 const (
 	DefaultCommonAccountBaseTokens   = 5 * isc.Million
 	DefaultChainOriginatorBaseTokens = 5 * isc.Million
@@ -312,10 +297,11 @@ func (env *Solo) deployChain(
 		env.GetFundsFromFaucet(originatorAddr)
 	}
 
-	initParams := origin.EncodeInitParams(
+	initParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chainOriginator.Address()),
 		evmChainID,
 		blockKeepAmount,
+		true,
 	)
 
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
@@ -329,7 +315,7 @@ func (env *Solo) deployChain(
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
-		initParams,
+		initParams.Encode(),
 		initBaseTokens,
 		baseTokenCoinInfo,
 	)
@@ -351,7 +337,6 @@ func (env *Solo) deployChain(
 		gasPayment,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
-		false,
 	)
 	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
@@ -370,6 +355,7 @@ func (env *Solo) deployChain(
 		OriginatorPrivateKey: chainOriginator,
 		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
+		migrationScheme:      allmigrations.DefaultScheme,
 	}, nil
 }
 
@@ -411,7 +397,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		OriginatorAgentID: isc.NewAddressAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
 		Env:               env,
 		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
-		proc:              processors.MustNew(env.processorConfig),
+		proc:              env.processorConfig,
 		log:               env.logger.Named(chData.Name),
 		mempool:           newMempool(env.GlobalTime, chData.ChainID),
 		migrationScheme:   chData.migrationScheme,
@@ -526,7 +512,7 @@ func (ch *Chain) Log() *logger.Logger {
 	return ch.log
 }
 
-func (ch *Chain) Processors() *processors.Cache {
+func (ch *Chain) Processors() *processors.Config {
 	return ch.proc
 }
 
