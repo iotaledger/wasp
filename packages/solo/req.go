@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -254,7 +255,7 @@ func (env *Solo) makeBaseTokenCoinsWithExactly(
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, error) {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
@@ -276,35 +277,29 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		iotaclient.DefaultGasBudget,
 	)
 	if err != nil {
-		return isc.RequestID{}, err
+		return isc.RequestID{}, nil, err
 	}
 	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
-		return isc.RequestID{}, err
+		return isc.RequestID{}, nil, err
 	}
 
-	return isc.RequestID(*reqRef.ObjectID), nil
+	return isc.RequestID(*reqRef.ObjectID), res, nil
 }
 
-// PostRequestSync posts a request synchronously sent by the test program to the smart contract on the same or another chain:
-//   - creates a request transaction with the request block on it. The sigScheme is used to
-//     sign the inputs of the transaction or OriginatorKeyPair is used if parameter is nil
-//   - adds request transaction to UTXODB
-//   - runs the request in the VM. It results in new updated virtual state and a new transaction
-//     which anchors the state.
-//   - adds the resulting transaction to UTXODB
-//   - posts requests, contained in the resulting transaction to backlog queues of respective chains
-//   - returns the result of the call to the smart contract's entry point
+// PostRequestSync posts a request synchronously sent by the test program to
+// the smart contract on the same or another chain.
 //
-// Note that in real network of Wasp nodes (the committee) posting the transaction is completely
+// Note that in a real network of Wasp nodes, posting a transaction is completely
 // asynchronous, i.e. result of the call is not available to the originator of the post.
-//
-// Unlike the real Wasp environment, the 'solo' environment makes PostRequestSync a synchronous call.
-// It makes it possible step-by-step debug of the smart contract logic.
-// The call should be used only from the main thread (goroutine)
+// Instead, the Solo environment makes PostRequestSync a synchronous call,
+// making it possible to step-by-step debug the smart contract logic.
 func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, error) {
-	_, ret, err := ch.PostRequestSyncTx(req, keyPair)
-	return ret, err
+	_, _, res, err := ch.PostRequestSyncTx(req, keyPair)
+	if err != nil {
+		return nil, err
+	}
+	return res.Return, nil
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, error) {
@@ -312,12 +307,17 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	return ch.RunOffLedgerRequest(r)
 }
 
-func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, isc.CallArguments, error) {
-	reqID, receipt, res, err := ch.PostRequestSyncExt(req, keyPair)
+func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (
+	isc.RequestID,
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	*vm.RequestResult,
+	error,
+) {
+	reqID, l1Res, vmRes, err := ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
-		return reqID, res, err
+		return reqID, l1Res, vmRes, err
 	}
-	return reqID, res, ch.ResolveVMError(receipt.Error).AsGoError()
+	return reqID, l1Res, vmRes, ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
 }
 
 // LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
@@ -330,22 +330,33 @@ func (ch *Chain) LastReceipt() *isc.Receipt {
 	return blocklogReceipt.ToISCReceipt(ch.ResolveVMError(blocklogReceipt.Error))
 }
 
-func (ch *Chain) PostRequestSyncExt(callParams *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, *blocklog.RequestReceipt, isc.CallArguments, error) {
+func (ch *Chain) PostRequestSyncExt(
+	callParams *CallParams,
+	keyPair *cryptolib.KeyPair,
+) (
+	isc.RequestID,
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	*vm.RequestResult,
+	error,
+) {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
 	defer ch.logRequestLastBlock()
 
-	reqID, err := ch.RequestFromParamsToLedger(callParams, keyPair)
+	reqID, l1Res, err := ch.RequestFromParamsToLedger(callParams, keyPair)
 	require.NoError(ch.Env.T, err)
+
 	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, (*iotago.ObjectID)(&reqID))
 	req, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
+
 	results := ch.RunRequestsSync([]isc.Request{req}, "post")
 	if len(results) == 0 {
 		return isc.RequestID{}, nil, nil, errors.New("request has been skipped")
 	}
-	res := results[0]
-	return reqID, res.Receipt, res.Return, nil
+	vmRes := results[0]
+
+	return reqID, l1Res, vmRes, nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing

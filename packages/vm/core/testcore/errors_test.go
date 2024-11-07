@@ -39,7 +39,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 func TestUntypedError(t *testing.T) {
 	chain := setupErrorsTest(t)
 
-	_, _, err := chain.PostRequestSyncTx(
+	_, _, _, err := chain.PostRequestSyncTx(
 		solo.NewCallParams(testerrors.FuncThrowUntypedError.Message(nil)),
 		nil,
 	)
@@ -56,7 +56,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 	req := solo.NewCallParamsEx(errors.Contract.Name, errors.FuncRegisterError.Name).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, _, _, err := chain.PostRequestSyncTx(req, nil)
 
 	testError := &isc.VMError{}
 	require.ErrorAs(t, err, &testError)
@@ -73,7 +73,7 @@ func TestSuccessfulRegisterError(t *testing.T) {
 	req := solo.NewCallParams(errors.FuncRegisterError.Message("poof")).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, _, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
 	testdbhash.VerifyContractStateHash(chain.Env, errors.Contract, "", t.Name())
@@ -86,7 +86,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 		req := solo.NewCallParams(msg).
 			WithGasBudget(100_000)
 
-		_, d, err := chain.PostRequestSyncTx(req, nil)
+		d, err := chain.PostRequestSync(req, nil)
 		return d, err
 	})
 	require.NoError(t, err)
@@ -95,7 +95,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 		req := solo.NewCallParams(msg).
 			WithGasBudget(100_000)
 
-		_, d, err := chain.PostRequestSyncTx(req, nil)
+		d, err := chain.PostRequestSync(req, nil)
 		return d, err
 	})
 	require.NoError(t, err)
@@ -108,7 +108,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 
 	require.NoError(t, err)
 
@@ -122,14 +122,14 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	// Throw error
 	req = solo.NewCallParams(testerrors.FuncThrowErrorWithArgs.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err = chain.PostRequestSyncTx(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 	require.True(t, strings.HasSuffix(err.Error(), "42"))
 
@@ -149,7 +149,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 
 	require.NoError(t, err)
 
@@ -157,7 +157,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 	req = solo.NewCallParams(testerrors.FuncThrowErrorWithoutArgs.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err = chain.PostRequestSyncTx(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 
 	errorTestType := &isc.VMError{}
 	require.ErrorAs(t, err, &errorTestType)
@@ -181,7 +181,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 
 	require.NoError(t, err)
 
@@ -189,7 +189,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	req = solo.NewCallParams(testerrors.FuncThrowErrorWithoutArgs.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err = chain.PostRequestSyncTx(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 
 	receipt := chain.LastReceipt()
 	typedError := err.(*isc.VMError)
@@ -213,7 +213,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	req := solo.NewCallParams(testerrors.FuncRegisterErrors.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 
 	require.NoError(t, err)
 
@@ -221,7 +221,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	req = solo.NewCallParams(testerrors.FuncThrowErrorWithArgs.Message(nil)).
 		WithGasBudget(100_000)
 
-	_, _, err = chain.PostRequestSyncTx(req, nil)
+	_, err = chain.PostRequestSync(req, nil)
 
 	receipt := chain.LastReceipt()
 	typedError := err.(*isc.VMError)

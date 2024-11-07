@@ -385,10 +385,6 @@ func (s StateAnchor) GetObjectID() *iotago.ObjectID {
 	return s.Anchor.ObjectID
 }
 
-func (s StateAnchor) GetAssets() *Assets {
-	panic("unimplement")
-}
-
 func (s StateAnchor) GetStateMetadata() []byte {
 	return s.Anchor.Object.StateMetadata
 }

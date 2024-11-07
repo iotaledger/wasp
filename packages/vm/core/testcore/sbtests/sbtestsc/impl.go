@@ -1,19 +1,11 @@
 package sbtestsc
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/samber/lo"
 )
-
-var testError *isc.VMErrorTemplate
-
-func initialize(ctx isc.Sandbox) isc.CallArguments {
-	failOnPurpose := isc.MustArgAt[bool](ctx.Params(), 0)
-	ctx.Requiref(!failOnPurpose, "failing on purpose")
-	testError = ctx.RegisterError("ERROR_TEST")
-	return nil
-}
 
 // testEventLogGenericData is called several times in log_test.go
 func testEventLogGenericData(ctx isc.Sandbox, inc *uint64) {
@@ -40,15 +32,11 @@ func testSandboxCall(ctx isc.SandboxView) isc.CallArguments {
 func testEventLogDeploy(ctx isc.Sandbox) {
 	// Deploy the same contract with another name
 	panic("TODO: contract deployment")
-	//ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
+	// ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
 }
 
 func testPanicFullEP(ctx isc.Sandbox) {
 	ctx.Log().Panicf(MsgFullPanic)
-}
-
-func testCustomError(_ isc.Sandbox) isc.CallArguments {
-	panic(testError.Create("CUSTOM_ERROR"))
 }
 
 func testPanicViewEP(ctx isc.SandboxView) {

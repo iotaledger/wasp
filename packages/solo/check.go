@@ -52,7 +52,7 @@ func (ch *Chain) CheckChain() {
 	ch.CheckAccountLedger()
 }
 
-// CheckAccountLedger check integrity of the on-chain ledger.
+// CheckAccountLedger checks the integrity of the on-chain ledger.
 // Sum of all accounts must be equal to total ftokens
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.L2TotalAssets()
@@ -68,6 +68,9 @@ func (ch *Chain) CheckAccountLedger() {
 	coreacc = isc.NewContractAgentID(ch.ChainID, accounts.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
+
+	_, bals := ch.GetLatestAnchorWithBalances()
+	require.True(ch.Env.T, bals.Equals(total))
 }
 
 func (ch *Chain) AssertL2TotalCoins(coinType coin.Type, bal coin.Value) {
@@ -84,16 +87,6 @@ func (ch *Chain) AssertL2TotalBaseTokens(bal coin.Value) {
 	}
 	baseTokens := ch.L2TotalBaseTokens()
 	require.EqualValues(ch.Env.T, bal, baseTokens)
-}
-
-func (ch *Chain) AssertControlAddresses() {
-	if h, ok := ch.Env.T.(tHelper); ok {
-		h.Helper()
-	}
-	rec := ch.GetControlAddresses()
-	require.True(ch.Env.T, rec.StateAddress.Equals(ch.OriginatorAddress))
-	require.True(ch.Env.T, rec.GoverningAddress.Equals(ch.OriginatorAddress))
-	require.EqualValues(ch.Env.T, ch.LatestBlock().StateIndex(), rec.SinceBlockIndex)
 }
 
 func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID iotago.ObjectID) bool {
