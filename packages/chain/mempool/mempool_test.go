@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -553,14 +554,15 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	})
 	iscPackage := l1starter.DeployISCContracts(l1client, cryptolib.SignerToIotaSigner(te.governor))
 	te.tcl = testchain.NewTestChainLedger(t, te.governor, &iscPackage, l1client)
-	te.anchor = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	var originDepositVal coin.Value
+	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAnchor(te.stores[i], te.anchor, 0, isc.BaseTokenCoinInfo)
+		origin.InitChainByAnchor(te.stores[i], te.anchor, originDepositVal, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(
