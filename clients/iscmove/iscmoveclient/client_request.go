@@ -105,32 +105,20 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	getAllCoinsRes, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	placedCoins := []lo.Tuple2[*iotajsonrpc.Coin, uint64]{}
 	// assume we can find it in the first page
 	for cointype, bal := range assets.Coins {
-		found := false
-		for _, coin := range getAllCoinsRes.Data {
-			assetsResource, err := iotago.NewResourceType(coin.CoinType)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse resource type: %w", err)
-			}
-			getAllCoinsResource, err := iotago.NewResourceType(cointype)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse resource type: %w", err)
-			}
-			if assetsResource.String() == getAllCoinsResource.String() && coin.Balance.Uint64() > bal.Uint64() {
-				placedCoins = append(placedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: coin, B: bal.Uint64()})
-				found = true
-				break
-			}
+		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
+			return lo.Must(iotago.IsSameResource(cointype, coin.CoinType)) && coin.Balance.Uint64() >= bal.Uint64()
+		})
+		if !ok {
+			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
 		}
-		if !found {
-			return nil, fmt.Errorf("cannot find coin for %s", cointype)
-		}
+		placedCoins = append(placedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: coin, B: bal.Uint64()})
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -162,9 +150,14 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
 		}
-		for _, coin := range coinPage.Data {
-			if !pt.IsInInputObjects(coin.CoinObjectID) {
-				gasPayments = []*iotago.ObjectRef{coin.Ref()}
+		coins := lo.Filter(coinPage.Data, func(coin *iotajsonrpc.Coin, _ int) bool {
+			return !pt.IsInInputObjects(coin.CoinObjectID)
+		})
+		tokensForGas := uint64(0)
+		for _, coin := range coins {
+			gasPayments = append(gasPayments, coin.Ref())
+			tokensForGas += coin.Balance.Uint64()
+			if tokensForGas >= gasPrice*gasBudget {
 				break
 			}
 		}

@@ -56,7 +56,7 @@ func testSeveralOutputsInASingleCall(t *testing.T) {
 		AddAllowanceBaseTokens(allowance).
 		AddBaseTokens(allowance + 1*isc.Million).
 		WithGasBudget(math.MaxUint64)
-	tx, _, err := ch.PostRequestSyncTx(req, wallet)
+	tx, _, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
 
 	storageDeposit := tx.Essence.Outputs[0].Deposit()

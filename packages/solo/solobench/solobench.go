@@ -29,7 +29,7 @@ func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams,
 	txs := make([]isc.RequestID, b.N)
 	for i := 0; i < b.N; i++ {
 		var err error
-		txs[i], err = chain.RequestFromParamsToLedger(reqs[i], nil)
+		txs[i], _, err = chain.RequestFromParamsToLedger(reqs[i], nil)
 		require.NoError(b, err)
 	}
 
@@ -46,7 +46,7 @@ func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams,
 		require.NoError(b, err)
 
 		requestMap := map[isc.ChainID][]isc.Request{
-			chain.ChainID: []isc.Request{
+			chain.ChainID: {
 				iscRequest,
 			},
 		}
