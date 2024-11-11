@@ -59,7 +59,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 
@@ -627,9 +626,9 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 
 func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
 	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
-	var gasPayment []*iotago.ObjectRef = aggregatedProposals.AggregatedGasCoins()
-	var gasBudget uint64 = iotaclient.DefaultGasBudget // TODO: Calculate it based on the PT.
 	var gasPrice uint64 = aggregatedProposals.AggregatedGasPrice()
+	var gasBudget uint64 = pt.EstimateGasBudget(gasPrice)
+	var gasPayment []*iotago.ObjectRef = aggregatedProposals.AggregatedGasCoins()
 
 	tx := iotago.NewProgrammable(sender, *pt, gasPayment, gasBudget, gasPrice)
 	return &tx

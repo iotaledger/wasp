@@ -272,6 +272,9 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 				continue
 			}
 			cgr.handleConsInput(cons.NewInputTimeData(t))
+
+		// TODO: Add the GasInfo input for the consensus.
+
 		case resp, ok := <-cgr.mempoolProposalsRespCh:
 			if !ok {
 				cgr.mempoolProposalsRespCh = nil
