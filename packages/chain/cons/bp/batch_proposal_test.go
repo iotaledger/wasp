@@ -49,7 +49,18 @@ func TestBatchProposal1Serialization(t *testing.T) {
 		Object: &anchor,
 	}, cryptolib.NewEmptyAddress(), *iotatest.RandomAddress())
 
-	batchProposal := NewBatchProposal(10, &stateAnchor, util.NewFixedSizeBitVector(11), time.Now(), isctest.NewRandomAgentID(), reqRefs)
+	coinRef := iotatest.RandomObjectRef()
+
+	batchProposal := NewBatchProposal(
+		10,
+		&stateAnchor,
+		util.NewFixedSizeBitVector(11),
+		time.Now(),
+		isctest.NewRandomAgentID(),
+		reqRefs,
+		[]*iotago.ObjectRef{coinRef},
+		10,
+	)
 
 	bpEncoded := lo.Must1(bcs.Marshal(batchProposal))
 	bpDecoded, err := bcs.Unmarshal[BatchProposal](bpEncoded)
@@ -60,4 +71,6 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	require.Equal(t, batchProposal.timeData.UnixNano(), bpDecoded.timeData.UnixNano())
 	require.Equal(t, batchProposal.validatorFeeDestination, bpDecoded.validatorFeeDestination)
 	require.Equal(t, batchProposal.requestRefs, bpDecoded.requestRefs)
+	require.Equal(t, batchProposal.gasCoins, bpDecoded.gasCoins)
+	require.Equal(t, batchProposal.gasPrice, bpDecoded.gasPrice)
 }

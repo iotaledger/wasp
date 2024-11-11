@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,6 +24,8 @@ type AggregatedBatchProposals struct {
 	decidedBaseAliasOutput *isc.StateAnchor
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
+	aggregatedGasCoins     []*iotago.ObjectRef
+	aggregatedGasPrice     uint64
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
@@ -49,14 +52,22 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	}
 	aggregatedTime := bps.aggregatedTime(f)
 	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
+	aggregatedGasCoins := bps.aggregatedGasCoins(f)
+	aggregatedGasPrice := bps.aggregatedGasPrice(f)
 	abp := &AggregatedBatchProposals{
 		batchProposalSet:       bps,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
+		aggregatedGasCoins:     aggregatedGasCoins,
+		aggregatedGasPrice:     aggregatedGasPrice,
 	}
-	if abp.decidedBaseAliasOutput == nil || len(abp.decidedRequestRefs) == 0 || abp.aggregatedTime.IsZero() {
+	if abp.decidedBaseAliasOutput == nil ||
+		len(abp.decidedRequestRefs) == 0 ||
+		abp.aggregatedTime.IsZero() ||
+		len(abp.aggregatedGasCoins) == 0 ||
+		abp.aggregatedGasPrice == 0 {
 		log.Debugf(
 			"Cant' aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, aggregatedTime=%v",
 			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), abp.aggregatedTime,
@@ -162,4 +173,18 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 		sorted[i] = sortBuf[i].req
 	}
 	return sorted
+}
+
+func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*iotago.ObjectRef {
+	if abp.shouldBeSkipped {
+		panic("trying to use aggregated proposal marked to be skipped")
+	}
+	return abp.aggregatedGasCoins
+}
+
+func (abp *AggregatedBatchProposals) AggregatedGasPrice() uint64 {
+	if abp.shouldBeSkipped {
+		panic("trying to use aggregated proposal marked to be skipped")
+	}
+	return abp.aggregatedGasPrice
 }
