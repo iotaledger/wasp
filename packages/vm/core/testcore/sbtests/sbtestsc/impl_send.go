@@ -79,26 +79,6 @@ func pingAllowanceBack(ctx isc.Sandbox) {
 	)
 }
 
-// testEstimateMinimumStorageDeposit returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
-func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) {
-	addr, ok := isc.AddressFromAgentID(ctx.Caller())
-	ctx.Requiref(ok, "caller must have L1 address")
-
-	provided := ctx.AllowanceAvailable().BaseTokens
-
-	requestParams := isc.RequestParameters{
-		TargetAddress: addr,
-		Metadata: &isc.SendMetadata{
-			Message: isc.NewMessage(isc.Hn("foo"), isc.Hn("bar")),
-		},
-	}
-
-	panic("TODO: fix EstimateRequiredStorageDeposit")
-	_, _ = requestParams, provided
-	//required := ctx.EstimateRequiredStorageDeposit(requestParams)
-	//ctx.Requiref(provided >= required, "not enough funds")
-}
-
 // tries to sendback whaever NFTs are specified in allowance
 func sendNFTsBack(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
@@ -150,7 +130,7 @@ func sendLargeRequest(ctx isc.Sandbox, x uint64) {
 
 	panic("TODO: fix EstimateRequiredStorageDeposit")
 	storageDeposit := coin.Value(0)
-	//storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
+	// storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
 
 	provided := ctx.AllowanceAvailable().BaseTokens()
 	if provided < storageDeposit {
