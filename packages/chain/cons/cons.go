@@ -598,7 +598,6 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 		vmResult.StateDraft = nil
 	}
 
-	panic("FIXME")
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
 	signingMsg, err := bcs.Marshal(&unsignedTX)
@@ -615,7 +614,19 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 // TX
 
 func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction) *iotago.TransactionData {
-	panic("Implement: makeTransactionData") // TODO: ...
+	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
+	var gasPayment []*iotago.ObjectRef // TODO: Coin.
+	var gasBudget uint64               // TODO: Const.
+	var gasPrice uint64                // TODO: Const via consensus.
+
+	tx := iotago.NewProgrammable(
+		sender,
+		*pt,
+		gasPayment,
+		gasBudget,
+		gasPrice,
+	)
+	return &tx
 }
 
 // Everything is ready for the output TX, produce it.
