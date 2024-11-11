@@ -118,7 +118,7 @@ func (a *InMemorySigner) Address() *iotago.Address {
 
 // FIXME support more than ed25519
 func (a *InMemorySigner) SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error) {
-	data := MessageWithIntent(intent, bcsBytes(txnBytes))
+	data := MessageWithIntent(intent, txnBytes)
 	hash := blake2b.Sum256(data)
 	return a.Sign(hash[:])
 }

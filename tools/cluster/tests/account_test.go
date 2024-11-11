@@ -74,10 +74,10 @@ func testAccounts(e *ChainEnv) {
 	require.NoError(e.t, err)
 
 	transferBaseTokens := coin.Value(1 * isc.Million)
-	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client().L2(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorClient().IscPackageID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
-	reqTx, err := chClient.PostRequest(inccounter.FuncIncCounter.Message(nil), *par)
+	reqTx, err := chClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(e.t, err)
 
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 10*time.Second)
