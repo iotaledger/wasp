@@ -209,6 +209,10 @@ func GetPackageID() iotago.PackageID {
 	return *packageIDParsed
 }
 
+func SetPackageID(id iotago.PackageID) {
+	Set("l1.packageId", id.String())
+}
+
 func GetUseLegacyDerivation() bool {
 	return viper.GetBool("wallet.useLegacyDerivation")
 }

@@ -402,6 +402,10 @@ func (s StateAnchor) Hash() hashing.HashValue {
 }
 
 func (s StateAnchor) Equals(input *StateAnchor) bool {
+	if input == nil {
+		return false
+	}
+
 	return iscmove.AnchorWithRefEquals(*s.Anchor, *input.Anchor)
 }
 
