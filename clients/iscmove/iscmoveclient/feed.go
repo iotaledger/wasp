@@ -59,7 +59,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 						Name:    iscmove.RequestObjectName,
 					},
 				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 			},
 			Cursor: lastSeen,
 		})
@@ -87,6 +87,7 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
 				ObjectRef: reqData.Data.Ref(),
 				Object:    req.ToRequest(),
+				Owner:     reqData.Data.Owner.AddressOwner,
 			})
 		}
 	}

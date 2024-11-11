@@ -120,7 +120,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
+	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
 	for _, req := range reqs {
 		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
@@ -146,7 +146,7 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 			case <-ctx.Done():
 				return
 			case moveAnchor := <-anchorUpdates:
-				anchor := isc.NewStateAnchor(moveAnchor, nil, ncc.feed.GetISCPackageID())
+				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
 			case req := <-newRequests:
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))

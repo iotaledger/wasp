@@ -5,6 +5,8 @@ package chain
 
 import (
 	"context"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"os"
 	"strconv"
 	"time"
@@ -17,12 +19,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -79,22 +79,26 @@ func initDeployCmd() *cobra.Command {
 			}
 
 			l1Client := cliclients.L1Client()
-
-			//packageID, err := deployISCMoveContract(ctx, l1Client, kp)
+			kp := wallet.Load()
+			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
 			log.Printf("PackageID: %v", packageID.String())
 
 			stateController := doDKG(ctx, node, peers, quorum)
-			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(stateController), evmChainID, blockKeepAmount)
-			stateMetadata := transaction.NewStateMetadata(allmigrations.DefaultScheme.LatestSchemaVersion(), &state.L1Commitment{}, gas.DefaultFeePolicy(), initParams, "")
+
+			initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
+			db := mapdb.NewMapDB()
+			store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+
+			_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, isc.BaseTokenCoinInfo)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
 				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
 				N:                 uint16(len(node)),
 				T:                 uint16(quorum),
-				OriginatorKeyPair: wallet.Load(),
+				OriginatorKeyPair: kp,
 				Textout:           os.Stdout,
 				PackageID:         packageID,
 				StateMetadata:     *stateMetadata,
