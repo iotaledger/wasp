@@ -29,15 +29,16 @@ type syncVMImpl struct {
 	chainState          state.State
 	randomness          *hashing.HashValue
 	requests            []isc.Request
+	vmResult            *vm.VMTaskResult
 	inputsReady         bool
 	inputsReadyCB       func(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
 	outputReady         bool
-	outputReadyCB       func(output *vm.VMTaskResult) gpa.OutMessages
+	outputReadyCB       func(output *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages
 }
 
 func NewSyncVM(
 	inputsReadyCB func(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
-	outputReadyCB func(output *vm.VMTaskResult) gpa.OutMessages,
+	outputReadyCB func(output *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages,
 ) SyncVM {
 	return &syncVMImpl{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
 }
@@ -47,7 +48,10 @@ func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *bp.Agg
 		return nil
 	}
 	sub.aggregatedProposals = aggregatedProposals
-	return sub.tryCompleteInputs()
+	msgs := gpa.NoMessages()
+	msgs.AddAll(sub.tryCompleteInputs())
+	msgs.AddAll(sub.tryCompleteOutputs())
+	return msgs
 }
 
 func (sub *syncVMImpl) DecidedStateReceived(chainState state.State) gpa.OutMessages {
@@ -82,15 +86,23 @@ func (sub *syncVMImpl) tryCompleteInputs() gpa.OutMessages {
 	return sub.inputsReadyCB(sub.aggregatedProposals, sub.chainState, sub.randomness, sub.requests)
 }
 
-func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
-	if vmResult == nil {
+func (sub *syncVMImpl) tryCompleteOutputs() gpa.OutMessages {
+	if sub.vmResult == nil || sub.aggregatedProposals == nil {
 		return nil
 	}
 	if sub.outputReady {
 		return nil
 	}
 	sub.outputReady = true
-	return sub.outputReadyCB(vmResult)
+	return sub.outputReadyCB(sub.vmResult, sub.aggregatedProposals)
+}
+
+func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
+	if sub.vmResult != nil || vmResult == nil {
+		return nil
+	}
+	sub.vmResult = vmResult
+	return sub.tryCompleteOutputs()
 }
 
 // Try to provide useful human-readable compact status.

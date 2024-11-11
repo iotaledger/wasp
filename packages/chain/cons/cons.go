@@ -59,6 +59,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 
@@ -327,6 +328,8 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 		return c.subSM.BlockSaved(input.block)
 	case *inputTimeData:
 		return c.subACS.TimeDataReceived(input.timeData)
+	case *inputGasInfo:
+		return c.subACS.GasInfoReceived(input.gasCoins, input.gasPrice)
 	case *inputVMResult:
 		return c.subVM.VMResultReceived(input.task)
 	}
@@ -476,7 +479,14 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 // ACS
 
-func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.StateAnchor, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
+func (c *consImpl) uponACSInputsReceived(
+	baseAliasOutput *isc.StateAnchor,
+	requestRefs []*isc.RequestRef,
+	dssIndexProposal []int,
+	timeData time.Time,
+	gasCoins []*iotago.ObjectRef,
+	gasPrice uint64,
+) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput,
@@ -484,6 +494,8 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.StateAnchor, reque
 		timeData,
 		c.validatorAgentID,
 		requestRefs,
+		gasCoins,
+		gasPrice,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
 	if err != nil {
@@ -573,7 +585,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	return nil
 }
 
-func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
+func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
 	c.output.NeedVMResult = nil
 	if len(vmResult.RequestResults) == 0 {
 		// No requests were processed, don't have what to do.
@@ -606,26 +618,20 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult) gpa.OutMessag
 	}
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.UnsignedTXReceived(c.makeTransactionData(&unsignedTX))).
+		AddAll(c.subTX.UnsignedTXReceived(c.makeTransactionData(&unsignedTX, aggregatedProposals))).
 		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // TX
 
-func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction) *iotago.TransactionData {
+func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
 	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
-	var gasPayment []*iotago.ObjectRef // TODO: Coin.
-	var gasBudget uint64               // TODO: Const.
-	var gasPrice uint64                // TODO: Const via consensus.
+	var gasPayment []*iotago.ObjectRef = aggregatedProposals.AggregatedGasCoins()
+	var gasBudget uint64 = iotaclient.DefaultGasBudget // TODO: Calculate it based on the PT.
+	var gasPrice uint64 = aggregatedProposals.AggregatedGasPrice()
 
-	tx := iotago.NewProgrammable(
-		sender,
-		*pt,
-		gasPayment,
-		gasBudget,
-		gasPrice,
-	)
+	tx := iotago.NewProgrammable(sender, *pt, gasPayment, gasBudget, gasPrice)
 	return &tx
 }
 

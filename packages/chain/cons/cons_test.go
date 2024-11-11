@@ -2,34 +2,34 @@ package cons_test
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/samber/lo"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -88,22 +88,15 @@ func testConsBasic(t *testing.T, n, f int) {
 	ao0x := isctest.RandomStateAnchorWithStateMetadata(stateMetadata)
 	ao0 := &ao0x
 
-	// callMsg := ethereum.CallMsg{
-	// 	From:  common.Address{1, 2, 3},
-	// 	To:    &common.Address{4, 5, 6},
-	// 	Gas:   100,
-	// 	Data:  []byte{1, 2, 3, 4},
-	// 	Value: big.NewInt(100),
-	// }
 	reqs := []isc.Request{
 		RandomOnLedgerDepositRequest(ao0.Owner),
 		RandomOnLedgerDepositRequest(ao0.Owner),
 		RandomOnLedgerDepositRequest(ao0.Owner),
-		// isc.NewEVMOffLedgerCallRequest(chainID, callMsg),
-		// isc.NewEVMOffLedgerCallRequest(chainID, callMsg),
-		// isc.NewEVMOffLedgerCallRequest(chainID, callMsg),
 	}
 	reqRefs := isc.RequestRefsFromRequests(reqs)
+
+	gasCoin := iotatest.RandomObjectRef()
+	gasPrice := uint64(123)
 
 	//
 	// Construct the chain on L1.
@@ -193,6 +186,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputMempoolProposal(reqRefs))
 		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
 		tc.WithInput(nid, cons.NewInputTimeData(now))
+		tc.WithInput(nid, cons.NewInputGasInfo([]*iotago.ObjectRef{gasCoin}, gasPrice))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)
