@@ -273,17 +273,6 @@ func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBloc
 	return ret
 }
 
-func (ch *Chain) GetControlAddresses() *isc.ControlAddresses {
-	panic("TODO: is this still needed?")
-	/*
-		return &isc.ControlAddresses{
-			StateAddress:     ch.OriginatorAddress,
-			GoverningAddress: ch.OriginatorAddress,
-			SinceBlockIndex:  ch.LatestBlockIndex(),
-		}
-	*/
-}
-
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) AddAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(governance.FuncAddAllowedStateControllerAddress.Message(addr)).

@@ -20,9 +20,9 @@ import (
 func TestRequestDataSerialization(t *testing.T) {
 	t.Run("off ledger", func(t *testing.T) {
 		req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.NewKeyPair())
-		bcs.TestCodec(t, req.(*isc.OffLedgerRequestData))
-		rwutil.BytesTest(t, req.(*isc.OffLedgerRequestData), func(data []byte) (*isc.OffLedgerRequestData, error) {
-			return bcs.Unmarshal[*isc.OffLedgerRequestData](data)
+		bcs.TestCodec(t, isc.Request(req))
+		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {
+			return bcs.Unmarshal[isc.Request](data)
 		})
 	})
 
@@ -53,9 +53,9 @@ func TestRequestDataSerialization(t *testing.T) {
 		}
 		req, err := isc.OnLedgerFromRequest(&onledgerReq, cryptolib.NewRandomAddress())
 		require.NoError(t, err)
-		bcs.TestCodec(t, req)
-		rwutil.BytesTest(t, req.(*isc.OnLedgerRequestData), func(data []byte) (*isc.OnLedgerRequestData, error) {
-			return bcs.Unmarshal[*isc.OnLedgerRequestData](data)
+		bcs.TestCodec(t, isc.Request(req))
+		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {
+			return bcs.Unmarshal[isc.Request](data)
 		})
 	})
 }

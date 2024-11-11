@@ -153,7 +153,7 @@ func (s *SandboxBase) CallView(msg isc.Message) isc.CallArguments {
 	if msg.Params == nil {
 		msg.Params = isc.CallArguments{}
 	}
-	return s.Ctx.Call(msg, nil)
+	return s.Ctx.Call(msg, isc.NewEmptyAssets())
 }
 
 func (s *SandboxBase) StateR() kv.KVStoreReader {

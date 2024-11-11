@@ -14,6 +14,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/manyevents"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/testerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -28,6 +31,9 @@ var All = map[isc.Hname]isc.VMProcessor{
 
 var Test = map[isc.Hname]isc.VMProcessor{
 	inccounter.Contract.Hname(): inccounter.Processor,
+	manyevents.Contract.Hname(): manyevents.Processor,
+	testerrors.Contract.Hname(): testerrors.Processor,
+	sbtestsc.Contract.Hname():   sbtestsc.Processor,
 }
 
 func init() {

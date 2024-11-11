@@ -96,13 +96,9 @@ func (t IotaTransactionBlockEffects) Content() string {
 }
 
 func (t IotaTransactionBlockEffects) GasFee() int64 {
-	if t.V1 == nil {
-		return 0
-	}
-	fee := t.V1.GasUsed.StorageCost.Int64() -
+	return t.V1.GasUsed.StorageCost.Int64() -
 		t.V1.GasUsed.StorageRebate.Int64() +
 		t.V1.GasUsed.ComputationCost.Int64()
-	return fee
 }
 
 func (t IotaTransactionBlockEffects) IsSuccess() bool {

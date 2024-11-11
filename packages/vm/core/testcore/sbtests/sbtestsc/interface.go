@@ -3,14 +3,13 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract("testcore")
 
-var Processor = Contract.Processor(initialize,
+var Processor = Contract.Processor(nil,
 	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
 	FuncChainOwnerIDFull.WithHandler(testChainOwnerIDFull),
 
@@ -19,7 +18,6 @@ var Processor = Contract.Processor(initialize,
 	FuncEventLogDeploy.WithHandler(testEventLogDeploy),
 	FuncSandboxCall.WithHandler(testSandboxCall),
 
-	FuncTestCustomError.WithHandler(testCustomError),
 	FuncPanicFullEP.WithHandler(testPanicFullEP),
 	FuncPanicViewEP.WithHandler(testPanicViewEP),
 	FuncCallPanicFullEP.WithHandler(testCallPanicFullEP),
@@ -48,13 +46,10 @@ var Processor = Contract.Processor(initialize,
 
 	FuncJustView.WithHandler(testJustView),
 
-	FuncSpawn.WithHandler(spawn),
-
 	FuncSplitFunds.WithHandler(testSplitFunds),
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 	FuncSendLargeRequest.WithHandler(sendLargeRequest),
-	FuncEstimateMinStorageDeposit.WithHandler(testEstimateMinimumStorageDeposit),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
 	FuncSendNFTsBack.WithHandler(sendNFTsBack),
@@ -140,21 +135,16 @@ var (
 	FuncPassTypesFull = Contract.Func("passTypesFull")
 	FuncPassTypesView = Contract.ViewFunc("passTypesView")
 
-	FuncSpawn = coreutil.NewEP1(Contract, "spawn",
-		coreutil.Field[hashing.HashValue](),
-	)
-
 	FuncSplitFunds             = coreutil.NewEP0(Contract, "splitFunds")
 	FuncSplitFundsNativeTokens = coreutil.NewEP0(Contract, "splitFundsNativeTokens")
 	FuncPingAllowanceBack      = coreutil.NewEP0(Contract, "pingAllowanceBack")
 	FuncSendLargeRequest       = coreutil.NewEP1(Contract, "sendLargeRequest",
 		coreutil.Field[uint64](),
 	)
-	FuncEstimateMinStorageDeposit = coreutil.NewEP0(Contract, "estimateMinStorageDeposit")
-	FuncInfiniteLoop              = coreutil.NewEP0(Contract, "infiniteLoop")
-	FuncInfiniteLoopView          = coreutil.NewViewEP0(Contract, "infiniteLoopView")
-	FuncSendNFTsBack              = coreutil.NewEP0(Contract, "sendNFTsBack")
-	FuncClaimAllowance            = coreutil.NewEP0(Contract, "claimAllowance")
+	FuncInfiniteLoop     = coreutil.NewEP0(Contract, "infiniteLoop")
+	FuncInfiniteLoopView = coreutil.NewViewEP0(Contract, "infiniteLoopView")
+	FuncSendNFTsBack     = coreutil.NewEP0(Contract, "sendNFTsBack")
+	FuncClaimAllowance   = coreutil.NewEP0(Contract, "claimAllowance")
 )
 
 const (

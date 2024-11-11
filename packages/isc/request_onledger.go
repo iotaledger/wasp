@@ -47,7 +47,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 				Params: request.Object.Message.Args,
 			},
 			Allowance: NewEmptyAssets(),
-			GasBudget: 0,
+			GasBudget: request.Object.GasBudget,
 		},
 	}
 	return r, nil
@@ -65,7 +65,8 @@ func (req *OnLedgerRequestData) Assets() *Assets {
 }
 
 func (req *OnLedgerRequestData) Bytes() []byte {
-	return bcs.MustMarshal(req)
+	var r Request = req
+	return bcs.MustMarshal(&r)
 }
 
 func (req *OnLedgerRequestData) Message() Message {

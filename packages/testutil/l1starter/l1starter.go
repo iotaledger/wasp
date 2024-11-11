@@ -24,6 +24,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -105,7 +106,7 @@ func (in *IotaNode) start(ctx context.Context) {
 	in.logf("Starting IotaNode... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 	in.waitAllHealthy(5 * time.Minute)
 	in.logf("Deploying ISC contracts...")
-	in.ISCPackageID = in.deployISCContracts()
+	in.ISCPackageID = DeployISCContracts(in.Client(), ISCPackageOwner)
 	in.logf("IotaNode started successfully")
 }
 
@@ -155,8 +156,11 @@ func (in *IotaNode) Stop() {
 	}
 }
 
-func (in *IotaNode) Client() *iotaclient.Client {
-	return iotaclient.NewHTTP(fmt.Sprintf("%s:%d", in.Config.Host, in.Config.RPCPort))
+func (in *IotaNode) Client() clients.L1Client {
+	return clients.NewL1Client(clients.L1Config{
+		APIURL:    fmt.Sprintf("%s:%d", in.Config.Host, in.Config.RPCPort),
+		FaucetURL: fmt.Sprintf("%s:%d/gas", in.Config.Host, in.Config.FaucetPort),
+	})
 }
 
 func (in *IotaNode) waitAllHealthy(timeout time.Duration) {
@@ -231,18 +235,17 @@ func scanLog(reader io.Reader, out *os.File) {
 	}
 }
 
-func (in *IotaNode) deployISCContracts() iotago.PackageID {
-	client := in.Client()
+func DeployISCContracts(client clients.L1Client, signer iotasigner.Signer) iotago.PackageID {
 	iscBytecode := contracts.ISC()
 	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          ISCPackageOwner.Address(),
+		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	}))
 	txnResponse := lo.Must(client.SignAndExecuteTransaction(
 		context.Background(),
-		ISCPackageOwner,
+		signer,
 		txnBytes.TxBytes,
 		&iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowEffects:       true,

@@ -15,6 +15,18 @@ type ResourceType struct {
 	SubType2 *ResourceType `bcs:"optional"`
 }
 
+func IsSameResource(a, b string) (bool, error) {
+	ra, err := NewResourceType(a)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse resource type: %w", err)
+	}
+	rb, err := NewResourceType(b)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse resource type: %w", err)
+	}
+	return ra.String() == rb.String(), nil
+}
+
 func NewResourceType(str string) (*ResourceType, error) {
 	var err error
 
