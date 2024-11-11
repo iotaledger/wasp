@@ -31,7 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -552,7 +551,10 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
 	})
-	iscPackage := l1starter.DeployISCContracts(l1client, cryptolib.SignerToIotaSigner(te.governor))
+
+	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.governor))
+	require.NoError(t, err)
+
 	te.tcl = testchain.NewTestChainLedger(t, te.governor, &iscPackage, l1client)
 	var originDepositVal coin.Value
 	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin(te.cmtAddress)

@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/stretchr/testify/require"
@@ -23,7 +22,8 @@ import (
 func TestTxBuilderBasic(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
-	iscPackage := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
+	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(signer))
+	require.NoError(t, err)
 
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
@@ -82,7 +82,8 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 	recipient := newSignerWithFunds(t, testSeed, 1)
-	iscPackage := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
+	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(signer))
+	require.NoError(t, err)
 
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
@@ -175,7 +176,8 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
-	iscPackage1 := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
+	iscPackage1, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(signer))
+	require.NoError(t, err)
 
 	anchor1, err := client.L2().StartNewChain(
 		context.Background(),

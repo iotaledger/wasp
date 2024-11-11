@@ -2,6 +2,9 @@ package clients
 
 import (
 	"context"
+	"errors"
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -196,6 +199,7 @@ type L1Client interface {
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
+	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
 }
 
 var _ L1Client = &l1Client{}
@@ -217,6 +221,30 @@ func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) 
 func (c *l1Client) Health(ctx context.Context) error {
 	_, err := c.Client.GetLatestIotaSystemState(ctx)
 	return err
+}
+
+func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
+	iscBytecode := contracts.ISC()
+	txnBytes := lo.Must(c.Publish(ctx, iotaclient.PublishRequest{
+		Sender:          signer.Address(),
+		CompiledModules: iscBytecode.Modules,
+		Dependencies:    iscBytecode.Dependencies,
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
+	}))
+	txnResponse := lo.Must(c.SignAndExecuteTransaction(
+		ctx,
+		signer,
+		txnBytes.TxBytes,
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowEffects:       true,
+			ShowObjectChanges: true,
+		},
+	))
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
+	}
+	packageID := lo.Must(txnResponse.GetPublishedPackageID())
+	return *packageID, nil
 }
 
 func (c *l1Client) L2() L2Client {
