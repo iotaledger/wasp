@@ -86,6 +86,24 @@ func L1Commitment(
 	return block.L1Commitment()
 }
 
+func L1CommitmentFromAnchorStateMetadata(
+	stateMetadataBytes []byte,
+	originDeposit coin.Value,
+	baseTokenCoinInfo *isc.IotaCoinInfo,
+) (*state.L1Commitment, error) {
+	stateMetadata, err := transaction.StateMetadataFromBytes(stateMetadataBytes)
+	if err != nil {
+		return nil, err
+	}
+	l1c := L1Commitment(
+		stateMetadata.SchemaVersion,
+		stateMetadata.InitParams,
+		originDeposit,
+		baseTokenCoinInfo,
+	)
+	return l1c, nil
+}
+
 func InitChain(
 	v isc.SchemaVersion,
 	store state.Store,
