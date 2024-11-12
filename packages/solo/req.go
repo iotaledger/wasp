@@ -206,6 +206,26 @@ func (ch *Chain) requestFromParams(cp *CallParams, keyPair *cryptolib.KeyPair) (
 	panic("TODO")
 }
 
+func (env *Solo) selectCoinsForGas(
+	addr *cryptolib.Address,
+	targetPTB *iotago.ProgrammableTransaction,
+	gasBudget, gasPrice uint64,
+) []*iotago.ObjectRef {
+	sum := uint64(0)
+	gasPayment := make([]*iotago.ObjectRef, 0)
+	for _, c := range env.L1AllCoins(addr) {
+		if targetPTB.IsInInputObjects(c.CoinObjectID) {
+			continue
+		}
+		gasPayment = append(gasPayment, c.Ref())
+		sum += c.Balance.Uint64()
+		if sum >= gasBudget*gasPrice {
+			break
+		}
+	}
+	return gasPayment
+}
+
 func (env *Solo) makeBaseTokenCoinsWithExactly(
 	keyPair *cryptolib.KeyPair,
 	values ...coin.Value,
@@ -295,7 +315,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 // Instead, the Solo environment makes PostRequestSync a synchronous call,
 // making it possible to step-by-step debug the smart contract logic.
 func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, error) {
-	_, _, res, err := ch.PostRequestSyncTx(req, keyPair)
+	_, _, res, _, err := ch.PostRequestSyncTx(req, keyPair)
 	if err != nil {
 		return nil, err
 	}
@@ -304,20 +324,23 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (i
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, error) {
 	r := req.NewRequestOffLedger(ch, keyPair)
-	return ch.RunOffLedgerRequest(r)
+	_, res, err := ch.RunOffLedgerRequest(r)
+	return res, err
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (
-	isc.RequestID,
-	*iotajsonrpc.IotaTransactionBlockResponse,
-	*vm.RequestResult,
-	error,
+	reqID isc.RequestID,
+	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
+	vmRes *vm.RequestResult,
+	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
+	err error,
 ) {
-	reqID, l1Res, vmRes, err := ch.PostRequestSyncExt(req, keyPair)
+	reqID, l1Res, vmRes, anchorTransitionPTBRes, err = ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
-		return reqID, l1Res, vmRes, err
+		return
 	}
-	return reqID, l1Res, vmRes, ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
+	err = ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
+	return
 }
 
 // LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
@@ -334,29 +357,30 @@ func (ch *Chain) PostRequestSyncExt(
 	callParams *CallParams,
 	keyPair *cryptolib.KeyPair,
 ) (
-	isc.RequestID,
-	*iotajsonrpc.IotaTransactionBlockResponse,
-	*vm.RequestResult,
-	error,
+	reqID isc.RequestID,
+	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
+	vmRes *vm.RequestResult,
+	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
+	err error,
 ) {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
 	defer ch.logRequestLastBlock()
 
-	reqID, l1Res, err := ch.RequestFromParamsToLedger(callParams, keyPair)
+	reqID, l1Res, err = ch.RequestFromParamsToLedger(callParams, keyPair)
 	require.NoError(ch.Env.T, err)
 
 	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, (*iotago.ObjectID)(&reqID))
 	req, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
 
-	results := ch.RunRequestsSync([]isc.Request{req}, "post")
+	anchorTransitionPTBRes, results := ch.RunRequestsSync([]isc.Request{req})
 	if len(results) == 0 {
-		return isc.RequestID{}, nil, nil, errors.New("request has been skipped")
+		return isc.RequestID{}, nil, nil, nil, errors.New("request has been skipped")
 	}
-	vmRes := results[0]
+	vmRes = results[0]
 
-	return reqID, l1Res, vmRes, nil
+	return reqID, l1Res, vmRes, anchorTransitionPTBRes, nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing

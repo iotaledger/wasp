@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -23,25 +23,35 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
-func (ch *Chain) RunOffLedgerRequest(r isc.Request) (isc.CallArguments, error) {
+func (ch *Chain) RunOffLedgerRequest(r isc.Request) (
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	isc.CallArguments,
+	error,
+) {
 	defer ch.logRequestLastBlock()
-	results := ch.RunRequestsSync([]isc.Request{r}, "off-ledger")
+	ptbRes, results := ch.RunRequestsSync([]isc.Request{r})
 	if len(results) == 0 {
-		return nil, errors.New("request was skipped")
+		return nil, nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	return res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
+	return ptbRes, res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
-func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) []*vm.RequestResult {
+func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) (
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	[]*vm.RequestResult,
+) {
 	defer ch.logRequestLastBlock()
-	return ch.RunRequestsSync(reqs, "off-ledger")
+	return ch.RunRequestsSync(reqs)
 }
 
-func (ch *Chain) RunRequestsSync(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
+func (ch *Chain) RunRequestsSync(reqs []isc.Request) (
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	[]*vm.RequestResult,
+) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
-	return ch.runRequestsNolock(reqs, trace)
+	return ch.runRequestsNolock(reqs)
 }
 
 func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
@@ -77,29 +87,29 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 	return res
 }
 
-func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
-	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
+func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	[]*vm.RequestResult,
+) {
 	res := ch.runTaskNoLock(reqs, false)
-
-	gasPayment := ch.Env.makeBaseTokenCoinsWithExactly(
-		ch.OriginatorPrivateKey,
-		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
+	gasPayment := ch.Env.selectCoinsForGas(
+		ch.OriginatorAddress,
+		&res.UnsignedTransaction,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
 	)
-
-	_ = ch.Env.executePTB(
+	ptbRes := ch.Env.executePTB(
 		res.UnsignedTransaction,
 		ch.OriginatorPrivateKey,
 		gasPayment,
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
-
 	if res.RotationAddress == nil {
 		// normal state transition
 		ch.settleStateTransition(res.StateDraft)
 	}
-
-	return res.RequestResults
+	return ptbRes, res.RequestResults
 }
 
 func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {

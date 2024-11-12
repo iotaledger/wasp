@@ -61,116 +61,93 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
-	t.Run("no contract", func(t *testing.T) {
-		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, governance.DefaultMinBaseTokensOnCommonAccount, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	for _, test := range []struct {
+		Name               string
+		Req                *solo.CallParams
+		SenderIsOriginator bool
+		ExpectedError      string
+	}{
+		{
+			Name:               "no contract, sender == originator",
+			Req:                solo.NewCallParamsEx("dummyContract", "dummyEP"),
+			SenderIsOriginator: true,
+			ExpectedError:      vm.ErrContractNotFound.Create(uint32(isc.Hn("dummyContract"))).Error(),
+		},
+		{
+			Name:               "no contract, sender != originator",
+			Req:                solo.NewCallParamsEx("dummyContract", "dummyEP"),
+			SenderIsOriginator: false,
+			ExpectedError:      vm.ErrContractNotFound.Create(uint32(isc.Hn("dummyContract"))).Error(),
+		},
+		{
+			Name:               "no EP, sender == originator",
+			Req:                solo.NewCallParamsEx(root.Contract.Name, "dummyEP"),
+			SenderIsOriginator: true,
+			ExpectedError:      vm.ErrTargetEntryPointNotFound.Error(),
+		},
+		{
+			Name:               "no EP, sender != originator",
+			Req:                solo.NewCallParamsEx(root.Contract.Name, "dummyEP"),
+			SenderIsOriginator: false,
+			ExpectedError:      vm.ErrTargetEntryPointNotFound.Error(),
+		},
+	} {
+		t.Run(test.Name, func(t *testing.T) {
+			env := solo.New(t)
+			ch, _ := env.NewChainExt(nil, governance.DefaultMinBaseTokensOnCommonAccount, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := isc.NewAddressAgentID(senderAddr)
+			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
+			if !test.SenderIsOriginator {
+				senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+			}
+			senderAgentID := isc.NewAddressAgentID(senderAddr)
 
-		l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
-		senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
-		senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
-		originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
+			l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
+			senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
+			senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
+			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, commonAccountBaseTokensBefore)
+			require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, commonAccountBaseTokensBefore)
 
-		_, l1Res, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParamsEx("dummyContract", "dummyEP").
-				WithAssets(isc.NewAssets(1*isc.Million)).
-				WithGasBudget(100_000),
-			senderKeyPair,
-		)
+			_, l1Res, _, anchorTransitionPTBRes, err := ch.PostRequestSyncTx(
+				test.Req.
+					WithAssets(isc.NewAssets(1*isc.Million)).
+					WithGasBudget(100_000),
+				senderKeyPair,
+			)
 
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(uint32(isc.Hn("dummyContract"))).Error())
+			require.Contains(t, err.Error(), test.ExpectedError)
 
-		l2TotalBaseTokensAfter := ch.L2TotalBaseTokens()
-		senderL1BaseTokensAfter := env.L1BaseTokens(senderAddr)
-		senderL2BaseTokensAfter := ch.L2BaseTokens(senderAgentID)
-		originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OriginatorAgentID)
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
-		l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
-		l2GasFee := ch.LastReceipt().GasFeeCharged
+			l2TotalBaseTokensAfter := ch.L2TotalBaseTokens()
+			senderL1BaseTokensAfter := env.L1BaseTokens(senderAddr)
+			senderL2BaseTokensAfter := ch.L2BaseTokens(senderAgentID)
+			commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
+			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OriginatorAgentID)
+			l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
+			l2GasFee := ch.LastReceipt().GasFeeCharged
+			l1AnchorTransitionGasFee := coin.Value(anchorTransitionPTBRes.Effects.Data.GasFee())
 
-		// sender deposited 1mil to L2 and spent L1 gas fees (which goes to a black hole?)
-		require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee, senderL1BaseTokensAfter)
-		// total L2 assets is increased by 1mil
-		require.Equal(t, l2TotalBaseTokensBefore+1*isc.Million, l2TotalBaseTokensAfter)
-		// sender got 1mil minus l2GasFee
-		require.Equal(t, senderL2BaseTokensBefore+1*isc.Million-l2GasFee, senderL2BaseTokensAfter)
-		// l2GasFee goes to payoutAgentID (originator by default)
-		require.Equal(t, originatorL2BaseTokensBefore+l2GasFee, originatorL2BaseTokensAfter)
-		// common account is left untouched
-		require.Equal(t, commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
-	})
-	t.Run("no EP,originator==user", func(t *testing.T) {
-		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-
-		totalBaseTokensBefore := ch.L2TotalBaseTokens()
-		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
-
-		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
-			WithGasBudget(100_000)
-		_, _, _, err := ch.PostRequestSyncTx(req, nil)
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
-
-		totalBaseTokensAfter := ch.L2TotalBaseTokens()
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
-
-		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore), int(totalBaseTokensAfter))
-		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
-		// originator (user) is charged with gas fee on L2
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore)
-		// all gas fee goes to the common account
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, commonAccountBaseTokensAfter)
-	})
-	t.Run("no EP,originator!=user", func(t *testing.T) {
-		env := solo.New(t)
-		ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-
-		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := isc.NewAddressAgentID(senderAddr)
-
-		totalBaseTokensBefore := ch.L2TotalBaseTokens()
-		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		env.AssertL1BaseTokens(senderAddr, iotaclient.FundsFromFaucetAmount)
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
-
-		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
-			WithGasBudget(100_000)
-		_, _, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
-
-		totalBaseTokensAfter := ch.L2TotalBaseTokens()
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
-
-		rec := ch.LastReceipt()
-		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore), int(totalBaseTokensAfter))
-		// originator on L1 does not change
-		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
-		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(senderAddr, iotaclient.FundsFromFaucetAmount)
-		// originator account does not change
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
-		// user is charged with gas fee on L2
-		ch.AssertL2BaseTokens(senderAgentID, -rec.GasFeeCharged)
-		// all gas fee goes to the common account
-		require.EqualValues(t,
-			governance.DefaultMinBaseTokensOnCommonAccount,
-			commonAccountBaseTokensAfter,
-		)
-	})
+			require.NotZero(ch.Env.T, l2GasFee)
+			// total L2 assets is increased by 1mil
+			require.Equal(t, l2TotalBaseTokensBefore+1*isc.Million, l2TotalBaseTokensAfter)
+			// common account is left untouched
+			require.Equal(t, commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
+			if test.SenderIsOriginator {
+				// sender deposited 1mil to L2 and spent L1 gas fee for the request and then the anchor transition
+				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee-l1AnchorTransitionGasFee, senderL1BaseTokensAfter)
+				// sender got 1mil (l2GasFee goes to originator which is the sender)
+				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million, senderL2BaseTokensAfter)
+			} else {
+				// sender deposited 1mil to L2 and spent L1 gas fees (which goes to a black hole?)
+				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee, senderL1BaseTokensAfter)
+				// sender got 1mil minus l2GasFee
+				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million-l2GasFee, senderL2BaseTokensAfter)
+				// l2GasFee goes to payoutAgentID (originator by default)
+				require.Equal(t, originatorL2BaseTokensBefore+l2GasFee, originatorL2BaseTokensAfter)
+			}
+		})
+	}
 }
 
 func TestNoTargetView(t *testing.T) {
@@ -378,7 +355,7 @@ func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
 	skipReq := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(9999).Sign(user)
 	validReq := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(0).Sign(user)
 
-	ch.RunRequestsSync([]isc.Request{skipReq, validReq}, "")
+	ch.RunRequestsSync([]isc.Request{skipReq, validReq})
 
 	// block has been created with only 1 request, calling 	`GetRequestReceiptsForBlock` must yield 1 receipt as expected
 	bi := ch.GetLatestBlockInfo()
