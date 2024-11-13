@@ -233,11 +233,12 @@ func TestEstimateGas(t *testing.T) {
 			agentID := isc.NewAddressAgentID(addr)
 
 			if testCase.L2Balance > 0 {
-				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
+				// deposit must come from another user so that we have exactly
+				// the funds we need on the test account
 				anotherKeyPair, _ := env.NewKeyPairWithFunds()
 				err := ch.TransferAllowanceTo(
 					isc.NewAssets(testCase.L2Balance),
-					isc.NewAddressAgentID(addr),
+					agentID,
 					anotherKeyPair,
 				)
 				require.NoError(t, err)

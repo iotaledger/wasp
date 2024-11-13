@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -88,17 +89,6 @@ func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 func (r *CallParams) AddAllowanceBaseTokens(amount coin.Value) *CallParams {
 	return r.AddAllowanceCoins(coin.BaseTokenType, amount)
 }
-
-// func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
-// 	if r.allowance == nil {
-// 		r.allowance = isc.NewEmptyAssets()
-// 	}
-
-// 	r.allowance.Add(&isc.Assets{
-// 		NativeTokens: nativeTokens,
-// 	})
-// 	return r
-// }
 
 func (r *CallParams) AddAllowanceCoins(coinType coin.Type, amount coin.Value) *CallParams {
 	if r.allowance == nil {
@@ -177,6 +167,34 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 	return r
 }
 
+// onLedgerRequestFromParams creates an on-ledger request without sending it to L1. It is intended
+// mainly for estimating gas.
+func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, error) {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
+	ref := iotatest.RandomObjectRef()
+	assetsBagRef := iotatest.RandomObjectRef()
+	return isc.OnLedgerFromRequest(&iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: *ref,
+		Object: &iscmove.Request{
+			ID:     *ref.ObjectID,
+			Sender: keyPair.Address(),
+			AssetsBag: *r.assets.AsAssetsBagWithBalances(&iscmove.AssetsBag{
+				ID:   *assetsBagRef.ObjectID,
+				Size: uint64(len(r.assets.Coins)),
+			}),
+			Message: iscmove.Message{
+				Contract: uint32(r.msg.Target.Contract),
+				Function: uint32(r.msg.Target.EntryPoint),
+				Args:     r.msg.Params,
+			},
+			Allowance: *r.allowance.AsISCMove(),
+			GasBudget: r.gasBudget,
+		},
+	}, ch.ChainID.AsAddress())
+}
+
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
 	if keyPair == nil {
@@ -198,12 +216,6 @@ func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *cryptol
 		WithAllowance(r.allowance)
 
 	return isc.NewImpersonatedOffLedgerRequest(ret.(*isc.OffLedgerRequestData)).WithSenderAddress(address)
-}
-
-// requestFromParams creates an on-ledger request without sending it to L1. It is intended
-// mainly for estimating gas.
-func (ch *Chain) requestFromParams(cp *CallParams, keyPair *cryptolib.KeyPair) (isc.Request, error) {
-	panic("TODO")
 }
 
 func (env *Solo) selectCoinsForGas(
@@ -388,14 +400,11 @@ func (ch *Chain) PostRequestSyncExt(
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 // TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, *blocklog.RequestReceipt, error) {
-	reqCopy := *req
-	r, err := ch.requestFromParams(&reqCopy, keyPair)
+	r, err := req.NewRequestOnLedger(ch, keyPair)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	res := ch.estimateGas(r)
-
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 

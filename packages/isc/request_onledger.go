@@ -31,6 +31,10 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse assets from AssetsBag: %w", err)
 	}
+	allowance, err := AssetsFromISCMove(&request.Object.Allowance)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse allowance: %w", err)
+	}
 	r := &OnLedgerRequestData{
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
@@ -46,7 +50,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 				},
 				Params: request.Object.Message.Args,
 			},
-			Allowance: NewEmptyAssets(),
+			Allowance: allowance,
 			GasBudget: request.Object.GasBudget,
 		},
 	}
