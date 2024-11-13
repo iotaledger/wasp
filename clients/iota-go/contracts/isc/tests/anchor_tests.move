@@ -14,7 +14,6 @@ module isc::anchor_tests {
         iota::IOTA,
         url::Self,
         vec_map,
-        test_utils,
         test_scenario,
     };
 
@@ -33,7 +32,6 @@ module isc::anchor_tests {
     public struct TEST_A has drop {}
     public struct TEST_B has drop {}
 
-    // Demonstration on how to receive a Request inside one PTB.
 
     public fun create_fake_nft(sender: address, ctx: &mut TxContext): stardust::nft::Nft {
         let mut royalties = vec_map::empty();
@@ -68,7 +66,7 @@ module isc::anchor_tests {
         test_b_nft
     }
 
-
+    // Demonstration on how to receive a Request inside one PTB.
     #[test]
     fun demonstrate_request_ptb() {
         // Setup
@@ -112,6 +110,7 @@ module isc::anchor_tests {
         req_assets.place_asset(test_b_nft_obj);
 
         let mut scenario = test_scenario::begin(sender);
+
         // ClientPTB.4 Create the request and can send it to the Anchor.
         let request_id = request::create_and_send_request(
             object::id(&anchor).id_to_address(),
@@ -131,8 +130,7 @@ module isc::anchor_tests {
 
         assert!(request_id == req.receiving_object_id());
 
-        let (receipt, mut req_extracted_assets, fee_balance) = anchor.receive_request(req); 
-        iota_gas_coin.balance_mut().join(fee_balance);
+        let (receipt, mut req_extracted_assets) = anchor.receive_request(req, &mut iota_gas_coin); 
 
         // ServerPTB.2: borrow the asset bag of the anchor
         let (mut anchor_assets, borrow) = anchor.borrow_assets();    

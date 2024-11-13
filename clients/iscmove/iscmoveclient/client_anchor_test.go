@@ -2,6 +2,8 @@ package iscmoveclient_test
 
 import (
 	"context"
+	"fmt"
+	"github.com/samber/lo"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -88,7 +90,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		sentAssetsBagRef,
 		getCoinsRes.Data[len(getCoinsRes.Data)-1].Ref(),
 		iotajsonrpc.IotaCoinType,
-		10,
+		5000,
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
@@ -109,8 +111,8 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			Function: uint32(isc.Hn("test_isc_func")),
 			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		},
-		nil,
-		0,
+		iscmove.NewAssets(5000),
+		5000,
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
@@ -121,6 +123,9 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
+	chainOwnerFunds, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	fmt.Printf("%v", chainOwnerFunds.Data)
+
 	_, err = client.ReceiveRequestAndTransition(
 		context.Background(),
 		chainSigner,
@@ -128,11 +133,21 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		&anchor.ObjectRef,
 		[]iotago.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
+		*chainOwnerFunds.Data[3].Ref(),
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
+
+	funds, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+
+	gasCoinValue, found := lo.Find(funds.Data, func(item *iotajsonrpc.Coin) bool {
+		return item.CoinObjectID.String() == chainOwnerFunds.Data[3].CoinObjectID.String()
+	})
+
+	require.True(t, found)
+	require.Equal(t, gasCoinValue.Balance.Uint64(), uint64(chainOwnerFunds.Data[3].Balance.Uint64()+1337))
 }
 
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {

@@ -26,6 +26,8 @@ type AnchorTransactionBuilder struct {
 
 	ptb *iotago.ProgrammableTransactionBuilder
 
+	gasCoinObject iotago.ObjectRef
+
 	ownerAddr *cryptolib.Address
 }
 
@@ -119,6 +121,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
+		txb.gasCoinObject,
 		stateMetadata,
 	)
 	return ptb.Finish()

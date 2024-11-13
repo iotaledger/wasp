@@ -198,6 +198,7 @@ func PTBReceiveRequestAndTransition(
 	argAnchor iotago.Argument,
 	requestRefs []iotago.ObjectRef,
 	requestAssets []*iscmove.AssetsBagWithBalances,
+	gasCoinObject iotago.ObjectRef,
 	stateMetadata []byte,
 ) *iotago.ProgrammableTransactionBuilder {
 	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
@@ -222,6 +223,8 @@ func PTBReceiveRequestAndTransition(
 	for i, reqObject := range requestRefs {
 		reqObject := reqObject
 		argReqObject := ptb.MustObj(iotago.ObjectArg{Receiving: &reqObject})
+		argGasCoinObject := ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &gasCoinObject})
+
 		argReceiveRequest := ptb.Command(
 			iotago.Command{
 				MoveCall: &iotago.ProgrammableMoveCall{
@@ -229,10 +232,11 @@ func PTBReceiveRequestAndTransition(
 					Module:        iscmove.AnchorModuleName,
 					Function:      "receive_request",
 					TypeArguments: []iotago.TypeTag{},
-					Arguments:     []iotago.Argument{argAnchor, argReqObject},
+					Arguments:     []iotago.Argument{argAnchor, argReqObject, argGasCoinObject},
 				},
 			},
 		)
+
 		argReceiveRequests = append(argReceiveRequests, argReceiveRequest)
 
 		assetsBag := requestAssets[i]

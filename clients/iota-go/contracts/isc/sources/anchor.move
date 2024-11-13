@@ -23,7 +23,6 @@ module isc::anchor {
 
     public struct Config has store {
         fee: u64,
-        admin: address
     }
 
     /// An object which allows managing assets within the "ISC" ecosystem.
@@ -43,7 +42,7 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<IOTA>>, initial_fee: u64,  admin: address, ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<IOTA>>, ctx: &mut TxContext): Anchor {
         let mut assets_bag = assets_bag::new(ctx);
 
         if (coin.is_some()) {
@@ -53,8 +52,7 @@ module isc::anchor {
         };
 
         let config = Config {
-            fee: initial_fee,
-            admin
+            fee: 1337,
         };
 
         let id = object::new(ctx);
@@ -82,7 +80,7 @@ module isc::anchor {
             ConfigKey {}
         );
 
-        assert!(tx_context::sender(ctx) == config.admin, ENotAdmin);
+        //assert!(tx_context::sender(ctx) == config.admin, ENotAdmin);
 
         config.fee = new_fee;
     }
@@ -119,7 +117,7 @@ module isc::anchor {
 
     // === Receive a Request ===
     /// The Anchor receives a request and destroys it, implementing the HotPotato pattern.
-    public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag, iota::balance::Balance<iota::iota::IOTA>) {
+    public fun receive_request(self: &mut Anchor,  request: transfer::Receiving<Request>, gas_fee_coin: &mut Coin<IOTA>): (Receipt, AssetsBag) {
         let req = request::receive(&mut self.id, request);
         let (request_id, mut assets) = req.destroy();
 
@@ -128,8 +126,9 @@ module isc::anchor {
 
         // Take fee
         let balance = assets.take_coin_balance<IOTA>(fee);
+        gas_fee_coin.balance_mut().join(balance);
 
-        (Receipt { request_id }, assets, balance)
+        (Receipt { request_id }, assets)
     }
 
 

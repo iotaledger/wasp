@@ -106,6 +106,7 @@ func TestRequestsFeed(t *testing.T) {
 		&anchor.ObjectRef,
 		[]iotago.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
+		iotago.ObjectRef{},
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,

@@ -24,10 +24,10 @@
     "disableEvents": true
   },
   "l1": {
-    "websocketURL": "ws://localhost:9000",
-    "packageID": "",
+    "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe",
+    "packageID": "0x7b0c08057012b32155b4d78120393639cbe7aad25505cefc4bcf9ac55ebac64a",
     "maxConnectionAttempts": 30,
-    "targetNetworkName": ""
+    "targetNetworkName": "IOTA"
   },
   "cache": {
     "cacheSize": "64MiB",

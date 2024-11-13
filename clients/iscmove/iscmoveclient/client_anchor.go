@@ -90,6 +90,7 @@ func (c *Client) ReceiveRequestAndTransition(
 	anchorRef *iotago.ObjectRef,
 	reqs []iotago.ObjectRef,
 	stateMetadata []byte,
+	gasCoinObject iotago.ObjectRef,
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -117,6 +118,7 @@ func (c *Client) ReceiveRequestAndTransition(
 		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}),
 		reqs,
 		reqAssetsBags,
+		gasCoinObject,
 		stateMetadata,
 	)
 	pt := ptb.Finish()
@@ -128,6 +130,7 @@ func (c *Client) ReceiveRequestAndTransition(
 		}
 		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
+
 	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,

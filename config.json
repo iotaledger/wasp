@@ -10,7 +10,7 @@
     }
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": true,
     "disableStacktrace": false,
     "stacktraceLevel": "panic",
@@ -23,10 +23,11 @@
     ],
     "disableEvents": true
   },
-  "inx": {
-    "address": "localhost:9029",
+  "l1": {
+    "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe",
+    "packageID": "0x744c182388ece427319e8be2c75c0626b1f498869101149323a5d9dc4e5e0fe6",
     "maxConnectionAttempts": 30,
-    "targetNetworkName": ""
+    "targetNetworkName": "IOTA"
   },
   "db": {
     "engine": "rocksdb",

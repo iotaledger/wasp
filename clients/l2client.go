@@ -42,6 +42,7 @@ type L2Client interface {
 		anchorRef *iotago.ObjectRef,
 		reqs []iotago.ObjectRef,
 		stateMetadata []byte,
+		gasCoinObject iotago.ObjectRef,
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
