@@ -5,6 +5,7 @@ module isc::assets_bag {
     use std::type_name;
     use iota::{
         coin::{Self, Coin},
+        iota::IOTA,
         balance::Balance,
         dynamic_object_field as dof,
         dynamic_field as df,
@@ -84,6 +85,18 @@ module isc::assets_bag {
     /// Takes an asset set as a dynamic field of the AssetsBag.
     public fun take_asset<T: key + store>(self: &mut AssetsBag, id: ID): T {
         take_asset_internal(self, id)
+    }
+
+    // get the amount of the balance of a Coin<T>
+    public fun peek_coin_balance<T>(self: &AssetsBag): &Balance<T> {
+        let coin_type = type_name::get<T>().into_string();
+        df::borrow<String, Balance<T>>(&self.id, coin_type)
+    }
+
+    public fun merge_token_to(self: &mut AssetsBag, to_target: &mut Coin<IOTA>, amount: u64, ctx: &mut TxContext) {
+        let take_bal = self.take_coin_balance<IOTA>(amount);
+        let moved_coin = coin::from_balance(take_bal, ctx);
+        to_target.join(moved_coin);
     }
 
     // === Internal Core ===

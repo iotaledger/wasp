@@ -6,13 +6,24 @@ module isc::anchor {
         borrow::{Self, Referent, Borrow},
         coin::Coin,
         iota::IOTA,
+        dynamic_field  as df,
     };
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
     };
 
+    const ENotAdmin: u64 = 0;
+    const ELackTxFee: u64 = 1;
+
     // === Main structs ===
+
+    public struct ConfigKey has copy, drop, store { }
+
+    public struct Config has store {
+        fee: u64,
+        admin: address
+    }
 
     /// An object which allows managing assets within the "ISC" ecosystem.
     /// By default it is owned by a single address.
@@ -21,6 +32,7 @@ module isc::anchor {
         assets: Referent<AssetsBag>,
         state_metadata: vector<u8>,
         state_index: u32,
+        gas_coin_object: address,
     }
 
     public struct Receipt {
@@ -31,24 +43,63 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<IOTA>>, ctx: &mut TxContext): Anchor {
+    public fun start_new_chain(state_metadata: vector<u8>, gas_coin_object: address, coin: Option<Coin<IOTA>>, initial_fee: u64,  admin: address, ctx: &mut TxContext): Anchor {
         let mut assets_bag = assets_bag::new(ctx);
+
         if (coin.is_some()) {
             assets_bag.place_coin<IOTA>(coin.destroy_some());
         } else {
-            coin.destroy_none()
+            coin.destroy_none();
         };
-        Anchor{
-            id: object::new(ctx),
+
+        let config = Config {
+            fee: initial_fee,
+            admin
+        };
+
+        let id = object::new(ctx);
+
+        let mut anchor = Anchor{
+            id: id,
             assets: borrow::new(assets_bag, ctx),
             state_metadata: state_metadata,
+            gas_coin_object: gas_coin_object,
             state_index: 0,
-        }
+        };
+
+        df::add(&mut anchor.id, ConfigKey {}, config);
+
+        anchor
+    }
+
+    // Only admin can modify config
+    public fun update_config(
+        anchor: &mut Anchor,
+        new_fee: u64,
+        ctx: &TxContext
+    ) {
+        let config = df::borrow_mut<ConfigKey, Config>(
+            &mut anchor.id,
+            ConfigKey {}
+        );
+
+        assert!(tx_context::sender(ctx) == config.admin, ENotAdmin);
+
+        config.fee = new_fee;
+    }
+
+    public fun get_config(anchor: &Anchor): (u64) {
+        let config = df::borrow<ConfigKey, Config>(
+            &anchor.id,
+            ConfigKey {}
+        );
+
+        (config.fee)
     }
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor { id, assets, state_index: _, state_metadata: _ } = self;
+        let Anchor { id, assets, state_index: _, state_metadata: _ , gas_coin_object: _} = self;
         id.delete();
         assets.destroy()
     }
@@ -71,6 +122,10 @@ module isc::anchor {
     public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag) {
         let req = request::receive(&mut self.id, request);
         let (request_id, assets) = req.destroy();
+
+        let fee = self.get_config();
+        assert!(assets.peek_coin_balance<IOTA>().value() > fee, ELackTxFee);
+
         (Receipt { request_id }, assets)
     }
 

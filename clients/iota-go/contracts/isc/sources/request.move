@@ -67,7 +67,7 @@ module isc::request {
         mut allowance_balances: vector<u64>,
         gas_budget: u64,
         ctx: &mut TxContext,
-    ) {
+    ) : ID {
         let mut allowance_cointypes_len = vector::length<String>(&allowance_cointypes);
         assert!(allowance_cointypes_len == vector::length<u64>(&allowance_balances), EAllowanceVecUnequal);
 
@@ -81,8 +81,11 @@ module isc::request {
             allowance_cointypes_len = allowance_cointypes_len - 1;
         };
 
-        send(Request{
-            id: object::new(ctx),
+        let id = object::new(ctx);
+        let request_id = object::uid_to_inner(&id);
+
+        let req = Request{
+            id: id,
             sender: ctx.sender(),
             assets_bag: borrow::new(assets_bag, ctx),
             message: Message{
@@ -92,7 +95,11 @@ module isc::request {
             },
             allowance: allowance,
             gas_budget: gas_budget,
-        }, anchor)
+        };
+
+        send(req, anchor);
+
+        request_id  // Return the ID directly
     }
 
     /// Destroys a Request object and returns its balance and assets bag.
