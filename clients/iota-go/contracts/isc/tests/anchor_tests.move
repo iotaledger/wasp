@@ -5,16 +5,14 @@ module isc::anchor_tests {
 
     use std::{
         fixed_point32,
-        string::{Self, String},
+        string::{Self},
         ascii::Self,
     };
     use iota::{
-        table::Self,
         coin::Self,
         coin::Coin,
         iota::IOTA,
         url::Self,
-        vec_set::Self,
         vec_map,
         test_utils,
         test_scenario,
@@ -79,19 +77,19 @@ module isc::anchor_tests {
         let initial_testA_in_request = 100;
         let governor = @0xA;
         let sender = @0xB;
+        let fee = 1337;
+
         let mut ctx = tx_context::dummy();
 
         let coin: Option<Coin<IOTA>> = option::none();
 
         let mut iota_gas_coin = coin::mint_for_testing<IOTA>(0, &mut ctx);
-        let gas_coin_id = object::borrow_id(&iota_gas_coin);
-        let gas_coin_addr = object::id_to_address(gas_coin_id);
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(vector::empty(), gas_coin_addr, coin, 16, governor, &mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), coin, fee, governor, &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
-        let mut iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
+        let iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
         let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
 
         let test_b_nft_obj = create_fake_nft(sender, &mut ctx);
@@ -127,19 +125,14 @@ module isc::anchor_tests {
             &mut ctx,
         );
 
-        test_scenario::next_tx(&mut scenario, sender);
         // ServerPTB.1 Now the Anchor receives off-chain an event that tracks the request and can receive it.
-        std::debug::print(&request_id);
+        test_scenario::next_tx(&mut scenario, sender);
         let req = test_scenario::most_recent_receiving_ticket<isc::request::Request>(&object::id(&anchor));
-        std::debug::print(&req);
-        scenario.end();
 
         assert!(request_id == req.receiving_object_id());
 
-        let (receipt, mut req_extracted_assets) = anchor.receive_request(req); 
-        std::debug::print(&receipt);
-        std::debug::print(&req_extracted_assets);
-        
+        let (receipt, mut req_extracted_assets, fee_balance) = anchor.receive_request(req); 
+        iota_gas_coin.balance_mut().join(fee_balance);
 
         // ServerPTB.2: borrow the asset bag of the anchor
         let (mut anchor_assets, borrow) = anchor.borrow_assets();    
@@ -156,9 +149,8 @@ module isc::anchor_tests {
         
         // ServerPTB.3.1: extract the iota balance.
         let extracted_iota_balance = req_extracted_assets.take_all_coin_balance<IOTA>();
-        std::debug::print(&extracted_iota_balance.value());
+        assert!(extracted_iota_balance.value() == initial_iota_in_request-fee);
 
-        assert!(extracted_iota_balance.value() == 10000);
         // ServerPTB.3.2: place it to the anchor assets bag.
         anchor_assets.place_coin_balance(extracted_iota_balance);
 
@@ -182,10 +174,13 @@ module isc::anchor_tests {
         let new_state_metadata = vector::empty();
         anchor.transition(new_state_metadata, receipts);
 
+        assert!(iota_gas_coin.balance().value() == fee);
+
         // !!! END !!!
 
-        transfer::public_transfer(anchor, governor); // not needed in the PTB
+        transfer::public_transfer(anchor, sender); // not needed in the PTB
+        transfer::public_transfer(iota_gas_coin, sender);
+        scenario.end();
 
-        iota_gas_coin.destroy_zero();
     }
 }

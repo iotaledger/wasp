@@ -6,6 +6,7 @@ module isc::request {
         borrow::{Self, Referent},
         event::Self,
     };
+    
     use std::string::String;
     use isc::assets_bag::AssetsBag;
 
@@ -55,7 +56,6 @@ module isc::request {
     }
 
     // === Request packing and unpacking ===
-
     /// Creates a request to call a specific SC function.
     public fun create_and_send_request(
         anchor: address,
