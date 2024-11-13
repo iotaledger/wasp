@@ -58,14 +58,14 @@ func TestManyEvents(t *testing.T) {
 
 	postEvents := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
-		reqID, _, _, _, err := ch.PostRequestSyncTx(
+		req, _, _, _, err := ch.PostRequestSyncTx(
 			solo.NewCallParamsEx(manyevents.Contract.Name, manyevents.FuncManyEvents.Name, isc.NewCallArguments(
 				codec.Encode(n),
 			)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
-		return getBurnedGas(ch, reqID, err)
+		return getBurnedGas(ch, req.ID(), err)
 	}
 
 	gas1000, err := postEvents(1000)
@@ -93,14 +93,14 @@ func TestEventTooLarge(t *testing.T) {
 
 	postEvent := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
-		reqID, _, _, _, err := ch.PostRequestSyncTx(
+		req, _, _, _, err := ch.PostRequestSyncTx(
 			solo.NewCallParamsEx(manyevents.Contract.Name, manyevents.FuncBigEvent.Name, isc.NewCallArguments(
 				codec.Encode(n),
 			)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
-		return getBurnedGas(ch, reqID, err)
+		return getBurnedGas(ch, req.ID(), err)
 	}
 
 	gas1k, err := postEvent(100_000)
@@ -116,12 +116,12 @@ func TestEventTooLarge(t *testing.T) {
 }
 
 func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
-	reqID, _, _, _, err := ch.PostRequestSyncTx(
+	req, _, _, _, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).WithGasBudget(math.MaxUint64),
 		nil,
 	)
 	require.NoError(t, err)
-	return reqID
+	return req.ID()
 }
 
 func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []*isc.Event {

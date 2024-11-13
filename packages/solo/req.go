@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -284,10 +283,8 @@ func (env *Solo) makeBaseTokenCoinsWithExactly(
 	})
 }
 
-// RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
-// Then it adds it to the ledger, atomically.
-// Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+// SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
+func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
@@ -309,14 +306,24 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		iotaclient.DefaultGasBudget,
 	)
 	if err != nil {
-		return isc.RequestID{}, nil, err
-	}
-	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
-	if err != nil {
-		return isc.RequestID{}, nil, err
+		return nil, nil, err
 	}
 
-	return isc.RequestID(*reqRef.ObjectID), res, nil
+	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, reqRef.ObjectID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	r, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
+	if err != nil {
+		return nil, nil, err
+	}
+	return r, res, nil
 }
 
 // PostRequestSync posts a request synchronously sent by the test program to
@@ -341,13 +348,13 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (
-	reqID isc.RequestID,
+	onLedregReq isc.OnLedgerRequest,
 	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
 	vmRes *vm.RequestResult,
 	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
 	err error,
 ) {
-	reqID, l1Res, vmRes, anchorTransitionPTBRes, err = ch.PostRequestSyncExt(req, keyPair)
+	onLedregReq, l1Res, vmRes, anchorTransitionPTBRes, err = ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
 		return
 	}
@@ -369,7 +376,7 @@ func (ch *Chain) PostRequestSyncExt(
 	callParams *CallParams,
 	keyPair *cryptolib.KeyPair,
 ) (
-	reqID isc.RequestID,
+	req isc.OnLedgerRequest,
 	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
 	vmRes *vm.RequestResult,
 	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
@@ -380,19 +387,16 @@ func (ch *Chain) PostRequestSyncExt(
 	}
 	defer ch.logRequestLastBlock()
 
-	reqID, l1Res, err = ch.RequestFromParamsToLedger(callParams, keyPair)
+	req, l1Res, err = ch.SendRequest(callParams, keyPair)
 	require.NoError(ch.Env.T, err)
-
-	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, (*iotago.ObjectID)(&reqID))
-	req, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
 
 	anchorTransitionPTBRes, results := ch.RunRequestsSync([]isc.Request{req})
 	if len(results) == 0 {
-		return isc.RequestID{}, nil, nil, nil, errors.New("request has been skipped")
+		return nil, nil, nil, nil, errors.New("request has been skipped")
 	}
 	vmRes = results[0]
 
-	return reqID, l1Res, vmRes, anchorTransitionPTBRes, nil
+	return req, l1Res, vmRes, anchorTransitionPTBRes, nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
@@ -563,69 +567,4 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 		return nil, err
 	}
 	return vmctx.GetContractStateCommitment(hn)
-}
-
-// WaitUntil waits until the condition specified by the given predicate yields true
-func (env *Solo) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
-	env.T.Helper()
-	maxw := 10 * time.Second
-	var deadline time.Time
-	if len(maxWait) > 0 {
-		maxw = maxWait[0]
-	}
-	deadline = time.Now().Add(maxw)
-	for {
-		if p() {
-			return true
-		}
-		if time.Now().After(deadline) {
-			env.T.Logf("WaitUntil failed waiting max %v", maxw)
-			return false
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-
-const waitUntilMempoolIsEmptyDefaultTimeout = 5 * time.Second
-
-func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
-	realTimeout := waitUntilMempoolIsEmptyDefaultTimeout
-	if len(timeout) > 0 {
-		realTimeout = timeout[0]
-	}
-
-	deadline := time.Now().Add(realTimeout)
-	for {
-		if ch.mempool.Info().TotalPool == 0 {
-			return true
-		}
-		time.Sleep(10 * time.Millisecond)
-		if time.Now().After(deadline) {
-			return false
-		}
-	}
-}
-
-// WaitForRequestsMark marks the amount of requests processed until now
-// This allows the WaitForRequestsThrough() function to wait for the
-// specified of number of requests after the mark point.
-func (ch *Chain) WaitForRequestsMark() {
-	ch.RequestsBlock = ch.LatestBlockIndex()
-}
-
-// WaitForRequestsThrough waits until the specified number of requests
-// have been processed since the last call to WaitForRequestsMark()
-func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	ch.Env.T.Helper()
-	ch.Env.T.Logf("WaitForRequestsThrough: start -- block #%d -- numReq = %d", ch.RequestsBlock, numReq)
-	return ch.Env.WaitUntil(func() bool {
-		ch.Env.T.Helper()
-		latest := ch.LatestBlockIndex()
-		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {
-			receipts := ch.GetRequestReceiptsForBlock(ch.RequestsBlock + 1)
-			numReq -= len(receipts)
-			ch.Env.T.Logf("WaitForRequestsThrough: new block #%d with %d requests -- numReq = %d", ch.RequestsBlock, len(receipts), numReq)
-		}
-		return numReq <= 0
-	}, maxWait...)
 }

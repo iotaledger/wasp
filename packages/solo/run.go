@@ -105,8 +105,9 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
-	if res.RotationAddress == nil {
-		// normal state transition
+	if res.RotationAddress != nil {
+		panic("TODO")
+	} else {
 		ch.settleStateTransition(res.StateDraft)
 	}
 	return ptbRes, res.RequestResults
@@ -126,9 +127,6 @@ func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
 	blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
 	if err != nil {
 		panic(err)
-	}
-	for _, rec := range blockReceipts {
-		ch.mempool.RemoveRequest(rec.Request.ID())
 	}
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d",
 		stateDraft.BlockIndex(), len(blockReceipts))

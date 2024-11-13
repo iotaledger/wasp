@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -303,8 +302,7 @@ func TestMessageSize(t *testing.T) {
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
-		req, err := solo.ISCRequestFromCallParams(
-			ch,
+		req, _, err := ch.SendRequest(
 			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize)), sbtestsc.Contract.Name).
 				AddBaseTokens(storageDeposit).
 				AddAllowanceBaseTokens(storageDeposit).
@@ -315,10 +313,11 @@ func TestMessageSize(t *testing.T) {
 		reqs[i] = req
 	}
 
-	env.AddRequestsToMempool(ch, reqs)
-	ch.WaitUntilMempoolIsEmpty()
-
 	// request outputs are so large that they have to be processed in two separate blocks
+	_, results := ch.RunRequestBatch(maxRequestsPerBlock)
+	require.Len(t, results, maxRequestsPerBlock)
+	_, results = ch.RunRequestBatch(maxRequestsPerBlock)
+	require.Len(t, results, 1)
 	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
 
 	for _, req := range reqs {
@@ -338,11 +337,8 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	}
 	badReq, err := isc.RequestFromBytes(badReqBytes)
 	require.NoError(t, err)
-	env.AddRequestsToMempool(ch, []isc.Request{badReq})
-	time.Sleep(200 * time.Millisecond)
-	// request won't be processed
-	_, ok := ch.GetRequestReceipt(badReq.ID())
-	require.False(t, ok)
+	_, _, err = ch.RunOffLedgerRequest(badReq)
+	require.ErrorContains(t, err, "invalid signature")
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {

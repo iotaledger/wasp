@@ -78,11 +78,6 @@ func (m MockSandBox) Send(metadata isc.RequestParameters) {
 	panic("implement me")
 }
 
-func (m MockSandBox) EstimateRequiredStorageDeposit(r isc.RequestParameters) uint64 {
-	// TODO implement me
-	panic("implement me")
-}
-
 func (m MockSandBox) StateAnchor() *isc.StateAnchor {
 	// TODO implement me
 	panic("implement me")

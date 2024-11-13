@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"math"
-	"math/rand"
 	"slices"
 	"sync"
 	"time"
@@ -25,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
@@ -37,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -47,8 +48,7 @@ import (
 )
 
 const (
-	MaxRequestsInBlock = 100
-	timeLayout         = "04:05.000000000"
+	timeLayout = "04:05.000000000"
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -107,10 +107,6 @@ type Chain struct {
 	proc *processors.Config
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
-	// mempool of the chain is used in Solo to mimic a real node
-	mempool Mempool
-
-	RequestsBlock uint32
 
 	migrationScheme *migrations.MigrationScheme
 }
@@ -180,23 +176,8 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	})
 
 	go ret.publisher.Run(ctx)
-	go ret.batchLoop()
 
 	return ret
-}
-
-func (env *Solo) batchLoop() {
-	for {
-		time.Sleep(50 * time.Millisecond)
-		chains := func() []*Chain {
-			env.chainsMutex.Lock()
-			defer env.chainsMutex.Unlock()
-			return lo.Values(env.chains)
-		}()
-		for _, ch := range chains {
-			ch.collateAndRunBatch()
-		}
-	}
 }
 
 func (env *Solo) IterateChainTrieDBs(
@@ -398,7 +379,6 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
 		proc:              env.processorConfig,
 		log:               env.logger.Named(chData.Name),
-		mempool:           newMempool(env.GlobalTime, chData.ChainID),
 		migrationScheme:   chData.migrationScheme,
 	}
 	env.chains[chData.ChainID] = ch
@@ -411,26 +391,6 @@ func (env *Solo) Ctx() context.Context {
 
 func (env *Solo) IotaFaucetURL() string {
 	return env.l1Config.IotaFaucetURL
-}
-
-// AddRequestsToMempool adds all the requests to the chain mempool,
-func (env *Solo) AddRequestsToMempool(ch *Chain, reqs []isc.Request) {
-	ch.mempool.ReceiveRequests(reqs...)
-}
-
-// EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
-func (env *Solo) EnqueueRequests(requests map[isc.ChainID][]isc.Request) {
-	env.chainsMutex.RLock()
-	defer env.chainsMutex.RUnlock()
-
-	for chainID, reqs := range requests {
-		ch, ok := env.chains[chainID]
-		if !ok {
-			env.logger.Infof("dispatching requests. Unknown chain: %s", chainID.String())
-			continue
-		}
-		ch.mempool.ReceiveRequests(reqs...)
-	}
 }
 
 func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
@@ -467,36 +427,42 @@ func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 	return anchor, lo.Must(isc.AssetsFromAssetsBagWithBalances(bals))
 }
 
-// collateBatch selects requests which are not time locked
-// returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []isc.Request {
-	// emulating variable sized blocks
-	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
-	requests := ch.mempool.RequestBatchProposal()
-	batchSize := len(requests)
-
-	if batchSize > maxBatch {
-		batchSize = maxBatch
+// collateBatch selects requests to be processed in a batch
+func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
+	reqs, err := ch.Env.ISCMoveClient().GetRequests(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress())
+	require.NoError(ch.Env.T, err)
+	slices.SortFunc(reqs, func(a, b *iscmove.RefWithObject[iscmove.Request]) int {
+		return bytes.Compare(a.ObjectID[:], b.ObjectID[:])
+	})
+	if len(reqs) > maxRequestsInBlock {
+		reqs = reqs[:maxRequestsInBlock]
 	}
-
-	return requests[:batchSize]
+	return lo.Map(reqs, func(req *iscmove.RefWithObject[iscmove.Request], _ int) isc.Request {
+		r, err := isc.OnLedgerFromRequest(req, ch.ChainID.AsAddress())
+		require.NoError(ch.Env.T, err)
+		return r
+	})
 }
 
-func (ch *Chain) collateAndRunBatch() {
+// RunRequestBatch runs a batch of requests pending to be processed
+func (ch *Chain) RunRequestBatch(maxRequestsInBlock int) (
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	[]*vm.RequestResult,
+) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
-	if ch.Env.ctx.Err() != nil {
-		return
+
+	batch := ch.collateBatch(maxRequestsInBlock)
+	if len(batch) == 0 {
+		return nil, nil // no requests to process
 	}
-	batch := ch.collateBatch()
-	if len(batch) > 0 {
-		_, results := ch.runRequestsNolock(batch)
-		for _, res := range results {
-			if res.Receipt.Error != nil {
-				ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
-			}
+	ptbRes, results := ch.runRequestsNolock(batch)
+	for _, res := range results {
+		if res.Receipt.Error != nil {
+			ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
 		}
 	}
+	return ptbRes, results
 }
 
 func (ch *Chain) AddMigration(m migrations.Migration) {

@@ -217,3 +217,58 @@ func (c *Client) GetRequestFromObjectID(
 		Object:    req.ToRequest(),
 	}, nil
 }
+
+func (c *Client) GetRequests(
+	ctx context.Context,
+	packageID iotago.PackageID,
+	anchorAddress *iotago.ObjectID,
+) (
+	[]*iscmove.RefWithObject[iscmove.Request],
+	error,
+) {
+	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	var lastSeen *iotago.ObjectID
+	for {
+		res, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+			Address: anchorAddress,
+			Query: &iotajsonrpc.IotaObjectResponseQuery{
+				Filter: &iotajsonrpc.IotaObjectDataFilter{
+					StructType: &iotago.StructTag{
+						Address: &packageID,
+						Module:  iscmove.RequestModuleName,
+						Name:    iscmove.RequestObjectName,
+					},
+				},
+				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+			},
+			Cursor: lastSeen,
+		})
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("failed to fetch requests: %w", err)
+		}
+		if len(res.Data) == 0 {
+			break
+		}
+		lastSeen = res.NextCursor
+		for _, reqData := range res.Data {
+			var req moveRequest
+			err := iotaclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode request: %w", err)
+			}
+			bals, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.ID)
+			if ctx.Err() != nil {
+				return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", ctx.Err())
+			}
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
+			}
+			req.AssetsBag.Value = bals
+			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
+				ObjectRef: reqData.Data.Ref(),
+				Object:    req.ToRequest(),
+			})
+		}
+	}
+	return reqs, nil
+}

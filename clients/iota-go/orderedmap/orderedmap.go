@@ -65,8 +65,9 @@ func (m *OrderedMap[K, V]) Get(key K) (V, bool) {
 }
 
 func (m *OrderedMap[K, V]) Find(key K) (int, bool) {
+	keyHash := GetHash(key)
 	for i, v := range m.insertOrder {
-		if v == key {
+		if GetHash(v) == keyHash {
 			return i, true
 		}
 	}
