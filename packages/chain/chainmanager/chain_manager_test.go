@@ -10,8 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -57,8 +58,6 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Create ledger accounts.
 	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
 	originator := cryptolib.NewKeyPair()
-	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
-	require.NoError(t, err)
 	//
 	// Node identities and DKG.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -72,7 +71,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	require.NotNil(t, cmtAddrB)
 	//
 	// Chain identifiers.
-	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
+	tcl := newTestChainLedger(t, originator)
 	anchor := tcl.MakeTxChainOrigin(cmtAddrA)
 	//
 	// Construct the nodes.
@@ -96,7 +95,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			// Nothing
 		}
 		cm, err := chainmanager.New(
-			nid, chainID, stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
+			nid, anchor.ChainID(), stores[nid], consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey,
 			activeAccessNodesCB, trackActiveStateCB, savePreliminaryBlockCB, updateCommitteeNodesCB, true, -1, 1, nil,
 			log.Named(nid.ShortString()),
 		)
@@ -109,7 +108,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Provide initial AO.
 	initAOInputs := map[gpa.NodeID]gpa.Input{}
 	for nid := range nodes {
-		initAOInputs[nid] = chainmanager.NewInputAliasOutputConfirmed(anchor)
+		initAOInputs[nid] = chainmanager.NewInputAliasOutputConfirmed(originator.Address(), anchor)
 	}
 	tc.WithInputs(initAOInputs)
 	tc.RunAll()
@@ -124,7 +123,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Provide consensus output.
-	step2AO, step2TX := tcl.FakeRotationTX(anchor, cmtAddrA)
+	step2AO := tcl.FakeRotationTX(anchor, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
@@ -182,7 +181,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Say TX is confirmed.
 	for nid := range nodes {
-		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(step2AO))
+		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(originator.Address(), step2AO))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("TX Published and Confirmed", t.Logf)
@@ -196,9 +195,9 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Make external committee rotation.
-	rotateAO, _ := tcl.FakeRotationTX(step2AO, cmtAddrB)
+	rotateAO := tcl.FakeRotationTX(step2AO, cmtAddrB)
 	for nid := range nodes {
-		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(rotateAO))
+		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(originator.Address(), rotateAO))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After external rotation", t.Logf)
@@ -210,4 +209,13 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrB, &out.NeedConsensus().CommitteeAddr)
 	}
+}
+
+func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.TestChainLedger {
+	l1client := clients.NewL1Client(clients.L1Config{
+		APIURL:    iotaconn.LocalnetEndpointURL,
+		FaucetURL: iotaconn.LocalnetFaucetURL,
+	})
+	iscPackage := testchain.BuildAndDeployISCContracts(t, l1client, originator)
+	return testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 }
