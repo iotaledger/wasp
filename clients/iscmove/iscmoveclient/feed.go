@@ -105,6 +105,15 @@ func (f *ChainFeed) SubscribeToUpdates(
 	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
 }
 
+func (f *ChainFeed) GetAssets(ctx context.Context, anchor *iscmove.AnchorWithRef) ([]*iotago.ObjectRef, error) {
+	coins, err := f.wsClient.GetCoinObjsForTargetAmount(ctx, &anchor.Object.Assets.ID, iotaclient.DefaultGasPrice)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch assets: %w", err)
+	}
+
+	return coins.CoinRefs(), err
+}
+
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
 	anchorID iotago.ObjectID,
@@ -223,7 +232,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
-						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 					})
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
@@ -242,6 +251,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					anchorCh <- &iscmove.AnchorWithRef{
 						ObjectRef: r.Data.VersionFound.Ref(),
 						Object:    anchor,
+						Owner:     r.Data.VersionFound.Owner.AddressOwner,
 					}
 				}
 			}

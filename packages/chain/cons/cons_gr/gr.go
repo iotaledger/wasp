@@ -8,6 +8,8 @@ package cons_gr
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"time"
 
 	"go.uber.org/atomic"
@@ -15,7 +17,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -39,12 +40,12 @@ const (
 ////////////////////////////////////////////////////////////////////////////////
 // Interfaces required from other components (MP, SM)
 
-type ConsensusID [iotago.Ed25519AddressBytesLength + 4]byte
+type ConsensusID [iotago.AddressLen + 4]byte
 
 func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) ConsensusID {
 	ret := ConsensusID{}
 	copy(ret[:], cmtAddr.Bytes())
-	copy(ret[iotago.Ed25519AddressBytesLength:], codec.Encode[uint32](logIndex.AsUint32()))
+	copy(ret[iotago.AddressLen:], codec.Encode[uint32](logIndex.AsUint32()))
 	return ret
 }
 
