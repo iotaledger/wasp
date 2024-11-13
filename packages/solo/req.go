@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -88,17 +88,6 @@ func (r *CallParams) AddAllowance(allowance *isc.Assets) *CallParams {
 func (r *CallParams) AddAllowanceBaseTokens(amount coin.Value) *CallParams {
 	return r.AddAllowanceCoins(coin.BaseTokenType, amount)
 }
-
-// func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.NativeToken) *CallParams {
-// 	if r.allowance == nil {
-// 		r.allowance = isc.NewEmptyAssets()
-// 	}
-
-// 	r.allowance.Add(&isc.Assets{
-// 		NativeTokens: nativeTokens,
-// 	})
-// 	return r
-// }
 
 func (r *CallParams) AddAllowanceCoins(coinType coin.Type, amount coin.Value) *CallParams {
 	if r.allowance == nil {
@@ -177,6 +166,34 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 	return r
 }
 
+// onLedgerRequestFromParams creates an on-ledger request without sending it to L1. It is intended
+// mainly for estimating gas.
+func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, error) {
+	if keyPair == nil {
+		keyPair = ch.OriginatorPrivateKey
+	}
+	ref := iotatest.RandomObjectRef()
+	assetsBagRef := iotatest.RandomObjectRef()
+	return isc.OnLedgerFromRequest(&iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: *ref,
+		Object: &iscmove.Request{
+			ID:     *ref.ObjectID,
+			Sender: keyPair.Address(),
+			AssetsBag: *r.assets.AsAssetsBagWithBalances(&iscmove.AssetsBag{
+				ID:   *assetsBagRef.ObjectID,
+				Size: uint64(len(r.assets.Coins)),
+			}),
+			Message: iscmove.Message{
+				Contract: uint32(r.msg.Target.Contract),
+				Function: uint32(r.msg.Target.EntryPoint),
+				Args:     r.msg.Params,
+			},
+			Allowance: *r.allowance.AsISCMove(),
+			GasBudget: r.gasBudget,
+		},
+	}, ch.ChainID.AsAddress())
+}
+
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
 	if keyPair == nil {
@@ -200,10 +217,24 @@ func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *cryptol
 	return isc.NewImpersonatedOffLedgerRequest(ret.(*isc.OffLedgerRequestData)).WithSenderAddress(address)
 }
 
-// requestFromParams creates an on-ledger request without sending it to L1. It is intended
-// mainly for estimating gas.
-func (ch *Chain) requestFromParams(cp *CallParams, keyPair *cryptolib.KeyPair) (isc.Request, error) {
-	panic("TODO")
+func (env *Solo) selectCoinsForGas(
+	addr *cryptolib.Address,
+	targetPTB *iotago.ProgrammableTransaction,
+	gasBudget, gasPrice uint64,
+) []*iotago.ObjectRef {
+	sum := uint64(0)
+	gasPayment := make([]*iotago.ObjectRef, 0)
+	for _, c := range env.L1AllCoins(addr) {
+		if targetPTB.IsInInputObjects(c.CoinObjectID) {
+			continue
+		}
+		gasPayment = append(gasPayment, c.Ref())
+		sum += c.Balance.Uint64()
+		if sum >= gasBudget*gasPrice {
+			break
+		}
+	}
+	return gasPayment
 }
 
 func (env *Solo) makeBaseTokenCoinsWithExactly(
@@ -252,10 +283,8 @@ func (env *Solo) makeBaseTokenCoinsWithExactly(
 	})
 }
 
-// RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
-// Then it adds it to the ledger, atomically.
-// Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.RequestID, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+// SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
+func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
@@ -277,14 +306,24 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 		iotaclient.DefaultGasBudget,
 	)
 	if err != nil {
-		return isc.RequestID{}, nil, err
-	}
-	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
-	if err != nil {
-		return isc.RequestID{}, nil, err
+		return nil, nil, err
 	}
 
-	return isc.RequestID(*reqRef.ObjectID), res, nil
+	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, reqRef.ObjectID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	r, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
+	if err != nil {
+		return nil, nil, err
+	}
+	return r, res, nil
 }
 
 // PostRequestSync posts a request synchronously sent by the test program to
@@ -295,7 +334,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 // Instead, the Solo environment makes PostRequestSync a synchronous call,
 // making it possible to step-by-step debug the smart contract logic.
 func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, error) {
-	_, _, res, err := ch.PostRequestSyncTx(req, keyPair)
+	_, _, res, _, err := ch.PostRequestSyncTx(req, keyPair)
 	if err != nil {
 		return nil, err
 	}
@@ -304,20 +343,23 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *cryptolib.KeyPair) (i
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, error) {
 	r := req.NewRequestOffLedger(ch, keyPair)
-	return ch.RunOffLedgerRequest(r)
+	_, res, err := ch.RunOffLedgerRequest(r)
+	return res, err
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) (
-	isc.RequestID,
-	*iotajsonrpc.IotaTransactionBlockResponse,
-	*vm.RequestResult,
-	error,
+	onLedregReq isc.OnLedgerRequest,
+	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
+	vmRes *vm.RequestResult,
+	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
+	err error,
 ) {
-	reqID, l1Res, vmRes, err := ch.PostRequestSyncExt(req, keyPair)
+	onLedregReq, l1Res, vmRes, anchorTransitionPTBRes, err = ch.PostRequestSyncExt(req, keyPair)
 	if err != nil {
-		return reqID, l1Res, vmRes, err
+		return
 	}
-	return reqID, l1Res, vmRes, ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
+	err = ch.ResolveVMError(vmRes.Receipt.Error).AsGoError()
+	return
 }
 
 // LastReceipt returns the receipt for the latest request processed by the chain, will return nil if the last block is empty
@@ -334,29 +376,27 @@ func (ch *Chain) PostRequestSyncExt(
 	callParams *CallParams,
 	keyPair *cryptolib.KeyPair,
 ) (
-	isc.RequestID,
-	*iotajsonrpc.IotaTransactionBlockResponse,
-	*vm.RequestResult,
-	error,
+	req isc.OnLedgerRequest,
+	l1Res *iotajsonrpc.IotaTransactionBlockResponse,
+	vmRes *vm.RequestResult,
+	anchorTransitionPTBRes *iotajsonrpc.IotaTransactionBlockResponse,
+	err error,
 ) {
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
 	defer ch.logRequestLastBlock()
 
-	reqID, l1Res, err := ch.RequestFromParamsToLedger(callParams, keyPair)
+	req, l1Res, err = ch.SendRequest(callParams, keyPair)
 	require.NoError(ch.Env.T, err)
 
-	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, (*iotago.ObjectID)(&reqID))
-	req, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
-
-	results := ch.RunRequestsSync([]isc.Request{req}, "post")
+	anchorTransitionPTBRes, results := ch.RunRequestsSync([]isc.Request{req})
 	if len(results) == 0 {
-		return isc.RequestID{}, nil, nil, errors.New("request has been skipped")
+		return nil, nil, nil, nil, errors.New("request has been skipped")
 	}
-	vmRes := results[0]
+	vmRes = results[0]
 
-	return reqID, l1Res, vmRes, nil
+	return req, l1Res, vmRes, anchorTransitionPTBRes, nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
@@ -364,14 +404,11 @@ func (ch *Chain) PostRequestSyncExt(
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 // TODO only a senderAddr, not a keyPair should be necessary to estimate (it definitely shouldn't fallback to the chain originator)
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, *blocklog.RequestReceipt, error) {
-	reqCopy := *req
-	r, err := ch.requestFromParams(&reqCopy, keyPair)
+	r, err := req.NewRequestOnLedger(ch, keyPair)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	res := ch.estimateGas(r)
-
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
@@ -530,69 +567,4 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 		return nil, err
 	}
 	return vmctx.GetContractStateCommitment(hn)
-}
-
-// WaitUntil waits until the condition specified by the given predicate yields true
-func (env *Solo) WaitUntil(p func() bool, maxWait ...time.Duration) bool {
-	env.T.Helper()
-	maxw := 10 * time.Second
-	var deadline time.Time
-	if len(maxWait) > 0 {
-		maxw = maxWait[0]
-	}
-	deadline = time.Now().Add(maxw)
-	for {
-		if p() {
-			return true
-		}
-		if time.Now().After(deadline) {
-			env.T.Logf("WaitUntil failed waiting max %v", maxw)
-			return false
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-
-const waitUntilMempoolIsEmptyDefaultTimeout = 5 * time.Second
-
-func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
-	realTimeout := waitUntilMempoolIsEmptyDefaultTimeout
-	if len(timeout) > 0 {
-		realTimeout = timeout[0]
-	}
-
-	deadline := time.Now().Add(realTimeout)
-	for {
-		if ch.mempool.Info().TotalPool == 0 {
-			return true
-		}
-		time.Sleep(10 * time.Millisecond)
-		if time.Now().After(deadline) {
-			return false
-		}
-	}
-}
-
-// WaitForRequestsMark marks the amount of requests processed until now
-// This allows the WaitForRequestsThrough() function to wait for the
-// specified of number of requests after the mark point.
-func (ch *Chain) WaitForRequestsMark() {
-	ch.RequestsBlock = ch.LatestBlockIndex()
-}
-
-// WaitForRequestsThrough waits until the specified number of requests
-// have been processed since the last call to WaitForRequestsMark()
-func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	ch.Env.T.Helper()
-	ch.Env.T.Logf("WaitForRequestsThrough: start -- block #%d -- numReq = %d", ch.RequestsBlock, numReq)
-	return ch.Env.WaitUntil(func() bool {
-		ch.Env.T.Helper()
-		latest := ch.LatestBlockIndex()
-		for ; ch.RequestsBlock < latest; ch.RequestsBlock++ {
-			receipts := ch.GetRequestReceiptsForBlock(ch.RequestsBlock + 1)
-			numReq -= len(receipts)
-			ch.Env.T.Logf("WaitForRequestsThrough: new block #%d with %d requests -- numReq = %d", ch.RequestsBlock, len(receipts), numReq)
-		}
-		return numReq <= 0
-	}, maxWait...)
 }

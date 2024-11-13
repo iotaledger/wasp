@@ -39,7 +39,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 func TestUntypedError(t *testing.T) {
 	chain := setupErrorsTest(t)
 
-	_, _, _, err := chain.PostRequestSyncTx(
+	_, _, _, _, err := chain.PostRequestSyncTx(
 		solo.NewCallParams(testerrors.FuncThrowUntypedError.Message(nil)),
 		nil,
 	)
@@ -56,7 +56,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 	req := solo.NewCallParamsEx(errors.Contract.Name, errors.FuncRegisterError.Name).
 		WithGasBudget(100_000)
 
-	_, _, _, err := chain.PostRequestSyncTx(req, nil)
+	_, _, _, _, err := chain.PostRequestSyncTx(req, nil)
 
 	testError := &isc.VMError{}
 	require.ErrorAs(t, err, &testError)
@@ -73,7 +73,7 @@ func TestSuccessfulRegisterError(t *testing.T) {
 	req := solo.NewCallParams(errors.FuncRegisterError.Message("poof")).
 		WithGasBudget(100_000)
 
-	_, _, _, err := chain.PostRequestSyncTx(req, nil)
+	_, _, _, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
 	testdbhash.VerifyContractStateHash(chain.Env, errors.Contract, "", t.Name())

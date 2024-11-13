@@ -46,49 +46,9 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
-	var lastSeen *iotago.ObjectID
-	for {
-		res, err := f.wsClient.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
-			Address: &f.anchorAddress,
-			Query: &iotajsonrpc.IotaObjectResponseQuery{
-				Filter: &iotajsonrpc.IotaObjectDataFilter{
-					StructType: &iotago.StructTag{
-						Address: &f.iscPackageID,
-						Module:  iscmove.RequestModuleName,
-						Name:    iscmove.RequestObjectName,
-					},
-				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
-			},
-			Cursor: lastSeen,
-		})
-		if ctx.Err() != nil {
-			return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
-		}
-		if len(res.Data) == 0 {
-			break
-		}
-		lastSeen = res.NextCursor
-		for _, reqData := range res.Data {
-			var req moveRequest
-			err := iotaclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
-			}
-			bals, err := f.wsClient.GetAssetsBagWithBalances(ctx, &req.AssetsBag.ID)
-			if ctx.Err() != nil {
-				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", ctx.Err())
-			}
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
-			}
-			req.AssetsBag.Value = bals
-			reqs = append(reqs, &iscmove.RefWithObject[iscmove.Request]{
-				ObjectRef: reqData.Data.Ref(),
-				Object:    req.ToRequest(),
-			})
-		}
+	reqs, err := f.wsClient.GetRequests(ctx, f.iscPackageID, &f.anchorAddress)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
 	}
 	return anchor, reqs, nil
 }

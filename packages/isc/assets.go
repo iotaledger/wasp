@@ -269,6 +269,18 @@ func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (
 	return assets, nil
 }
 
+func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
+	ret := NewEmptyAssets()
+	for k, v := range assets.Coins {
+		ct, err := coin.TypeFromString(k)
+		if err != nil {
+			return nil, err
+		}
+		ret.Coins.Add(ct, coin.Value(v.Uint64()))
+	}
+	return ret, nil
+}
+
 func AssetsFromBytes(b []byte) (*Assets, error) {
 	return bcs.Unmarshal[*Assets](b)
 }
