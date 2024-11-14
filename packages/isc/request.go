@@ -57,7 +57,7 @@ type UnsignedOffLedgerRequest interface {
 	WithNonce(nonce uint64) UnsignedOffLedgerRequest
 	WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest
 	WithAllowance(allowance *Assets) UnsignedOffLedgerRequest
-	WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest
+	WithSender(sender *cryptolib.PublicKey) OffLedgerRequest
 	Sign(signer cryptolib.Signer) OffLedgerRequest
 }
 

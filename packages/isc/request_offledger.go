@@ -8,18 +8,25 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/minio/blake2b-simd"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
+// OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest
+type OffLedgerRequestDataEssence struct {
+	allowance *Assets `bcs:"export"`
+	chainID   ChainID `bcs:"export"`
+	msg       Message `bcs:"export"`
+	gasBudget uint64  `bcs:"export"`
+	nonce     uint64  `bcs:"export"`
+}
+
+// OffLedgerRequestData implements OffLedgerRequest
 type OffLedgerRequestData struct {
-	allowance *Assets              `bcs:"export"`
-	chainID   ChainID              `bcs:"export"`
-	msg       Message              `bcs:"export"`
-	gasBudget uint64               `bcs:"export"`
-	nonce     uint64               `bcs:"export"`
+	OffLedgerRequestDataEssence
 	signature *cryptolib.Signature `bcs:"export"`
 }
 
@@ -30,37 +37,13 @@ var (
 	_ Calldata                 = new(OffLedgerRequestData)
 )
 
-type ImpersonatedOffLedgerRequestData struct {
-	OffLedgerRequestData
-	address *cryptolib.Address
-}
-
-func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) ImpersonatedOffLedgerRequest {
-	copyReq := *request
-	copyReq.signature = nil
-	return &ImpersonatedOffLedgerRequestData{
-		OffLedgerRequestData: copyReq,
-		address:              nil,
-	}
-}
-
-func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *cryptolib.Address) OffLedgerRequest {
-	addressBytes := address.Bytes()
-	copy(r.address[:], addressBytes)
-	return r
-}
-
-func (r *ImpersonatedOffLedgerRequestData) SenderAccount() AgentID {
-	return NewAddressAgentID(r.address)
-}
-
 func NewOffLedgerRequest(
 	chainID ChainID,
 	msg Message,
 	nonce uint64,
 	gasBudget uint64,
 ) UnsignedOffLedgerRequest {
-	return &OffLedgerRequestData{
+	return &OffLedgerRequestDataEssence{
 		chainID:   chainID,
 		msg:       msg,
 		nonce:     nonce,
@@ -96,26 +79,12 @@ func (req *OffLedgerRequestData) ChainID() ChainID {
 	return req.chainID
 }
 
-func (req *OffLedgerRequestData) EssenceBytes() []byte {
-	type offLedgerRequestDataEssence struct { // TODO: why is it not a separate embedded type?
-		Allowance *Assets
-		ChainID   ChainID
-		Msg       Message
-		GasBudget uint64
-		Nonce     uint64
-	}
-
-	return bcs.MustMarshal(&offLedgerRequestDataEssence{
-		Allowance: req.allowance,
-		ChainID:   req.chainID,
-		Msg:       req.msg,
-		GasBudget: req.gasBudget,
-		Nonce:     req.nonce,
-	})
+func (req *OffLedgerRequestDataEssence) Bytes() []byte {
+	return bcs.MustMarshal(req)
 }
 
-func (req *OffLedgerRequestData) messageToSign() []byte {
-	ret := blake2b.Sum256(req.EssenceBytes())
+func (req *OffLedgerRequestDataEssence) messageToSign() []byte {
+	ret := blake2b.Sum256(req.Bytes())
 	return ret[:]
 }
 
@@ -152,11 +121,12 @@ func (req *OffLedgerRequestData) SenderAccount() AgentID {
 	return NewAddressAgentID(req.signature.GetPublicKey().AsAddress())
 }
 
-// Sign signs the essence
-func (req *OffLedgerRequestData) Sign(signer cryptolib.Signer) OffLedgerRequest {
-	signature, _ := signer.Sign(req.messageToSign())
-	req.signature = signature
-	return req
+func (req *OffLedgerRequestDataEssence) Sign(signer cryptolib.Signer) OffLedgerRequest {
+	signature := lo.Must(signer.Sign(req.messageToSign()))
+	return &OffLedgerRequestData{
+		OffLedgerRequestDataEssence: *req,
+		signature:                   signature,
+	}
 }
 
 func (req *OffLedgerRequestData) String() string {
@@ -191,25 +161,27 @@ func (req *OffLedgerRequestData) VerifySignature() error {
 	return nil
 }
 
-func (req *OffLedgerRequestData) WithAllowance(allowance *Assets) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestDataEssence) WithAllowance(allowance *Assets) UnsignedOffLedgerRequest {
 	req.allowance = allowance.Clone()
 	return req
 }
 
-func (req *OffLedgerRequestData) WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestDataEssence) WithGasBudget(gasBudget uint64) UnsignedOffLedgerRequest {
 	req.gasBudget = gasBudget
 	return req
 }
 
-func (req *OffLedgerRequestData) WithNonce(nonce uint64) UnsignedOffLedgerRequest {
+func (req *OffLedgerRequestDataEssence) WithNonce(nonce uint64) UnsignedOffLedgerRequest {
 	req.nonce = nonce
 	return req
 }
 
 // WithSender can be used to estimate gas, without a signature
-func (req *OffLedgerRequestData) WithSender(sender *cryptolib.PublicKey) UnsignedOffLedgerRequest {
-	req.signature = cryptolib.NewDummySignature(sender)
-	return req
+func (req *OffLedgerRequestDataEssence) WithSender(sender *cryptolib.PublicKey) OffLedgerRequest {
+	return &OffLedgerRequestData{
+		OffLedgerRequestDataEssence: *req,
+		signature:                   cryptolib.NewDummySignature(sender),
+	}
 }
 
 func (req *OffLedgerRequestData) GasPrice() *big.Int {

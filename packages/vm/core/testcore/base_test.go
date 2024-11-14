@@ -331,16 +331,19 @@ func TestMessageSize(t *testing.T) {
 func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	req := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64)
-	badReqBytes := req.(*isc.OffLedgerRequestData).EssenceBytes()
-	// append 33 bytes to the req essence to simulate a bad signature (32 bytes for the pubkey + 1 for 0 length signature)
-	for i := 0; i < 33; i++ {
-		badReqBytes = append(badReqBytes, 0x00)
-	}
-	badReq, err := isc.RequestFromBytes(badReqBytes)
-	require.NoError(t, err)
-	_, _, err = ch.RunOffLedgerRequest(badReq)
-	require.ErrorContains(t, err, "invalid signature")
+
+	// produce a badly signed off-ledger request
+	req := isc.NewOffLedgerRequest(
+		ch.ID(),
+		isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil),
+		0,
+		math.MaxUint64,
+	).WithSender(ch.OriginatorPrivateKey.GetPublicKey())
+
+	require.ErrorContains(t, req.VerifySignature(), "invalid signature")
+
+	_, _, err := ch.RunOffLedgerRequest(req)
+	require.ErrorContains(t, err, "request was skipped")
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
