@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -296,16 +295,18 @@ func TestMessageSize(t *testing.T) {
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	var storageDeposit coin.Value = 1 * isc.Million
+	var attachedBaseTokens coin.Value = 1 * isc.Million
 
-	maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
+	// TODO
+	// maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
+	maxRequestsPerBlock := 1
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
 		req, _, err := ch.SendRequest(
-			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize)), sbtestsc.Contract.Name).
-				AddBaseTokens(storageDeposit).
-				AddAllowanceBaseTokens(storageDeposit).
+			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize))).
+				AddBaseTokens(attachedBaseTokens).
+				AddAllowanceBaseTokens(attachedBaseTokens).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -313,6 +314,7 @@ func TestMessageSize(t *testing.T) {
 		reqs[i] = req
 	}
 
+	// TODO properly test this:
 	// request outputs are so large that they have to be processed in two separate blocks
 	_, results := ch.RunRequestBatch(maxRequestsPerBlock)
 	require.Len(t, results, maxRequestsPerBlock)

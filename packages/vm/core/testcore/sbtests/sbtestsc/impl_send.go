@@ -124,7 +124,6 @@ func sendLargeRequest(ctx isc.Sandbox, x uint64) {
 				isc.NewCallArguments(codec.Encode(x)),
 			),
 		},
-
 		Assets: ctx.AllowanceAvailable(),
 	}
 	ctx.Send(req)

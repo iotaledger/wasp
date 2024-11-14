@@ -192,7 +192,7 @@ func PTBTakeAndPlaceToAssetsBag(
 	return ptb
 }
 
-func PTBReceiveRequestAndTransition(
+func PTBReceiveRequestsAndTransition(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
@@ -265,17 +265,7 @@ func PTBReceiveRequestAndTransition(
 				},
 			)
 		}
-		ptb.Command(
-			iotago.Command{
-				MoveCall: &iotago.ProgrammableMoveCall{
-					Package:       &packageID,
-					Module:        iscmove.AssetsBagModuleName,
-					Function:      "destroy_empty",
-					TypeArguments: []iotago.TypeTag{},
-					Arguments:     []iotago.Argument{argAssetsBag},
-				},
-			},
-		)
+		PTBAssetsDestroyEmpty(ptb, packageID, argAssetsBag)
 	}
 
 	var nestedResults []iotago.Argument

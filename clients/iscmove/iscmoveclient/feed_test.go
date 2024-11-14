@@ -99,7 +99,7 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
-	_, err = client.ReceiveRequestAndTransition(
+	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
 		chainOwner,
 		l1starter.ISCPackageID(),
