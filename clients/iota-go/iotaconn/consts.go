@@ -7,7 +7,7 @@ const (
 	AlphanetWebsocketEndpointURL = "wss://api.iota-rebased-alphanet.iota.cafe"
 	LocalnetWebsocketEndpointURL = "ws://localhost:9000"
 
-	AlphanetFaucetURL = "https://api.iota-rebased-alphanet.iota.cafe/gas"
+	AlphanetFaucetURL = "https://faucet.iota-rebased-alphanet.iota.cafe/gas"
 	LocalnetFaucetURL = "http://localhost:9123/gas"
 )
 
