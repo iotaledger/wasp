@@ -19,7 +19,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type BlockFactory struct {
@@ -41,13 +44,21 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	if len(chainInitParamsOpt) > 0 {
 		chainInitParams = isc.NewCallArguments(agentId.Bytes(), codec.Encode[uint16](evm.DefaultChainID), codec.Encode[int32](int32(chainInitParamsOpt[0].BlockKeepAmount)))
 	} else {
-		chainInitParams = isc.NewCallArguments(agentId.Bytes())
+		chainInitParams = origin.DefaultInitParams(agentId).Encode()
+
 	}
 	chainID := isctest.RandomChainID()
 	chainIDObjID := chainID.AsObjectID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	originBlock, _ := origin.InitChain(0, chainStore, chainInitParams, 0, isc.BaseTokenCoinInfo)
+	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, 0, isc.BaseTokenCoinInfo)
 	originCommitment := originBlock.L1Commitment()
+	originStateMetadata := transaction.NewStateMetadata(
+		allmigrations.LatestSchemaVersion,
+		originBlock.L1Commitment(),
+		gas.DefaultFeePolicy(),
+		isc.NewCallArguments(),
+		"",
+	)
 	originAnchorData := iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: iotago.ObjectRef{
 			ObjectID: &chainIDObjID,
@@ -57,7 +68,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 		Object: &iscmove.Anchor{
 			ID:            chainIDObjID,
 			Assets:        iscmovetest.RandomAssetsBag(),
-			StateMetadata: originCommitment.Bytes(),
+			StateMetadata: originStateMetadata.Bytes(),
 			StateIndex:    0,
 		},
 	}
@@ -185,7 +196,10 @@ func (bfT *BlockFactory) GetNextBlock(
 
 	consumedAnchor := bfT.GetAnchor(commitment)
 	newAnchor := *consumedAnchor
-	newAnchor.Anchor.Object.StateMetadata = newCommitment.Bytes()
+	consumedMetadata, err := transaction.StateMetadataFromBytes(consumedAnchor.Anchor.Object.StateMetadata)
+	require.NoError(bfT.t, err)
+	consumedMetadata.L1Commitment, err = state.NewL1CommitmentFromBytes(newCommitment.Bytes())
+	require.NoError(bfT.t, err)
 	newAnchor.Anchor.Object.StateIndex = newAnchor.Anchor.Object.StateIndex + 1
 	bfT.anchorData[newCommitment.BlockHash()] = *newAnchor.Anchor
 
