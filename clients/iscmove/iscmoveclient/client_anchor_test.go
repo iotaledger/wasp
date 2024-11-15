@@ -121,7 +121,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	_, err = client.ReceiveRequestAndTransition(
+	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
 		chainSigner,
 		l1starter.ISCPackageID(),

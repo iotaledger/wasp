@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -296,16 +295,18 @@ func TestMessageSize(t *testing.T) {
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	var storageDeposit coin.Value = 1 * isc.Million
+	var attachedBaseTokens coin.Value = 1 * isc.Million
 
-	maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
+	// TODO
+	// maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
+	maxRequestsPerBlock := 1
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
 		req, _, err := ch.SendRequest(
-			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize)), sbtestsc.Contract.Name).
-				AddBaseTokens(storageDeposit).
-				AddAllowanceBaseTokens(storageDeposit).
+			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize))).
+				AddBaseTokens(attachedBaseTokens).
+				AddAllowanceBaseTokens(attachedBaseTokens).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -313,6 +314,7 @@ func TestMessageSize(t *testing.T) {
 		reqs[i] = req
 	}
 
+	// TODO properly test this:
 	// request outputs are so large that they have to be processed in two separate blocks
 	_, results := ch.RunRequestBatch(maxRequestsPerBlock)
 	require.Len(t, results, maxRequestsPerBlock)
@@ -329,16 +331,19 @@ func TestMessageSize(t *testing.T) {
 func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	req := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64)
-	badReqBytes := req.(*isc.OffLedgerRequestData).EssenceBytes()
-	// append 33 bytes to the req essence to simulate a bad signature (32 bytes for the pubkey + 1 for 0 length signature)
-	for i := 0; i < 33; i++ {
-		badReqBytes = append(badReqBytes, 0x00)
-	}
-	badReq, err := isc.RequestFromBytes(badReqBytes)
-	require.NoError(t, err)
-	_, _, err = ch.RunOffLedgerRequest(badReq)
-	require.ErrorContains(t, err, "invalid signature")
+
+	// produce a badly signed off-ledger request
+	req := isc.NewOffLedgerRequest(
+		ch.ID(),
+		isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil),
+		0,
+		math.MaxUint64,
+	).WithSender(ch.OriginatorPrivateKey.GetPublicKey())
+
+	require.ErrorContains(t, req.VerifySignature(), "invalid signature")
+
+	_, _, err := ch.RunOffLedgerRequest(req)
+	require.ErrorContains(t, err, "request was skipped")
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {

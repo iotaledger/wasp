@@ -113,7 +113,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 	}
 	// we have to discard the current txb to avoid reusing an ObjectRef
 	defer func() { txb.ptb = nil }()
-	ptb := iscmoveclient.PTBReceiveRequestAndTransition(
+	ptb := iscmoveclient.PTBReceiveRequestsAndTransition(
 		txb.ptb,
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),

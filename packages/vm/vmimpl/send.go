@@ -10,7 +10,7 @@ const MaxPostedOutputsInOneRequest = 4
 
 func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.ObjectID) *isc.NFT {
 	panic("refactor me: getNFTData vm.send")
-	//return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
+	// return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
 }
 
 func (reqctx *requestContext) send(params isc.RequestParameters) {
@@ -19,6 +19,11 @@ func (reqctx *requestContext) send(params isc.RequestParameters) {
 		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
 	} else {
 		// sending cross chain request to a contract on the other chain
-		reqctx.vm.txbuilder.SendCrossChainRequest(params.TargetAddress.AsIotaAddress(), reqctx.vm.task.Anchor.GetObjectID(), params.Assets, params.Metadata)
+		reqctx.vm.txbuilder.SendCrossChainRequest(
+			&reqctx.vm.task.Anchor.ISCPackage,
+			params.TargetAddress.AsIotaAddress(),
+			params.Assets,
+			params.Metadata,
+		)
 	}
 }

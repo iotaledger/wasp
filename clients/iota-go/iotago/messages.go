@@ -67,9 +67,13 @@ type ProgrammableTransaction struct {
 	Commands []Command
 }
 
-func (p ProgrammableTransaction) PrintMoveCommand(cmdIdx int) {
-	if p.Commands[cmdIdx].MoveCall != nil {
-		fmt.Printf("pt.commands[%d]: %v\n", cmdIdx, p.Commands[cmdIdx].MoveCall)
+func (p ProgrammableTransaction) Print(prefix string) {
+	fmt.Printf(prefix + "ProgrammableTransaction:\n")
+	for i, input := range p.Inputs {
+		fmt.Printf("%s  input %2d: %s\n", prefix, i, input.String())
+	}
+	for i, cmd := range p.Commands {
+		fmt.Printf("%s  command %2d: %s\n", prefix, i, cmd.String())
 	}
 }
 
@@ -154,6 +158,16 @@ type CallArg struct {
 }
 
 func (c CallArg) IsBcsEnum() {}
+
+func (c CallArg) String() string {
+	if c.Pure != nil {
+		return fmt.Sprintf("Pure(0x%x)", *c.Pure)
+	}
+	if c.Object != nil {
+		return fmt.Sprintf("Object(%v)", *c.Object)
+	}
+	panic("invalid argument")
+}
 
 type ObjectArg struct {
 	ImmOrOwnedObject *ObjectRef

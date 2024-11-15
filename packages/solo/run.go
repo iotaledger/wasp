@@ -5,6 +5,7 @@ package solo
 
 import (
 	"errors"
+	"os"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -98,6 +99,9 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
+	if os.Getenv("DEBUG") != "" {
+		res.UnsignedTransaction.Print("-- ")
+	}
 	ptbRes := ch.Env.executePTB(
 		res.UnsignedTransaction,
 		ch.OriginatorPrivateKey,

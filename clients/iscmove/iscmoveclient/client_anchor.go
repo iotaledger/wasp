@@ -83,7 +83,7 @@ func (c *Client) StartNewChain(
 	return anchor, nil
 }
 
-func (c *Client) ReceiveRequestAndTransition(
+func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
 	packageID iotago.PackageID,
@@ -111,7 +111,7 @@ func (c *Client) ReceiveRequestAndTransition(
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = PTBReceiveRequestAndTransition(
+	ptb = PTBReceiveRequestsAndTransition(
 		ptb,
 		packageID,
 		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}),

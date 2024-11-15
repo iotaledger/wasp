@@ -207,16 +207,6 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) 
 	return ret.Sign(keyPair)
 }
 
-func (r *CallParams) NewRequestImpersonatedOffLedger(ch *Chain, address *cryptolib.Address) isc.OffLedgerRequest {
-	if r.nonce == 0 {
-		r.nonce = ch.Nonce(isc.NewAddressAgentID(address))
-	}
-	ret := isc.NewOffLedgerRequest(ch.ID(), r.msg, r.nonce, r.gasBudget).
-		WithAllowance(r.allowance)
-
-	return isc.NewImpersonatedOffLedgerRequest(ret.(*isc.OffLedgerRequestData)).WithSenderAddress(address)
-}
-
 func (env *Solo) selectCoinsForGas(
 	addr *cryptolib.Address,
 	targetPTB *iotago.ProgrammableTransaction,
@@ -417,7 +407,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
-	r := reqCopy.NewRequestImpersonatedOffLedger(ch, keyPair.Address())
+	r := reqCopy.NewRequestOffLedger(ch, keyPair)
 	res := ch.estimateGas(r)
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
