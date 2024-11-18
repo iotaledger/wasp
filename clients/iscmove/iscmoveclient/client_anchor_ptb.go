@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func PTBStartNewChain(
@@ -14,6 +13,8 @@ func PTBStartNewChain(
 	packageID iotago.PackageID,
 	stateMetadata []byte,
 	argInitCoin iotago.Argument,
+	gasObjAddr *iotago.Address,
+	txFeePerReq uint64,
 	ownerAddress *cryptolib.Address,
 ) *iotago.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
@@ -26,6 +27,8 @@ func PTBStartNewChain(
 				Arguments: []iotago.Argument{
 					ptb.MustPure(stateMetadata),
 					argInitCoin,
+					ptb.MustPure(gasObjAddr),
+					ptb.MustPure(txFeePerReq),
 				},
 			},
 		},
@@ -46,7 +49,7 @@ func PTBTakeAndTransferCoinBalance(
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
 	target *iotago.Address,
-	assets *isc.Assets,
+	assets *iscmove.Assets,
 ) *iotago.ProgrammableTransactionBuilder {
 	argBorrow := ptb.Command(
 		iotago.Command{
@@ -71,7 +74,7 @@ func PTBTakeAndTransferCoinBalance(
 					Package:       &packageID,
 					Module:        iscmove.AssetsBagModuleName,
 					Function:      "take_coin_balance",
-					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+					TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString(coinType)},
 					Arguments: []iotago.Argument{
 						argAssets,
 						ptb.MustPure(coinBalance.Uint64()),
@@ -85,7 +88,7 @@ func PTBTakeAndTransferCoinBalance(
 					Package:       iotago.IotaPackageIdIotaFramework,
 					Module:        "coin",
 					Function:      "from_balance",
-					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+					TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString(coinType)},
 					Arguments: []iotago.Argument{
 						argBal,
 					},
@@ -229,7 +232,7 @@ func PTBReceiveRequestsAndTransition(
 					Module:        iscmove.AnchorModuleName,
 					Function:      "receive_request",
 					TypeArguments: []iotago.TypeTag{},
-					Arguments:     []iotago.Argument{argAnchor, argReqObject},
+					Arguments:     []iotago.Argument{argAnchor, argReqObject, iotago.GetArgumentGasCoin()},
 				},
 			},
 		)

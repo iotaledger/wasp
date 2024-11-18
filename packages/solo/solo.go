@@ -48,7 +48,8 @@ import (
 )
 
 const (
-	timeLayout = "04:05.000000000"
+	timeLayout         = "04:05.000000000"
+	DefaultTxFeePerReq = 100
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -306,7 +307,7 @@ func (env *Solo) deployChain(
 		initBaseTokens,
 		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
 	)
-	initCoinRef, gasPayment := coins[0], coins[1:]
+	initCoinRef, gasCoin, gasPayment := coins[0], coins[1], coins[2:]
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
@@ -314,6 +315,8 @@ func (env *Solo) deployChain(
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
 		initCoinRef,
+		gasCoin.ObjectID,
+		DefaultTxFeePerReq,
 		gasPayment,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,

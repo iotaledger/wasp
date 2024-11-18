@@ -76,7 +76,7 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		target,
-		assets,
+		assets.Clone().AsISCMove(),
 	)
 }
 

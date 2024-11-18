@@ -99,12 +99,7 @@ func (c *Client) UpdateObjectRef(
 	ctx context.Context,
 	ref *iotago.ObjectRef,
 ) (*iotago.ObjectRef, error) {
-	res, err := c.GetObject(
-		context.Background(),
-		GetObjectRequest{
-			ObjectID: ref.ObjectID,
-		},
-	)
+	res, err := c.GetObject(context.Background(), GetObjectRequest{ObjectID: ref.ObjectID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the object of ObjectRef: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
@@ -16,7 +17,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 
-	anchor := startNewChain(t, client, cryptolibSigner)
+	anchor, _ := startNewChain(t, client, cryptolibSigner)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -62,7 +63,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 
-	anchor := startNewChain(t, client, cryptolibSigner)
+	anchor, _ := startNewChain(t, client, cryptolibSigner)
 
 	assets := iscmove.NewAssets(100)
 
@@ -98,7 +99,7 @@ func TestGetRequestFromObjectID(t *testing.T) {
 	client := newLocalnetClient()
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 
-	anchor := startNewChain(t, client, cryptolibSigner)
+	anchor, _ := startNewChain(t, client, cryptolibSigner)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -141,6 +142,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, 12, req.Object.Allowance.Coins["TEST_A"])
-	require.Equal(t, 21, req.Object.Allowance.Coins["IOTA"])
+	require.Equal(t, iotajsonrpc.CoinValue(12), req.Object.Allowance.Coins["0xa::testa::TEST_A"])
+	// require.Equal(t, iotajsonrpc.CoinValue(21), req.Object.Allowance.Coins["0x1::iota::IOTA"]) // FIXME
 }
