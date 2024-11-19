@@ -9,9 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/transaction/transactiontest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/stretchr/testify/require"
@@ -27,7 +25,17 @@ func TestTxBuilderBasic(t *testing.T) {
 	signer := newSignerWithFunds(t, testSeed, 0)
 	iscPackage := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
 
-	anchor, gasObjRef := iscmoveclienttest.StartNewChain(t, client, signer, iscPackage, 100)
+	anchor, err := client.L2().StartNewChain(
+		context.Background(),
+		signer,
+		iscPackage,
+		[]byte{1, 2, 3, 4},
+		nil,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
 
 	stateAnchor := isc.NewStateAnchor(anchor, signer.Address(), iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, signer.Address())
@@ -36,12 +44,18 @@ func TestTxBuilderBasic(t *testing.T) {
 	txb.ConsumeRequest(req1)
 	req2 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb.ConsumeRequest(req2)
-	pt := txb.BuildTransactionEssence(transactiontest.RandomStateMetadata().Bytes())
+	// stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(1), commitment, &gas.FeePolicy{}, isc.CallArguments{}, "http://dummy")
+	// ptb := txb.BuildTransactionEssence(stateMetadata.Bytes())
+	stateMetadata := []byte("dummy stateMetadata")
+	pt := txb.BuildTransactionEssence(stateMetadata)
+
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	require.NoError(t, err)
 
 	tx := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt,
-		[]*iotago.ObjectRef{gasObjRef},
+		[]*iotago.ObjectRef{getCoinsRes.Data[len(getCoinsRes.Data)-2].Ref()},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -69,7 +83,17 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	recipient := newSignerWithFunds(t, testSeed, 1)
 	iscPackage := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
 
-	anchor, gasObjRef := iscmoveclienttest.StartNewChain(t, client, signer, iscPackage, 100)
+	anchor, err := client.L2().StartNewChain(
+		context.Background(),
+		signer,
+		iscPackage,
+		[]byte{1, 2, 3, 4},
+		nil,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
 
 	stateAnchor := isc.NewStateAnchor(anchor, signer.Address(), iscPackage)
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, signer.Address())
@@ -77,12 +101,18 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	req1 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb1.ConsumeRequest(req1)
 
-	ptb1 := txb1.BuildTransactionEssence(transactiontest.RandomStateMetadata().Bytes())
+	// stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(1), commitment, &gas.FeePolicy{}, isc.CallArguments{}, "http://dummy")
+	// ptb := txb.BuildTransactionEssence(stateMetadata.Bytes())
+	stateMetadata1 := []byte("dummy stateMetadata1")
+	ptb1 := txb1.BuildTransactionEssence(stateMetadata1)
+
+	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
+	require.NoError(t, err)
 
 	tx1 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		ptb1,
-		[]*iotago.ObjectRef{gasObjRef},
+		coins.CoinRefs(),
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -111,16 +141,16 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	req2 := createIscmoveReq(t, client, signer, iscPackage, anchor)
 	txb2.ConsumeRequest(req2)
+	stateMetadata2 := []byte("dummy stateMetadata2")
+	pt2 := txb2.BuildTransactionEssence(stateMetadata2)
 
-	pt2 := txb2.BuildTransactionEssence(transactiontest.RandomStateMetadata().Bytes())
-
-	gasObjRef, err = client.UpdateObjectRef(context.Background(), gasObjRef)
+	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt2,
-		[]*iotago.ObjectRef{gasObjRef},
+		coins.CoinRefs(),
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -141,26 +171,48 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 }
 
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
-	t.Skip("we may suppress the SendCrossChainRequest behavior for now")
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
-	iscPackage := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
+	iscPackage1 := l1starter.DeployISCContracts(client, cryptolib.SignerToIotaSigner(signer))
 
-	anchor1, gasObjRef1 := iscmoveclienttest.StartNewChain(t, client, signer, iscPackage, 100)
-	anchor2, gasObjRef2 := iscmoveclienttest.StartNewChain(t, client, signer, iscPackage, 100)
+	anchor1, err := client.L2().StartNewChain(
+		context.Background(),
+		signer,
+		iscPackage1,
+		[]byte{1, 2, 3, 4},
+		nil,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
+	anchor2, err := client.L2().StartNewChain(
+		context.Background(),
+		signer,
+		iscPackage1,
+		[]byte{1, 2, 3, 4},
+		nil,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
+	stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage1)
+	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor1, signer.Address())
 
-	stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage)
-	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor1, signer.Address())
-
-	req1 := createIscmoveReq(t, client, signer, iscPackage, anchor1)
+	req1 := createIscmoveReq(t, client, signer, iscPackage1, anchor1)
 	txb1.ConsumeRequest(req1)
 
-	pt1 := txb1.BuildTransactionEssence(transactiontest.RandomStateMetadata().Bytes())
+	stateMetadata1 := []byte("dummy stateMetadata1")
+	pt1 := txb1.BuildTransactionEssence(stateMetadata1)
+
+	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
+	require.NoError(t, err)
 
 	tx1 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt1,
-		[]*iotago.ObjectRef{gasObjRef1},
+		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -183,20 +235,24 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	tmp, err := client.UpdateObjectRef(context.Background(), &anchor1.ObjectRef)
 	require.NoError(t, err)
 	anchor1.ObjectRef = *tmp
-	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor1, signer.Address())
+	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor1, signer.Address())
 
-	txb2.SendCrossChainRequest(&iscPackage, anchor2.ObjectID, isc.NewAssets(1), &isc.SendMetadata{
+	txb2.SendCrossChainRequest(&iscPackage1, anchor2.ObjectID, isc.NewAssets(1), &isc.SendMetadata{
 		Message:   isc.NewMessage(isc.Hn("accounts"), isc.Hn("deposit")),
 		Allowance: isc.NewAssets(1),
 		GasBudget: 2,
 	})
 
-	pt2 := txb2.BuildTransactionEssence(transactiontest.RandomStateMetadata().Bytes())
+	stateMetadata2 := []byte("dummy stateMetadata2")
+	pt2 := txb2.BuildTransactionEssence(stateMetadata2)
+
+	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
+	require.NoError(t, err)
 
 	tx2 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt2,
-		[]*iotago.ObjectRef{gasObjRef2},
+		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -214,8 +270,8 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	crossChainRequestRef, err := txnResponse2.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	stateAnchor2 := isc.NewStateAnchor(anchor2, signer.Address(), iscPackage)
-	txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor2, signer.Address())
+	stateAnchor2 := isc.NewStateAnchor(anchor2, signer.Address(), iscPackage1)
+	txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor2, signer.Address())
 
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), crossChainRequestRef.ObjectID)
 	require.NoError(t, err)
@@ -223,14 +279,16 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	require.NoError(t, err)
 	txb3.ConsumeRequest(req3)
 
-	gasObjRef2, err = client.UpdateObjectRef(context.Background(), gasObjRef2)
+	coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
-	pt3 := txb3.BuildTransactionEssence(transactiontest.RandomStateMetadata().Bytes())
+
+	stateMetadata3 := []byte("dummy stateMetadata3")
+	pt3 := txb3.BuildTransactionEssence(stateMetadata3)
 
 	tx3 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt3,
-		[]*iotago.ObjectRef{gasObjRef2},
+		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)

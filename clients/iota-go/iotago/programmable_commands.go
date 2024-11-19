@@ -64,11 +64,6 @@ type Argument struct {
 	// value from a Move call with multiple return values.
 	NestedResult *NestedResult
 }
-
-func GetArgumentGasCoin() Argument {
-	return Argument{GasCoin: &serialization.EmptyEnum{}}
-}
-
 type NestedResult struct {
 	Cmd    uint16 // command index
 	Result uint16 // result index

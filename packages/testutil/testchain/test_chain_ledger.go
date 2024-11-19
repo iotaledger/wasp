@@ -92,8 +92,6 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		*tcl.iscPackage,
 		stateMetadata.Bytes(),
 		originDeposit.Ref(),
-		resGetCoins.Data[2].Ref().ObjectID,
-		100,
 		[]*iotago.ObjectRef{resGetCoins.Data[0].Ref()},
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,

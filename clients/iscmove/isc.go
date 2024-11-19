@@ -74,8 +74,6 @@ type Anchor struct {
 	Assets        AssetsBag
 	StateMetadata []byte
 	StateIndex    uint32
-	GasObjAddr    iotago.ObjectID
-	TxFeePerReq   uint64
 }
 
 func (a1 Anchor) Equals(a2 *Anchor) bool {

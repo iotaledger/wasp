@@ -19,8 +19,6 @@ func (c *Client) StartNewChain(
 	packageID iotago.PackageID,
 	stateMetadata []byte,
 	initCoinRef *iotago.ObjectRef,
-	gasObjAddr *iotago.Address,
-	txFeePerReq uint64,
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
@@ -37,7 +35,7 @@ func (c *Client) StartNewChain(
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, gasObjAddr, txFeePerReq, cryptolibSigner.Address())
+	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, cryptolibSigner.Address())
 	pt := ptb.Finish()
 
 	if len(gasPayments) == 0 {
@@ -92,7 +90,7 @@ func (c *Client) ReceiveRequestsAndTransition(
 	anchorRef *iotago.ObjectRef,
 	reqs []iotago.ObjectRef,
 	stateMetadata []byte,
-	gasPayments []*iotago.ObjectRef,
+	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
@@ -123,6 +121,13 @@ func (c *Client) ReceiveRequestsAndTransition(
 	)
 	pt := ptb.Finish()
 
+	if len(gasPayments) == 0 {
+		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
+		}
+		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
+	}
 	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
