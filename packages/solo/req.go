@@ -384,9 +384,8 @@ func (ch *Chain) PostRequestSyncExt(
 	if len(results) == 0 {
 		return nil, nil, nil, nil, errors.New("request has been skipped")
 	}
-	vmRes = results[0]
-
-	return req, l1Res, vmRes, anchorTransitionPTBRes, nil
+	require.Len(ch.Env.T, results, 1)
+	return req, l1Res, results[0], anchorTransitionPTBRes, nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
