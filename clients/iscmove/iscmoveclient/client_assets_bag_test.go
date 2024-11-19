@@ -185,14 +185,14 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
 	require.Equal(t, testCointype, bal.CoinType)
-	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+	require.Equal(t, uint64(1000000), bal.TotalBalance)
 }
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	anchor, _ := startNewChain(t, client, cryptolibSigner)
+	anchor := startNewChain(t, client, cryptolibSigner)
 
 	coinRef, coinType := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -220,11 +220,11 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.ID)
 	require.NoError(t, err)
-	require.Equal(t, uint64(2), assetsBag.Size)
+	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
 	require.Equal(t, testCointype, bal.CoinType)
-	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+	require.Equal(t, uint64(1000000), bal.TotalBalance)
 }
 
 func borrowAnchorAssetsAndPlaceCoin(
@@ -312,7 +312,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()
 
-	anchor, _ := startNewChain(t, client, cryptolibSigner)
+	anchor := startNewChain(t, client, cryptolibSigner)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 	getCoinRef, err := client.GetObject(
@@ -368,7 +368,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 			Function: uint32(isc.Hn("test_isc_func")),
 			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		},
-		iscmove.NewAssets(100),
+		nil,
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -388,5 +388,5 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
 	require.Equal(t, testCointype, bal.CoinType)
-	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+	require.Equal(t, uint64(1000000), bal.TotalBalance)
 }

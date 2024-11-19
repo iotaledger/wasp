@@ -5,7 +5,6 @@ package isc
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -15,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -365,7 +363,6 @@ type StateAnchor struct {
 	Anchor     *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
 	ISCPackage iotago.Address
-	GasCoin    *iotago.ObjectRef
 }
 
 func NewStateAnchor(
@@ -378,27 +375,6 @@ func NewStateAnchor(
 		Owner:      owner,
 		ISCPackage: iscPackage,
 	}
-}
-
-// Every time changing the L1 state of the Anchor object, the nodes should call
-// this func to synchronize to the latest state
-// It includes the following 'txbuilder' operations
-// * BuildTransactionEssence (update the anchor commitment)
-// * RotationTransaction
-func (a *StateAnchor) UpdateStateAnchor(ctx context.Context, c clients.L1Client) error {
-	newStateAnchor := *a
-	anchorWithRef, err := c.L2().GetAnchorFromObjectID(ctx, a.GetObjectID())
-	if err != nil {
-		return fmt.Errorf("can't get Anchor by ID: %w", err)
-	}
-	newGasCoinRef, err := c.UpdateObjectRef(ctx, a.GasCoin)
-	if err != nil {
-		return fmt.Errorf("can't update GasCoin's Ref: %w", err)
-	}
-	newStateAnchor.Anchor = anchorWithRef
-	newStateAnchor.GasCoin = newGasCoinRef
-	*a = newStateAnchor
-	return nil
 }
 
 func (s StateAnchor) GetObjectRef() *iotago.ObjectRef {

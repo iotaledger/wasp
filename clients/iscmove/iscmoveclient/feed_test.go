@@ -22,7 +22,7 @@ func TestRequestsFeed(t *testing.T) {
 	iscOwner := newSignerWithFunds(t, testSeed, 0)
 	chainOwner := newSignerWithFunds(t, testSeed, 1)
 
-	anchor, _ := startNewChain(t, client, chainOwner)
+	anchor := startNewChain(t, client, chainOwner)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

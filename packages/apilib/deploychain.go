@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -48,20 +47,13 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	coins, err := par.Layer1Client.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: par.OriginatorKeyPair.Address().AsIotaAddress(), CoinType: &iotajsonrpc.IotaCoinType})
-	if err != nil {
-		return isc.ChainID{}, err
-	}
-
 	anchor, err := par.Layer1Client.L2().StartNewChain(
 		ctx,
 		par.OriginatorKeyPair,
 		par.PackageID,
 		par.StateMetadata.Bytes(),
-		coins.Data[3].Ref(),
-		coins.Data[2].Ref().ObjectID,
-		100,
-		[]*iotago.ObjectRef{coins.Data[0].Ref()},
+		nil,
+		nil, // Add gasPayments here (or not)
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)

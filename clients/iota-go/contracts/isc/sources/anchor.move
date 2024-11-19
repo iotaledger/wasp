@@ -4,16 +4,13 @@
 module isc::anchor {
     use iota::{
         borrow::{Self, Referent, Borrow},
-        coin::{Self, Coin},
+        coin::Coin,
         iota::IOTA,
     };
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
     };
-
-    // The given gas coin is not the assigned one under Anchor
-    // const EWrongGivenGasCoin: u64 = 0;
 
     // === Main structs ===
 
@@ -24,10 +21,6 @@ module isc::anchor {
         assets: Referent<AssetsBag>,
         state_metadata: vector<u8>,
         state_index: u32,
-        // the address of the gas object for updating Anchor object in the future
-        gas_obj_addr: address,
-        // the tx fee for each request
-        tx_fee_per_req: u64,
     }
 
     public struct Receipt {
@@ -38,13 +31,7 @@ module isc::anchor {
     // === Anchor packing and unpacking ===
 
     /// Starts a new chain by creating a new `Anchor` for it
-    public fun start_new_chain(
-        state_metadata: vector<u8>,
-        coin: Option<Coin<IOTA>>,
-        gas_obj_addr: address,
-        tx_fee_per_req: u64,
-        ctx: &mut TxContext,
-    ): Anchor {
+    public fun start_new_chain(state_metadata: vector<u8>, coin: Option<Coin<IOTA>>, ctx: &mut TxContext): Anchor {
         let mut assets_bag = assets_bag::new(ctx);
         if (coin.is_some()) {
             assets_bag.place_coin<IOTA>(coin.destroy_some());
@@ -56,22 +43,12 @@ module isc::anchor {
             assets: borrow::new(assets_bag, ctx),
             state_metadata: state_metadata,
             state_index: 0,
-            // FIXME we need to transfer the ownership of gas coin to the Anchor in move contract too
-            gas_obj_addr: gas_obj_addr,
-            tx_fee_per_req: tx_fee_per_req,
         }
     }
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {
-        let Anchor {
-            id,
-            assets,
-            state_index: _,
-            state_metadata: _,
-            gas_obj_addr: _,
-            tx_fee_per_req: _,
-        } = self;
+        let Anchor { id, assets, state_index: _, state_metadata: _ } = self;
         id.delete();
         assets.destroy()
     }
@@ -91,20 +68,9 @@ module isc::anchor {
     // === Receive a Request ===
 
     /// The Anchor receives a request and destroys it, implementing the HotPotato pattern.
-    public fun receive_request(
-        self: &mut Anchor,
-        request: transfer::Receiving<Request>,
-        gas_coin: &mut Coin<IOTA>,
-        ctx: &mut TxContext,
-    ): (Receipt, AssetsBag) {
+    public fun receive_request(self: &mut Anchor, request: transfer::Receiving<Request>): (Receipt, AssetsBag) {
         let req = request::receive(&mut self.id, request);
-        let (request_id, mut assets) = req.destroy();
-
-        let req_fee_bal = assets.take_coin_balance<IOTA>(self.tx_fee_per_req);
-        let req_fee_coin = coin::from_balance(req_fee_bal, ctx);
-
-        gas_coin.join(req_fee_coin);
-
+        let (request_id, assets) = req.destroy();
         (Receipt { request_id }, assets)
     }
 

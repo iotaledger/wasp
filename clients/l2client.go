@@ -18,8 +18,6 @@ type L2Client interface {
 		packageID iotago.PackageID,
 		stateMetadata []byte,
 		initCoinRef *iotago.ObjectRef,
-		gasObjAddr *iotago.Address,
-		txFeePerReq uint64,
 		gasPayments []*iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
