@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -100,9 +101,16 @@ func Start(ctx context.Context, cfg Config) *IotaNode {
 
 func (in *IotaNode) start(ctx context.Context) {
 	in.ctx = ctx
-	in.logf("Starting IotaNode...")
-	ts := time.Now()
-	in.execCmd()
+	var ts time.Time
+	os := runtime.GOOS
+	if os == "darwin" {
+		in.logf("Not run IotaNode by Go on MacOS")
+	} else {
+		in.logf("Starting IotaNode...")
+		ts = time.Now()
+		in.execCmd()
+	}
+
 	in.logf("Starting IotaNode... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 	in.waitAllHealthy(5 * time.Minute)
 	in.logf("Deploying ISC contracts...")
@@ -179,7 +187,7 @@ func (in *IotaNode) waitAllHealthy(timeout time.Duration) {
 				return
 			}
 			in.logf("Waiting until IotaNode becomes ready. Time waiting: %v", time.Since(ts).Truncate(time.Millisecond))
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 
