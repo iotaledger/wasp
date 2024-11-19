@@ -1,6 +1,8 @@
 package iscmoveclient
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -17,6 +19,8 @@ type moveAnchor struct {
 	Assets        referent[iscmove.AssetsBag]
 	StateMetadata []byte
 	StateIndex    uint32
+	GasObjAddr    iotago.ObjectID
+	TxFeePerReq   uint64
 }
 
 func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
@@ -25,6 +29,8 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 		Assets:        *ma.Assets.Value,
 		StateMetadata: ma.StateMetadata,
 		StateIndex:    ma.StateIndex,
+		GasObjAddr:    ma.GasObjAddr,
+		TxFeePerReq:   ma.TxFeePerReq,
 	}
 }
 
@@ -40,7 +46,9 @@ type moveRequest struct {
 
 func (mr *moveRequest) ToRequest() *iscmove.Request {
 	assets := iscmove.NewAssets(0)
+	fmt.Println("mr.Allowance: ", mr.Allowance)
 	for _, allowance := range mr.Allowance {
+		fmt.Println("allowance: ", allowance)
 		assets.AddCoin(allowance.CoinType, allowance.Balance)
 	}
 	return &iscmove.Request{
@@ -51,4 +59,9 @@ func (mr *moveRequest) ToRequest() *iscmove.Request {
 		Allowance: *assets,
 		GasBudget: mr.GasBudget,
 	}
+}
+
+type MoveCoin struct {
+	ID      iotago.ObjectID
+	Balance uint64
 }

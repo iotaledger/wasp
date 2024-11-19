@@ -16,12 +16,15 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
+const TestTxFeePerReq = 100
+
 func TestStartNewChain(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)
+	gasObj := getCoinsRes.Data[2]
 
 	anchor, err := client.StartNewChain(
 		context.Background(),
@@ -29,7 +32,9 @@ func TestStartNewChain(t *testing.T) {
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
 		getCoinsRes.Data[1].Ref(),
-		nil,
+		gasObj.CoinObjectID,
+		TestTxFeePerReq,
+		[]*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)
@@ -41,12 +46,18 @@ func TestGetAnchorFromObjectID(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
 
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	require.NoError(t, err)
+	gasObjectAddr := getCoinsRes.Data[2].Ref().ObjectID
+
 	anchor1, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
-		nil,
+		getCoinsRes.Data[1].Ref(),
+		gasObjectAddr,
+		100,
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
@@ -64,7 +75,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	chainSigner := newSignerWithFunds(t, testSeed, 1)
 
-	anchor := startNewChain(t, client, chainSigner)
+	anchor, gasObj := startNewChain(t, client, chainSigner)
 
 	txnResponse, err := client.AssetsBagNew(
 		context.Background(),
@@ -88,7 +99,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 		sentAssetsBagRef,
 		getCoinsRes.Data[len(getCoinsRes.Data)-1].Ref(),
 		iotajsonrpc.IotaCoinType,
-		10,
+		1000,
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
@@ -109,43 +120,60 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			Function: uint32(isc.Hn("test_isc_func")),
 			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		},
-		nil,
+		iscmove.NewAssets(100),
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)
-
 	require.NoError(t, err)
 
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	_, err = client.ReceiveRequestsAndTransition(
+	getObjectRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: &gasObj, Options: &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true, ShowContent: true, ShowBcs: true}})
+	require.NoError(t, err)
+	gasObjRef := getObjectRes.Data.Ref()
+	var gasObj1, gasObj2 iscmoveclient.MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasObj1)
+	require.NoError(t, err)
+
+	transitionRes, err := client.ReceiveRequestsAndTransition(
 		context.Background(),
 		chainSigner,
 		l1starter.ISCPackageID(),
 		&anchor.ObjectRef,
 		[]iotago.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
-		nil,
+		[]*iotago.ObjectRef{&gasObjRef},
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
+
+	getObjectRes, err = client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: &gasObj, Options: &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true, ShowContent: true, ShowBcs: true}})
+	require.NoError(t, err)
+	err = iotaclient.UnmarshalBCS(getObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasObj2)
+	require.NoError(t, err)
+	require.Equal(t, int64(gasObj1.Balance)-transitionRes.Effects.Data.GasFee()+TestTxFeePerReq, int64(gasObj2.Balance))
 }
 
-func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
+func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*iscmove.RefWithObject[iscmove.Anchor], iotago.ObjectID) {
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	require.NoError(t, err)
+	gasObj := getCoinsRes.Data[2]
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
-		nil,
-		nil,
+		getCoinsRes.Data[1].Ref(),
+		gasObj.CoinObjectID,
+		TestTxFeePerReq,
+		[]*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
-	return anchor
+	return anchor, *gasObj.CoinObjectID
 }
