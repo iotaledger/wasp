@@ -117,6 +117,7 @@ type Output struct {
 	NeedStateMgrStateProposal *isc.StateAnchor  // Query for a proposal for Virtual State (it will go to the batch proposal).
 	NeedStateMgrDecidedState  *isc.StateAnchor  // Query for a decided Virtual State to be used by VM.
 	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
+	NeedNodeConnGasInfo       bool              // Ask NodeConn for the GasInfo.
 	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
@@ -155,6 +156,7 @@ type consImpl struct {
 	acs              acs.ACS
 	subMP            SyncMP         // Mempool.
 	subSM            SyncSM         // StateMgr.
+	subNC            SyncNC         // Synchronization with the NodeConn.
 	subDSS           SyncDSS        // Distributed Schnorr Signature.
 	subACS           SyncACS        // Asynchronous Common Subset.
 	subRND           SyncRND        // Randomness.
@@ -250,6 +252,10 @@ func New(
 		c.uponSMSaveProducedBlockInputsReady,
 		c.uponSMSaveProducedBlockDone,
 	)
+	c.subNC = NewSyncNC(
+		c.uponNCInputsReady,
+		c.uponNCOutputReady,
+	)
 	c.subDSS = NewSyncDSS(
 		c.uponDSSInitialInputsReady,
 		c.uponDSSIndexProposalReady,
@@ -328,7 +334,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputTimeData:
 		return c.subACS.TimeDataReceived(input.timeData)
 	case *inputGasInfo:
-		return c.subACS.GasInfoReceived(input.gasCoins, input.gasPrice)
+		return c.subNC.HaveGasInfo(input.gasCoins, input.gasPrice)
 	case *inputVMResult:
 		return c.subVM.VMResultReceived(input.task)
 	}
@@ -367,10 +373,11 @@ func (c *consImpl) Output() gpa.Output {
 
 func (c *consImpl) StatusString() string {
 	// We con't include RND here, maybe that's less important, and visible from the VM status.
-	return fmt.Sprintf("{consImpl⟨%v⟩,%v,%v,%v,%v,%v,%v}",
+	return fmt.Sprintf("{consImpl⟨%v⟩,%v,%v,%v,%v,%v,%v,%v}",
 		c.output.Status,
 		c.subSM.String(),
 		c.subMP.String(),
+		c.subNC.String(),
 		c.subDSS.String(),
 		c.subACS.String(),
 		c.subVM.String(),
@@ -388,7 +395,10 @@ func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *isc.StateAnchor) g
 
 func (c *consImpl) uponMPProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	c.output.NeedMempoolProposal = nil
-	return c.subACS.MempoolRequestsReceived(requestRefs)
+	msgs := gpa.NoMessages()
+	msgs.AddAll(c.subACS.MempoolRequestsReceived(requestRefs))
+	msgs.AddAll(c.subNC.HaveRequests())
+	return msgs
 }
 
 func (c *consImpl) uponMPRequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
@@ -411,7 +421,10 @@ func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *isc.Stat
 
 func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *isc.StateAnchor) gpa.OutMessages {
 	c.output.NeedStateMgrStateProposal = nil
-	return c.subACS.StateProposalReceived(proposedAliasOutput)
+	msgs := gpa.NoMessages()
+	msgs.AddAll(c.subACS.StateProposalReceived(proposedAliasOutput))
+	msgs.AddAll(c.subNC.HaveState())
+	return msgs
 }
 
 func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
@@ -437,6 +450,19 @@ func (c *consImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.StateD
 func (c *consImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMessages {
 	c.output.NeedStateMgrSaveBlock = nil
 	return c.subTX.BlockSaved(block)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// NC
+
+func (c *consImpl) uponNCInputsReady() gpa.OutMessages {
+	c.output.NeedNodeConnGasInfo = true
+	return nil
+}
+
+func (c *consImpl) uponNCOutputReady(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages {
+	c.output.NeedNodeConnGasInfo = false
+	return c.subACS.GasInfoReceived(gasCoins, gasPrice)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

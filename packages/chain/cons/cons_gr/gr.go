@@ -15,7 +15,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -39,12 +39,12 @@ const (
 ////////////////////////////////////////////////////////////////////////////////
 // Interfaces required from other components (MP, SM)
 
-type ConsensusID [iotago.Ed25519AddressBytesLength + 4]byte
+type ConsensusID [iotago.AddressLen + 4]byte
 
 func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) ConsensusID {
 	ret := ConsensusID{}
 	copy(ret[:], cmtAddr.Bytes())
-	copy(ret[iotago.Ed25519AddressBytesLength:], codec.Encode[uint32](logIndex.AsUint32()))
+	copy(ret[iotago.AddressLen:], codec.Encode[uint32](logIndex.AsUint32()))
 	return ret
 }
 
@@ -74,6 +74,15 @@ type StateMgr interface {
 		ctx context.Context,
 		block state.StateDraft,
 	) <-chan state.Block
+}
+
+type NodeConnGasInfo interface {
+	GetGasCoins() []*iotago.ObjectRef
+	GetGasPrice() uint64
+}
+
+type NodeConn interface {
+	ConsensusGasPriceProposal() <-chan NodeConnGasInfo
 }
 
 type VM interface {
@@ -122,6 +131,9 @@ type ConsGr struct {
 	stateMgrDecidedStateAsked   bool
 	stateMgrSaveBlockRespCh     <-chan state.Block
 	stateMgrSaveBlockAsked      bool
+	nodeConn                    NodeConn
+	nodeConnGasInfoRespCh       <-chan NodeConnGasInfo
+	nodeConnGasInfoAsked        bool
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTaskResult
 	vmAsked                     bool
@@ -146,6 +158,7 @@ func New(
 	procCache *processors.Config,
 	mempool Mempool,
 	stateMgr StateMgr,
+	nodeConn NodeConn,
 	net peering.NetworkProvider,
 	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
@@ -173,6 +186,7 @@ func New(
 		printStatusPeriod: printStatusPeriod,
 		mempool:           mempool,
 		stateMgr:          stateMgr,
+		nodeConn:          nodeConn,
 		vm:                NewVMAsync(chainMetrics, log),
 		netRecvPipe:       pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:      netPeeringID,
@@ -273,8 +287,6 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			}
 			cgr.handleConsInput(cons.NewInputTimeData(t))
 
-		// TODO: Add the GasInfo input for the consensus.
-
 		case resp, ok := <-cgr.mempoolProposalsRespCh:
 			if !ok {
 				cgr.mempoolProposalsRespCh = nil
@@ -309,6 +321,14 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 				panic(fmt.Errorf("cannot save produced block"))
 			}
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
+
+		case t, ok := <-cgr.nodeConnGasInfoRespCh:
+			if !ok {
+				cgr.nodeConnGasInfoRespCh = nil
+				continue
+			}
+			cgr.handleConsInput(cons.NewInputGasInfo(t.GetGasCoins(), t.GetGasPrice()))
+
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
 				cgr.vmRespCh = nil
@@ -393,6 +413,10 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	if output.NeedStateMgrSaveBlock != nil && !cgr.stateMgrSaveBlockAsked {
 		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.ConsensusProducedBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
 		cgr.stateMgrSaveBlockAsked = true
+	}
+	if output.NeedNodeConnGasInfo && !cgr.nodeConnGasInfoAsked {
+		cgr.nodeConnGasInfoRespCh = cgr.nodeConn.ConsensusGasPriceProposal()
+		cgr.nodeConnGasInfoAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
 		cgr.vmRespCh = cgr.vm.ConsensusRunTask(cgr.ctx, output.NeedVMResult)
