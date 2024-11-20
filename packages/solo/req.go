@@ -212,40 +212,29 @@ func (env *Solo) selectCoinsForGas(
 	targetPTB *iotago.ProgrammableTransaction,
 	gasBudget, gasPrice uint64,
 ) []*iotago.ObjectRef {
-	sum := uint64(0)
-	gasPayment := make([]*iotago.ObjectRef, 0)
-	for _, c := range env.L1AllCoins(addr) {
-		if targetPTB.IsInInputObjects(c.CoinObjectID) {
-			continue
-		}
-		gasPayment = append(gasPayment, c.Ref())
-		sum += c.Balance.Uint64()
-		if sum >= gasBudget*gasPrice {
-			break
-		}
-	}
-	return gasPayment
+	pickedCoins, err := iotajsonrpc.PickupCoinsWithFilter(
+		env.L1BaseTokenCoins(addr),
+		gasBudget*gasPrice,
+		func(c *iotajsonrpc.Coin) bool { return !targetPTB.IsInInputObjects(c.CoinObjectID) },
+	)
+	require.NoError(env.T, err)
+	return pickedCoins.CoinRefs()
 }
 
 func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value) *iotago.ObjectRef {
 	allCoins := env.L1BaseTokenCoins(keyPair.Address())
 	require.NotEmpty(env.T, allCoins)
 
-	sum := uint64(0)
-	var inputCoins []*iotago.ObjectID
-	for _, coin := range allCoins {
-		inputCoins = append(inputCoins, coin.CoinObjectID)
-		sum += coin.Balance.Uint64()
-		if sum >= uint64(value) {
-			break
-		}
-	}
+	pickedCoins, err := iotajsonrpc.PickupCoinsSimple(
+		env.L1BaseTokenCoins(keyPair.Address()),
+		uint64(value),
+	)
 
 	tx := lo.Must(env.IotaClient().PayIota(
 		env.ctx,
 		iotaclient.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),
-			InputCoins: inputCoins,
+			InputCoins: pickedCoins.ObjectIDs(),
 			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(uint64(value))},
 			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},
 			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),

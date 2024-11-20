@@ -97,3 +97,33 @@ func PickupCoins(
 		TotalAmount:  total,
 	}, nil
 }
+
+func PickupCoinsSimple(coins Coins, targetAmount uint64) (Coins, error) {
+	return PickupCoinsWithFilter(coins, targetAmount, nil)
+}
+
+func PickupCoinsWithFilter(
+	coins Coins,
+	targetAmount uint64,
+	filter func(*Coin) bool,
+) (Coins, error) {
+	if len(coins) <= 0 {
+		return nil, ErrNoCoinsFound
+	}
+	total := uint64(0)
+	pickedCoins := Coins{}
+	for _, coin := range coins {
+		if filter != nil && !filter(coin) {
+			continue
+		}
+		total = total + coin.Balance.Uint64()
+		pickedCoins = append(pickedCoins, coin)
+		if total >= targetAmount {
+			break
+		}
+	}
+	if total < targetAmount {
+		return nil, ErrInsufficientBalance
+	}
+	return pickedCoins, nil
+}

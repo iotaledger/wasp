@@ -27,22 +27,12 @@ func (c *Client) FindCoinsForGasPayment(
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
 	}
-	var gasPayments []*iotago.ObjectRef
-	sum := uint64(0)
-	for _, coin := range coinPage.Data {
-		if pt.IsInInputObjects(coin.CoinObjectID) {
-			continue
-		}
-		gasPayments = append(gasPayments, coin.Ref())
-		sum += coin.Balance.Uint64()
-		if sum >= gasPrice*gasBudget {
-			break
-		}
-	}
-	if sum < gasPrice*gasBudget {
-		return nil, fmt.Errorf("not enough coins for gas payment")
-	}
-	return gasPayments, nil
+	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
+		coinPage.Data,
+		gasBudget*gasPrice,
+		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+	)
+	return gasPayments.CoinRefs(), nil
 }
 
 func (c *Client) StartNewChain(
