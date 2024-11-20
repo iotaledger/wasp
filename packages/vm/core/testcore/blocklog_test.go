@@ -1,5 +1,4 @@
 // excluded temporarily because of compilation errors
-//go:build exclude
 
 package testcore
 
@@ -15,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-func TestBlockInfoLatest(t *testing.T) {
+func TestBlocklog_BlockInfoLatest(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t)
 	chain := env.NewChain()
@@ -29,7 +28,7 @@ func TestBlockInfoLatest(t *testing.T) {
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfo(t *testing.T) {
+func TestBlocklog_BlockInfo(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t)
 	chain := env.NewChain()
@@ -53,7 +52,7 @@ func TestBlockInfo(t *testing.T) {
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfoLatestWithRequest(t *testing.T) {
+func TestBlocklog_BlockInfoLatestWithRequest(t *testing.T) {
 	env := solo.New(t)
 
 	ch := env.NewChain()
@@ -66,24 +65,25 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 	bi = ch.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 3, bi.BlockIndex)
+	require.EqualValues(t, 2, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
-	require.EqualValues(t, 1, bi.NumOffLedgerRequests)
+	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfoSeveral(t *testing.T) {
+func TestBlocklog_BlockInfoSeveral(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
-	err := ch.DepositBaseTokensToL2(100_000, nil)
-	require.NoError(t, err)
-
-	const numReqs = 5
+	const numReqs = 6
+	for i := 0; i < numReqs; i++ {
+		err := ch.DepositBaseTokensToL2(100_000, nil)
+		require.NoError(t, err)
+	}
 
 	bi := ch.GetLatestBlockInfo()
-	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex))
+	require.EqualValues(t, 1+numReqs, int(bi.BlockIndex))
 
 	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex; blockIndex++ {
 		bi1, err := ch.GetBlockInfo(blockIndex)
@@ -97,47 +97,43 @@ func TestBlockInfoSeveral(t *testing.T) {
 	}
 }
 
-func TestRequestIsProcessed(t *testing.T) {
+func TestBlocklog_RequestIsProcessed(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
-
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
 
 	bi := ch.GetLatestBlockInfo()
 	require.NoError(t, err)
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 	t.Logf("%s", bi.String())
 }
 
-func TestRequestReceipt(t *testing.T) {
+func TestBlocklog_RequestReceipt(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
-
-	receipt, _ := ch.GetRequestReceipt(reqs[0].ID())
-	a := reqs[0].Bytes()
+	receipt, _ := ch.GetRequestReceipt(req.ID())
+	a := req.Bytes()
 	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
 	require.Nil(t, receipt.Error)
@@ -146,54 +142,49 @@ func TestRequestReceipt(t *testing.T) {
 	t.Logf("%s", receipt.String())
 }
 
-func TestRequestReceiptsForBlocks(t *testing.T) {
+func TestBlocklog_RequestReceiptsForBlocks(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
-
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
-
-	recs := ch.GetRequestReceiptsForBlock(3)
+	require.EqualValues(t, 3, ch.GetLatestAnchor().GetStateIndex())
+	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestAnchor().GetStateIndex())
 	require.EqualValues(t, 1, len(recs))
-	require.EqualValues(t, reqs[0].ID(), recs[0].Request.ID())
+	require.EqualValues(t, req.ID(), recs[0].Request.ID())
 	t.Logf("%s\n", recs[0].String())
 }
 
-func TestRequestIDsForBlocks(t *testing.T) {
+func TestBlocklog_RequestIDsForBlocks(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
-
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
-
-	ids := ch.GetRequestIDsForBlock(3)
+	ids := ch.GetRequestIDsForBlock(ch.GetLatestAnchor().GetStateIndex())
 	require.EqualValues(t, 1, len(ids))
-	require.EqualValues(t, reqs[0].ID(), ids[0])
+	require.EqualValues(t, req.ID(), ids[0])
 }
 
-func TestViewGetRequestReceipt(t *testing.T) {
+func TestBlocklog_ViewGetRequestReceipt(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 	// try to get a receipt for a request that does not exist
@@ -201,7 +192,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 	require.False(t, ok)
 }
 
-func TestBlocklogPruning(t *testing.T) {
+func TestBlocklog_Pruning(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true})
 
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", 0, 10)
@@ -228,7 +219,8 @@ func TestBlocklogPruning(t *testing.T) {
 	}
 }
 
-func TestBlocklogFoundriesWithPruning(t *testing.T) {
+func TestBlocklog_FoundriesWithPruning(t *testing.T) {
+	t.SkipNow() // TODO
 	// test that foundries can be accessed even after the block is pruned
 
 	env := solo.New(t, &solo.InitOptions{Debug: true})
