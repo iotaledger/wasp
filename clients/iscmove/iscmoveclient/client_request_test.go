@@ -125,7 +125,7 @@ func TestGetRequestFromObjectID(t *testing.T) {
 		},
 		&iscmove.Assets{
 			Coins: iscmove.CoinBalances{
-				"0x1::iota::IOTA":    11,
+				"0x1::iota::IOTA":    21,
 				"0xa::testa::TEST_A": 12,
 			},
 		},
@@ -141,6 +141,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, 12, req.Object.Allowance.Coins["TEST_A"])
-	require.Equal(t, 21, req.Object.Allowance.Coins["IOTA"])
+	require.Equal(t, uint64(12), req.Object.Allowance.Coins["0xa::testa::TEST_A"].Uint64())
+	require.Equal(t, uint64(21), req.Object.Allowance.Coins["0x1::iota::IOTA"].Uint64())
 }
