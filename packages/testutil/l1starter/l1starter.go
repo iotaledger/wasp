@@ -102,8 +102,7 @@ func Start(ctx context.Context, cfg Config) *IotaNode {
 func (in *IotaNode) start(ctx context.Context) {
 	in.ctx = ctx
 	var ts time.Time
-	os := runtime.GOOS
-	if os == "darwin" {
+	if runtime.GOOS == "darwin" {
 		in.logf("Not run IotaNode by Go on MacOS")
 	} else {
 		in.logf("Starting IotaNode...")
@@ -142,7 +141,9 @@ func (in *IotaNode) execCmd() {
 
 func (in *IotaNode) Stop() {
 	in.logf("Stopping...")
-
+	if runtime.GOOS == "darwin" {
+		return
+	}
 	if err := in.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		panic(fmt.Errorf("unable to send TERM signal to IotaNode: %w", err))
 	}

@@ -87,6 +87,10 @@ func (a Argument) String() string {
 	panic("invalid argument")
 }
 
+func GetArgumentGasCoin() Argument {
+	return Argument{GasCoin: &serialization.EmptyEnum{}}
+}
+
 type ProgrammableMoveCall struct {
 	Package       *PackageID
 	Module        Identifier
